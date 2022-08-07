@@ -7,7 +7,7 @@ import {
   CardTitleWrapper,
   CardWrapper,
   CardSubTitleWrapper,
-} from './PortfolioCard';
+} from '../common/Card';
 import { PositivePercentChangeContainer } from '../common/PercentChange';
 import {
   RESPONSIVE_BREAKPOINT_SM,
