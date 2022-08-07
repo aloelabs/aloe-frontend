@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { FeeTier } from '../../data/BlendPoolMarkers';
-import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
 import {
   getBrighterColor,
@@ -10,35 +9,43 @@ import {
   rgba,
 } from '../../util/Colors';
 import FeeTierContainer from '../common/FeeTierContainer';
-import InvestedTypes from '../common/InvestedTypes';
 import TokenPairIcons from '../common/TokenPairIcons';
-import { PercentChange } from '../common/PercentChange';
 import { Display, Text } from '../common/Typography';
-import { formatUSDAuto } from '../../util/Numbers';
-import { BodyDivider, BodySubContainer, CardBodyWrapper, CardSubTitleWrapper, CardTitleWrapper, CardWrapper, ValueText } from '../common/Card';
+import { roundPercentage } from '../../util/Numbers';
+import LendTokenInfo from './LendTokenInfo';
+import {
+  BodyDivider,
+  BodySubContainer,
+  CardBodyWrapper,
+  CardSubTitleWrapper,
+  CardTitleWrapper,
+  CardWrapper,
+} from '../common/Card';
 
 const TOKEN_PAIR_FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
+const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
-export type PortfolioCardProps = {
+const TokenAPYWrapper = styled.div`
+  padding: 2px 8px;
+  border-radius: 8px;
+  background-color: ${TOKEN_APY_BG_COLOR};
+`;
+
+export type LendPairCardProps = {
   token0: TokenData;
   token1: TokenData;
-  silo0: SiloData;
-  silo1: SiloData;
+  token0APY: number;
+  token1APY: number;
+  token0TotalSupply: number;
+  token1TotalSupply: number;
+  token0Utilization: number;
+  token1Utilization: number;
   uniswapFeeTier: FeeTier;
-  estimatedValue: number;
-  percentageChange: number;
 };
 
-export default function PortfolioCard(props: PortfolioCardProps) {
-  const {
-    token0,
-    token1,
-    silo0,
-    silo1,
-    uniswapFeeTier,
-    estimatedValue,
-    percentageChange,
-  } = props;
+export default function LendPairCard(props: LendPairCardProps) {
+  const { token0, token1, token0APY, token1APY, token0TotalSupply, token1TotalSupply, token0Utilization, token1Utilization, uniswapFeeTier } =
+    props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   useEffect(() => {
@@ -76,7 +83,7 @@ export default function PortfolioCard(props: PortfolioCardProps) {
     >
       <CardTitleWrapper backgroundGradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
-          {token0.ticker} - {token1.ticker}
+          {token0.ticker} / {token1.ticker}
         </Display>
         <CardSubTitleWrapper>
           <TokenPairIcons
@@ -90,24 +97,39 @@ export default function PortfolioCard(props: PortfolioCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <BodySubContainer>
-          <Text size='M' weight='medium'>Invested</Text>
-          <InvestedTypes
-            token0={token0}
-            token1={token1}
-            silo0={silo0}
-            silo1={silo1}
+          <div className='flex items-center gap-3'>
+            <Text size='M' weight='medium'>
+              {token0?.ticker}+
+            </Text>
+            <TokenAPYWrapper>
+              <Text size='S' weight='medium'>
+                {roundPercentage(token0APY)}% APY
+              </Text>
+            </TokenAPYWrapper>
+          </div>
+          <LendTokenInfo
+            totalSupply={token0TotalSupply}
+            utilization={token0Utilization}
             figureColor={TOKEN_PAIR_FIGURE_COLOR}
           />
         </BodySubContainer>
         <BodyDivider />
         <BodySubContainer>
-          <Text size='M' weight='medium'>
-            Estimated Value
-          </Text>
-          <div className='flex gap-2 items-center'>
-            <ValueText>{formatUSDAuto(estimatedValue)}</ValueText>
-            <PercentChange percent={percentageChange} />
+          <div className='flex items-center gap-3'>
+            <Text size='M' weight='medium'>
+              {token1?.ticker}+
+            </Text>
+            <TokenAPYWrapper>
+              <Text size='S' weight='medium'>
+                {roundPercentage(token1APY)}% APY
+              </Text>
+            </TokenAPYWrapper>
           </div>
+          <LendTokenInfo
+            totalSupply={token1TotalSupply}
+            utilization={token1Utilization}
+            figureColor={TOKEN_PAIR_FIGURE_COLOR}
+          />
         </BodySubContainer>
       </CardBodyWrapper>
     </CardWrapper>

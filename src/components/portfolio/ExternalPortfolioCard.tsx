@@ -18,7 +18,7 @@ import {
   CardTitleWrapper,
   CardWrapper,
   ValueText
-} from './PortfolioCard';
+} from '../common/Card';
 
 const EXTERNAL_CARD_WRAPPER_HOVER_SHADOW_COLOR = 'rgba(26, 41, 52, 0.65)';
 const EXTERNAL_CARD_WRAPPER_HOVER_OUTLINE_COLOR = 'rgba(56, 82, 101, 1)';
