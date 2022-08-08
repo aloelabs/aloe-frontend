@@ -3,9 +3,12 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import DropdownArrowDown from '../../assets/svg/dropdown_arrow_down.svg';
 import DropdownArrowUp from '../../assets/svg/dropdown_arrow_up.svg';
+import { ReactComponent as DropdownArrowDownIcon } from '../../assets/svg/dropdown_arrow_down.svg';
+import { ReactComponent as DropdownArrowUpIcon } from '../../assets/svg/dropdown_arrow_up.svg';
 import { CheckIcon } from '@heroicons/react/solid';
 import useClickOutside from '../../data/hooks/UseClickOutside';
 import { Text } from './Typography';
+import { FilledGreyButtonWithIcon } from './Buttons';
 
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';
 const DROPDOWN_LIST_BG_COLOR = 'rgba(7, 14, 18, 1)';
@@ -134,6 +137,56 @@ export function Dropdown(props: DropdownProps) {
           {options.map((option) => (
             <DropdownOptionContainer
               className={option.value === selectedOption.value ? 'active' : ''}
+              key={option.value}
+              onClick={() => selectItem(option)}
+            >
+              <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+            </DropdownOptionContainer>
+          ))}
+        </DropdownList>
+      )}
+    </DropdownWrapper>
+  );
+}
+
+export type DropdownButtonActionProps = {
+  label: string;
+  options: DropdownOption[];
+  onSelect: (option: DropdownOption) => void;
+  placeAbove?: boolean;
+  small?: boolean;
+};
+
+export function DropdownButtonAction(props: DropdownButtonActionProps) {
+  const { label, options, onSelect, placeAbove, small } = props;
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
+
+  const toggleList = () => {
+    setIsOpen(!isOpen);
+  };
+  const selectItem = (option: DropdownOption) => {
+    onSelect(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <DropdownWrapper ref={dropdownRef}>
+      <FilledGreyButtonWithIcon
+        onClick={() => toggleList()}
+        Icon={isOpen ? <DropdownArrowUpIcon /> : <DropdownArrowDownIcon />}
+        size='M'
+        svgColorType='stroke'
+        position='trailing'
+      >
+        {label}
+      </FilledGreyButtonWithIcon>
+      {isOpen && (
+        <DropdownList className={placeAbove ? 'inverted' : ''}>
+          {options.map((option) => (
+            <DropdownOptionContainer
+              className={option.value === 'all' ? 'active' : ''}
               key={option.value}
               onClick={() => selectItem(option)}
             >

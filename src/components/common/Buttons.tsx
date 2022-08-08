@@ -43,6 +43,7 @@ export const BaseButton = styled.button.attrs(
     color?: string;
     fillWidth?: boolean;
     linkTo?: string;
+    hidden?: boolean;
   }) => props
 )`
   ${tw`flex flex-row justify-center items-center gap-3`}
@@ -50,6 +51,7 @@ export const BaseButton = styled.button.attrs(
   /* font-family: 'Satoshi-Variable'; */
   font-weight: 700;
   border-radius: 8px;
+  display: ${props => props.hidden ? 'none' : 'flex'};
   ${(props) => {
     switch (props.size) {
       case 'S':
@@ -537,6 +539,7 @@ export type ButtonWithIconProps = {
   backgroundColor?: string;
   color?: string;
   fillWidth?: boolean;
+  hidden?: boolean;
 };
 
 export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
@@ -552,9 +555,10 @@ export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
     backgroundColor,
     color,
     fillWidth,
+    hidden,
   } = props;
   return (
-    <ButtonWithIconWrapper svgColorType={svgColorType}>
+    <ButtonWithIconWrapper svgColorType={svgColorType} className={hidden ? 'hidden' : ''}>
       <FilledGradientButton
         size={size}
         paddingLeft={position === 'leading' ? ICON_PADDING[size] : undefined}

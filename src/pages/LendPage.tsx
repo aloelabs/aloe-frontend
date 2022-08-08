@@ -14,6 +14,7 @@ import LendPairCard from '../components/lend/LendPairCard';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import YieldAggregatorCard from '../components/lend/YieldAggregatorCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
+import LendPortfolioWidget from '../components/lend/LendPortfolioWidget';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -94,11 +95,7 @@ export default function LendPage() {
               />
             </div>
           </div>
-          <LendChart>
-            {chartData.map((data, index) => (
-              <LendChartItem key={index} />
-            ))}
-          </LendChart>
+          <LendPortfolioWidget />
         </LendHeaderContainer>
         <Divider />
         <div>

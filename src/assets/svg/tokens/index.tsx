@@ -1,6 +1,7 @@
 import FeiLogo from './fei.svg';
 import UsdcLogo from './usdc.svg';
 import WbtcLogo from './wbtc.svg';
+import WbtcLogoNew from './wbtc-new.svg';
 import WethLogo from './weth.svg';
 import TribeLogo from './tribe.svg';
 import RaiLogo from './rai.svg';
@@ -11,6 +12,7 @@ export {
   FeiLogo,
   UsdcLogo,
   WbtcLogo,
+  WbtcLogoNew,
   WethLogo,
   UnknownTokenLogo,
   TribeLogo,
