@@ -24,8 +24,8 @@ import {
 import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
-import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
-import { CloseableModal } from '../common/Modal';
+import AddPositionModal from './modal/AddPositionModal';
+import EditPositionModal from './modal/EditPositionModal';
 
 const TOKEN_PAIR_FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
@@ -41,11 +41,8 @@ const CustomBodySubContainer = styled(BodySubContainer)`
   padding-right: 80px;
 `;
 
-const CardActionButton = styled.button.attrs(
-  (props: { hidden: boolean }) => props
-)`
-  ${tw`items-center justify-center absolute`}
-  display: ${(props) => (props.hidden ? 'none' : 'flex')};
+const CardActionButton = styled.button`
+  ${tw`flex items-center justify-center absolute`}
   border-radius: 50%;
   background-color: white;
   right: 20px;
@@ -57,6 +54,22 @@ const CardActionButton = styled.button.attrs(
     }
   }
 `;
+
+function AddPositionButton(props: { onClick?: () => void }) {
+  return (
+    <CardActionButton onClick={props?.onClick}>
+      <PlusIcon width={32} height={32} />
+    </CardActionButton>
+  );
+}
+
+function EditPositionButton(props: { onClick?: () => void }) {
+  return (
+    <CardActionButton onClick={props?.onClick}>
+      <EditIcon width={32} height={32} />
+    </CardActionButton>
+  );
+}
 
 export type LendPairCardProps = {
   token0: TokenData;
@@ -82,7 +95,14 @@ export default function LendPairCard(props: LendPairCardProps) {
     token1Utilization,
     uniswapFeeTier,
   } = props;
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
+    useState<boolean>(false);
+  const [isAddToken1PositionModalOpen, setIsAddToken1PositionModalOpen] =
+    useState<boolean>(false);
+  const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
+    useState<boolean>(false);
+  const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] =
+    useState<boolean>(false);
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
@@ -114,12 +134,18 @@ export default function LendPairCard(props: LendPairCardProps) {
     getBrighterColor(token0Color, token1Color),
     0.16
   );
+
+  // Hard-coded for now...
+  const token0Position = 0;
+  const token1Position = 1000;
+
   return (
-    <>
+    <div>
       <CardWrapper
         borderGradient={cardBorderGradient}
         shadowColor={cardShadowColor}
         onMouseOver={() => {
+          // TODO: figure out a more performant way to do this (if possible)
           if (!isCardHovered) {
             setIsCardHovered(true);
           }
@@ -162,15 +188,19 @@ export default function LendPairCard(props: LendPairCardProps) {
               utilization={token0Utilization}
               figureColor={TOKEN_PAIR_FIGURE_COLOR}
             />
-            <CardActionButton hidden={!isCardHovered}>
-              <EditIcon
-                width={32}
-                height={32}
+            {isCardHovered && (token0Position > 0 ? (
+              <EditPositionButton 
                 onClick={() => {
-                  setIsModalOpen(true);
+                  setIsEditToken0PositionModalOpen(true);
                 }}
               />
-            </CardActionButton>
+            ) : (
+              <AddPositionButton
+                onClick={() => {
+                  setIsAddToken0PositionModalOpen(true);
+                }}
+              />
+            ))}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -189,27 +219,70 @@ export default function LendPairCard(props: LendPairCardProps) {
               utilization={token1Utilization}
               figureColor={TOKEN_PAIR_FIGURE_COLOR}
             />
-            <CardActionButton hidden={!isCardHovered}>
-              <PlusIcon
-                width={32}
-                height={32}
+            {isCardHovered && (token1Position > 0 ? (
+              <EditPositionButton 
                 onClick={() => {
-                  setIsModalOpen(true);
+                  setIsEditToken1PositionModalOpen(true);
                 }}
               />
-            </CardActionButton>
+            ) : (
+              <AddPositionButton
+                onClick={() => {
+                  setIsAddToken1PositionModalOpen(true);
+                }}
+              />
+            ))}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>
-      <CloseableModal
-        open={isModalOpen}
+      <AddPositionModal
+        open={isAddToken0PositionModalOpen}
         setOpen={(open: boolean) => {
-          setIsModalOpen(open);
+          setIsAddToken0PositionModalOpen(open);
         }}
-        title='test'
-      >
-        <Text size='M' weight='medium'>this is a test</Text>
-      </CloseableModal>
-    </>
+        onConfirm={() => {
+          setIsAddToken0PositionModalOpen(false);
+        }}
+        onCancel={() => {
+          setIsAddToken0PositionModalOpen(false);
+        }}
+      />
+      <AddPositionModal
+        open={isAddToken1PositionModalOpen}
+        setOpen={(open: boolean) => {
+          setIsAddToken1PositionModalOpen(open);
+        }}
+        onConfirm={() => {
+          setIsAddToken1PositionModalOpen(false);
+        }}
+        onCancel={() => {
+          setIsAddToken1PositionModalOpen(false);
+        }}
+      />
+      <EditPositionModal
+        open={isEditToken0PositionModalOpen}
+        setOpen={(open: boolean) => {
+          setIsEditToken0PositionModalOpen(open);
+        }}
+        onConfirm={() => {
+          setIsEditToken0PositionModalOpen(false);
+        }}
+        onCancel={() => {
+          setIsEditToken0PositionModalOpen(false);
+        }}
+      />
+      <EditPositionModal
+        open={isEditToken1PositionModalOpen}
+        setOpen={(open: boolean) => {
+          setIsEditToken1PositionModalOpen(open);
+        }}
+        onConfirm={() => {
+          setIsEditToken1PositionModalOpen(false);
+        }}
+        onCancel={() => {
+          setIsEditToken1PositionModalOpen(false);
+        }}
+      />
+    </div>
   );
 }
