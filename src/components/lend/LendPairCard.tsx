@@ -236,6 +236,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         </CardBodyWrapper>
       </CardWrapper>
       <AddPositionModal
+        token={token0}
         open={isAddToken0PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsAddToken0PositionModalOpen(open);
@@ -248,6 +249,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         }}
       />
       <AddPositionModal
+        token={token1}
         open={isAddToken1PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsAddToken1PositionModalOpen(open);

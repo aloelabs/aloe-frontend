@@ -75,6 +75,7 @@ const InputBase = styled.input.attrs(
   color: ${INPUT_TEXT_COLOR};
   box-sizing: border-box;
   padding: ${(props) => INPUT_PADDING[props.inputSize]};
+  font-family: 'Satoshi-Variable';
   font-size: ${(props) => INPUT_FONT_SIZE[props.inputSize]}px;
   line-height: ${(props) => INPUT_LINE_HEIGHT[props.inputSize]}px;
   /* Height is declared so we can have an inner border */
@@ -182,6 +183,7 @@ const MaxButton = styled.button.attrs(
   color: rgba(0, 193, 67, 1);
   position: absolute;
   top: calc(50% - 9.45px);
+  font-family: 'Satoshi-Variable';
   font-size: 14px;
   font-weight: 400;
   line-height: 18.9px;
