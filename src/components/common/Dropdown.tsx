@@ -35,10 +35,12 @@ const DropdownHeader = styled.button.attrs(
   white-space: nowrap;
 `;
 
-const DropdownList = styled.div.attrs((props: { small?: boolean }) => props)`
+const DropdownList = styled.div.attrs(
+  (props: { small?: boolean; flipDirection?: boolean }) => props
+)`
   ${tw`flex flex-col`}
   position: absolute;
-  right: 0px;
+  ${(props) => (props.flipDirection ? 'left: 0px;' : 'right: 0px;')};
   z-index: 10;
   min-width: 100%;
   padding: ${(props) => (props.small ? '8px' : '12px')};
@@ -207,19 +209,33 @@ export type MultiDropdownOption = {
   icon?: string;
 };
 
-export type MultiDropdownProps = {
+type MultiDropdownBaseProps = {
   options: MultiDropdownOption[];
   activeOptions: MultiDropdownOption[];
   handleChange: (options: MultiDropdownOption[]) => void;
-  placeholder: string;
-  selectedText: string;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  /*Use this to flip the side the dropdown list expand towards*/
+  flipDirection?: boolean;
+  DropdownButton: React.FC;
+  SearchInput?: React.FC<{
+    searchTerm: string;
+    onSearch: (searchTerm: string) => void;
+  }>;
 };
 
-export function MultiDropdown(props: MultiDropdownProps) {
-  const { options, activeOptions, handleChange, placeholder, selectedText } =
-    props;
-  const [isOpen, setIsOpen] = useState(false);
-
+function MultiDropdownBase(props: MultiDropdownBaseProps) {
+  const {
+    options,
+    activeOptions,
+    handleChange,
+    isOpen,
+    setIsOpen,
+    flipDirection,
+    DropdownButton,
+    SearchInput,
+  } = props;
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(
     dropdownRef,
@@ -228,10 +244,6 @@ export function MultiDropdown(props: MultiDropdownProps) {
     },
     isOpen
   );
-
-  const toggleList = () => {
-    setIsOpen(!isOpen);
-  };
 
   const selectItem = (option: MultiDropdownOption, index: number) => {
     let updatedOptions;
@@ -249,24 +261,23 @@ export function MultiDropdown(props: MultiDropdownProps) {
     handleChange(updatedOptions);
   };
 
-  let dropdownLabel =
-    activeOptions.length === options.length
-      ? placeholder
-      : `${selectedText} (${activeOptions.length})`;
+  const handleSearch = (updatedSearchTerm: string) => {
+    setSearchTerm(updatedSearchTerm);
+  }
+
+  const filteredOptions = options.filter(
+    (option) => option.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DropdownWrapper ref={dropdownRef}>
-      <DropdownHeader onClick={toggleList}>
-        <Text size='M'>{dropdownLabel}</Text>
-        <img
-          className='absolute right-6'
-          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
-          alt=''
-        />
-      </DropdownHeader>
+      <DropdownButton />
       {isOpen && (
-        <MultiDropdownList ref={dropdownRef}>
-          {options.map((option, index) => {
+        <MultiDropdownList ref={dropdownRef} flipDirection={flipDirection}>
+          {SearchInput && (
+            <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />
+          )}
+          {filteredOptions.map((option, index) => {
             const { label, icon } = option;
             const isActive = activeOptions.some(
               (currentOption) => currentOption.value === option.value
@@ -312,4 +323,78 @@ export function MultiDropdown(props: MultiDropdownProps) {
       )}
     </DropdownWrapper>
   );
+}
+
+export type MultiDropdownWithPlaceholderProps = {
+  options: MultiDropdownOption[];
+  activeOptions: MultiDropdownOption[];
+  handleChange: (options: MultiDropdownOption[]) => void;
+  placeholder: string;
+  selectedText: string;
+  flipDirection?: boolean;
+  SearchInput?: React.FC<{
+    searchTerm: string;
+    onSearch: (searchTerm: string) => void;
+  }>;
+};
+
+export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholderProps) {
+  const { options, activeOptions, handleChange, placeholder, selectedText, flipDirection, SearchInput } =
+    props;
+  const [isOpen, setIsOpen] = useState(false);
+  let dropdownLabel =
+    activeOptions.length === options.length
+      ? placeholder
+      : `${selectedText} (${activeOptions.length})`;
+  console.log(options, activeOptions);
+  return MultiDropdownBase({
+    options,
+    activeOptions,
+    handleChange,
+    isOpen,
+    setIsOpen,
+    flipDirection,
+    DropdownButton: () => (
+      <DropdownHeader onClick={() => setIsOpen(!isOpen)}>
+        <Text size='M'>{dropdownLabel}</Text>
+        <img
+          className='absolute right-6'
+          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
+          alt=''
+        />
+      </DropdownHeader>
+    ),
+    SearchInput,
+  });
+}
+
+export type MultiDropdownButtonProps = {
+  options: MultiDropdownOption[];
+  activeOptions: MultiDropdownOption[];
+  handleChange: (options: MultiDropdownOption[]) => void;
+  flipDirection?: boolean;
+  DropdownButton: React.FC<{
+    onClick: () => void;
+  }>;
+  SearchInput?: React.FC<{
+    searchTerm: string;
+    onSearch: (searchTerm: string) => void;
+  }>;
+}
+
+export function MultiDropdownButton(props: MultiDropdownButtonProps) {
+  const { options, activeOptions, handleChange, flipDirection, DropdownButton, SearchInput } = props;
+  const [isOpen, setIsOpen] = useState(false);
+  return MultiDropdownBase({
+    options,
+    activeOptions,
+    handleChange,
+    isOpen,
+    setIsOpen,
+    flipDirection,
+    DropdownButton: () => (
+      <DropdownButton onClick={() => setIsOpen(!isOpen)} />
+    ),
+    SearchInput,
+  });
 }

@@ -27,7 +27,6 @@ import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import AddPositionModal from './modal/AddPositionModal';
 import EditPositionModal from './modal/EditPositionModal';
 
-const TOKEN_PAIR_FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
 const TokenAPYWrapper = styled.div`
@@ -186,7 +185,6 @@ export default function LendPairCard(props: LendPairCardProps) {
             <LendTokenInfo
               totalSupply={token0TotalSupply}
               utilization={token0Utilization}
-              figureColor={TOKEN_PAIR_FIGURE_COLOR}
             />
             {isCardHovered && (token0Position > 0 ? (
               <EditPositionButton 
@@ -217,7 +215,6 @@ export default function LendPairCard(props: LendPairCardProps) {
             <LendTokenInfo
               totalSupply={token1TotalSupply}
               utilization={token1Utilization}
-              figureColor={TOKEN_PAIR_FIGURE_COLOR}
             />
             {isCardHovered && (token1Position > 0 ? (
               <EditPositionButton 
