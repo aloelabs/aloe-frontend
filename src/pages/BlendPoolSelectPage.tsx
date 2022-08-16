@@ -7,7 +7,7 @@ import { OutlinedGradientRoundedButtonWithIcon } from '../components/common/Butt
 import {
   DropdownWithPlaceholder,
   DropdownWithPlaceholderOption,
-  MultiDropdown,
+  MultiDropdownWithPlaceholder,
   MultiDropdownOption,
 } from '../components/common/Dropdown';
 import { FilterBadge } from '../components/common/FilterBadge';
@@ -340,7 +340,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
               />
             </SearchInputWrapper>
             <DropdownContainer>
-              <MultiDropdown
+              <MultiDropdownWithPlaceholder
                 options={tokenOptions}
                 activeOptions={activeTokenOptions}
                 handleChange={setActiveTokenOptions}

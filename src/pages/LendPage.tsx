@@ -5,15 +5,21 @@ import AppPage from '../components/common/AppPage';
 import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
 import { Text } from '../components/common/Typography';
 import BalanceSlider from '../components/lend/BalanceSlider';
-import { GetTokenData } from '../data/TokenData';
+import { GetTokenData, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { Divider } from '../components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
-import LendPairCard from '../components/lend/LendPairCard';
+import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import YieldAggregatorCard from '../components/lend/YieldAggregatorCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
+import {
+  MultiDropdownButton,
+  MultiDropdownOption,
+} from '../components/common/Dropdown';
+import { SquareInputWithIcon } from '../components/common/Input';
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -41,6 +47,15 @@ const LendCards = styled.div`
   margin-top: 24px;
 `;
 
+const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
+  return {
+    value: token.address,
+    label: token.ticker,
+    icon: token.iconPath,
+  } as MultiDropdownOption;
+});
+
+
 export default function LendPage() {
   const chartData = [];
   for (let i = 0; i < 100; i++) {
@@ -49,6 +64,46 @@ export default function LendPage() {
   const name = 'haydenshively.eth';
   const balance = 1000.01;
   const apy = 5.54;
+  const [selectedOptions, setSelectedOptions] =
+    React.useState<MultiDropdownOption[]>(filterOptions);
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = React.useState<ItemsPerPage>(10);
+
+  const lendPairs: LendPairCardProps[] = [
+    {
+      token0: GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
+      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+      token0APY: 5.54,
+      token1APY: 5.54,
+      token0TotalSupply: 1000.01,
+      token1TotalSupply: 1000.01,
+      token0Utilization: 0.5,
+      token1Utilization: 0.5,
+      uniswapFeeTier: FeeTier.ZERO_THREE,
+    },
+    {
+      token0: GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
+      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+      token0APY: 5.54,
+      token1APY: 5.54,
+      token0TotalSupply: 1000.01,
+      token1TotalSupply: 1000.01,
+      token0Utilization: 0.5,
+      token1Utilization: 0.5,
+      uniswapFeeTier: FeeTier.ZERO_THREE,
+    },
+    {
+      token0: GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919'),
+      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+      token0APY: 5.54,
+      token1APY: 5.54,
+      token0TotalSupply: 1000.01,
+      token1TotalSupply: 1000.01,
+      token0Utilization: 0.5,
+      token1Utilization: 0.5,
+      uniswapFeeTier: FeeTier.ZERO_THREE,
+    }
+  ];
 
   return (
     <AppPage>
@@ -62,14 +117,46 @@ export default function LendPage() {
               <p>{roundPercentage(apy)}% APY.</p>
             </Text>
             <div className='flex items-center'>
-              <FilledGreyButtonWithIcon
-                Icon={<FilterIcon />}
-                size='M'
-                svgColorType='stroke'
-                position='leading'
-              >
-                Filter
-              </FilledGreyButtonWithIcon>
+              <MultiDropdownButton
+                options={filterOptions}
+                activeOptions={selectedOptions}
+                handleChange={(updatedOptions: MultiDropdownOption[]) => {
+                  setSelectedOptions(updatedOptions);
+                }}
+                DropdownButton={(props: {
+                  onClick: () => void,
+                }) => {
+                  return (
+                    <FilledGreyButtonWithIcon
+                      onClick={props.onClick}
+                      Icon={<FilterIcon />}
+                      size='M'
+                      position='leading'
+                      svgColorType='stroke'
+                    >
+                      Filter
+                    </FilledGreyButtonWithIcon>
+                  );
+                }}
+                SearchInput={(props: {
+                  searchTerm: string,
+                  onSearch: (searchTerm: string) => void,
+                }) => {
+                  return (
+                    <SquareInputWithIcon
+                      placeholder='Search'
+                      value={props.searchTerm}
+                      onChange={(e) => {
+                        props.onSearch(e.target.value);
+                      }}
+                      Icon={<SearchIcon />}
+                      size='M'
+                      svgColorType='stroke'
+                    />
+                  )
+                }}
+                flipDirection={true}
+              />
               <BalanceSlider
                 tokenBalances={[
                   {
@@ -103,43 +190,21 @@ export default function LendPage() {
         <Divider />
         <div>
           <div className='flex items-center gap-2'>
-            <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>Lending Pairs</Text>
-            <Tooltip buttonSize='M' buttonText='' content='test' position='bottom-center' filled={true}  />
+            <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
+              Lending Pairs
+            </Text>
+            <Tooltip
+              buttonSize='M'
+              buttonText=''
+              content='test'
+              position='top-center'
+              filled={true}
+            />
           </div>
           <LendCards>
-            <LendPairCard 
-              token0={GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')}
-              token1={GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')}
-              token0APY={5.54}
-              token1APY={5.54}
-              token0TotalSupply={1000.01}
-              token1TotalSupply={1000.01}
-              token0Utilization={70.5}
-              token1Utilization={70.5}
-              uniswapFeeTier={FeeTier.ZERO_ZERO_FIVE}
-            />
-            <LendPairCard 
-              token0={GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')}
-              token1={GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')}
-              token0APY={5.54}
-              token1APY={5.54}
-              token0TotalSupply={1000.01}
-              token1TotalSupply={1000.01}
-              token0Utilization={70.5}
-              token1Utilization={70.5}
-              uniswapFeeTier={FeeTier.ZERO_ZERO_FIVE}
-            />
-            <LendPairCard 
-              token0={GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919')}
-              token1={GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')}
-              token0APY={5.54}
-              token1APY={5.54}
-              token0TotalSupply={1000.01}
-              token1TotalSupply={1000.01}
-              token0Utilization={70.5}
-              token1Utilization={70.5}
-              uniswapFeeTier={FeeTier.ZERO_ZERO_FIVE}
-            />
+            {lendPairs.map((lendPair) => (
+              <LendPairCard key={lendPair.token0.address} {...lendPair} />
+            ))}
             <YieldAggregatorCard
               tokens={[
                 GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919'),
@@ -158,7 +223,18 @@ export default function LendPage() {
               totalUtilization={70.5}
             />
           </LendCards>
-          <Pagination totalItems={10} currentPage={1} itemsPerPage={10} loading={false} onPageChange={(page: number) => {}} onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {}} />
+          <Pagination
+            totalItems={/*TODO*/10}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            loading={/*TODO*/false}
+            onPageChange={(page: number) => {
+              setCurrentPage(page);
+            }}
+            onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
+              setItemsPerPage(itemsPerPage);
+            }}
+          />
         </div>
       </div>
     </AppPage>

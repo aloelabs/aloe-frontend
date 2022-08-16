@@ -16,7 +16,6 @@ import {
 import YieldTokenIcons from './YieldTokenIcons';
 import tw from 'twin.macro';
 
-const TOKEN_PAIR_FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 const YIELD_AGGREGATOR_LABEL_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 const BACKGROUND_GRADIENT = 'linear-gradient(90deg, rgba(43, 43, 43, 1) 0%, rgba(97, 99, 101, 1) 100%)';
@@ -80,8 +79,7 @@ export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
           </div>
           <LendTokenInfo
             totalSupply={totalSupply}
-            utilization={totalUtilization}
-            figureColor={TOKEN_PAIR_FIGURE_COLOR}
+            utilization={totalUtilization} 
           />
         </BodySubContainer>
         <BodyDivider />
