@@ -1,13 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const ALT_SPINNER_SIZES = {
+export const ALT_SPINNER_SIZES = {
   S: 30,
   M: 50,
   L: 70,
 };
 
-const IOS_STYLE_SPINNER_SIZES = {
+export const IOS_STYLE_SPINNER_SIZES = {
   S: 0.5,
   M: 0.75,
   L: 1,
