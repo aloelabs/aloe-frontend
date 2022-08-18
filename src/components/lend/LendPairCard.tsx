@@ -26,6 +26,7 @@ import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import AddPositionModal from './modal/AddPositionModal';
 import EditPositionModal from './modal/EditPositionModal';
+// import ConfirmModal, { ConfirmationType } from './modal/ConfirmModalState';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
@@ -186,19 +187,20 @@ export default function LendPairCard(props: LendPairCardProps) {
               totalSupply={token0TotalSupply}
               utilization={token0Utilization}
             />
-            {isCardHovered && (token0Position > 0 ? (
-              <EditPositionButton 
-                onClick={() => {
-                  setIsEditToken0PositionModalOpen(true);
-                }}
-              />
-            ) : (
-              <AddPositionButton
-                onClick={() => {
-                  setIsAddToken0PositionModalOpen(true);
-                }}
-              />
-            ))}
+            {isCardHovered &&
+              (token0Position > 0 ? (
+                <EditPositionButton
+                  onClick={() => {
+                    setIsEditToken0PositionModalOpen(true);
+                  }}
+                />
+              ) : (
+                <AddPositionButton
+                  onClick={() => {
+                    setIsAddToken0PositionModalOpen(true);
+                  }}
+                />
+              ))}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -216,19 +218,20 @@ export default function LendPairCard(props: LendPairCardProps) {
               totalSupply={token1TotalSupply}
               utilization={token1Utilization}
             />
-            {isCardHovered && (token1Position > 0 ? (
-              <EditPositionButton 
-                onClick={() => {
-                  setIsEditToken1PositionModalOpen(true);
-                }}
-              />
-            ) : (
-              <AddPositionButton
-                onClick={() => {
-                  setIsAddToken1PositionModalOpen(true);
-                }}
-              />
-            ))}
+            {isCardHovered &&
+              (token1Position > 0 ? (
+                <EditPositionButton
+                  onClick={() => {
+                    setIsEditToken1PositionModalOpen(true);
+                  }}
+                />
+              ) : (
+                <AddPositionButton
+                  onClick={() => {
+                    setIsAddToken1PositionModalOpen(true);
+                  }}
+                />
+              ))}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>
@@ -259,6 +262,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         }}
       />
       <EditPositionModal
+        token={token0}
         open={isEditToken0PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken0PositionModalOpen(open);
@@ -271,6 +275,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         }}
       />
       <EditPositionModal
+        token={token1}
         open={isEditToken1PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);

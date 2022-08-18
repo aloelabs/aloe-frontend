@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { classNames } from '../../util/ClassNames';
 import LeftChevron from '../../assets/svg/left_chevron.svg';
+import { Text } from './Typography';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
@@ -928,5 +929,31 @@ export function PreviousPageButton(props: PreviousPageButtonProps) {
     <PreviousPageButtonWrapper onClick={onClick}>
       <PreviousPageIcon src={LeftChevron} alt='Previous Page' />
     </PreviousPageButtonWrapper>
+  );
+}
+
+const StyledRadioButtonWrapper = styled.div.attrs(
+  (props: { checked: boolean; disabled: boolean; }) => props
+)`
+  ${tw`flex items-center justify-center`}
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: ${(props) => props.checked ? 'rgb(255, 255, 255)' : 'transparent'};
+`;
+
+export type StyledRadioButtonProps = {
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+};
+
+export function StyledRadioButton(props: StyledRadioButtonProps) {
+  const { label, checked, disabled } = props;
+  return (
+    <StyledRadioButtonWrapper checked={checked} disabled={disabled}>
+      <Text size='M' weight='bold' color={checked ? 'rgb(7, 14, 18)' : 'rgb(255, 255, 255)'}>
+        {label}
+      </Text>
+    </StyledRadioButtonWrapper>
   );
 }
