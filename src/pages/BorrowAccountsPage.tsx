@@ -3,15 +3,11 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
 import { Display, Text } from '../components/common/Typography';
-import {
-  ActionProvider,
-} from '../components/borrow/ActionCard';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import { GetTokenData } from '../data/TokenData';
 import { FeeTier } from '../data/BlendPoolMarkers';
-import { NavLink } from 'react-router-dom';
-
-const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
+import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
+import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 
 const DEMO_MARGIN_ACCOUNTS = [
   {
@@ -22,22 +18,25 @@ const DEMO_MARGIN_ACCOUNTS = [
 ];
 
 export default function BorrowAccountsPage() {
-  const [activeActions, setActiveActions] = React.useState<
-    Array<[ActionProvider, string]>
-  >([]);
-  const [actionModalOpen, setActionModalOpen] = React.useState(false);
   return (
     <AppPage>
-      <div className='mb-4'>
+      <div className='flex gap-8 items-center mb-4'>
         <Display size='L' weight='semibold'>
           Your Margin Accounts
         </Display>
+        <FilledGradientButtonWithIcon
+          Icon={<PlusIcon />}
+          position='leading'
+          size='S'
+          svgColorType='stroke'
+          onClick={() => {}}
+        >
+          New
+        </FilledGradientButtonWithIcon>
       </div>
       <div>
         {DEMO_MARGIN_ACCOUNTS.map((marginAccount, index) => (
-          <NavLink to='/borrow/account/0'>
-            <MarginAccountCard key={index} {...marginAccount} />
-          </NavLink>
+          <MarginAccountCard key={index} {...marginAccount} />
         ))}
       </div>
     </AppPage>
