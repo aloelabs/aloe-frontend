@@ -96,6 +96,7 @@ const CheckContainer = styled.div`
 export type DropdownOption = {
   label: string;
   value: string;
+  icon?: string;
 };
 
 export type DropdownProps = {
@@ -124,7 +125,14 @@ export function Dropdown(props: DropdownProps) {
   return (
     <DropdownWrapper ref={dropdownRef}>
       <DropdownHeader onClick={toggleList} small={small}>
-        <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
+        <div className='flex items-center gap-3'>
+          {selectedOption.icon && (
+            <div className='w-4 h-4 bg-white rounded-full'>
+              <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+            </div>
+          )}
+          <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
+        </div>
         <img
           className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-6'}
           src={isOpen ? DropdownArrowUp : DropdownArrowDown}
@@ -139,7 +147,14 @@ export function Dropdown(props: DropdownProps) {
               key={option.value}
               onClick={() => selectItem(option)}
             >
-              <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+              <div className='flex items-center gap-3'>
+                {option.icon && (
+                  <div className='w-4 h-4 bg-white rounded-full'>
+                    <img className='w-4 h-4' src={option.icon} alt='' />
+                  </div>
+                )}
+                <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+              </div>
             </DropdownOptionContainer>
           ))}
         </DropdownList>
