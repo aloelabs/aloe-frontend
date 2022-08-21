@@ -30,6 +30,7 @@ const ModalWrapper = styled.div.attrs(
   transform: translateY(0);
   min-width: 368px;//TODO: make sure this doesn't break any modals
   max-width: 100%;
+  width: ${props => props.fullWidth ? '100%' : 'auto'};
   height: ${(props) => props.fullHeight ? '100vh' : 'auto'};
   ${(props) => props.fullHeight ? 'margin: 0 !important;' : ''}
   background-color: rgba(13, 23, 30, 1);
@@ -135,6 +136,7 @@ type ModalBaseProps = ModalProps & {
   fullHeight?: boolean;
   backgroundColor?: string;
   noPadding?: boolean;
+  opacity?: number;
 };
 
 function ModalBase(props: ModalBaseProps) {
@@ -251,6 +253,21 @@ export function LoadingModal(props: LoadingModalProps) {
           <Loader src={LoadingIcon} alt='loader' />
         </LoaderWrapper>
       </div>
+      {props.children}
+    </ModalBase>
+  );
+}
+
+export function FullscreenModal(props: ModalProps) {
+  return (
+    <ModalBase
+      open={props.open}
+      setOpen={props.setOpen}
+      backgroundColor='rgba(13, 23, 30, 0.7)'
+      borderGradient={DEFAULT_BORDER_GRADIENT}
+      fullWidth
+      fullHeight
+    >
       {props.children}
     </ModalBase>
   );

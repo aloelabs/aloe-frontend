@@ -20,15 +20,15 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   {
-    title: 'Blend',
-    name: 'blend',
-    url: '/blend',
+    title: 'Lend',
+    name: 'lend',
+    url: '/lend',
   },
   {
-    title: 'Portfolio',
-    name: 'portfolio',
-    url: '/portfolio',
-    onlyShowIfConnected: true,
+    title: 'Borrow',
+    name: 'borrow',
+    url: '/borrow',
+    // onlyShowIfConnected: true,
   }
 ];
 

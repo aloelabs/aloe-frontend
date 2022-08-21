@@ -23,6 +23,8 @@ import {
   gql,
 } from '@apollo/react-hooks';
 import LendPage from './pages/LendPage';
+import BorrowActionsPage from './pages/BorrowActionsPage';
+import BorrowAccountsPage from './pages/BorrowAccountsPage';
 
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({
@@ -114,6 +116,8 @@ function App() {
                   </Route>
                   <Route path='/portfolio' element={<PortfolioPage />} />
                   <Route path='/lend' element={<LendPage />} />
+                  <Route path='/borrow' element={<BorrowAccountsPage />} />
+                  <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
                   { // Devmode-only example page routing
                     IS_DEV && (
                       <>
