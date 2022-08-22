@@ -99,7 +99,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   const { token0, token1, feeTier } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
-  const link = '/borrow/account/0';
+  const link = '/borrow/account/1234';
 
   useEffect(() => {
     let mounted = true;
