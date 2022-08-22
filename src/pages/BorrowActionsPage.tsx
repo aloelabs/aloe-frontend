@@ -2,7 +2,10 @@ import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
-import { FilledStylizedButtonWithIcon } from '../components/common/Buttons';
+import {
+  FilledStylizedButtonWithIcon,
+  PreviousPageButton,
+} from '../components/common/Buttons';
 import { Display, Text } from '../components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
@@ -10,21 +13,26 @@ import { FullscreenModal } from '../components/common/Modal';
 import { ActionProvider, Actions } from '../components/borrow/ActionCard';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { GetTokenData } from '../data/TokenData';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   AloeDepositAction,
   AloeWithdrawAction,
 } from '../components/borrow/actions/SingleNumericEntry';
+import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
+import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
+import PnLGraph from '../components/graph/PnLGraph';
+import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
+import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 
 // const PENDING_ACTION_CARDS = {
 //   [Actions.AloeII]: AloeDepositAction,
 // }
 
-const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 function getAccount(account: string) {
   switch (account) {
-    case '0':
+    case '1234':
       return {
         token0: GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
         token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
@@ -38,6 +46,13 @@ function getAccount(account: string) {
 type AccountParams = {
   account: string;
 };
+
+const BodyWrapper = styled.div`
+  display: grid;
+  width: 100%;
+  grid-template-columns: calc(60% - 16px) calc(40% - 16px);
+  gap: 32px;
+`;
 
 const ActionModalHeader = styled.div`
   ${tw`flex justify-center items-center`}
@@ -56,7 +71,7 @@ const BackButtonWrapper = styled.button.attrs(
     width: 40px;
     height: 40px;
     path {
-      stroke: ${LEND_TITLE_TEXT_COLOR};
+      stroke: ${SECONDARY_COLOR};
     }
   }
 
@@ -116,64 +131,85 @@ const ActionButton = styled.button.attrs(
   }
 `;
 
+const AccountStatsGrid = styled.div`
+  display: grid;
+  //TODO: make this responsive
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+`;
+
 export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const account = params.account;
   const accountData = getAccount(account || '');
-  const [activeActions, setActiveActions] = React.useState<
-    Array<ReactElement>>([]);
+  const [activeActions, setActiveActions] = React.useState<Array<ReactElement>>(
+    []
+  );
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
+  const navigate = useNavigate();
   if (!accountData) {
     return null;
   }
   return (
     <AppPage>
-      <div className='flex flex-col gap-6'>
-        <div className='flex items-center gap-4 relative'>
-          <BackButtonWrapper
-            position='relative'
-            onClick={() => {
-              window.history.back();
-            }}
-          >
-            <BackArrowIcon />
-          </BackButtonWrapper>
-          <Display size='L' weight='semibold'>
-            Borrow Actions
-          </Display>
+      <BodyWrapper>
+        <div className='flex gap-8 items-center mb-16'>
+          <PreviousPageButton onClick={() => navigate('../borrow')} />
+          <MarginAccountHeader
+            token0={accountData.token0}
+            token1={accountData.token1}
+            feeTier={accountData.feeTier}
+            id={account || ''}
+          />
         </div>
-        <div className='flex flex-row justify-between'>
-          <div className='w-full'>
+        <div className='w-full flex flex-col'>
+          <ManageAccountWidget />
+        </div>
+        <div className='w-full flex flex-col justify-between'>
+          <div className='w-full flex flex-col gap-4 mb-8'>
             <Display size='M' weight='medium'>
               Summary
             </Display>
-            {activeActions.length === 0 && (
-              <Text size='S' weight='medium' color={LEND_TITLE_TEXT_COLOR}>
-                No actions selected
-              </Text>
-            )}
+            <AccountStatsGrid>
+              <AccountStatsCard
+                label='Assets'
+                value={`1100 ${accountData.token0?.ticker || ''}`}
+              />
+              <AccountStatsCard
+                label='Liabilities'
+                value={`500 ${accountData.token0?.ticker || ''}`}
+              />
+              <AccountStatsCard
+                label='Lower Liquidation Threshold'
+                value={`2000 ${accountData.token0?.ticker || ''}/${
+                  accountData.token1?.ticker || ''
+                }`}
+              />
+              <AccountStatsCard
+                label='Upper Liquidation Threshold'
+                value={`∞ ${accountData.token0?.ticker || ''}/${
+                  accountData.token1?.ticker || ''
+                }`}
+              />
+            </AccountStatsGrid>
           </div>
-          <div className='w-full flex flex-col'>
-            <div className='flex flex-col justify-center items-center gap-4'>
-              {activeActions.map((action, index) => (
-                <React.Fragment key={index}>
-                  {action}
-                </React.Fragment>
-              ))}
+          <div className='w-full flex flex-col gap-4'>
+            <Display size='M' weight='medium'>
+              PnL
+            </Display>
+            <div className='w-full h-52 mb-4'>
+              {/* TODO: Don't hardcode height in className */}
+              <PnLGraph />
             </div>
-            <div className='flex justify-center items-center'>
-              <FilledStylizedButtonWithIcon
-                Icon={<PlusIcon />}
-                position='leading'
-                size='L'
-                svgColorType='stroke'
-                onClick={() => {
-                  setActionModalOpen(true);
-                }}
-              >
-                Add Action
-              </FilledStylizedButtonWithIcon>
-            </div>
+          </div>
+          <div className='w-full flex flex-col gap-4'>
+            <Display size='M' weight='medium'>
+              Token Allocation
+            </Display>
+            <TokenAllocationPieChartWidget
+              token0={accountData.token0}
+              token1={accountData.token1}
+            />
           </div>
         </div>
         <FullscreenModal
@@ -208,48 +244,49 @@ export default function BorrowActionsPage() {
                       </Display>
                     </div>
                     <ActionButtonsContainer>
-                      {Object.entries(actionProvider.actions).map((actionData, index) => {
-                        const action = actionData[1];
-                        return (
-                          <ActionButton
-                            key={index}
-                            borderColor={actionProvider.color}
-                            onClick={() => {
-                              setActiveActions([
-                                ...activeActions,
-                                <action.actionCard
-                                  token0={accountData.token0}
-                                  token1={accountData.token1}
-                                  feeTier={accountData.feeTier}
-                                  key={index}
-                                  onAdd={() => {
-                                    
-                                  }}
-                                  onRemove={() => {
-                                    setActiveActions(
-                                      activeActions.filter(
-                                        (activeAction, otherIndex) => index !== otherIndex
-                                      )
-                                    );
-                                  }}
-                                />
-                              ]);
+                      {Object.entries(actionProvider.actions).map(
+                        (actionData, index) => {
+                          const action = actionData[1];
+                          return (
+                            <ActionButton
+                              key={index}
+                              borderColor={actionProvider.color}
+                              onClick={() => {
+                                setActiveActions([
+                                  ...activeActions,
+                                  <action.actionCard
+                                    token0={accountData.token0}
+                                    token1={accountData.token1}
+                                    feeTier={accountData.feeTier}
+                                    key={index}
+                                    onAdd={() => {}}
+                                    onRemove={() => {
+                                      setActiveActions(
+                                        activeActions.filter(
+                                          (activeAction, otherIndex) =>
+                                            index !== otherIndex
+                                        )
+                                      );
+                                    }}
+                                  />,
+                                ]);
                                 // <AloeDepositAction
-                                  
+
                                 // />
-                              // setActiveActions([
-                              //   ...activeActions,
-                              //   [actionProvider, action],
-                              // ]);
-                              setActionModalOpen(false);
-                            }}
-                          >
-                            <Text size='S' weight='bold'>
-                              {action.name}
-                            </Text>
-                          </ActionButton>
-                        );
-                      })}
+                                // setActiveActions([
+                                //   ...activeActions,
+                                //   [actionProvider, action],
+                                // ]);
+                                setActionModalOpen(false);
+                              }}
+                            >
+                              <Text size='S' weight='bold'>
+                                {action.name}
+                              </Text>
+                            </ActionButton>
+                          );
+                        }
+                      )}
                     </ActionButtonsContainer>
                   </ActionProviderContainer>
                 );
@@ -257,7 +294,7 @@ export default function BorrowActionsPage() {
             )}
           </div>
         </FullscreenModal>
-      </div>
+      </BodyWrapper>
     </AppPage>
   );
 }
