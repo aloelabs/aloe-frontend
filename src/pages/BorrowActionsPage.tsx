@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
 import {
+  FilledGreyButton,
   FilledStylizedButtonWithIcon,
   PreviousPageButton,
 } from '../components/common/Buttons';
@@ -10,7 +11,13 @@ import { Display, Text } from '../components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FullscreenModal } from '../components/common/Modal';
-import { ActionProvider, Actions } from '../components/borrow/ActionCard';
+import {
+  Action,
+  ActionCardProps,
+  ActionCardResult,
+  ActionProvider,
+  Actions,
+} from '../components/borrow/ActionCard';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { GetTokenData } from '../data/TokenData';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -23,6 +30,7 @@ import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
 import PnLGraph from '../components/graph/PnLGraph';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
+import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 
 // const PENDING_ACTION_CARDS = {
 //   [Actions.AloeII]: AloeDepositAction,
@@ -50,8 +58,24 @@ type AccountParams = {
 const BodyWrapper = styled.div`
   display: grid;
   width: 100%;
-  grid-template-columns: calc(60% - 16px) calc(40% - 16px);
+  grid-template-columns: calc(100% - 582px) 550px;
   gap: 32px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const GridExpandingDiv = styled.div`
+  grid-row: 1 / span 2;
+  grid-column: 2 / span 1;
+  justify-self: center;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    justify-self: start;
+    grid-row: 2 / span 1;
+    grid-column: 1 / span 1;
+  }
 `;
 
 const ActionModalHeader = styled.div`
@@ -142,18 +166,69 @@ export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const account = params.account;
   const accountData = getAccount(account || '');
-  const [activeActions, setActiveActions] = React.useState<Array<ReactElement>>(
-    []
+  const [actionResults, setActionResults] = React.useState<ActionCardResult[]>([
+    // {
+    //   token0Change: 0,
+    //   token1Change: 0,
+    //   uniswapLiquidityChange: 0,
+    //   uniswapLowerBoundChange: 0,
+    //   uniswapUpperBoundChange: 0,
+    // },
+    // {
+    //   token0Change: 0,
+    //   token1Change: 0,
+    //   uniswapLiquidityChange: 0,
+    //   uniswapLowerBoundChange: 0,
+    //   uniswapUpperBoundChange: 0,
+    // },
+  ]);
+  const [activeActions, setActiveActions] = React.useState<Array<Action>>(
+    [
+      // <AloeWithdrawAction
+      //   token0={accountData?.token0 || null}
+      //   token1={accountData?.token1 || null}
+      //   onRemove={() => {}}
+      //   onChange={(actionResult: ActionCardResult) => {
+      //     let newActionResults = actionResults;
+      //     newActionResults[0] = actionResult;
+      //     setActionResults(newActionResults);
+      //     console.log(actionResult);
+      //     console.log(actionResults);
+      //   }}
+      // />,
+      // <AloeWithdrawAction
+      //   token0={accountData?.token0 || null}
+      //   token1={accountData?.token1 || null}
+      //   onRemove={() => {}}
+      //   onChange={(actionResult: ActionCardResult) => {
+      //     let newActionResults = actionResults;
+      //     newActionResults[1] = actionResult;
+      //     setActionResults(newActionResults);
+      //     console.log(actionResult);
+      //     console.log(actionResults);
+      //   }}
+      // />,
+    ]
   );
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const navigate = useNavigate();
   if (!accountData) {
     return null;
   }
+  function handleRemoveAction(index: number) {
+    let copy = [...activeActions];
+    console.log('before', index, copy);
+    let newActiveActions = activeActions;
+    newActiveActions.filter((_, i) => i !== index);
+    // setActiveActions(newActiveActions);
+  }
+  function handleAddAction(action: Action) {
+    setActiveActions([...activeActions, action]);
+  }
   return (
     <AppPage>
       <BodyWrapper>
-        <div className='flex gap-8 items-center mb-16'>
+        <div className='flex gap-8 items-center mb-4'>
           <PreviousPageButton onClick={() => navigate('../borrow')} />
           <MarginAccountHeader
             token0={accountData.token0}
@@ -162,9 +237,20 @@ export default function BorrowActionsPage() {
             id={account || ''}
           />
         </div>
-        <div className='w-full flex flex-col'>
-          <ManageAccountWidget />
-        </div>
+        <GridExpandingDiv>
+          <ManageAccountWidget
+            token0={accountData.token0}
+            token1={accountData.token1}
+            activeActions={activeActions}
+            onAddAction={() => {
+              setActionModalOpen(true);
+            }}
+            onRemoveAction={(index: number) => {
+              let activeActionsCopy = [...activeActions];
+              setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
+            }}
+          />
+        </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
           <div className='w-full flex flex-col gap-4 mb-8'>
             <Display size='M' weight='medium'>
@@ -252,31 +338,7 @@ export default function BorrowActionsPage() {
                               key={index}
                               borderColor={actionProvider.color}
                               onClick={() => {
-                                setActiveActions([
-                                  ...activeActions,
-                                  <action.actionCard
-                                    token0={accountData.token0}
-                                    token1={accountData.token1}
-                                    feeTier={accountData.feeTier}
-                                    key={index}
-                                    onAdd={() => {}}
-                                    onRemove={() => {
-                                      setActiveActions(
-                                        activeActions.filter(
-                                          (activeAction, otherIndex) =>
-                                            index !== otherIndex
-                                        )
-                                      );
-                                    }}
-                                  />,
-                                ]);
-                                // <AloeDepositAction
-
-                                // />
-                                // setActiveActions([
-                                //   ...activeActions,
-                                //   [actionProvider, action],
-                                // ]);
+                                handleAddAction(action);
                                 setActionModalOpen(false);
                               }}
                             >
