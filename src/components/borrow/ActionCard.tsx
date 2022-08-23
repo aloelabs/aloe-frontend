@@ -23,17 +23,24 @@ export const UNISWAP_V3_PAIRS = [
   }
 ];
 
+export type ActionCardResult = {
+  token0Change: number;
+  token1Change: number;
+  uniswapLiquidityChange: number;
+  uniswapLowerBoundChange: number;
+  uniswapUpperBoundChange: number;
+};
+
 export type ActionCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  feeTier: FeeTier;
-  onAdd: () => void;
+  token0: TokenData | null;
+  token1: TokenData | null;
   onRemove: () => void;
-}
+  onChange: (result: ActionCardResult) => void;
+};
 
 export type Action = {
   name: string;
-  actions: React.FC<ActionCardProps>;
+  actionCard: React.FC<ActionCardProps>;
 }
 
 export type ActionProvider = {
@@ -78,6 +85,7 @@ const ActionCardContainer = styled.div`
   padding: 12px 24px;
   border-radius: 8px;
   background-color: rgba(13, 24, 33, 1);
+  border: 1px solid rgba(34, 54, 69, 1);
 `;
 
 const ActionBadge = styled.div.attrs(
@@ -105,12 +113,11 @@ export type BaseActionCardProps = {
   actionProvider: ActionProvider;
   action: string;
   children: React.ReactNode;
-  onAdd: () => void;
   onRemove: () => void;
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, children, onAdd, onRemove } = props;
+  const { actionProvider, action, children, onRemove } = props;
   return (
     <ActionCardContainer>
       <div className='w-full flex justify-start items-center gap-4 mb-4'>
@@ -132,16 +139,6 @@ export function BaseActionCard(props: BaseActionCardProps) {
         </button>
       </div>
       {children}
-      <div>
-        <FilledGreyButton
-          size='M'
-          onClick={() => {
-            onAdd();
-          }}
-        >
-          Add
-        </FilledGreyButton>
-      </div>
     </ActionCardContainer>
   );
 }
