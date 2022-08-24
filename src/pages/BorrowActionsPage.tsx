@@ -166,50 +166,8 @@ export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const account = params.account;
   const accountData = getAccount(account || '');
-  const [actionResults, setActionResults] = React.useState<ActionCardResult[]>([
-    // {
-    //   token0Change: 0,
-    //   token1Change: 0,
-    //   uniswapLiquidityChange: 0,
-    //   uniswapLowerBoundChange: 0,
-    //   uniswapUpperBoundChange: 0,
-    // },
-    // {
-    //   token0Change: 0,
-    //   token1Change: 0,
-    //   uniswapLiquidityChange: 0,
-    //   uniswapLowerBoundChange: 0,
-    //   uniswapUpperBoundChange: 0,
-    // },
-  ]);
-  const [activeActions, setActiveActions] = React.useState<Array<Action>>(
-    [
-      // <AloeWithdrawAction
-      //   token0={accountData?.token0 || null}
-      //   token1={accountData?.token1 || null}
-      //   onRemove={() => {}}
-      //   onChange={(actionResult: ActionCardResult) => {
-      //     let newActionResults = actionResults;
-      //     newActionResults[0] = actionResult;
-      //     setActionResults(newActionResults);
-      //     console.log(actionResult);
-      //     console.log(actionResults);
-      //   }}
-      // />,
-      // <AloeWithdrawAction
-      //   token0={accountData?.token0 || null}
-      //   token1={accountData?.token1 || null}
-      //   onRemove={() => {}}
-      //   onChange={(actionResult: ActionCardResult) => {
-      //     let newActionResults = actionResults;
-      //     newActionResults[1] = actionResult;
-      //     setActionResults(newActionResults);
-      //     console.log(actionResult);
-      //     console.log(actionResults);
-      //   }}
-      // />,
-    ]
-  );
+  const [actionResults, setActionResults] = React.useState<ActionCardResult[]>([]);
+  const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const navigate = useNavigate();
   if (!accountData) {
@@ -223,6 +181,15 @@ export default function BorrowActionsPage() {
     // setActiveActions(newActiveActions);
   }
   function handleAddAction(action: Action) {
+    setActionResults([...actionResults, { 
+      token0RawDelta: 0,
+      token1RawDelta: 0,
+      token0DebtDelta: 0,
+      token1DebtDelta: 0,
+      token0PlusDelta: 0,
+      token1PlusDelta: 0,
+      uniswapPositions: [],
+     }]);
     setActiveActions([...activeActions, action]);
   }
   return (
@@ -242,10 +209,15 @@ export default function BorrowActionsPage() {
             token0={accountData.token0}
             token1={accountData.token1}
             activeActions={activeActions}
+            actionResults={actionResults}
+            setActionResults={setActionResults}
             onAddAction={() => {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {
+              let actionResultsCopy = [...actionResults];
+              setActionResults(actionResultsCopy.filter((_, i) => i !== index));
+              console.log('after', index, actionResults);
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}

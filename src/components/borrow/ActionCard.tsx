@@ -23,17 +23,26 @@ export const UNISWAP_V3_PAIRS = [
   }
 ];
 
+export type UniswapPosition = {
+  liquidity: number;
+  lowerBound: number;
+  upperBound: number;
+};
+
 export type ActionCardResult = {
-  token0Change: number;
-  token1Change: number;
-  uniswapLiquidityChange: number;
-  uniswapLowerBoundChange: number;
-  uniswapUpperBoundChange: number;
+  token0RawDelta: number;
+  token1RawDelta: number;
+  token0DebtDelta: number;
+  token1DebtDelta: number;
+  token0PlusDelta: number;
+  token1PlusDelta: number;
+  uniswapPositions: UniswapPosition[];
 };
 
 export type ActionCardProps = {
   token0: TokenData | null;
   token1: TokenData | null;
+  previousActionCardState: ActionCardResult | null;
   onRemove: () => void;
   onChange: (result: ActionCardResult) => void;
 };
