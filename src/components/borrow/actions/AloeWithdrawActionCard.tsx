@@ -3,6 +3,7 @@ import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, Actions } from '../../../data/Actions';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
@@ -19,29 +20,37 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
     },
   ];
 
-  const previousTokenAmount = Math.max(
-    previousActionCardState?.token0RawDelta || 0,
-    previousActionCardState?.token1RawDelta || 0
-  );
-  const [selectedToken, setSelectedToken] = useState<DropdownOption>(
-    dropdownOptions[0]
-  );
-  const [tokenAmount, setTokenAmount] = useState<string>('');
+  console.log('hi');
 
-  useEffect(() => {
-    if (
-      previousTokenAmount !== 0 &&
-      previousTokenAmount !== parseFloat(tokenAmount)
-    ) {
-      setTokenAmount(
-        previousTokenAmount > 0 ? previousTokenAmount.toString() : ''
-      );
+  const previouslySelectedToken = previousActionCardState?.selectedTokenA;
+  useEffectOnce(() => {
+    if (!previouslySelectedToken) {
+      onChange({
+        token0DebtDelta: previousActionCardState?.token0DebtDelta || '',
+        token1DebtDelta: previousActionCardState?.token1DebtDelta || '',
+        token0RawDelta: '',
+        token1RawDelta: '',
+        token0PlusDelta: previousActionCardState?.token0PlusDelta || '',
+        token1PlusDelta: previousActionCardState?.token1PlusDelta || '',
+        uniswapPositions: [],
+        selectedTokenA: selectedToken,
+        selectedTokenB: null,
+      });
     }
-  }, [previousActionCardState, previousTokenAmount, tokenAmount]);
+  });
+  const selectedToken = previousActionCardState?.selectedTokenA || dropdownOptions[0];
+  let tokenAmount = '';
+  if (previousActionCardState) {
+    if (selectedToken.value === dropdownOptions[0].value) {
+      tokenAmount = previousActionCardState.token0RawDelta;
+    } else {
+      tokenAmount = previousActionCardState.token1RawDelta;
+    }
+  }
 
   return (
     <BaseActionCard
-      action='Withdraw'
+      action={Actions.AloeII.actions.WITHDRAW.name}
       actionProvider={Actions.AloeII}
       onRemove={onRemove}
     >
@@ -52,41 +61,43 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           onSelect={(option) => {
             if (option?.value !== selectedToken?.value) {
               onChange({
-                token0RawDelta: 0,
-                token1RawDelta: 0,
-                token0DebtDelta: 0,
-                token1DebtDelta: 0,
-                token0PlusDelta: 0,
-                token1PlusDelta: 0,
+                token0RawDelta: '',
+                token1RawDelta: '',
+                token0DebtDelta: '',
+                token1DebtDelta: '',
+                token0PlusDelta: '',
+                token1PlusDelta: '',
                 uniswapPositions: [],
+                selectedTokenA: option,
+                selectedTokenB: null,
               });
-              setTokenAmount('');
             }
-            setSelectedToken(option);
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedToken?.label || ''}
           value={tokenAmount}
           onChange={(value) => {
-            console.log(value);
-            setTokenAmount(value);
             const token0Change =
               selectedToken?.value === token0?.address
-                ? parseFloat(value) || 0
-                : 0;
+                ? parseFloat(value) || null
+                : null;
             const token1Change =
               selectedToken?.value === token1?.address
-                ? parseFloat(value) || 0
-                : 0;
+                ? parseFloat(value) || null
+                : null;
+            const token0IsSelected = selectedToken?.value === token0?.address;
+            console.log(token0Change, token1Change, value);
             onChange({
-              token0RawDelta: token0Change,
-              token1RawDelta: token1Change,
-              token0DebtDelta: 0,
-              token1DebtDelta: 0,
-              token0PlusDelta: -token0Change,
-              token1PlusDelta: -token1Change,
+              token0RawDelta: token0IsSelected ? value : '',
+              token1RawDelta: !token0IsSelected ? value : '',
+              token0DebtDelta: '',
+              token1DebtDelta: '',
+              token0PlusDelta: token0Change != null ? (-1 * token0Change).toString() : '',
+              token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
               uniswapPositions: [],
+              selectedTokenA: selectedToken,
+              selectedTokenB: null,
             });
           }}
           max='100'

@@ -165,13 +165,15 @@ export default function BorrowActionsPage() {
   }
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, { 
-      token0RawDelta: 0,
-      token1RawDelta: 0,
-      token0DebtDelta: 0,
-      token1DebtDelta: 0,
-      token0PlusDelta: 0,
-      token1PlusDelta: 0,
+      token0RawDelta: '',
+      token1RawDelta: '',
+      token0DebtDelta: '',
+      token1DebtDelta: '',
+      token0PlusDelta: '',
+      token1PlusDelta: '',
       uniswapPositions: [],
+      selectedTokenA: null,
+      selectedTokenB: null,
      }]);
     setActiveActions([...activeActions, action]);
   }

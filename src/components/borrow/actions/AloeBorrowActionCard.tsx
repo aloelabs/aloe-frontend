@@ -5,7 +5,7 @@ import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, Actions } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
-export function AloeDepositActionCard(prop: ActionCardProps) {
+export function AloeBorrowActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
@@ -39,37 +39,15 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
   let tokenAmount = '';
   if (previousActionCardState) {
     if (selectedToken.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState.token0PlusDelta;
+      tokenAmount = previousActionCardState.token0DebtDelta;
     } else {
-      tokenAmount = previousActionCardState.token1PlusDelta;
+      tokenAmount = previousActionCardState.token1DebtDelta;
     }
   }
-  // const previousTokenAmount = 0;
-  //   // Math.min(
-  //   //   previousActionCardState?.token0RawDelta || 0,
-  //   //   previousActionCardState?.token1RawDelta || 0
-  //   // ) * -1;
-  // const [selectedToken, setSelectedToken] = useState<DropdownOption>(
-  //   dropdownOptions[0]
-  // );
-  // const [tokenAmount, setTokenAmount] = useState<string>('');
-
-  // useEffect(() => {
-  //   if (
-  //     previousTokenAmount !== 0 &&
-  //     previousTokenAmount !== parseFloat(tokenAmount)
-  //   ) {
-  //     // setTokenAmount(
-  //     //   previousTokenAmount > 0 ? previousTokenAmount.toString() : ''
-  //     // );
-  //   } else if (previousTokenAmount === 0) {
-  //     setTokenAmount('');
-  //   }
-  // }, [previousActionCardState, previousTokenAmount, tokenAmount]);
-
+  
   return (
     <BaseActionCard
-      action={Actions.AloeII.actions.DEPOSIT.name}
+      action={Actions.AloeII.actions.BORROW.name}
       actionProvider={Actions.AloeII}
       onRemove={onRemove}
     >
@@ -107,12 +85,12 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
                 : null;
             const token0IsSelected = selectedToken?.value === token0?.address;
             onChange({
-              token0RawDelta: token0Change != null ? (-1 * token0Change).toString() : '',
-              token1RawDelta: token1Change != null ? (-1 * token1Change).toString() : '',
-              token0DebtDelta: '',
-              token1DebtDelta: '',
-              token0PlusDelta: token0IsSelected ? value : '',//Allows for decimals to be entered
-              token1PlusDelta: !token0IsSelected ? value : '',//Allows for decimals to be entered
+              token0RawDelta: token0IsSelected ? value : '',//Allows for decimals to be entered
+              token1RawDelta: !token0IsSelected ? value : '',//Allows for decimals to be entered
+              token0DebtDelta: token0IsSelected ? value : '',//Allows for decimals to be entered
+              token1DebtDelta: !token0IsSelected ? value : '',//Allows for decimals to be entered
+              token0PlusDelta: '',
+              token1PlusDelta: '',
               uniswapPositions: [],
               selectedTokenA: selectedToken,
               selectedTokenB: null,
