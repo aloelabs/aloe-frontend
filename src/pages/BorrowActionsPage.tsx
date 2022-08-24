@@ -13,18 +13,13 @@ import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FullscreenModal } from '../components/common/Modal';
 import {
   Action,
-  ActionCardProps,
   ActionCardResult,
   ActionProvider,
   Actions,
-} from '../components/borrow/ActionCard';
+} from '../data/Actions';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { GetTokenData } from '../data/TokenData';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  AloeDepositAction,
-  AloeWithdrawAction,
-} from '../components/borrow/actions/SingleNumericEntry';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
 import PnLGraph from '../components/graph/PnLGraph';

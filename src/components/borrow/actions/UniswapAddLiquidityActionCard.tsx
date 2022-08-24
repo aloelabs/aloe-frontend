@@ -2,7 +2,22 @@ import { useState } from 'react';
 import { FilledGradientButton, FilledGreyButton } from '../../common/Buttons';
 import { Dropdown } from "../../common/Dropdown";
 import TokenAmountInput from "../../common/TokenAmountInput";
-import { Actions, BaseActionCard, UNISWAP_V3_PAIRS } from "../ActionCard";
+import { BaseActionCard } from "../BaseActionCard";
+import { Actions } from "../../../data/Actions";
+import { GetTokenData } from '../../../data/TokenData';
+
+export const UNISWAP_V3_PAIRS = [
+  {
+    name: 'USDC/WETH',
+    token0: GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
+    token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+  },
+  {
+    name: 'WBTC/WETH',
+    token0: GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
+    token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+  }
+];
 
 // export default function UniswapAddLiquidityActionCard() {
 //   const [token0Amount, setToken0Amount] = useState('');
