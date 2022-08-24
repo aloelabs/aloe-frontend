@@ -100,19 +100,16 @@ export function AloeWithdrawAction(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  console.log(previousActionCardState);
+
   const previousTokenAmount = Math.max(previousActionCardState?.token0RawDelta || 0, previousActionCardState?.token1RawDelta || 0);
   const [selectedToken, setSelectedToken] = React.useState<DropdownOption>(dropdownOptions[0]);
   const [tokenAmount, setTokenAmount] = React.useState<string>('');
 
   useEffect(() => {
-    console.log(previousTokenAmount, tokenAmount);
     if (previousTokenAmount !== 0 && previousTokenAmount !== parseFloat(tokenAmount)) {
       setTokenAmount(previousTokenAmount > 0 ? previousTokenAmount.toString() : '');
     }
   }, [previousActionCardState, previousTokenAmount, tokenAmount]);
-
-  console.log('test2')
 
   return (
     <BaseActionCard action='Withdraw' actionProvider={Actions.AloeII} onRemove={onRemove}>
