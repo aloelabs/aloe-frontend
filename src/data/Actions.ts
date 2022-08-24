@@ -1,7 +1,10 @@
 import { ReactComponent as AloeLogo } from '../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../assets/svg/uniswap_logo.svg';
+import { AloeBorrowActionCard } from '../components/borrow/actions/AloeBorrowActionCard';
 import { AloeDepositActionCard } from '../components/borrow/actions/AloeDepositActionCard';
+import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
+import { DropdownOption } from '../components/common/Dropdown';
 import { TokenData } from './TokenData';
 
 export const Actions = {
@@ -18,6 +21,14 @@ export const Actions = {
         name: 'Withdraw',
         actionCard: AloeWithdrawActionCard,
       },
+      BORROW: {
+        name: 'Borrow',
+        actionCard: AloeBorrowActionCard,
+      },
+      REPAY: {
+        name: 'Repay',
+        actionCard: AloeRepayActionCard,
+      }
     },
   },
 };
@@ -29,13 +40,15 @@ export type UniswapPosition = {
 };
 
 export type ActionCardResult = {
-  token0RawDelta: number;
-  token1RawDelta: number;
-  token0DebtDelta: number;
-  token1DebtDelta: number;
-  token0PlusDelta: number;
-  token1PlusDelta: number;
+  token0RawDelta: string;
+  token1RawDelta: string;
+  token0DebtDelta: string;
+  token1DebtDelta: string;
+  token0PlusDelta: string;
+  token1PlusDelta: string;
   uniswapPositions: UniswapPosition[];
+  selectedTokenA: DropdownOption | null;
+  selectedTokenB: DropdownOption | null;
 };
 
 export type ActionCardProps = {
