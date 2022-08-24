@@ -1,10 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
 import {
-  FilledGreyButton,
-  FilledStylizedButtonWithIcon,
   PreviousPageButton,
 } from '../components/common/Buttons';
 import { Display, Text } from '../components/common/Typography';
@@ -26,10 +24,6 @@ import PnLGraph from '../components/graph/PnLGraph';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
-
-// const PENDING_ACTION_CARDS = {
-//   [Actions.AloeII]: AloeDepositAction,
-// }
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -166,14 +160,8 @@ export default function BorrowActionsPage() {
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const navigate = useNavigate();
   if (!accountData) {
+    //If no account data is found, don't render the page
     return null;
-  }
-  function handleRemoveAction(index: number) {
-    let copy = [...activeActions];
-    console.log('before', index, copy);
-    let newActiveActions = activeActions;
-    newActiveActions.filter((_, i) => i !== index);
-    // setActiveActions(newActiveActions);
   }
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, { 
