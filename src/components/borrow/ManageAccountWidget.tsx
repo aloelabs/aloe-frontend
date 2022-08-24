@@ -4,7 +4,7 @@ import tw from "twin.macro";
 import { FilledGradientButtonWithIcon } from "../common/Buttons";
 import { Text, Display } from "../common/Typography";
 import { ReactComponent as PlusIcon } from "../../assets/svg/plus.svg";
-import { Action, ActionCardResult } from "./ActionCard";
+import { Action, ActionCardResult } from "../../data/Actions";
 import { TokenData } from "../../data/TokenData";
 
 const Wrapper = styled.div`
