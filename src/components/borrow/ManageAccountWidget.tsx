@@ -4,7 +4,7 @@ import tw from "twin.macro";
 import { FilledGradientButtonWithIcon } from "../common/Buttons";
 import { Text, Display } from "../common/Typography";
 import { ReactComponent as PlusIcon } from "../../assets/svg/plus.svg";
-import { Action } from "./ActionCard";
+import { Action, ActionCardResult } from "./ActionCard";
 import { TokenData } from "../../data/TokenData";
 
 const Wrapper = styled.div`
@@ -52,12 +52,14 @@ export type ManageAccountWidgetProps = {
   token0: TokenData;
   token1: TokenData;
   activeActions: Array<Action>;
+  actionResults: Array<ActionCardResult>;
+  setActionResults: (actionResults: Array<ActionCardResult>) => void;
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
-  const { token0, token1, activeActions, onAddAction, onRemoveAction } = props;
+  const { token0, token1, activeActions, actionResults, setActionResults, onAddAction, onRemoveAction } = props;
   return (
     <Wrapper>
       <div>
@@ -78,11 +80,13 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               <action.actionCard
                 token0={token0}
                 token1={token1}
+                previousActionCardState={actionResults[index]}
                 onRemove={() => {
                   onRemoveAction(index);
                 }}
-                onChange={() => {
-
+                onChange={(result: ActionCardResult) => {
+                  setActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
+                  console.log(result);
                 }}
               />
             </ActionItem>
