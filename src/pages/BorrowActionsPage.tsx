@@ -165,12 +165,30 @@ export default function BorrowActionsPage() {
   }
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, { 
-      token0RawDelta: '',
-      token1RawDelta: '',
-      token0DebtDelta: '',
-      token1DebtDelta: '',
-      token0PlusDelta: '',
-      token1PlusDelta: '',
+      token0RawDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
+      token1RawDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
+      token0DebtDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
+      token1DebtDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
+      token0PlusDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
+      token1PlusDelta: {
+        numericValue: 0,
+        inputValue: '',
+      },
       uniswapPositions: [],
       selectedTokenA: null,
       selectedTokenB: null,
@@ -202,7 +220,6 @@ export default function BorrowActionsPage() {
             onRemoveAction={(index: number) => {
               let actionResultsCopy = [...actionResults];
               setActionResults(actionResultsCopy.filter((_, i) => i !== index));
-              console.log('after', index, actionResults);
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}

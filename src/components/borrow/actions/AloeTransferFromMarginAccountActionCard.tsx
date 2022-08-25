@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, Actions } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
-export function AloeWithdrawActionCard(prop: ActionCardProps) {
+export function AloeTransferFromMarginAccountActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
@@ -18,8 +17,19 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       value: token1?.address || '',
       icon: token1?.iconPath || '',
     },
+    //TODO: TEMPORARY, add type for token+
+    {
+      label: token0?.ticker + '+' || '',
+      value: token0?.address + '1' || '',
+      icon: token0?.iconPath || '',
+    },
+    //TODO: TEMPORARY, add type for token+
+    {
+      label: token1?.ticker + '+' || '',
+      value: token1?.address + '1' || '',
+      icon: token1?.iconPath || '',
+    }
   ];
-
   const previouslySelectedToken = previousActionCardState?.selectedTokenA;
   const selectedToken = previousActionCardState?.selectedTokenA || dropdownOptions[0];
   useEffectOnce(() => {
@@ -59,14 +69,18 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   if (previousActionCardState) {
     if (selectedToken.value === dropdownOptions[0].value) {
       tokenAmount = previousActionCardState.token0RawDelta.inputValue;
-    } else {
+    } else if (selectedToken.value === dropdownOptions[1].value) {
       tokenAmount = previousActionCardState.token1RawDelta.inputValue;
+    } else if (selectedToken.value === dropdownOptions[2].value) {
+      tokenAmount = previousActionCardState.token0PlusDelta.inputValue;
+    } else if (selectedToken.value === dropdownOptions[3].value) {
+      tokenAmount = previousActionCardState.token1PlusDelta.inputValue;
     }
   }
-
+  
   return (
     <BaseActionCard
-      action={Actions.AloeII.actions.WITHDRAW.name}
+      action={Actions.AloeII.actions.TRANSFER_FROM_MARGIN_ACCOUNT.name}
       actionProvider={Actions.AloeII}
       onRemove={onRemove}
     >
@@ -120,15 +134,24 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
               selectedToken?.value === token1?.address
                 ? parseFloat(value) || null
                 : null;
-            const token0IsSelected = selectedToken?.value === token0?.address;
+            const token0PlusChange =
+              //TODO: TEMPORARY, add type for token+
+              selectedToken?.value === token0?.address + '1'
+                ? parseFloat(value) || null
+                : null;
+            const token1PlusChange =
+              //TODO: TEMPORARY, add type for token+
+              selectedToken?.value === token1?.address + '1'
+                ? parseFloat(value) || null
+                : null;
             onChange({
               token0RawDelta: {
-                numericValue: token0Change || 0,
-                inputValue: token0IsSelected ? value : '',
+                numericValue: token0Change != null ? (-1 * token0Change) : 0,
+                inputValue: selectedToken?.value === token0?.address ? value : '',
               },
               token1RawDelta: {
-                numericValue: token1Change || 0,
-                inputValue: !token0IsSelected ? value : '',
+                numericValue: token1Change != null ? (-1 * token1Change) : 0,
+                inputValue: selectedToken?.value === token1?.address ? value : '',
               },
               token0DebtDelta: {
                 numericValue: 0,
@@ -139,15 +162,15 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
                 inputValue: '',
               },
               token0PlusDelta: {
-                numericValue: token0Change != null ? (-1 * token0Change) : 0,
-                inputValue: token0IsSelected ? value : '',
+                numericValue: token0PlusChange != null ? (-1 * token0PlusChange) : 0,
+                //TODO: TEMPORARY, add type for token+
+                inputValue: selectedToken?.value === token0?.address + '1' ? value : '',
               },
               token1PlusDelta: {
-                numericValue: token1Change != null ? (-1 * token1Change) : 0,
-                inputValue: !token0IsSelected ? value : '',
+                numericValue: token1PlusChange != null ? (-1 * token1PlusChange) : 0,
+                //TODO: TEMPORARY, add type for token+
+                inputValue: selectedToken?.value === token1?.address + '1' ? value : '',
               },
-              // token0PlusDelta: token0Change != null ? (-1 * token0Change).toString() : '',
-              // token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
               uniswapPositions: [],
               selectedTokenA: selectedToken,
               selectedTokenB: null,

@@ -86,7 +86,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 }}
                 onChange={(result: ActionCardResult) => {
                   setActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
-                  console.log(result);
+                  console.log(actionResults);
                 }}
               />
             </ActionItem>
