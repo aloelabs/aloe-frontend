@@ -20,28 +20,46 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
     },
   ];
   const previouslySelectedToken = previousActionCardState?.selectedTokenA;
+  const selectedToken = previousActionCardState?.selectedTokenA || dropdownOptions[0];
   useEffectOnce(() => {
     if (!previouslySelectedToken) {
       onChange({
-        token0DebtDelta: previousActionCardState?.token0DebtDelta || '',
-        token1DebtDelta: previousActionCardState?.token1DebtDelta || '',
-        token0RawDelta: '',
-        token1RawDelta: '',
-        token0PlusDelta: previousActionCardState?.token0PlusDelta || '',
-        token1PlusDelta: previousActionCardState?.token1PlusDelta || '',
+        token0DebtDelta: {
+          numericValue: previousActionCardState?.token0DebtDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token0DebtDelta?.inputValue || '',
+        },
+        token1DebtDelta: {
+          numericValue: previousActionCardState?.token1DebtDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token1DebtDelta?.inputValue || '',
+        },
+        token0RawDelta: {
+          numericValue: previousActionCardState?.token0RawDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token0RawDelta?.inputValue || '',
+        },
+        token1RawDelta: {
+          numericValue: previousActionCardState?.token1RawDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token1RawDelta?.inputValue || '',
+        },
+        token0PlusDelta: {
+          numericValue: previousActionCardState?.token0PlusDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token0PlusDelta?.inputValue || '',
+        },
+        token1PlusDelta: {
+          numericValue: previousActionCardState?.token1PlusDelta?.numericValue || 0,
+          inputValue: previousActionCardState?.token1PlusDelta?.inputValue || '',
+        },
         uniswapPositions: [],
         selectedTokenA: selectedToken,
         selectedTokenB: null,
       });
     }
   });
-  const selectedToken = previousActionCardState?.selectedTokenA || dropdownOptions[0];
   let tokenAmount = '';
   if (previousActionCardState) {
     if (selectedToken.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState.token0DebtDelta;
+      tokenAmount = previousActionCardState.token0DebtDelta.inputValue;
     } else {
-      tokenAmount = previousActionCardState.token1DebtDelta;
+      tokenAmount = previousActionCardState.token1DebtDelta.inputValue;
     }
   }
   
@@ -58,12 +76,30 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           onSelect={(option) => {
             if (option?.value !== selectedToken?.value) {
               onChange({
-                token0RawDelta: '',
-                token1RawDelta: '',
-                token0DebtDelta: '',
-                token1DebtDelta: '',
-                token0PlusDelta: '',
-                token1PlusDelta: '',
+                token0RawDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token1RawDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token0DebtDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token1DebtDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token0PlusDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token1PlusDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
                 uniswapPositions: [],
                 selectedTokenA: option,
                 selectedTokenB: null,
@@ -85,12 +121,30 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
                 : null;
             const token0IsSelected = selectedToken?.value === token0?.address;
             onChange({
-              token0RawDelta: token0IsSelected ? value : '',//Allows for decimals to be entered
-              token1RawDelta: !token0IsSelected ? value : '',//Allows for decimals to be entered
-              token0DebtDelta: token0IsSelected ? value : '',//Allows for decimals to be entered
-              token1DebtDelta: !token0IsSelected ? value : '',//Allows for decimals to be entered
-              token0PlusDelta: '',
-              token1PlusDelta: '',
+              token0RawDelta: {
+                numericValue: token0Change != null ? (-1 * token0Change) : 0,
+                inputValue: token0IsSelected ? value : '',
+              },
+              token1RawDelta: {
+                numericValue: token1Change != null ? (-1 * token1Change) : 0,
+                inputValue: !token0IsSelected ? value : '',
+              },
+              token0DebtDelta: {
+                numericValue: token0Change != null ? (-1 * token0Change) : 0,
+                inputValue: token0IsSelected ? value : '',
+              },
+              token1DebtDelta: {
+                numericValue: token1Change != null ? (-1 * token1Change) : 0,
+                inputValue: !token0IsSelected ? value : '',
+              },
+              token0PlusDelta: {
+                numericValue: 0,
+                inputValue: '',
+              },
+              token1PlusDelta: {
+                numericValue: 0,
+                inputValue: '',
+              },
               uniswapPositions: [],
               selectedTokenA: selectedToken,
               selectedTokenB: null,
