@@ -38,6 +38,7 @@ export type TickData = {
   amount1: number,
   price1In0: number,
   price0In1: number,
+  totalValueIn0: number,
 }
 
 export const UNISWAP_V3_PAIRS = [
@@ -140,16 +141,18 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           const price0 = new Big(rawTickData.price0);
           const price1 = new Big(rawTickData.price1);
 
-          const pL = price0;
-          const pU = pL.mul(new Big(1.0001).pow(tickSpacing));
+          const sqrtPL = price0.sqrt();
+          const sqrtPU = price0.mul(new Big(1.0001).pow(tickSpacing)).sqrt();
+          const amount0 = liquidity.mul(ONE.div(sqrtPL).minus(ONE.div(sqrtPU))).div(10 ** token0Decimals).toNumber();
 
           tickDataRight.push({
             tick,
             liquidity,
-            amount0: liquidity.mul(ONE.div(pL.sqrt()).minus(ONE.div(pU.sqrt()))).div(10 ** token0Decimals).toNumber(),
+            amount0: amount0,
             amount1: 0,
             price1In0: price1.mul(decimalFactor).toNumber(),
             price0In1: price0.div(decimalFactor).toNumber(),
+            totalValueIn0: amount0,
           });
         }
 
@@ -165,10 +168,11 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           const price0 = new Big(rawTickData.price0);
           const price1 = new Big(rawTickData.price1);
 
-          const pL = price0;
-          const pU = pL.mul(new Big(1.0001).pow(tickSpacing));
+          const sqrtPL = price0.sqrt();
+          const sqrtPU = price0.mul(new Big(1.0001).pow(tickSpacing)).sqrt();
+          const amount1 = liquidity.mul(sqrtPU.minus(sqrtPL)).div(10 ** token1Decimals).toNumber();
 
-          if (i===splitIdx - 1) {
+          if (i === splitIdx - 1) {
             console.log(tick);
             console.log(liquidity.toFixed(3));
             console.log(price0.toFixed(0));
@@ -178,13 +182,15 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             tick,
             liquidity,
             amount0: 0,
-            amount1: liquidity.mul(pU.sqrt().minus(pL.sqrt())).div(10 ** token1Decimals).toNumber(),
+            amount1: amount1,
             price1In0: price1.mul(decimalFactor).toNumber(),
             price0In1: price0.div(decimalFactor).toNumber(),
+            totalValueIn0: amount1 * price1.mul(decimalFactor).toNumber(),
           });
         }
 
         const tickData = tickDataLeft.reverse().concat(...tickDataRight);
+        console.log(tickData);
         setChartData(tickData);
       }
     }
@@ -203,7 +209,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     >
       {chartData.length > 0 &&
         (<LiquidityChart
-          data={chartData}
+          data={chartData.reverse()}
           rangeStart={lower.index}
           rangeEnd={upper.index}
         />)

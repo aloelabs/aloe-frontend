@@ -120,7 +120,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           barCategoryGap={0}
         >
           <Bar
-            dataKey='amount1'
+            dataKey='totalValueIn0'
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
