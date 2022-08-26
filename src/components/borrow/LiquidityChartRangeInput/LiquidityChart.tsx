@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import styled from 'styled-components';
 import { Text } from '../../common/Typography';
+import { TickData } from '../actions/UniswapAddLiquidityActionCard';
 
 export type ChartEntry = {
   index: number;
@@ -57,7 +58,7 @@ const CustomRange = ({
   return (
     <g>
       <rect
-        x={x - width / 6}
+        x={x - (width * 6) / 2}
         y={0}
         fill='#72a7f6'
         width={width * 6}
@@ -96,7 +97,7 @@ const CustomInsideRange = ({
 };
 
 export type LiquidityChartProps = {
-  data: ChartEntry[];
+  data: TickData[];
   rangeStart: number;
   rangeEnd: number;
 };
@@ -104,9 +105,9 @@ export type LiquidityChartProps = {
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd } = props;
   const ticks = [
-    data[Math.floor(Math.floor(data.length / 2) / 2)].price1,
-    data[Math.floor(data.length / 2)].price1,
-    data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price1,
+    data[Math.floor(Math.floor(data.length / 2) / 2)].price1In0,
+    data[Math.floor(data.length / 2)].price1In0,
+    data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price1In0,
   ];
   return (
     <Wrapper>
@@ -119,12 +120,12 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           barCategoryGap={0}
         >
           <Bar
-            dataKey='activeLiquidity'
+            dataKey='amount1'
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
               const fill = props.isCurrent ? 'white' : props.fill;
-              if (rangeStart === props.price1 || rangeEnd === props.price1) {
+              if (rangeStart === props.index || rangeEnd === props.index) {
                 return (
                   <CustomRange
                     width={props.width}
@@ -134,7 +135,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                     fill={fill}
                   />
                 );
-              } else if (rangeStart < props.price1 && rangeEnd > props.price1) {
+              } else if (rangeStart < props.index && rangeEnd > props.index) {
                 return (
                   <CustomInsideRange
                     width={props.width}
@@ -157,7 +158,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             }}
           />
           <XAxis
-            dataKey='price1'
+            dataKey='price1In0'
             tickCount={3}
             ticks={ticks}
             tick={(props) => {
