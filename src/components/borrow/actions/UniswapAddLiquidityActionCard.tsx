@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FilledGradientButton, FilledGreyButton } from '../../common/Buttons';
 import { Dropdown } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
@@ -7,6 +7,8 @@ import { ActionCardProps, ActionProviders } from '../../../data/Actions';
 import { GetTokenData } from '../../../data/TokenData';
 import SteppedInput from '../LiquidityChartRangeInput/SteppedInput';
 import LiquidityChart, { ChartEntry } from '../LiquidityChartRangeInput/LiquidityChart';
+import { theGraphUniswapV3Client } from '../../../App';
+import { UniswapTicksQuery } from '../../../util/GraphQL';
 
 export const UNISWAP_V3_PAIRS = [
   {
@@ -60,6 +62,28 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     price: fakeData[fakeData.length - 1].price1.toString(),
     index: fakeData.length - 1,
   });
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch(poolAddress: string, minTick: number, maxTick: number) {
+      const tickData = await theGraphUniswapV3Client.query({
+        query: UniswapTicksQuery,
+        variables: {
+          poolAddress: poolAddress,
+          minTick: minTick,
+          maxTick: maxTick,
+        },
+      });
+      if (mounted) {
+        console.log(tickData);
+      }
+    }
+
+    fetch("0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", 190000, 200000);
+    return () => {
+      mounted = false;
+    }
+  }, []);
 
   return (
     <BaseActionCard
