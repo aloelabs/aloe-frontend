@@ -9,6 +9,36 @@ import SteppedInput from '../LiquidityChartRangeInput/SteppedInput';
 import LiquidityChart, { ChartEntry } from '../LiquidityChartRangeInput/LiquidityChart';
 import { theGraphUniswapV3Client } from '../../../App';
 import { UniswapTicksQuery } from '../../../util/GraphQL';
+import { ApolloQueryResult } from '@apollo/react-hooks';
+import Big from 'big.js';
+
+type UniswapV3GraphQLTick = {
+  tickIdx: string,
+  liquidityNet: string,
+  price0: string,
+  price1: string,
+  __typename: string,
+};
+
+type UniswapV3GraphQLTicksQueryResponse = {
+  pools: {
+    token0: { decimals: string },
+    token1: { decimals: string },
+    liquidity: string,
+    tick: string,
+    ticks: UniswapV3GraphQLTick[],
+    __typename: string
+  }[],
+}
+
+type TickData = {
+  tick: number,
+  liquidity: Big,
+  amount0: number,
+  amount1: number,
+  price1In0: number,
+  price0In1: number
+}[];
 
 export const UNISWAP_V3_PAIRS = [
   {
@@ -30,6 +60,8 @@ function calcuateLiquidity(index: number, total: number) {
     Math.random() * distanceFromMiddle * distanceFromMiddle * distanceFromMiddle
   );
 }
+
+const ONE = new Big("1.0");
 
 let fakeData: Array<ChartEntry> = [];
 
@@ -65,21 +97,100 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   useEffect(() => {
     let mounted = true;
-    async function fetch(poolAddress: string, minTick: number, maxTick: number) {
-      const tickData = await theGraphUniswapV3Client.query({
+    async function fetch(poolAddress: string, minTick: number, maxTick: number, tickSpacing: number) {
+      const uniswapV3GraphQLTicksQueryResponse = await theGraphUniswapV3Client.query({
         query: UniswapTicksQuery,
         variables: {
           poolAddress: poolAddress,
           minTick: minTick,
           maxTick: maxTick,
         },
-      });
+      }) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
+
       if (mounted) {
+        if (!uniswapV3GraphQLTicksQueryResponse.data.pools) return;
+        const poolLiquidityData = uniswapV3GraphQLTicksQueryResponse.data.pools[0];
+
+        const token0Decimals = Number(poolLiquidityData.token0.decimals);
+        const token1Decimals = Number(poolLiquidityData.token1.decimals);
+        const decimalFactor = new Big(10 ** (token1Decimals - token0Decimals));
+
+        const currentLiquidity = new Big(poolLiquidityData.liquidity);
+        const currentTick = Number(poolLiquidityData.tick);
+        const rawTicksData = poolLiquidityData.ticks;
+
+        const tickDataLeft: TickData = [];
+        const tickDataRight: TickData = [];
+
+        console.log("Current Tick:");
+        console.log(currentTick);
+
+        // MARK -- filling out data for ticks *above* the current tick
+        let liquidity = currentLiquidity;
+        let splitIdx = rawTicksData.length;
+
+        for (let i = 0; i < rawTicksData.length; i += 1) {
+          const rawTickData = rawTicksData[i];
+          const tick = Number(rawTickData.tickIdx);
+          if (tick <= currentTick) continue;
+
+          // remember the first index above current tick so that search below current tick is more efficient
+          if (i < splitIdx) splitIdx = i;
+
+          liquidity = liquidity.plus(new Big(rawTickData.liquidityNet));
+          const price0 = new Big(rawTickData.price0);
+          const price1 = new Big(rawTickData.price1);
+
+          const pL = price0;
+          const pU = pL.mul(new Big(1.0001).pow(tickSpacing));
+
+          tickDataRight.push({
+            tick,
+            liquidity,
+            amount0: liquidity.mul(ONE.div(pL.sqrt()).minus(ONE.div(pU.sqrt()))).div(10 ** token0Decimals).toNumber(),
+            amount1: 0,
+            price1In0: price1.mul(decimalFactor).toNumber(),
+            price0In1: price0.div(decimalFactor).toNumber(),
+          });
+        }
+
+        // MARK -- filling out data for ticks *below* the current tick
+        liquidity = currentLiquidity;
+
+        for (let i = splitIdx - 1; i >= 0; i -= 1) {
+          const rawTickData = rawTicksData[i];
+          const tick = Number(rawTickData.tickIdx);
+          if (tick > currentTick) continue;
+
+          liquidity = liquidity.minus(new Big(rawTickData.liquidityNet));
+          const price0 = new Big(rawTickData.price0);
+          const price1 = new Big(rawTickData.price1);
+
+          const pL = price0;
+          const pU = pL.mul(new Big(1.0001).pow(tickSpacing));
+
+          if (i==splitIdx - 1) {
+            console.log(tick);
+            console.log(liquidity.toFixed(3));
+            console.log(price0.toFixed(0));
+          }
+
+          tickDataLeft.push({
+            tick,
+            liquidity,
+            amount0: 0,
+            amount1: liquidity.mul(pU.sqrt().minus(pL.sqrt())).div(10 ** token1Decimals).toNumber(),
+            price1In0: price1.mul(decimalFactor).toNumber(),
+            price0In1: price0.div(decimalFactor).toNumber(),
+          });
+        }
+
+        const tickData = tickDataLeft.reverse().concat(...tickDataRight);
         console.log(tickData);
       }
     }
 
-    fetch("0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", 190000, 200000);
+    fetch("0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", 200000, 210000, 10);
     return () => {
       mounted = false;
     }
