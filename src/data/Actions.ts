@@ -6,10 +6,11 @@ import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActio
 import { AloeTransferFromMarginAccountActionCard } from '../components/borrow/actions/AloeTransferFromMarginAccountActionCard';
 import { AloeTransferToMarginAccountActionCard } from '../components/borrow/actions/AloeTransferToMarginAccountActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
+import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import { DropdownOption } from '../components/common/Dropdown';
 import { TokenData } from './TokenData';
 
-export const Actions = {
+export const ActionProviders = {
   AloeII: {
     name: 'Aloe II',
     Icon: AloeLogo,
@@ -38,6 +39,17 @@ export const Actions = {
       TRANSFER_TO_MARGIN_ACCOUNT: {
         name: 'Transfer to Margin Account',
         actionCard: AloeTransferToMarginAccountActionCard,
+      },
+    },
+  },
+  UniswapV3: {
+    name: 'Uniswap V3',
+    Icon: UniswapLogo,
+    color: '#f31677',
+    actions: {
+      ADD_LIQUIDITY: {
+        name: 'Add Liquidity',
+        actionCard: UniswapAddLiquidityActionCard,
       },
     },
   },
