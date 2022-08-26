@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, Actions } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
@@ -66,8 +66,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
 
   return (
     <BaseActionCard
-      action={Actions.AloeII.actions.WITHDRAW.name}
-      actionProvider={Actions.AloeII}
+      action={ActionProviders.AloeII.actions.WITHDRAW.name}
+      actionProvider={ActionProviders.AloeII}
       onRemove={onRemove}
     >
       <div className='w-full flex flex-col gap-4 items-center'>

@@ -13,7 +13,7 @@ import {
   Action,
   ActionCardResult,
   ActionProvider,
-  Actions,
+  ActionProviders,
 } from '../data/Actions';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { GetTokenData } from '../data/TokenData';
@@ -24,6 +24,7 @@ import PnLGraph from '../components/graph/PnLGraph';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
+import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -198,6 +199,15 @@ export default function BorrowActionsPage() {
   return (
     <AppPage>
       <BodyWrapper>
+      <UniswapAddLiquidityActionCard
+          token0={accountData.token0}
+          token1={accountData.token1}
+          previousActionCardState={null}
+          onChange={(result: ActionCardResult) => {
+          }}
+          onRemove={() => {
+          }}
+        />
         <div className='flex gap-8 items-center mb-4'>
           <PreviousPageButton onClick={() => navigate('../borrow')} />
           <MarginAccountHeader
@@ -291,7 +301,7 @@ export default function BorrowActionsPage() {
             </Display>
           </ActionModalHeader>
           <div className='flex flex-col gap-4'>
-            {Object.values(Actions).map(
+            {Object.values(ActionProviders).map(
               (actionProvider: ActionProvider, index: number) => {
                 return (
                   <ActionProviderContainer key={index}>
