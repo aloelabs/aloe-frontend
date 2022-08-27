@@ -75,11 +75,19 @@ const SvgButtonWrapper = styled.button`
   margin-top: auto;
   margin-bottom: auto;
   background-color: transparent;
-  border-radius: 2px;
-  padding: 8px;
+  border-radius: 8px;
+  padding: 6px;
   svg {
     path {
       stroke: #fff;
+    }
+  }
+
+  &:hover {
+    svg {
+      path {
+        stroke: rgba(255, 255, 255, 0.75);
+      }
     }
   }
 `;
