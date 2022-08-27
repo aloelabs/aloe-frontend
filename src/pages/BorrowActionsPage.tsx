@@ -7,7 +7,6 @@ import {
 } from '../components/common/Buttons';
 import { Display, Text } from '../components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
-import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FullscreenModal } from '../components/common/Modal';
 import {
   Action,
