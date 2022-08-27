@@ -316,6 +316,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           label='Min Price'
           token0={token0}
           token1={token1}
+          isToken0Selected={isToken0Selected}
           onChange={(value) => {
             const nearest = calculateNearestPrice(parseFloat(value), chartData);
             if (nearest.index < upper.index) {
@@ -354,6 +355,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           label='Max Price'
           token0={token0}
           token1={token1}
+          isToken0Selected={isToken0Selected}
           onChange={(value) => {
             const nearest = calculateNearestPrice(parseFloat(value), chartData);
             if (nearest.index > lower.index) {
