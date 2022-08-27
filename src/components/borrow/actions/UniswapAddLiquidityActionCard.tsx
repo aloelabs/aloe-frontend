@@ -49,6 +49,8 @@ type PriceIndex = {
   index: number;
 };
 
+//Debouncing helps us avoid maxing out cpu usage
+const DEBOUNCE_DELAY = 150;
 const ONE = new Big('1.0');
 
 function calculateNearestPrice(price: number, data: ChartEntry[]): PriceIndex {
@@ -133,8 +135,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         const tickDataLeft: TickData[] = [];
         const tickDataRight: TickData[] = [];
 
-        console.log('Current Tick:');
-        console.log(currentTick);
+        // console.log('Current Tick:');
+        // console.log(currentTick);
 
         // MARK -- filling out data for ticks *above* the current tick
         let liquidity = currentLiquidity;
@@ -190,9 +192,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             .toNumber();
 
           if (i === splitIdx - 1) {
-            console.log(tick);
-            console.log(liquidity.toFixed(3));
-            console.log(price0.toFixed(0));
+            // console.log(tick);
+            // console.log(liquidity.toFixed(3));
+            // console.log(price0.toFixed(0));
           }
 
           tickDataLeft.push({
@@ -206,7 +208,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           });
         }
 
-        //TODO: temporarily splicing data
         const tickData = tickDataLeft
           .reverse()
           .concat(...tickDataRight);
@@ -264,6 +265,25 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
   }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
 
+  let setLowerTimeout: NodeJS.Timeout;
+  let setUpperTimeout: NodeJS.Timeout;
+
+  //TODO: improve debounce logic (possibly move it to only debounce graph rendering if possible)
+  function setLowerDebounced(updatedLower: PriceIndex) {
+    clearTimeout(setLowerTimeout);
+    setLowerTimeout = setTimeout(() => {
+      setLower(updatedLower);
+    }, DEBOUNCE_DELAY);
+  }
+
+  //TODO: improve debounce logic (possibly move it to only debounce graph rendering if possible)
+  function setUpperDebounced(updatedUpper: PriceIndex) {
+    clearTimeout(setUpperTimeout);
+    setUpperTimeout = setTimeout(() => {
+      setUpper(updatedUpper);
+    }, DEBOUNCE_DELAY);
+  }
+
   return (
     <BaseActionCard
       action={ActionProviders.UniswapV3.actions.ADD_LIQUIDITY.name}
@@ -297,8 +317,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           token0={token0}
           token1={token1}
           onChange={(value) => {
-            const nearest = calculateNearestPrice(parseInt(value), chartData);
+            const nearest = calculateNearestPrice(parseFloat(value), chartData);
             if (nearest.index < upper.index) {
+              //Don't debounce this
               setLower({
                 price: nearest.price,
                 index: nearest.index,
@@ -307,7 +328,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
           onDecrement={() => {
             if (lower.index > 0) {
-              setLower({
+              setLowerDebounced({
                 price: chartData[lower.index - 1].price.toString(),
                 index: lower.index - 1,
               });
@@ -315,7 +336,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
           onIncrement={() => {
             if (lower.index + 1 < upper.index) {
-              setLower({
+              setLowerDebounced({
                 price: chartData[lower.index + 1].price.toString(),
                 index: lower.index + 1,
               });
@@ -334,8 +355,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           token0={token0}
           token1={token1}
           onChange={(value) => {
-            const nearest = calculateNearestPrice(parseInt(value), chartData);
+            const nearest = calculateNearestPrice(parseFloat(value), chartData);
             if (nearest.index > lower.index) {
+              //Don't debounce this
               setUpper({
                 price: nearest.price,
                 index: nearest.index,
@@ -344,7 +366,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
           onDecrement={() => {
             if (upper.index - 1 > 0 && upper.index - 1 > lower.index) {
-              setUpper({
+              setUpperDebounced({
                 price: chartData[upper.index - 1].price.toString(),
                 index: upper.index - 1,
               });
@@ -352,7 +374,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
           onIncrement={() => {
             if (upper.index < chartData.length) {
-              setUpper({
+              setUpperDebounced({
                 price: chartData[upper.index + 1].price.toString(),
                 index: upper.index + 1,
               });

@@ -7,7 +7,6 @@ import {
   ReferenceArea,
 } from 'recharts';
 import styled from 'styled-components';
-import { TickData } from '../actions/UniswapAddLiquidityActionCard';
 
 export type ChartEntry = {
   price: number,
@@ -117,8 +116,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               );
             }}
             tickFormatter={(value) => {
-              // console.log(value);
-              return value.toFixed(2);
+              return value.toFixed(4);
             }}
           />
         </BarChart>

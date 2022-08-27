@@ -50,6 +50,10 @@ const SvgButtonWrapper = styled.button`
       stroke: #fff;
     }
   }
+
+  &:active {
+    background-color: rgba(26, 41, 52, 1);
+  }
 `;
 
 const formatNumberInput = (input: string, max?: string): string | null => {
@@ -120,7 +124,6 @@ export default function SteppedInput(props: SteppedInputProps) {
     }
   }, [value, localValue, useLocalValue]);
 
-  console.log('test');
   return (
     <SteppedInputWrapper active={active}>
       <Text size='M' weight='medium'>{label}</Text>
