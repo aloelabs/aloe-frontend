@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { FilledGradientButton, FilledGreyButton } from '../../common/Buttons';
-import { Dropdown } from '../../common/Dropdown';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionProviders } from '../../../data/Actions';
-import { GetTokenData } from '../../../data/TokenData';
 import SteppedInput from '../LiquidityChartRangeInput/SteppedInput';
-import LiquidityChart, {
-  ChartEntry,
-} from '../LiquidityChartRangeInput/LiquidityChart';
+import LiquidityChart from '../LiquidityChartRangeInput/LiquidityChart';
 import { theGraphUniswapV3Client } from '../../../App';
 import { UniswapTicksQuery } from '../../../util/GraphQL';
 import { ApolloQueryResult } from '@apollo/react-hooks';
@@ -43,28 +37,33 @@ export type TickData = {
   totalValueIn0: number;
 };
 
+type PriceIndex = {
+  price: string;
+  index: number;
+};
+
 const ONE = new Big('1.0');
 
-//TODO: make type for price index data
-function calculateNearestPrice(price: number, data: TickData[]) {
+function calculateNearestPrice(price: number, data: TickData[]): PriceIndex {
   const nearest: TickData = data.reduce((prev: TickData, cur: TickData) => {
     const prevDifference = Math.abs(prev.price1In0 - price);
     const curDifference = Math.abs(cur.price1In0 - price);
     return curDifference < prevDifference ? cur : prev;
   });
   return {
-    price: nearest.price1In0,
+    price: nearest.price1In0.toString(),
+    //TODO: look into to avoiding having to use indexOf
     index: data.indexOf(nearest),
-  }
+  };
 }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, previousActionCardState, onChange, onRemove } = props;
-  const [lower, setLower] = useState({
+  const [lower, setLower] = useState<PriceIndex>({
     price: '',
     index: 0,
   });
-  const [upper, setUpper] = useState({
+  const [upper, setUpper] = useState<PriceIndex>({
     price: '',
     index: 0,
   });
@@ -235,7 +234,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const nearest = calculateNearestPrice(parseInt(value), chartData);
             if (nearest.index < upper.index) {
               setLower({
-                price: nearest.price.toString(),
+                price: nearest.price,
                 index: nearest.index,
               });
             }
@@ -272,7 +271,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const nearest = calculateNearestPrice(parseInt(value), chartData);
             if (nearest.index > lower.index) {
               setUpper({
-                price: nearest.price.toString(),
+                price: nearest.price,
                 index: nearest.index,
               });
             }
@@ -296,7 +295,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           decrementDisabled={
             upper.price === '' || upper.index - 1 <= lower.index
           }
-          incrementDisabled={upper.price === '' || upper.index + 1 >= chartData.length}
+          incrementDisabled={
+            upper.price === '' || upper.index + 1 >= chartData.length
+          }
         />
       </div>
     </BaseActionCard>

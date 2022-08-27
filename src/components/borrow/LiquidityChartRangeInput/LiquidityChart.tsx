@@ -7,7 +7,6 @@ import {
   ReferenceArea,
 } from 'recharts';
 import styled from 'styled-components';
-import { Text } from '../../common/Typography';
 import { TickData } from '../actions/UniswapAddLiquidityActionCard';
 
 export type ChartEntry = {
