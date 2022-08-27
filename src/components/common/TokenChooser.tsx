@@ -1,7 +1,7 @@
 import { RadioGroup } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { GetTokenData, TokenData } from '../../data/TokenData';
+import { TokenData } from '../../data/TokenData';
 import { StyledRadioButton } from './Buttons';
 
 const RadioButtonsContainer = styled.div`
@@ -15,17 +15,21 @@ const RadioButtonsContainer = styled.div`
 export type TokenChooserProps = {
   token0: TokenData;
   token1: TokenData;
-  token0Selected: boolean;
-  setToken0Selected: (updatedValue: boolean) => void;
+  isToken0Selected: boolean;
+  setIsToken0Selected: (updatedValue: boolean) => void;
 };
 
 export default function TokenChooser(props: TokenChooserProps) {
-  const { token0, token1, token0Selected, setToken0Selected } = props;
+  const { token0, token1, isToken0Selected, setIsToken0Selected } = props;
   return (
     <RadioGroup
-      value={token0Selected ? token0.address : token1.address}
+      value={isToken0Selected ? token0.address : token1.address}
       onChange={(updatedValue: string) => {
-        setToken0Selected(updatedValue === token0.address);
+        let isToken0CurrentlySelected = updatedValue === token0.address;
+        if (isToken0CurrentlySelected !== isToken0Selected) {
+          //Do not needlessly update the value
+          setIsToken0Selected(isToken0CurrentlySelected);
+        }
       }}
     >
       <RadioButtonsContainer>
