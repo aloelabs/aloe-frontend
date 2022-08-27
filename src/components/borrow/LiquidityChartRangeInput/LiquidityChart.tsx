@@ -90,8 +90,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             isFront={true}
           />
           <ReferenceArea
-            x1={data.length > rangeStart + 1 ? data[rangeStart + 1].price1In0 : 0}
-            x2={data.length > rangeEnd - 1 ? data[rangeEnd - 1].price1In0 : 0}
+            x1={data.length > rangeStart + 1 && data[rangeStart + 1] ? data[rangeStart + 1].price1In0 : 0}
+            x2={data.length > rangeEnd - 1 && data[rangeEnd - 1] ? data[rangeEnd - 1].price1In0 : 0}
             fill='rgba(114, 167, 246, 0.5)'
           />
           <ReferenceLine
