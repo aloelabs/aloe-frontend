@@ -936,9 +936,10 @@ const StyledRadioButtonWrapper = styled.div.attrs(
   (props: { checked: boolean; disabled: boolean; }) => props
 )`
   ${tw`flex items-center justify-center`}
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 8px;
-  background-color: ${(props) => props.checked ? 'rgb(255, 255, 255)' : 'transparent'};
+  background-color: ${(props) => props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent'};
+  cursor: pointer;
 `;
 
 export type StyledRadioButtonProps = {
@@ -951,7 +952,7 @@ export function StyledRadioButton(props: StyledRadioButtonProps) {
   const { label, checked, disabled } = props;
   return (
     <StyledRadioButtonWrapper checked={checked} disabled={disabled}>
-      <Text size='M' weight='bold' color={checked ? 'rgb(7, 14, 18)' : 'rgb(255, 255, 255)'}>
+      <Text size='S' weight='bold'>
         {label}
       </Text>
     </StyledRadioButtonWrapper>

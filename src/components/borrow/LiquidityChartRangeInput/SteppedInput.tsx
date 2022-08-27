@@ -37,10 +37,7 @@ const StyledInput = styled.input`
   /* border-bottom: 1px solid rgba(204, 223, 237, 1); */
 `;
 
-const SvgButtonWrapper = styled.button.attrs(
-  (props: {
-  }) => props
-)`
+const SvgButtonWrapper = styled.button`
   ${tw`flex justify-center items-center`}
   height: max-content;
   width: max-content;

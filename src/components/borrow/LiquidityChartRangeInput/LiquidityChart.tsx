@@ -10,11 +10,8 @@ import styled from 'styled-components';
 import { TickData } from '../actions/UniswapAddLiquidityActionCard';
 
 export type ChartEntry = {
-  index: number;
-  isCurrent: boolean;
-  activeLiquidity: number;
-  price0: number;
-  price1: number;
+  price: number,
+  liquidityDensity: number,
 };
 
 const Wrapper = styled.div`
@@ -41,7 +38,7 @@ function StyledBar(props: StyledBarProps) {
 }
 
 export type LiquidityChartProps = {
-  data: TickData[];
+  data: ChartEntry[];
   rangeStart: number;
   rangeEnd: number;
 };
@@ -49,11 +46,11 @@ export type LiquidityChartProps = {
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd } = props;
   const ticks = [
-    data[Math.floor(Math.floor(data.length / 2) / 2)].price1In0,
-    data[Math.floor(data.length / 2)].price1In0,
+    data[Math.floor(Math.floor(data.length / 2) / 2)].price,
+    data[Math.floor(data.length / 2)].price,
     data[
       Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)
-    ].price1In0,
+    ].price,
   ];
   return (
     <Wrapper>
@@ -66,7 +63,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           barCategoryGap={0}
         >
           <Bar
-            dataKey='totalValueIn0'
+            dataKey='liquidityDensity'
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
@@ -83,25 +80,24 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             }}
           />
           <ReferenceLine
-            className='relative'
-            x={data[rangeStart].price1In0}
+            x={data[rangeStart].price}
             stroke='rgb(114, 167, 246)'
             strokeWidth={4}
             isFront={true}
           />
           <ReferenceArea
-            x1={data.length > rangeStart + 1 && data[rangeStart + 1] ? data[rangeStart + 1].price1In0 : 0}
-            x2={data.length > rangeEnd - 1 && data[rangeEnd - 1] ? data[rangeEnd - 1].price1In0 : 0}
+            x1={data.length > rangeStart + 1 && data[rangeStart + 1] ? data[rangeStart + 1].price : 0}
+            x2={data.length > rangeEnd - 1 && data[rangeEnd - 1] ? data[rangeEnd - 1].price : 0}
             fill='rgba(114, 167, 246, 0.5)'
           />
           <ReferenceLine
-            x={data[rangeEnd].price1In0}
+            x={data[rangeEnd].price}
             stroke='rgb(114, 167, 246)'
             strokeWidth={4}
             isFront={true}
           />
           <XAxis
-            dataKey='price1In0'
+            dataKey='price'
             tickCount={3}
             ticks={ticks}
             tick={(props) => {
@@ -115,14 +111,14 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                     textAnchor='middle'
                     dominantBaseline='central'
                   >
-                    {props.payload.value.toFixed(0)}
+                    {props.payload.value.toFixed(4)}
                   </text>
                 </g>
               );
             }}
             tickFormatter={(value) => {
-              console.log(value);
-              return value.toFixed(0);
+              // console.log(value);
+              return value.toFixed(2);
             }}
           />
         </BarChart>
