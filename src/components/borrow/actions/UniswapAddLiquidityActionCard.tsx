@@ -295,8 +295,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           <TokenChooser
             token0={token0}
             token1={token1}
-            token0Selected={isToken0Selected}
-            setToken0Selected={setToken0Selected}
+            isToken0Selected={isToken0Selected}
+            setIsToken0Selected={setToken0Selected}
           />
         )}
         <SvgButtonWrapper>
