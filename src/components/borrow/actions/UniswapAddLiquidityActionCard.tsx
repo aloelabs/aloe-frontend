@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionProviders } from '../../../data/Actions';
 import SteppedInput from '../LiquidityChartRangeInput/SteppedInput';
-import LiquidityChart from '../LiquidityChartRangeInput/LiquidityChart';
+import LiquidityChart, {
+  ChartEntry,
+} from '../LiquidityChartRangeInput/LiquidityChart';
 import { theGraphUniswapV3Client } from '../../../App';
 import { UniswapTicksQuery } from '../../../util/GraphQL';
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import Big from 'big.js';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import TokenChooser from '../../common/TokenChooser';
+import styled from 'styled-components';
+import tw from 'twin.macro';
+import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -44,18 +51,36 @@ type PriceIndex = {
 
 const ONE = new Big('1.0');
 
-function calculateNearestPrice(price: number, data: TickData[]): PriceIndex {
-  const nearest: TickData = data.reduce((prev: TickData, cur: TickData) => {
-    const prevDifference = Math.abs(prev.price1In0 - price);
-    const curDifference = Math.abs(cur.price1In0 - price);
-    return curDifference < prevDifference ? cur : prev;
-  });
+function calculateNearestPrice(price: number, data: ChartEntry[]): PriceIndex {
+  const nearest: ChartEntry = data.reduce(
+    (prev: ChartEntry, cur: ChartEntry) => {
+      const prevDifference = Math.abs(prev.price - price);
+      const curDifference = Math.abs(cur.price - price);
+      return curDifference < prevDifference ? cur : prev;
+    }
+  );
   return {
-    price: nearest.price1In0.toString(),
+    price: nearest.price.toString(),
     //TODO: look into to avoiding having to use indexOf
     index: data.indexOf(nearest),
   };
 }
+
+const SvgButtonWrapper = styled.button`
+  ${tw`flex justify-center items-center`}
+  height: max-content;
+  width: max-content;
+  margin-top: auto;
+  margin-bottom: auto;
+  background-color: transparent;
+  border-radius: 2px;
+  padding: 8px;
+  svg {
+    path {
+      stroke: #fff;
+    }
+  }
+`;
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, previousActionCardState, onChange, onRemove } = props;
@@ -67,7 +92,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     price: '',
     index: 0,
   });
-  const [chartData, setChartData] = useState<TickData[]>([]);
+  const [token0Amount, setToken0Amount] = useState('');
+  const [token1Amount, setToken1Amount] = useState('');
+  const [isToken0Selected, setToken0Selected] = useState(false);
+  const [isLiquidityDataLoading, setIsLiquidityDataLoading] = useState(true);
+  const [liquidityData, setLiquidityData] = useState<TickData[]>([]);
+  const [chartData, setChartData] = useState<ChartEntry[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -179,29 +209,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         //TODO: temporarily splicing data
         const tickData = tickDataLeft
           .reverse()
-          .concat(...tickDataRight)
-          .splice(500);
-        const reversedTickData = [...tickData].reverse();
-        setChartData(reversedTickData);
-        if (reversedTickData.length > 0) {
-          setLower({
-            price:
-              reversedTickData[
-                Math.floor(reversedTickData.length / 4)
-              ].price1In0.toString(),
-            index: Math.floor(reversedTickData.length / 4),
-          });
-          setUpper({
-            price:
-              reversedTickData[
-                Math.floor(reversedTickData.length / 4) +
-                  Math.floor(reversedTickData.length / 2)
-              ].price1In0.toString(),
-            index:
-              Math.floor(reversedTickData.length / 4) +
-              Math.floor(reversedTickData.length / 2),
-          });
-        }
+          .concat(...tickDataRight);
+        setLiquidityData(tickData);
+        setIsLiquidityDataLoading(false);
       }
     }
 
@@ -211,12 +221,68 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (isLiquidityDataLoading) {
+      return;
+    }
+    let updatedChartData: ChartEntry[] = [];
+    if (isToken0Selected) {
+      updatedChartData = liquidityData.map((td: TickData) => {
+        return {
+          price: td.price0In1,
+          liquidityDensity: td.totalValueIn0,
+        };
+      });
+    } else {
+      const reversedLiquidityData = [...liquidityData].reverse();
+      updatedChartData = reversedLiquidityData.map((td: TickData) => {
+        return {
+          price: td.price1In0,
+          liquidityDensity: td.totalValueIn0,
+        };
+      });
+    }
+    setChartData(updatedChartData);
+    if (updatedChartData.length > 4) {
+      setLower({
+        price:
+          updatedChartData[
+            Math.floor(updatedChartData.length / 4)
+          ].price.toString(),
+        index: Math.floor(updatedChartData.length / 4),
+      });
+      setUpper({
+        price:
+          updatedChartData[
+            Math.floor(updatedChartData.length / 4) +
+              Math.floor(updatedChartData.length / 2)
+          ].price.toString(),
+        index:
+          Math.floor(updatedChartData.length / 4) +
+          Math.floor(updatedChartData.length / 2),
+      });
+    }
+  }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
+
   return (
     <BaseActionCard
       action={ActionProviders.UniswapV3.actions.ADD_LIQUIDITY.name}
       actionProvider={ActionProviders.UniswapV3}
       onRemove={onRemove}
     >
+      <div className='w-full flex justify-between items-center gap-2 mb-4'>
+        {token0 && token1 && (
+          <TokenChooser
+            token0={token0}
+            token1={token1}
+            token0Selected={isToken0Selected}
+            setToken0Selected={setToken0Selected}
+          />
+        )}
+        <SvgButtonWrapper>
+          <GearIcon width={24} height={24} />
+        </SvgButtonWrapper>
+      </div>
       {chartData.length > 0 && (
         <LiquidityChart
           data={chartData}
@@ -224,7 +290,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           rangeEnd={upper.index}
         />
       )}
-      <div className='flex flex-row gap-2'>
+      <div className='flex flex-row gap-2 mb-4'>
         <SteppedInput
           value={lower.price}
           label='Min Price'
@@ -242,7 +308,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onDecrement={() => {
             if (lower.index > 0) {
               setLower({
-                price: chartData[lower.index - 1].price1In0.toString(),
+                price: chartData[lower.index - 1].price.toString(),
                 index: lower.index - 1,
               });
             }
@@ -250,7 +316,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onIncrement={() => {
             if (lower.index + 1 < upper.index) {
               setLower({
-                price: chartData[lower.index + 1].price1In0.toString(),
+                price: chartData[lower.index + 1].price.toString(),
                 index: lower.index + 1,
               });
             }
@@ -279,7 +345,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onDecrement={() => {
             if (upper.index - 1 > 0 && upper.index - 1 > lower.index) {
               setUpper({
-                price: chartData[upper.index - 1].price1In0.toString(),
+                price: chartData[upper.index - 1].price.toString(),
                 index: upper.index - 1,
               });
             }
@@ -287,7 +353,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onIncrement={() => {
             if (upper.index < chartData.length) {
               setUpper({
-                price: chartData[upper.index + 1].price1In0.toString(),
+                price: chartData[upper.index + 1].price.toString(),
                 index: upper.index + 1,
               });
             }
@@ -298,6 +364,18 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           incrementDisabled={
             upper.price === '' || upper.index + 1 >= chartData.length
           }
+        />
+      </div>
+      <div className='w-full flex flex-col gap-4'>
+        <TokenAmountInput
+          tokenLabel={token0?.ticker || ''}
+          value={token0Amount}
+          onChange={setToken0Amount}
+        />
+        <TokenAmountInput
+          tokenLabel={token1?.ticker || ''}
+          value={token1Amount}
+          onChange={setToken1Amount}
         />
       </div>
     </BaseActionCard>
