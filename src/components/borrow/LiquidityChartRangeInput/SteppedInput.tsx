@@ -1,22 +1,21 @@
-import { ChangeEvent, useEffect, useState } from "react";
-import { TokenData } from "../../../data/TokenData";
-import { ReactComponent as MinusIcon } from "../../../assets/svg/minus.svg";
-import { ReactComponent as PlusIcon } from "../../../assets/svg/plus.svg";
-import styled from "styled-components";
-import tw from "twin.macro";
-import { Text } from "../../common/Typography";
+import { ChangeEvent, useEffect, useState } from 'react';
+import { TokenData } from '../../../data/TokenData';
+import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
+import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+import styled from 'styled-components';
+import tw from 'twin.macro';
+import { Text } from '../../common/Typography';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
 const ACTIVE_BORDER_COLOR = 'rgba(82, 182, 154, 1)';
 
 const SteppedInputWrapper = styled.div.attrs(
-  (props: {
-    active: boolean;
-  }) => props
+  (props: { active: boolean }) => props
 )`
   ${tw`flex flex-col items-center justify-center`}
   background-color: transparent;
-  border: 1px solid ${props => props.active ? ACTIVE_BORDER_COLOR : REGULAR_BORDER_COLOR};
+  border: 1px solid
+    ${(props) => (props.active ? ACTIVE_BORDER_COLOR : REGULAR_BORDER_COLOR)};
   border-radius: 8px;
   padding: 8px;
 `;
@@ -81,13 +80,14 @@ export type SteppedInputProps = {
   label: string;
   token0: TokenData | null;
   token1: TokenData | null;
+  isToken0Selected: boolean;
   onChange: (value: string) => void;
   onDecrement: () => void;
   onIncrement: () => void;
   decrementDisabled?: boolean;
   incrementDisabled?: boolean;
   disabled?: boolean;
-}
+};
 
 export default function SteppedInput(props: SteppedInputProps) {
   const {
@@ -95,6 +95,7 @@ export default function SteppedInput(props: SteppedInputProps) {
     label,
     token0,
     token1,
+    isToken0Selected,
     onChange,
     onDecrement,
     onIncrement,
@@ -124,14 +125,16 @@ export default function SteppedInput(props: SteppedInputProps) {
     }
   }, [value, localValue, useLocalValue]);
 
+  const token0Ticker = token0?.ticker || '';
+  const token1Ticker = token1?.ticker || '';
+
   return (
     <SteppedInputWrapper active={active}>
-      <Text size='M' weight='medium'>{label}</Text>
+      <Text size='M' weight='medium'>
+        {label}
+      </Text>
       <div className='flex'>
-        <SvgButtonWrapper 
-          onClick={onDecrement}
-          disabled={decrementDisabled}
-        >
+        <SvgButtonWrapper onClick={onDecrement} disabled={decrementDisabled}>
           <MinusIcon />
         </SvgButtonWrapper>
         <StyledInput
@@ -148,14 +151,14 @@ export default function SteppedInput(props: SteppedInputProps) {
           onBlur={handleBlur}
           disabled={disabled}
         />
-        <SvgButtonWrapper
-          onClick={onIncrement}
-          disabled={incrementDisabled}
-        >
+        <SvgButtonWrapper onClick={onIncrement} disabled={incrementDisabled}>
           <PlusIcon />
         </SvgButtonWrapper>
       </div>
-      <Text>{token1?.ticker || ''} per {token0?.ticker || ''}</Text>
+      <Text>
+        {isToken0Selected ? token0Ticker : token1Ticker} per{' '}
+        {isToken0Selected ? token1Ticker : token0Ticker}
+      </Text>
     </SteppedInputWrapper>
   );
 }
