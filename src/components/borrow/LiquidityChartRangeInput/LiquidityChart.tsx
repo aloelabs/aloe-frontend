@@ -3,6 +3,8 @@ import {
   Bar,
   XAxis,
   ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea,
 } from 'recharts';
 import styled from 'styled-components';
 import { Text } from '../../common/Typography';
@@ -22,79 +24,22 @@ const Wrapper = styled.div`
   height: 250px;
 `;
 
-const CustomBar = ({
-  x,
-  y,
-  width,
-  height,
-  fill,
-}: {
+type StyledBarProps = {
   x: number;
   y: number;
   width: number;
   height: number;
   fill: string;
-}) => {
-  return (
-    <g>
-      <rect x={x} y={y} fill={fill} width={width} height={height} />
-    </g>
-  );
 };
 
-const CustomRange = ({
-  x,
-  y,
-  width,
-  height,
-  fill,
-}: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fill: string;
-}) => {
+function StyledBar(props: StyledBarProps) {
+  const { x, y, width, height, fill } = props;
   return (
     <g>
-      <rect
-        x={x - (width * 6) / 2}
-        y={0}
-        fill='#72a7f6'
-        width={width * 6}
-        height='calc(100% - 35px)'
-      />
-      <rect x={x} y={y} fill={fill} width={width} height={height} />
+      <rect x={x} y={y} width={width} height={height} fill={fill} />
     </g>
   );
-};
-
-const CustomInsideRange = ({
-  x,
-  y,
-  width,
-  height,
-  fill,
-}: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fill: string;
-}) => {
-  return (
-    <g>
-      <rect
-        x={x}
-        y={0}
-        fill='rgba(114, 167, 246, 0.2)'
-        width={width}
-        height='calc(100% - 35px)'
-      />
-      <rect x={x} y={y} fill={fill} width={width} height={height} />
-    </g>
-  );
-};
+}
 
 export type LiquidityChartProps = {
   data: TickData[];
@@ -107,7 +52,9 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price1In0,
     data[Math.floor(data.length / 2)].price1In0,
-    data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price1In0,
+    data[
+      Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)
+    ].price1In0,
   ];
   return (
     <Wrapper>
@@ -125,37 +72,34 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             isAnimationActive={false}
             shape={(props) => {
               const fill = props.isCurrent ? 'white' : props.fill;
-              if (rangeStart === props.index || rangeEnd === props.index) {
-                return (
-                  <CustomRange
-                    width={props.width}
-                    height={props.height}
-                    x={props.x}
-                    y={props.y}
-                    fill={fill}
-                  />
-                );
-              } else if (rangeStart < props.index && rangeEnd > props.index) {
-                return (
-                  <CustomInsideRange
-                    width={props.width}
-                    height={props.height}
-                    x={props.x}
-                    y={props.y}
-                    fill={fill}
-                  />
-                );
-              }
               return (
-                <CustomBar
-                  width={props.width}
-                  height={props.height}
+                <StyledBar
                   x={props.x}
                   y={props.y}
+                  width={props.width}
+                  height={props.height}
                   fill={fill}
                 />
               );
             }}
+          />
+          <ReferenceLine
+            className='relative'
+            x={data[rangeStart].price1In0}
+            stroke='rgb(114, 167, 246)'
+            strokeWidth={4}
+            isFront={true}
+          />
+          <ReferenceArea
+            x1={data[rangeStart].price1In0}
+            x2={data[rangeEnd].price1In0}
+            fill='rgba(114, 167, 246, 0.5)'
+          />
+          <ReferenceLine
+            x={data[rangeEnd].price1In0}
+            stroke='rgb(114, 167, 246)'
+            strokeWidth={4}
+            isFront={true}
           />
           <XAxis
             dataKey='price1In0'
@@ -170,12 +114,12 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                     fill='rgb(130, 160, 182)'
                     fontFamily='Satoshi-Variable'
                     textAnchor='middle'
-                    dominantBaseline='central'                    
+                    dominantBaseline='central'
                   >
                     {props.payload.value.toFixed(0)}
                   </text>
                 </g>
-              )
+              );
             }}
             tickFormatter={(value) => {
               console.log(value);
