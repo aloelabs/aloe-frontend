@@ -13,7 +13,6 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import Settings from '../uniswap/Settings';
 
 type UniswapV3GraphQLTick = {
