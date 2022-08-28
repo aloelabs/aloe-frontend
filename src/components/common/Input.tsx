@@ -176,6 +176,16 @@ const SvgWrapper = styled.div.attrs(
   }
 `;
 
+const TrailingUnit = styled.div.attrs(
+  (props: { size: 'S' | 'M' | 'L'}) => props
+)`
+  ${tw`absolute`}
+  right: ${(props) => ICON_SPACING[props.size]}px;
+  pointer-events: none;
+  font-size: ${(props) => INPUT_FONT_SIZE[props.size]}px;
+  line-height: ${(props) => INPUT_LINE_HEIGHT[props.size]}px;
+`;
+
 const MaxButton = styled.button.attrs(
   (props: { size: 'S' | 'M' | 'L' }) => props
 )`
@@ -285,6 +295,53 @@ export function SquareInput(props: InputProps) {
       />
     </SquareInputWrapper>
   );
+}
+
+export type InputWithUnitProps = InputProps & {
+  unit: string;
+}
+
+export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
+  const {
+    value,
+    onChange,
+    size,
+    fullWidth,
+    wrapperClassName,
+    inputClassName,
+    placeholder,
+    disabled,
+    onEnter,
+    onBlur,
+    unit,
+  } = props;
+  return (
+    <SquareInputWrapper
+      className={classNames(
+        fullWidth ? 'w-full' : 'w-max',
+        wrapperClassName || ''
+      )}
+    >
+      <InputBase
+        value={value}
+        onChange={onChange}
+        inputSize={size}
+        placeholder={placeholder}
+        disabled={disabled}
+        fullWidth={fullWidth}
+        className={classNames('no-border', inputClassName || '')}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter' && onEnter) {
+            onEnter();
+          }
+        }}
+        onBlur={onBlur}
+      />
+      <TrailingUnit size={size}>
+        {unit}
+      </TrailingUnit>
+    </SquareInputWrapper>
+  )
 }
 
 export type InputWithMaxProps = InputProps & {
