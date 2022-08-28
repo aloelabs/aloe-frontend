@@ -38,7 +38,7 @@ const SettingsMenuWrapper = styled.div`
   border: 1px solid rgba(26, 41, 52, 1);
   border-radius: 8px;
   width: 250px;
-  padding: 8px;
+  padding: 16px;
   top: 42px;
   right: 0;
 `;
