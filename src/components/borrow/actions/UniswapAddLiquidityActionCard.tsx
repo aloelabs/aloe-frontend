@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionProviders } from '../../../data/Actions';
-import SteppedInput from '../LiquidityChartRangeInput/SteppedInput';
+import SteppedInput from '../uniswap/SteppedInput';
 import LiquidityChart, {
   ChartEntry,
-} from '../LiquidityChartRangeInput/LiquidityChart';
+} from '../uniswap/LiquidityChart';
 import { theGraphUniswapV3Client } from '../../../App';
 import { UniswapTicksQuery } from '../../../util/GraphQL';
 import { ApolloQueryResult } from '@apollo/react-hooks';
@@ -14,6 +14,7 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
+import Settings from '../uniswap/Settings';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -307,9 +308,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             setIsToken0Selected={setToken0Selected}
           />
         )}
-        <SvgButtonWrapper>
-          <GearIcon width={24} height={24} />
-        </SvgButtonWrapper>
+        <Settings />
       </div>
       {chartData.length > 0 && (
         <LiquidityChart
