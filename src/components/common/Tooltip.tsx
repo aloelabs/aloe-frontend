@@ -140,7 +140,7 @@ export default function Tooltip(props: TooltipProps) {
   const tooltipRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(tooltipRef, () => setIsOpen(false), isOpen);
   return (
-    <div className='inline-block relative' ref={tooltipRef}>
+    <div className='inline-block relative w-max' ref={tooltipRef}>
       {isOpen && (
         <TooltipContainer position={position} filled={filled}>
           {title && (
