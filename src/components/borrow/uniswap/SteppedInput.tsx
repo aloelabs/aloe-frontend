@@ -5,6 +5,7 @@ import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Text } from '../../common/Typography';
+import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
 const ACTIVE_BORDER_COLOR = 'rgba(82, 182, 154, 1)';
@@ -54,26 +55,6 @@ const SvgButtonWrapper = styled.button`
     background-color: rgba(26, 41, 52, 1);
   }
 `;
-
-const formatNumberInput = (input: string, max?: string): string | null => {
-  if (input === '') {
-    return '';
-  }
-
-  if (input === '.') {
-    return '0.';
-  }
-
-  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,18}$/;
-
-  if (re.test(input)) {
-    // if (max && new Big(input).gt(new Big(max))) {
-    //   return max;
-    // }
-
-    return input;
-  } else return null;
-};
 
 export type SteppedInputProps = {
   value: string;

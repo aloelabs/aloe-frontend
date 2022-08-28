@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import useClickOutside from '../../../data/hooks/UseClickOutside';
+import { formatNumberInput } from '../../../util/Numbers';
 import { SquareInputWithTrailingUnit } from '../../common/Input';
 import Tooltip from '../../common/Tooltip';
 import { Text } from '../../common/Typography';
@@ -53,6 +54,7 @@ const AutoSlippageButton = styled.button.attrs(
   border: 1px solid rgba(26, 41, 52, 1);
 `;
 
+//TODO: add error messages for illegal input and warning messages for naive input
 export default function Settings() {
   const [localSlippagePercentage, setLocalSlippagePercentage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,7 +97,10 @@ export default function Settings() {
             <SquareInputWithTrailingUnit
               value={localSlippagePercentage}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                setLocalSlippagePercentage(e.currentTarget.value);
+                const output = formatNumberInput(e.currentTarget.value);
+                if (output != null) {
+                  setLocalSlippagePercentage(output);
+                }
               }}
               onBlur={() => {
                 const currentValue = parseFloat(localSlippagePercentage);

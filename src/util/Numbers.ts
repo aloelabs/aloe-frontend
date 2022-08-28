@@ -80,3 +80,24 @@ export function roundPercentage(
     Math.pow(10, precision)
   );
 }
+
+//TODO: refactor this to handle edge cases better
+export function formatNumberInput(input: string): string | null {
+  if (input === '') {
+    return '';
+  }
+
+  if (input === '.') {
+    return '0.';
+  }
+
+  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,18}$/;
+
+  if (re.test(input)) {
+    // if (max && new Big(input).gt(new Big(max))) {
+    //   return max;
+    // }
+
+    return input;
+  } else return null;
+}
