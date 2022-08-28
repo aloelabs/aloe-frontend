@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import useClickOutside from '../../../data/hooks/UseClickOutside';
-import { SquareInput, SquareInputWithTrailingUnit } from '../../common/Input';
+import { SquareInputWithTrailingUnit } from '../../common/Input';
 import Tooltip from '../../common/Tooltip';
 import { Text } from '../../common/Typography';
 
@@ -43,6 +43,7 @@ const SettingsMenuWrapper = styled.div`
   right: 0;
 `;
 
+//TODO: Improve styling and possibly create a more generic reusable button to replace this
 const AutoSlippageButton = styled.button.attrs(
   (props: { active: boolean }) => props
 )`
