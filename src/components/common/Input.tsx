@@ -206,6 +206,7 @@ export type InputProps = {
   placeholder?: string;
   disabled?: boolean;
   onEnter?: () => void;
+  onBlur?: () => void;
 };
 
 export function RoundedInput(props: InputProps) {
@@ -219,6 +220,7 @@ export function RoundedInput(props: InputProps) {
     placeholder,
     disabled,
     onEnter,
+    onBlur,
   } = props;
   return (
     <RoundedInputWrapper
@@ -240,6 +242,7 @@ export function RoundedInput(props: InputProps) {
             onEnter();
           }
         }}
+        onBlur={onBlur}
       />
     </RoundedInputWrapper>
   );
@@ -256,6 +259,7 @@ export function SquareInput(props: InputProps) {
     placeholder,
     disabled,
     onEnter,
+    onBlur,
   } = props;
   return (
     <SquareInputWrapper
@@ -277,6 +281,7 @@ export function SquareInput(props: InputProps) {
             onEnter();
           }
         }}
+        onBlur={onBlur}
       />
     </SquareInputWrapper>
   );
@@ -300,6 +305,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     placeholder,
     disabled,
     onEnter,
+    onBlur,
   } = props;
   return (
     <SquareInputWrapper
@@ -321,6 +327,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
             onEnter();
           }
         }}
+        onBlur={onBlur}
       />
       <MaxButton
         size={size}
@@ -352,6 +359,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     disabled,
     onIconClick,
     onEnter,
+    onBlur,
   } = props;
   return (
     <RoundedInputWrapper
@@ -373,6 +381,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
             onEnter();
           }
         }}
+        onBlur={onBlur}
       />
       <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
         {Icon}
@@ -394,6 +403,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     disabled,
     onIconClick,
     onEnter,
+    onBlur,
   } = props;
   return (
     <SquareInputWrapper
@@ -410,11 +420,12 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={onEnter !== undefined ? (e) => {
-          if (e.key === 'Enter') {
+        onKeyPress={(e) => {
+          if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
-        } : undefined}
+        }}
+        onBlur={onBlur}
       />
       <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
         {Icon}
