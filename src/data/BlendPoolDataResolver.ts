@@ -8,6 +8,7 @@ import Big from 'big.js';
 
 import UniswapABI from '../assets/abis/UniswapV3Pool.json';
 import { toBig } from '../util/Numbers';
+import { convertSqrtPriceX96 } from '../util/Uniswap';
 
 export type BlendPoolDrawData = {
   token0Label: string;
@@ -106,12 +107,6 @@ export interface BlendPoolStats {
 
 export function logBig(value: Big) {
   console.log(value.toFixed(4));
-}
-
-function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
-  const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
-  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
-  return toBig(priceX96).div(toBig(Q96));
 }
 
 export async function ResolveBlendStats(
