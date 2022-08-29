@@ -14,7 +14,8 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
-import { getCurrentTick } from '../../../util/Uniswap';
+import { getUniswapPoolBasics } from '../../../util/Uniswap';
+import { useProvider } from 'wagmi';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -110,16 +111,17 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [liquidityData, setLiquidityData] = useState<TickData[]>([]);
   const [chartData, setChartData] = useState<ChartEntry[]>([]);
 
+  const provider = useProvider();
+
   useEffect(() => {
     let mounted = true;
-    async function fetch(
-      poolAddress: string,
-      tickSpacing: number
-    ) {
-      const currentTick = await getCurrentTick();
-      //TODO: make offset a constant
-      const minTick = currentTick - 5000;
-      const maxTick = currentTick + 5000;
+    async function fetch(poolAddress: string) {
+      const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
+      //TODO: make binsToFetch a constant
+      const binsToFetch = 1000;
+      const tickOffset = Math.floor(binsToFetch * poolBasics.tickSpacing / 2);
+      const minTick = poolBasics.slot0.tick - tickOffset;
+      const maxTick = poolBasics.slot0.tick + tickOffset;
       //TODO: determine tickSpacing dynamically
       const uniswapV3GraphQLTicksQueryResponse =
         (await theGraphUniswapV3Client.query({
@@ -167,7 +169,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           const price1 = new Big(rawTickData.price1);
 
           const sqrtPL = price0.sqrt();
-          const sqrtPU = price0.mul(new Big(1.0001).pow(tickSpacing)).sqrt();
+          const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
           const amount0 = liquidity
             .mul(ONE.div(sqrtPL).minus(ONE.div(sqrtPU)))
             .div(10 ** token0Decimals)
@@ -197,7 +199,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           const price1 = new Big(rawTickData.price1);
 
           const sqrtPL = price0.sqrt();
-          const sqrtPU = price0.mul(new Big(1.0001).pow(tickSpacing)).sqrt();
+          const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
           const amount1 = liquidity
             .mul(sqrtPU.minus(sqrtPL))
             .div(10 ** token1Decimals)
@@ -228,7 +230,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       }
     }
 
-    fetch('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', 10);
+    fetch('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640');
     return () => {
       mounted = false;
     };
