@@ -14,6 +14,7 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
+import { getCurrentTick } from '../../../util/Uniswap';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -113,10 +114,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let mounted = true;
     async function fetch(
       poolAddress: string,
-      minTick: number,
-      maxTick: number,
       tickSpacing: number
     ) {
+      const currentTick = await getCurrentTick();
+      //TODO: make offset a constant
+      const minTick = currentTick - 5000;
+      const maxTick = currentTick + 5000;
+      //TODO: determine tickSpacing dynamically
       const uniswapV3GraphQLTicksQueryResponse =
         (await theGraphUniswapV3Client.query({
           query: UniswapTicksQuery,
@@ -224,7 +228,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       }
     }
 
-    fetch('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', 200000, 210000, 10);
+    fetch('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', 10);
     return () => {
       mounted = false;
     };
