@@ -16,6 +16,7 @@ import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
 import { getUniswapPoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -113,7 +114,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   const provider = useProvider();
 
-  useEffect(() => {
+  useEffectOnce(() => {
     let mounted = true;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
@@ -234,7 +235,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     return () => {
       mounted = false;
     };
-  }, []);
+  });
 
   useEffect(() => {
     if (isLiquidityDataLoading) {
