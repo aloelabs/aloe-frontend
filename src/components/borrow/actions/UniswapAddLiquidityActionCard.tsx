@@ -14,9 +14,10 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
-import { getUniswapPoolBasics } from '../../../util/Uniswap';
+import { getUniswapPoolBasics, priceToTick, tickToPrice, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -37,6 +38,14 @@ type UniswapV3GraphQLTicksQueryResponse = {
   }[];
 };
 
+type TickInfo = {
+  tickSpacing: number;
+  minTick: number;
+  maxTick: number;
+  minPrice: number;
+  maxPrice: number;
+};
+
 export type TickData = {
   tick: number;
   liquidity: Big;
@@ -54,6 +63,7 @@ type PriceIndex = {
 
 //Debouncing helps us avoid maxing out cpu usage
 const DEBOUNCE_DELAY = 150;
+const BINS_TO_FETCH = 1000;
 const ONE = new Big('1.0');
 
 function calculateNearestPrice(price: number, data: ChartEntry[]): PriceIndex {
@@ -108,6 +118,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [token0Amount, setToken0Amount] = useState('');
   const [token1Amount, setToken1Amount] = useState('');
   const [isToken0Selected, setToken0Selected] = useState(false);
+  const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
+  const [tickInfo, setTickInfo] = useState<TickInfo | null>(null);
   const [isLiquidityDataLoading, setIsLiquidityDataLoading] = useState(true);
   const [liquidityData, setLiquidityData] = useState<TickData[]>([]);
   const [chartData, setChartData] = useState<ChartEntry[]>([]);
@@ -118,9 +130,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let mounted = true;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
+      setUniswapPoolBasics(poolBasics);
       //TODO: make binsToFetch a constant
-      const binsToFetch = 1000;
-      const tickOffset = Math.floor(binsToFetch * poolBasics.tickSpacing / 2);
+      const tickOffset = Math.floor(BINS_TO_FETCH * poolBasics.tickSpacing / 2);
       const minTick = poolBasics.slot0.tick - tickOffset;
       const maxTick = poolBasics.slot0.tick + tickOffset;
       //TODO: determine tickSpacing dynamically
@@ -238,6 +250,57 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   });
 
   useEffect(() => {
+    let mounted = true;
+    if (uniswapPoolBasics == null) {
+      return;
+    }
+    const tickSpacing = uniswapPoolBasics.tickSpacing;
+    const tickOffset = Math.floor(BINS_TO_FETCH * tickSpacing / 2);
+    const minTick = roundDownToNearestN(uniswapPoolBasics.slot0.tick - tickOffset, tickSpacing);
+    const maxTick = roundUpToNearestN(uniswapPoolBasics.slot0.tick + tickOffset, tickSpacing);
+    const minPrice = tickToPrice(isToken0Selected ? minTick : maxTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+    const maxPrice = tickToPrice(isToken0Selected ? maxTick : minTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+    if (mounted) {
+      setTickInfo({
+        tickSpacing: tickSpacing,
+        minTick: minTick,
+        maxTick: maxTick,
+        minPrice: parseFloat(minPrice),
+        maxPrice: parseFloat(maxPrice),
+      });
+    }
+    const lowerTick = roundDownToNearestN(minTick + (tickOffset / 2), tickSpacing);
+    const upperTick = roundUpToNearestN(maxTick - (tickOffset / 2), tickSpacing);
+    //TODO: clean up this logic
+    const lowerPrice = tickToPrice(lowerTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+    const upperPrice = tickToPrice(upperTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+    //TODO: clean up this logic
+    if (mounted && isToken0Selected) {
+      setLower({
+        price: lowerPrice,
+        index: lowerTick,
+      });
+      setUpper({
+        price: upperPrice,
+        index: upperTick,
+      });
+    } else if (mounted && !isToken0Selected) {
+      setLower({
+        price: upperPrice,
+        index: upperTick,
+      });
+      setUpper({
+        price: lowerPrice,
+        index: lowerTick,
+      });
+    }
+    
+    return () => {
+      mounted = false;
+    }
+  }, [uniswapPoolBasics, isToken0Selected]);
+
+  useEffect(() => {
     if (isLiquidityDataLoading) {
       return;
     }
@@ -259,25 +322,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       });
     }
     setChartData(updatedChartData);
-    if (updatedChartData.length > 4) {
-      setLower({
-        price:
-          updatedChartData[
-            Math.floor(updatedChartData.length / 4)
-          ].price.toString(),
-        index: Math.floor(updatedChartData.length / 4),
-      });
-      setUpper({
-        price:
-          updatedChartData[
-            Math.floor(updatedChartData.length / 4) +
-              Math.floor(updatedChartData.length / 2)
-          ].price.toString(),
-        index:
-          Math.floor(updatedChartData.length / 4) +
-          Math.floor(updatedChartData.length / 2),
-      });
-    }
   }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
 
   let setLowerTimeout: NodeJS.Timeout;
@@ -319,8 +363,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       {chartData.length > 0 && (
         <LiquidityChart
           data={chartData}
-          rangeStart={lower.index}
-          rangeEnd={upper.index}
+          rangeStart={lower.price}
+          rangeEnd={upper.price}
         />
       )}
       <div className='flex flex-row gap-2 mb-4'>
@@ -331,36 +375,59 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           token1={token1}
           isToken0Selected={isToken0Selected}
           onChange={(value) => {
-            const nearest = calculateNearestPrice(parseFloat(value), chartData);
-            if (nearest.index < upper.index) {
-              //Don't debounce this
+            if (parseFloat(value) === 0 || tickInfo == null) {
+              return;
+            }
+            const numericValue = isToken0Selected ? parseFloat(value) : 1.0 / parseFloat(value);
+            const nearestTick = roundUpToNearestN(priceToTick(numericValue, token0?.decimals || 18, token1?.decimals || 18), uniswapPoolBasics?.tickSpacing || 10);
+            const nearestPrice = tickToPrice(nearestTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+            if ((parseFloat(nearestPrice) < parseFloat(upper.price)) &&
+                (parseFloat(nearestPrice) >= tickInfo.minPrice)) {
               setLower({
-                price: nearest.price,
-                index: nearest.index,
+                price: nearestPrice,
+                index: nearestTick,
               });
             }
           }}
           onDecrement={() => {
-            if (lower.index > 0) {
+            if (!tickInfo) {
+              return;
+            }
+            const updatedTick = isToken0Selected ? lower.index - tickInfo.tickSpacing : lower.index + tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
+            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.index : updatedTick > upper.index;
+            if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               setLowerDebounced({
-                price: chartData[lower.index - 1].price.toString(),
-                index: lower.index - 1,
+                price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
+                index: updatedTick,
               });
             }
           }}
           onIncrement={() => {
-            if (lower.index + 1 < upper.index) {
+            if (!tickInfo) {
+              return;
+            }
+            const updatedTick = isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
+            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.index : updatedTick > upper.index;
+            if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               setLowerDebounced({
-                price: chartData[lower.index + 1].price.toString(),
-                index: lower.index + 1,
+                price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
+                index: updatedTick,
               });
             }
           }}
-          decrementDisabled={lower.price === '' || lower.index <= 0}
+          decrementDisabled={
+            tickInfo == null ||
+            lower.index === tickInfo.minTick ||
+            lower.index === tickInfo.maxTick
+          }
           incrementDisabled={
-            lower.price === '' ||
-            lower.index + 1 >= upper.index ||
-            lower.index + 1 === chartData.length
+            tickInfo == null ||
+            !(isToken0Selected ? 
+              (isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing) < upper.index :
+              (isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing) > upper.index
+            )
           }
         />
         <SteppedInput
@@ -370,36 +437,59 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           token1={token1}
           isToken0Selected={isToken0Selected}
           onChange={(value) => {
-            const nearest = calculateNearestPrice(parseFloat(value), chartData);
-            if (nearest.index > lower.index) {
-              //Don't debounce this
+            if (parseFloat(value) === 0 || tickInfo == null) {
+              return;
+            }
+            const numericValue = isToken0Selected ? parseFloat(value) : 1.0 / parseFloat(value);
+            const nearestTick = roundUpToNearestN(priceToTick(numericValue, token0?.decimals || 18, token1?.decimals || 18), uniswapPoolBasics?.tickSpacing || 10);
+            const nearestPrice = tickToPrice(nearestTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected);
+            if ((parseFloat(nearestPrice) > parseFloat(lower.price)) &&
+                (parseFloat(nearestPrice) <= tickInfo.maxPrice)) {
               setUpper({
-                price: nearest.price,
-                index: nearest.index,
+                price: nearestPrice,
+                index: nearestTick,
               });
             }
           }}
           onDecrement={() => {
-            if (upper.index - 1 > 0 && upper.index - 1 > lower.index) {
+            if (!tickInfo) {
+              return;
+            }
+            const updatedTick = isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
+            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.index : updatedTick < lower.index;
+            if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               setUpperDebounced({
-                price: chartData[upper.index - 1].price.toString(),
-                index: upper.index - 1,
+                price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
+                index: updatedTick,
               });
             }
           }}
           onIncrement={() => {
-            if (upper.index < chartData.length) {
+            if (!tickInfo) {
+              return;
+            }
+            const updatedTick = isToken0Selected ? upper.index + tickInfo.tickSpacing : upper.index - tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
+            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.index : updatedTick < lower.index;
+            if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               setUpperDebounced({
-                price: chartData[upper.index + 1].price.toString(),
-                index: upper.index + 1,
+                price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
+                index: updatedTick,
               });
             }
           }}
           decrementDisabled={
-            upper.price === '' || upper.index - 1 <= lower.index
+            tickInfo == null ||
+            !(isToken0Selected ? 
+              (isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing) > lower.index :
+              (isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing) < lower.index
+            )
           }
           incrementDisabled={
-            upper.price === '' || upper.index + 1 >= chartData.length
+            tickInfo == null ||
+            upper.index === tickInfo.minTick ||
+            upper.index === tickInfo.maxTick
           }
         />
       </div>

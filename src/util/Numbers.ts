@@ -101,3 +101,11 @@ export function formatNumberInput(input: string): string | null {
     return input;
   } else return null;
 }
+
+export function roundDownToNearestN(value: number, n: number): number {
+  return Math.floor(value / n) * n;
+}
+
+export function roundUpToNearestN(value: number, n: number): number {
+  return Math.ceil(value / n) * n;
+}
