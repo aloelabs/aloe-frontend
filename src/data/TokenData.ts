@@ -10,10 +10,11 @@ import {
 
 export type TokenData = {
   address: string;
+  decimals: number;
   ticker?: string;
   name?: string;
   iconPath?: string;
-  decimals?: number; // TODO: Move this out of here, so that other uses of tokendata don't have to async wait to draw
+  // TODO: Move this out of here, so that other uses of tokendata don't have to async wait to draw
 };
 
 const TokenDataMap = new Map<string, TokenData>([
@@ -105,6 +106,7 @@ export function GetTokenData(address: string): TokenData {
     return TokenDataMap.get(address)!;
   } else
     return {
-      address,
+      address: address,
+      decimals: 0,
     };
 }
