@@ -7,6 +7,7 @@ import JSBI from 'jsbi';
 import { TickMath, tickToPrice as uniswapTickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
 import { TokenData } from '../data/TokenData';
+import { Tick } from '../data/Tick';
 
 const Q48 = ethers.BigNumber.from('0x1000000000000')
 const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
@@ -69,6 +70,20 @@ export function tickToPrice(tick: number, token0Decimals: number, token1Decimals
   const price1In0 = 1.0 / price0In1;
   // console.log(tick, price0In1, price1In0);
   return isInTermsOfToken0 ? price0In1.toString() : price1In0.toString();
+}
+
+export function tickTypeToPrice(tick: Tick, token0Decimals: number, token1Decimals: number): number {
+  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick.index);
+  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
+  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
+
+  const priceX96Big = new Big(priceX96.toString(10));
+
+  const decimalDiff = token0Decimals - token1Decimals;
+  const price0In1 = priceX96Big.mul(10 ** decimalDiff).div(Q96.toString()).toNumber();
+  const price1In0 = 1.0 / price0In1;
+  // console.log(tick, price0In1, price1In0);
+  return tick.isFlipped ? price0In1 : price1In0;
 }
 
 // export function tickToPrice2(token0: TokenData | null, token1: TokenData | null, tick: number) {

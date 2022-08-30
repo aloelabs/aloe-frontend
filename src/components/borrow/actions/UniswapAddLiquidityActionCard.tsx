@@ -14,10 +14,11 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
-import { getUniswapPoolBasics, priceToTick, tickToPrice, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { getUniswapPoolBasics, priceToTick, tickToPrice, tickTypeToPrice, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import { Tick } from '../../../data/Tick';
 
 type UniswapV3GraphQLTick = {
   tickIdx: string;
@@ -254,44 +255,74 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (uniswapPoolBasics == null || token0 == null || token1 == null) return;
     const tickSpacing = uniswapPoolBasics.tickSpacing;
     const tickOffset = Math.floor(BINS_TO_FETCH * tickSpacing / 2);
-    const minTick = roundDownToNearestN(uniswapPoolBasics.slot0.tick - tickOffset, tickSpacing);
-    const maxTick = roundUpToNearestN(uniswapPoolBasics.slot0.tick + tickOffset, tickSpacing);
-    const minPrice = tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected);
-    const maxPrice = tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected);
+    // const minTickIndex = roundDownToNearestN(uniswapPoolBasics.slot0.tick - tickOffset, tickSpacing);
+    // const maxTickIndex = roundUpToNearestN(uniswapPoolBasics.slot0.tick + tickOffset, tickSpacing);
+    // const minPrice = tickToPrice(isToken0Selected ? minTickIndex : maxTickIndex, token0.decimals, token1.decimals, isToken0Selected);
+    // const maxPrice = tickToPrice(isToken0Selected ? maxTickIndex : minTickIndex, token0.decimals, token1.decimals, isToken0Selected);
+    const edgeTicks = [
+      new Tick(roundDownToNearestN(uniswapPoolBasics.slot0.tick - tickOffset, tickSpacing), tickSpacing, isToken0Selected), 
+      new Tick(roundUpToNearestN(uniswapPoolBasics.slot0.tick + tickOffset, tickSpacing), tickSpacing, isToken0Selected),
+    ];
+    const minTick = isToken0Selected ? edgeTicks[0] : edgeTicks[1];
+    const maxTick = isToken0Selected ? edgeTicks[1] : edgeTicks[0];
+    // const maxTick = new Tick(roundUpToNearestN(uniswapPoolBasics.slot0.tick + tickOffset, tickSpacing), tickSpacing, isToken0Selected);
+    // if (token0 && token1) {
+    //   console.log(tickTypeToPrice(minTick, token0.decimals, token1.decimals), minPrice);
+    //   console.log(tickTypeToPrice(maxTick, token0.decimals, token1.decimals), maxPrice);
+    //   console.log(tickTypeToPrice(maxTick.previousTick(), token0.decimals, token1.decimals), maxPrice);
+    //   console.log(tickTypeToPrice(minTick.nextTick(), token0.decimals, token1.decimals), minPrice);
+    // }
     if (mounted) {
       setTickInfo({
         tickSpacing: tickSpacing,
-        minTick: minTick,
-        maxTick: maxTick,
-        minPrice: parseFloat(minPrice),
-        maxPrice: parseFloat(maxPrice),
+        minTick: minTick.index,
+        maxTick: maxTick.index,
+        minPrice: tickTypeToPrice(minTick, token0.decimals, token1.decimals),
+        maxPrice: tickTypeToPrice(maxTick, token0.decimals, token1.decimals),
       });
     }
-    const lowerTick = roundDownToNearestN(minTick + (tickOffset / 2), tickSpacing);
-    const upperTick = roundUpToNearestN(maxTick - (tickOffset / 2), tickSpacing);
+    const lowerTick = new Tick(roundDownToNearestN((isToken0Selected ? minTick.index : maxTick.index) + (tickOffset / 2), tickSpacing), tickSpacing, isToken0Selected);
+    const upperTick = new Tick(roundUpToNearestN((isToken0Selected ? maxTick.index : minTick.index) - (tickOffset / 2), tickSpacing), tickSpacing, isToken0Selected);
+    // const lowerTickIndex = roundDownToNearestN(minTickIndex + (tickOffset / 2), tickSpacing);
+    // const upperTickIndex = roundUpToNearestN(maxTickIndex - (tickOffset / 2), tickSpacing);
     //TODO: clean up this logic
-    const lowerPrice = tickToPrice(lowerTick, token0.decimals, token1.decimals, isToken0Selected);
-    const upperPrice = tickToPrice(upperTick, token0.decimals, token1.decimals, isToken0Selected);
+    // const lowerPrice = tickToPrice(lowerTickIndex, token0.decimals, token1.decimals, isToken0Selected);
+    // const upperPrice = tickToPrice(upperTickIndex, token0.decimals, token1.decimals, isToken0Selected);
+    const lowerPrice = tickTypeToPrice(isToken0Selected ? lowerTick : upperTick, token0.decimals, token1.decimals).toString();
+    const upperPrice = tickTypeToPrice(isToken0Selected ? upperTick : lowerTick, token0.decimals, token1.decimals).toString();
+    // console.log(lowerTickPrice, upperTickPrice);
     //TODO: clean up this logic
-    if (mounted && isToken0Selected) {
+    if (mounted) {
+      console.log(lowerPrice, upperPrice);
       setLower({
+        tick: lowerTick.index,
         price: lowerPrice,
-        tick: lowerTick,
       });
       setUpper({
+        tick: upperTick.index,
         price: upperPrice,
-        tick: upperTick,
-      });
-    } else if (mounted && !isToken0Selected) {
-      setLower({
-        price: upperPrice,
-        tick: upperTick,
-      });
-      setUpper({
-        price: lowerPrice,
-        tick: lowerTick,
       });
     }
+    
+    // if (mounted && isToken0Selected) {
+    //   setLower({
+    //     price: lowerPrice,
+    //     tick: lowerTick.index,
+    //   });
+    //   setUpper({
+    //     price: upperPrice,
+    //     tick: upperTick.index,
+    //   });
+    // } else if (mounted && !isToken0Selected) {
+    //   setLower({
+    //     price: upperPrice,
+    //     tick: upperTick.index,
+    //   });
+    //   setUpper({
+    //     price: lowerPrice,
+    //     tick: lowerTick.index,
+    //   });
+    // }
     
     return () => {
       mounted = false;
