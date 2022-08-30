@@ -56,9 +56,9 @@ export type TickData = {
   totalValueIn0: number;
 };
 
-type PriceIndex = {
+type TickPrice = {
   price: string;
-  index: number;
+  tick: number;
 };
 
 //Debouncing helps us avoid maxing out cpu usage
@@ -66,7 +66,7 @@ const DEBOUNCE_DELAY = 150;
 const BINS_TO_FETCH = 1000;
 const ONE = new Big('1.0');
 
-function calculateNearestPrice(price: number, data: ChartEntry[]): PriceIndex {
+function calculateNearestPrice(price: number, data: ChartEntry[]): TickPrice {
   const nearest: ChartEntry = data.reduce(
     (prev: ChartEntry, cur: ChartEntry) => {
       const prevDifference = Math.abs(prev.price - price);
@@ -77,7 +77,7 @@ function calculateNearestPrice(price: number, data: ChartEntry[]): PriceIndex {
   return {
     price: nearest.price.toString(),
     //TODO: look into to avoiding having to use indexOf
-    index: data.indexOf(nearest),
+    tick: data.indexOf(nearest),
   };
 }
 
@@ -107,13 +107,13 @@ const SvgButtonWrapper = styled.button`
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, previousActionCardState, onChange, onRemove } = props;
-  const [lower, setLower] = useState<PriceIndex>({
+  const [lower, setLower] = useState<TickPrice>({
     price: '',
-    index: 0,
+    tick: 0,
   });
-  const [upper, setUpper] = useState<PriceIndex>({
+  const [upper, setUpper] = useState<TickPrice>({
     price: '',
-    index: 0,
+    tick: 0,
   });
   const [token0Amount, setToken0Amount] = useState('');
   const [token1Amount, setToken1Amount] = useState('');
@@ -278,20 +278,20 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (mounted && isToken0Selected) {
       setLower({
         price: lowerPrice,
-        index: lowerTick,
+        tick: lowerTick,
       });
       setUpper({
         price: upperPrice,
-        index: upperTick,
+        tick: upperTick,
       });
     } else if (mounted && !isToken0Selected) {
       setLower({
         price: upperPrice,
-        index: upperTick,
+        tick: upperTick,
       });
       setUpper({
         price: lowerPrice,
-        index: lowerTick,
+        tick: lowerTick,
       });
     }
     
@@ -328,7 +328,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let setUpperTimeout: NodeJS.Timeout;
 
   //TODO: improve debounce logic (possibly move it to only debounce graph rendering if possible)
-  function setLowerDebounced(updatedLower: PriceIndex) {
+  function setLowerDebounced(updatedLower: TickPrice) {
     clearTimeout(setLowerTimeout);
     setLowerTimeout = setTimeout(() => {
       setLower(updatedLower);
@@ -336,7 +336,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }
 
   //TODO: improve debounce logic (possibly move it to only debounce graph rendering if possible)
-  function setUpperDebounced(updatedUpper: PriceIndex) {
+  function setUpperDebounced(updatedUpper: TickPrice) {
     clearTimeout(setUpperTimeout);
     setUpperTimeout = setTimeout(() => {
       setUpper(updatedUpper);
@@ -385,7 +385,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                 (parseFloat(nearestPrice) >= tickInfo.minPrice)) {
               setLower({
                 price: nearestPrice,
-                index: nearestTick,
+                tick: nearestTick,
               });
             }
           }}
@@ -393,13 +393,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo) {
               return;
             }
-            const updatedTick = isToken0Selected ? lower.index - tickInfo.tickSpacing : lower.index + tickInfo.tickSpacing;
+            const updatedTick = isToken0Selected ? lower.tick - tickInfo.tickSpacing : lower.tick + tickInfo.tickSpacing;
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.index : updatedTick > upper.index;
+            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               setLowerDebounced({
                 price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
-                index: updatedTick,
+                tick: updatedTick,
               });
             }
           }}
@@ -407,26 +407,26 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo) {
               return;
             }
-            const updatedTick = isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing;
+            const updatedTick = isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing;
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.index : updatedTick > upper.index;
+            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               setLowerDebounced({
                 price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
-                index: updatedTick,
+                tick: updatedTick,
               });
             }
           }}
           decrementDisabled={
             tickInfo == null ||
-            lower.index === tickInfo.minTick ||
-            lower.index === tickInfo.maxTick
+            lower.tick === tickInfo.minTick ||
+            lower.tick === tickInfo.maxTick
           }
           incrementDisabled={
             tickInfo == null ||
             !(isToken0Selected ? 
-              (isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing) < upper.index :
-              (isToken0Selected ? lower.index + tickInfo.tickSpacing : lower.index - tickInfo.tickSpacing) > upper.index
+              (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) < upper.tick :
+              (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) > upper.tick
             )
           }
         />
@@ -447,7 +447,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                 (parseFloat(nearestPrice) <= tickInfo.maxPrice)) {
               setUpper({
                 price: nearestPrice,
-                index: nearestTick,
+                tick: nearestTick,
               });
             }
           }}
@@ -455,13 +455,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo) {
               return;
             }
-            const updatedTick = isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing;
+            const updatedTick = isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing;
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
-            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.index : updatedTick < lower.index;
+            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               setUpperDebounced({
                 price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
-                index: updatedTick,
+                tick: updatedTick,
               });
             }
           }}
@@ -469,27 +469,27 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo) {
               return;
             }
-            const updatedTick = isToken0Selected ? upper.index + tickInfo.tickSpacing : upper.index - tickInfo.tickSpacing;
+            const updatedTick = isToken0Selected ? upper.tick + tickInfo.tickSpacing : upper.tick - tickInfo.tickSpacing;
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
-            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.index : updatedTick < lower.index;
+            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               setUpperDebounced({
                 price: tickToPrice(updatedTick, token0?.decimals || 18, token1?.decimals || 18, isToken0Selected),
-                index: updatedTick,
+                tick: updatedTick,
               });
             }
           }}
           decrementDisabled={
             tickInfo == null ||
             !(isToken0Selected ? 
-              (isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing) > lower.index :
-              (isToken0Selected ? upper.index - tickInfo.tickSpacing : upper.index + tickInfo.tickSpacing) < lower.index
+              (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) > lower.tick :
+              (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) < lower.tick
             )
           }
           incrementDisabled={
             tickInfo == null ||
-            upper.index === tickInfo.minTick ||
-            upper.index === tickInfo.maxTick
+            upper.tick === tickInfo.minTick ||
+            upper.tick === tickInfo.maxTick
           }
         />
       </div>
