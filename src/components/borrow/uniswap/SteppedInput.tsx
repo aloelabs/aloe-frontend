@@ -51,8 +51,12 @@ const SvgButtonWrapper = styled.button`
     }
   }
 
-  &:active {
+  &:not(:disabled):active {
     background-color: rgba(26, 41, 52, 1);
+  }
+
+  :disabled {
+    opacity: 0.5;
   }
 `;
 
@@ -137,8 +141,8 @@ export default function SteppedInput(props: SteppedInputProps) {
         </SvgButtonWrapper>
       </div>
       <Text>
-        {isToken0Selected ? token0Ticker : token1Ticker} per{' '}
-        {isToken0Selected ? token1Ticker : token0Ticker}
+        {isToken0Selected ? token1Ticker : token0Ticker} per{' '}
+        {isToken0Selected ? token0Ticker : token1Ticker}
       </Text>
     </SteppedInputWrapper>
   );

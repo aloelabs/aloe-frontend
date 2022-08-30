@@ -38,12 +38,22 @@ function StyledBar(props: StyledBarProps) {
 
 export type LiquidityChartProps = {
   data: ChartEntry[];
-  rangeStart: number;
-  rangeEnd: number;
+  rangeStart: string;
+  rangeEnd: string;
 };
+
+function nearestPriceInGraph(price: number, data: ChartEntry[]): number {
+  return data.reduce((prev: ChartEntry, curr: ChartEntry) => {
+    let prevDiff = Math.abs(price - prev.price);
+    let currDiff = Math.abs(price - curr.price);
+    return prevDiff < currDiff ? prev : curr;
+  }).price;
+}
 
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd } = props;
+  const updatedRangeStart = nearestPriceInGraph(parseFloat(rangeStart), data);
+  const updatedRangeEnd = nearestPriceInGraph(parseFloat(rangeEnd), data);
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,
@@ -66,7 +76,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
-              const fill = props.isCurrent ? 'white' : props.fill;
+              const fill = props.isCurrent ? 'white' : props.fill
               return (
                 <StyledBar
                   x={props.x}
@@ -79,18 +89,18 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             }}
           />
           <ReferenceLine
-            x={data[rangeStart].price}
+            x={updatedRangeStart}
             stroke='rgb(114, 167, 246)'
             strokeWidth={4}
             isFront={true}
           />
           <ReferenceArea
-            x1={data.length > rangeStart + 1 && data[rangeStart + 1] ? data[rangeStart + 1].price : 0}
-            x2={data.length > rangeEnd - 1 && data[rangeEnd - 1] ? data[rangeEnd - 1].price : 0}
+            x1={updatedRangeStart}
+            x2={updatedRangeEnd}
             fill='rgba(114, 167, 246, 0.5)'
           />
           <ReferenceLine
-            x={data[rangeEnd].price}
+            x={updatedRangeEnd}
             stroke='rgb(114, 167, 246)'
             strokeWidth={4}
             isFront={true}

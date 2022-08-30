@@ -3,6 +3,13 @@ import { ethers } from 'ethers';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { toBig } from '../util/Numbers';
+import JSBI from 'jsbi';
+import { TickMath, tickToPrice as uniswapTickToPrice } from '@uniswap/v3-sdk';
+import { Token } from '@uniswap/sdk-core';
+import { TokenData } from '../data/TokenData';
+
+const Q48 = ethers.BigNumber.from('0x1000000000000')
+const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
 
 export interface UniswapV3PoolSlot0 {
   sqrtPriceX96: ethers.BigNumber;
@@ -20,7 +27,6 @@ export interface UniswapV3PoolBasics {
 }
 
 export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
-  const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
   const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
   return toBig(priceX96).div(toBig(Q96));
 }
@@ -49,4 +55,33 @@ export async function getUniswapPoolBasics(uniswapPoolAddress: string, provider:
     tickSpacing: tickSpacing,
     token1OverToken0: convertSqrtPriceX96(slot0.sqrtPriceX96),
   };
+}
+
+export function tickToPrice(tick: number, token0Decimals: number, token1Decimals: number, isInTermsOfToken0=true): string {
+  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
+  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
+
+  const priceX96Big = new Big(priceX96.toString(10));
+
+  const decimalDiff = token0Decimals - token1Decimals;
+  const price0In1 = priceX96Big.mul(10 ** decimalDiff).div(Q96.toString()).toNumber();
+  const price1In0 = 1.0 / price0In1;
+  // console.log(tick, price0In1, price1In0);
+  return isInTermsOfToken0 ? price0In1.toString() : price1In0.toString();
+}
+
+// export function tickToPrice2(token0: TokenData | null, token1: TokenData | null, tick: number) {
+//   const uniswapToken0 = new Token(1, token0?.address || '', token0?.decimals || 18);
+//   const uniswapToken1 = new Token(1, token1?.address || '', token1?.decimals || 18);
+//   return uniswapTickToPrice(uniswapToken0, uniswapToken1, tick);
+// }
+
+export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
+  const decimalDiff = token0Decimals - token1Decimals;
+  const priceX96 = new Big(price0In1).mul(Q96.toString()).div(10 ** decimalDiff);
+  
+  const sqrtPriceX48 = priceX96.sqrt();
+  const sqrtPriceX96JSBI = JSBI.BigInt(sqrtPriceX48.mul(Q48.toString()).toFixed(0));
+  return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
 }
