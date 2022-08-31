@@ -36,12 +36,6 @@ function StyledBar(props: StyledBarProps) {
   );
 }
 
-export type LiquidityChartProps = {
-  data: ChartEntry[];
-  rangeStart: string;
-  rangeEnd: string;
-};
-
 function nearestPriceInGraph(price: number, data: ChartEntry[]): number {
   return data.reduce((prev: ChartEntry, curr: ChartEntry) => {
     let prevDiff = Math.abs(price - prev.price);
@@ -50,10 +44,18 @@ function nearestPriceInGraph(price: number, data: ChartEntry[]): number {
   }).price;
 }
 
+export type LiquidityChartProps = {
+  data: ChartEntry[];
+  rangeStart: string;
+  rangeEnd: string;
+  currentPrice: string;
+};
+
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { data, rangeStart, rangeEnd } = props;
+  const { data, rangeStart, rangeEnd, currentPrice } = props;
   const updatedRangeStart = nearestPriceInGraph(parseFloat(rangeStart), data);
   const updatedRangeEnd = nearestPriceInGraph(parseFloat(rangeEnd), data);
+  const updatedCurrentPrice = nearestPriceInGraph(parseFloat(currentPrice), data);
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,
@@ -61,6 +63,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)
     ].price,
   ];
+  console.log(data);
   return (
     <Wrapper>
       <ResponsiveContainer width='100%' height='100%'>
@@ -102,6 +105,12 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           <ReferenceLine
             x={updatedRangeEnd}
             stroke='rgb(114, 167, 246)'
+            strokeWidth={4}
+            isFront={true}
+          />
+          <ReferenceLine
+            x={updatedCurrentPrice}
+            stroke='rgb(255, 0, 0)'
             strokeWidth={4}
             isFront={true}
           />

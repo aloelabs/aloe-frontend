@@ -182,11 +182,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         )}
         <Settings />
       </div>
-      {chartData.length > 0 && (
+      {chartData.length > 0 && uniswapPoolBasics != null && token0 != null && token1 != null && (
         <LiquidityChart
           data={chartData}
           rangeStart={lower.price}
           rangeEnd={upper.price}
+          currentPrice={tickToPrice(uniswapPoolBasics?.slot0.tick, token0.decimals, token1.decimals, isToken0Selected)}
         />
       )}
       <div className='flex flex-row gap-2 mb-4'>
