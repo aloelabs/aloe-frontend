@@ -79,14 +79,13 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
-              const fill = props.isCurrent ? 'white' : props.fill
               return (
                 <StyledBar
                   x={props.x}
                   y={props.y}
                   width={props.width}
                   height={props.height}
-                  fill={fill}
+                  fill={props.fill}
                 />
               );
             }}
@@ -110,9 +109,9 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           />
           <ReferenceLine
             x={updatedCurrentPrice}
-            stroke='rgb(255, 0, 0)'
-            strokeWidth={4}
-            isFront={true}
+            stroke='rgba(255, 255, 255, 0.5)'
+            strokeWidth={2}
+            isFront={false}
           />
           <XAxis
             dataKey='price'
