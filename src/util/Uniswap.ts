@@ -2,14 +2,19 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { toBig } from '../util/Numbers';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
 import { TickMath, tickToPrice as uniswapTickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
 import { TokenData } from '../data/TokenData';
+import { ApolloQueryResult } from '@apollo/react-hooks';
+import { theGraphUniswapV3Client } from '../App';
+import { UniswapTicksQuery } from './GraphQL';
 
+const BINS_TO_FETCH = 1000;
 const Q48 = ethers.BigNumber.from('0x1000000000000')
 const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
+const ONE = new Big('1.0');
 
 export interface UniswapV3PoolSlot0 {
   sqrtPriceX96: ethers.BigNumber;
@@ -26,9 +31,172 @@ export interface UniswapV3PoolBasics {
   token1OverToken0: Big;
 }
 
+export type TickInfo = {
+  tickSpacing: number;
+  tickOffset: number;
+  minTick: number;
+  maxTick: number;
+  minPrice: number;
+  maxPrice: number;
+};
+
+export type TickData = {
+  tick: number;
+  liquidity: Big;
+  amount0: number;
+  amount1: number;
+  price1In0: number;
+  price0In1: number;
+  totalValueIn0: number;
+};
+
+export type UniswapV3GraphQLTick = {
+  tickIdx: string;
+  liquidityNet: string;
+  price0: string;
+  price1: string;
+  __typename: string;
+};
+
+export type UniswapV3GraphQLTicksQueryResponse = {
+  pools: {
+    token0: { decimals: string };
+    token1: { decimals: string };
+    liquidity: string;
+    tick: string;
+    ticks: UniswapV3GraphQLTick[];
+    __typename: string;
+  }[];
+};
+
 export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
   const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
   return toBig(priceX96).div(toBig(Q96));
+}
+
+export function calculateTickInfo(poolBasics: UniswapV3PoolBasics, token0: TokenData, token1: TokenData, isToken0Selected: boolean): TickInfo {
+  const tickSpacing = poolBasics.tickSpacing;
+  const tickOffset = Math.floor(BINS_TO_FETCH * tickSpacing / 2);
+  const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
+  const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
+  const minPrice = parseFloat(tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected));
+  const maxPrice = parseFloat(tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected));
+  return {
+    minTick,
+    maxTick,
+    minPrice,
+    maxPrice,
+    tickSpacing,
+    tickOffset,
+  }
+}
+
+export async function calculateTickData(poolAddress: string, poolBasics: UniswapV3PoolBasics): Promise<TickData[]> {
+  const tickOffset = Math.floor(BINS_TO_FETCH * poolBasics.tickSpacing / 2);
+  const minTick = poolBasics.slot0.tick - tickOffset;
+  const maxTick = poolBasics.slot0.tick + tickOffset;
+  //TODO: determine tickSpacing dynamically
+  const uniswapV3GraphQLTicksQueryResponse =
+    (await theGraphUniswapV3Client.query({
+      query: UniswapTicksQuery,
+      variables: {
+        poolAddress: poolAddress,
+        minTick: minTick,
+        maxTick: maxTick,
+      },
+    })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
+  if (!uniswapV3GraphQLTicksQueryResponse.data.pools) return [];
+  const poolLiquidityData = uniswapV3GraphQLTicksQueryResponse.data.pools[0];
+
+  const token0Decimals = Number(poolLiquidityData.token0.decimals);
+  const token1Decimals = Number(poolLiquidityData.token1.decimals);
+  const decimalFactor = new Big(10 ** (token1Decimals - token0Decimals));
+
+  const currentLiquidity = new Big(poolLiquidityData.liquidity);
+  const currentTick = Number(poolLiquidityData.tick);
+  const rawTicksData = poolLiquidityData.ticks;
+
+  const tickDataLeft: TickData[] = [];
+  const tickDataRight: TickData[] = [];
+
+  // console.log('Current Tick:');
+  // console.log(currentTick);
+
+  // MARK -- filling out data for ticks *above* the current tick
+  let liquidity = currentLiquidity;
+  let splitIdx = rawTicksData.length;
+
+  for (let i = 0; i < rawTicksData.length; i += 1) {
+    const rawTickData = rawTicksData[i];
+    const tick = Number(rawTickData.tickIdx);
+    if (tick <= currentTick) continue;
+
+    // remember the first index above current tick so that search below current tick is more efficient
+    if (i < splitIdx) splitIdx = i;
+
+    liquidity = liquidity.plus(new Big(rawTickData.liquidityNet));
+    const price0 = new Big(rawTickData.price0);
+    const price1 = new Big(rawTickData.price1);
+
+    const sqrtPL = price0.sqrt();
+    const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
+    const amount0 = liquidity
+      .mul(ONE.div(sqrtPL).minus(ONE.div(sqrtPU)))
+      .div(10 ** token0Decimals)
+      .toNumber();
+
+    tickDataRight.push({
+      tick,
+      liquidity,
+      amount0: amount0,
+      amount1: 0,
+      price1In0: price1.mul(decimalFactor).toNumber(),
+      price0In1: price0.div(decimalFactor).toNumber(),
+      totalValueIn0: amount0,
+    });
+  }
+
+  // MARK -- filling out data for ticks *below* the current tick
+  liquidity = currentLiquidity;
+
+  for (let i = splitIdx - 1; i >= 0; i -= 1) {
+    const rawTickData = rawTicksData[i];
+    const tick = Number(rawTickData.tickIdx);
+    if (tick > currentTick) continue;
+
+    liquidity = liquidity.minus(new Big(rawTickData.liquidityNet));
+    const price0 = new Big(rawTickData.price0);
+    const price1 = new Big(rawTickData.price1);
+
+    const sqrtPL = price0.sqrt();
+    const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
+    const amount1 = liquidity
+      .mul(sqrtPU.minus(sqrtPL))
+      .div(10 ** token1Decimals)
+      .toNumber();
+
+    if (i === splitIdx - 1) {
+      // console.log(tick);
+      // console.log(liquidity.toFixed(3));
+      // console.log(price0.toFixed(0));
+    }
+
+    tickDataLeft.push({
+      tick,
+      liquidity,
+      amount0: 0,
+      amount1: amount1,
+      price1In0: price1.mul(decimalFactor).toNumber(),
+      price0In1: price0.div(decimalFactor).toNumber(),
+      totalValueIn0: amount1 * price1.mul(decimalFactor).toNumber(),
+    });
+  }
+
+  const tickData = tickDataLeft
+    .reverse()
+    .concat(...tickDataRight);
+
+  return tickData;
 }
 
 /**

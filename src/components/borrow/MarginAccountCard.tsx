@@ -93,13 +93,14 @@ export type MarginAccountCardProps = {
   token0: TokenData;
   token1: TokenData;
   feeTier: FeeTier;
+  id: string;
 };
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { token0, token1, feeTier } = props;
+  const { token0, token1, feeTier, id } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
-  const link = '/borrow/account/1234';
+  const link = `/borrow/account/${id}`;
 
   useEffect(() => {
     let mounted = true;
@@ -160,7 +161,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
         </div>
         <IDContainer>
           <Text size='S' weight='medium'>
-            ID - 1234
+            ID - {id}
           </Text>
         </IDContainer>
       </CardBodyWrapper>
