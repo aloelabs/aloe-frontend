@@ -49,7 +49,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           numericValue: previousActionCardState?.token1PlusDelta?.numericValue || 0,
           inputValue: previousActionCardState?.token1PlusDelta?.inputValue || '',
         },
-        uniswapPositions: [],
+        uniswapPositions: null,
         selectedTokenA: selectedToken,
         selectedTokenB: null,
       });
@@ -101,7 +101,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
                   numericValue: 0,
                   inputValue: '',
                 },
-                uniswapPositions: [],
+                uniswapPositions: null,
                 selectedTokenA: option,
                 selectedTokenB: null,
               });
@@ -148,7 +148,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
               },
               // token0PlusDelta: token0Change != null ? (-1 * token0Change).toString() : '',
               // token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
-              uniswapPositions: [],
+              uniswapPositions: null,
               selectedTokenA: selectedToken,
               selectedTokenB: null,
             });

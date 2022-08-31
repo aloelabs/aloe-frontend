@@ -48,7 +48,7 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
           numericValue: previousActionCardState?.token1PlusDelta?.numericValue || 0,
           inputValue: previousActionCardState?.token1PlusDelta?.inputValue || '',
         },
-        uniswapPositions: [],
+        uniswapPositions: null,
         selectedTokenA: selectedToken,
         selectedTokenB: null,
       });
@@ -100,7 +100,7 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
                   numericValue: 0,
                   inputValue: '',
                 },
-                uniswapPositions: [],
+                uniswapPositions: null,
                 selectedTokenA: option,
                 selectedTokenB: null,
               });
@@ -145,7 +145,7 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
                 numericValue: token1Change != null ? token1Change : 0,
                 inputValue: !token0IsSelected ? value : '',
               },
-              uniswapPositions: [],
+              uniswapPositions: null,
               selectedTokenA: selectedToken,
               selectedTokenB: null,
             });

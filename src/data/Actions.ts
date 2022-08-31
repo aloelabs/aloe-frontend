@@ -60,15 +60,16 @@ export const ActionProviders = {
   },
 };
 
-export type UniswapPosition = {
-  liquidity: number;
-  lowerBound: number;
-  upperBound: number;
-};
-
 export type ActionValue = {
   numericValue: number;
   inputValue: string;
+};
+
+export type UniswapPosition = {
+  amount0: ActionValue;
+  amount1: ActionValue;
+  lowerBound: number;
+  upperBound: number;
 };
 
 export type ActionCardResult = {
@@ -78,7 +79,7 @@ export type ActionCardResult = {
   token1DebtDelta: ActionValue;
   token0PlusDelta: ActionValue;
   token1PlusDelta: ActionValue;
-  uniswapPositions: UniswapPosition[];
+  uniswapPositions: UniswapPosition | null;
   selectedTokenA: DropdownOption | null;
   selectedTokenB: DropdownOption | null;
 };
