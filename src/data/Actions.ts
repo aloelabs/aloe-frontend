@@ -7,6 +7,7 @@ import { AloeTransferFromMarginAccountActionCard } from '../components/borrow/ac
 import { AloeTransferToMarginAccountActionCard } from '../components/borrow/actions/AloeTransferToMarginAccountActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
+import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import { DropdownOption } from '../components/common/Dropdown';
 import { TokenData } from './TokenData';
 
@@ -50,6 +51,10 @@ export const ActionProviders = {
       ADD_LIQUIDITY: {
         name: 'Add Liquidity',
         actionCard: UniswapAddLiquidityActionCard,
+      },
+      REMOVE_LIQUIDITY: {
+        name: 'Remove Liquidity',
+        actionCard: UniswapRemoveLiquidityActionCard,
       },
     },
   },
