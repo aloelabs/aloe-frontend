@@ -195,7 +195,7 @@ export default function BorrowActionsPage() {
         numericValue: 0,
         inputValue: '',
       },
-      uniswapPositions: [],
+      uniswapPositions: null,
       selectedTokenA: null,
       selectedTokenB: null,
      }]);

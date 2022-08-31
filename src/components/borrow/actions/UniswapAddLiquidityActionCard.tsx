@@ -63,6 +63,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   useEffectOnce(() => {
     let mounted = true;
+    if (token0 == null || token1 == null) return;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
       if (mounted) {
@@ -73,9 +74,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         setLiquidityData(tickData);
         setIsLiquidityDataLoading(false);
       }
-    }
-    if (token0 == null || token1 == null) {
-      return;
     }
     const poolAddress = tokensToPool(token0, token1);
     fetch(poolAddress);
@@ -156,7 +154,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   function handleToken1AmountInput(value: string) {
     const output = formatNumberInput(value);
     if (output != null) {
-      setToken0Amount(output);
+      setToken1Amount(output);
     }
   }
 
@@ -177,6 +175,50 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     setUpperTimeout = setTimeout(() => {
       setUpper(updatedUpper);
     }, DEBOUNCE_DELAY);
+  }
+
+  function updateLower(updatedLower: TickPrice) {
+    onChange({
+      token0RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      uniswapPositions: {
+        amount0: {
+          inputValue: token0Amount,
+          numericValue: parseFloat(token0Amount),
+        },
+        amount1: {
+          inputValue: token1Amount,
+          numericValue: parseFloat(token1Amount),
+        },
+        lowerBound: updatedLower.tick,
+        upperBound: upper.tick,
+      },
+      selectedTokenA: null,
+      selectedTokenB: null
+    })
+    // setLower(updatedLower);
   }
 
   return (
@@ -236,7 +278,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
             const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
-              setLowerDebounced({
+              updateLower({
                 price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
                 tick: updatedTick,
               });

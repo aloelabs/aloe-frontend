@@ -59,7 +59,7 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
           numericValue: previousActionCardState?.token1PlusDelta?.numericValue || 0,
           inputValue: previousActionCardState?.token1PlusDelta?.inputValue || '',
         },
-        uniswapPositions: [],
+        uniswapPositions: null,
         selectedTokenA: selectedToken,
         selectedTokenB: null,
       });
@@ -115,7 +115,7 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
                   numericValue: 0,
                   inputValue: '',
                 },
-                uniswapPositions: [],
+                uniswapPositions: null,
                 selectedTokenA: option,
                 selectedTokenB: null,
               });
@@ -171,7 +171,7 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
                 //TODO: TEMPORARY, add type for token+
                 inputValue: selectedToken?.value === token1?.address + '1' ? value : '',
               },
-              uniswapPositions: [],
+              uniswapPositions: null,
               selectedTokenA: selectedToken,
               selectedTokenB: null,
             });
