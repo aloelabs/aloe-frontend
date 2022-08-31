@@ -17,7 +17,7 @@ import Settings from '../uniswap/Settings';
 import { calculateTickData, calculateTickInfo, getUniswapPoolBasics, priceToTick, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import { TokenData } from '../../../data/TokenData';
 
 type TickPrice = {
@@ -145,6 +145,20 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
     setChartData(updatedChartData);
   }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
+
+  function handleToken0AmountInput(value: string) {
+    const output = formatNumberInput(value);
+    if (output != null) {
+      setToken0Amount(output);
+    }
+  }
+
+  function handleToken1AmountInput(value: string) {
+    const output = formatNumberInput(value);
+    if (output != null) {
+      setToken0Amount(output);
+    }
+  }
 
   let setLowerTimeout: NodeJS.Timeout;
   let setUpperTimeout: NodeJS.Timeout;
@@ -324,12 +338,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           tokenLabel={token0?.ticker || ''}
           value={token0Amount}
-          onChange={setToken0Amount}
+          onChange={handleToken0AmountInput}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
           value={token1Amount}
-          onChange={setToken1Amount}
+          onChange={handleToken1AmountInput}
         />
       </div>
     </BaseActionCard>
