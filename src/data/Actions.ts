@@ -81,7 +81,6 @@ export type ActionCardResult = {
   token1PlusDelta: ActionValue;
   uniswapPositions: UniswapPosition | null;
   selectedTokenA: DropdownOption | null;
-  selectedTokenB: DropdownOption | null;
 };
 
 export type ActionCardProps = {

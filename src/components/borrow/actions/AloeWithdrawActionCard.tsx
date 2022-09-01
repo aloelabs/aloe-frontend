@@ -51,7 +51,6 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
         },
         uniswapPositions: null,
         selectedTokenA: selectedToken,
-        selectedTokenB: null,
       });
     }
   });
@@ -103,7 +102,6 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
                 },
                 uniswapPositions: null,
                 selectedTokenA: option,
-                selectedTokenB: null,
               });
             }
           }}
@@ -150,7 +148,6 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
               // token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
               uniswapPositions: null,
               selectedTokenA: selectedToken,
-              selectedTokenB: null,
             });
           }}
           max='100'
