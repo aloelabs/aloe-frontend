@@ -161,7 +161,7 @@ export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const account = params.account;
   const accountData = getAccount(account || '');
-  const [actionResults, setActionResults] = React.useState<ActionCardResult[]>([]);
+  const [actionResults, setActionResults] = React.useState<Array<ActionCardResult>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const navigate = useNavigate();
@@ -170,34 +170,10 @@ export default function BorrowActionsPage() {
     return null;
   }
   function handleAddAction(action: Action) {
-    setActionResults([...actionResults, { 
-      token0RawDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      token1RawDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      token0DebtDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      token1DebtDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      token0PlusDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      token1PlusDelta: {
-        numericValue: 0,
-        inputValue: '',
-      },
-      uniswapPositions: null,
-      selectedTokenA: null,
-     }]);
+    setActionResults([...actionResults, {
+      aloeResult: null,
+      uniswapResult: null,
+    }]);
     setActiveActions([...activeActions, action]);
   }
   return (

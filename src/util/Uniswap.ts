@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import { TickMath, tickToPrice as uniswapTickToPrice, maxLiquidityForAmounts, Position, Pool, SqrtPriceMath } from '@uniswap/v3-sdk';
+import { TickMath, tickToPrice as uniswapTickToPrice, maxLiquidityForAmounts, Position, Pool, SqrtPriceMath, nearestUsableTick } from '@uniswap/v3-sdk';
 import { MaxUint256, Token } from '@uniswap/sdk-core';
 import { TokenData } from '../data/TokenData';
 import { ApolloQueryResult } from '@apollo/react-hooks';
@@ -299,4 +299,8 @@ export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, 
     amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6);
+}
+
+export function getMinTick(tickSpacing: number) {
+  return nearestUsableTick(TickMath.MIN_TICK, tickSpacing);
 }
