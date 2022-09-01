@@ -254,49 +254,71 @@ export function priceToTick(price0In1: number, token0Decimals: number, token1Dec
   return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
 }
 
+export function shouldAmount0InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
+  return currentTick < Math.min(lowerTick, upperTick);
+}
+
+export function shouldAmount1InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
+  return currentTick > Math.max(lowerTick, upperTick);
+}
+
 export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): string {
+  // If lowerTick > upperTick, flip them so that the var names match reality
+  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
+
   //lower price
-  const sqrtRatioAX96 = lowerTick < upperTick ? TickMath.getSqrtRatioAtTick(lowerTick) : TickMath.getSqrtRatioAtTick(upperTick);
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
   //upper price
-  const sqrtRatioBX96 = lowerTick < upperTick ? TickMath.getSqrtRatioAtTick(upperTick) : TickMath.getSqrtRatioAtTick(lowerTick);
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
   //current price
   const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
+
   const bigAmount0 = JSBI.BigInt(new Big(amount0).mul(10 ** token0Decimals).toFixed(0));
-  const liquidity = maxLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, bigAmount0, MaxUint256, false);
+  const liquidity = maxLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, bigAmount0, MaxUint256, true);
+
   let amount1 = JSBI.BigInt(0);
-  if (JSBI.lessThan(sqrtRatioX96, sqrtRatioAX96)) {
+  if (currentTick <= lowerTick) {
     //current price < lower price
-    //there is only token1 between lowerTick and upperTick
-    amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
-  } else if (JSBI.lessThan(sqrtRatioX96, sqrtRatioBX96)) {
-    //lower price <= current price < upper price
-    //there is only token1 between lowerTick and currentTick
+    //everything to the right of currentTick is token0. thus there's no token1 (amount1 = 0)
+    return '0';
+  } else if (currentTick < upperTick) {
+    //lower price < current price < upper price
+    //only stuff to the left of currentTick is token1. so we look between lowerTick and currentTick
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioX96, liquidity, false);
   } else {
     //current price >= upper price
-    //when currentTick is above upperTick the entire position is token0 (thus amount1 is zero)
-    return '0';
+    //everything to the left of currentTick is token1. so we look between lowerTick and upperTick
+    amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6);
 }
 
 export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): string {
-  const sqrtRatioAX96 = lowerTick < upperTick ? TickMath.getSqrtRatioAtTick(lowerTick) : TickMath.getSqrtRatioAtTick(upperTick);
-  const sqrtRatioBX96 = lowerTick < upperTick ? TickMath.getSqrtRatioAtTick(upperTick) : TickMath.getSqrtRatioAtTick(lowerTick);
+  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
+
+  //lower price
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
+  //upper price
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
+  //current price
   const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
+
   const bigAmount1 = JSBI.BigInt(new Big(amount1).mul(10 ** token1Decimals).toFixed(0));
-  //always use full precision (according to uniswap)
   const liquidity = maxLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, MaxUint256, bigAmount1, true);
+
   let amount0 = JSBI.BigInt(0);
-  if (JSBI.lessThan(sqrtRatioX96, sqrtRatioAX96)) {
+  if (currentTick <= lowerTick) {
     //current price < lower price
-    return '0';
-  } else if (JSBI.lessThan(sqrtRatioX96, sqrtRatioBX96)) {
-    //lower price <= current price < upper price
-    amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioAX96, sqrtRatioX96, liquidity, false);
+    //everything to the right of currentTick is token0. so we look between lowerTick and upperTick
+    amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
+  } else if (currentTick < upperTick) {
+    //lower price < current price < upper price
+    //only stuff to the right of currentTick is token0. so we look between currentTick and upperTick
+    amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioX96, sqrtRatioBX96, liquidity, false);
   } else {
     //current price >= upper price
-    amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
+    //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
+    return '0';
   }
   return new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6);
 }
