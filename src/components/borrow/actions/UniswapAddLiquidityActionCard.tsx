@@ -14,7 +14,7 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
-import { calculateTickData, calculateTickInfo, getUniswapPoolBasics, priceToTick, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getUniswapPoolBasics, priceToTick, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
@@ -42,6 +42,7 @@ function tokensToPool(token0: TokenData, token1: TokenData): string {
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, previousActionCardState, onChange, onRemove } = props;
+  console.log(previousActionCardState);
   const [lower, setLower] = useState<TickPrice>({
     price: '',
     tick: 0,
@@ -145,15 +146,29 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
 
   function handleToken0AmountInput(value: string) {
+    if (uniswapPoolBasics == null || token0 == null || token1 == null) return;
     const output = formatNumberInput(value);
     if (output != null) {
+      const floatOutput = parseFloat(output);
+      if (!isNaN(floatOutput)) {
+        setToken1Amount(calculateAmount1FromAmount0(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals));
+      } else {
+        setToken1Amount('');
+      }
       setToken0Amount(output);
     }
   }
 
   function handleToken1AmountInput(value: string) {
+    if (uniswapPoolBasics == null || token0 == null || token1 == null) return;
     const output = formatNumberInput(value);
     if (output != null) {
+      const floatOutput = parseFloat(output);
+      if (!isNaN(floatOutput)) {
+        setToken0Amount(calculateAmount0FromAmount1(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals));
+      } else {
+        setToken0Amount('');
+      }
       setToken1Amount(output);
     }
   }
@@ -206,19 +221,103 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       uniswapPositions: {
         amount0: {
           inputValue: token0Amount,
-          numericValue: parseFloat(token0Amount),
+          numericValue: parseFloat(token0Amount) || 0,
         },
         amount1: {
           inputValue: token1Amount,
-          numericValue: parseFloat(token1Amount),
+          numericValue: parseFloat(token1Amount) || 0,
         },
         lowerBound: updatedLower.tick,
         upperBound: upper.tick,
       },
       selectedTokenA: null,
-      selectedTokenB: null
     })
-    // setLower(updatedLower);
+    setLower(updatedLower);
+  }
+
+  function updateUpper(updatedUpper: TickPrice) {
+    onChange({
+      token0RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      uniswapPositions: {
+        amount0: {
+          inputValue: token0Amount,
+          numericValue: parseFloat(token0Amount) || 0,
+        },
+        amount1: {
+          inputValue: token1Amount,
+          numericValue: parseFloat(token1Amount) || 0,
+        },
+        lowerBound: lower.tick,
+        upperBound: updatedUpper.tick,
+      },
+      selectedTokenA: null,
+    })
+    setUpper(updatedUpper);
+  }
+
+  function updateTokenAmountInput() {
+    onChange({
+      token0RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1RawDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1DebtDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token0PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      token1PlusDelta: {
+        inputValue: '',
+        numericValue: 0,
+      },
+      uniswapPositions: {
+        amount0: {
+          inputValue: token0Amount,
+          numericValue: parseFloat(token0Amount) || 0,
+        },
+        amount1: {
+          inputValue: token1Amount,
+          numericValue: parseFloat(token1Amount) || 0,
+        },
+        lowerBound: lower.tick,
+        upperBound: upper.tick,
+      },
+      selectedTokenA: null,
+    });
   }
 
   return (
@@ -263,7 +362,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
             if ((parseFloat(nearestPrice) < parseFloat(upper.price)) &&
                 (parseFloat(nearestPrice) >= tickInfo.minPrice)) {
-              setLower({
+              updateLower({
                 price: nearestPrice,
                 tick: nearestTick,
               });
@@ -293,7 +392,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
             const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
-              setLowerDebounced({
+              updateLower({
                 price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
                 tick: updatedTick,
               });
@@ -328,7 +427,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
             if ((parseFloat(nearestPrice) > parseFloat(lower.price)) &&
                 (parseFloat(nearestPrice) <= tickInfo.maxPrice)) {
-              setUpper({
+              updateUpper({
                 price: nearestPrice,
                 tick: nearestTick,
               });
@@ -342,7 +441,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
             const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
-              setUpperDebounced({
+              updateUpper({
                 price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
                 tick: updatedTick,
               });
@@ -356,7 +455,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const isUpdatedTickWithinBounds = tickInfo.minTick <= updatedTick && updatedTick <= tickInfo.maxTick;
             const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
-              setUpperDebounced({
+              updateUpper({
                 price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
                 tick: updatedTick,
               });
@@ -381,11 +480,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           tokenLabel={token0?.ticker || ''}
           value={token0Amount}
           onChange={handleToken0AmountInput}
+          onBlur={updateTokenAmountInput}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
           value={token1Amount}
           onChange={handleToken1AmountInput}
+          onBlur={updateTokenAmountInput}
         />
       </div>
     </BaseActionCard>

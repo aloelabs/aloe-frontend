@@ -8,16 +8,6 @@ import { Text } from './Typography';
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
-export type TokenAmountInputProps = {
-  onChange: (newValue: string) => void;
-  max?: string;
-  maxed?: boolean;
-  value: string;
-  tokenLabel: string;
-  error?: boolean;
-  errorMessage?: string;
-};
-
 const formatNumberInput = (input: string, max?: string): string | null => {
   if (input === '') {
     return '';
@@ -49,6 +39,17 @@ const ErrorMessageText = styled.div`
   line-height: 20px;
 `;
 
+export type TokenAmountInputProps = {
+  value: string;
+  tokenLabel: string;
+  onChange: (newValue: string) => void;
+  max?: string;
+  maxed?: boolean;
+  error?: boolean;
+  errorMessage?: string;
+  onBlur?: () => void;
+};
+
 export default function TokenAmountInput(props: TokenAmountInputProps) {
   return (
     <div className='w-full'>
@@ -76,6 +77,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         }}
         maxDisabled={props.maxed}
         fullWidth={true}
+        onBlur={props?.onBlur}
       />
       {props.error && (
         <ErrorMessageWrapper>

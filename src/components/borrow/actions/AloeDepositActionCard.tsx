@@ -50,7 +50,6 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
         },
         uniswapPositions: null,
         selectedTokenA: selectedToken,
-        selectedTokenB: null,
       });
     }
   });
@@ -102,7 +101,6 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
                 },
                 uniswapPositions: null,
                 selectedTokenA: option,
-                selectedTokenB: null,
               });
             }
           }}
@@ -147,7 +145,6 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
               },
               uniswapPositions: null,
               selectedTokenA: selectedToken,
-              selectedTokenB: null,
             });
           }}
           max='100'

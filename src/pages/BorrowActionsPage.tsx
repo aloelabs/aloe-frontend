@@ -197,22 +197,12 @@ export default function BorrowActionsPage() {
       },
       uniswapPositions: null,
       selectedTokenA: null,
-      selectedTokenB: null,
      }]);
     setActiveActions([...activeActions, action]);
   }
   return (
     <AppPage>
       <BodyWrapper>
-      <UniswapAddLiquidityActionCard
-          token0={accountData.token0}
-          token1={accountData.token1}
-          previousActionCardState={null}
-          onChange={(result: ActionCardResult) => {
-          }}
-          onRemove={() => {
-          }}
-        />
         <div className='flex gap-8 items-center mb-4'>
           <PreviousPageButton onClick={() => navigate('../borrow')} />
           <MarginAccountHeader
