@@ -85,6 +85,7 @@ export type AloeResult = {
 export type UniswapResult = {
   uniswapPosition: UniswapPosition;
   isToken0Selected?: boolean;
+  isAmount0LastUpdated?: boolean;
 }
 
 export type ActionCardResult = {
