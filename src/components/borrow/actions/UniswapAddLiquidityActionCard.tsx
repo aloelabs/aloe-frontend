@@ -20,6 +20,7 @@ import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import { TokenData } from '../../../data/TokenData';
 import { TickMath } from '@uniswap/v3-sdk';
+import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 
 type TickPrice = {
   price: string;
@@ -85,26 +86,54 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   //   }
   // });
 
-  // useEffectOnce(() => {
-  //   let mounted = true;
-  //   if (token0 == null || token1 == null) return;
-  //   async function fetch(poolAddress: string) {
-  //     const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
-  //     if (mounted) {
-  //       setUniswapPoolBasics(poolBasics);
-  //     }
-  //     const tickData = await calculateTickData(poolAddress, poolBasics);
-  //     if (mounted) {
-  //       setLiquidityData(tickData);
-  //       setIsLiquidityDataLoading(false);
-  //     }
-  //   }
-  //   const poolAddress = tokensToPool(token0, token1);
-  //   fetch(poolAddress);
-  //   return () => {
-  //     mounted = false;
-  //   };
-  // });
+  useEffectOnce(() => {
+    let mounted = true;
+    if (token0 == null || token1 == null) return;
+    async function fetch(poolAddress: string) {
+      const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
+      if (mounted) {
+        setUniswapPoolBasics(poolBasics);
+      }
+      const tickData = await calculateTickData(poolAddress, poolBasics);
+      if (mounted) {
+        setLiquidityData(tickData);
+        setIsLiquidityDataLoading(false);
+      }
+    }
+    const poolAddress = tokensToPool(token0, token1);
+    fetch(poolAddress);
+    return () => {
+      mounted = false;
+    };
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    if (isLiquidityDataLoading) return;
+    let updatedChartData: ChartEntry[] = [];
+    if (isToken0Selected) {
+      updatedChartData = liquidityData.map((td: TickData) => {
+        return {
+          price: td.price0In1,
+          liquidityDensity: td.totalValueIn0,
+        };
+      });
+    } else {
+      const reversedLiquidityData = [...liquidityData].reverse();
+      updatedChartData = reversedLiquidityData.map((td: TickData) => {
+        return {
+          price: td.price1In0,
+          liquidityDensity: td.totalValueIn0,
+        };
+      });
+    }
+    if (mounted) {
+      setChartData(updatedChartData);
+    }
+    return () => {
+      mounted = false;
+    }
+  }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
 
   useEffectOnce(() => {
     let mounted = true;
@@ -123,11 +152,18 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
   });
 
-  // useEffectOnce(() => {
-  //   if (previousActionCardState) return;
+  useEffect(() => {
+    if (previousActionCardState?.uniswapResult) {
+      const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
+      if (uniswapPosition) {
+        setLocalToken0Amount(uniswapPosition.amount0.inputValue);
+        setLocalToken1Amount(uniswapPosition.amount1.inputValue);
+      }
+    }
     
-  // })
+  }, [isToken0Selected])
   
+
   let lower: TickPrice | null = null;
   let upper: TickPrice | null = null;
   
@@ -183,51 +219,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       tick: isToken0Selected ? upperTick : lowerTick,
     };
   }
-  
-  
-
-  // useEffect(() => {
-  //   let mounted = true;
-  //   if (uniswapPoolBasics == null) return;
-    
-  //   if (mounted) {
-  //     setLower({
-  //       price: isToken0Selected ? lowerPrice : upperPrice,
-  //       tick: isToken0Selected ? lowerTick : upperTick,
-  //     });
-  //     setUpper({
-  //       price: isToken0Selected ? upperPrice : lowerPrice,
-  //       tick: isToken0Selected ? upperTick : lowerTick,
-  //     });
-  //   }
-  //   return () => {
-  //     mounted = false;
-  //   }
-  // }, [isToken0Selected, uniswapPoolBasics]);
-
-  // useEffect(() => {
-  //   if (isLiquidityDataLoading) {
-  //     return;
-  //   }
-  //   let updatedChartData: ChartEntry[] = [];
-  //   if (isToken0Selected) {
-  //     updatedChartData = liquidityData.map((td: TickData) => {
-  //       return {
-  //         price: td.price0In1,
-  //         liquidityDensity: td.totalValueIn0,
-  //       };
-  //     });
-  //   } else {
-  //     const reversedLiquidityData = [...liquidityData].reverse();
-  //     updatedChartData = reversedLiquidityData.map((td: TickData) => {
-  //       return {
-  //         price: td.price1In0,
-  //         liquidityDensity: td.totalValueIn0,
-  //       };
-  //     });
-  //   }
-  //   setChartData(updatedChartData);
-  // }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
 
   function handleLocalToken0AmountInput(value: string) {
     if (uniswapPoolBasics == null || lower == null || upper == null) return;
@@ -353,7 +344,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             token0={token0}
             token1={token1}
             isToken0Selected={isToken0Selected}
-            setIsToken0Selected={() => {
+            setIsToken0Selected={(updatedValue: boolean) => {
                 // const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
                 // const lowerTick = roundDownToNearestN(updatedTickInfo.minTick + (updatedTickInfo.tickOffset / 2), updatedTickInfo.tickSpacing);
                 // const upperTick = roundUpToNearestN(updatedTickInfo.maxTick - (updatedTickInfo.tickOffset / 2), updatedTickInfo.tickSpacing);
@@ -374,7 +365,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                       lowerBound: -1,
                       upperBound: -1,
                     },
-                    isToken0Selected: !isToken0Selected,
+                    isToken0Selected: updatedValue,
                   },
                 });
                   // setLower({
@@ -397,6 +388,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           rangeEnd={upper.price}
           currentPrice={tickToPrice(uniswapPoolBasics?.slot0.tick, token0.decimals, token1.decimals, isToken0Selected)}
         />
+      )}
+      {(chartData.length === 0 || uniswapPoolBasics == null || lower == null || upper == null) && (
+        <LiquidityChartPlaceholder />
       )}
       <div className='flex flex-row gap-2 mb-4'>
         <SteppedInput
