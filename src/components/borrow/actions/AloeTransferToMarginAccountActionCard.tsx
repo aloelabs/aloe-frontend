@@ -30,50 +30,53 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     }
   ];
-  const previouslySelectedToken = previousActionCardState?.selectedTokenA;
-  const selectedToken = previousActionCardState?.selectedTokenA || dropdownOptions[0];
+  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedTokenA;
+  const selectedToken = previousActionCardState?.aloeResult?.selectedTokenA || dropdownOptions[0];
   useEffectOnce(() => {
     if (!previouslySelectedToken) {
       onChange({
-        token0DebtDelta: {
-          numericValue: previousActionCardState?.token0DebtDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token0DebtDelta?.inputValue || '',
+        aloeResult: {
+          token0DebtDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token0DebtDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token0DebtDelta?.inputValue || '',
+          },
+          token1DebtDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token1DebtDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token1DebtDelta?.inputValue || '',
+          },
+          token0RawDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
+          },
+          token1RawDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
+          },
+          token0PlusDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token0PlusDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token0PlusDelta?.inputValue || '',
+          },
+          token1PlusDelta: {
+            numericValue: previousActionCardState?.aloeResult?.token1PlusDelta?.numericValue || 0,
+            inputValue: previousActionCardState?.aloeResult?.token1PlusDelta?.inputValue || '',
+          },
+          selectedTokenA: selectedToken,
         },
-        token1DebtDelta: {
-          numericValue: previousActionCardState?.token1DebtDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token1DebtDelta?.inputValue || '',
-        },
-        token0RawDelta: {
-          numericValue: previousActionCardState?.token0RawDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token0RawDelta?.inputValue || '',
-        },
-        token1RawDelta: {
-          numericValue: previousActionCardState?.token1RawDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token1RawDelta?.inputValue || '',
-        },
-        token0PlusDelta: {
-          numericValue: previousActionCardState?.token0PlusDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token0PlusDelta?.inputValue || '',
-        },
-        token1PlusDelta: {
-          numericValue: previousActionCardState?.token1PlusDelta?.numericValue || 0,
-          inputValue: previousActionCardState?.token1PlusDelta?.inputValue || '',
-        },
-        uniswapPositions: null,
-        selectedTokenA: selectedToken,
+        uniswapResult: null,
+        
       });
     }
   });
   let tokenAmount = '';
   if (previousActionCardState) {
     if (selectedToken.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState.token0RawDelta.inputValue;
+      tokenAmount = previousActionCardState?.aloeResult?.token0RawDelta.inputValue || '';
     } else if (selectedToken.value === dropdownOptions[1].value) {
-      tokenAmount = previousActionCardState.token1RawDelta.inputValue;
+      tokenAmount = previousActionCardState?.aloeResult?.token1RawDelta.inputValue || '';
     } else if (selectedToken.value === dropdownOptions[2].value) {
-      tokenAmount = previousActionCardState.token0PlusDelta.inputValue;
+      tokenAmount = previousActionCardState?.aloeResult?.token0PlusDelta.inputValue || '';
     } else if (selectedToken.value === dropdownOptions[3].value) {
-      tokenAmount = previousActionCardState.token1PlusDelta.inputValue;
+      tokenAmount = previousActionCardState?.aloeResult?.token1PlusDelta.inputValue || '';
     }
   }
   
@@ -90,32 +93,34 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
           onSelect={(option) => {
             if (option?.value !== selectedToken?.value) {
               onChange({
-                token0RawDelta: {
-                  numericValue: 0,
-                  inputValue: '',
+                aloeResult: {
+                  token0RawDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  token1RawDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  token0DebtDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  token1DebtDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  token0PlusDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  token1PlusDelta: {
+                    numericValue: 0,
+                    inputValue: '',
+                  },
+                  selectedTokenA: option,
                 },
-                token1RawDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token0DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token1DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token0PlusDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token1PlusDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                uniswapPositions: null,
-                selectedTokenA: option,
+                uniswapResult: null,
               });
             }
           }}
@@ -143,34 +148,36 @@ export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
                 ? parseFloat(value) || null
                 : null;
             onChange({
-              token0RawDelta: {
-                numericValue: token0Change != null ? token0Change : 0,
-                inputValue: selectedToken?.value === token0?.address ? value : '',
+              aloeResult: {
+                token0RawDelta: {
+                  numericValue: token0Change != null ? token0Change : 0,
+                  inputValue: selectedToken?.value === token0?.address ? value : '',
+                },
+                token1RawDelta: {
+                  numericValue: token1Change != null ? token1Change : 0,
+                  inputValue: selectedToken?.value === token1?.address ? value : '',
+                },
+                token0DebtDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token1DebtDelta: {
+                  numericValue: 0,
+                  inputValue: '',
+                },
+                token0PlusDelta: {
+                  numericValue: token0PlusChange != null ? token0PlusChange : 0,
+                  //TODO: TEMPORARY, add type for token+
+                  inputValue: selectedToken?.value === token0?.address + '1' ? value : '',
+                },
+                token1PlusDelta: {
+                  numericValue: token1PlusChange != null ? token1PlusChange : 0,
+                  //TODO: TEMPORARY, add type for token+
+                  inputValue: selectedToken?.value === token1?.address + '1' ? value : '',
+                },
+                selectedTokenA: selectedToken,
               },
-              token1RawDelta: {
-                numericValue: token1Change != null ? token1Change : 0,
-                inputValue: selectedToken?.value === token1?.address ? value : '',
-              },
-              token0DebtDelta: {
-                numericValue: 0,
-                inputValue: '',
-              },
-              token1DebtDelta: {
-                numericValue: 0,
-                inputValue: '',
-              },
-              token0PlusDelta: {
-                numericValue: token0PlusChange != null ? token0PlusChange : 0,
-                //TODO: TEMPORARY, add type for token+
-                inputValue: selectedToken?.value === token0?.address + '1' ? value : '',
-              },
-              token1PlusDelta: {
-                numericValue: token1PlusChange != null ? token1PlusChange : 0,
-                //TODO: TEMPORARY, add type for token+
-                inputValue: selectedToken?.value === token1?.address + '1' ? value : '',
-              },
-              uniswapPositions: null,
-              selectedTokenA: selectedToken,
+              uniswapResult: null,
             });
           }}
           max='100'

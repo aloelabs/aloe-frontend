@@ -72,20 +72,29 @@ export type UniswapPosition = {
   upperBound: number;
 };
 
-export type ActionCardResult = {
+export type AloeResult = {
   token0RawDelta: ActionValue;
   token1RawDelta: ActionValue;
   token0DebtDelta: ActionValue;
   token1DebtDelta: ActionValue;
   token0PlusDelta: ActionValue;
   token1PlusDelta: ActionValue;
-  uniswapPositions: UniswapPosition | null;
   selectedTokenA: DropdownOption | null;
-};
+}
+
+export type UniswapResult = {
+  uniswapPosition: UniswapPosition;
+  isToken0Selected?: boolean;
+}
+
+export type ActionCardResult = {
+  aloeResult: AloeResult | null;
+  uniswapResult: UniswapResult | null;
+}
 
 export type ActionCardProps = {
-  token0: TokenData | null;
-  token1: TokenData | null;
+  token0: TokenData;
+  token1: TokenData;
   previousActionCardState: ActionCardResult | null;
   onRemove: () => void;
   onChange: (result: ActionCardResult) => void;
