@@ -235,7 +235,26 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
   }
 
-  //TODO: try to consolidate this function and updateUpper's logic
+  function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
+    onChange({
+      aloeResult: null,
+      uniswapResult: {
+        uniswapPosition: {
+          amount0: {
+            inputValue: amount0,
+            numericValue: parseFloat(amount0) || 0,
+          },
+          amount1: {
+            inputValue: amount1,
+            numericValue: parseFloat(amount1) || 0,
+          },
+          lowerBound: lowerTick,
+          upperBound: upperTick,
+        }
+      },
+    })
+  }
+
   function updateLower(updatedLower: TickPrice) {
     const numericAmount0 = parseFloat(localToken0Amount);
     const numericAmount1 = parseFloat(localToken1Amount);
@@ -250,28 +269,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         setLocalToken0Amount(updatedAmount0);
       }
     }
-    onChange({
-      aloeResult: null,
-      uniswapResult: {
-        uniswapPosition: {
-          amount0: {
-            inputValue: updatedAmount0,
-            numericValue: parseFloat(updatedAmount0) || 0,
-          },
-          amount1: {
-            inputValue: updatedAmount1,
-            numericValue: parseFloat(updatedAmount1) || 0,
-          },
-          lowerBound: updatedLower.tick,
-          upperBound: upper?.tick || null,
-        },
-        isToken0Selected: isToken0Selected,
-        isAmount0LastUpdated: localIsAmount0LastUpdated,
-      },
-    });
+    updateRange(updatedAmount0, updatedAmount1, updatedLower.tick, upper?.tick || null);
   }
 
-  //TODO: try to consolidate this function and updateLower's logic
   function updateUpper(updatedUpper: TickPrice) {
     const numericAmount0 = parseFloat(localToken0Amount);
     const numericAmount1 = parseFloat(localToken1Amount);
@@ -286,25 +286,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         setLocalToken0Amount(updatedAmount0);
       }
     }
-    onChange({
-      aloeResult: null,
-      uniswapResult: {
-        uniswapPosition: {
-          amount0: {
-            inputValue: updatedAmount0,
-            numericValue: parseFloat(updatedAmount0) || 0,
-          },
-          amount1: {
-            inputValue: updatedAmount1,
-            numericValue: parseFloat(updatedAmount1) || 0,
-          },
-          lowerBound: lower?.tick || null,
-          upperBound: updatedUpper.tick,
-        },
-        isToken0Selected: isToken0Selected,
-        isAmount0LastUpdated: localIsAmount0LastUpdated,
-      },
-    });
+    updateRange(updatedAmount0, updatedAmount1, lower?.tick || null, updatedUpper.tick);
   }
 
   function updateTokenAmountInput() {
