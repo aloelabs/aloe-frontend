@@ -163,18 +163,89 @@ export function Dropdown(props: DropdownProps) {
   );
 }
 
-export type DropdownWithPlaceholderOption = DropdownOption & {
+export type DropdownWithPlaceholderProps = {
+  options: DropdownOption[];
+  selectedOption?: DropdownOption;
+  onSelect: (option: DropdownOption) => void;
+  placeholder: string;
+  placeAbove?: boolean;
+  small?: boolean;
+}
+
+export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
+  const { options, selectedOption, onSelect, placeholder, placeAbove, small } = props;
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
+
+  const toggleList = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const selectItem = (option: DropdownOption) => {
+    onSelect(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <DropdownWrapper ref={dropdownRef}>
+      <DropdownHeader onClick={toggleList}>
+        <div className='flex items-center gap-3'>
+          {selectedOption ? (
+            <>
+              {selectedOption.icon && (
+                <div className='w-4 h-4 bg-white rounded-full'>
+                  <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+                </div>
+              )}
+              <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
+            </>
+          ) : (
+            <Text size='M'>{placeholder}</Text>
+          )}          
+        </div>
+        <img
+          className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-6'}
+          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
+          alt=''
+        />
+      </DropdownHeader>
+      {isOpen && (
+        <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
+          {options.map((option) => (
+            <DropdownOptionContainer
+              className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
+              key={option.value}
+              onClick={() => selectItem(option)}
+            >
+              <div className='flex items-center gap-3'>
+                {option.icon && (
+                  <div className='w-4 h-4 bg-white rounded-full'>
+                    <img className='w-4 h-4' src={option.icon} alt='' />
+                  </div>
+                )}
+                <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+              </div>
+            </DropdownOptionContainer>
+          ))}
+        </DropdownList>
+      )}
+    </DropdownWrapper>
+  );
+}
+
+export type DropdownWithPlaceholderValueOption = DropdownOption & {
   isDefault: boolean;
 };
 
-export type DropdownWithPlaceholderProps = {
-  options: DropdownWithPlaceholderOption[];
-  selectedOption: DropdownWithPlaceholderOption;
-  onSelect: (option: DropdownWithPlaceholderOption) => void;
+export type DropdownWithPlaceholderValueProps = {
+  options: DropdownWithPlaceholderValueOption[];
+  selectedOption: DropdownWithPlaceholderValueOption;
+  onSelect: (option: DropdownWithPlaceholderValueOption) => void;
   placeholder: string;
 };
 
-export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
+export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValueProps) {
   const { options, selectedOption, onSelect, placeholder } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -184,7 +255,7 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (option: DropdownWithPlaceholderOption, index: number) => {
+  const selectItem = (option: DropdownWithPlaceholderValueOption, index: number) => {
     onSelect(option);
     setIsOpen(false);
   };

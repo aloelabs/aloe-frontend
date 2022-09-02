@@ -5,8 +5,8 @@ import BrowseCard from '../components/browse/BrowseCard';
 import BrowsePoolsPerformance from '../components/browse/BrowsePoolsPerformance';
 import { OutlinedGradientRoundedButtonWithIcon } from '../components/common/Buttons';
 import {
-  DropdownWithPlaceholder,
-  DropdownWithPlaceholderOption,
+  DropdownWithPlaceholderValue,
+  DropdownWithPlaceholderValueOption,
   MultiDropdownWithPlaceholder,
   MultiDropdownOption,
 } from '../components/common/Dropdown';
@@ -125,9 +125,9 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
       value: 'oldest',
       isDefault: false,
     },
-  ] as DropdownWithPlaceholderOption[];
+  ] as DropdownWithPlaceholderValueOption[];
   const [selectedSortByOption, setSelectedSortByOption] =
-    useState<DropdownWithPlaceholderOption>(sortByOptions[0]);
+    useState<DropdownWithPlaceholderValueOption>(sortByOptions[0]);
 
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
   const { poolDataMap } = useContext(BlendTableContext);
@@ -347,7 +347,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
                 placeholder='All Tokens'
                 selectedText='Tokens'
               />
-              <DropdownWithPlaceholder
+              <DropdownWithPlaceholderValue
                 options={sortByOptions}
                 selectedOption={selectedSortByOption}
                 onSelect={setSelectedSortByOption}
