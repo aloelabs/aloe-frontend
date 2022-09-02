@@ -255,38 +255,31 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     })
   }
 
-  function updateLower(updatedLower: TickPrice) {
+  function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
     const numericAmount0 = parseFloat(localToken0Amount);
     const numericAmount1 = parseFloat(localToken1Amount);
     let updatedAmount0 = localToken0Amount;
     let updatedAmount1 = localToken1Amount;
-    if (!isNaN(numericAmount0) && !isNaN(numericAmount1) && lower != null && upper != null && currentTick != null) {
+    if (!isNaN(numericAmount0) && !isNaN(numericAmount1) && lowerTick != null && upperTick != null && currentTick != null) {
       if (localIsAmount0LastUpdated) {
-        updatedAmount1 = calculateAmount1FromAmount0(numericAmount0, updatedLower.tick, upper.tick, currentTick, token0.decimals, token1.decimals);
+        updatedAmount1 = calculateAmount1FromAmount0(numericAmount0, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
         setLocalToken1Amount(updatedAmount1);
       } else {
-        updatedAmount0 = calculateAmount0FromAmount1(numericAmount1, updatedLower.tick, upper.tick, currentTick, token0.decimals, token1.decimals);
+        updatedAmount0 = calculateAmount0FromAmount1(numericAmount1, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
         setLocalToken0Amount(updatedAmount0);
       }
     }
-    updateRange(updatedAmount0, updatedAmount1, updatedLower.tick, upper?.tick || null);
+    return [updatedAmount0, updatedAmount1];
+  }
+
+  function updateLower(updatedLower: TickPrice) {
+    const updatedAmounts = calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
+    updateRange(updatedAmounts[0], updatedAmounts[1], updatedLower.tick, upper?.tick || null);
   }
 
   function updateUpper(updatedUpper: TickPrice) {
-    const numericAmount0 = parseFloat(localToken0Amount);
-    const numericAmount1 = parseFloat(localToken1Amount);
-    let updatedAmount0 = localToken0Amount;
-    let updatedAmount1 = localToken1Amount;
-    if (!isNaN(numericAmount0) && !isNaN(numericAmount1) && lower != null && upper != null && currentTick != null) {
-      if (localIsAmount0LastUpdated) {
-        updatedAmount1 = calculateAmount1FromAmount0(numericAmount0, lower.tick, updatedUpper.tick, currentTick, token0.decimals, token1.decimals);
-        setLocalToken1Amount(updatedAmount1);
-      } else {
-        updatedAmount0 = calculateAmount0FromAmount1(numericAmount1, lower.tick, updatedUpper.tick, currentTick, token0.decimals, token1.decimals);
-        setLocalToken0Amount(updatedAmount0);
-      }
-    }
-    updateRange(updatedAmount0, updatedAmount1, lower?.tick || null, updatedUpper.tick);
+    const updatedAmounts = calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
+    updateRange(updatedAmounts[0], updatedAmounts[1], lower?.tick || null, updatedUpper.tick);
   }
 
   function updateTokenAmountInput() {
