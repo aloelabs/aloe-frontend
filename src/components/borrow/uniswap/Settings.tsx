@@ -116,7 +116,12 @@ export default function Settings(props: SettingsProps) {
               onBlur={() => {
                 const currentValue = parseFloat(localSlippagePercentage);
                 const output = isNaN(currentValue) ? '' : currentValue.toFixed(2);
-                updateSlippagePercentage(output);
+                if (slippagePercentage !== output) {
+                  updateSlippagePercentage(output);
+                } else {
+                  setLocalSlippagePercentage(output);
+                }
+                
               }}
               inputClassName={localSlippagePercentage !== '' ? 'active' : ''}
               placeholder='0.50'
