@@ -6,6 +6,7 @@ import { Text, Display } from "../common/Typography";
 import { ReactComponent as PlusIcon } from "../../assets/svg/plus.svg";
 import { Action, ActionCardResult } from "../../data/Actions";
 import { TokenData } from "../../data/TokenData";
+import { FeeTier } from "../../data/FeeTier";
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -51,6 +52,7 @@ const ActionItemCount = styled.span`
 export type ManageAccountWidgetProps = {
   token0: TokenData;
   token1: TokenData;
+  feeTier: FeeTier;
   activeActions: Array<Action>;
   actionResults: Array<ActionCardResult>;
   updateActionResults: (actionResults: Array<ActionCardResult>) => void;
@@ -59,7 +61,7 @@ export type ManageAccountWidgetProps = {
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
-  const { token0, token1, activeActions, actionResults, updateActionResults, onAddAction, onRemoveAction } = props;
+  const { token0, token1, feeTier, activeActions, actionResults, updateActionResults, onAddAction, onRemoveAction } = props;
   return (
     <Wrapper>
       <div>
@@ -80,6 +82,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               <action.actionCard
                 token0={token0}
                 token1={token1}
+                feeTier={feeTier}
                 previousActionCardState={actionResults[index]}
                 onRemove={() => {
                   onRemoveAction(index);

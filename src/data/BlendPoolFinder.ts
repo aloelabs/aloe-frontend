@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
-import { BlendPoolMarkers, FeeTier } from './BlendPoolMarkers';
+import { BlendPoolMarkers } from './BlendPoolMarkers';
+import { FeeTier } from './FeeTier';
 
 import AloeBlendABI from '../assets/abis/AloeBlend.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';

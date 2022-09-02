@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Display, Text } from '../common/Typography';
 import { TokenData } from '../../data/TokenData';
-import { FeeTier, PrintFeeTier } from '../../data/BlendPoolMarkers';
+import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';

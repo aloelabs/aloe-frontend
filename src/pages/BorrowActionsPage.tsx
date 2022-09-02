@@ -15,7 +15,7 @@ import {
   ActionProviders,
   CumulativeActionCardResult,
 } from '../data/Actions';
-import { FeeTier } from '../data/BlendPoolMarkers';
+import { FeeTier } from '../data/FeeTier';
 import { GetTokenData } from '../data/TokenData';
 import { useNavigate, useParams } from 'react-router-dom';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
@@ -329,6 +329,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             token0={accountData.token0}
             token1={accountData.token1}
+            feeTier={accountData.feeTier}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}

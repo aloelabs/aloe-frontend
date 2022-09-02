@@ -8,7 +8,7 @@ import LiquidityChart, {
 import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import Settings from '../uniswap/Settings';
-import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getMinTick, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getMinTick, getPoolAddressFromTokens, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
@@ -26,21 +26,22 @@ type TickPrice = {
 
 //TODO: This is a temporary workaround for getting the pool, 
 // in the future we need to take into account the fee tier and get this from another source.
-function tokensToPool(token0: TokenData, token1: TokenData): string {
-  if (token0.address.toLowerCase() === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
-    return '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640';
-  } else if (token0.address.toLowerCase() === '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
-    return '0x4585fe77225b41b697c938b018e2ac67ac5a20c0';
-  } else {
-    return '';
-  }
-}
+// function tokensToPool(token0: TokenData, token1: TokenData): string {
+//   if (token0.address.toLowerCase() === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
+//     return '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640';
+//   } else if (token0.address.toLowerCase() === '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
+//     return '0x4585fe77225b41b697c938b018e2ac67ac5a20c0';
+//   } else {
+//     return '';
+//   }
+// }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { token0, token1, previousActionCardState, onChange, onRemove } = props;
+  const { token0, token1, feeTier, previousActionCardState, onChange, onRemove } = props;
 
   const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
 
+  const [isError, setIsError] = useState(false);
   const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] = useState(false);
   const [localToken0Amount, setLocalToken0Amount] = useState('');
   const [localToken1Amount, setLocalToken1Amount] = useState('');
@@ -52,9 +53,11 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   const provider = useProvider();
 
+  const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier);
+
   useEffectOnce(() => {
     let mounted = true;
-    if (token0 == null || token1 == null) return;
+    if (poolAddress == null) return;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
       if (mounted) {
@@ -66,7 +69,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         setIsLiquidityDataLoading(false);
       }
     }
-    const poolAddress = tokensToPool(token0, token1);
     fetch(poolAddress);
     return () => {
       mounted = false;
@@ -105,13 +107,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   useEffectOnce(() => {
     let mounted = true;
+    if (poolAddress == null) return;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }
-    }
-    const poolAddress = tokensToPool(token0, token1);
+    }    
     fetch(poolAddress);
     return () => {
       mounted = false;
@@ -412,6 +414,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) > upper.tick
             )
           }
+          disabled={poolAddress == null}
         />
         <SteppedInput
           value={upper?.price || ''}
@@ -477,6 +480,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             tickInfo == null ||
             upper == null
           }
+          disabled={poolAddress == null}
         />
       </div>
       <div className='w-full flex flex-col gap-4'>

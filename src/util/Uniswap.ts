@@ -4,12 +4,13 @@ import { ethers } from 'ethers';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import { TickMath, tickToPrice as uniswapTickToPrice, maxLiquidityForAmounts, Position, Pool, SqrtPriceMath, nearestUsableTick } from '@uniswap/v3-sdk';
+import { TickMath, tickToPrice as uniswapTickToPrice, maxLiquidityForAmounts, Position, Pool, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
 import { MaxUint256, Token } from '@uniswap/sdk-core';
 import { TokenData } from '../data/TokenData';
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { theGraphUniswapV3Client } from '../App';
 import { UniswapTicksQuery } from './GraphQL';
+import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
 
 const BINS_TO_FETCH = 500;
 const Q48 = ethers.BigNumber.from('0x1000000000000')
@@ -325,4 +326,24 @@ export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, 
 
 export function getMinTick(tickSpacing: number) {
   return nearestUsableTick(TickMath.MIN_TICK, tickSpacing);
+}
+
+export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
+  const numericFeeTier = GetNumericFeeTier(feeTier);
+  if (numericFeeTier === 0) {
+    //Invalid feeTier
+    //TODO: we should probably throw an error
+    return null;
+  }
+  return numericFeeTier as FeeAmount;
+}
+
+export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string | null {
+  //If in the future we want to use this with something besides ethereum, we will need to change the
+  //chainId passed to the tokens.
+  const uniswapToken0 = new Token(1, token0.address, token0.decimals);
+  const uniswapToken1 = new Token(1, token1?.address, token1?.decimals);
+  const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
+  if (uniswapFeeAmount == null) return null;
+  return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
 }

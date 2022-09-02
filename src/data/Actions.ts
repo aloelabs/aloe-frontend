@@ -9,6 +9,7 @@ import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdra
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import { DropdownOption } from '../components/common/Dropdown';
+import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
 
 export const ActionProviders = {
@@ -101,6 +102,7 @@ export type CumulativeActionCardResult = {
 export type ActionCardProps = {
   token0: TokenData;
   token1: TokenData;
+  feeTier: FeeTier;
   previousActionCardState: ActionCardResult | null;
   onRemove: () => void;
   onChange: (result: ActionCardResult) => void;

@@ -3,10 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import {
-  BlendPoolMarkers,
-  PrintFeeTier,
-} from '../../data/BlendPoolMarkers';
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
+import { PrintFeeTier } from '../../data/FeeTier';
 import {
   BROWSE_CARD_WIDTH_LG,
   BROWSE_CARD_WIDTH_MD,
