@@ -15,19 +15,23 @@ const AccountStatsCardWrapper = styled.div`
 export type AccountStatsCardProps = {
   label: string;
   value: string;
+  hypothetical?: string;
   className?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, className } = props;
+  const { label, value, hypothetical, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
       <Text size='S' weight='medium' color={SECONDARY_COLOR}>
         {label}
       </Text>
-      <Text size='L' weight='medium'>
+      <Text size='L' weight='medium' className={hypothetical ? 'line-through' : ''}>
         {value}
       </Text>
+      {hypothetical && (
+        <Text size='L' weight='medium'>{hypothetical}</Text>
+      )}
     </AccountStatsCardWrapper>
   );
 }

@@ -53,13 +53,13 @@ export type ManageAccountWidgetProps = {
   token1: TokenData;
   activeActions: Array<Action>;
   actionResults: Array<ActionCardResult>;
-  setActionResults: (actionResults: Array<ActionCardResult>) => void;
+  updateActionResults: (actionResults: Array<ActionCardResult>) => void;
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
-  const { token0, token1, activeActions, actionResults, setActionResults, onAddAction, onRemoveAction } = props;
+  const { token0, token1, activeActions, actionResults, updateActionResults, onAddAction, onRemoveAction } = props;
   return (
     <Wrapper>
       <div>
@@ -85,8 +85,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   onRemoveAction(index);
                 }}
                 onChange={(result: ActionCardResult) => {
-                  setActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
-                  console.log(actionResults);
+                  updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
                 }}
               />
             </ActionItem>

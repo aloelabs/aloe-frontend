@@ -13,6 +13,7 @@ import {
   ActionCardResult,
   ActionProvider,
   ActionProviders,
+  CumulativeActionCardResult,
 } from '../data/Actions';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { GetTokenData } from '../data/TokenData';
@@ -24,6 +25,19 @@ import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationP
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
+import TokenChooser from '../components/common/TokenChooser';
+
+export type MarginAccountBalances = {
+  assets: number;
+  liabilities: number;
+  lowerLiquidationThreshold: number;
+  upperLiquidationThreshold: number;
+}
+
+export type MarginAccount = {
+  token0: MarginAccountBalances;
+  token1: MarginAccountBalances;
+}
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -157,24 +171,147 @@ const AccountStatsGrid = styled.div`
   gap: 16px;
 `;
 
+const FAKE_DATA: MarginAccount = {
+  token0: {
+    assets: 10,
+    liabilities: 10,
+    lowerLiquidationThreshold: 2000,
+    upperLiquidationThreshold: Infinity,
+  },
+  token1: {
+    assets: 50,
+    liabilities: 50,
+    lowerLiquidationThreshold: 1250,
+    upperLiquidationThreshold: Infinity,
+  },
+};
+
 export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const account = params.account;
   const accountData = getAccount(account || '');
+  
   const [actionResults, setActionResults] = React.useState<Array<ActionCardResult>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
+  const [isToken0Selected, setIsToken0Selected] = React.useState(false);
   const navigate = useNavigate();
+
   if (!accountData) {
     //If no account data is found, don't render the page
     return null;
   }
+
+  const activeToken = isToken0Selected ? accountData.token0 : accountData.token1;
+  const inactiveToken = isToken0Selected ? accountData.token1 : accountData.token0;
+  const currentBalances = isToken0Selected ? FAKE_DATA.token0 : FAKE_DATA.token1;
+
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, {
       aloeResult: null,
       uniswapResult: null,
     }]);
     setActiveActions([...activeActions, action]);
+  }
+
+  function updateCumulativeActionResult(updatedActionResults: ActionCardResult[]) {
+    let cumulativeActionResult: CumulativeActionCardResult = {
+      aloeResult: {
+        selectedTokenA: null,
+        token0RawDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+        token0DebtDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+        token0PlusDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+        token1RawDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+        token1DebtDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+        token1PlusDelta: {
+          inputValue: '',
+          numericValue: 0,
+        },
+      },
+      uniswapPositions: [],
+    }
+    for (let actionResult of updatedActionResults) {
+      const aloeResult = actionResult.aloeResult;
+      const uniswapPosition = actionResult.uniswapResult?.uniswapPosition;
+      if (aloeResult) {
+        cumulativeActionResult = {
+          aloeResult: {
+            selectedTokenA: null,
+            token0RawDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + aloeResult.token0RawDelta.numericValue,
+            },
+            token0DebtDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0) + aloeResult.token0DebtDelta.numericValue,
+            },
+            token0PlusDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) + aloeResult.token0PlusDelta.numericValue,
+            },
+            token1RawDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token1RawDelta.numericValue || 0) + aloeResult.token1RawDelta.numericValue,
+            },
+            token1DebtDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0) + aloeResult.token1DebtDelta.numericValue,
+            },
+            token1PlusDelta: {
+              inputValue: '',
+              numericValue: (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) + aloeResult.token1PlusDelta.numericValue,
+            },
+          },
+          uniswapPositions: cumulativeActionResult.uniswapPositions,
+        }
+      } else if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
+        const existingPositionIndex = cumulativeActionResult.uniswapPositions.findIndex((pos) => {
+          return pos.lowerBound === uniswapPosition.lowerBound && pos.upperBound === uniswapPosition.upperBound;
+        });
+
+        if (existingPositionIndex !== -1) {
+          const existingPosition = cumulativeActionResult.uniswapPositions[existingPositionIndex];
+          cumulativeActionResult.uniswapPositions[existingPositionIndex] = {
+            amount0: {
+              inputValue: '',
+              numericValue: existingPosition.amount0.numericValue + uniswapPosition.amount0.numericValue,
+            },
+            amount1: {
+              inputValue: '',
+              numericValue: existingPosition.amount1.numericValue + uniswapPosition.amount1.numericValue,
+            },
+            lowerBound: existingPosition.lowerBound,
+            upperBound: existingPosition.upperBound,
+          }
+        } else {
+          cumulativeActionResult = {
+            aloeResult: cumulativeActionResult.aloeResult,
+            uniswapPositions: [...cumulativeActionResult.uniswapPositions, uniswapPosition],
+          }
+        }
+      }
+    }
+    console.log(cumulativeActionResult);
+  }
+
+  function updateActionResults(updatedActionResults: ActionCardResult[]) {
+    setActionResults(updatedActionResults);
+    updateCumulativeActionResult(updatedActionResults);
   }
   return (
     <AppPage>
@@ -194,13 +331,15 @@ export default function BorrowActionsPage() {
             token1={accountData.token1}
             activeActions={activeActions}
             actionResults={actionResults}
-            setActionResults={setActionResults}
+            updateActionResults={updateActionResults}
             onAddAction={() => {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {
               let actionResultsCopy = [...actionResults];
-              setActionResults(actionResultsCopy.filter((_, i) => i !== index));
+              const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
+              setActionResults(updatedActionResults);
+              updateCumulativeActionResult(updatedActionResults);
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
@@ -208,29 +347,41 @@ export default function BorrowActionsPage() {
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
           <div className='w-full flex flex-col gap-4 mb-8'>
-            <Display size='M' weight='medium'>
-              Summary
-            </Display>
+            <div className='flex gap-4 items-center'>
+              <Display size='M' weight='medium'>
+                Summary
+              </Display>
+              <TokenChooser
+                token0={accountData.token0}
+                token1={accountData.token1}
+                isToken0Selected={isToken0Selected}
+                setIsToken0Selected={setIsToken0Selected}
+              />
+            </div>
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
-                value={`1100 ${accountData.token0?.ticker || ''}`}
+                value={`${currentBalances.assets} ${activeToken?.ticker || ''}`}
+                hypothetical={`11 ${activeToken?.ticker || ''}`}
               />
               <AccountStatsCard
                 label='Liabilities'
-                value={`500 ${accountData.token0?.ticker || ''}`}
+                value={`${currentBalances.liabilities} ${activeToken?.ticker || ''}`}
+                hypothetical={`11 ${activeToken?.ticker || ''}`}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
-                value={`2000 ${accountData.token0?.ticker || ''}/${
-                  accountData.token1?.ticker || ''
+                value={`${currentBalances.lowerLiquidationThreshold} ${activeToken?.ticker || ''}/${
+                  inactiveToken?.ticker || ''
                 }`}
+                hypothetical={undefined}
               />
               <AccountStatsCard
                 label='Upper Liquidation Threshold'
-                value={`∞ ${accountData.token0?.ticker || ''}/${
-                  accountData.token1?.ticker || ''
+                value={`${currentBalances.upperLiquidationThreshold} ${activeToken?.ticker || ''}/${
+                  inactiveToken?.ticker || ''
                 }`}
+                hypothetical={undefined}
               />
             </AccountStatsGrid>
           </div>

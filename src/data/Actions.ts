@@ -93,6 +93,11 @@ export type ActionCardResult = {
   uniswapResult: UniswapResult | null;
 }
 
+export type CumulativeActionCardResult = {
+  aloeResult: AloeResult | null;
+  uniswapPositions: UniswapPosition[];
+}
+
 export type ActionCardProps = {
   token0: TokenData;
   token1: TokenData;
