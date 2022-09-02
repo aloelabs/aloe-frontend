@@ -256,7 +256,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
     onChange({
-      aloeResult: null,
+      aloeResult: {
+        token0RawDelta: {
+          inputValue: amount0,
+          numericValue: -1 * (parseFloat(amount0) || 0),
+        },
+        token1RawDelta: {
+          inputValue: amount1,
+          numericValue: -1 * (parseFloat(amount1) || 0),
+        },
+        token0DebtDelta: DEFAULT_ACTION_VALUE,
+        token1DebtDelta: DEFAULT_ACTION_VALUE,
+        token0PlusDelta: DEFAULT_ACTION_VALUE,
+        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        selectedTokenA: null,
+      },
       uniswapResult: {
         uniswapPosition: {
           amount0: {
@@ -306,7 +320,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   function updateTokenAmountInput() {
     onChange({
-      aloeResult: null,
+      aloeResult: {
+        token0RawDelta: {
+          inputValue: localToken0Amount,
+          numericValue: -1 * (parseFloat(localToken0Amount) || 0),
+        },
+        token1RawDelta: {
+          inputValue: localToken1Amount,
+          numericValue: -1 * (parseFloat(localToken1Amount) || 0),
+        },
+        token0DebtDelta: DEFAULT_ACTION_VALUE,
+        token1DebtDelta: DEFAULT_ACTION_VALUE,
+        token0PlusDelta: DEFAULT_ACTION_VALUE,
+        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        selectedTokenA: null,
+      },
       uniswapResult: {
         uniswapPosition: {
           amount0: {

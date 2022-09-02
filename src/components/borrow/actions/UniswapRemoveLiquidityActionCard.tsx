@@ -63,6 +63,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   function handleSelectOption(updatedOption: DropdownOption) {
     const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
     onChange({
+      //TODO: Update aloe result
       aloeResult: null,
       uniswapResult: {
         uniswapPosition: {
