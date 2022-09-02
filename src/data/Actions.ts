@@ -68,8 +68,8 @@ export type ActionValue = {
 export type UniswapPosition = {
   amount0: ActionValue;
   amount1: ActionValue;
-  lowerBound: number;
-  upperBound: number;
+  lowerBound: number | null;
+  upperBound: number | null;
 };
 
 export type AloeResult = {
