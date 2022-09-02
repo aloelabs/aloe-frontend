@@ -29,7 +29,7 @@ import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
 import tw from 'twin.macro';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
 import { Connector, useAccount } from 'wagmi';
-import { FeeTier } from '../data/BlendPoolMarkers';
+import { FeeTier } from '../data/FeeTier';
 import { theGraphUniswapV3Client } from '../App';
 import { getUniswapVolumeQuery } from '../util/GraphQL';
 import { IOSStyleSpinner } from '../components/common/Spinner';

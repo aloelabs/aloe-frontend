@@ -1,5 +1,5 @@
 import React from 'react';
-import { FeeTier, PrintFeeTier } from '../../data/BlendPoolMarkers';
+import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
 import RoundedBadge from './RoundedBadge';
 
 export type FeeTierProps = {

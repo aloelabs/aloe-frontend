@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { FeeTier } from '../../data/BlendPoolMarkers';
+import { FeeTier } from '../../data/FeeTier';
 import { TokenData } from '../../data/TokenData';
 import {
   getBrighterColor,

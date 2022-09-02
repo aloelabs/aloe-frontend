@@ -11,7 +11,7 @@ import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { Divider } from '../components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
 import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
-import { FeeTier } from '../data/BlendPoolMarkers';
+import { FeeTier } from '../data/FeeTier';
 import YieldAggregatorCard from '../components/lend/YieldAggregatorCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
 import {

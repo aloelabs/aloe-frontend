@@ -5,7 +5,7 @@ import AppPage from '../components/common/AppPage';
 import { Display, Text } from '../components/common/Typography';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import { GetTokenData } from '../data/TokenData';
-import { FeeTier } from '../data/BlendPoolMarkers';
+import { FeeTier } from '../data/FeeTier';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 

@@ -1,4 +1,5 @@
-import { BlendPoolMarkers, PrintFeeTier } from './BlendPoolMarkers';
+import { BlendPoolMarkers } from './BlendPoolMarkers';
+import { PrintFeeTier } from './FeeTier';
 import { GetTokenData } from './TokenData';
 import { GetSiloData } from './SiloData';
 import { FormatAddressStart } from '../util/FormatAddress';
