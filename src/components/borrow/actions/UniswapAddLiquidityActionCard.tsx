@@ -37,13 +37,6 @@ type TickPrice = {
 //   }
 // }
 
-const DEFAULT_UNISWAP_POSITION: UniswapPosition = {
-  amount0: DEFAULT_ACTION_VALUE,
-  amount1: DEFAULT_ACTION_VALUE,
-  lowerBound: null,
-  upperBound: null,
-}
-
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, feeTier, previousActionCardState, onChange, onRemove } = props;
 
