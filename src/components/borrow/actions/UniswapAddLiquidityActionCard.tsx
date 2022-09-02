@@ -132,10 +132,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let mounted = true;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
-      const updatedTickInfo = calculateTickInfo(poolBasics, token0, token1, isToken0Selected);
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
-        setTickInfo(updatedTickInfo);
       }
     }
     const poolAddress = tokensToPool(token0, token1);
@@ -144,6 +142,18 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       mounted = false;
     }
   });
+
+  useEffect(() => {
+    let mounted = true;
+    if (!uniswapPoolBasics) return;
+    const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
+    if (mounted) {
+      setTickInfo(updatedTickInfo);
+    }
+    return () => {
+      mounted = false;
+    }
+  }, [isToken0Selected, uniswapPoolBasics])
 
   useEffect(() => {
     if (previousActionCardState?.uniswapResult) {
