@@ -14,7 +14,7 @@ import TokenChooser from '../../common/TokenChooser';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import Settings from '../uniswap/Settings';
-import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getMinTick, getUniswapPoolBasics, priceToTick, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getMinTick, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
@@ -212,6 +212,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       price: isToken0Selected ? upperPrice : lowerPrice,
       tick: isToken0Selected ? upperTick : lowerTick,
     };
+  }
+
+  let isAmount0InputDisabled = true;
+  let isAmount1InputDisabled = true;
+
+  if (lower != null && upper != null && currentTick != null) {
+    isAmount0InputDisabled = shouldAmount0InputBeDisabled(lower.tick, upper.tick, currentTick);
+    isAmount1InputDisabled = shouldAmount1InputBeDisabled(lower.tick, upper.tick, currentTick);
   }
 
   function handleLocalToken0AmountInput(value: string) {
@@ -538,15 +546,17 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
           tokenLabel={token0?.ticker || ''}
-          value={localToken0Amount}
+          value={isAmount0InputDisabled ? '' :localToken0Amount}
           onChange={handleLocalToken0AmountInput}
           onBlur={updateTokenAmountInput}
+          disabled={isAmount0InputDisabled}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
-          value={localToken1Amount}
+          value={isAmount1InputDisabled ? '' : localToken1Amount}
           onChange={handleLocalToken1AmountInput}
           onBlur={updateTokenAmountInput}
+          disabled={isAmount1InputDisabled}
         />
       </div>
     </BaseActionCard>
