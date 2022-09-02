@@ -47,6 +47,7 @@ export type TokenAmountInputProps = {
   maxed?: boolean;
   error?: boolean;
   errorMessage?: string;
+  disabled?: boolean;
   onBlur?: () => void;
 };
 
@@ -78,6 +79,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         maxDisabled={props.maxed}
         fullWidth={true}
         onBlur={props?.onBlur}
+        disabled={props?.disabled}
       />
       {props.error && (
         <ErrorMessageWrapper>
