@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
@@ -54,11 +54,22 @@ const AutoSlippageButton = styled.button.attrs(
   border: 1px solid rgba(26, 41, 52, 1);
 `;
 
+export type SettingsProps = {
+  slippagePercentage: string;
+  updateSlippagePercentage: (updatedSlippage: string) => void;
+};
+
 //TODO: add error messages for illegal input and warning messages for naive input
-export default function Settings() {
+export default function Settings(props: SettingsProps) {
+  const { slippagePercentage, updateSlippagePercentage } = props;
   const [localSlippagePercentage, setLocalSlippagePercentage] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const settingsMenuRef = useRef(null);
+  useEffect(() => {
+    if (slippagePercentage !== localSlippagePercentage) {
+      setLocalSlippagePercentage(slippagePercentage);
+    }
+  }, [slippagePercentage]);
   useClickOutside(settingsMenuRef, () => {
     setIsMenuOpen(false);
   });
@@ -86,7 +97,7 @@ export default function Settings() {
               active={localSlippagePercentage === ''}
               onClick={() => {
                 if (localSlippagePercentage !== '') {
-                  setLocalSlippagePercentage('');
+                  updateSlippagePercentage('');
                 }
               }}
             >
@@ -105,7 +116,7 @@ export default function Settings() {
               onBlur={() => {
                 const currentValue = parseFloat(localSlippagePercentage);
                 const output = isNaN(currentValue) ? '' : currentValue.toFixed(2);
-                setLocalSlippagePercentage(output);
+                updateSlippagePercentage(output);
               }}
               inputClassName={localSlippagePercentage !== '' ? 'active' : ''}
               placeholder='0.50'

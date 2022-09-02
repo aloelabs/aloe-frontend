@@ -1,4 +1,4 @@
-import { ActionCardProps, ActionProviders } from "../../../data/Actions";
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from "../../../data/Actions";
 import { DropdownOption, DropdownWithPlaceholder } from "../../common/Dropdown";
 import { Text } from "../../common/Typography";
 import { BaseActionCard } from "../BaseActionCard";
@@ -77,6 +77,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
           lowerBound: updatedPosition.tickLower,
           upperBound: updatedPosition.tickUpper,
         },
+        slippageTolerance: DEFAULT_ACTION_VALUE,
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       }

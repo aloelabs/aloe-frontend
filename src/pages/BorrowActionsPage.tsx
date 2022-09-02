@@ -307,6 +307,7 @@ export default function BorrowActionsPage() {
       }
     }
     console.log(cumulativeActionResult);
+    console.log(updatedActionResults);
   }
 
   function updateActionResults(updatedActionResults: ActionCardResult[]) {

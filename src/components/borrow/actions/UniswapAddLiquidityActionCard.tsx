@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, ActionValue, DEFAULT_ACTION_VALUE, UniswapPosition } from '../../../data/Actions';
 import SteppedInput from '../uniswap/SteppedInput';
 import LiquidityChart, {
   ChartEntry,
@@ -15,6 +15,7 @@ import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../..
 import { TokenData } from '../../../data/TokenData';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 import { TickMath } from '@uniswap/v3-sdk';
+import { DEFAULT_ADD_LIQUIDITY_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
@@ -35,6 +36,13 @@ type TickPrice = {
 //     return '';
 //   }
 // }
+
+const DEFAULT_UNISWAP_POSITION: UniswapPosition = {
+  amount0: DEFAULT_ACTION_VALUE,
+  amount1: DEFAULT_ACTION_VALUE,
+  lowerBound: null,
+  upperBound: null,
+}
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, feeTier, previousActionCardState, onChange, onRemove } = props;
@@ -141,6 +149,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let currentTick: number | null = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
   const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lowerBound;
   const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upperBound;
+  let slippagePercentage = previousActionCardState?.uniswapResult?.slippageTolerance?.inputValue || '';
   
   if (tickInfo != null && lowerBound && upperBound) {
     lower = {
@@ -201,6 +210,27 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     isAmount1InputDisabled = shouldAmount1InputBeDisabled(lower.tick, upper.tick, currentTick);
   }
 
+  function handleUpdateSlippagePercentage(updatedSlippage: string) {
+    const prevUniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
+    onChange({
+      aloeResult: previousActionCardState?.aloeResult || null,
+      uniswapResult: {
+        uniswapPosition: {
+          amount0: prevUniswapPosition?.amount0 || DEFAULT_ACTION_VALUE,
+          amount1: prevUniswapPosition?.amount1 || DEFAULT_ACTION_VALUE,
+          lowerBound: prevUniswapPosition?.lowerBound || null,
+          upperBound: prevUniswapPosition?.upperBound || null,
+        },
+        slippageTolerance: {
+          inputValue: updatedSlippage,
+          numericValue: parseFloat(updatedSlippage) || 0,
+        },
+        isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
+        isToken0Selected: previousActionCardState?.uniswapResult?.isToken0Selected,
+      }
+    })
+  }
+
   function handleLocalToken0AmountInput(value: string) {
     if (uniswapPoolBasics == null || lower == null || upper == null) return;
     const output = formatNumberInput(value);
@@ -247,6 +277,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           lowerBound: lowerTick,
           upperBound: upperTick,
         },
+        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
         isToken0Selected: isToken0Selected,
       },
@@ -296,6 +327,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           lowerBound: lower?.tick || null,
           upperBound: upper?.tick || null,
         },
+        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
         isToken0Selected: isToken0Selected,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
       },
@@ -330,6 +362,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                     lowerBound: null,
                     upperBound: null,
                   },
+                  slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
                   isToken0Selected: updatedValue,
                   isAmount0LastUpdated: false,
                 },
@@ -337,7 +370,10 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             }}
           />
         )}
-        <Settings />
+        <Settings
+          slippagePercentage={slippagePercentage}
+          updateSlippagePercentage={handleUpdateSlippagePercentage}
+        />
       </div>
       {chartData.length > 0 && uniswapPoolBasics != null && lower != null && upper != null && (
         <LiquidityChart

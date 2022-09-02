@@ -85,6 +85,7 @@ export type AloeResult = {
 
 export type UniswapResult = {
   uniswapPosition: UniswapPosition;
+  slippageTolerance: ActionValue;
   isToken0Selected?: boolean;
   isAmount0LastUpdated?: boolean;
 }
@@ -124,3 +125,8 @@ export type ActionProvider = {
     }
   };
 };
+
+export const DEFAULT_ACTION_VALUE: ActionValue = {
+  inputValue: '',
+  numericValue: 0,
+}
