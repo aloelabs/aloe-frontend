@@ -4,6 +4,9 @@ import { Text } from "../../common/Typography";
 import { BaseActionCard } from "../BaseActionCard";
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import styled from "styled-components";
+import { SquareInputWithTrailingUnit } from "../../common/Input";
+import { ChangeEvent, useState } from "react";
+import { formatNumberInput } from "../../../util/Numbers";
 
 export type UniswapV3LiquidityPosition = {
   amount0: number;
@@ -47,6 +50,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     } as DropdownOption
   });
 
+  const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
+
   let selectedOption: DropdownOption | undefined = undefined;
   let selectedPosition: UniswapV3LiquidityPosition | undefined = undefined;
   const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
@@ -62,18 +67,21 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   function handleSelectOption(updatedOption: DropdownOption) {
     const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
+    //TODO: use the percentage
+    const updatedAmount0 = updatedPosition.amount0;
+    const updatedAmount1 = updatedPosition.amount1;
     onChange({
       //TODO: Update aloe result
       aloeResult: null,
       uniswapResult: {
         uniswapPosition: {
           amount0: {
-            inputValue: updatedPosition.amount0.toString(),
-            numericValue: -1 * updatedPosition.amount0,
+            inputValue: updatedAmount0.toString(),
+            numericValue: -1 * updatedAmount0,
           },
           amount1: {
-            inputValue: updatedPosition.amount1.toString(),
-            numericValue: -1 * updatedPosition.amount1,
+            inputValue: updatedAmount1.toString(),
+            numericValue: -1 * updatedAmount1,
           },
           lowerBound: updatedPosition.tickLower,
           upperBound: updatedPosition.tickUpper,
@@ -108,6 +116,31 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                 <Text size='M'>tickUpper: {selectedPosition.tickUpper}</Text>
               </div>
             )}
+            <div className='mt-4'>
+              <label className='flex flex-col gap-2'>
+                <Text size='M'>Label</Text>
+                <SquareInputWithTrailingUnit
+                  value={localRemoveLiquidityPercentage}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const output = formatNumberInput(e.currentTarget.value);
+                    if (output != null) {
+                      setLocalRemoveLiquidityPercentage(output);
+                    }
+                  }}
+                  size='L'
+                  unit='%'
+                  placeholder='0.00'
+                  inputClassName={localRemoveLiquidityPercentage !== '' ? 'active' : ''}
+                  onBlur={() => {
+                    const parsed = parseFloat(localRemoveLiquidityPercentage);
+                    if (!isNaN(parsed)) {
+                      //TODO use onChange instead
+                      setLocalRemoveLiquidityPercentage(parsed.toFixed(2));
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </>
         )}
         {dropdownOptions.length === 0 && (
