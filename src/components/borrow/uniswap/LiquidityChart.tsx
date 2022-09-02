@@ -36,7 +36,9 @@ function StyledBar(props: StyledBarProps) {
   );
 }
 
-function nearestPriceInGraph(price: number, data: ChartEntry[]): number {
+function nearestPriceInGraphOrNull(price: number, minPrice: number, maxPrice: number, data: ChartEntry[]): number | null {
+  
+  if (price < minPrice || price > maxPrice) return null; 
   return data.reduce((prev: ChartEntry, curr: ChartEntry) => {
     let prevDiff = Math.abs(price - prev.price);
     let currDiff = Math.abs(price - curr.price);
@@ -53,9 +55,11 @@ export type LiquidityChartProps = {
 
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd, currentPrice } = props;
-  const updatedRangeStart = nearestPriceInGraph(parseFloat(rangeStart), data);
-  const updatedRangeEnd = nearestPriceInGraph(parseFloat(rangeEnd), data);
-  const updatedCurrentPrice = nearestPriceInGraph(parseFloat(currentPrice), data);
+  const minPrice = data.length > 0 ? data[0].price : 0;
+  const maxPrice = data.length > 0 ? data[data.length - 1].price : 0;
+  const updatedRangeStart = nearestPriceInGraphOrNull(parseFloat(rangeStart), minPrice, maxPrice, data);
+  const updatedRangeEnd = nearestPriceInGraphOrNull(parseFloat(rangeEnd), minPrice, maxPrice, data);
+  const updatedCurrentPrice = nearestPriceInGraphOrNull(parseFloat(currentPrice), minPrice, maxPrice, data);
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,
@@ -90,29 +94,35 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               );
             }}
           />
-          <ReferenceLine
-            x={updatedRangeStart}
-            stroke='rgb(114, 167, 246)'
-            strokeWidth={4}
-            isFront={true}
-          />
+          {updatedRangeStart && (
+            <ReferenceLine
+              x={updatedRangeStart}
+              stroke='rgb(114, 167, 246)'
+              strokeWidth={4}
+              isFront={true}
+            />
+          )}
           <ReferenceArea
-            x1={updatedRangeStart}
-            x2={updatedRangeEnd}
+            x1={updatedRangeStart || minPrice}
+            x2={updatedRangeEnd || maxPrice}
             fill='rgba(114, 167, 246, 0.5)'
           />
-          <ReferenceLine
-            x={updatedRangeEnd}
-            stroke='rgb(114, 167, 246)'
-            strokeWidth={4}
-            isFront={true}
-          />
-          <ReferenceLine
-            x={updatedCurrentPrice}
-            stroke='rgba(255, 255, 255, 0.5)'
-            strokeWidth={2}
-            isFront={false}
-          />
+          {updatedRangeEnd && (
+            <ReferenceLine
+              x={updatedRangeEnd}
+              stroke='rgb(114, 167, 246)'
+              strokeWidth={4}
+              isFront={true}
+            />
+          )}
+          {updatedCurrentPrice && (
+            <ReferenceLine
+              x={updatedCurrentPrice}
+              stroke='rgba(255, 255, 255, 0.5)'
+              strokeWidth={2}
+              isFront={false}
+            />
+          )}
           <XAxis
             dataKey='price'
             tickCount={3}
