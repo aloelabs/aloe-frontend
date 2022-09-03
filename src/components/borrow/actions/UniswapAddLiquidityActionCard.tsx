@@ -128,6 +128,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }, [isToken0Selected, uniswapPoolBasics])
 
   useEffect(() => {
+    //Handles the initial render and whenever the selected token changes
     if (previousActionCardState?.uniswapResult) {
       const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
       if (uniswapPosition) {

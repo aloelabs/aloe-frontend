@@ -7,6 +7,7 @@ import styled from "styled-components";
 import { SquareInputWithTrailingUnit } from "../../common/Input";
 import { ChangeEvent, useState } from "react";
 import { formatNumberInput } from "../../../util/Numbers";
+import useEffectOnce from "../../../data/hooks/UseEffectOnce";
 
 export type UniswapV3LiquidityPosition = {
   amount0: number;
@@ -52,6 +53,13 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
+  useEffectOnce(() => {
+    const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
+    if (previousRemoveLiquidityPercentage) {
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.inputValue);
+    } 
+  })
+
   let selectedOption: DropdownOption | undefined = undefined;
   let selectedPosition: UniswapV3LiquidityPosition | undefined = undefined;
   const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
@@ -66,10 +74,12 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {
+    
     const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
-    //TODO: use the percentage
-    const updatedAmount0 = updatedPosition.amount0;
-    const updatedAmount1 = updatedPosition.amount1;
+    const parsed =  Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
+    const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
+    const updatedAmount0 = updatedPosition.amount0 * (parsed / 100.0);
+    const updatedAmount1 = updatedPosition.amount1 * (parsed / 100.0);
     onChange({
       //TODO: Update aloe result
       aloeResult: null,
@@ -87,6 +97,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
           upperBound: updatedPosition.tickUpper,
         },
         slippageTolerance: DEFAULT_ACTION_VALUE,
+        removeLiquidityPercentage: {
+          inputValue: formattedPercentage,
+          numericValue: parsed,
+        },
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       }
@@ -132,11 +146,36 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                   placeholder='0.00'
                   inputClassName={localRemoveLiquidityPercentage !== '' ? 'active' : ''}
                   onBlur={() => {
-                    const parsed = parseFloat(localRemoveLiquidityPercentage);
-                    if (!isNaN(parsed)) {
-                      //TODO use onChange instead
-                      setLocalRemoveLiquidityPercentage(parsed.toFixed(2));
-                    }
+                    //TODO consolidate this logic between both usages of it
+                    const updatedAmount0 = selectedPosition != null ? selectedPosition.amount0 * ((parseFloat(localRemoveLiquidityPercentage) || 0) / 100.0) : null;
+                    const updatedAmount1 = selectedPosition != null ? selectedPosition.amount1 * ((parseFloat(localRemoveLiquidityPercentage) || 0) / 100.0) : null;
+                    const parsed = Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
+                    const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
+                    onChange({
+                      aloeResult: previousActionCardState?.aloeResult || null,
+                      uniswapResult: {
+                        uniswapPosition: {
+                          amount0: {
+                            inputValue: updatedAmount0 != null ? updatedAmount0.toString() : '',
+                            numericValue: -1 * (updatedAmount0 || 0),
+                          },
+                          amount1: {
+                            inputValue: updatedAmount1 != null ? updatedAmount1.toString() : '',
+                            numericValue: -1 * (updatedAmount1 || 0),
+                          },
+                          lowerBound: selectedPosition != null ? selectedPosition.tickLower : null,
+                          upperBound: selectedPosition != null ? selectedPosition.tickUpper : null,
+                        },
+                        removeLiquidityPercentage: {
+                          inputValue: formattedPercentage,
+                          numericValue: parsed,
+                        },
+                        slippageTolerance: DEFAULT_ACTION_VALUE,
+                        isAmount0LastUpdated: undefined,
+                        isToken0Selected: undefined,
+                      }
+                    });
+                    setLocalRemoveLiquidityPercentage(formattedPercentage);
                   }}
                 />
               </label>
