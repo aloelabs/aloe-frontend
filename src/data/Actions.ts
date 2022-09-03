@@ -85,7 +85,8 @@ export type AloeResult = {
 
 export type UniswapResult = {
   uniswapPosition: UniswapPosition;
-  slippageTolerance: ActionValue;
+  slippageTolerance?: ActionValue;
+  removeLiquidityPercentage?: ActionValue;
   isToken0Selected?: boolean;
   isAmount0LastUpdated?: boolean;
 }
