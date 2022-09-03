@@ -3,10 +3,11 @@ import { DropdownOption, DropdownWithPlaceholder } from "../../common/Dropdown";
 import { Text } from "../../common/Typography";
 import { BaseActionCard } from "../BaseActionCard";
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
+import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg'
 import styled from "styled-components";
 import { SquareInputWithTrailingUnit } from "../../common/Input";
 import { ChangeEvent, useState } from "react";
-import { formatNumberInput } from "../../../util/Numbers";
+import { formatNumberInput, formatTokenAmount } from "../../../util/Numbers";
 import useEffectOnce from "../../../data/hooks/UseEffectOnce";
 
 export type UniswapV3LiquidityPosition = {
@@ -18,7 +19,7 @@ export type UniswapV3LiquidityPosition = {
 
 const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
   {
-    amount0: 100,
+    amount0: 0.011,
     amount1: 50,
     tickLower: 190000,
     tickUpper: 210000,
@@ -31,9 +32,14 @@ const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
   },
 ];
 
-const SVGIconWrapper = styled.div`
-  width: 32px;
-  height: 32px;
+const SVGIconWrapper = styled.div.attrs(
+  (props: { 
+    width: number,
+    height: number,
+  }) => props
+)`
+  width: ${props => props.width}px;
+  height: ${props => props.height}px;
   svg {
     path {
       stroke: white;
@@ -41,6 +47,8 @@ const SVGIconWrapper = styled.div`
   }
 `;
 
+//TODO: make sure the numbers displayed are accurate and contain enough digits
+//TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, previousActionCardState, onChange, onRemove } = props;
   const dropdownOptions = FAKE_LIQUIDITY_POSITIONS.map((lp, index) => {
@@ -83,15 +91,27 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {
-    
     const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
     const parsed =  Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
     const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
     const updatedAmount0 = updatedPosition.amount0 * (parsed / 100.0);
     const updatedAmount1 = updatedPosition.amount1 * (parsed / 100.0);
     onChange({
-      //TODO: Update aloe result
-      aloeResult: null,
+      aloeResult: {
+        token0RawDelta: {
+          inputValue: updatedAmount0.toString(),
+          numericValue: updatedAmount0,
+        },
+        token1RawDelta: {
+          inputValue: updatedAmount1.toString(),
+          numericValue: updatedAmount1,
+        },
+        token0DebtDelta: DEFAULT_ACTION_VALUE,
+        token1DebtDelta: DEFAULT_ACTION_VALUE,
+        token0PlusDelta: DEFAULT_ACTION_VALUE,
+        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        selectedTokenA: null,
+      },
       uniswapResult: {
         uniswapPosition: {
           amount0: {
@@ -153,7 +173,21 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                     const parsed = Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
                     const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
                     onChange({
-                      aloeResult: previousActionCardState?.aloeResult || null,
+                      aloeResult: {
+                        token0RawDelta: {
+                          inputValue: updatedAmount0 != null ? updatedAmount0.toString() : '',
+                          numericValue: updatedAmount0 || 0,
+                        },
+                        token1RawDelta: {
+                          inputValue: updatedAmount1 != null ? updatedAmount1.toString() : '',
+                          numericValue: updatedAmount1 || 0,
+                        },
+                        token0DebtDelta: DEFAULT_ACTION_VALUE,
+                        token1DebtDelta: DEFAULT_ACTION_VALUE,
+                        token0PlusDelta: DEFAULT_ACTION_VALUE,
+                        token1PlusDelta: DEFAULT_ACTION_VALUE,
+                        selectedTokenA: null,
+                      },
                       uniswapResult: {
                         uniswapPosition: {
                           amount0: {
@@ -183,16 +217,19 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
             </div>
             {selectedPosition && (
               <div className='w-max m-auto mt-2'>
-                <div className='flex gap-4'>
+                <div className='flex items-center gap-4'>
                   <div className='flex flex-col'>
                     <Text size='S' color='#82a0b6'>Current Balance</Text>
-                    <Text size='M'>{selectedPosition.amount0.toFixed(4)} {token0?.ticker}</Text>
-                    <Text size='M'>{selectedPosition.amount1.toFixed(4)} {token1?.ticker}</Text>
+                    <Text size='M'>{formatTokenAmount(selectedPosition.amount0)} {token0?.ticker}</Text>
+                    <Text size='M'>{formatTokenAmount(selectedPosition.amount1)} {token1?.ticker}</Text>
                   </div>
+                  <SVGIconWrapper width={24} height={24}>
+                    <RightArrowIcon width={24} height={24} />
+                  </SVGIconWrapper>
                   <div>
                     <Text size='S' color='#82a0b6'>Updated Balance</Text>
-                    <Text size='M'>{amount0 ? (selectedPosition.amount0 + amount0).toFixed(4) : selectedPosition.amount0.toFixed(4)} {token0?.ticker}</Text>
-                    <Text size='M'>{amount1 ? (selectedPosition.amount1 + amount1).toFixed(4) : selectedPosition.amount1.toFixed(4)} {token1?.ticker}</Text>
+                    <Text size='M'>{amount0 ? formatTokenAmount(selectedPosition.amount0 + amount0) : formatTokenAmount(selectedPosition.amount0)} {token0?.ticker}</Text>
+                    <Text size='M'>{amount1 ? formatTokenAmount(selectedPosition.amount1 + amount1) : formatTokenAmount(selectedPosition.amount1)} {token1?.ticker}</Text>
                   </div>
                 </div>
               </div>
@@ -201,7 +238,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
         )}
         {dropdownOptions.length === 0 && (
           <div className='flex flex-col gap-2 items-center'>
-            <SVGIconWrapper>
+            <SVGIconWrapper width={32} height={32}>
               <InboxIcon width={32} height={32} />
             </SVGIconWrapper>
             <Text size='S' className='text-center w-80'>

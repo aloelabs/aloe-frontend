@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders, ActionValue, DEFAULT_ACTION_VALUE, UniswapPosition } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
 import SteppedInput from '../uniswap/SteppedInput';
 import LiquidityChart, {
   ChartEntry,
@@ -8,14 +8,12 @@ import LiquidityChart, {
 import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import Settings from '../uniswap/Settings';
-import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getMinTick, getPoolAddressFromTokens, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getPoolAddressFromTokens, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3PoolBasics } from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
-import { TokenData } from '../../../data/TokenData';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 import { TickMath } from '@uniswap/v3-sdk';
-import { DEFAULT_ADD_LIQUIDITY_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
@@ -25,24 +23,11 @@ type TickPrice = {
   tick: number;
 };
 
-//TODO: This is a temporary workaround for getting the pool, 
-// in the future we need to take into account the fee tier and get this from another source.
-// function tokensToPool(token0: TokenData, token1: TokenData): string {
-//   if (token0.address.toLowerCase() === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
-//     return '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640';
-//   } else if (token0.address.toLowerCase() === '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599' && token1.address.toLowerCase() === '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2') {
-//     return '0x4585fe77225b41b697c938b018e2ac67ac5a20c0';
-//   } else {
-//     return '';
-//   }
-// }
-
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { token0, token1, feeTier, previousActionCardState, onChange, onRemove } = props;
 
   const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
 
-  const [isError, setIsError] = useState(false);
   const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] = useState(false);
   const [localToken0Amount, setLocalToken0Amount] = useState('');
   const [localToken1Amount, setLocalToken1Amount] = useState('');
