@@ -109,3 +109,13 @@ export function roundDownToNearestN(value: number, n: number): number {
 export function roundUpToNearestN(value: number, n: number): number {
   return Math.ceil(value / n) * n;
 }
+
+export function formatTokenAmount(amount: number, sigDigs: number = 4): string {
+  //TODO: if we want to support more than one locale, we would need to add more logic here
+  return amount.toLocaleString('en-US', {
+    style: 'decimal',
+    maximumSignificantDigits: sigDigs,
+    //avoid adding excess zeros at the end
+    minimumSignificantDigits: amount < 1 ? 1 : sigDigs,
+  })
+}
