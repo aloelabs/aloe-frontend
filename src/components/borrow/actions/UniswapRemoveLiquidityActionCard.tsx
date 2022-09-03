@@ -62,6 +62,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   let selectedOption: DropdownOption | undefined = undefined;
   let selectedPosition: UniswapV3LiquidityPosition | undefined = undefined;
+  let amount0: number | undefined = undefined;
+  let amount1: number | undefined = undefined;
   const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
   if (uniswapPosition) {
     const selectedIndex = FAKE_LIQUIDITY_POSITIONS.findIndex((lp) => {
@@ -70,6 +72,13 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption =  dropdownOptions[selectedIndex];
       selectedPosition = FAKE_LIQUIDITY_POSITIONS[selectedIndex];
+    }
+    
+    const previousAmount0 = uniswapPosition.amount0.numericValue;
+    const previousAmount1 = uniswapPosition.amount1.numericValue;
+    if (previousAmount0 !== 0 && previousAmount1 !== 0) {
+      amount0 = previousAmount0;
+      amount1 = previousAmount1;
     }
   }
 
@@ -122,17 +131,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
               selectedOption={selectedOption}
               placeholder='Selected Liquidity Position'
             />
-            {selectedPosition && (
-              <div className='w-max m-auto mt-2'>
-                <Text size='M'>amount0: {selectedPosition.amount0} {token0?.ticker}</Text>
-                <Text size='M'>amount1: {selectedPosition.amount1} {token1?.ticker}</Text>
-                <Text size='M'>tickLower: {selectedPosition.tickLower}</Text>
-                <Text size='M'>tickUpper: {selectedPosition.tickUpper}</Text>
-              </div>
-            )}
-            <div className='mt-4'>
+            <div className='mt-4 mb-4'>
               <label className='flex flex-col gap-2'>
-                <Text size='M'>Label</Text>
+                <Text size='S'>Percentage to Remove</Text>
                 <SquareInputWithTrailingUnit
                   value={localRemoveLiquidityPercentage}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +181,22 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                 />
               </label>
             </div>
+            {selectedPosition && (
+              <div className='w-max m-auto mt-2'>
+                <div className='flex gap-4'>
+                  <div className='flex flex-col'>
+                    <Text size='S' color='#82a0b6'>Current Balance</Text>
+                    <Text size='M'>{selectedPosition.amount0.toFixed(4)} {token0?.ticker}</Text>
+                    <Text size='M'>{selectedPosition.amount1.toFixed(4)} {token1?.ticker}</Text>
+                  </div>
+                  <div>
+                    <Text size='S' color='#82a0b6'>Updated Balance</Text>
+                    <Text size='M'>{amount0 ? (selectedPosition.amount0 + amount0).toFixed(4) : selectedPosition.amount0.toFixed(4)} {token0?.ticker}</Text>
+                    <Text size='M'>{amount1 ? (selectedPosition.amount1 + amount1).toFixed(4) : selectedPosition.amount1.toFixed(4)} {token1?.ticker}</Text>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
         {dropdownOptions.length === 0 && (
