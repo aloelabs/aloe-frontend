@@ -90,12 +90,19 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     }
   }
 
-  function handleSelectOption(updatedOption: DropdownOption) {
-    const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
-    const parsed =  Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
-    const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
-    const updatedAmount0 = updatedPosition.amount0 * (parsed / 100.0);
-    const updatedAmount1 = updatedPosition.amount1 * (parsed / 100.0);
+  function parsePercentage(percentageStr: string): number {
+    return Math.min(parseFloat(percentageStr), 100) || 0;
+  }
+
+  function formatPercentage(percentage: number): string {
+    return percentage !== 0 ? percentage.toFixed(2) : '';
+  }
+
+  function updateResult(liquidityPosition: UniswapV3LiquidityPosition | undefined) {
+    const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
+    const formattedPercentage = formatPercentage(parsedPercentage);
+    const updatedAmount0 = liquidityPosition ? liquidityPosition.amount0 * (parsedPercentage / 100.0) : 0;
+    const updatedAmount1 = liquidityPosition ? liquidityPosition.amount1 * (parsedPercentage / 100.0) : 0;
     onChange({
       aloeResult: {
         token0RawDelta: {
@@ -122,18 +129,23 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
             inputValue: updatedAmount1.toString(),
             numericValue: -1 * updatedAmount1,
           },
-          lowerBound: updatedPosition.tickLower,
-          upperBound: updatedPosition.tickUpper,
+          lowerBound: liquidityPosition ? liquidityPosition.tickLower : null,
+          upperBound: liquidityPosition ? liquidityPosition.tickUpper : null,
         },
         slippageTolerance: DEFAULT_ACTION_VALUE,
         removeLiquidityPercentage: {
           inputValue: formattedPercentage,
-          numericValue: parsed,
+          numericValue: parsedPercentage,
         },
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       }
-    })
+    });
+  }
+
+  function handleSelectOption(updatedOption: DropdownOption) {
+    const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
+    updateResult(updatedPosition);
   }
 
   return (
@@ -167,49 +179,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                   placeholder='0.00'
                   inputClassName={localRemoveLiquidityPercentage !== '' ? 'active' : ''}
                   onBlur={() => {
-                    //TODO consolidate this logic between both usages of it
-                    const updatedAmount0 = selectedPosition != null ? selectedPosition.amount0 * ((parseFloat(localRemoveLiquidityPercentage) || 0) / 100.0) : null;
-                    const updatedAmount1 = selectedPosition != null ? selectedPosition.amount1 * ((parseFloat(localRemoveLiquidityPercentage) || 0) / 100.0) : null;
-                    const parsed = Math.min(parseFloat(localRemoveLiquidityPercentage), 100) || 0;
-                    const formattedPercentage = parsed !== 0 ? parsed.toFixed(2) : '';
-                    onChange({
-                      aloeResult: {
-                        token0RawDelta: {
-                          inputValue: updatedAmount0 != null ? updatedAmount0.toString() : '',
-                          numericValue: updatedAmount0 || 0,
-                        },
-                        token1RawDelta: {
-                          inputValue: updatedAmount1 != null ? updatedAmount1.toString() : '',
-                          numericValue: updatedAmount1 || 0,
-                        },
-                        token0DebtDelta: DEFAULT_ACTION_VALUE,
-                        token1DebtDelta: DEFAULT_ACTION_VALUE,
-                        token0PlusDelta: DEFAULT_ACTION_VALUE,
-                        token1PlusDelta: DEFAULT_ACTION_VALUE,
-                        selectedTokenA: null,
-                      },
-                      uniswapResult: {
-                        uniswapPosition: {
-                          amount0: {
-                            inputValue: updatedAmount0 != null ? updatedAmount0.toString() : '',
-                            numericValue: -1 * (updatedAmount0 || 0),
-                          },
-                          amount1: {
-                            inputValue: updatedAmount1 != null ? updatedAmount1.toString() : '',
-                            numericValue: -1 * (updatedAmount1 || 0),
-                          },
-                          lowerBound: selectedPosition != null ? selectedPosition.tickLower : null,
-                          upperBound: selectedPosition != null ? selectedPosition.tickUpper : null,
-                        },
-                        removeLiquidityPercentage: {
-                          inputValue: formattedPercentage,
-                          numericValue: parsed,
-                        },
-                        slippageTolerance: DEFAULT_ACTION_VALUE,
-                        isAmount0LastUpdated: undefined,
-                        isToken0Selected: undefined,
-                      }
-                    });
+                    const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage)
+                    const formattedPercentage = formatPercentage(parsedPercentage);
+                    updateResult(selectedPosition);
                     setLocalRemoveLiquidityPercentage(formattedPercentage);
                   }}
                 />
