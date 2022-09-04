@@ -27,6 +27,7 @@ import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import TokenChooser from '../components/common/TokenChooser';
+import { sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
 
 export type MarginAccountBalances = {
   assets: number;
@@ -204,20 +205,23 @@ export default function BorrowActionsPage() {
     return null;
   }
 
+  const assetsInUniswapPositions: [number, number] =  cumulativeActionResult ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions) : [0, 0];
   const activeToken = isToken0Selected ? accountData.token0 : accountData.token1;
   const inactiveToken = isToken0Selected ? accountData.token1 : accountData.token0;
   const currentBalances = isToken0Selected ? FAKE_DATA.token0 : FAKE_DATA.token1;
   const combinedDeltaBalances: MarginAccount | null = cumulativeActionResult ? {
     token0: {
       assets: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + 
-              (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0),
+              (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) +
+              assetsInUniswapPositions[0],
       liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
     token1: {
       assets: (cumulativeActionResult?.aloeResult?.token1RawDelta.numericValue || 0) +
-              (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0),
+              (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) +
+              assetsInUniswapPositions[1],
       liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
@@ -282,7 +286,8 @@ export default function BorrowActionsPage() {
           },
           uniswapPositions: updatedCumulativeActionResult.uniswapPositions,
         }
-      } else if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
+      }
+      if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
         const existingPositionIndex = updatedCumulativeActionResult.uniswapPositions.findIndex((pos) => {
           return pos.lowerBound === uniswapPosition.lowerBound && pos.upperBound === uniswapPosition.upperBound;
         });
