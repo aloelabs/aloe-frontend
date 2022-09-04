@@ -1,32 +1,35 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
+  //TODO: Temporary until these are finised, then we can just fetch the entire token
+  const token0PlusAddress = token0.address + '1';
+  const token1PlusAddress = token1.address + '1';
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: token0?.address || '',
+      value: token0.address,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: token1?.address || '',
+      value: token1.address,
       icon: token1?.iconPath || '',
     },
     //TODO: TEMPORARY, add type for token+
     {
       label: token0?.ticker + '+' || '',
-      value: token0?.address + '1' || '',
+      value: token0PlusAddress,
       icon: token0?.iconPath || '',
     },
     //TODO: TEMPORARY, add type for token+
     {
       label: token1?.ticker + '+' || '',
-      value: token1?.address + '1' || '',
+      value: token1PlusAddress,
       icon: token1?.iconPath || '',
     }
   ];
@@ -36,14 +39,6 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     if (!previouslySelectedToken) {
       onChange({
         aloeResult: {
-          token0DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0DebtDelta?.inputValue || '',
-          },
-          token1DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1DebtDelta?.inputValue || '',
-          },
           token0RawDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
@@ -52,6 +47,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
             numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
           },
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
           token0PlusDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0PlusDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0PlusDelta?.inputValue || '',
@@ -94,30 +91,12 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
             if (option?.value !== selectedToken?.value) {
               onChange({
                 aloeResult: {
-                  token0RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
+                  token0RawDelta: DEFAULT_ACTION_VALUE,
+                  token1RawDelta: DEFAULT_ACTION_VALUE,
+                  token0DebtDelta: DEFAULT_ACTION_VALUE,
+                  token1DebtDelta: DEFAULT_ACTION_VALUE,
+                  token0PlusDelta: DEFAULT_ACTION_VALUE,
+                  token1PlusDelta: DEFAULT_ACTION_VALUE,
                   selectedTokenA: option,
                 },
                 uniswapResult: null,
@@ -130,50 +109,44 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
           value={tokenAmount}
           onChange={(value) => {
             const token0Change =
-              selectedToken?.value === token0?.address
+              selectedToken?.value === token0.address
                 ? parseFloat(value) || null
                 : null;
             const token1Change =
-              selectedToken?.value === token1?.address
+              selectedToken?.value === token1.address
                 ? parseFloat(value) || null
                 : null;
             const token0PlusChange =
               //TODO: TEMPORARY, add type for token+
-              selectedToken?.value === token0?.address + '1'
+              selectedToken?.value === token0PlusAddress
                 ? parseFloat(value) || null
                 : null;
             const token1PlusChange =
               //TODO: TEMPORARY, add type for token+
-              selectedToken?.value === token1?.address + '1'
+              selectedToken?.value === token1PlusAddress
                 ? parseFloat(value) || null
                 : null;
             onChange({
               aloeResult: {
                 token0RawDelta: {
                   numericValue: token0Change != null ? token0Change : 0,
-                  inputValue: selectedToken?.value === token0?.address ? value : '',
+                  inputValue: selectedToken?.value === token0.address ? value : '',
                 },
                 token1RawDelta: {
                   numericValue: token1Change != null ? token1Change : 0,
-                  inputValue: selectedToken?.value === token1?.address ? value : '',
+                  inputValue: selectedToken?.value === token1.address ? value : '',
                 },
-                token0DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token1DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
+                token0DebtDelta: DEFAULT_ACTION_VALUE,
+                token1DebtDelta: DEFAULT_ACTION_VALUE,
                 token0PlusDelta: {
                   numericValue: token0PlusChange != null ? token0PlusChange : 0,
                   //TODO: TEMPORARY, add type for token+
-                  inputValue: selectedToken?.value === token0?.address + '1' ? value : '',
+                  inputValue: selectedToken?.value === token0PlusAddress ? value : '',
                 },
                 token1PlusDelta: {
                   numericValue: token1PlusChange != null ? token1PlusChange : 0,
                   //TODO: TEMPORARY, add type for token+
-                  inputValue: selectedToken?.value === token1?.address + '1' ? value : '',
+                  inputValue: selectedToken?.value === token1PlusAddress ? value : '',
                 },
                 selectedTokenA: selectedToken,
               },
