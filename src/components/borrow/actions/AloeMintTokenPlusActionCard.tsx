@@ -9,12 +9,12 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: token0?.address || '',
+      value: token0.address,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: token1?.address || '',
+      value: token1.address,
       icon: token1?.iconPath || '',
     },
   ];
@@ -89,14 +89,14 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
           value={tokenAmount}
           onChange={(value) => {
             const token0Change =
-              selectedToken?.value === token0?.address
+              selectedToken?.value === token0.address
                 ? parseFloat(value) || null
                 : null;
             const token1Change =
-              selectedToken?.value === token1?.address
+              selectedToken?.value === token1.address
                 ? parseFloat(value) || null
                 : null;
-            const token0IsSelected = selectedToken?.value === token0?.address;
+            const token0IsSelected = selectedToken?.value === token0.address;
             onChange({
               aloeResult: {
                 token0RawDelta: {
