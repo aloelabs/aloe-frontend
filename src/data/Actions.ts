@@ -1,11 +1,11 @@
 import { ReactComponent as AloeLogo } from '../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../assets/svg/uniswap_logo.svg';
 import { AloeBorrowActionCard } from '../components/borrow/actions/AloeBorrowActionCard';
-import { AloeDepositActionCard } from '../components/borrow/actions/AloeDepositActionCard';
+import { AloeMintTokenPlusActionCard } from '../components/borrow/actions/AloeMintTokenPlusActionCard';
 import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActionCard';
-import { AloeTransferFromMarginAccountActionCard } from '../components/borrow/actions/AloeTransferFromMarginAccountActionCard';
-import { AloeTransferToMarginAccountActionCard } from '../components/borrow/actions/AloeTransferToMarginAccountActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
+import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
+import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import { DropdownOption } from '../components/common/Dropdown';
@@ -19,12 +19,12 @@ export const ActionProviders = {
     color: '#63b59a',
     actions: {
       DEPOSIT: {
-        name: 'Deposit',
-        actionCard: AloeDepositActionCard,
+        name: 'Mint Token+',
+        actionCard: AloeMintTokenPlusActionCard,
       },
       WITHDRAW: {
-        name: 'Withdraw',
-        actionCard: AloeWithdrawActionCard,
+        name: 'Burn Token+',
+        actionCard: AloeBurnTokenPlusActionCard,
       },
       BORROW: {
         name: 'Borrow',
@@ -35,12 +35,12 @@ export const ActionProviders = {
         actionCard: AloeRepayActionCard,
       },
       TRANSFER_FROM_MARGIN_ACCOUNT: {
-        name: 'Transfer from Margin Account',
-        actionCard: AloeTransferFromMarginAccountActionCard,
+        name: 'Withdraw',
+        actionCard: AloeWithdrawActionCard,
       },
       TRANSFER_TO_MARGIN_ACCOUNT: {
-        name: 'Transfer to Margin Account',
-        actionCard: AloeTransferToMarginAccountActionCard,
+        name: 'Add Margin',
+        actionCard: AloeAddMarginActionCard,
       },
     },
   },

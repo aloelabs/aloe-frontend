@@ -14,6 +14,7 @@ import {
   ActionProvider,
   ActionProviders,
   CumulativeActionCardResult,
+  DEFAULT_ACTION_VALUE,
 } from '../data/Actions';
 import { FeeTier } from '../data/FeeTier';
 import { GetTokenData } from '../data/TokenData';
@@ -208,13 +209,15 @@ export default function BorrowActionsPage() {
   const currentBalances = isToken0Selected ? FAKE_DATA.token0 : FAKE_DATA.token1;
   const combinedDeltaBalances: MarginAccount | null = cumulativeActionResult ? {
     token0: {
-      assets: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0),
+      assets: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + 
+              (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0),
       liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
     token1: {
-      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta.numericValue || 0),
+      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta.numericValue || 0) +
+              (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0),
       liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
@@ -236,30 +239,12 @@ export default function BorrowActionsPage() {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
         selectedTokenA: null,
-        token0RawDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
-        token0DebtDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
-        token0PlusDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
-        token1RawDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
-        token1DebtDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
-        token1PlusDelta: {
-          inputValue: '',
-          numericValue: 0,
-        },
+        token0RawDelta: DEFAULT_ACTION_VALUE,
+        token0DebtDelta: DEFAULT_ACTION_VALUE,
+        token0PlusDelta: DEFAULT_ACTION_VALUE,
+        token1RawDelta: DEFAULT_ACTION_VALUE,
+        token1DebtDelta: DEFAULT_ACTION_VALUE,
+        token1PlusDelta: DEFAULT_ACTION_VALUE,
       },
       uniswapPositions: [],
     }
@@ -383,12 +368,12 @@ export default function BorrowActionsPage() {
               <AccountStatsCard
                 label='Assets'
                 value={`${currentBalances.assets} ${activeToken?.ticker || ''}`}
-                hypothetical={(hypotheticalActiveAssets !== currentBalances.assets) ? `${hypotheticalActiveAssets} ${activeToken?.ticker || ''}` : undefined}
+                hypothetical={hypotheticalActiveAssets != null && (hypotheticalActiveAssets !== currentBalances.assets) ? `${hypotheticalActiveAssets} ${activeToken?.ticker || ''}` : undefined}
               />
               <AccountStatsCard
                 label='Liabilities'
                 value={`${currentBalances.liabilities} ${activeToken?.ticker || ''}`}
-                hypothetical={(hypotheticalActiveLiabilities !== currentBalances.liabilities) ? `${hypotheticalActiveLiabilities} ${activeToken?.ticker || ''}` : undefined}
+                hypothetical={hypotheticalActiveAssets != null && (hypotheticalActiveLiabilities !== currentBalances.liabilities) ? `${hypotheticalActiveLiabilities} ${activeToken?.ticker || ''}` : undefined}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'

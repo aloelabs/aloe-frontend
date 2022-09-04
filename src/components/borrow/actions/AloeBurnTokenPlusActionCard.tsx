@@ -5,7 +5,7 @@ import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionProviders } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
-export function AloeDepositActionCard(prop: ActionCardProps) {
+export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
@@ -19,6 +19,7 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
+
   const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedTokenA;
   const selectedToken = previousActionCardState?.aloeResult?.selectedTokenA || dropdownOptions[0];
   useEffectOnce(() => {
@@ -58,15 +59,15 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
   let tokenAmount = '';
   if (previousActionCardState) {
     if (selectedToken.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState?.aloeResult?.token0PlusDelta.inputValue || '';
+      tokenAmount = previousActionCardState?.aloeResult?.token0RawDelta.inputValue || '';
     } else {
-      tokenAmount = previousActionCardState?.aloeResult?.token1PlusDelta.inputValue || '';
+      tokenAmount = previousActionCardState?.aloeResult?.token1RawDelta.inputValue || '';
     }
   }
 
   return (
     <BaseActionCard
-      action={ActionProviders.AloeII.actions.DEPOSIT.name}
+      action={ActionProviders.AloeII.actions.WITHDRAW.name}
       actionProvider={ActionProviders.AloeII}
       onRemove={onRemove}
     >
@@ -125,11 +126,11 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
             onChange({
               aloeResult: {
                 token0RawDelta: {
-                  numericValue: token0Change != null ? (-1 * token0Change) : 0,
+                  numericValue: token0Change || 0,
                   inputValue: token0IsSelected ? value : '',
                 },
                 token1RawDelta: {
-                  numericValue: token1Change != null ? (-1 * token1Change) : 0,
+                  numericValue: token1Change || 0,
                   inputValue: !token0IsSelected ? value : '',
                 },
                 token0DebtDelta: {
@@ -141,17 +142,18 @@ export function AloeDepositActionCard(prop: ActionCardProps) {
                   inputValue: '',
                 },
                 token0PlusDelta: {
-                  numericValue: token0Change != null ? token0Change : 0,
+                  numericValue: token0Change != null ? (-1 * token0Change) : 0,
                   inputValue: token0IsSelected ? value : '',
                 },
                 token1PlusDelta: {
-                  numericValue: token1Change != null ? token1Change : 0,
+                  numericValue: token1Change != null ? (-1 * token1Change) : 0,
                   inputValue: !token0IsSelected ? value : '',
                 },
+                // token0PlusDelta: token0Change != null ? (-1 * token0Change).toString() : '',
+                // token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
                 selectedTokenA: selectedToken,
               },
               uniswapResult: null,
-              
             });
           }}
           max='100'
