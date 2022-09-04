@@ -128,6 +128,6 @@ export type ActionProvider = {
 };
 
 export const DEFAULT_ACTION_VALUE: ActionValue = {
-  inputValue: '',
   numericValue: 0,
+  inputValue: '',
 }
