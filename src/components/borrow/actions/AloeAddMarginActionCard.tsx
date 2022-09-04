@@ -4,7 +4,7 @@ import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionProviders } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
-export function AloeTransferToMarginAccountActionCard(prop: ActionCardProps) {
+export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
