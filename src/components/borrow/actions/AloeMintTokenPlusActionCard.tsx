@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
@@ -25,14 +24,6 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
     if (!previouslySelectedToken) {
       onChange({
         aloeResult: {
-          token0DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0DebtDelta?.inputValue || '',
-          },
-          token1DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1DebtDelta?.inputValue || '',
-          },
           token0RawDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
@@ -41,6 +32,8 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
           },
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
           token0PlusDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0PlusDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0PlusDelta?.inputValue || '',
@@ -78,30 +71,12 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             if (option?.value !== selectedToken?.value) {
               onChange({
                 aloeResult: {
-                  token0RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
+                  token0RawDelta: DEFAULT_ACTION_VALUE,
+                  token1RawDelta: DEFAULT_ACTION_VALUE,
+                  token0DebtDelta: DEFAULT_ACTION_VALUE,
+                  token1DebtDelta: DEFAULT_ACTION_VALUE,
+                  token0PlusDelta: DEFAULT_ACTION_VALUE,
+                  token1PlusDelta: DEFAULT_ACTION_VALUE,
                   selectedTokenA: option,
                 },
                 uniswapResult: null,
@@ -132,14 +107,8 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
                   numericValue: token1Change != null ? (-1 * token1Change) : 0,
                   inputValue: !token0IsSelected ? value : '',
                 },
-                token0DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token1DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
+                token0DebtDelta: DEFAULT_ACTION_VALUE,
+                token1DebtDelta: DEFAULT_ACTION_VALUE,
                 token0PlusDelta: {
                   numericValue: token0Change != null ? token0Change : 0,
                   inputValue: token0IsSelected ? value : '',
