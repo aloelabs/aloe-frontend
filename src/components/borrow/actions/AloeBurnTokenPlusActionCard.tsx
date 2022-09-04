@@ -1,21 +1,23 @@
-import { useEffect, useState } from 'react';
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
+  //TODO: Temporary until these are finised, then we can just fetch the entire token
+  const token0PlusAddress = token0.address + '1';
+  const token1PlusAddress = token1.address + '1';
   const dropdownOptions: DropdownOption[] = [
     {
-      label: token0?.ticker || '',
-      value: token0?.address || '',
+      label: token0?.ticker + '+' || '',
+      value: token0PlusAddress,
       icon: token0?.iconPath || '',
     },
     {
-      label: token1?.ticker || '',
-      value: token1?.address || '',
+      label: token1?.ticker + '+' || '',
+      value: token1PlusAddress,
       icon: token1?.iconPath || '',
     },
   ];
@@ -26,14 +28,6 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     if (!previouslySelectedToken) {
       onChange({
         aloeResult: {
-          token0DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0DebtDelta?.inputValue || '',
-          },
-          token1DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1DebtDelta?.inputValue || '',
-          },
           token0RawDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
@@ -42,6 +36,8 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
           },
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
           token0PlusDelta: {
             numericValue: previousActionCardState?.aloeResult?.token0PlusDelta?.numericValue || 0,
             inputValue: previousActionCardState?.aloeResult?.token0PlusDelta?.inputValue || '',
@@ -79,30 +75,12 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             if (option?.value !== selectedToken?.value) {
               onChange({
                 aloeResult: {
-                  token0RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1RawDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1DebtDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token0PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
-                  token1PlusDelta: {
-                    numericValue: 0,
-                    inputValue: '',
-                  },
+                  token0RawDelta: DEFAULT_ACTION_VALUE,
+                  token1RawDelta: DEFAULT_ACTION_VALUE,
+                  token0DebtDelta: DEFAULT_ACTION_VALUE,
+                  token1DebtDelta: DEFAULT_ACTION_VALUE,
+                  token0PlusDelta: DEFAULT_ACTION_VALUE,
+                  token1PlusDelta: DEFAULT_ACTION_VALUE,
                   selectedTokenA: option,
                 },
                 uniswapResult: null,
@@ -115,14 +93,14 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
           value={tokenAmount}
           onChange={(value) => {
             const token0Change =
-              selectedToken?.value === token0?.address
+              selectedToken?.value === token0PlusAddress
                 ? parseFloat(value) || null
                 : null;
             const token1Change =
-              selectedToken?.value === token1?.address
+              selectedToken?.value === token1PlusAddress
                 ? parseFloat(value) || null
                 : null;
-            const token0IsSelected = selectedToken?.value === token0?.address;
+            const token0IsSelected = selectedToken?.value === token0PlusAddress;
             onChange({
               aloeResult: {
                 token0RawDelta: {
@@ -133,14 +111,8 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
                   numericValue: token1Change || 0,
                   inputValue: !token0IsSelected ? value : '',
                 },
-                token0DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
-                token1DebtDelta: {
-                  numericValue: 0,
-                  inputValue: '',
-                },
+                token0DebtDelta: DEFAULT_ACTION_VALUE,
+                token1DebtDelta: DEFAULT_ACTION_VALUE,
                 token0PlusDelta: {
                   numericValue: token0Change != null ? (-1 * token0Change) : 0,
                   inputValue: token0IsSelected ? value : '',
@@ -149,8 +121,6 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
                   numericValue: token1Change != null ? (-1 * token1Change) : 0,
                   inputValue: !token0IsSelected ? value : '',
                 },
-                // token0PlusDelta: token0Change != null ? (-1 * token0Change).toString() : '',
-                // token1PlusDelta: token1Change != null ? (-1 * token1Change).toString() : '',
                 selectedTokenA: selectedToken,
               },
               uniswapResult: null,
