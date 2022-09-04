@@ -11,6 +11,7 @@ import { ApolloQueryResult } from '@apollo/react-hooks';
 import { theGraphUniswapV3Client } from '../App';
 import { UniswapTicksQuery } from './GraphQL';
 import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { UniswapPosition } from '../data/Actions';
 
 const BINS_TO_FETCH = 500;
 const Q48 = ethers.BigNumber.from('0x1000000000000')
@@ -346,4 +347,14 @@ export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, f
   const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
   if (uniswapFeeAmount == null) return null;
   return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
+}
+
+export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]) : [number, number] {
+  let token0Amount = 0;
+  let token1Amount = 0;
+  for (let pos of uniPos) {
+    token0Amount += pos.amount0.numericValue;
+    token1Amount += pos.amount1.numericValue;
+  }
+  return [token0Amount, token1Amount];
 }
