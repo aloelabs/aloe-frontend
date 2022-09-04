@@ -195,6 +195,7 @@ export default function BorrowActionsPage() {
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const [isToken0Selected, setIsToken0Selected] = React.useState(false);
+  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<CumulativeActionCardResult | null>(null);
   const navigate = useNavigate();
 
   if (!accountData) {
@@ -205,6 +206,23 @@ export default function BorrowActionsPage() {
   const activeToken = isToken0Selected ? accountData.token0 : accountData.token1;
   const inactiveToken = isToken0Selected ? accountData.token1 : accountData.token0;
   const currentBalances = isToken0Selected ? FAKE_DATA.token0 : FAKE_DATA.token1;
+  const combinedDeltaBalances: MarginAccount | null = cumulativeActionResult ? {
+    token0: {
+      assets: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0),
+      liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0),
+      lowerLiquidationThreshold: 0,
+      upperLiquidationThreshold: 0,
+    },
+    token1: {
+      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta.numericValue || 0),
+      liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0),
+      lowerLiquidationThreshold: 0,
+      upperLiquidationThreshold: 0,
+    },
+  } : null;
+  const activeDeltaBalances: MarginAccountBalances | null = combinedDeltaBalances ? (isToken0Selected ? combinedDeltaBalances.token0 : combinedDeltaBalances.token1) : null;
+  const hypotheticalActiveAssets: number | null = activeDeltaBalances ? currentBalances.assets + activeDeltaBalances.assets : null;
+  const hypotheticalActiveLiabilities: number | null = activeDeltaBalances ? currentBalances.liabilities + activeDeltaBalances.liabilities : null;
 
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, {
@@ -215,7 +233,7 @@ export default function BorrowActionsPage() {
   }
 
   function updateCumulativeActionResult(updatedActionResults: ActionCardResult[]) {
-    let cumulativeActionResult: CumulativeActionCardResult = {
+    let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
         selectedTokenA: null,
         token0RawDelta: {
@@ -249,44 +267,44 @@ export default function BorrowActionsPage() {
       const aloeResult = actionResult.aloeResult;
       const uniswapPosition = actionResult.uniswapResult?.uniswapPosition;
       if (aloeResult) {
-        cumulativeActionResult = {
+        updatedCumulativeActionResult = {
           aloeResult: {
             selectedTokenA: null,
             token0RawDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + aloeResult.token0RawDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + aloeResult.token0RawDelta.numericValue,
             },
             token0DebtDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0) + aloeResult.token0DebtDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0) + aloeResult.token0DebtDelta.numericValue,
             },
             token0PlusDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) + aloeResult.token0PlusDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) + aloeResult.token0PlusDelta.numericValue,
             },
             token1RawDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token1RawDelta.numericValue || 0) + aloeResult.token1RawDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token1RawDelta.numericValue || 0) + aloeResult.token1RawDelta.numericValue,
             },
             token1DebtDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0) + aloeResult.token1DebtDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0) + aloeResult.token1DebtDelta.numericValue,
             },
             token1PlusDelta: {
               inputValue: '',
-              numericValue: (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) + aloeResult.token1PlusDelta.numericValue,
+              numericValue: (updatedCumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) + aloeResult.token1PlusDelta.numericValue,
             },
           },
-          uniswapPositions: cumulativeActionResult.uniswapPositions,
+          uniswapPositions: updatedCumulativeActionResult.uniswapPositions,
         }
       } else if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
-        const existingPositionIndex = cumulativeActionResult.uniswapPositions.findIndex((pos) => {
+        const existingPositionIndex = updatedCumulativeActionResult.uniswapPositions.findIndex((pos) => {
           return pos.lowerBound === uniswapPosition.lowerBound && pos.upperBound === uniswapPosition.upperBound;
         });
 
         if (existingPositionIndex !== -1) {
-          const existingPosition = cumulativeActionResult.uniswapPositions[existingPositionIndex];
-          cumulativeActionResult.uniswapPositions[existingPositionIndex] = {
+          const existingPosition = updatedCumulativeActionResult.uniswapPositions[existingPositionIndex];
+          updatedCumulativeActionResult.uniswapPositions[existingPositionIndex] = {
             amount0: {
               inputValue: '',
               numericValue: existingPosition.amount0.numericValue + uniswapPosition.amount0.numericValue,
@@ -299,15 +317,16 @@ export default function BorrowActionsPage() {
             upperBound: existingPosition.upperBound,
           }
         } else {
-          cumulativeActionResult = {
-            aloeResult: cumulativeActionResult.aloeResult,
-            uniswapPositions: [...cumulativeActionResult.uniswapPositions, uniswapPosition],
+          updatedCumulativeActionResult = {
+            aloeResult: updatedCumulativeActionResult.aloeResult,
+            uniswapPositions: [...updatedCumulativeActionResult.uniswapPositions, uniswapPosition],
           }
         }
       }
     }
     console.log(cumulativeActionResult);
     console.log(updatedActionResults);
+    setCumulativeActionResult(updatedCumulativeActionResult);
   }
 
   function updateActionResults(updatedActionResults: ActionCardResult[]) {
@@ -364,12 +383,12 @@ export default function BorrowActionsPage() {
               <AccountStatsCard
                 label='Assets'
                 value={`${currentBalances.assets} ${activeToken?.ticker || ''}`}
-                hypothetical={`11 ${activeToken?.ticker || ''}`}
+                hypothetical={(hypotheticalActiveAssets !== currentBalances.assets) ? `${hypotheticalActiveAssets} ${activeToken?.ticker || ''}` : undefined}
               />
               <AccountStatsCard
                 label='Liabilities'
                 value={`${currentBalances.liabilities} ${activeToken?.ticker || ''}`}
-                hypothetical={`11 ${activeToken?.ticker || ''}`}
+                hypothetical={(hypotheticalActiveLiabilities !== currentBalances.liabilities) ? `${hypotheticalActiveLiabilities} ${activeToken?.ticker || ''}` : undefined}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
