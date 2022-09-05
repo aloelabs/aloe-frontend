@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { Text } from '../common/Typography';
 import { TokenData } from '../../data/TokenData';
 
@@ -54,7 +54,7 @@ const TokenAllocationWrapper = styled.div`
   ${tw`w-full h-full mt-4 pt-2 flex flex-nowrap`}
   flex-direction: row;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
     flex-direction: column;
   }
 `;
@@ -103,7 +103,7 @@ const TokenAllocationBreakdown = styled.div`
   ${tw`flex flex-col justify-center gap-y-12`};
   margin-left: 45px;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
     margin-left: 0;
     margin-top: 32px;
   }
