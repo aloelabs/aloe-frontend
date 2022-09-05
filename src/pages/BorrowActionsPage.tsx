@@ -423,10 +423,7 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               PnL
             </Display>
-            <div className='w-full h-52 mb-4'>
-              {/* TODO: Don't hardcode height in className */}
-              <PnLGraph />
-            </div>
+            <PnLGraph />
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>

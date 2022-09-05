@@ -8,8 +8,23 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import styled from 'styled-components';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+
+const Wrapper = styled.div`
+  position: relative;
+  width: 100%;
+  height: 300px;
+`;
+
+const Container = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+`
 
 export default function PnLGraph() {
   const data = [
@@ -51,34 +66,51 @@ export default function PnLGraph() {
 
   const off = gradientOffset();
   return (
-    <ResponsiveContainer width='100%' height='100%'>
-      <AreaChart
-        width={500}
-        height={400}
-        data={data}
-        margin={{
-          top: 10,
-          right: 30,
-          left: 0,
-          bottom: 0,
-        }}
-      >
-        <XAxis dataKey='name' axisLine={false} tickLine={false} />
-        <YAxis stroke={SECONDARY_COLOR} />
-        <ReferenceLine y={0} stroke={SECONDARY_COLOR} />
-        <Tooltip />
-        <defs>
-          <linearGradient id='splitColor' x1='0' y1='0' x2='0' y2='1'>
-            <stop offset={off} stopColor='rgba(128, 196, 128, 0.5)' stopOpacity={1} />
-            <stop offset={off} stopColor='rgba(206, 87, 87, 0.5)' stopOpacity={1} />
-          </linearGradient>
-          <linearGradient id='splitColorFill' x1='0' y1='0' x2='0' y2='1'>
-          <stop offset={off} stopColor='rgba(128, 196, 128, 1)' stopOpacity={1} />
-            <stop offset={off} stopColor='rgba(206, 87, 87, 1)' stopOpacity={1} />
-          </linearGradient>
-        </defs>
-        <Area type='linear' dataKey='amount' stroke='url(#splitColorFill)' fill='url(#splitColor)' />
-      </AreaChart>
-    </ResponsiveContainer>
+    <Wrapper>
+      <Container>
+        <ResponsiveContainer width='99%' height={300}>
+          <AreaChart
+            data={data}
+            margin={{
+              top: 10,
+              right: 30,
+              left: 0,
+              bottom: 0,
+            }}
+          >
+            <XAxis 
+              domain={['auto', 'auto']}
+              interval={0}
+              dataKey='name'
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis stroke={SECONDARY_COLOR}  />
+            <ReferenceLine
+              y={0}
+              stroke={SECONDARY_COLOR}
+            />
+            <Tooltip isAnimationActive={false} />
+            <defs>
+              <linearGradient id='splitColor' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset={off} stopColor='rgba(128, 196, 128, 0.5)' stopOpacity={1} />
+                <stop offset={off} stopColor='rgba(206, 87, 87, 0.5)' stopOpacity={1} />
+              </linearGradient>
+              <linearGradient id='splitColorFill' x1='0' y1='0' x2='0' y2='1'>
+              <stop offset={off} stopColor='rgba(128, 196, 128, 1)' stopOpacity={1} />
+                <stop offset={off} stopColor='rgba(206, 87, 87, 1)' stopOpacity={1} />
+              </linearGradient>
+            </defs>
+            <Area 
+              type='linear'
+              dataKey='amount'
+              stroke='url(#splitColorFill)'
+              fill='url(#splitColor)'
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Container>
+    </Wrapper>
   );
 }
