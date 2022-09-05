@@ -1,12 +1,13 @@
-import React from "react";
-import styled from "styled-components";
-import tw from "twin.macro";
-import { FilledGradientButtonWithIcon } from "../common/Buttons";
-import { Text, Display } from "../common/Typography";
-import { ReactComponent as PlusIcon } from "../../assets/svg/plus.svg";
-import { Action, ActionCardResult } from "../../data/Actions";
-import { TokenData } from "../../data/TokenData";
-import { FeeTier } from "../../data/FeeTier";
+import React from 'react';
+import styled from 'styled-components';
+import tw from 'twin.macro';
+import { FilledGradientButtonWithIcon } from '../common/Buttons';
+import { Text, Display } from '../common/Typography';
+import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
+import { Action, ActionCardResult } from '../../data/Actions';
+import { TokenData } from '../../data/TokenData';
+import { FeeTier } from '../../data/FeeTier';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -61,7 +62,16 @@ export type ManageAccountWidgetProps = {
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
-  const { token0, token1, feeTier, activeActions, actionResults, updateActionResults, onAddAction, onRemoveAction } = props;
+  const {
+    token0,
+    token1,
+    feeTier,
+    activeActions,
+    actionResults,
+    updateActionResults,
+    onAddAction,
+    onRemoveAction,
+  } = props;
   return (
     <Wrapper>
       <div>
@@ -69,7 +79,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           Manage Account
         </Display>
         <Text size='S' weight='medium'>
-          Get started by clicking "Add Action" and transferring some funds as margin.
+          Get started by clicking "Add Action" and transferring some funds as
+          margin.
         </Text>
         <ActionsList>
           {activeActions.map((action, index) => (
@@ -88,7 +99,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   onRemoveAction(index);
                 }}
                 onChange={(result: ActionCardResult) => {
-                  updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
+                  updateActionResults([
+                    ...actionResults.slice(0, index),
+                    result,
+                    ...actionResults.slice(index + 1),
+                  ]);
                 }}
               />
             </ActionItem>
@@ -112,7 +127,18 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </FilledGradientButtonWithIcon>
           </ActionItem>
         </ActionsList>
+        <div className='flex justify-end gap-4 mt-4'>
+          <FilledGradientButtonWithIcon
+            Icon={<CheckIcon />}
+            position='trailing'
+            size='M'
+            svgColorType='stroke'
+            disabled={activeActions.length === 0}
+          >
+            Confirm
+          </FilledGradientButtonWithIcon>
+        </div>
       </div>
     </Wrapper>
-  )
+  );
 }
