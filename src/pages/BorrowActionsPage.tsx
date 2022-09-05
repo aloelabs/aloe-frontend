@@ -74,7 +74,7 @@ const BodyWrapper = styled.div`
 `;
 
 const GridExpandingDiv = styled.div`
-  grid-row: 1 / span 2;
+  grid-row: 1 / 4;
   grid-column: 2 / span 1;
   justify-self: center;
 
@@ -438,7 +438,9 @@ export default function BorrowActionsPage() {
             />
           </div>
         </div>
-        <FullscreenModal
+        
+      </BodyWrapper>
+      <FullscreenModal
           open={actionModalOpen}
           setOpen={(open: boolean) => {
             setActionModalOpen(open);
@@ -525,7 +527,6 @@ export default function BorrowActionsPage() {
             </ActionProviderContainer>
           </div>
         </FullscreenModal>
-      </BodyWrapper>
     </AppPage>
   );
 }
