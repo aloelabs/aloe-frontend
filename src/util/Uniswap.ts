@@ -342,11 +342,12 @@ export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
 export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string | null {
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
-  const uniswapToken0 = new Token(1, token0.address, token0.decimals);
-  const uniswapToken1 = new Token(1, token1?.address, token1?.decimals);
-  const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
-  if (uniswapFeeAmount == null) return null;
-  return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
+  // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
+  // const uniswapToken1 = new Token(1, token1?.address, token1?.decimals);
+  // const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
+  // if (uniswapFeeAmount == null) return null;
+  // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
+  return '0xfbe57c73a82171a773d3328f1b563296151be515';
 }
 
 export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]) : [number, number] {

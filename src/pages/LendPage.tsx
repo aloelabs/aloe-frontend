@@ -71,38 +71,38 @@ export default function LendPage() {
 
   const lendPairs: LendPairCardProps[] = [
     {
-      token0: GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
-      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+      token0: GetTokenData('0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'),
+      token1: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
       token0APY: 5.54,
       token1APY: 5.54,
       token0TotalSupply: 1000.01,
       token1TotalSupply: 1000.01,
       token0Utilization: 0.5,
       token1Utilization: 0.5,
-      uniswapFeeTier: FeeTier.ZERO_THREE,
+      uniswapFeeTier: FeeTier.ZERO_ZERO_FIVE,
     },
-    {
-      token0: GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
-      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
-      token0APY: 5.54,
-      token1APY: 5.54,
-      token0TotalSupply: 1000.01,
-      token1TotalSupply: 1000.01,
-      token0Utilization: 0.5,
-      token1Utilization: 0.5,
-      uniswapFeeTier: FeeTier.ZERO_THREE,
-    },
-    {
-      token0: GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919'),
-      token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
-      token0APY: 5.54,
-      token1APY: 5.54,
-      token0TotalSupply: 1000.01,
-      token1TotalSupply: 1000.01,
-      token0Utilization: 0.5,
-      token1Utilization: 0.5,
-      uniswapFeeTier: FeeTier.ZERO_THREE,
-    }
+    // {
+    //   token0: GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
+    //   token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+    //   token0APY: 5.54,
+    //   token1APY: 5.54,
+    //   token0TotalSupply: 1000.01,
+    //   token1TotalSupply: 1000.01,
+    //   token0Utilization: 0.5,
+    //   token1Utilization: 0.5,
+    //   uniswapFeeTier: FeeTier.ZERO_THREE,
+    // },
+    // {
+    //   token0: GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919'),
+    //   token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+    //   token0APY: 5.54,
+    //   token1APY: 5.54,
+    //   token0TotalSupply: 1000.01,
+    //   token1TotalSupply: 1000.01,
+    //   token0Utilization: 0.5,
+    //   token1Utilization: 0.5,
+    //   uniswapFeeTier: FeeTier.ZERO_THREE,
+    // }
   ];
 
   return (
@@ -161,13 +161,13 @@ export default function LendPage() {
                 tokenBalances={[
                   {
                     token: GetTokenData(
-                      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+                      '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'
                     ),
                     balance: '0.00',
                   },
                   {
                     token: GetTokenData(
-                      '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+                      '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'
                     ),
                     balance: '0.00',
                   },
@@ -205,7 +205,7 @@ export default function LendPage() {
             {lendPairs.map((lendPair) => (
               <LendPairCard key={lendPair.token0.address} {...lendPair} />
             ))}
-            <YieldAggregatorCard
+            {/* <YieldAggregatorCard
               tokens={[
                 GetTokenData('0x03ab458634910aad20ef5f1c8ee96f1d6ac54919'),
                 GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
@@ -221,7 +221,7 @@ export default function LendPage() {
               totalAPY={5.54}
               totalSupply={1000.01}
               totalUtilization={70.5}
-            />
+            /> */}
           </LendCards>
           <Pagination
             totalItems={/*TODO*/10}

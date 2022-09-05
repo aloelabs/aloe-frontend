@@ -20,22 +20,44 @@ export type TokenData = {
 const TokenDataMap = new Map<string, TokenData>([
   // USDC
   [
-    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
     {
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-      name: 'USDC',
+      address: '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
+      name: 'USD Coin',
       ticker: 'USDC',
+      iconPath: UsdcLogo,
+      decimals: 6,
+    },
+  ],
+  // USDC+
+  [
+    '0x2743e1f55b5a9b7d8ed79e21e2196de74b5f64b0',
+    {
+      address: '0x2743e1f55b5a9b7d8ed79e21e2196de74b5f64b0',
+      name: 'USD Coin+',
+      ticker: 'USDC+',
       iconPath: UsdcLogo,
       decimals: 6,
     },
   ],
   // WETH
   [
-    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
     {
-      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      address: '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
       name: 'Wrapped Ether',
       ticker: 'WETH',
+      iconPath: WethLogo,
+      decimals: 18,
+    },
+  ],
+  // WETH+
+  [
+    '0x1455acd023a2f40a54507db9fad9c2ce48481979',
+    {
+      address: '0x1455acd023a2f40a54507db9fad9c2ce48481979',
+      name: 'Wrapped Ether+',
+      ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
     },

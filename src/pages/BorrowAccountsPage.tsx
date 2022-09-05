@@ -11,16 +11,10 @@ import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 
 const DEMO_MARGIN_ACCOUNTS = [
   {
-    token0: GetTokenData('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
-    token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
+    token0: GetTokenData('0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'),
+    token1: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
     feeTier: FeeTier.ZERO_ZERO_FIVE,
     id: '1234',
-  },
-  {
-    token0: GetTokenData('0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'),
-    token1: GetTokenData('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
-    feeTier: FeeTier.ZERO_ZERO_FIVE,
-    id: '5678',
   },
 ];
 
