@@ -435,7 +435,6 @@ export default function BorrowActionsPage() {
             />
           </div>
         </div>
-        
       </BodyWrapper>
       <FullscreenModal
           open={actionModalOpen}
