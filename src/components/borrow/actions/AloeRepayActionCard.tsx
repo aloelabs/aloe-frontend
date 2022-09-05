@@ -1,7 +1,7 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
+import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
@@ -9,17 +9,18 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: token0.address,
+      value: SelectedToken.TOKEN_ZERO,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: token1.address,
+      value: SelectedToken.TOKEN_ONE,
       icon: token1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedTokenA;
-  const selectedToken = previousActionCardState?.aloeResult?.selectedTokenA || dropdownOptions[0];
+  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
+  const selectedToken = parseSelectedToken(selectedTokenOption.value);
   useEffectOnce(() => {
     if (!previouslySelectedToken) {
       onChange({
@@ -42,7 +43,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           },
           token0PlusDelta: DEFAULT_ACTION_VALUE,
           token1PlusDelta: DEFAULT_ACTION_VALUE,
-          selectedTokenA: selectedToken,
+          selectedToken: selectedToken,
         },
         uniswapResult: null,
       });
@@ -50,7 +51,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   });
   let tokenAmount = '';
   if (previousActionCardState) {
-    if (selectedToken.value === dropdownOptions[0].value) {
+    if (selectedTokenOption.value === dropdownOptions[0].value) {
       tokenAmount = previousActionCardState?.aloeResult?.token0DebtDelta.inputValue || '';
     } else {
       tokenAmount = previousActionCardState?.aloeResult?.token1DebtDelta.inputValue || '';
@@ -66,9 +67,9 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
       <div className='w-full flex flex-col gap-4 items-center'>
         <Dropdown
           options={dropdownOptions}
-          selectedOption={selectedToken}
+          selectedOption={selectedTokenOption}
           onSelect={(option) => {
-            if (option?.value !== selectedToken?.value) {
+            if (option.value !== selectedTokenOption.value) {
               onChange({
                 aloeResult: {
                   token0RawDelta: DEFAULT_ACTION_VALUE,
@@ -77,7 +78,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
                   token1DebtDelta: DEFAULT_ACTION_VALUE,
                   token0PlusDelta: DEFAULT_ACTION_VALUE,
                   token1PlusDelta: DEFAULT_ACTION_VALUE,
-                  selectedTokenA: option,
+                  selectedToken: parseSelectedToken(option.value),
                 },
                 uniswapResult: null,
               });
@@ -85,18 +86,18 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           }}
         />
         <TokenAmountInput
-          tokenLabel={selectedToken?.label || ''}
+          tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => {
             const token0Change =
-              selectedToken?.value === token0.address
+              selectedToken === SelectedToken.TOKEN_ZERO
                 ? parseFloat(value) || null
                 : null;
             const token1Change =
-              selectedToken?.value === token1.address
+              selectedToken === SelectedToken.TOKEN_ONE
                 ? parseFloat(value) || null
                 : null;
-            const token0IsSelected = selectedToken?.value === token0.address;
+            const token0IsSelected = selectedToken === SelectedToken.TOKEN_ZERO;
             onChange({
               aloeResult: {
                 token0RawDelta: {
@@ -117,7 +118,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
                 },
                 token0PlusDelta: DEFAULT_ACTION_VALUE,
                 token1PlusDelta: DEFAULT_ACTION_VALUE,
-                selectedTokenA: selectedToken,
+                selectedToken: selectedToken,
               },
               uniswapResult: null,
             });

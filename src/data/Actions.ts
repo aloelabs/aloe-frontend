@@ -12,55 +12,6 @@ import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
 
-export const ActionProviders = {
-  AloeII: {
-    name: 'Aloe II',
-    Icon: AloeLogo,
-    color: '#63b59a',
-    actions: {
-      DEPOSIT: {
-        name: 'Mint Token+',
-        actionCard: AloeMintTokenPlusActionCard,
-      },
-      WITHDRAW: {
-        name: 'Burn Token+',
-        actionCard: AloeBurnTokenPlusActionCard,
-      },
-      BORROW: {
-        name: 'Borrow',
-        actionCard: AloeBorrowActionCard,
-      },
-      REPAY: {
-        name: 'Repay',
-        actionCard: AloeRepayActionCard,
-      },
-      TRANSFER_FROM_MARGIN_ACCOUNT: {
-        name: 'Withdraw',
-        actionCard: AloeWithdrawActionCard,
-      },
-      TRANSFER_TO_MARGIN_ACCOUNT: {
-        name: 'Add Margin',
-        actionCard: AloeAddMarginActionCard,
-      },
-    },
-  },
-  UniswapV3: {
-    name: 'Uniswap V3',
-    Icon: UniswapLogo,
-    color: '#f31677',
-    actions: {
-      ADD_LIQUIDITY: {
-        name: 'Add Liquidity',
-        actionCard: UniswapAddLiquidityActionCard,
-      },
-      REMOVE_LIQUIDITY: {
-        name: 'Remove Liquidity',
-        actionCard: UniswapRemoveLiquidityActionCard,
-      },
-    },
-  },
-};
-
 export type ActionValue = {
   numericValue: number;
   inputValue: string;
@@ -73,6 +24,13 @@ export type UniswapPosition = {
   upperBound: number | null;
 };
 
+export enum SelectedToken {
+  TOKEN_ZERO='TOKEN_ZERO',
+  TOKEN_ONE='TOKEN_ONE',
+  TOKEN_ZERO_PLUS='TOKEN_ZERO_PLUS',
+  TOKEN_ONE_PLUS='TOKEN_ONE_PLUS',
+}
+
 export type AloeResult = {
   token0RawDelta: ActionValue;
   token1RawDelta: ActionValue;
@@ -80,7 +38,7 @@ export type AloeResult = {
   token1DebtDelta: ActionValue;
   token0PlusDelta: ActionValue;
   token1PlusDelta: ActionValue;
-  selectedTokenA: DropdownOption | null;
+  selectedToken: SelectedToken | null;
 }
 
 export type UniswapResult = {
@@ -120,14 +78,153 @@ export type ActionProvider = {
   Icon: React.FC;
   color: string;
   actions: {
-    [key: string]: {
-      name: string;
-      actionCard: React.FC<ActionCardProps>;
-    }
+    [key: string]: Action;
   };
 };
+
+
+export type ActionTemplate = {
+  name: string,
+  actions: Array<Action>,
+  defaultActionResults?: Array<ActionCardResult>, 
+}
 
 export const DEFAULT_ACTION_VALUE: ActionValue = {
   numericValue: 0,
   inputValue: '',
+}
+
+export const MINT_TOKEN_PLUS: Action = {
+  name: 'Mint Token+',
+  actionCard: AloeMintTokenPlusActionCard,
+}
+
+export const BURN_TOKEN_PLUS: Action = {
+  name: 'Burn Token+',
+  actionCard: AloeBurnTokenPlusActionCard,
+}
+
+export const BORROW: Action = {
+  name: 'Borrow',
+  actionCard: AloeBorrowActionCard,
+}
+
+export const REPAY: Action = {
+  name: 'Repay',
+  actionCard: AloeRepayActionCard,
+}
+
+export const WITHDRAW: Action = {
+  name: 'Withdraw',
+  actionCard: AloeWithdrawActionCard,
+}
+
+export const ADD_MARGIN: Action = {
+  name: 'Add Margin',
+  actionCard: AloeAddMarginActionCard,
+}
+
+export const REMOVE_LIQUIDITY: Action = {
+  name: 'Remove Liquidity',
+  actionCard: UniswapRemoveLiquidityActionCard,
+}
+
+export const ADD_LIQUIDITY: Action = {
+  name: 'Add Liquidity',
+  actionCard: UniswapAddLiquidityActionCard,
+}
+
+export const ActionProviders = {
+  AloeII: {
+    name: 'Aloe II',
+    Icon: AloeLogo,
+    color: '#63b59a',
+    actions: {
+      MINT_TOKEN_PLUS,
+      BURN_TOKEN_PLUS,
+      BORROW,
+      REPAY,
+      WITHDRAW,
+      ADD_MARGIN,
+    },
+  },
+  UniswapV3: {
+    name: 'Uniswap V3',
+    Icon: UniswapLogo,
+    color: '#f31677',
+    actions: {
+      ADD_LIQUIDITY,
+      REMOVE_LIQUIDITY,
+    },
+  },
+};
+
+export const ActionTemplates = {
+  TEN_X_LEVERAGE: {
+    name: '10x Leverage',
+    actions: [
+      ADD_MARGIN,
+      BORROW,
+      ADD_LIQUIDITY,
+    ],
+    defaultActionResults: [
+      {
+        aloeResult: {
+          token0RawDelta: {
+            numericValue: 10,
+            inputValue: '10.0',
+          },
+          token1RawDelta: DEFAULT_ACTION_VALUE,
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
+          token0PlusDelta: DEFAULT_ACTION_VALUE,
+          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          selectedToken: null,
+        },
+        uniswapResult: null,
+      },
+      {
+        aloeResult: {
+          token0RawDelta: DEFAULT_ACTION_VALUE,
+          token1RawDelta: DEFAULT_ACTION_VALUE,
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
+          token0PlusDelta: {
+            numericValue: 10,
+            inputValue: '10.0',
+          },
+          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          selectedToken: null,
+        },
+        uniswapResult: null,
+      },
+      {
+        aloeResult: {
+          token0RawDelta: DEFAULT_ACTION_VALUE,
+          token1RawDelta: {
+            numericValue: 10,
+            inputValue: '10.0',
+          },
+          token0DebtDelta: DEFAULT_ACTION_VALUE,
+          token1DebtDelta: DEFAULT_ACTION_VALUE,
+          token0PlusDelta: DEFAULT_ACTION_VALUE,
+          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          selectedToken: null,
+        },
+        uniswapResult: null,
+      },
+    ]
+  }
+}
+
+export function getDropdownOptionFromSelectedToken(selectedToken: SelectedToken | null, options: DropdownOption[]): DropdownOption {
+  if (options.length === 0) {
+    throw new Error();
+  }
+  return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
+}
+
+export function parseSelectedToken(value: string | undefined): SelectedToken | null {
+  if (!value) return null;
+  return value as SelectedToken;
 }

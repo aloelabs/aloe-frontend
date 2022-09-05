@@ -255,7 +255,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         token1DebtDelta: DEFAULT_ACTION_VALUE,
         token0PlusDelta: DEFAULT_ACTION_VALUE,
         token1PlusDelta: DEFAULT_ACTION_VALUE,
-        selectedTokenA: null,
+        selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
@@ -319,7 +319,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         token1DebtDelta: DEFAULT_ACTION_VALUE,
         token0PlusDelta: DEFAULT_ACTION_VALUE,
         token1PlusDelta: DEFAULT_ACTION_VALUE,
-        selectedTokenA: null,
+        selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
