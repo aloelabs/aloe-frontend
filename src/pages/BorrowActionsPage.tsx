@@ -13,6 +13,7 @@ import {
   ActionCardResult,
   ActionProvider,
   ActionProviders,
+  ActionTemplates,
   CumulativeActionCardResult,
   DEFAULT_ACTION_VALUE,
 } from '../data/Actions';
@@ -28,6 +29,7 @@ import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import TokenChooser from '../components/common/TokenChooser';
 import { sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
+import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
 
 export type MarginAccountBalances = {
   assets: number;
@@ -127,6 +129,18 @@ const SvgWrapper = styled.div`
   svg {
     width: 32px;
     height: 32px;
+  }
+`;
+
+const TemplatesSvgWrapper = styled.div`
+  ${tw`flex items-center justify-center`}
+  width: 32px;
+  height: 32px;
+
+  svg {
+    path {
+      stroke: #4B6980;
+    }
   }
 `;
 
@@ -239,10 +253,25 @@ export default function BorrowActionsPage() {
     setActiveActions([...activeActions, action]);
   }
 
+  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardResult[]) {
+    if (defaultActionResults && actions.length !== defaultActionResults.length) {
+      console.error('You must pass in the same number of action results as you do actions (or pass no action results in).');
+      return;
+    }
+    const newActionResults = defaultActionResults || actions.map(() => {
+      return {
+        aloeResult: null,
+        uniswapResult: null,
+      }
+    });
+    setActionResults([...actionResults, ...newActionResults]);
+    setActiveActions([...activeActions, ...actions]);
+  }
+
   function updateCumulativeActionResult(updatedActionResults: ActionCardResult[]) {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
-        selectedTokenA: null,
+        selectedToken: null,
         token0RawDelta: DEFAULT_ACTION_VALUE,
         token0DebtDelta: DEFAULT_ACTION_VALUE,
         token0PlusDelta: DEFAULT_ACTION_VALUE,
@@ -258,7 +287,7 @@ export default function BorrowActionsPage() {
       if (aloeResult) {
         updatedCumulativeActionResult = {
           aloeResult: {
-            selectedTokenA: null,
+            selectedToken: null,
             token0RawDelta: {
               inputValue: '',
               numericValue: (updatedCumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + aloeResult.token0RawDelta.numericValue,
@@ -471,6 +500,35 @@ export default function BorrowActionsPage() {
                 );
               }
             )}
+            <ActionProviderContainer>
+              <div className='flex items-center mb-4'>
+                <TemplatesSvgWrapper>
+                  <LayersIcon width={20} height={20} />
+                </TemplatesSvgWrapper>
+                <Display size='M' weight='semibold'>
+                  Templates
+                </Display>
+              </div>
+              <ActionButtonsContainer>
+                {Object.entries(ActionTemplates).map(
+                  (templateData, index) => {
+                    const template = templateData[1];
+                    return (
+                      <ActionButton
+                        key={index}
+                        borderColor='#4B6980'
+                        onClick={() => {
+                          handleAddActions(template.actions, template.defaultActionResults);
+                          setActionModalOpen(false);
+                        }}
+                      >
+                        {template.name}
+                      </ActionButton>
+                    );
+                  }
+                )}
+              </ActionButtonsContainer>
+            </ActionProviderContainer>
           </div>
         </FullscreenModal>
       </BodyWrapper>
