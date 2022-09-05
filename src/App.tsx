@@ -91,30 +91,6 @@ function App() {
               <Header />
               <main className='flex-grow'>
                 <Routes>
-                  <Route
-                    path='/blend'
-                    element={
-                      <RedirectPartialPath
-                        from={['/blend', '/blend/']}
-                        to={'/blend/pools'}
-                      />
-                    }
-                  >
-                    <Route path='pools' element={<BlendPoolSelectPage blockNumber={blockNumber} />} />
-                    <Route
-                      path='pool/:pooladdress'
-                      element={<BlendPoolPage blockNumber={blockNumber} />}
-                    />
-                    <Route
-                      path='pool'
-                      element={<Navigate replace to='/blend' />}
-                    />
-                    <Route
-                      path='*'
-                      element={<Navigate replace to='/blend/pools' />}
-                    />
-                  </Route>
-                  <Route path='/portfolio' element={<PortfolioPage />} />
                   <Route path='/lend' element={<LendPage />} />
                   <Route path='/borrow' element={<BorrowAccountsPage />} />
                   <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
@@ -123,11 +99,9 @@ function App() {
                       <>
                         <Route path='/buttons' element={<ButtonExamplesPage />} />
                         <Route path='/inputs' element={<InputExamplesPage />} />
-                        <Route path='/portfolio' element={<PortfolioPage />} />
-                        <Route path='/governance' element={<GovernancePage />} />
                       </>
                   )}
-                  <Route path='/' element={<Navigate replace to='/blend' />} />
+                  <Route path='/' element={<Navigate replace to='/lend' />} />
                   <Route path='*' element={<Navigate to='/' />} />
                 </Routes>
               </main>

@@ -179,40 +179,32 @@ export const ActionTemplates = {
           token1DebtDelta: DEFAULT_ACTION_VALUE,
           token0PlusDelta: DEFAULT_ACTION_VALUE,
           token1PlusDelta: DEFAULT_ACTION_VALUE,
-          selectedToken: null,
+          selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,
       },
       {
         aloeResult: {
-          token0RawDelta: DEFAULT_ACTION_VALUE,
+          token0RawDelta: {
+            numericValue: 100,
+            inputValue: '100',
+          },
           token1RawDelta: DEFAULT_ACTION_VALUE,
-          token0DebtDelta: DEFAULT_ACTION_VALUE,
-          token1DebtDelta: DEFAULT_ACTION_VALUE,
-          token0PlusDelta: {
-            numericValue: 10,
-            inputValue: '10.0',
+          token0DebtDelta: {
+            numericValue: 100,
+            inputValue: '100',
           },
-          token1PlusDelta: DEFAULT_ACTION_VALUE,
-          selectedToken: null,
-        },
-        uniswapResult: null,
-      },
-      {
-        aloeResult: {
-          token0RawDelta: DEFAULT_ACTION_VALUE,
-          token1RawDelta: {
-            numericValue: 10,
-            inputValue: '10.0',
-          },
-          token0DebtDelta: DEFAULT_ACTION_VALUE,
           token1DebtDelta: DEFAULT_ACTION_VALUE,
           token0PlusDelta: DEFAULT_ACTION_VALUE,
           token1PlusDelta: DEFAULT_ACTION_VALUE,
-          selectedToken: null,
+          selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,
       },
+      {
+        aloeResult: null,
+        uniswapResult: null,
+      }
     ]
   }
 }
