@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CloseableModal } from '../common/Modal';
 
 import { useConnect } from 'wagmi';
-import { FormatAddress } from '../../util/FormatAddress';
+import { formatAddress } from '../../util/FormatAddress';
 import {
   FilledStylizedButton,
   OutlinedGradientRoundedButton,
@@ -22,7 +22,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const [{ data: connectData, error: connectError }, connect] = useConnect();
 
   const ensName: string | undefined = accountData?.ens?.name;
-  const formattedAddr = accountData ? FormatAddress(accountData.address) : '';
+  const formattedAddr = accountData ? formatAddress(accountData.address) : '';
   const buttonText = accountData
     ? ensName
       ? ensName
@@ -80,7 +80,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                   title={accountData.address}
                 >
                   {accountData.ens?.name
-                    ? `${accountData.ens?.name} (${FormatAddress(
+                    ? `${accountData.ens?.name} (${formatAddress(
                         accountData.address
                       )})`
                     : accountData.address}
