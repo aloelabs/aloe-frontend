@@ -9,6 +9,7 @@ import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatUSDAuto } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
+import { MarginAccount } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -90,18 +91,13 @@ function MetricContainer(props: MetricContainerProps) {
   );
 }
 
-export type MarginAccountCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  feeTier: FeeTier;
-  id: string;
-};
+export type MarginAccountCardProps = MarginAccount;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { token0, token1, feeTier, id } = props;
+  const { address, assets, feeTier, liabilities, token0, token1 } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
-  const link = `/borrow/account/${id}`;
+  const link = `/borrow/account/${address}`;
 
   useEffect(() => {
     let mounted = true;
@@ -161,8 +157,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
           />
         </div>
         <IDContainer>
-          <Text size='S' weight='medium' title={id}>
-            ID - {formatAddressStart(id)}
+          <Text size='S' weight='medium' title={address}>
+            ID - {formatAddressStart(address)}
           </Text>
         </IDContainer>
       </CardBodyWrapper>

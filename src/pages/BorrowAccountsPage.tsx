@@ -109,11 +109,8 @@ export default function BorrowAccountsPage() {
       <MarginAccountsContainner>
         {marginAccounts.map((marginAccount: MarginAccount, index: number) => (
           <MarginAccountCard
-            token0={marginAccount.token0}
-            token1={marginAccount.token1}
-            feeTier={marginAccount.feeTier}
-            id={marginAccount.address}
             key={index}
+            {...marginAccount}
           />
         ))}
       </MarginAccountsContainner>
