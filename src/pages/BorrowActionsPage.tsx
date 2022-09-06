@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
-import {
-  PreviousPageButton,
-} from '../components/common/Buttons';
+import { PreviousPageButton } from '../components/common/Buttons';
 import { Display, Text } from '../components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { FullscreenModal } from '../components/common/Modal';
@@ -33,7 +31,7 @@ import JSBI from 'jsbi';
 import { useContract, useProvider } from 'wagmi';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
+import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import Big from 'big.js';
 import { BigNumber } from 'ethers';
 
@@ -54,7 +52,7 @@ export type CumulativeBalance = {
   liabilities: number;
   lowerLiquidationThreshold: number;
   upperLiquidationThreshold: number;
-}
+};
 
 // export type CumulativeBalances = {
 //   token0: CumulativeBalance;
@@ -109,9 +107,7 @@ const ActionModalHeader = styled.div`
   margin-bottom: 24px;
 `;
 
-const BackButtonWrapper = styled.button.attrs(
-  (props: { position?: string }) => props
-)`
+const BackButtonWrapper = styled.button.attrs((props: { position?: string }) => props)`
   ${tw`flex items-center justify-center`}
   position: ${(props) => props.position || 'absolute'};
   left: 0;
@@ -151,7 +147,7 @@ const TemplatesSvgWrapper = styled.div`
 
   svg {
     path {
-      stroke: #4B6980;
+      stroke: #4b6980;
     }
   }
 `;
@@ -173,9 +169,7 @@ const ActionButtonsContainer = styled.div`
   gap: 25px;
 `;
 
-const ActionButton = styled.button.attrs(
-  (props: { borderColor: string }) => props
-)`
+const ActionButton = styled.button.attrs((props: { borderColor: string }) => props)`
   ${tw`flex items-center justify-center`}
   width: 250px;
   padding: 12px 8px;
@@ -198,21 +192,6 @@ const AccountStatsGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 `;
-
-// const FAKE_DATA: MarginAccount = {
-//   token0: {
-//     assets: 10,
-//     liabilities: 10,
-//     lowerLiquidationThreshold: 2000,
-//     upperLiquidationThreshold: Infinity,
-//   },
-//   token1: {
-//     assets: 50,
-//     liabilities: 50,
-//     lowerLiquidationThreshold: 1250,
-//     upperLiquidationThreshold: Infinity,
-//   },
-// };
 
 export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
@@ -237,17 +216,33 @@ export default function BorrowActionsPage() {
       const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(address);
       const liabilitiesData: BigNumber[] = await marginAccountLensContract.getLiabilities(address);
       const assets: Assets = {
-        token0Raw: Big(assetsData[0].toString()).div(10 ** token0.decimals).toNumber(),
-        token1Raw: Big(assetsData[1].toString()).div(10 ** token1.decimals).toNumber(),
-        token0Plus: Big(assetsData[2].toString()).div(10 ** token0.decimals).toNumber(),
-        token1Plus: Big(assetsData[3].toString()).div(10 ** token1.decimals).toNumber(),
-        uni0: Big(assetsData[4].toString()).div(10 ** token0.decimals).toNumber(),
-        uni1: Big(assetsData[5].toString()).div(10 ** token1.decimals).toNumber(),
-      }
+        token0Raw: Big(assetsData[0].toString())
+          .div(10 ** token0.decimals)
+          .toNumber(),
+        token1Raw: Big(assetsData[1].toString())
+          .div(10 ** token1.decimals)
+          .toNumber(),
+        token0Plus: Big(assetsData[2].toString())
+          .div(10 ** token0.decimals)
+          .toNumber(),
+        token1Plus: Big(assetsData[3].toString())
+          .div(10 ** token1.decimals)
+          .toNumber(),
+        uni0: Big(assetsData[4].toString())
+          .div(10 ** token0.decimals)
+          .toNumber(),
+        uni1: Big(assetsData[5].toString())
+          .div(10 ** token1.decimals)
+          .toNumber(),
+      };
       const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData[0].toString()).div(10 ** token0.decimals).toNumber(),
-        amount1: Big(liabilitiesData[1].toString()).div(10 ** token1.decimals).toNumber(),
-      }
+        amount0: Big(liabilitiesData[0].toString())
+          .div(10 ** token0.decimals)
+          .toNumber(),
+        amount1: Big(liabilitiesData[1].toString())
+          .div(10 ** token1.decimals)
+          .toNumber(),
+      };
       if (mounted) {
         setMarginAccount({
           address: address,
@@ -264,9 +259,9 @@ export default function BorrowActionsPage() {
     }
     return () => {
       mounted = false;
-    }
+    };
   });
-  
+
   const [actionResults, setActionResults] = React.useState<Array<ActionCardState>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
@@ -279,31 +274,56 @@ export default function BorrowActionsPage() {
     return null;
   }
 
-  const assetsInUniswapPositions: [number, number] =  cumulativeActionResult ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions) : [0, 0];
+  const assetsInUniswapPositions: [number, number] = cumulativeActionResult
+    ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions)
+    : [0, 0];
   const activeToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
   const inactiveToken = isToken0Selected ? marginAccount.token1 : marginAccount.token0;
-  const currentBalances = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
-  const combinedDeltaBalances: [CumulativeBalance, CumulativeBalance] | null = cumulativeActionResult ? [
+  const currentAssetsPerToken = marginAccount ? sumAssetsPerToken(marginAccount.assets) : [0, 0];
+  const currentBalancesPerToken: [CumulativeBalance, CumulativeBalance] = [
     {
-      assets: (cumulativeActionResult.aloeResult?.token0RawDelta || 0) + 
-              (cumulativeActionResult.aloeResult?.token0PlusDelta || 0) +
-              assetsInUniswapPositions[0],
-      liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta || 0),
+      assets: currentAssetsPerToken[0],
+      liabilities: marginAccount.liabilities.amount0,
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
     {
-      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta || 0) +
-              (cumulativeActionResult.aloeResult?.token1PlusDelta || 0) +
-              assetsInUniswapPositions[1],
-      liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta || 0),
+      assets: currentAssetsPerToken[1],
+      liabilities: marginAccount.liabilities.amount1,
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
-  ] : null;
-  const activeDeltaBalances: CumulativeBalance | null = combinedDeltaBalances ? (isToken0Selected ? combinedDeltaBalances[0] : combinedDeltaBalances[1]) : null;
-  // const hypotheticalActiveAssets: number | null = activeDeltaBalances ? currentBalances.assets + activeDeltaBalances.assets : null;
-  // const hypotheticalActiveLiabilities: number | null = activeDeltaBalances ? currentBalances.liabilities + activeDeltaBalances.liabilities : null;
+  ];
+  const currentBalances: CumulativeBalance = currentBalancesPerToken[isToken0Selected ? 0 : 1];
+  const combinedDeltaBalances: [CumulativeBalance, CumulativeBalance] | null = cumulativeActionResult
+    ? [
+        {
+          assets:
+            (cumulativeActionResult.aloeResult?.token0RawDelta || 0) +
+            (cumulativeActionResult.aloeResult?.token0PlusDelta || 0) +
+            assetsInUniswapPositions[0],
+          liabilities: cumulativeActionResult.aloeResult?.token0DebtDelta || 0,
+          lowerLiquidationThreshold: 0,
+          upperLiquidationThreshold: 0,
+        },
+        {
+          assets:
+            (cumulativeActionResult?.aloeResult?.token1RawDelta || 0) +
+            (cumulativeActionResult.aloeResult?.token1PlusDelta || 0) +
+            assetsInUniswapPositions[1],
+          liabilities: cumulativeActionResult.aloeResult?.token1DebtDelta || 0,
+          lowerLiquidationThreshold: 0,
+          upperLiquidationThreshold: 0,
+        },
+      ]
+    : null;
+  const activeDeltaBalances: CumulativeBalance | null = combinedDeltaBalances
+    ? isToken0Selected
+      ? combinedDeltaBalances[0]
+      : combinedDeltaBalances[1]
+    : null;
+  const hypotheticalActiveAssets: number | null = activeDeltaBalances ? currentBalances.assets + activeDeltaBalances.assets : null;
+  const hypotheticalActiveLiabilities: number | null = activeDeltaBalances ? currentBalances.liabilities + activeDeltaBalances.liabilities : null;
 
   function updateCumulativeActionResult(updatedActionResults: ActionCardState[]) {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
@@ -311,7 +331,7 @@ export default function BorrowActionsPage() {
         selectedToken: null,
       },
       uniswapPositions: [],
-    }
+    };
     for (let actionResult of updatedActionResults) {
       const aloeResult = actionResult.aloeResult;
       const uniswapPosition = actionResult.uniswapResult?.uniswapPosition;
@@ -319,15 +339,21 @@ export default function BorrowActionsPage() {
         updatedCumulativeActionResult = {
           aloeResult: {
             selectedToken: null,
-            token0RawDelta: (updatedCumulativeActionResult.aloeResult?.token0RawDelta || 0) + (aloeResult.token0RawDelta ?? 0),
-            token0DebtDelta: (updatedCumulativeActionResult.aloeResult?.token0DebtDelta || 0) + (aloeResult.token0DebtDelta ?? 0),
-            token0PlusDelta: (updatedCumulativeActionResult.aloeResult?.token0PlusDelta || 0) + (aloeResult.token0PlusDelta ?? 0),
-            token1RawDelta: (updatedCumulativeActionResult.aloeResult?.token1RawDelta || 0) + (aloeResult.token1RawDelta ?? 0),
-            token1DebtDelta: (updatedCumulativeActionResult.aloeResult?.token1DebtDelta || 0) + (aloeResult.token1DebtDelta ?? 0),
-            token1PlusDelta: (updatedCumulativeActionResult.aloeResult?.token1PlusDelta || 0) + (aloeResult.token1PlusDelta ?? 0),
+            token0RawDelta:
+              (updatedCumulativeActionResult.aloeResult?.token0RawDelta || 0) + (aloeResult.token0RawDelta ?? 0),
+            token0DebtDelta:
+              (updatedCumulativeActionResult.aloeResult?.token0DebtDelta || 0) + (aloeResult.token0DebtDelta ?? 0),
+            token0PlusDelta:
+              (updatedCumulativeActionResult.aloeResult?.token0PlusDelta || 0) + (aloeResult.token0PlusDelta ?? 0),
+            token1RawDelta:
+              (updatedCumulativeActionResult.aloeResult?.token1RawDelta || 0) + (aloeResult.token1RawDelta ?? 0),
+            token1DebtDelta:
+              (updatedCumulativeActionResult.aloeResult?.token1DebtDelta || 0) + (aloeResult.token1DebtDelta ?? 0),
+            token1PlusDelta:
+              (updatedCumulativeActionResult.aloeResult?.token1PlusDelta || 0) + (aloeResult.token1PlusDelta ?? 0),
           },
           uniswapPositions: updatedCumulativeActionResult.uniswapPositions,
-        }
+        };
       }
       if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
         const existingPositionIndex = updatedCumulativeActionResult.uniswapPositions.findIndex((pos) => {
@@ -342,12 +368,12 @@ export default function BorrowActionsPage() {
             amount1: existingPosition.amount1 + uniswapPosition.amount1,
             lowerBound: existingPosition.lowerBound,
             upperBound: existingPosition.upperBound,
-          }
+          };
         } else {
           updatedCumulativeActionResult = {
             aloeResult: updatedCumulativeActionResult.aloeResult,
             uniswapPositions: [...updatedCumulativeActionResult.uniswapPositions, uniswapPosition],
-          }
+          };
         }
       }
     }
@@ -362,26 +388,33 @@ export default function BorrowActionsPage() {
   }
 
   function handleAddAction(action: Action) {
-    updateActionResults([...actionResults, {
-      actionId: action.id,
-      aloeResult: null,
-      uniswapResult: null,
-    }]);
+    updateActionResults([
+      ...actionResults,
+      {
+        actionId: action.id,
+        aloeResult: null,
+        uniswapResult: null,
+      },
+    ]);
     setActiveActions([...activeActions, action]);
   }
 
   function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
     if (defaultActionResults && actions.length !== defaultActionResults.length) {
-      console.error('You must pass in the same number of action results as you do actions (or pass no action results in).');
+      console.error(
+        'You must pass in the same number of action results as you do actions (or pass no action results in).'
+      );
       return;
     }
-    const newActionResults = defaultActionResults || actions.map((x) => {
-      return {
-        actionId: x.id,
-        aloeResult: null,
-        uniswapResult: null,
-      }
-    });
+    const newActionResults =
+      defaultActionResults ||
+      actions.map((x) => {
+        return {
+          actionId: x.id,
+          aloeResult: null,
+          uniswapResult: null,
+        };
+      });
     updateActionResults([...actionResults, ...newActionResults]);
     setActiveActions([...activeActions, ...actions]);
   }
@@ -399,10 +432,10 @@ export default function BorrowActionsPage() {
           />
         </div>
         <GridExpandingDiv>
-          {/* <ManageAccountWidget
-            token0={accountData.token0}
-            token1={accountData.token1}
-            feeTier={accountData.feeTier}
+          <ManageAccountWidget
+            token0={marginAccount.token0}
+            token1={marginAccount.token1}
+            feeTier={marginAccount.feeTier}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -417,7 +450,7 @@ export default function BorrowActionsPage() {
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
-          /> */}
+          />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
           <div className='w-full flex flex-col gap-4 mb-8'>
@@ -433,7 +466,7 @@ export default function BorrowActionsPage() {
               />
             </div>
             <AccountStatsGrid>
-              {/* <AccountStatsCard
+              <AccountStatsCard
                 label='Assets'
                 value={`${currentBalances.assets} ${activeToken?.ticker || ''}`}
                 hypothetical={hypotheticalActiveAssets != null && (hypotheticalActiveAssets !== currentBalances.assets) ? `${hypotheticalActiveAssets} ${activeToken?.ticker || ''}` : undefined}
@@ -456,7 +489,7 @@ export default function BorrowActionsPage() {
                   inactiveToken?.ticker || ''
                 }`}
                 hypothetical={undefined}
-              /> */}
+              />
             </AccountStatsGrid>
           </div>
           <div className='w-full flex flex-col gap-4'>
@@ -469,100 +502,91 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               Token Allocation
             </Display>
-            {/* <TokenAllocationPieChartWidget
-              token0={accountData.token0}
-              token1={accountData.token1}
-            /> */}
+            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} />
           </div>
         </div>
       </BodyWrapper>
       <FullscreenModal
-          open={actionModalOpen}
-          setOpen={(open: boolean) => {
-            setActionModalOpen(open);
-          }}
-        >
-          <ActionModalHeader>
-            <BackButtonWrapper>
-              <BackArrowIcon
-                onClick={() => {
-                  setActionModalOpen(false);
-                }}
-              />
-            </BackButtonWrapper>
-            <Display size='M' weight='medium'>
-              New Action
-            </Display>
-          </ActionModalHeader>
-          <div className='flex flex-col gap-4'>
-            {Object.values(ActionProviders).map(
-              (actionProvider: ActionProvider, index: number) => {
-                return (
-                  <ActionProviderContainer key={index}>
-                    <div className='flex items-center mb-4'>
-                      <SvgWrapper>
-                        <actionProvider.Icon />
-                      </SvgWrapper>
-                      <Display size='M' weight='semibold'>
-                        {actionProvider.name}
-                      </Display>
-                    </div>
-                    <ActionButtonsContainer>
-                      {Object.entries(actionProvider.actions).map(
-                        (actionData, index) => {
-                          const action = actionData[1];
-                          return (
-                            <ActionButton
-                              key={index}
-                              borderColor={actionProvider.color}
-                              onClick={() => {
-                                handleAddAction(action);
-                                setActionModalOpen(false);
-                              }}
-                            >
-                              <Text size='S' weight='bold'>
-                                {getNameOfAction(action.id)}
-                              </Text>
-                            </ActionButton>
-                          );
-                        }
-                      )}
-                    </ActionButtonsContainer>
-                  </ActionProviderContainer>
-                );
-              }
-            )}
-            <ActionProviderContainer>
-              <div className='flex items-center mb-4'>
-                <TemplatesSvgWrapper>
-                  <LayersIcon width={20} height={20} />
-                </TemplatesSvgWrapper>
-                <Display size='M' weight='semibold'>
-                  Templates
-                </Display>
-              </div>
-              <ActionButtonsContainer>
-                {Object.entries(ActionTemplates).map(
-                  (templateData, index) => {
-                    const template = templateData[1];
+        open={actionModalOpen}
+        setOpen={(open: boolean) => {
+          setActionModalOpen(open);
+        }}
+      >
+        <ActionModalHeader>
+          <BackButtonWrapper>
+            <BackArrowIcon
+              onClick={() => {
+                setActionModalOpen(false);
+              }}
+            />
+          </BackButtonWrapper>
+          <Display size='M' weight='medium'>
+            New Action
+          </Display>
+        </ActionModalHeader>
+        <div className='flex flex-col gap-4'>
+          {Object.values(ActionProviders).map((actionProvider: ActionProvider, index: number) => {
+            return (
+              <ActionProviderContainer key={index}>
+                <div className='flex items-center mb-4'>
+                  <SvgWrapper>
+                    <actionProvider.Icon />
+                  </SvgWrapper>
+                  <Display size='M' weight='semibold'>
+                    {actionProvider.name}
+                  </Display>
+                </div>
+                <ActionButtonsContainer>
+                  {Object.entries(actionProvider.actions).map((actionData, index) => {
+                    const action = actionData[1];
                     return (
                       <ActionButton
                         key={index}
-                        borderColor='#4B6980'
+                        borderColor={actionProvider.color}
                         onClick={() => {
-                          handleAddActions(template.actions, template.defaultActionStates);
+                          handleAddAction(action);
                           setActionModalOpen(false);
                         }}
                       >
-                        {template.name}
+                        <Text size='S' weight='bold'>
+                          {getNameOfAction(action.id)}
+                        </Text>
                       </ActionButton>
                     );
-                  }
-                )}
-              </ActionButtonsContainer>
-            </ActionProviderContainer>
-          </div>
-        </FullscreenModal>
+                  })}
+                </ActionButtonsContainer>
+              </ActionProviderContainer>
+            );
+          })}
+          <ActionProviderContainer>
+            <div className='flex items-center mb-4'>
+              <TemplatesSvgWrapper>
+                <LayersIcon width={20} height={20} />
+              </TemplatesSvgWrapper>
+              <Display size='M' weight='semibold'>
+                Templates
+              </Display>
+            </div>
+            <ActionButtonsContainer>
+              {Object.entries(ActionTemplates).map((templateData, index) => {
+                const template = templateData[1];
+                return (
+                  <ActionButton
+                    key={index}
+                    borderColor='#4B6980'
+                    onClick={() => {
+                      handleAddActions(template.actions, template.defaultActionStates);
+                      setActionModalOpen(false);
+                    }}
+                  >
+                    {template.name}
+                  </ActionButton>
+                );
+              })}
+            </ActionButtonsContainer>
+          </ActionProviderContainer>
+        </div>
+      </FullscreenModal>
     </AppPage>
   );
 }
