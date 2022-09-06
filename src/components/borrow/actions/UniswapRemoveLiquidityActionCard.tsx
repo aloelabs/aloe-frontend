@@ -9,12 +9,15 @@ import { SquareInputWithTrailingUnit } from "../../common/Input";
 import { ChangeEvent, useState } from "react";
 import { formatNumberInput, formatTokenAmount } from "../../../util/Numbers";
 import useEffectOnce from "../../../data/hooks/UseEffectOnce";
+import JSBI from 'jsbi';
 
+//TOOD: merge this with the existing UniswapPosition?
 export type UniswapV3LiquidityPosition = {
   amount0: number;
   amount1: number;
   tickLower: number;
   tickUpper: number;
+  liquidity: JSBI;
 }
 
 const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
@@ -23,12 +26,14 @@ const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
     amount1: 50,
     tickLower: 190000,
     tickUpper: 210000,
+    liquidity: JSBI.BigInt(0),
   },
   {
     amount0: 200,
     amount1: 100,
     tickLower: 195000,
     tickUpper: 215000,
+    liquidity: JSBI.BigInt(0),
   },
 ];
 
@@ -112,6 +117,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       },
       uniswapResult: {
         uniswapPosition: {
+          liquidity: liquidityPosition?.liquidity || JSBI.BigInt(0),
           amount0: -updatedAmount0,
           amount1: -updatedAmount1,
           lowerBound: liquidityPosition ? liquidityPosition.tickLower : null,
