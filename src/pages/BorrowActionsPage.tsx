@@ -482,7 +482,7 @@ export default function BorrowActionsPage() {
                         key={index}
                         borderColor='#4B6980'
                         onClick={() => {
-                          handleAddActions(template.actions, template.defaultActionResults);
+                          handleAddActions(template.actions, template.defaultActionStates);
                           setActionModalOpen(false);
                         }}
                       >
