@@ -97,7 +97,7 @@ export async function calculateTickData(poolAddress: string, poolBasics: Uniswap
   const tickOffset = Math.floor(BINS_TO_FETCH * poolBasics.tickSpacing / 2);
   const minTick = poolBasics.slot0.tick - tickOffset;
   const maxTick = poolBasics.slot0.tick + tickOffset;
-  //TODO: determine tickSpacing dynamically
+
   const uniswapV3GraphQLTicksQueryResponse =
     (await theGraphUniswapV3Client.query({
       query: UniswapTicksQuery,
@@ -176,12 +176,6 @@ export async function calculateTickData(poolAddress: string, poolBasics: Uniswap
       .mul(sqrtPU.minus(sqrtPL))
       .div(10 ** token1Decimals)
       .toNumber();
-
-    if (i === splitIdx - 1) {
-      // console.log(tick);
-      // console.log(liquidity.toFixed(3));
-      // console.log(price0.toFixed(0));
-    }
 
     tickDataLeft.push({
       tick,
@@ -264,7 +258,10 @@ export function shouldAmount1InputBeDisabled(lowerTick: number, upperTick: numbe
   return currentTick > Math.max(lowerTick, upperTick);
 }
 
-export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): string {
+export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): {
+  amount1: string,
+  liquidity: JSBI
+} {
   // If lowerTick > upperTick, flip them so that the var names match reality
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
@@ -282,7 +279,10 @@ export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, 
   if (currentTick <= lowerTick) {
     //current price < lower price
     //everything to the right of currentTick is token0. thus there's no token1 (amount1 = 0)
-    return '0';
+    return {
+      amount1: '0',
+      liquidity,
+    };
   } else if (currentTick < upperTick) {
     //lower price < current price < upper price
     //only stuff to the left of currentTick is token1. so we look between lowerTick and currentTick
@@ -292,10 +292,16 @@ export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, 
     //everything to the left of currentTick is token1. so we look between lowerTick and upperTick
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
-  return new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6);
+  return {
+    amount1: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
+    liquidity,
+  };
 }
 
-export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): string {
+export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): {
+  amount0: string,
+  liquidity: JSBI,
+} {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
   //lower price
@@ -320,9 +326,15 @@ export function calculateAmount0FromAmount1(amount1: number, lowerTick: number, 
   } else {
     //current price >= upper price
     //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
-    return '0';
+    return {
+      amount0: '0',
+      liquidity,
+    };
   }
-  return new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6);
+  return {
+    amount0: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
+    liquidity,
+  };
 }
 
 export function getMinTick(tickSpacing: number) {

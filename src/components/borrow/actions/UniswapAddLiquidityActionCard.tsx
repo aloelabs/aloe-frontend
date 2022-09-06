@@ -14,6 +14,8 @@ import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 import { TickMath } from '@uniswap/v3-sdk';
+import Big from 'big.js';
+import JSBI from 'jsbi';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
@@ -31,6 +33,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] = useState(false);
   const [localToken0Amount, setLocalToken0Amount] = useState('');
   const [localToken1Amount, setLocalToken1Amount] = useState('');
+  const [localLiquidityJSBI, setLocalLiquidityJSBI] = useState(JSBI.BigInt(0));
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
   const [tickInfo, setTickInfo] = useState<TickInfo | null>(null);
   const [isLiquidityDataLoading, setIsLiquidityDataLoading] = useState(true);
@@ -197,6 +200,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       aloeResult: null,
       uniswapResult: {
         uniswapPosition: {
+          liquidity: prevUniswapPosition?.liquidity || JSBI.BigInt(0),
           amount0: prevUniswapPosition?.amount0 || 0,
           amount1: prevUniswapPosition?.amount1 || 0,
           lowerBound: prevUniswapPosition?.lowerBound || null,
@@ -215,9 +219,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (output != null) {
       const floatOutput = parseFloat(output);
       if (!isNaN(floatOutput)) {
-        setLocalToken1Amount(calculateAmount1FromAmount0(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals));
+        const {amount1, liquidity} = calculateAmount1FromAmount0(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
+        setLocalToken1Amount(amount1);
+        setLocalLiquidityJSBI(liquidity);
       } else {
         setLocalToken1Amount('');
+        setLocalLiquidityJSBI(JSBI.BigInt(0));
       }
       setLocalToken0Amount(output);
       setLocalIsAmount0LastUpdated(true);
@@ -230,9 +237,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (output != null) {
       const floatOutput = parseFloat(output);
       if (!isNaN(floatOutput)) {
-        setLocalToken0Amount(calculateAmount0FromAmount1(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals));
+        const {amount0, liquidity} = calculateAmount0FromAmount1(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
+        setLocalToken0Amount(amount0);
+        setLocalLiquidityJSBI(liquidity);
       } else {
         setLocalToken0Amount('');
+        setLocalLiquidityJSBI(JSBI.BigInt(0));
       }
       setLocalToken1Amount(output);
       setLocalIsAmount0LastUpdated(false);
@@ -250,6 +260,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       },
       uniswapResult: {
         uniswapPosition: {
+          liquidity: localLiquidityJSBI,
           amount0: parseFloat(amount0) || 0,
           amount1: parseFloat(amount1) || 0,
           lowerBound: lowerTick,
@@ -265,18 +276,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
     const numericAmount0 = parseFloat(localToken0Amount);
     const numericAmount1 = parseFloat(localToken1Amount);
-    let updatedAmount0 = localToken0Amount;
-    let updatedAmount1 = localToken1Amount;
+
     if (!isNaN(numericAmount0) && !isNaN(numericAmount1) && lowerTick != null && upperTick != null && currentTick != null) {
       if (localIsAmount0LastUpdated) {
-        updatedAmount1 = calculateAmount1FromAmount0(numericAmount0, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
-        setLocalToken1Amount(updatedAmount1);
+        const {amount1, liquidity} = calculateAmount1FromAmount0(numericAmount0, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
+        setLocalToken1Amount(amount1);
+        setLocalLiquidityJSBI(liquidity);
+        return [localToken0Amount, amount1];
       } else {
-        updatedAmount0 = calculateAmount0FromAmount1(numericAmount1, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
-        setLocalToken0Amount(updatedAmount0);
+        const {amount0, liquidity} = calculateAmount0FromAmount1(numericAmount1, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
+        setLocalToken0Amount(amount0);
+        setLocalLiquidityJSBI(liquidity);
+        return [amount0, localToken1Amount];
       }
     }
-    return [updatedAmount0, updatedAmount1];
+    return [localToken0Amount, localToken1Amount];
   }
 
   function updateLower(updatedLower: TickPrice) {
@@ -311,6 +325,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                 aloeResult: null,
                 uniswapResult: {
                   uniswapPosition: {
+                    liquidity: JSBI.BigInt(0),
                     amount0: 0,
                     amount1: 0,
                     lowerBound: null,
