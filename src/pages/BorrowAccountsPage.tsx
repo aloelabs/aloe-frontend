@@ -9,8 +9,8 @@ import { FeeTier } from '../data/FeeTier';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 import { useContract, useProvider } from 'wagmi';
-import MarginAccountABI from '../assets/abis/MarginAccount.json'
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json'
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import Big from 'big.js';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
 import { BigNumber } from 'ethers';
