@@ -16,13 +16,14 @@ const Wrapper = styled.div`
 export type RoundedBadgeProps = {
   children: React.ReactNode;
   className?: string;
+  title?: string;
 };
 
 export default function RoundedBadge(props: RoundedBadgeProps) {
-  const { children, className } = props;
+  const { children, className, title } = props;
   return (
     <Wrapper className={className}>
-      <Text size='S' weight='medium' color={BADGE_TEXT_COLOR}>
+      <Text size='S' weight='medium' color={BADGE_TEXT_COLOR} title={title}>
         {children}
       </Text>
     </Wrapper>

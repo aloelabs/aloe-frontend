@@ -102,9 +102,9 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
     assets.token0Raw +
     assets.token1Raw +
     assets.token0Plus +
-    assets.token1Plus -
-    assets.token0Debt -
-    assets.token1Debt;
+    assets.token1Plus +
+    assets.uni0 +
+    assets.uni1;
   const totalLiabilities = liabilities.amount0 + liabilities.amount1;
 
   useEffect(() => {

@@ -68,10 +68,10 @@ export default function BorrowAccountsPage() {
         const assets: Assets = {
           token0Raw: Big(assetsData[0].toString()).div(10 ** token0.decimals).toNumber(),
           token1Raw: Big(assetsData[1].toString()).div(10 ** token1.decimals).toNumber(),
-          token0Debt: Big(assetsData[2].toString()).div(10 ** token0.decimals).toNumber(),
-          token1Debt: Big(assetsData[3].toString()).div(10 ** token1.decimals).toNumber(),
           token0Plus: Big(assetsData[4].toString()).div(10 ** token0.decimals).toNumber(),
           token1Plus: Big(assetsData[5].toString()).div(10 ** token1.decimals).toNumber(),
+          uni0: Big(assetsData[2].toString()).div(10 ** token0.decimals).toNumber(),
+          uni1: Big(assetsData[3].toString()).div(10 ** token1.decimals).toNumber(),
         }
         const liabilities: Liabilities = {
           amount0: Big(liabilitiesData[0].toString()).div(10 ** token0.decimals).toNumber(),
