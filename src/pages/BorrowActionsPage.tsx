@@ -10,12 +10,12 @@ import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { FullscreenModal } from '../components/common/Modal';
 import {
   Action,
-  ActionCardResult,
+  ActionCardState,
   ActionProvider,
   ActionProviders,
   ActionTemplates,
   CumulativeActionCardResult,
-  DEFAULT_ACTION_VALUE,
+  getNameOfAction,
 } from '../data/Actions';
 import { FeeTier } from '../data/FeeTier';
 import { GetTokenData } from '../data/TokenData';
@@ -201,7 +201,7 @@ export default function BorrowActionsPage() {
   const account = params.account;
   const accountData = getAccount(account || '');
   
-  const [actionResults, setActionResults] = React.useState<Array<ActionCardResult>>([]);
+  const [actionResults, setActionResults] = React.useState<Array<ActionCardState>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const [isToken0Selected, setIsToken0Selected] = React.useState(false);
@@ -219,18 +219,18 @@ export default function BorrowActionsPage() {
   const currentBalances = isToken0Selected ? FAKE_DATA.token0 : FAKE_DATA.token1;
   const combinedDeltaBalances: MarginAccount | null = cumulativeActionResult ? {
     token0: {
-      assets: (cumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + 
-              (cumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) +
+      assets: (cumulativeActionResult.aloeResult?.token0RawDelta || 0) + 
+              (cumulativeActionResult.aloeResult?.token0PlusDelta || 0) +
               assetsInUniswapPositions[0],
-      liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0),
+      liabilities: (cumulativeActionResult.aloeResult?.token0DebtDelta || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
     token1: {
-      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta.numericValue || 0) +
-              (cumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) +
+      assets: (cumulativeActionResult?.aloeResult?.token1RawDelta || 0) +
+              (cumulativeActionResult.aloeResult?.token1PlusDelta || 0) +
               assetsInUniswapPositions[1],
-      liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0),
+      liabilities: (cumulativeActionResult.aloeResult?.token1DebtDelta || 0),
       lowerLiquidationThreshold: 0,
       upperLiquidationThreshold: 0,
     },
@@ -241,19 +241,21 @@ export default function BorrowActionsPage() {
 
   function handleAddAction(action: Action) {
     setActionResults([...actionResults, {
+      actionId: action.id,
       aloeResult: null,
       uniswapResult: null,
     }]);
     setActiveActions([...activeActions, action]);
   }
 
-  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardResult[]) {
+  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
     if (defaultActionResults && actions.length !== defaultActionResults.length) {
       console.error('You must pass in the same number of action results as you do actions (or pass no action results in).');
       return;
     }
-    const newActionResults = defaultActionResults || actions.map(() => {
+    const newActionResults = defaultActionResults || actions.map((x) => {
       return {
+        actionId: x.id,
         aloeResult: null,
         uniswapResult: null,
       }
@@ -262,16 +264,16 @@ export default function BorrowActionsPage() {
     setActiveActions([...activeActions, ...actions]);
   }
 
-  function updateCumulativeActionResult(updatedActionResults: ActionCardResult[]) {
+  function updateCumulativeActionResult(updatedActionResults: ActionCardState[]) {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
         selectedToken: null,
-        token0RawDelta: DEFAULT_ACTION_VALUE,
-        token0DebtDelta: DEFAULT_ACTION_VALUE,
-        token0PlusDelta: DEFAULT_ACTION_VALUE,
-        token1RawDelta: DEFAULT_ACTION_VALUE,
-        token1DebtDelta: DEFAULT_ACTION_VALUE,
-        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        token0RawDelta: null,
+        token0DebtDelta: null,
+        token0PlusDelta: null,
+        token1RawDelta: null,
+        token1DebtDelta: null,
+        token1PlusDelta: null,
       },
       uniswapPositions: [],
     }
@@ -282,30 +284,12 @@ export default function BorrowActionsPage() {
         updatedCumulativeActionResult = {
           aloeResult: {
             selectedToken: null,
-            token0RawDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token0RawDelta.numericValue || 0) + aloeResult.token0RawDelta.numericValue,
-            },
-            token0DebtDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token0DebtDelta.numericValue || 0) + aloeResult.token0DebtDelta.numericValue,
-            },
-            token0PlusDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token0PlusDelta.numericValue || 0) + aloeResult.token0PlusDelta.numericValue,
-            },
-            token1RawDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token1RawDelta.numericValue || 0) + aloeResult.token1RawDelta.numericValue,
-            },
-            token1DebtDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token1DebtDelta.numericValue || 0) + aloeResult.token1DebtDelta.numericValue,
-            },
-            token1PlusDelta: {
-              inputValue: '',
-              numericValue: (updatedCumulativeActionResult.aloeResult?.token1PlusDelta.numericValue || 0) + aloeResult.token1PlusDelta.numericValue,
-            },
+            token0RawDelta: (updatedCumulativeActionResult.aloeResult?.token0RawDelta || 0) + (aloeResult.token0RawDelta ?? 0),
+            token0DebtDelta: (updatedCumulativeActionResult.aloeResult?.token0DebtDelta || 0) + (aloeResult.token0DebtDelta ?? 0),
+            token0PlusDelta: (updatedCumulativeActionResult.aloeResult?.token0PlusDelta || 0) + (aloeResult.token0PlusDelta ?? 0),
+            token1RawDelta: (updatedCumulativeActionResult.aloeResult?.token1RawDelta || 0) + (aloeResult.token1RawDelta ?? 0),
+            token1DebtDelta: (updatedCumulativeActionResult.aloeResult?.token1DebtDelta || 0) + (aloeResult.token1DebtDelta ?? 0),
+            token1PlusDelta: (updatedCumulativeActionResult.aloeResult?.token1PlusDelta || 0) + (aloeResult.token1PlusDelta ?? 0),
           },
           uniswapPositions: updatedCumulativeActionResult.uniswapPositions,
         }
@@ -318,14 +302,8 @@ export default function BorrowActionsPage() {
         if (existingPositionIndex !== -1) {
           const existingPosition = updatedCumulativeActionResult.uniswapPositions[existingPositionIndex];
           updatedCumulativeActionResult.uniswapPositions[existingPositionIndex] = {
-            amount0: {
-              inputValue: '',
-              numericValue: existingPosition.amount0.numericValue + uniswapPosition.amount0.numericValue,
-            },
-            amount1: {
-              inputValue: '',
-              numericValue: existingPosition.amount1.numericValue + uniswapPosition.amount1.numericValue,
-            },
+            amount0: existingPosition.amount0 + uniswapPosition.amount0,
+            amount1: existingPosition.amount1 + uniswapPosition.amount1,
             lowerBound: existingPosition.lowerBound,
             upperBound: existingPosition.upperBound,
           }
@@ -342,7 +320,7 @@ export default function BorrowActionsPage() {
     setCumulativeActionResult(updatedCumulativeActionResult);
   }
 
-  function updateActionResults(updatedActionResults: ActionCardResult[]) {
+  function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
     updateCumulativeActionResult(updatedActionResults);
   }
@@ -481,7 +459,7 @@ export default function BorrowActionsPage() {
                               }}
                             >
                               <Text size='S' weight='bold'>
-                                {action.name}
+                                {getNameOfAction(action.id)}
                               </Text>
                             </ActionButton>
                           );

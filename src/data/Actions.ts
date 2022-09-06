@@ -12,14 +12,37 @@ import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
 
-export type ActionValue = {
-  numericValue: number;
-  inputValue: string;
-};
+export enum ActionID {
+  TRANSFER_IN,
+  TRANSFER_OUT,
+  MINT,
+  BURN,
+  BORROW,
+  REPAY,
+  ADD_LIQUIDITY,
+  REMOVE_LIQUIDITY,
+  SWAP
+}
+
+export function getNameOfAction(id: ActionID): string {
+  switch (id) {
+    case ActionID.TRANSFER_IN: return 'Add Margin';
+    case ActionID.TRANSFER_OUT: return 'Withdraw';
+    case ActionID.MINT: return 'Mint Token+';
+    case ActionID.BURN: return 'Burn Token+';
+    case ActionID.BORROW: return 'Borrow';
+    case ActionID.REPAY: return 'Repay';
+    case ActionID.ADD_LIQUIDITY: return 'Add Liquidity';
+    case ActionID.REMOVE_LIQUIDITY: return 'Remove Liquidity';
+    default: return 'UNKNOWN';
+  }
+}
+
+// export type ActionValue = number;
 
 export type UniswapPosition = {
-  amount0: ActionValue;
-  amount1: ActionValue;
+  amount0: number;
+  amount1: number;
   lowerBound: number | null;
   upperBound: number | null;
 };
@@ -32,24 +55,27 @@ export enum SelectedToken {
 }
 
 export type AloeResult = {
-  token0RawDelta: ActionValue;
-  token1RawDelta: ActionValue;
-  token0DebtDelta: ActionValue;
-  token1DebtDelta: ActionValue;
-  token0PlusDelta: ActionValue;
-  token1PlusDelta: ActionValue;
+  token0RawDelta: number | null;
+  token1RawDelta: number | null;
+  token0DebtDelta: number | null;
+  token1DebtDelta: number | null;
+  token0PlusDelta: number | null;
+  token1PlusDelta: number | null;
   selectedToken: SelectedToken | null;
 }
 
 export type UniswapResult = {
   uniswapPosition: UniswapPosition;
-  slippageTolerance?: ActionValue;
-  removeLiquidityPercentage?: ActionValue;
+  slippageTolerance?: number;
+  removeLiquidityPercentage?: number;
   isToken0Selected?: boolean;
   isAmount0LastUpdated?: boolean;
 }
 
-export type ActionCardResult = {
+export type ActionCardState = {
+  actionId: ActionID;
+  actionArgs?: string;
+  textFields?: string[];
   aloeResult: AloeResult | null;
   uniswapResult: UniswapResult | null;
 }
@@ -63,13 +89,13 @@ export type ActionCardProps = {
   token0: TokenData;
   token1: TokenData;
   feeTier: FeeTier;
-  previousActionCardState: ActionCardResult | null;
+  previousActionCardState: ActionCardState | null;
   onRemove: () => void;
-  onChange: (result: ActionCardResult) => void;
+  onChange: (result: ActionCardState) => void;
 };
 
 export type Action = {
-  name: string;
+  id: ActionID;
   actionCard: React.FC<ActionCardProps>;
 }
 
@@ -86,51 +112,48 @@ export type ActionProvider = {
 export type ActionTemplate = {
   name: string,
   actions: Array<Action>,
-  defaultActionResults?: Array<ActionCardResult>, 
+  defaultActionResults?: Array<ActionCardState>, 
 }
 
-export const DEFAULT_ACTION_VALUE: ActionValue = {
-  numericValue: 0,
-  inputValue: '',
-}
+// export const DEFAULT_ACTION_VALUE: 0;
 
 export const MINT_TOKEN_PLUS: Action = {
-  name: 'Mint Token+',
+  id: ActionID.MINT,
   actionCard: AloeMintTokenPlusActionCard,
 }
 
 export const BURN_TOKEN_PLUS: Action = {
-  name: 'Burn Token+',
+  id: ActionID.BURN,
   actionCard: AloeBurnTokenPlusActionCard,
 }
 
 export const BORROW: Action = {
-  name: 'Borrow',
+  id: ActionID.BORROW,
   actionCard: AloeBorrowActionCard,
 }
 
 export const REPAY: Action = {
-  name: 'Repay',
+  id: ActionID.REPAY,
   actionCard: AloeRepayActionCard,
 }
 
 export const WITHDRAW: Action = {
-  name: 'Withdraw',
+  id: ActionID.TRANSFER_OUT,
   actionCard: AloeWithdrawActionCard,
 }
 
 export const ADD_MARGIN: Action = {
-  name: 'Add Margin',
+  id: ActionID.TRANSFER_IN,
   actionCard: AloeAddMarginActionCard,
 }
 
 export const REMOVE_LIQUIDITY: Action = {
-  name: 'Remove Liquidity',
+  id: ActionID.REMOVE_LIQUIDITY,
   actionCard: UniswapRemoveLiquidityActionCard,
 }
 
 export const ADD_LIQUIDITY: Action = {
-  name: 'Add Liquidity',
+  id: ActionID.ADD_LIQUIDITY,
   actionCard: UniswapAddLiquidityActionCard,
 }
 
@@ -169,39 +192,35 @@ export const ActionTemplates = {
     ],
     defaultActionResults: [
       {
+        actionId: ADD_MARGIN.id,
+        textFields: ['10'],
         aloeResult: {
-          token0RawDelta: {
-            numericValue: 10,
-            inputValue: '10.0',
-          },
-          token1RawDelta: DEFAULT_ACTION_VALUE,
-          token0DebtDelta: DEFAULT_ACTION_VALUE,
-          token1DebtDelta: DEFAULT_ACTION_VALUE,
-          token0PlusDelta: DEFAULT_ACTION_VALUE,
-          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          token0RawDelta: 10,
+          token1RawDelta: null,
+          token0DebtDelta: null,
+          token1DebtDelta: null,
+          token0PlusDelta: null,
+          token1PlusDelta: null,
           selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,
       },
       {
+        actionId: BORROW.id,
+        textFields: ['100'],
         aloeResult: {
-          token0RawDelta: {
-            numericValue: 100,
-            inputValue: '100',
-          },
-          token1RawDelta: DEFAULT_ACTION_VALUE,
-          token0DebtDelta: {
-            numericValue: 100,
-            inputValue: '100',
-          },
-          token1DebtDelta: DEFAULT_ACTION_VALUE,
-          token0PlusDelta: DEFAULT_ACTION_VALUE,
-          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          token0RawDelta: 100,
+          token1RawDelta: null,
+          token0DebtDelta: 100,
+          token1DebtDelta: null,
+          token0PlusDelta: null,
+          token1PlusDelta: null,
           selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,
       },
       {
+        actionId: ADD_LIQUIDITY.id,
         aloeResult: null,
         uniswapResult: null,
       }

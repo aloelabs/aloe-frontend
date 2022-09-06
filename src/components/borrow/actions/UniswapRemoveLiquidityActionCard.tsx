@@ -1,4 +1,4 @@
-import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from "../../../data/Actions";
+import { ActionCardProps, ActionID, ActionProviders } from "../../../data/Actions";
 import { DropdownOption, DropdownWithPlaceholder } from "../../common/Dropdown";
 import { Text } from "../../common/Typography";
 import { BaseActionCard } from "../BaseActionCard";
@@ -64,7 +64,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   useEffectOnce(() => {
     const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
     if (previousRemoveLiquidityPercentage) {
-      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.inputValue);
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(3));
     } 
   })
 
@@ -82,8 +82,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       selectedPosition = FAKE_LIQUIDITY_POSITIONS[selectedIndex];
     }
     
-    const previousAmount0 = uniswapPosition.amount0.numericValue;
-    const previousAmount1 = uniswapPosition.amount1.numericValue;
+    const previousAmount0 = uniswapPosition.amount0;
+    const previousAmount1 = uniswapPosition.amount1;
     if (previousAmount0 !== 0 && previousAmount1 !== 0) {
       amount0 = previousAmount0;
       amount1 = previousAmount1;
@@ -104,39 +104,25 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     const updatedAmount0 = liquidityPosition ? liquidityPosition.amount0 * (parsedPercentage / 100.0) : 0;
     const updatedAmount1 = liquidityPosition ? liquidityPosition.amount1 * (parsedPercentage / 100.0) : 0;
     onChange({
+      actionId: ActionID.REMOVE_LIQUIDITY,
       aloeResult: {
-        token0RawDelta: {
-          inputValue: updatedAmount0.toString(),
-          numericValue: updatedAmount0,
-        },
-        token1RawDelta: {
-          inputValue: updatedAmount1.toString(),
-          numericValue: updatedAmount1,
-        },
-        token0DebtDelta: DEFAULT_ACTION_VALUE,
-        token1DebtDelta: DEFAULT_ACTION_VALUE,
-        token0PlusDelta: DEFAULT_ACTION_VALUE,
-        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        token0RawDelta: updatedAmount0,
+        token1RawDelta: updatedAmount1,
+        token0DebtDelta: null,
+        token1DebtDelta: null,
+        token0PlusDelta: null,
+        token1PlusDelta: null,
         selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
-          amount0: {
-            inputValue: updatedAmount0.toString(),
-            numericValue: -1 * updatedAmount0,
-          },
-          amount1: {
-            inputValue: updatedAmount1.toString(),
-            numericValue: -1 * updatedAmount1,
-          },
+          amount0: -updatedAmount0,
+          amount1: -updatedAmount1,
           lowerBound: liquidityPosition ? liquidityPosition.tickLower : null,
           upperBound: liquidityPosition ? liquidityPosition.tickUpper : null,
         },
-        slippageTolerance: DEFAULT_ACTION_VALUE,
-        removeLiquidityPercentage: {
-          inputValue: formattedPercentage,
-          numericValue: parsedPercentage,
-        },
+        slippageTolerance: 0,
+        removeLiquidityPercentage: parsedPercentage,
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       }
@@ -150,7 +136,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   return (
     <BaseActionCard 
-      action={ActionProviders.UniswapV3.actions.REMOVE_LIQUIDITY.name}
+      action={ActionID.REMOVE_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       onRemove={onRemove}
     >

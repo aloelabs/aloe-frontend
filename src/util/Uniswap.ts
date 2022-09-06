@@ -343,7 +343,7 @@ export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, f
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
   // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
-  // const uniswapToken1 = new Token(1, token1?.address, token1?.decimals);
+  // const uniswapToken1 = new Token(1, token1.address, token1.decimals);
   // const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
   // if (uniswapFeeAmount == null) return null;
   // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
@@ -354,8 +354,8 @@ export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]) : 
   let token0Amount = 0;
   let token1Amount = 0;
   for (let pos of uniPos) {
-    token0Amount += pos.amount0.numericValue;
-    token1Amount += pos.amount1.numericValue;
+    token0Amount += pos.amount0;
+    token1Amount += pos.amount1;
   }
   return [token0Amount, token1Amount];
 }

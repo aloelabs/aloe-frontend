@@ -1,7 +1,7 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
@@ -24,43 +24,26 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   useEffectOnce(() => {
     if (!previouslySelectedToken) {
       onChange({
+        actionId: ActionID.REPAY,
         aloeResult: {
-          token0RawDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
-          },
-          token1RawDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
-          },
-          token0DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0DebtDelta?.inputValue || '',
-          },
-          token1DebtDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1DebtDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1DebtDelta?.inputValue || '',
-          },
-          token0PlusDelta: DEFAULT_ACTION_VALUE,
-          token1PlusDelta: DEFAULT_ACTION_VALUE,
+          token0RawDelta: previousActionCardState?.aloeResult?.token0RawDelta ?? 0,
+          token1RawDelta: previousActionCardState?.aloeResult?.token1RawDelta ?? 0,
+          token0DebtDelta: previousActionCardState?.aloeResult?.token0DebtDelta ?? 0,
+          token1DebtDelta: previousActionCardState?.aloeResult?.token1DebtDelta ?? 0,
+          token0PlusDelta: previousActionCardState?.aloeResult?.token0PlusDelta ?? 0,
+          token1PlusDelta: previousActionCardState?.aloeResult?.token1PlusDelta ?? 0,
           selectedToken: selectedToken,
         },
         uniswapResult: null,
       });
     }
   });
-  let tokenAmount = '';
-  if (previousActionCardState) {
-    if (selectedTokenOption.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState?.aloeResult?.token0DebtDelta.inputValue || '';
-    } else {
-      tokenAmount = previousActionCardState?.aloeResult?.token1DebtDelta.inputValue || '';
-    }
-  }
+  
+  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
   
   return (
     <BaseActionCard
-      action={ActionProviders.AloeII.actions.REPAY.name}
+      action={ActionID.REPAY}
       actionProvider={ActionProviders.AloeII}
       onRemove={onRemove}
     >
@@ -71,13 +54,14 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
+                actionId: ActionID.REPAY,
                 aloeResult: {
-                  token0RawDelta: DEFAULT_ACTION_VALUE,
-                  token1RawDelta: DEFAULT_ACTION_VALUE,
-                  token0DebtDelta: DEFAULT_ACTION_VALUE,
-                  token1DebtDelta: DEFAULT_ACTION_VALUE,
-                  token0PlusDelta: DEFAULT_ACTION_VALUE,
-                  token1PlusDelta: DEFAULT_ACTION_VALUE,
+                  token0RawDelta: null,
+                  token1RawDelta: null,
+                  token0DebtDelta: null,
+                  token1DebtDelta: null,
+                  token0PlusDelta: null,
+                  token1PlusDelta: null,
                   selectedToken: parseSelectedToken(option.value),
                 },
                 uniswapResult: null,
@@ -89,35 +73,17 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => {
-            const token0Change =
-              selectedToken === SelectedToken.TOKEN_ZERO
-                ? parseFloat(value) || null
-                : null;
-            const token1Change =
-              selectedToken === SelectedToken.TOKEN_ONE
-                ? parseFloat(value) || null
-                : null;
-            const token0IsSelected = selectedToken === SelectedToken.TOKEN_ZERO;
+            const parsedValue = parseFloat(value);
             onChange({
+              actionId: ActionID.REPAY,
+              textFields: [value],
               aloeResult: {
-                token0RawDelta: {
-                  numericValue: token0Change != null ? (-1 * token0Change) : 0,
-                  inputValue: token0IsSelected ? value : '',
-                },
-                token1RawDelta: {
-                  numericValue: token1Change != null ? (-1 * token1Change) : 0,
-                  inputValue: !token0IsSelected ? value : '',
-                },
-                token0DebtDelta: {
-                  numericValue: token0Change != null ? (-1 * token0Change) : 0,
-                  inputValue: token0IsSelected ? value : '',
-                },
-                token1DebtDelta: {
-                  numericValue: token1Change != null ? (-1 * token1Change) : 0,
-                  inputValue: !token0IsSelected ? value : '',
-                },
-                token0PlusDelta: DEFAULT_ACTION_VALUE,
-                token1PlusDelta: DEFAULT_ACTION_VALUE,
+                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : null,
+                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE ? -parsedValue : null,
+                token0DebtDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : null,
+                token1DebtDelta: selectedToken === SelectedToken.TOKEN_ONE ? -parsedValue : null,
+                token0PlusDelta: null,
+                token1PlusDelta: null,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,

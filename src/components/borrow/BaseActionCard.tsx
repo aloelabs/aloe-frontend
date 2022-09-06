@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Display, Text } from '../common/Typography';
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
-import { ActionProvider } from '../../data/Actions';
+import { ActionID, ActionProvider, getNameOfAction } from '../../data/Actions';
 
 const ActionCardContainer = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -37,7 +37,7 @@ const SvgWrapper = styled.div`
 
 export type BaseActionCardProps = {
   actionProvider: ActionProvider;
-  action: string;
+  action: ActionID;
   children: React.ReactNode;
   onRemove: () => void;
 };
@@ -49,7 +49,7 @@ export function BaseActionCard(props: BaseActionCardProps) {
       <div className='w-full flex justify-start items-center gap-4 mb-4'>
         <ActionBadge backgroundColor={actionProvider.color}>
           <Text size='S' weight='medium'>
-            {action}
+            {getNameOfAction(action)}
           </Text>
         </ActionBadge>
         <div className='flex items-center'>
