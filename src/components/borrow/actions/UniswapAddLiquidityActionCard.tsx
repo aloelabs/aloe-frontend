@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
 import SteppedInput from '../uniswap/SteppedInput';
 import LiquidityChart, {
   ChartEntry,
@@ -114,12 +114,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   useEffect(() => {
     //Handles the initial render and whenever the selected token changes
-    if (previousActionCardState?.uniswapResult) {
-      const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-      if (uniswapPosition) {
-        setLocalToken0Amount(uniswapPosition.amount0.inputValue);
-        setLocalToken1Amount(uniswapPosition.amount1.inputValue);
-      }
+    if (previousActionCardState?.textFields) {
+      setLocalToken0Amount(previousActionCardState.textFields[0]);
+      setLocalToken1Amount(previousActionCardState.textFields[1]);
     }
   }, [isToken0Selected]);
   
@@ -128,7 +125,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let currentTick: number | null = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
   const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lowerBound;
   const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upperBound;
-  let slippagePercentage = previousActionCardState?.uniswapResult?.slippageTolerance?.inputValue || '';
+  let slippagePercentage = previousActionCardState?.textFields?.[4] ?? '';
   
   if (tickInfo != null && lowerBound && upperBound) {
     lower = {
@@ -191,19 +188,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   function handleUpdateSlippagePercentage(updatedSlippage: string) {
     const prevUniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
+    const prevTextFields = previousActionCardState?.textFields ?? ['', '', '', '', ''];
+    prevTextFields[4] = updatedSlippage;
+
     onChange({
-      aloeResult: previousActionCardState?.aloeResult || null,
+      actionId: ActionID.ADD_LIQUIDITY,
+      textFields: prevTextFields,
+      aloeResult: null,
       uniswapResult: {
         uniswapPosition: {
-          amount0: prevUniswapPosition?.amount0 || DEFAULT_ACTION_VALUE,
-          amount1: prevUniswapPosition?.amount1 || DEFAULT_ACTION_VALUE,
+          amount0: prevUniswapPosition?.amount0 || 0,
+          amount1: prevUniswapPosition?.amount1 || 0,
           lowerBound: prevUniswapPosition?.lowerBound || null,
           upperBound: prevUniswapPosition?.upperBound || null,
         },
-        slippageTolerance: {
-          inputValue: updatedSlippage,
-          numericValue: parseFloat(updatedSlippage) || 0,
-        },
+        slippageTolerance: parseFloat(updatedSlippage),
         isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
         isToken0Selected: previousActionCardState?.uniswapResult?.isToken0Selected,
       }
@@ -242,39 +241,29 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
     onChange({
+      actionId: ActionID.ADD_LIQUIDITY,
+      textFields: [amount0, amount1, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', previousActionCardState?.textFields?.[4] ?? ''],
       aloeResult: {
-        token0RawDelta: {
-          inputValue: amount0,
-          numericValue: -1 * (parseFloat(amount0) || 0),
-        },
-        token1RawDelta: {
-          inputValue: amount1,
-          numericValue: -1 * (parseFloat(amount1) || 0),
-        },
-        token0DebtDelta: DEFAULT_ACTION_VALUE,
-        token1DebtDelta: DEFAULT_ACTION_VALUE,
-        token0PlusDelta: DEFAULT_ACTION_VALUE,
-        token1PlusDelta: DEFAULT_ACTION_VALUE,
+        token0RawDelta: -parseFloat(amount0),
+        token1RawDelta: -parseFloat(amount1),
+        token0DebtDelta: null,
+        token1DebtDelta: null,
+        token0PlusDelta: null,
+        token1PlusDelta: null,
         selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
-          amount0: {
-            inputValue: amount0,
-            numericValue: parseFloat(amount0) || 0,
-          },
-          amount1: {
-            inputValue: amount1,
-            numericValue: parseFloat(amount1) || 0,
-          },
+          amount0: parseFloat(amount0),
+          amount1: parseFloat(amount1),
           lowerBound: lowerTick,
           upperBound: upperTick,
         },
-        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
+        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
         isToken0Selected: isToken0Selected,
       },
-    })
+    });
   }
 
   function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
@@ -305,45 +294,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }
 
   function updateTokenAmountInput() {
-    onChange({
-      aloeResult: {
-        token0RawDelta: {
-          inputValue: localToken0Amount,
-          numericValue: -1 * (parseFloat(localToken0Amount) || 0),
-        },
-        token1RawDelta: {
-          inputValue: localToken1Amount,
-          numericValue: -1 * (parseFloat(localToken1Amount) || 0),
-        },
-        token0DebtDelta: DEFAULT_ACTION_VALUE,
-        token1DebtDelta: DEFAULT_ACTION_VALUE,
-        token0PlusDelta: DEFAULT_ACTION_VALUE,
-        token1PlusDelta: DEFAULT_ACTION_VALUE,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          amount0: {
-            inputValue: localToken0Amount,
-            numericValue: parseFloat(localToken0Amount) || 0,
-          },
-          amount1: {
-            inputValue: localToken1Amount,
-            numericValue: parseFloat(localToken1Amount) || 0,
-          },
-          lowerBound: lower?.tick || null,
-          upperBound: upper?.tick || null,
-        },
-        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
-        isToken0Selected: isToken0Selected,
-        isAmount0LastUpdated: localIsAmount0LastUpdated,
-      },
-    });
+    updateRange(localToken0Amount, localToken1Amount, lower?.tick ?? null, upper?.tick ?? null);
   }
 
   return (
     <BaseActionCard
-      action={ActionProviders.UniswapV3.actions.ADD_LIQUIDITY.name}
+      action={ActionID.ADD_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       onRemove={onRemove}
     >
@@ -355,21 +311,16 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             isToken0Selected={isToken0Selected}
             setIsToken0Selected={(updatedValue: boolean) => {
               onChange({
+                actionId: ActionID.ADD_LIQUIDITY,
                 aloeResult: null,
                 uniswapResult: {
                   uniswapPosition: {
-                    amount0: {
-                      inputValue: '',
-                      numericValue: 0,
-                    },
-                    amount1: {
-                      inputValue: '',
-                      numericValue: 0,
-                    },
+                    amount0: 0,
+                    amount1: 0,
                     lowerBound: null,
                     upperBound: null,
                   },
-                  slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance || DEFAULT_ACTION_VALUE,
+                  slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
                   isToken0Selected: updatedValue,
                   isAmount0LastUpdated: false,
                 },

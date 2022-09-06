@@ -1,7 +1,7 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionProviders, DEFAULT_ACTION_VALUE, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
@@ -24,43 +24,26 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
   useEffectOnce(() => {
     if (!previouslySelectedToken) {
       onChange({
+        actionId: ActionID.MINT,
         aloeResult: {
-          token0RawDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0RawDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0RawDelta?.inputValue || '',
-          },
-          token1RawDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1RawDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1RawDelta?.inputValue || '',
-          },
-          token0DebtDelta: DEFAULT_ACTION_VALUE,
-          token1DebtDelta: DEFAULT_ACTION_VALUE,
-          token0PlusDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token0PlusDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token0PlusDelta?.inputValue || '',
-          },
-          token1PlusDelta: {
-            numericValue: previousActionCardState?.aloeResult?.token1PlusDelta?.numericValue || 0,
-            inputValue: previousActionCardState?.aloeResult?.token1PlusDelta?.inputValue || '',
-          },
+          token0RawDelta: previousActionCardState?.aloeResult?.token0RawDelta ?? 0,
+          token1RawDelta: previousActionCardState?.aloeResult?.token1RawDelta ?? 0,
+          token0DebtDelta: previousActionCardState?.aloeResult?.token0DebtDelta ?? 0,
+          token1DebtDelta: previousActionCardState?.aloeResult?.token1DebtDelta ?? 0,
+          token0PlusDelta: previousActionCardState?.aloeResult?.token0PlusDelta ?? 0,
+          token1PlusDelta: previousActionCardState?.aloeResult?.token1PlusDelta ?? 0,
           selectedToken: selectedToken,
         },
         uniswapResult: null,
       });
     }
   });
-  let tokenAmount = '';
-  if (previousActionCardState) {
-    if (selectedTokenOption.value === dropdownOptions[0].value) {
-      tokenAmount = previousActionCardState?.aloeResult?.token0PlusDelta.inputValue || '';
-    } else {
-      tokenAmount = previousActionCardState?.aloeResult?.token1PlusDelta.inputValue || '';
-    }
-  }
+
+  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
 
   return (
     <BaseActionCard
-      action={ActionProviders.AloeII.actions.MINT_TOKEN_PLUS.name}
+      action={ActionID.MINT}
       actionProvider={ActionProviders.AloeII}
       onRemove={onRemove}
     >
@@ -71,13 +54,14 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
+                actionId: ActionID.MINT,
                 aloeResult: {
-                  token0RawDelta: DEFAULT_ACTION_VALUE,
-                  token1RawDelta: DEFAULT_ACTION_VALUE,
-                  token0DebtDelta: DEFAULT_ACTION_VALUE,
-                  token1DebtDelta: DEFAULT_ACTION_VALUE,
-                  token0PlusDelta: DEFAULT_ACTION_VALUE,
-                  token1PlusDelta: DEFAULT_ACTION_VALUE,
+                  token0RawDelta: null,
+                  token1RawDelta: null,
+                  token0DebtDelta: null,
+                  token1DebtDelta: null,
+                  token0PlusDelta: null,
+                  token1PlusDelta: null,
                   selectedToken: parseSelectedToken(option.value),
                 },
                 uniswapResult: null,
@@ -89,35 +73,17 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => {
-            const token0Change =
-              selectedToken === SelectedToken.TOKEN_ZERO
-                ? parseFloat(value) || null
-                : null;
-            const token1Change =
-              selectedToken === SelectedToken.TOKEN_ONE
-                ? parseFloat(value) || null
-                : null;
-            const token0IsSelected = selectedToken === SelectedToken.TOKEN_ZERO;
+            const parsedValue = parseFloat(value);
             onChange({
+              actionId: ActionID.MINT,
+              textFields: [value],
               aloeResult: {
-                token0RawDelta: {
-                  numericValue: token0Change != null ? (-1 * token0Change) : 0,
-                  inputValue: token0IsSelected ? value : '',
-                },
-                token1RawDelta: {
-                  numericValue: token1Change != null ? (-1 * token1Change) : 0,
-                  inputValue: !token0IsSelected ? value : '',
-                },
-                token0DebtDelta: DEFAULT_ACTION_VALUE,
-                token1DebtDelta: DEFAULT_ACTION_VALUE,
-                token0PlusDelta: {
-                  numericValue: token0Change != null ? token0Change : 0,
-                  inputValue: token0IsSelected ? value : '',
-                },
-                token1PlusDelta: {
-                  numericValue: token1Change != null ? token1Change : 0,
-                  inputValue: !token0IsSelected ? value : '',
-                },
+                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : null,
+                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE ? -parsedValue : null,
+                token0DebtDelta: null,
+                token1DebtDelta: null,
+                token0PlusDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : null,
+                token1PlusDelta: selectedToken === SelectedToken.TOKEN_ONE ? parsedValue : null,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,

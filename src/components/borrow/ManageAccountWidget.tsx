@@ -5,7 +5,7 @@ import { FilledGradientButtonWithIcon } from '../common/Buttons';
 import { Text, Display } from '../common/Typography';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
-import { Action, ActionCardResult } from '../../data/Actions';
+import { Action, ActionCardState } from '../../data/Actions';
 import { TokenData } from '../../data/TokenData';
 import { FeeTier } from '../../data/FeeTier';
 
@@ -55,8 +55,8 @@ export type ManageAccountWidgetProps = {
   token1: TokenData;
   feeTier: FeeTier;
   activeActions: Array<Action>;
-  actionResults: Array<ActionCardResult>;
-  updateActionResults: (actionResults: Array<ActionCardResult>) => void;
+  actionResults: Array<ActionCardState>;
+  updateActionResults: (actionResults: Array<ActionCardState>) => void;
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
 };
@@ -98,7 +98,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 onRemove={() => {
                   onRemoveAction(index);
                 }}
-                onChange={(result: ActionCardResult) => {
+                onChange={(result: ActionCardState) => {
                   updateActionResults([
                     ...actionResults.slice(0, index),
                     result,
