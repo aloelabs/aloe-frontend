@@ -246,10 +246,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       aloeResult: {
         token0RawDelta: -parseFloat(amount0),
         token1RawDelta: -parseFloat(amount1),
-        token0DebtDelta: null,
-        token1DebtDelta: null,
-        token0PlusDelta: null,
-        token1PlusDelta: null,
         selectedToken: null,
       },
       uniswapResult: {
