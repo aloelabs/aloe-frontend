@@ -8,13 +8,14 @@ import { GetTokenData } from '../data/TokenData';
 import { FeeTier } from '../data/FeeTier';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
-import { useContract, useProvider } from 'wagmi';
+import { useAccount, useContract, useProvider } from 'wagmi';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import Big from 'big.js';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
+import { makeEtherscanRequest } from '../util/Etherscan';
 
 const DEMO_MARGIN_ACCOUNTS = [
   {
@@ -30,14 +31,34 @@ const MarginAccountsContainner = styled.div`
 `;
 
 //TODO: move this function to where it belongs
-async function getMarginAccountsForUser() {
-  //TODO: use etherscan to get an actual list of margin accounts for a user
-  return Promise.resolve(['0x63761a7397E51b5C49D55BFcf4bf3709E0c1df58'])
+async function getMarginAccountsForUser(userAddress: string, provider: ethers.providers.Provider): Promise<string[]> {
+  const etherscanResult = await makeEtherscanRequest(
+    7537163,
+    '0x9F6d4681fD8c557e5dC75b6713078233e98CA351',
+    ['0x2e4e957c1260adb001f2d118cbfb21f455e78760f52247e8b9490521ac2254aa'],
+    true,
+    'api-goerli'
+  );
+  if (!etherscanResult.data.result) return [];
+
+  const accounts: string[] = etherscanResult.data.result.map((item: any) => {
+    const address: string = item.topics[2];
+    return address.slice(26);
+  });
+
+  const accountOwners = await Promise.all(accounts.map((account) => {
+    const contract = new ethers.Contract(account, MarginAccountABI, provider);
+    return contract.OWNER();
+  }));
+
+  return accounts.filter((_, i) => accountOwners[i] === userAddress);
 }
 
 export default function BorrowAccountsPage() {
   const [marginAccounts, setMarginAccounts] = useState<Array<MarginAccount>>([]);
   const provider = useProvider();
+  const [{ data: accountData }] = useAccount();
+
   const marginAccountLensContract = useContract({
     addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
     contractInterface: MarginAccountLensABI,
@@ -55,7 +76,8 @@ export default function BorrowAccountsPage() {
   useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
-      const fetchedMarginAccounts = await getMarginAccountsForUser();
+      const fetchedMarginAccounts = accountData ? await getMarginAccountsForUser(accountData.address, provider) : [];
+
       const marginAccountPromises: Promise<MarginAccount>[] = fetchedMarginAccounts.map(async (fetchedMarginAccount: string) => {
         //TODO: use the marginAccountContract to get the TokenData
         const token0Address = '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a';
