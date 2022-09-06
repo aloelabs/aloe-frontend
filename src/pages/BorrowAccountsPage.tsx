@@ -53,6 +53,7 @@ export default function BorrowAccountsPage() {
   //  - get token addresses => TokenData (name, label, icon, etc)
   //  - get assets/liabilities
   useEffectOnce(() => {
+    let mounted = true;
     async function fetch() {
       const fetchedMarginAccounts = await getMarginAccountsForUser();
       const marginAccountPromises: Promise<MarginAccount>[] = fetchedMarginAccounts.map(async (fetchedMarginAccount: string) => {
@@ -86,9 +87,14 @@ export default function BorrowAccountsPage() {
         }
       });
       const updatedMarginAccounts = await Promise.all(marginAccountPromises);
-      setMarginAccounts(updatedMarginAccounts);
+      if (mounted) {
+        setMarginAccounts(updatedMarginAccounts);
+      }
     }
     fetch();
+    return () => {
+      mounted = false;
+    }
   });
   return (
     <AppPage>
