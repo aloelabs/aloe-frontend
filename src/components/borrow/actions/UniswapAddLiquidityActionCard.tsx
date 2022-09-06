@@ -202,7 +202,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           lowerBound: prevUniswapPosition?.lowerBound || null,
           upperBound: prevUniswapPosition?.upperBound || null,
         },
-        slippageTolerance: parseFloat(updatedSlippage),
+        slippageTolerance: parseFloat(updatedSlippage) || undefined,
         isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
         isToken0Selected: previousActionCardState?.uniswapResult?.isToken0Selected,
       }
@@ -244,14 +244,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       actionId: ActionID.ADD_LIQUIDITY,
       textFields: [amount0, amount1, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', previousActionCardState?.textFields?.[4] ?? ''],
       aloeResult: {
-        token0RawDelta: -parseFloat(amount0),
-        token1RawDelta: -parseFloat(amount1),
+        token0RawDelta: -parseFloat(amount0) || undefined,
+        token1RawDelta: -parseFloat(amount1) || undefined,
         selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
-          amount0: parseFloat(amount0),
-          amount1: parseFloat(amount1),
+          amount0: parseFloat(amount0) || 0,
+          amount1: parseFloat(amount1) || 0,
           lowerBound: lowerTick,
           upperBound: upperTick,
         },

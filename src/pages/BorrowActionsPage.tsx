@@ -239,31 +239,6 @@ export default function BorrowActionsPage() {
   const hypotheticalActiveAssets: number | null = activeDeltaBalances ? currentBalances.assets + activeDeltaBalances.assets : null;
   const hypotheticalActiveLiabilities: number | null = activeDeltaBalances ? currentBalances.liabilities + activeDeltaBalances.liabilities : null;
 
-  function handleAddAction(action: Action) {
-    setActionResults([...actionResults, {
-      actionId: action.id,
-      aloeResult: null,
-      uniswapResult: null,
-    }]);
-    setActiveActions([...activeActions, action]);
-  }
-
-  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
-    if (defaultActionResults && actions.length !== defaultActionResults.length) {
-      console.error('You must pass in the same number of action results as you do actions (or pass no action results in).');
-      return;
-    }
-    const newActionResults = defaultActionResults || actions.map((x) => {
-      return {
-        actionId: x.id,
-        aloeResult: null,
-        uniswapResult: null,
-      }
-    });
-    setActionResults([...actionResults, ...newActionResults]);
-    setActiveActions([...activeActions, ...actions]);
-  }
-
   function updateCumulativeActionResult(updatedActionResults: ActionCardState[]) {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
@@ -318,6 +293,32 @@ export default function BorrowActionsPage() {
     setActionResults(updatedActionResults);
     updateCumulativeActionResult(updatedActionResults);
   }
+
+  function handleAddAction(action: Action) {
+    updateActionResults([...actionResults, {
+      actionId: action.id,
+      aloeResult: null,
+      uniswapResult: null,
+    }]);
+    setActiveActions([...activeActions, action]);
+  }
+
+  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
+    if (defaultActionResults && actions.length !== defaultActionResults.length) {
+      console.error('You must pass in the same number of action results as you do actions (or pass no action results in).');
+      return;
+    }
+    const newActionResults = defaultActionResults || actions.map((x) => {
+      return {
+        actionId: x.id,
+        aloeResult: null,
+        uniswapResult: null,
+      }
+    });
+    updateActionResults([...actionResults, ...newActionResults]);
+    setActiveActions([...activeActions, ...actions]);
+  }
+
   return (
     <AppPage>
       <BodyWrapper>
