@@ -2,7 +2,7 @@ import { BlendPoolMarkers } from './BlendPoolMarkers';
 import { PrintFeeTier } from './FeeTier';
 import { GetTokenData } from './TokenData';
 import { GetSiloData } from './SiloData';
-import { FormatAddressStart } from '../util/FormatAddress';
+import { formatAddressStart } from '../util/FormatAddress';
 import { UnknownTokenLogo } from '../assets/svg/tokens';
 import { ethers } from 'ethers';
 import Big from 'big.js';
@@ -36,20 +36,20 @@ export function ResolveBlendPoolDrawData(poolData: BlendPoolMarkers) {
 
   const token0Label = token0Data.ticker
     ? token0Data.ticker
-    : FormatAddressStart(poolData.token0Address, 4);
+    : formatAddressStart(poolData.token0Address, 4);
   const token1Label = token1Data.ticker
     ? token1Data.ticker
-    : FormatAddressStart(poolData.token1Address, 4);
+    : formatAddressStart(poolData.token1Address, 4);
 
   const token0Img = token0Data.iconPath || UnknownTokenLogo;
   const token1Img = token1Data.iconPath || UnknownTokenLogo;
 
   const silo0Label = silo0Data.shortName
     ? silo0Data.shortName
-    : FormatAddressStart(poolData.silo0Address, 4);
+    : formatAddressStart(poolData.silo0Address, 4);
   const silo1Label = silo1Data.shortName
     ? silo1Data.shortName
-    : FormatAddressStart(poolData.silo1Address, 4);
+    : formatAddressStart(poolData.silo1Address, 4);
 
   const feeTierText = PrintFeeTier(poolData.feeTier);
 

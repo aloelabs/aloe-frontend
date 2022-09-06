@@ -8,6 +8,7 @@ import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatUSDAuto } from '../../util/Numbers';
+import { formatAddressStart } from '../../util/FormatAddress';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -160,8 +161,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
           />
         </div>
         <IDContainer>
-          <Text size='S' weight='medium'>
-            ID - {id}
+          <Text size='S' weight='medium' title={id}>
+            ID - {formatAddressStart(id)}
           </Text>
         </IDContainer>
       </CardBodyWrapper>
