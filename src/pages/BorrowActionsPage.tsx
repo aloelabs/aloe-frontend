@@ -268,12 +268,6 @@ export default function BorrowActionsPage() {
     let updatedCumulativeActionResult: CumulativeActionCardResult = {
       aloeResult: {
         selectedToken: null,
-        token0RawDelta: null,
-        token0DebtDelta: null,
-        token0PlusDelta: null,
-        token1RawDelta: null,
-        token1DebtDelta: null,
-        token1PlusDelta: null,
       },
       uniswapPositions: [],
     }

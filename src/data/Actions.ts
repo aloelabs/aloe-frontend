@@ -55,12 +55,12 @@ export enum SelectedToken {
 }
 
 export type AloeResult = {
-  token0RawDelta: number | null;
-  token1RawDelta: number | null;
-  token0DebtDelta: number | null;
-  token1DebtDelta: number | null;
-  token0PlusDelta: number | null;
-  token1PlusDelta: number | null;
+  token0RawDelta?: number;
+  token1RawDelta?: number;
+  token0DebtDelta?: number;
+  token1DebtDelta?: number;
+  token0PlusDelta?: number;
+  token1PlusDelta?: number;
   selectedToken: SelectedToken | null;
 }
 
@@ -196,11 +196,6 @@ export const ActionTemplates = {
         textFields: ['10'],
         aloeResult: {
           token0RawDelta: 10,
-          token1RawDelta: null,
-          token0DebtDelta: null,
-          token1DebtDelta: null,
-          token0PlusDelta: null,
-          token1PlusDelta: null,
           selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,
@@ -210,11 +205,7 @@ export const ActionTemplates = {
         textFields: ['100'],
         aloeResult: {
           token0RawDelta: 100,
-          token1RawDelta: null,
           token0DebtDelta: 100,
-          token1DebtDelta: null,
-          token0PlusDelta: null,
-          token1PlusDelta: null,
           selectedToken: SelectedToken.TOKEN_ZERO,
         },
         uniswapResult: null,

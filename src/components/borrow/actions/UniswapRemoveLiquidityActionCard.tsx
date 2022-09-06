@@ -108,10 +108,6 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       aloeResult: {
         token0RawDelta: updatedAmount0,
         token1RawDelta: updatedAmount1,
-        token0DebtDelta: null,
-        token1DebtDelta: null,
-        token0PlusDelta: null,
-        token1PlusDelta: null,
         selectedToken: null,
       },
       uniswapResult: {
