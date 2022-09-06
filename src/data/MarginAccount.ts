@@ -1,5 +1,5 @@
-import { FeeTier } from "./FeeTier";
-import { TokenData } from "./TokenData";
+import { FeeTier } from './FeeTier';
+import { TokenData } from './TokenData';
 
 export type Assets = {
   token0Raw: number;
@@ -23,3 +23,7 @@ export type MarginAccount = {
   assets: Assets;
   liabilities: Liabilities;
 };
+
+export function sumAssetsPerToken(assets: Assets): [number, number] {
+  return [assets.token0Raw + assets.token0Plus + assets.uni0, assets.token1Raw + assets.token1Plus + assets.uni1];
+}
