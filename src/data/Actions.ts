@@ -85,6 +85,8 @@ export type ActionCardState = {
   actionId: ActionID;
   actionArgs?: string;
   textFields?: string[];
+  error?: boolean;
+  errorMsg?: string;
   aloeResult: AloeResult | null;
   uniswapResult: UniswapResult | null;
 };
