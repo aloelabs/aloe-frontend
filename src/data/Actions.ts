@@ -11,6 +11,7 @@ import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/Unisw
 import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
+import { SwapMath } from '@uniswap/v3-sdk';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -21,7 +22,7 @@ export enum ActionID {
   REPAY,
   ADD_LIQUIDITY,
   REMOVE_LIQUIDITY,
-  SWAP
+  SWAP,
 }
 
 export function getNameOfAction(id: ActionID): string {
@@ -112,7 +113,7 @@ export type ActionProvider = {
 export type ActionTemplate = {
   name: string,
   actions: Array<Action>,
-  defaultActionResults?: Array<ActionCardState>, 
+  defaultActionStates?: Array<ActionCardState>, 
 }
 
 // export const DEFAULT_ACTION_VALUE: 0;
@@ -157,7 +158,7 @@ export const ADD_LIQUIDITY: Action = {
   actionCard: UniswapAddLiquidityActionCard,
 }
 
-export const ActionProviders = {
+export const ActionProviders: { [key: string]: ActionProvider } = {
   AloeII: {
     name: 'Aloe II',
     Icon: AloeLogo,
@@ -182,7 +183,7 @@ export const ActionProviders = {
   },
 };
 
-export const ActionTemplates = {
+export const ActionTemplates: { [key: string]: ActionTemplate } = {
   TEN_X_LEVERAGE: {
     name: '10x Leverage',
     actions: [
@@ -190,7 +191,7 @@ export const ActionTemplates = {
       BORROW,
       ADD_LIQUIDITY,
     ],
-    defaultActionResults: [
+    defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
         textFields: ['10'],
@@ -214,9 +215,54 @@ export const ActionTemplates = {
         actionId: ADD_LIQUIDITY.id,
         aloeResult: null,
         uniswapResult: null,
-      }
-    ]
-  }
+      },
+    ],
+  },
+  MARKET_MAKING: {
+    name: 'Market-Making',
+    actions: [
+      ADD_MARGIN,
+      BORROW,
+      BORROW,
+      ADD_LIQUIDITY,
+    ],
+    defaultActionStates: [
+      {
+        actionId: ADD_MARGIN.id,
+        textFields: ['10'],
+        aloeResult: {
+          token0RawDelta: 10,
+          selectedToken: SelectedToken.TOKEN_ZERO,
+        },
+        uniswapResult: null,
+      },
+      {
+        actionId: BORROW.id,
+        textFields: ['50'],
+        aloeResult: {
+          token0RawDelta: 50,
+          token0DebtDelta: 50,
+          selectedToken: SelectedToken.TOKEN_ZERO,
+        },
+        uniswapResult: null,
+      },
+      {
+        actionId: BORROW.id,
+        textFields: ['0.03'],
+        aloeResult: {
+          token1RawDelta: 0.03,
+          token1DebtDelta: 0.03,
+          selectedToken: SelectedToken.TOKEN_ONE,
+        },
+        uniswapResult: null,
+      },
+      {
+        actionId: ADD_LIQUIDITY.id,
+        aloeResult: null,
+        uniswapResult: null,
+      },
+    ],
+  },
 }
 
 export function getDropdownOptionFromSelectedToken(selectedToken: SelectedToken | null, options: DropdownOption[]): DropdownOption {
