@@ -11,6 +11,7 @@ import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/Unisw
 import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
+import JSBI from 'jsbi';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -54,6 +55,7 @@ export type UniswapPosition = {
   amount1: number;
   lowerBound: number | null;
   upperBound: number | null;
+  liquidity: JSBI;
 };
 
 export enum SelectedToken {

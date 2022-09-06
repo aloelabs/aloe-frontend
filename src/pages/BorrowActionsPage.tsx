@@ -26,10 +26,10 @@ import PnLGraph from '../components/graph/PnLGraph';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
-import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import TokenChooser from '../components/common/TokenChooser';
 import { sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
 import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
+import JSBI from 'jsbi';
 
 export type MarginAccountBalances = {
   assets: number;
@@ -271,6 +271,7 @@ export default function BorrowActionsPage() {
         if (existingPositionIndex !== -1) {
           const existingPosition = updatedCumulativeActionResult.uniswapPositions[existingPositionIndex];
           updatedCumulativeActionResult.uniswapPositions[existingPositionIndex] = {
+            liquidity: JSBI.BigInt(0),
             amount0: existingPosition.amount0 + uniswapPosition.amount0,
             amount1: existingPosition.amount1 + uniswapPosition.amount1,
             lowerBound: existingPosition.lowerBound,
