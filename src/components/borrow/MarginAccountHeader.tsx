@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
+import { formatAddressStart } from '../../util/FormatAddress';
 import FeeTierContainer from '../common/FeeTierContainer';
 import RoundedBadge from '../common/RoundedBadge';
 import { Display } from '../common/Typography';
@@ -69,7 +70,7 @@ export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
       </MarginPairContainer>
       <div className='flex gap-4'>
         <FeeTierContainer feeTier={props.feeTier} />
-        <RoundedBadge>ID - {props.id}</RoundedBadge>
+        <RoundedBadge title={props.id}>ID - {formatAddressStart(props.id)}</RoundedBadge>
       </div>
     </div>
   );

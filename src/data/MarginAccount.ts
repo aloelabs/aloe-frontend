@@ -4,10 +4,10 @@ import { TokenData } from "./TokenData";
 export type Assets = {
   token0Raw: number;
   token1Raw: number;
-  token0Debt: number;
-  token1Debt: number;
   token0Plus: number;
   token1Plus: number;
+  uni0: number;
+  uni1: number;
 };
 
 export type Liabilities = {
