@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
-import { Display, Text } from '../components/common/Typography';
+import { Display } from '../components/common/Typography';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import { GetTokenData } from '../data/TokenData';
 import { FeeTier } from '../data/FeeTier';
@@ -18,6 +18,9 @@ import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { createMarginAccount } from '../connector/FactoryActions';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
+import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
+import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
+import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 
 const DEMO_MARGIN_ACCOUNTS = [
   {
@@ -85,6 +88,7 @@ export default function BorrowAccountsPage() {
   //  - get assets/liabilities
   useEffectOnce(() => {
     let mounted = true;
+
     async function fetch() {
       const fetchedMarginAccounts = accountData ? await getMarginAccountsForUser(accountData.address, provider) : [];
 
@@ -139,7 +143,9 @@ export default function BorrowAccountsPage() {
           position='leading'
           size='S'
           svgColorType='stroke'
-          onClick={() => {}}
+          onClick={() => {
+            setShowConfirmModal(true);
+          }}
         >
           New
         </FilledGradientButtonWithIcon>
@@ -154,18 +160,22 @@ export default function BorrowAccountsPage() {
       </MarginAccountsContainner>
 
       <CreateMarginAccountModal
+        availablePools={[
+          {label: 'USDC/WETH 0.05%', value: '0xfBe57C73A82171A773D3328F1b563296151be515'},
+        ]}
         open={showConfirmModal}
         setOpen={setShowConfirmModal}
-        onConfirm={() => {
+        onConfirm={(selectedPool: string | null) => {
+          console.log(selectedPool);
           setShowConfirmModal(false);
           setShowSubmittingModal(true);
-          if (!signer || !accountData) {
+          if (!signer || !accountData || !selectedPool) {
             setIsTransactionPending(false);
             return;
           }
           createMarginAccount(
             signer,
-            '0xfBe57C73A82171A773D3328F1b563296151be515', // TODO allow user to select pool
+            selectedPool,
             accountData.address,
             (receipt) => {
               setShowSubmittingModal(false);
@@ -182,6 +192,18 @@ export default function BorrowAccountsPage() {
         onCancel={() => {
           setIsTransactionPending(false);
         }}
+      />
+      <CreatedMarginAccountModal
+        open={showSuccessModal}
+        setOpen={setShowSuccessModal}
+      />
+      <FailedTxnModal
+        open={showFailedModal}
+        setOpen={setShowFailedModal}
+      />
+      <PendingTxnModal
+        open={showSubmittingModal}
+        setOpen={setShowSubmittingModal}
       />
     </AppPage>
   );
