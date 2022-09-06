@@ -13,6 +13,7 @@ import { API_URL } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { OffChainPoolStats } from '../../data/PoolStats';
 import { AccountData } from '../../pages/BlendPoolPage';
+import { makeEtherscanRequest } from '../../util/Etherscan';
 import { formatUSDAuto, toBig } from '../../util/Numbers';
 import { PoolReturns, TokenReturns } from '../../util/ReturnsCalculations';
 import { PercentChange } from '../common/PercentChange';
@@ -62,35 +63,6 @@ type AccountStats = {
 
 type Timestamp = {
   timestamp: string | number;
-}
-
-function makeEtherscanRequest(
-  fromBlock: number,
-  address: string,
-  topics: (string | null)[],
-  shouldMatchAll: boolean,
-  pageLength = 1000,
-  page?: number,
-  toBlock?: number,
-) {
-  let query = `https://api.etherscan.io/api?module=logs&action=getLogs`.concat(
-    `&fromBlock=${fromBlock.toFixed(0)}`,
-    toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '',
-    `&address=${address}`
-  );
-  
-  for (let i = 0; i < topics.length; i += 1) {
-    if (topics[i] === null) continue;
-    query += `&topic${i}=${topics[i]}`;
-
-    if (i === topics.length - 1) break;
-    query += `&topic${i}_${i + 1}_opr=${shouldMatchAll ? 'and' : 'or'}`;
-  }
-
-  if (page) query += `&page=${page}`;
-  query = query.concat(`&offset=${pageLength}`, `&apikey=${process.env.REACT_APP_ETHERSCAN_API_KEY}`);
-
-  return axios.get(query);
 }
 
 function findNearestElementByTime<T extends Timestamp>(arr: T[], timestamp: string | number): T {
