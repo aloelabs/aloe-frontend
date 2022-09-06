@@ -11,7 +11,6 @@ import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/Unisw
 import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
-import { SwapMath } from '@uniswap/v3-sdk';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -27,15 +26,24 @@ export enum ActionID {
 
 export function getNameOfAction(id: ActionID): string {
   switch (id) {
-    case ActionID.TRANSFER_IN: return 'Add Margin';
-    case ActionID.TRANSFER_OUT: return 'Withdraw';
-    case ActionID.MINT: return 'Mint Token+';
-    case ActionID.BURN: return 'Burn Token+';
-    case ActionID.BORROW: return 'Borrow';
-    case ActionID.REPAY: return 'Repay';
-    case ActionID.ADD_LIQUIDITY: return 'Add Liquidity';
-    case ActionID.REMOVE_LIQUIDITY: return 'Remove Liquidity';
-    default: return 'UNKNOWN';
+    case ActionID.TRANSFER_IN:
+      return 'Add Margin';
+    case ActionID.TRANSFER_OUT:
+      return 'Withdraw';
+    case ActionID.MINT:
+      return 'Mint Token+';
+    case ActionID.BURN:
+      return 'Burn Token+';
+    case ActionID.BORROW:
+      return 'Borrow';
+    case ActionID.REPAY:
+      return 'Repay';
+    case ActionID.ADD_LIQUIDITY:
+      return 'Add Liquidity';
+    case ActionID.REMOVE_LIQUIDITY:
+      return 'Remove Liquidity';
+    default:
+      return 'UNKNOWN';
   }
 }
 
@@ -49,10 +57,10 @@ export type UniswapPosition = {
 };
 
 export enum SelectedToken {
-  TOKEN_ZERO='TOKEN_ZERO',
-  TOKEN_ONE='TOKEN_ONE',
-  TOKEN_ZERO_PLUS='TOKEN_ZERO_PLUS',
-  TOKEN_ONE_PLUS='TOKEN_ONE_PLUS',
+  TOKEN_ZERO = 'TOKEN_ZERO',
+  TOKEN_ONE = 'TOKEN_ONE',
+  TOKEN_ZERO_PLUS = 'TOKEN_ZERO_PLUS',
+  TOKEN_ONE_PLUS = 'TOKEN_ONE_PLUS',
 }
 
 export type AloeResult = {
@@ -63,7 +71,7 @@ export type AloeResult = {
   token0PlusDelta?: number;
   token1PlusDelta?: number;
   selectedToken: SelectedToken | null;
-}
+};
 
 export type UniswapResult = {
   uniswapPosition: UniswapPosition;
@@ -71,7 +79,7 @@ export type UniswapResult = {
   removeLiquidityPercentage?: number;
   isToken0Selected?: boolean;
   isAmount0LastUpdated?: boolean;
-}
+};
 
 export type ActionCardState = {
   actionId: ActionID;
@@ -79,12 +87,12 @@ export type ActionCardState = {
   textFields?: string[];
   aloeResult: AloeResult | null;
   uniswapResult: UniswapResult | null;
-}
+};
 
 export type CumulativeActionCardResult = {
   aloeResult: AloeResult | null;
   uniswapPositions: UniswapPosition[];
-}
+};
 
 export type ActionCardProps = {
   token0: TokenData;
@@ -98,7 +106,7 @@ export type ActionCardProps = {
 export type Action = {
   id: ActionID;
   actionCard: React.FC<ActionCardProps>;
-}
+};
 
 export type ActionProvider = {
   name: string;
@@ -109,54 +117,51 @@ export type ActionProvider = {
   };
 };
 
-
 export type ActionTemplate = {
-  name: string,
-  actions: Array<Action>,
-  defaultActionStates?: Array<ActionCardState>, 
-}
-
-// export const DEFAULT_ACTION_VALUE: 0;
+  name: string;
+  actions: Array<Action>;
+  defaultActionStates?: Array<ActionCardState>;
+};
 
 export const MINT_TOKEN_PLUS: Action = {
   id: ActionID.MINT,
   actionCard: AloeMintTokenPlusActionCard,
-}
+};
 
 export const BURN_TOKEN_PLUS: Action = {
   id: ActionID.BURN,
   actionCard: AloeBurnTokenPlusActionCard,
-}
+};
 
 export const BORROW: Action = {
   id: ActionID.BORROW,
   actionCard: AloeBorrowActionCard,
-}
+};
 
 export const REPAY: Action = {
   id: ActionID.REPAY,
   actionCard: AloeRepayActionCard,
-}
+};
 
 export const WITHDRAW: Action = {
   id: ActionID.TRANSFER_OUT,
   actionCard: AloeWithdrawActionCard,
-}
+};
 
 export const ADD_MARGIN: Action = {
   id: ActionID.TRANSFER_IN,
   actionCard: AloeAddMarginActionCard,
-}
+};
 
 export const REMOVE_LIQUIDITY: Action = {
   id: ActionID.REMOVE_LIQUIDITY,
   actionCard: UniswapRemoveLiquidityActionCard,
-}
+};
 
 export const ADD_LIQUIDITY: Action = {
   id: ActionID.ADD_LIQUIDITY,
   actionCard: UniswapAddLiquidityActionCard,
-}
+};
 
 export const ActionProviders: { [key: string]: ActionProvider } = {
   AloeII: {
@@ -186,11 +191,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
 export const ActionTemplates: { [key: string]: ActionTemplate } = {
   TEN_X_LEVERAGE: {
     name: '10x Leverage',
-    actions: [
-      ADD_MARGIN,
-      BORROW,
-      ADD_LIQUIDITY,
-    ],
+    actions: [ADD_MARGIN, BORROW, ADD_LIQUIDITY],
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
@@ -220,12 +221,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
   },
   MARKET_MAKING: {
     name: 'Market-Making',
-    actions: [
-      ADD_MARGIN,
-      BORROW,
-      BORROW,
-      ADD_LIQUIDITY,
-    ],
+    actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
@@ -263,16 +259,24 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
     ],
   },
-}
+};
 
-export function getDropdownOptionFromSelectedToken(selectedToken: SelectedToken | null, options: DropdownOption[]): DropdownOption {
+export function getDropdownOptionFromSelectedToken(
+  selectedToken: SelectedToken | null,
+  options: DropdownOption[]
+): DropdownOption {
   if (options.length === 0) {
     throw new Error();
   }
-  return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
+  return (
+    options.find((option: DropdownOption) => option.value === selectedToken) ||
+    options[0]
+  );
 }
 
-export function parseSelectedToken(value: string | undefined): SelectedToken | null {
+export function parseSelectedToken(
+  value: string | undefined
+): SelectedToken | null {
   if (!value) return null;
   return value as SelectedToken;
 }
