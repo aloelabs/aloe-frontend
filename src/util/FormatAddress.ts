@@ -1,4 +1,4 @@
-export function FormatAddress(address: string, characters: number = 4) {
+export function formatAddress(address: string, characters: number = 4) {
   const maxChars = address.length / 2 - 2;
   if (characters > maxChars) {
     return address;
@@ -9,6 +9,6 @@ export function FormatAddress(address: string, characters: number = 4) {
   )}`;
 }
 
-export function FormatAddressStart(address: string, characters: number = 4) {
+export function formatAddressStart(address: string, characters: number = 4) {
   return `${address.substring(0, characters + 2)}...`;
 }

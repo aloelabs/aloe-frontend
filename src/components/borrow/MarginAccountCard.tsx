@@ -8,6 +8,8 @@ import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatUSDAuto } from '../../util/Numbers';
+import { formatAddressStart } from '../../util/FormatAddress';
+import { MarginAccount } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -73,7 +75,7 @@ const IDContainer = styled.div`
 type MetricContainerProps = {
   label: string;
   value: string;
-}
+};
 
 function MetricContainer(props: MetricContainerProps) {
   const { label, value } = props;
@@ -89,18 +91,21 @@ function MetricContainer(props: MetricContainerProps) {
   );
 }
 
-export type MarginAccountCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  feeTier: FeeTier;
-  id: string;
-};
+export type MarginAccountCardProps = MarginAccount;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { token0, token1, feeTier, id } = props;
+  const { address, assets, feeTier, liabilities, token0, token1 } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
-  const link = `/borrow/account/${id}`;
+  const link = `/borrow/account/${address}`;
+  const totalAssets =
+    assets.token0Raw +
+    assets.token1Raw +
+    assets.token0Plus +
+    assets.token1Plus -
+    assets.token0Debt -
+    assets.token1Debt;
+  const totalLiabilities = liabilities.amount0 + liabilities.amount1;
 
   useEffect(() => {
     let mounted = true;
@@ -123,7 +128,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
     token0Color,
     0.25
   )} 0%, ${rgba(token1Color, 0.25)} 100%)`;
-  
+
   return (
     <CardWrapper to={link}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
@@ -146,22 +151,16 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
-          <MetricContainer
-            label='Assets'
-            value={formatUSDAuto(420)}
-          />
+          <MetricContainer label='Assets' value={formatUSDAuto(totalAssets)} />
           <MetricContainer
             label='Liabilities'
-            value={formatUSDAuto(69)}
+            value={formatUSDAuto(totalLiabilities)}
           />
-          <MetricContainer
-            label='Health'
-            value='1.20'
-          />
+          <MetricContainer label='Health' value='1.20' />
         </div>
         <IDContainer>
-          <Text size='S' weight='medium'>
-            ID - {id}
+          <Text size='S' weight='medium' title={address}>
+            ID - {formatAddressStart(address)}
           </Text>
         </IDContainer>
       </CardBodyWrapper>
