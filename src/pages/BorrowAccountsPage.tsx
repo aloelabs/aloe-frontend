@@ -8,7 +8,7 @@ import { GetTokenData } from '../data/TokenData';
 import { FeeTier } from '../data/FeeTier';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
-import { useAccount, useContract, useProvider } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner } from 'wagmi';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import Big from 'big.js';
@@ -16,6 +16,8 @@ import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
 import { BigNumber, ethers } from 'ethers';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { createMarginAccount } from '../connector/FactoryActions';
+import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 
 const DEMO_MARGIN_ACCOUNTS = [
   {
@@ -55,6 +57,14 @@ async function getMarginAccountsForUser(userAddress: string, provider: ethers.pr
 }
 
 export default function BorrowAccountsPage() {
+  // MARK: Stuff for deploying a new MarginAccount
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showFailedModal, setShowFailedModal] = useState(false);
+  const [showSubmittingModal, setShowSubmittingModal] = useState(false);
+  const [isTransactionPending, setIsTransactionPending] = useState(false);
+  const [{ data: signer }] = useSigner();
+
   const [marginAccounts, setMarginAccounts] = useState<Array<MarginAccount>>([]);
   const provider = useProvider();
   const [{ data: accountData }] = useAccount();
@@ -142,6 +152,37 @@ export default function BorrowAccountsPage() {
           />
         ))}
       </MarginAccountsContainner>
+
+      <CreateMarginAccountModal
+        open={showConfirmModal}
+        setOpen={setShowConfirmModal}
+        onConfirm={() => {
+          setShowConfirmModal(false);
+          setShowSubmittingModal(true);
+          if (!signer || !accountData) {
+            setIsTransactionPending(false);
+            return;
+          }
+          createMarginAccount(
+            signer,
+            '0xfBe57C73A82171A773D3328F1b563296151be515', // TODO allow user to select pool
+            accountData.address,
+            (receipt) => {
+              setShowSubmittingModal(false);
+              if (receipt?.status === 1) {
+                setShowSuccessModal(true);
+              } else {
+                setShowFailedModal(true);
+              }
+              setIsTransactionPending(false);
+              console.log(receipt);
+            }
+          );
+        }}
+        onCancel={() => {
+          setIsTransactionPending(false);
+        }}
+      />
     </AppPage>
   );
 }
