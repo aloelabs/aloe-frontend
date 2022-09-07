@@ -74,6 +74,8 @@ function EditPositionButton(props: { onClick?: () => void }) {
 export type LendPairCardProps = {
   token0: TokenData;
   token1: TokenData;
+  kitty0: TokenData;
+  kitty1: TokenData;
   token0APY: number;
   token1APY: number;
   token0TotalSupply: number;
@@ -184,6 +186,7 @@ export default function LendPairCard(props: LendPairCardProps) {
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
+              token={token0}
               totalSupply={token0TotalSupply}
               utilization={token0Utilization}
             />
@@ -215,6 +218,7 @@ export default function LendPairCard(props: LendPairCardProps) {
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
+              token={token1}
               totalSupply={token1TotalSupply}
               utilization={token1Utilization}
             />
