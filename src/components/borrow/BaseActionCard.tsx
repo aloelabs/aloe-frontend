@@ -5,13 +5,16 @@ import { Display, Text } from '../common/Typography';
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
 import { ActionID, ActionProvider, getNameOfAction } from '../../data/Actions';
 
-const ActionCardContainer = styled.div`
+const ActionCardContainer = styled.div.attrs(
+  (props: { isCausingError: boolean }) => props
+)`
   ${tw`flex flex-col items-center justify-center`}
   width: 400px;
   padding: 12px 24px;
   border-radius: 8px;
   background-color: rgba(13, 24, 33, 1);
-  border: 1px solid rgba(34, 54, 69, 1);
+  border: 1px solid ${(props) => props.isCausingError ? 'rgba(255, 54, 69, 1)' : 'rgba(34, 54, 69, 1)'};
+  box-shadow: ${(props) => props.isCausingError ? '0px 0px 10px rgba(255, 54, 69, 0.5)' : 'none'};
 `;
 
 const ActionBadge = styled.div.attrs(
@@ -38,14 +41,15 @@ const SvgWrapper = styled.div`
 export type BaseActionCardProps = {
   actionProvider: ActionProvider;
   action: ActionID;
+  isCausingError: boolean;
   children: React.ReactNode;
   onRemove: () => void;
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, children, onRemove } = props;
+  const { actionProvider, action, isCausingError, children, onRemove } = props;
   return (
-    <ActionCardContainer>
+    <ActionCardContainer isCausingError={isCausingError}>
       <div className='w-full flex justify-start items-center gap-4 mb-4'>
         <ActionBadge backgroundColor={actionProvider.color}>
           <Text size='S' weight='medium'>
