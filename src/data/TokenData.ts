@@ -18,6 +18,28 @@ export type TokenData = {
 };
 
 const TokenDataMap = new Map<string, TokenData>([
+  // Mock USDC (Goerli)
+  [
+    '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
+    {
+      address: '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
+      name: 'Aloe Mock USDC',
+      ticker: 'USDC',
+      iconPath: UsdcLogo,
+      decimals: 6,
+    },
+  ],
+  // WETH (Goerli)
+  [
+    '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
+    {
+      address: '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
+      name: 'Wrapped Ether',
+      ticker: 'WETH',
+      iconPath: WethLogo,
+      decimals: 18,
+    },
+  ],
   // USDC
   [
     '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
@@ -124,8 +146,8 @@ export function getTokens(): TokenData[] {
 }
 
 export function GetTokenData(address: string): TokenData {
-  if (TokenDataMap.has(address)) {
-    return TokenDataMap.get(address)!;
+  if (TokenDataMap.has(address.toLowerCase())) {
+    return TokenDataMap.get(address.toLowerCase())!;
   } else
     return {
       address: address,
