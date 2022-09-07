@@ -113,7 +113,6 @@ export default function BorrowAccountsPage() {
         }
       });
       const updatedMarginAccounts = await Promise.all(marginAccountPromises);
-      console.log('test', mounted, accountData);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);
       }
@@ -122,10 +121,8 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     }
-    //Only re-run if the account's address changes
+    //TODO: temporary while we need metamask to fetch this info
   }, [accountData?.address]);
-
-  console.log(marginAccounts);
 
   return (
     <AppPage>
