@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useAccount } from 'wagmi';
+import { chain, useAccount, useEnsName } from 'wagmi';
 import DepositIllustration from '../../assets/svg/deposit_illustration.svg';
 import { Display, Text } from '../common/Typography';
 import ConnectWalletButton from '../header/ConnectWalletButton';
@@ -26,9 +26,13 @@ const Wrapper = styled.div`
 `;
 
 export default function ConnectWallet() {
-  const [{ data: accountData }, disconnect] = useAccount({
-    fetchEns: true,
+  // MARK: wagmi hooks
+  const { address } = useAccount();
+  const { data: ensName } = useEnsName({
+    address: address,
+    chainId: chain.mainnet.id,
   });
+
   return (
     <Wrapper>
       <div className='flex items-center justify-center'>
@@ -40,7 +44,7 @@ export default function ConnectWallet() {
           By investing with Aloe, you will be able to earn trading fees on Uniswap, collect interest from other protocols, and autonomously manage your portfolio.
         </Text>
       </div>
-      <ConnectWalletButton accountData={accountData} disconnect={disconnect} buttonStyle='secondary' />
+      <ConnectWalletButton address={address} ensName={ensName as string} buttonStyle='secondary' />
     </Wrapper>
   );
 }

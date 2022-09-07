@@ -1,61 +1,62 @@
-import React from 'react';
-import { Provider, chain, defaultChains } from 'wagmi';
+import {
+  WagmiConfig,
+  chain,
+  createClient,
+  configureChains
+} from 'wagmi';
+
+import { alchemyProvider } from 'wagmi/providers/alchemy';
+import { infuraProvider } from 'wagmi/providers/infura';
+import { publicProvider } from 'wagmi/providers/public';
+
 import { InjectedConnector } from 'wagmi/connectors/injected';
-
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
-import { WalletLinkConnector } from 'wagmi/connectors/walletLink';
-import { providers } from 'ethers';
+import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 
-export type WagmiProviderProps = {
-  children?: React.ReactNode;
-};
+const { chains, provider, webSocketProvider } = configureChains(
+  [chain.mainnet, chain.optimism, chain.arbitrum, chain.goerli],
+  [
+    alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY, priority: 0 }),
+    infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID, priority: 1 }),
+    publicProvider({ priority: 2 }),
+  ],
+  { stallTimeout: 5000 }
+);
 
-const infuraId = process.env.REACT_APP_INFURA_ID;
-
-const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY;
-
-const chains = defaultChains;
-
-const connectors = ({ chainId }: { chainId?: number | undefined }) => {
-  const rpcUrl =
-    chains.find((x) => x.id === chainId)?.rpcUrls?.[0] ??
-    chain.mainnet.rpcUrls[0];
-  return [
+const client = createClient({
+  autoConnect: true,
+  connectors: [
     new InjectedConnector({
       chains,
       options: { shimDisconnect: true },
     }),
     new WalletConnectConnector({
+      chains,
       options: {
-        infuraId,
         qrcode: true,
-      },
+        rpc: { 1: 'TODO' },
+      }
     }),
-    new WalletLinkConnector({
+    new CoinbaseWalletConnector({
+      chains,
       options: {
-        appName: 'Aloe',
-        jsonRpcUrl: `${rpcUrl}/${infuraId}`,
-      },
-    }),
-  ];
-};
+        appName: 'Aloe II',
+        jsonRpcUrl: 'TODO',
+      }
+    })
+  ],
+  provider,
+  webSocketProvider,
+})
 
-const provider = ({ chainId }: { chainId?: number | undefined }) =>
-  new providers.AlchemyProvider(chainId, alchemyApiKey);
-
-const webSocketProvider = ({ chainId }: { chainId?: number | undefined }) => {
-  return new providers.AlchemyWebSocketProvider(chainId, alchemyApiKey);
+export type WagmiProviderProps = {
+  children?: React.ReactNode;
 };
 
 export default function WagmiProvider(props: WagmiProviderProps) {
   return (
-    <Provider
-      autoConnect
-      connectors={connectors}
-      provider={provider}
-      webSocketProvider={webSocketProvider}
-    >
+    <WagmiConfig client={client}>
       {props.children}
-    </Provider>
+    </WagmiConfig>
   );
 }

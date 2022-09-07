@@ -212,8 +212,8 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
     };
   }, [blockNumber, poolData]);
 
-  const [{ data: accountData }] = useAccount({ fetchEns: true });
-  const walletIsConnected = accountData?.address !== undefined;
+  const { address } = useAccount();
+  const walletIsConnected = address !== undefined;
 
   if (!poolData) {
     if (params.pooladdress) {
@@ -267,7 +267,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
               walletIsConnected={walletIsConnected}
               poolData={poolData}
               offChainPoolStats={offChainPoolStats}
-              accountData={accountData}
+              address={address}
             />
           )}
           <PoolStatsWidget

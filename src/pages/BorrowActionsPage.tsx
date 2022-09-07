@@ -198,7 +198,7 @@ export default function BorrowActionsPage() {
   const accountAddressParam = params.account;
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   // const accountData = getAccount(account || '');
-  const [{ data: accountData }] = useAccount();
+  const { address } = useAccount();
   const provider = useProvider();
   const marginAccountLensContract = useContract({
     addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
@@ -262,7 +262,7 @@ export default function BorrowActionsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [accountData?.address]);
+  }, [address]);
 
   const [actionResults, setActionResults] = React.useState<Array<ActionCardState>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);

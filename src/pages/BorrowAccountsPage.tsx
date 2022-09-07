@@ -56,11 +56,11 @@ export default function BorrowAccountsPage() {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   const [isTransactionPending, setIsTransactionPending] = useState(false);
-  const [{ data: signer }] = useSigner();
+  const { data: signer } = useSigner();
 
   const [marginAccounts, setMarginAccounts] = useState<Array<MarginAccount>>([]);
   const provider = useProvider();
-  const [{ data: accountData }] = useAccount();
+  const { address } = useAccount();
 
   const marginAccountLensContract = useContract({
     addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
@@ -80,7 +80,7 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch() {
-      const fetchedMarginAccounts = accountData ? await getMarginAccountsForUser(accountData.address, provider) : [];
+      const fetchedMarginAccounts = address ? await getMarginAccountsForUser(address, provider) : [];
 
       const marginAccountPromises: Promise<MarginAccount>[] = fetchedMarginAccounts.map(async (fetchedMarginAccount: string) => {
         //TODO: use the marginAccountContract to get the TokenData
@@ -122,7 +122,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     }
     //TODO: temporary while we need metamask to fetch this info
-  }, [accountData?.address]);
+  }, [address]);
 
   return (
     <AppPage>
@@ -161,14 +161,14 @@ export default function BorrowAccountsPage() {
           console.log(selectedPool);
           setShowConfirmModal(false);
           setShowSubmittingModal(true);
-          if (!signer || !accountData || !selectedPool) {
+          if (!signer || !address || !selectedPool) {
             setIsTransactionPending(false);
             return;
           }
           createMarginAccount(
             signer,
             selectedPool,
-            accountData.address,
+            address,
             (receipt) => {
               setShowSubmittingModal(false);
               if (receipt?.status === 1) {
