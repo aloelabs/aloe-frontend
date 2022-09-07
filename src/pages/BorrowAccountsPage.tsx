@@ -14,22 +14,12 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import Big from 'big.js';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
 import { BigNumber, ethers } from 'ethers';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { createMarginAccount } from '../connector/FactoryActions';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
-
-const DEMO_MARGIN_ACCOUNTS = [
-  {
-    token0: GetTokenData('0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'),
-    token1: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-    feeTier: FeeTier.ZERO_ZERO_FIVE,
-    id: '1234',
-  },
-];
 
 const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
@@ -86,7 +76,7 @@ export default function BorrowAccountsPage() {
   //for each account:
   //  - get token addresses => TokenData (name, label, icon, etc)
   //  - get assets/liabilities
-  useEffectOnce(() => {
+  useEffect(() => {
     let mounted = true;
 
     async function fetch() {
@@ -123,6 +113,7 @@ export default function BorrowAccountsPage() {
         }
       });
       const updatedMarginAccounts = await Promise.all(marginAccountPromises);
+      console.log('test', mounted, accountData);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);
       }
@@ -131,7 +122,11 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     }
-  });
+    //Only re-run if the account's address changes
+  }, [accountData?.address]);
+
+  console.log(marginAccounts);
+
   return (
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
