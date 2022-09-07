@@ -5,7 +5,7 @@ import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelect
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
-  const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
+  const { token0, token1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
@@ -45,6 +45,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
     <BaseActionCard
       action={ActionID.REPAY}
       actionProvider={ActionProviders.AloeII}
+      isCausingError={isCausingError}
       onRemove={onRemove}
     >
       <div className='w-full flex flex-col gap-4 items-center'>
@@ -67,7 +68,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => {
-            const parsedValue = parseFloat(value);
+            const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.REPAY,
               textFields: [value],

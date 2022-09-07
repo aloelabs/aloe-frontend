@@ -5,7 +5,7 @@ import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelect
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { token0, token1, previousActionCardState, onRemove, onChange } = prop;
+  const { token0, token1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   //TODO: Temporary until these are finised, then we can just fetch the entire token
   const token0PlusAddress = token0.address + '1';
   const token1PlusAddress = token1.address + '1';
@@ -60,6 +60,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     <BaseActionCard
       action={ActionID.TRANSFER_IN}
       actionProvider={ActionProviders.AloeII}
+      isCausingError={isCausingError}
       onRemove={onRemove}
     >
       <div className='w-full flex flex-col gap-4 items-center'>
@@ -82,7 +83,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => {
-            const parsedValue = parseFloat(value);
+            const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.TRANSFER_IN,
               textFields: [value],

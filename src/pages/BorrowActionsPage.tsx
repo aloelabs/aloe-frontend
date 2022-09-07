@@ -15,8 +15,8 @@ import {
   CumulativeActionCardResult,
   getNameOfAction,
 } from '../data/Actions';
-import { FeeTier } from '../data/FeeTier';
-import { GetTokenData } from '../data/TokenData';
+import { FeeTier, NumericFeeTierToEnum } from '../data/FeeTier';
+import { GetTokenData, TokenData } from '../data/TokenData';
 import { useNavigate, useParams } from 'react-router-dom';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
@@ -25,15 +25,18 @@ import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationP
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import TokenChooser from '../components/common/TokenChooser';
-import { sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
+import { Q96, sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
 import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
 import JSBI from 'jsbi';
 import { useAccount, useContract, useProvider } from 'wagmi';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import Big from 'big.js';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 
 // export type MarginAccountBalances = {
 //   assets: number;
@@ -193,13 +196,41 @@ const AccountStatsGrid = styled.div`
   gap: 16px;
 `;
 
+function isSolvent(assets: Assets, liabilities: Liabilities, sqrtPriceX96: Big, token0: TokenData, token1: TokenData): boolean {
+  const q96 = Q96.toString();
+  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(q96);
+
+  const assets0 = assets.token0Raw + assets.token0Plus + assets.uni0;
+  const assets1 = assets.token1Raw + assets.token1Plus + assets.uni1;
+
+  const assets_1 = assets1 + priceX96.mul(assets0).mul(10 ** token0.decimals).div(q96).div(10 ** token1.decimals).toNumber();
+  const liabilities_1 = liabilities.amount1 + priceX96.mul(liabilities.amount0).mul(10 ** token0.decimals).div(q96).div(10 ** token1.decimals).toNumber();
+
+  return assets_1 >= 1.08 * liabilities_1;
+}
+
 export default function BorrowActionsPage() {
+  const navigate = useNavigate();
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
+
+  // MARK: component state
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  // const accountData = getAccount(account || '');
-  const { address } = useAccount();
+  const [actionResults, setActionResults] = React.useState<ActionCardState[]>([]);
+  const [activeActions, setActiveActions] = React.useState<Action[]>([]);
+  const [actionModalOpen, setActionModalOpen] = React.useState(false);
+  const [isToken0Selected, setIsToken0Selected] = React.useState(false);
+  const [sqrtPriceX96, setSqrtPriceX96] = React.useState<Big | null>(null);
+  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<CumulativeActionCardResult | null>(null);
+
+  // MARK: wagmi hooks
   const provider = useProvider();
+  // const { address } = useAccount();
+  const marginAccountContract = useContract({
+    addressOrName: accountAddressParam ?? '', // TODO better optional resolution
+    contractInterface: MarginAccountABI,
+    signerOrProvider: provider,
+  });
   const marginAccountLensContract = useContract({
     addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
     contractInterface: MarginAccountLensABI,
@@ -208,14 +239,27 @@ export default function BorrowActionsPage() {
 
   useEffect(() => {
     let mounted = true;
-    async function fetch(address: string) {
-      const token0Address = '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a';
-      const token1Address = '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6';
-      const token0 = GetTokenData(token0Address);
-      const token1 = GetTokenData(token1Address);
-      const feeTier = FeeTier.ZERO_ZERO_FIVE;
-      const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(address);
-      const liabilitiesData: BigNumber[] = await marginAccountLensContract.getLiabilities(address);
+    async function fetch(marginAccountAddress: string) {
+      const results = await Promise.all([
+        marginAccountContract.TOKEN0(),
+        marginAccountContract.TOKEN1(),
+        marginAccountContract.UNISWAP_POOL(),
+        marginAccountLensContract.getAssets(marginAccountAddress),
+        await marginAccountLensContract.getLiabilities(marginAccountAddress),
+      ]);
+
+      const uniswapPool = results[2];
+      const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
+      const [feeTier, slot0] = await Promise.all([
+        uniswapPoolContract.fee(),
+        uniswapPoolContract.slot0(),
+      ]);
+
+      const token0 = GetTokenData(results[0] as string);
+      const token1 = GetTokenData(results[1] as string);
+      const assetsData = results[3] as BigNumber[];
+      const liabilitiesData = results[4] as BigNumber[];
+
       const assets: Assets = {
         token0Raw: Big(assetsData[0].toString())
           .div(10 ** token0.decimals)
@@ -224,10 +268,10 @@ export default function BorrowActionsPage() {
           .div(10 ** token1.decimals)
           .toNumber(),
         token0Plus: Big(assetsData[2].toString())
-          .div(10 ** token0.decimals)
+          .div(10 ** 18)
           .toNumber(),
         token1Plus: Big(assetsData[3].toString())
-          .div(10 ** token1.decimals)
+          .div(10 ** 18)
           .toNumber(),
         uni0: Big(assetsData[4].toString())
           .div(10 ** token0.decimals)
@@ -246,13 +290,14 @@ export default function BorrowActionsPage() {
       };
       if (mounted) {
         setMarginAccount({
-          address: address,
-          assets: assets,
-          feeTier: feeTier,
-          liabilities: liabilities,
+          address: marginAccountAddress,
           token0: token0,
           token1: token1,
+          feeTier: NumericFeeTierToEnum(feeTier),
+          assets: assets,
+          liabilities: liabilities,
         });
+        setSqrtPriceX96(new Big(slot0.sqrtPriceX96.toString()));
       }
     }
     if (accountAddressParam) {
@@ -261,20 +306,59 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-    //TODO: temporary while we need metamask to fetch this info
-  }, [address]);
-
-  const [actionResults, setActionResults] = React.useState<Array<ActionCardState>>([]);
-  const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
-  const [actionModalOpen, setActionModalOpen] = React.useState(false);
-  const [isToken0Selected, setIsToken0Selected] = React.useState(false);
-  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<CumulativeActionCardResult | null>(null);
-  const navigate = useNavigate();
+  }, [provider]);
 
   if (!marginAccount) {
     //If no account data is found, don't render the page
     return null;
   }
+
+  // assets and liabilities before adding any hypothetical actions
+  const assetsI = marginAccount.assets;
+  const liabilitiesI = marginAccount.liabilities;
+
+  // assets and liabilities after adding hypothetical actions
+  let assetsF = { ...assetsI };
+  let liabilitiesF = { ...liabilitiesI };
+  let problematicActionIdx: number | null = null;
+
+  for (let i = 0; i < actionResults.length; i += 1) {
+    const actionResult = actionResults[i];
+  
+    const assetsTemp = { ...assetsF };
+    const liabilitiesTemp = {...liabilitiesF };
+
+    // update assets
+    assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
+    assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;
+    assetsTemp.token0Plus += actionResult.aloeResult?.token0PlusDelta ?? 0;
+    assetsTemp.token1Plus += actionResult.aloeResult?.token1PlusDelta ?? 0;
+    assetsTemp.uni0 += actionResult.uniswapResult?.uniswapPosition.amount0 ?? 0;
+    assetsTemp.uni1 += actionResult.uniswapResult?.uniswapPosition.amount1 ?? 0;
+
+    // update liabilities
+    liabilitiesTemp.amount0 += actionResult.aloeResult?.token0DebtDelta ?? 0;
+    liabilitiesTemp.amount1 += actionResult.aloeResult?.token1DebtDelta ?? 0;
+
+    // if any assets or liabilities are < 0, we have an issue!
+    if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
+      problematicActionIdx = i;
+      break;
+    }
+    // if liabilities * 1.08 >= assets, we have an issue! // TODO fetch liquidation factor dynamically
+    if (sqrtPriceX96 && !isSolvent(assetsTemp, liabilitiesTemp, sqrtPriceX96, marginAccount.token0, marginAccount.token1)) {
+      problematicActionIdx = i;
+      break;
+    }
+
+    // otherwise continue accumulating
+    assetsF = assetsTemp;
+    liabilitiesF = liabilitiesTemp;
+  }
+
+  console.log(assetsF);
+  console.log(liabilitiesF);
+  console.log(problematicActionIdx);
 
   const assetsInUniswapPositions: [number, number] = cumulativeActionResult
     ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions)
@@ -386,7 +470,7 @@ export default function BorrowActionsPage() {
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
-    updateCumulativeActionResult(updatedActionResults);
+    // updateCumulativeActionResult(updatedActionResults);
   }
 
   function handleAddAction(action: Action) {
@@ -448,10 +532,11 @@ export default function BorrowActionsPage() {
               let actionResultsCopy = [...actionResults];
               const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
               setActionResults(updatedActionResults);
-              updateCumulativeActionResult(updatedActionResults);
+              // updateCumulativeActionResult(updatedActionResults);
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
+            problematicActionIdx={problematicActionIdx}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
