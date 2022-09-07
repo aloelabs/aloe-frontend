@@ -31,7 +31,7 @@ import JSBI from 'jsbi';
 import { useAccount, useContract, useProvider } from 'wagmi';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
+import { AccountSummaries, AccountSummary, Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import Big from 'big.js';
 import { BigNumber } from 'ethers';
 
@@ -47,12 +47,12 @@ import { BigNumber } from 'ethers';
 //   token1: MarginAccountBalances;
 // }
 
-export type CumulativeBalance = {
-  assets: number;
-  liabilities: number;
-  lowerLiquidationThreshold: number;
-  upperLiquidationThreshold: number;
-};
+// export type CumulativeBalance = {
+//   assets: number;
+//   liabilities: number;
+//   lowerLiquidationThreshold: number;
+//   upperLiquidationThreshold: number;
+// };
 
 // export type CumulativeBalances = {
 //   token0: CumulativeBalance;
@@ -60,19 +60,6 @@ export type CumulativeBalance = {
 // }
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
-
-function getAccount(account: string) {
-  switch (account) {
-    case '1234':
-      return {
-        token0: GetTokenData('0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'),
-        token1: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-        feeTier: FeeTier.ZERO_ZERO_FIVE,
-      };
-    default:
-      return null;
-  }
-}
 
 type AccountParams = {
   account: string;
@@ -268,7 +255,20 @@ export default function BorrowActionsPage() {
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const [isToken0Selected, setIsToken0Selected] = React.useState(false);
-  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<CumulativeActionCardResult | null>(null);
+  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<AccountSummaries>([
+    {
+      assets: 0,
+      liabilities: 0,
+      lowerLiquidationThreshold: 0,
+      upperLiquidationThreshold: 0,
+    },
+    {
+      assets: 0,
+      liabilities: 0,
+      lowerLiquidationThreshold: 0,
+      upperLiquidationThreshold: 0,
+    },
+  ]);
   const navigate = useNavigate();
 
   if (!marginAccount) {
@@ -276,13 +276,13 @@ export default function BorrowActionsPage() {
     return null;
   }
 
-  const assetsInUniswapPositions: [number, number] = cumulativeActionResult
-    ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions)
-    : [0, 0];
+  // const assetsInUniswapPositions: [number, number] = cumulativeActionResult
+  //   ? sumOfAssetsUsedForUniswapPositions(cumulativeActionResult.uniswapPositions)
+  //   : [0, 0];
   const activeToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
   const inactiveToken = isToken0Selected ? marginAccount.token1 : marginAccount.token0;
   const currentAssetsPerToken = marginAccount ? sumAssetsPerToken(marginAccount.assets) : [0, 0];
-  const currentBalancesPerToken: [CumulativeBalance, CumulativeBalance] = [
+  const currentBalancesPerToken: AccountSummaries = [
     {
       assets: currentAssetsPerToken[0],
       liabilities: marginAccount.liabilities.amount0,
@@ -296,91 +296,76 @@ export default function BorrowActionsPage() {
       upperLiquidationThreshold: 0,
     },
   ];
-  const currentBalances: CumulativeBalance = currentBalancesPerToken[isToken0Selected ? 0 : 1];
-  const combinedDeltaBalances: [CumulativeBalance, CumulativeBalance] | null = cumulativeActionResult
-    ? [
-        {
-          assets:
-            (cumulativeActionResult.aloeResult?.token0RawDelta || 0) +
-            (cumulativeActionResult.aloeResult?.token0PlusDelta || 0) +
-            assetsInUniswapPositions[0],
-          liabilities: cumulativeActionResult.aloeResult?.token0DebtDelta || 0,
-          lowerLiquidationThreshold: 0,
-          upperLiquidationThreshold: 0,
-        },
-        {
-          assets:
-            (cumulativeActionResult?.aloeResult?.token1RawDelta || 0) +
-            (cumulativeActionResult.aloeResult?.token1PlusDelta || 0) +
-            assetsInUniswapPositions[1],
-          liabilities: cumulativeActionResult.aloeResult?.token1DebtDelta || 0,
-          lowerLiquidationThreshold: 0,
-          upperLiquidationThreshold: 0,
-        },
-      ]
-    : null;
-  const activeDeltaBalances: CumulativeBalance | null = combinedDeltaBalances
-    ? isToken0Selected
-      ? combinedDeltaBalances[0]
-      : combinedDeltaBalances[1]
-    : null;
+  const currentBalances: AccountSummary = currentBalancesPerToken[isToken0Selected ? 0 : 1];
+  const activeDeltaBalances: AccountSummary | null = cumulativeActionResult ? isToken0Selected
+      ? cumulativeActionResult[0]
+      : cumulativeActionResult[1] : null;
   const hypotheticalActiveAssets: number | null = activeDeltaBalances ? currentBalances.assets + activeDeltaBalances.assets : null;
   const hypotheticalActiveLiabilities: number | null = activeDeltaBalances ? currentBalances.liabilities + activeDeltaBalances.liabilities : null;
 
   function updateCumulativeActionResult(updatedActionResults: ActionCardState[]) {
-    let updatedCumulativeActionResult: CumulativeActionCardResult = {
-      aloeResult: {
-        selectedToken: null,
+    let updatedCumulativeActionResult: AccountSummaries = [
+      {
+        assets: 0,
+        liabilities: 0,
+        lowerLiquidationThreshold: 0,
+        upperLiquidationThreshold: 0,
       },
-      uniswapPositions: [],
-    };
+      {
+        assets: 0,
+        liabilities: 0,
+        lowerLiquidationThreshold: 0,
+        upperLiquidationThreshold: 0,
+      },
+    ];
     for (let actionResult of updatedActionResults) {
       const aloeResult = actionResult.aloeResult;
       const uniswapPosition = actionResult.uniswapResult?.uniswapPosition;
-      if (aloeResult) {
-        updatedCumulativeActionResult = {
-          aloeResult: {
-            selectedToken: null,
-            token0RawDelta:
-              (updatedCumulativeActionResult.aloeResult?.token0RawDelta || 0) + (aloeResult.token0RawDelta ?? 0),
-            token0DebtDelta:
-              (updatedCumulativeActionResult.aloeResult?.token0DebtDelta || 0) + (aloeResult.token0DebtDelta ?? 0),
-            token0PlusDelta:
-              (updatedCumulativeActionResult.aloeResult?.token0PlusDelta || 0) + (aloeResult.token0PlusDelta ?? 0),
-            token1RawDelta:
-              (updatedCumulativeActionResult.aloeResult?.token1RawDelta || 0) + (aloeResult.token1RawDelta ?? 0),
-            token1DebtDelta:
-              (updatedCumulativeActionResult.aloeResult?.token1DebtDelta || 0) + (aloeResult.token1DebtDelta ?? 0),
-            token1PlusDelta:
-              (updatedCumulativeActionResult.aloeResult?.token1PlusDelta || 0) + (aloeResult.token1PlusDelta ?? 0),
-          },
-          uniswapPositions: updatedCumulativeActionResult.uniswapPositions,
-        };
-      }
-      if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
-        const existingPositionIndex = updatedCumulativeActionResult.uniswapPositions.findIndex((pos) => {
-          return pos.lowerBound === uniswapPosition.lowerBound && pos.upperBound === uniswapPosition.upperBound;
-        });
-
-        if (existingPositionIndex !== -1) {
-          const existingPosition = updatedCumulativeActionResult.uniswapPositions[existingPositionIndex];
-          updatedCumulativeActionResult.uniswapPositions[existingPositionIndex] = {
-            liquidity: JSBI.BigInt(0),
-            amount0: existingPosition.amount0 + uniswapPosition.amount0,
-            amount1: existingPosition.amount1 + uniswapPosition.amount1,
-            lowerBound: existingPosition.lowerBound,
-            upperBound: existingPosition.upperBound,
-          };
-        } else {
-          updatedCumulativeActionResult = {
-            aloeResult: updatedCumulativeActionResult.aloeResult,
-            uniswapPositions: [...updatedCumulativeActionResult.uniswapPositions, uniswapPosition],
-          };
+      updatedCumulativeActionResult = [
+        {
+          assets: (updatedCumulativeActionResult ? updatedCumulativeActionResult[0].assets : 0) + (aloeResult?.token0RawDelta || 0) + (aloeResult?.token0PlusDelta || 0) + (uniswapPosition?.amount0 || 0),
+          liabilities: (updatedCumulativeActionResult ? updatedCumulativeActionResult[0].liabilities : 0) + (aloeResult?.token0DebtDelta || 0),
+          lowerLiquidationThreshold: 0,
+          upperLiquidationThreshold: 0,
+        },
+        {
+          assets: (updatedCumulativeActionResult ? updatedCumulativeActionResult[1].assets : 0) + (aloeResult?.token1RawDelta || 0) + (aloeResult?.token1PlusDelta || 0) + (uniswapPosition?.amount1 || 0),
+          liabilities: (updatedCumulativeActionResult ? updatedCumulativeActionResult[1].liabilities : 0) + (aloeResult?.token1DebtDelta || 0),
+          lowerLiquidationThreshold: 0,
+          upperLiquidationThreshold: 0,
         }
+      ];
+      console.log(currentBalances.assets, updatedCumulativeActionResult[isToken0Selected ? 0 : 1].assets)
+      if (currentBalances.assets + updatedCumulativeActionResult[isToken0Selected ? 0 : 1].assets < 0) {
+        console.log('bad');
       }
+      console.log(updatedCumulativeActionResult);
+      // if (aloeResult) {
+        
+      // }
+      // if (uniswapPosition && uniswapPosition.lowerBound != null && uniswapPosition.upperBound != null) {
+      //   const existingPositionIndex = updatedCumulativeActionResult.uniswapPositions.findIndex((pos) => {
+      //     return pos.lowerBound === uniswapPosition.lowerBound && pos.upperBound === uniswapPosition.upperBound;
+      //   });
+
+      //   if (existingPositionIndex !== -1) {
+      //     const existingPosition = updatedCumulativeActionResult.uniswapPositions[existingPositionIndex];
+      //     updatedCumulativeActionResult.uniswapPositions[existingPositionIndex] = {
+      //       liquidity: JSBI.BigInt(0),
+      //       amount0: existingPosition.amount0 + uniswapPosition.amount0,
+      //       amount1: existingPosition.amount1 + uniswapPosition.amount1,
+      //       lowerBound: existingPosition.lowerBound,
+      //       upperBound: existingPosition.upperBound,
+      //     };
+      //   } else {
+      //     updatedCumulativeActionResult = {
+      //       aloeResult: updatedCumulativeActionResult.aloeResult,
+      //       uniswapPositions: [...updatedCumulativeActionResult.uniswapPositions, uniswapPosition],
+      //     };
+      //   }
+      // }
     }
-    console.log(cumulativeActionResult);
-    console.log(updatedActionResults);
+    // console.log(cumulativeActionResult, combinedDeltaBalances);
     setCumulativeActionResult(updatedCumulativeActionResult);
   }
 
@@ -504,7 +489,7 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               Token Allocation
             </Display>
-            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} />
+            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} assets={marginAccount.assets} />
           </div>
         </div>
       </BodyWrapper>
