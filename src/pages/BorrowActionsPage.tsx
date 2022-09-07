@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
@@ -28,7 +28,7 @@ import TokenChooser from '../components/common/TokenChooser';
 import { sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
 import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
 import JSBI from 'jsbi';
-import { useContract, useProvider } from 'wagmi';
+import { useAccount, useContract, useProvider } from 'wagmi';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
@@ -195,9 +195,10 @@ const AccountStatsGrid = styled.div`
 
 export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
-  const account = params.account;
+  const accountAddressParam = params.account;
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   // const accountData = getAccount(account || '');
+  const [{ data: accountData }] = useAccount();
   const provider = useProvider();
   const marginAccountLensContract = useContract({
     addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
@@ -205,7 +206,7 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
 
-  useEffectOnce(() => {
+  useEffect(() => {
     let mounted = true;
     async function fetch(address: string) {
       const token0Address = '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a';
@@ -254,13 +255,14 @@ export default function BorrowActionsPage() {
         });
       }
     }
-    if (account) {
-      fetch(account);
+    if (accountAddressParam) {
+      fetch(accountAddressParam);
     }
     return () => {
       mounted = false;
     };
-  });
+    //TODO: temporary while we need metamask to fetch this info
+  }, [accountData?.address]);
 
   const [actionResults, setActionResults] = React.useState<Array<ActionCardState>>([]);
   const [activeActions, setActiveActions] = React.useState<Array<Action>>([]);
@@ -428,7 +430,7 @@ export default function BorrowActionsPage() {
             token0={marginAccount.token0}
             token1={marginAccount.token1}
             feeTier={marginAccount.feeTier}
-            id={account || ''}
+            id={accountAddressParam || ''}
           />
         </div>
         <GridExpandingDiv>
