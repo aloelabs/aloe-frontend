@@ -118,10 +118,10 @@ export default function BorrowAccountsPage() {
               .div(10 ** token1.decimals)
               .toNumber(),
             token0Plus: Big(assetsData[4].toString())
-              .div(10 ** token0.decimals)
+              .div(10 ** 18)
               .toNumber(),
             token1Plus: Big(assetsData[5].toString())
-              .div(10 ** token1.decimals)
+              .div(10 ** 18)
               .toNumber(),
             uni0: Big(assetsData[2].toString())
               .div(10 ** token0.decimals)
