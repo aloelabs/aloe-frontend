@@ -55,7 +55,7 @@ const SVGIconWrapper = styled.div.attrs(
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { token0, token1, previousActionCardState, onChange, onRemove } = props;
+  const { token0, token1, previousActionCardState, isCausingError, onChange, onRemove } = props;
   const dropdownOptions = FAKE_LIQUIDITY_POSITIONS.map((lp, index) => {
     return {
       label: `Lower: ${lp.tickLower} Upper: ${lp.tickUpper}`,
@@ -140,6 +140,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     <BaseActionCard 
       action={ActionID.REMOVE_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
+      isCausingError={isCausingError}
       onRemove={onRemove}
     >
       <div>

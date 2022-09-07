@@ -103,6 +103,7 @@ export type ActionCardProps = {
   token1: TokenData;
   feeTier: FeeTier;
   previousActionCardState: ActionCardState | null;
+  isCausingError: boolean;
   onRemove: () => void;
   onChange: (result: ActionCardState) => void;
 };

@@ -14,8 +14,8 @@ import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
 import { UniswapPosition } from '../data/Actions';
 
 const BINS_TO_FETCH = 500;
-const Q48 = ethers.BigNumber.from('0x1000000000000')
-const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
+export const Q48 = ethers.BigNumber.from('0x1000000000000')
+export const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
 const ONE = new Big('1.0');
 
 export interface UniswapV3PoolSlot0 {

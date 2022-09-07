@@ -26,7 +26,7 @@ type TickPrice = {
 };
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { token0, token1, feeTier, previousActionCardState, onChange, onRemove } = props;
+  const { token0, token1, feeTier, previousActionCardState, isCausingError, onChange, onRemove } = props;
 
   const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
 
@@ -311,6 +311,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     <BaseActionCard
       action={ActionID.ADD_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
+      isCausingError={isCausingError}
       onRemove={onRemove}
     >
       <div className='w-full flex justify-between items-center gap-2 mb-4'>
