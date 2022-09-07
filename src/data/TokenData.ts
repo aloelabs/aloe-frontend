@@ -42,21 +42,21 @@ const TokenDataMap = new Map<string, TokenData>([
   ],
   // USDC
   [
-    '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     {
-      address: '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       name: 'USD Coin',
       ticker: 'USDC',
       iconPath: UsdcLogo,
       decimals: 6,
     },
   ],
-  // USDC+
+  // USDC+ (Goerli)
   [
-    '0x2743e1f55b5a9b7d8ed79e21e2196de74b5f64b0',
+    '0x73F9Dd058b2fF3fC2eEE2B757642fEa4A1Ab2a29',
     {
-      address: '0x2743e1f55b5a9b7d8ed79e21e2196de74b5f64b0',
-      name: 'USD Coin+',
+      address: '0x73F9Dd058b2fF3fC2eEE2B757642fEa4A1Ab2a29',
+      name: 'Aloe II USD Coin',
       ticker: 'USDC+',
       iconPath: UsdcLogo,
       decimals: 6,
@@ -64,21 +64,21 @@ const TokenDataMap = new Map<string, TokenData>([
   ],
   // WETH
   [
-    '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
+    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     {
-      address: '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       name: 'Wrapped Ether',
       ticker: 'WETH',
       iconPath: WethLogo,
       decimals: 18,
     },
   ],
-  // WETH+
+  // WETH+ (Goerli)
   [
-    '0x1455acd023a2f40a54507db9fad9c2ce48481979',
+    '0xB50445758B4230ac29Ff8ECfFb8f8C8c29d98042',
     {
-      address: '0x1455acd023a2f40a54507db9fad9c2ce48481979',
-      name: 'Wrapped Ether+',
+      address: '0xB50445758B4230ac29Ff8ECfFb8f8C8c29d98042',
+      name: 'Aloe II Wrapped Ether',
       ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
