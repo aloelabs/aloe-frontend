@@ -5,11 +5,7 @@ import tw from 'twin.macro';
 import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { Text } from '../common/Typography';
 import { TokenData } from '../../data/TokenData';
-
-export type TokenAllocationPieChartWidgetProps = {
-  token0: TokenData;
-  token1: TokenData;
-};
+import { Assets, MarginAccount } from '../../data/MarginAccount';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -206,8 +202,14 @@ const DashedDivider = styled.div`
   }
 `;
 
+export type TokenAllocationPieChartWidgetProps = {
+  token0: TokenData;
+  token1: TokenData;
+  assets: Assets;
+};
+
 export default function TokenAllocationPieChartWidget(props: TokenAllocationPieChartWidgetProps) {
-  // const drawData = ResolveBlendPoolDrawData(props.poolData);
+  const { token0, token1, assets} = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [currentPercent, setCurrentPercent] = useState('');
 
@@ -221,95 +223,46 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     setCurrentPercent('');
   };
 
+  const totalAssets: number = Object.values(assets).reduce((prev, cur) => cur + prev);
+
   const slices: AllocationPieChartSlice[] = [
     {
       index: 0,
-      percent: 0.25,
+      percent: assets.token0Raw / totalAssets,
       color: TOKEN0_COLOR_RAW,
       category: 'Raw',
     },
     {
       index: 1,
-      percent: 0.25,
+      percent: assets.token0Plus / totalAssets,
       color: TOKEN0_COLOR_INTEREST_BEARING,
       category: 'Interest Bearing',
     },
     {
       index: 2,
-      percent: 0.25,
+      percent: assets.uni0 / totalAssets,
       color: TOKEN0_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 3,
-      percent: 0.15,
+      percent: assets.uni1 / totalAssets,
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 4,
-      percent: 0.05,
+      percent: assets.token1Plus / totalAssets,
       color: TOKEN1_COLOR_INTEREST_BEARING,
       category: 'Interest Bearing',
     },
     {
       index: 5,
-      percent: 0.05,
+      percent: assets.token1Raw / totalAssets,
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
     },
   ];
-  // if (drawData && poolStats) {
-  //   const silo0_1 = poolStats.inventory0.silo.mul(poolStats.token1OverToken0);
-  //   const float0_1 = poolStats.inventory0.float.mul(poolStats.token1OverToken0);
-  //   const uni0_1 = poolStats.inventory0.uniswap.mul(poolStats.token1OverToken0);
-  //   const uni1 = poolStats.inventory1.uniswap;
-  //   const float1 = poolStats.inventory1.float;
-  //   const silo1 = poolStats.inventory1.silo;
-
-  //   if (poolStats.tvl_1.gt(0)) {
-  //     slices[0] = {
-  //       index: 0,
-  //       percent: float0_1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN0_COLOR_FLOAT,
-  //       category: 'Float',
-  //     };
-  //     slices[1] = {
-  //       index: 1,
-  //       percent: silo0_1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN0_COLOR_SILO,
-  //       category: drawData.silo0Label,
-  //       // metric: '2% APY',
-  //     };
-  //     slices[2] = {
-  //       index: 2,
-  //       percent: uni0_1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN0_COLOR_UNISWAP,
-  //       category: 'Uniswap',
-  //       // metric: '1% APR',
-  //     };
-  //     slices[3] = {
-  //       index: 3,
-  //       percent: uni1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN1_COLOR_UNISWAP,
-  //       category: 'Uniswap',
-  //       // metric: '1% APR',
-  //     };
-  //     slices[4] = {
-  //       index: 4,
-  //       percent: silo1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN1_COLOR_SILO,
-  //       category: drawData.silo1Label,
-  //       // metric: '2% APY',
-  //     };
-  //     slices[5] = {
-  //       index: 5,
-  //       percent: float1.div(poolStats.tvl_1).toNumber(),
-  //       color: TOKEN1_COLOR_FLOAT,
-  //       category: 'Float',
-  //     };
-  //   }
-  // }
 
   let cumulativePercent = 0;
   const paths: PieChartSlicePath[] = slices.map((slice) => {
@@ -334,28 +287,8 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     };
   });
 
-  // const combinedSiloLabelA =
-  //   drawData.silo0Label === drawData.silo1Label
-  //     ? ` and ${drawData.silo0Label}`
-  //     : `, ${drawData.silo0Label}, and ${drawData.silo1Label}`;
-  // const combinedSiloLabelB = drawData.silo0Label.concat(
-  //   drawData.silo0Label === drawData.silo1Label
-  //     ? ''
-  //     : ` and ${drawData.silo1Label}`
-  // );
-
   const firstHalfOfSlices = slices.slice(0, slices.length / 2).reverse();
   const secondHalfOfSlices = slices.slice(slices.length / 2);
-
-  // const tooltipContent = (
-  //   <>
-  //     As prices shift, tokens are moved between Uniswap{combinedSiloLabelA} to
-  //     keep liquidity in range. Blend replicates Uniswap V2 payoffs with extreme
-  //     capital efficiency, so most tokens can earn yield in {combinedSiloLabelB}.
-  //     Value marked as {<em>"Float"</em>} helps facilitate gas-efficient
-  //     withdrawals.
-  //   </>
-  // );
 
   return (
     <div className='w-full flex flex-col items-start justify-start mb-8'>
@@ -389,7 +322,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
                   : ''
               }
             >
-              {props.token0?.ticker || ''}
+              {token0?.ticker || ''}
             </TokenLabel>
             <div className='w-64 flex flex-col'>
               {firstHalfOfSlices.map((slice, index) => {
@@ -439,7 +372,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
                   : ''
               }
             >
-              {props.token1?.ticker || ''}
+              {token1?.ticker || ''}
             </TokenLabel>
             <div className='w-64 flex flex-col'>
               {secondHalfOfSlices.map((slice, index) => {

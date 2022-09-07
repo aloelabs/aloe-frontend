@@ -231,7 +231,6 @@ export default function BorrowActionsPage() {
   const [actionModalOpen, setActionModalOpen] = React.useState(false);
   const [isToken0Selected, setIsToken0Selected] = React.useState(false);
   const [sqrtPriceX96, setSqrtPriceX96] = React.useState<Big | null>(null);
-  const [cumulativeActionResult, setCumulativeActionResult] = React.useState<CumulativeActionCardResult | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider();
@@ -515,7 +514,7 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               Token Allocation
             </Display>
-            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} />
+            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} assets={marginAccount.assets} />
           </div>
         </div>
       </BodyWrapper>
