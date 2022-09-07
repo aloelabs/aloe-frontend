@@ -29,7 +29,7 @@ const MarginAccountsContainner = styled.div`
 async function getMarginAccountsForUser(userAddress: string, provider: ethers.providers.Provider): Promise<string[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
-    '0x9F6d4681fD8c557e5dC75b6713078233e98CA351',
+    '0x9F6d4681fD8c557e5dC75b6713078233e98CA351', // TODO replace with constant for FACTORY address
     ['0x2e4e957c1260adb001f2d118cbfb21f455e78760f52247e8b9490521ac2254aa'],
     true,
     'api-goerli'
