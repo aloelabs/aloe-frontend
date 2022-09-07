@@ -1,42 +1,35 @@
-import React, { useState } from 'react';
-import { CloseableModal } from '../common/Modal';
+import { useState } from 'react';
+import { chain, useConnect, useDisconnect } from 'wagmi';
 
-import { useConnect } from 'wagmi';
+import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
-import {
-  FilledStylizedButton,
-  OutlinedGradientRoundedButton,
-} from '../common/Buttons';
+import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
 import { Text } from '../common/Typography';
 
 export type ConnectWalletButtonProps = {
-  accountData: any;
-  disconnect: () => void;
+  address?: string;
+  ensName?: string;
   buttonStyle?: 'secondary' | 'tertiary';
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
-  const { accountData, disconnect } = props;
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [{ data: connectData, error: connectError }, connect] = useConnect();
+  // MARK: component props
+  const { address, ensName, buttonStyle } = props;
+  const formattedAddr = address ? formatAddress(address) : '';
+  const buttonText = address ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 
-  const ensName: string | undefined = accountData?.ens?.name;
-  const formattedAddr = accountData ? formatAddress(accountData.address) : '';
-  const buttonText = accountData
-    ? ensName
-      ? ensName
-      : formattedAddr
-    : 'Connect Wallet';
+  // MARK: component state
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+
+  // MARK: wagmi hooks
+  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: chain.goerli.id });
+  const { disconnect } = useDisconnect();
 
   return (
     <div>
       {!props.buttonStyle && (
-        <OutlinedGradientRoundedButton
-          name={buttonText}
-          size='S'
-          onClick={() => setModalOpen(true)}
-        >
+        <OutlinedGradientRoundedButton name={buttonText} size='S' onClick={() => setModalOpen(true)}>
           {buttonText}
         </OutlinedGradientRoundedButton>
       )}
@@ -63,34 +56,17 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           {buttonText}
         </FilledStylizedButton>
       )}
-      <CloseableModal
-        open={modalOpen}
-        setOpen={setModalOpen}
-        title={'Connect Wallet'}
-      >
+      <CloseableModal open={modalOpen} setOpen={setModalOpen} title={'Connect Wallet'}>
         <div className='w-full'>
-          {accountData ? (
+          {address ? (
             // We have an account connected
             <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
-              {/*<img src={accountData.ens?.avatar || undefined} alt="ENS Avatar" />*/}
               <div className='flex flex-col items-start justify-start w-full oveflow-hidden'>
-                <Text
-                  size='M'
-                  className='w-full overflow-hidden text-ellipsis'
-                  title={accountData.address}
-                >
-                  {accountData.ens?.name
-                    ? `${accountData.ens?.name} (${formatAddress(
-                        accountData.address
-                      )})`
-                    : accountData.address}
+                <Text size='M' className='w-full overflow-hidden text-ellipsis' title={address}>
+                  {ensName ? `${ensName} (${formattedAddr})` : address}
                 </Text>
-                <Text
-                  size='S'
-                  color='rgb(194, 209, 221)'
-                  className='w-full overflow-hidden text-ellipsis'
-                >
-                  Connected to {accountData.connector?.name}
+                <Text size='S' color='rgb(194, 209, 221)' className='w-full overflow-hidden text-ellipsis'>
+                  Connected to {connectionData?.connector?.name}
                 </Text>
               </div>
               <FilledStylizedButton
@@ -99,7 +75,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                 backgroundColor='rgba(26, 41, 52, 1)'
                 color={'rgba(255, 255, 255, 1)'}
                 fillWidth={true}
-                onClick={disconnect}
+                onClick={() => disconnect()}
               >
                 Disconnect
               </FilledStylizedButton>
@@ -128,16 +104,9 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                 </a>
                 .
               </Text>
-              {connectData.connectors.map((connector) => (
-                <div
-                  key={connector.id}
-                  className=' py-2 w-full flex flex-row items-center justify-between'
-                >
-                  <img
-                    src={mapConnectorNameToIcon(connector.name)}
-                    alt=''
-                    className='w-10 h-10 mr-4'
-                  />
+              {connectors.map((connector) => (
+                <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
+                  <img src={mapConnectorNameToIcon(connector.name)} alt='' className='w-10 h-10 mr-4' />
                   <FilledStylizedButton
                     name='Disconnect'
                     size='M'
@@ -145,7 +114,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                     color={'rgba(255, 255, 255, 1)'}
                     fillWidth={true}
                     disabled={!connector.ready}
-                    onClick={() => connect(connector)}
+                    onClick={() => connect({ connector })}
                   >
                     {connector.name}
                     {!connector.ready && ' (unsupported)'}
@@ -154,9 +123,9 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
               ))}
             </div>
           )}
-          {connectError && (
+          {error && (
             <Text size='S' color='rgb(236, 45, 91)'>
-              {connectError?.message ?? 'Failed to connect'}
+              {error?.message ?? 'Failed to connect'}
             </Text>
           )}
         </div>

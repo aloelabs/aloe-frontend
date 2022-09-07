@@ -74,18 +74,18 @@ function findNearestElementByTime<T extends Timestamp>(arr: T[], timestamp: stri
 export type PoolPositionWidgetProps = {
   walletIsConnected: boolean;
   poolData: BlendPoolMarkers;
-  offChainPoolStats: OffChainPoolStats | undefined;
-  accountData: AccountData | undefined;
+  offChainPoolStats?: OffChainPoolStats;
+  address?: string;
 };
 
 export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
 
-  const { walletIsConnected, poolData, offChainPoolStats, accountData } = props;
+  const { walletIsConnected, poolData, offChainPoolStats, address } = props;
   const { poolStats } = useContext(BlendPoolContext);
 
   // const [{ data: accountData }] = useAccount();
-  const [{ data: accountShareBalance }] = useBalance({
-    addressOrName: accountData?.address,
+  const { data: accountShareBalance } = useBalance({
+    addressOrName: address,
     token: poolData.poolAddress,
     watch: false,
   });
@@ -95,10 +95,10 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
   useEffect(() => {
     let mounted = true;
 
-    async function fetchAccountStats(offChainPoolStats: OffChainPoolStats, poolStats: BlendPoolStats, accountShareBalance: any, accountData: any) {
+    async function fetchAccountStats(offChainPoolStats: OffChainPoolStats, poolStats: BlendPoolStats, accountShareBalance: any, address: string) {
       const tvl = new Big(offChainPoolStats.total_value_locked);
       const accountValue = tvl.mul(toBig(accountShareBalance.value)).div(poolStats.outstandingShares);
-      const accountAddress = accountData.address.slice(2).toLowerCase();
+      const accountAddress = address.slice(2).toLowerCase();
 
       const getEvents = makeEtherscanRequest(
         BLEND_FACTORY_CREATION_BLOCK,
@@ -193,13 +193,13 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
         }
       ));
     }
-    if (walletIsConnected && offChainPoolStats && poolStats && accountShareBalance && accountData && !accountStats) {
-      fetchAccountStats(offChainPoolStats, poolStats, accountShareBalance, accountData);
+    if (walletIsConnected && offChainPoolStats && poolStats && accountShareBalance && address && !accountStats) {
+      fetchAccountStats(offChainPoolStats, poolStats, accountShareBalance, address);
     }
     return () => {
       mounted = false;
     }
-  }, [accountData, accountShareBalance, accountStats, offChainPoolStats, poolData, poolStats, walletIsConnected]);
+  }, [address, accountShareBalance, accountStats, offChainPoolStats, poolData, poolStats, walletIsConnected]);
   
   if (!walletIsConnected) {
     return null;
