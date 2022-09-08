@@ -16,21 +16,29 @@ export type AccountStatsCardProps = {
   label: string;
   value: string;
   hypothetical?: string;
+  showHypothetical?: boolean;
   className?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, hypothetical, className } = props;
+  const { label, value, hypothetical, showHypothetical, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
-      <Text size='S' weight='medium' color={SECONDARY_COLOR}>
-        {label}
-      </Text>
-      <Text size='L' weight='medium' className={hypothetical ? 'line-through' : ''}>
-        {value}
-      </Text>
-      {hypothetical && (
-        <Text size='L' weight='medium'>{hypothetical}</Text>
+      <div className='flex'>
+        <Text size='S' weight='medium' color={SECONDARY_COLOR}>
+          {label}
+        </Text>
+        {showHypothetical && (
+          <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>*</Text>
+        )}
+      </div>
+      {!showHypothetical && (
+        <Text size='L' weight='medium'>
+          {value}
+        </Text>
+      )}
+      {showHypothetical && (
+        <Text size='L' weight='medium'>{hypothetical ?? value}</Text>
       )}
     </AccountStatsCardWrapper>
   );

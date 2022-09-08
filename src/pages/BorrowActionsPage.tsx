@@ -33,10 +33,10 @@ import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
 
 // export type MarginAccountBalances = {
 //   assets: number;
@@ -198,23 +198,63 @@ const AccountStatsGrid = styled.div`
 
 const q96 = new Big(Q96.toString());
 
-function isSolvent(assets: Assets, liabilities: Liabilities, sqrtPriceX96: Big, token0: TokenData, token1: TokenData): boolean {
+function isSolvent(
+  assets: Assets,
+  liabilities: Liabilities,
+  sqrtPriceX96: Big,
+  token0: TokenData,
+  token1: TokenData
+): boolean {
   const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(q96);
 
   const assets0 = assets.token0Raw + assets.token0Plus + assets.uni0;
   const assets1 = assets.token1Raw + assets.token1Plus + assets.uni1;
 
-  const assets_1 = assets1 + priceX96.mul(assets0).mul(10 ** token0.decimals).div(q96).div(10 ** token1.decimals).toNumber();
-  const liabilities_1 = liabilities.amount1 + priceX96.mul(liabilities.amount0).mul(10 ** token0.decimals).div(q96).div(10 ** token1.decimals).toNumber();
+  const assets_1 =
+    assets1 +
+    priceX96
+      .mul(assets0)
+      .mul(10 ** token0.decimals)
+      .div(q96)
+      .div(10 ** token1.decimals)
+      .toNumber();
+  const liabilities_1 =
+    liabilities.amount1 +
+    priceX96
+      .mul(liabilities.amount0)
+      .mul(10 ** token0.decimals)
+      .div(q96)
+      .div(10 ** token1.decimals)
+      .toNumber();
 
   return assets_1 >= 1.08 * liabilities_1;
 }
 
-function inTermsOfEachToken(amount0: number, amount1: number, sqrtPriceX96: Big, token0: TokenData, token1: TokenData): [number, number] {
+function inTermsOfEachToken(
+  amount0: number,
+  amount1: number,
+  sqrtPriceX96: Big,
+  token0: TokenData,
+  token1: TokenData
+): [number, number] {
   const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(q96);
 
-  const inTermsOfToken1 = amount1 + priceX96.mul(amount0).mul(10 ** token0.decimals).div(q96).div(10 ** token1.decimals).toNumber();
-  const inTermsOfToken0 = amount0 + q96.mul(amount1).mul(10 ** token1.decimals).div(priceX96).div(10 ** token0.decimals).toNumber();
+  const inTermsOfToken1 =
+    amount1 +
+    priceX96
+      .mul(amount0)
+      .mul(10 ** token0.decimals)
+      .div(q96)
+      .div(10 ** token1.decimals)
+      .toNumber();
+  const inTermsOfToken0 =
+    amount0 +
+    q96
+      .mul(amount1)
+      .mul(10 ** token1.decimals)
+      .div(priceX96)
+      .div(10 ** token0.decimals)
+      .toNumber();
 
   return [inTermsOfToken0, inTermsOfToken1];
 }
@@ -225,12 +265,13 @@ export default function BorrowActionsPage() {
   const accountAddressParam = params.account;
 
   // MARK: component state
+  const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  const [actionResults, setActionResults] = React.useState<ActionCardState[]>([]);
-  const [activeActions, setActiveActions] = React.useState<Action[]>([]);
-  const [actionModalOpen, setActionModalOpen] = React.useState(false);
-  const [isToken0Selected, setIsToken0Selected] = React.useState(false);
-  const [sqrtPriceX96, setSqrtPriceX96] = React.useState<Big | null>(null);
+  const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
+  const [activeActions, setActiveActions] = useState<Action[]>([]);
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [isToken0Selected, setIsToken0Selected] = useState(false);
+  const [sqrtPriceX96, setSqrtPriceX96] = useState<Big | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider();
@@ -259,10 +300,7 @@ export default function BorrowActionsPage() {
 
       const uniswapPool = results[2];
       const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-      const [feeTier, slot0] = await Promise.all([
-        uniswapPoolContract.fee(),
-        uniswapPoolContract.slot0(),
-      ]);
+      const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
 
       const token0 = GetTokenData(results[0] as string);
       const token1 = GetTokenData(results[1] as string);
@@ -333,9 +371,9 @@ export default function BorrowActionsPage() {
 
   for (let i = 0; i < actionResults.length; i += 1) {
     const actionResult = actionResults[i];
-  
+
     const assetsTemp = { ...assetsF };
-    const liabilitiesTemp = {...liabilitiesF };
+    const liabilitiesTemp = { ...liabilitiesF };
 
     // update assets
     assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
@@ -355,7 +393,10 @@ export default function BorrowActionsPage() {
       break;
     }
     // if liabilities * 1.08 >= assets, we have an issue! // TODO fetch liquidation factor dynamically
-    if (sqrtPriceX96 && !isSolvent(assetsTemp, liabilitiesTemp, sqrtPriceX96, marginAccount.token0, marginAccount.token1)) {
+    if (
+      sqrtPriceX96 &&
+      !isSolvent(assetsTemp, liabilitiesTemp, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
+    ) {
       problematicActionIdx = i;
       break;
     }
@@ -371,28 +412,39 @@ export default function BorrowActionsPage() {
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
+  const hypotheticalChangesToShow = assetsISum0 !== assetsFSum0 || assetsISum1 !== assetsFSum1;
 
-  const [assetsIInTermsOf0, assetsIInTermsOf1] = sqrtPriceX96 ? inTermsOfEachToken(assetsISum0, assetsISum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1) : [0, 0];
-  const [assetsFInTermsOf0, assetsFInTermsOf1] = sqrtPriceX96 ? inTermsOfEachToken(assetsFSum0, assetsFSum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1) : [0, 0];
-  const [liabilitiesIInTermsOf0, liabilitiesIInTermsOf1] = sqrtPriceX96 ? inTermsOfEachToken(
-    liabilitiesI.amount0,
-    liabilitiesI.amount1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  ) : [0, 0];
-  const [liabilitiesFInTermsOf0, liabilitiesFInTermsOf1] = sqrtPriceX96 ? inTermsOfEachToken(
-    liabilitiesF.amount0,
-    liabilitiesF.amount1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  ) : [0, 0];
+  const [assetsIInTermsOf0, assetsIInTermsOf1] = sqrtPriceX96
+    ? inTermsOfEachToken(assetsISum0, assetsISum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
+    : [0, 0];
+  const [assetsFInTermsOf0, assetsFInTermsOf1] = sqrtPriceX96
+    ? inTermsOfEachToken(assetsFSum0, assetsFSum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
+    : [0, 0];
+  const [liabilitiesIInTermsOf0, liabilitiesIInTermsOf1] = sqrtPriceX96
+    ? inTermsOfEachToken(
+        liabilitiesI.amount0,
+        liabilitiesI.amount1,
+        sqrtPriceX96,
+        marginAccount.token0,
+        marginAccount.token1
+      )
+    : [0, 0];
+  const [liabilitiesFInTermsOf0, liabilitiesFInTermsOf1] = sqrtPriceX96
+    ? inTermsOfEachToken(
+        liabilitiesF.amount0,
+        liabilitiesF.amount1,
+        sqrtPriceX96,
+        marginAccount.token0,
+        marginAccount.token1
+      )
+    : [0, 0];
 
   const [lowerLiquidationThreshold, upperLiquidationThreshold] = [0, 0]; // TODO
 
   // MARK: Stuff to make display logic easier
-  const [selectedToken, unselectedToken] = isToken0Selected ? [marginAccount.token0, marginAccount.token1] : [marginAccount.token1, marginAccount.token0];
+  const [selectedToken, unselectedToken] = isToken0Selected
+    ? [marginAccount.token0, marginAccount.token1]
+    : [marginAccount.token1, marginAccount.token0];
   const shouldDisplayHypotheticals = actionResults.length > 0;
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
@@ -476,31 +528,51 @@ export default function BorrowActionsPage() {
                 isToken0Selected={isToken0Selected}
                 setIsToken0Selected={setIsToken0Selected}
               />
+              <div className='ml-auto'>
+                {hypotheticalChangesToShow && (
+                  <HypotheticalToggleButton
+                    showHypothetical={isShowingHypothetical}
+                    setShowHypothetical={setIsShowingHypothetical}
+                  />
+                )}
+              </div>
             </div>
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
                 value={`${isToken0Selected ? assetsIInTermsOf0 : assetsIInTermsOf1} ${selectedToken.ticker || ''}`}
-                hypothetical={shouldDisplayHypotheticals ? `${isToken0Selected ? assetsFInTermsOf0 : assetsFInTermsOf1} ${selectedToken.ticker || ''}` : undefined}
+                hypothetical={
+                  shouldDisplayHypotheticals
+                    ? `${isToken0Selected ? assetsFInTermsOf0 : assetsFInTermsOf1} ${selectedToken.ticker || ''}`
+                    : undefined
+                }
+                showHypothetical={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Liabilities'
-                value={`${isToken0Selected ? liabilitiesIInTermsOf0 : liabilitiesIInTermsOf1} ${selectedToken.ticker || ''}`}
-                hypothetical={shouldDisplayHypotheticals ? `${isToken0Selected ? liabilitiesFInTermsOf0 : liabilitiesFInTermsOf1} ${selectedToken.ticker || ''}` : undefined}
+                value={`${isToken0Selected ? liabilitiesIInTermsOf0 : liabilitiesIInTermsOf1} ${
+                  selectedToken.ticker || ''
+                }`}
+                hypothetical={
+                  shouldDisplayHypotheticals
+                    ? `${isToken0Selected ? liabilitiesFInTermsOf0 : liabilitiesFInTermsOf1} ${
+                        selectedToken.ticker || ''
+                      }`
+                    : undefined
+                }
+                showHypothetical={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
-                value={`${lowerLiquidationThreshold} ${selectedToken?.ticker || ''}/${
-                  unselectedToken?.ticker || ''
-                }`}
+                value={`${lowerLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
                 hypothetical={undefined}
+                showHypothetical={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Upper Liquidation Threshold'
-                value={`${upperLiquidationThreshold} ${selectedToken?.ticker || ''}/${
-                  unselectedToken?.ticker || ''
-                }`}
+                value={`${upperLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
                 hypothetical={undefined}
+                showHypothetical={isShowingHypothetical}
               />
             </AccountStatsGrid>
           </div>
@@ -514,7 +586,11 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               Token Allocation
             </Display>
-            <TokenAllocationPieChartWidget token0={marginAccount.token0} token1={marginAccount.token1} assets={marginAccount.assets} />
+            <TokenAllocationPieChartWidget
+              token0={marginAccount.token0}
+              token1={marginAccount.token1}
+              assets={marginAccount.assets}
+            />
           </div>
         </div>
       </BodyWrapper>
