@@ -1,85 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import Big from 'big.js';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { useContract, useProvider } from 'wagmi';
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
+import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
+import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
+import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
+import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
+import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
+import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import AppPage from '../components/common/AppPage';
 import { PreviousPageButton } from '../components/common/Buttons';
-import { Display, Text } from '../components/common/Typography';
-import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { FullscreenModal } from '../components/common/Modal';
+import TokenChooser from '../components/common/TokenChooser';
+import { Display, Text } from '../components/common/Typography';
+import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
   ActionCardState,
   ActionProvider,
   ActionProviders,
   ActionTemplates,
-  CumulativeActionCardResult,
+  calculateHypotheticalState,
   getNameOfAction,
 } from '../data/Actions';
-import { FeeTier, NumericFeeTierToEnum } from '../data/FeeTier';
-import { GetTokenData, TokenData } from '../data/TokenData';
-import { useNavigate, useParams } from 'react-router-dom';
-import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
-import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
-import PnLGraph from '../components/graph/PnLGraph';
-import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
-import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
-import TokenChooser from '../components/common/TokenChooser';
-import { Q96, sumOfAssetsUsedForUniswapPositions } from '../util/Uniswap';
-import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
-import JSBI from 'jsbi';
-import { useAccount, useContract, useProvider } from 'wagmi';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { Assets, Liabilities, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
-import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
-
-// export type MarginAccountBalances = {
-//   assets: number;
-//   liabilities: number;
-//   lowerLiquidationThreshold: number;
-//   upperLiquidationThreshold: number;
-// }
-
-// export type MarginAccount = {
-//   token0: MarginAccountBalances;
-//   token1: MarginAccountBalances;
-// }
-
-export type CumulativeBalance = {
-  assets: number;
-  liabilities: number;
-  lowerLiquidationThreshold: number;
-  upperLiquidationThreshold: number;
-};
-
-// export type CumulativeBalances = {
-//   token0: CumulativeBalance;
-//   token1: CumulativeBalance;
-// }
+import { BIGQ96 } from '../data/constants/Values';
+import { fetchMarginAccount, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
+import { TokenData } from '../data/TokenData';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
-
-function getAccount(account: string) {
-  switch (account) {
-    case '1234':
-      return {
-        token0: GetTokenData('0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'),
-        token1: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-        feeTier: FeeTier.ZERO_ZERO_FIVE,
-      };
-    default:
-      return null;
-  }
-}
-
-type AccountParams = {
-  account: string;
-};
 
 const BodyWrapper = styled.div`
   display: grid;
@@ -196,40 +150,6 @@ const AccountStatsGrid = styled.div`
   gap: 16px;
 `;
 
-const q96 = new Big(Q96.toString());
-
-function isSolvent(
-  assets: Assets,
-  liabilities: Liabilities,
-  sqrtPriceX96: Big,
-  token0: TokenData,
-  token1: TokenData
-): boolean {
-  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(q96);
-
-  const assets0 = assets.token0Raw + assets.token0Plus + assets.uni0;
-  const assets1 = assets.token1Raw + assets.token1Plus + assets.uni1;
-
-  const assets_1 =
-    assets1 +
-    priceX96
-      .mul(assets0)
-      .mul(10 ** token0.decimals)
-      .div(q96)
-      .div(10 ** token1.decimals)
-      .toNumber();
-  const liabilities_1 =
-    liabilities.amount1 +
-    priceX96
-      .mul(liabilities.amount0)
-      .mul(10 ** token0.decimals)
-      .div(q96)
-      .div(10 ** token1.decimals)
-      .toNumber();
-
-  return assets_1 >= 1.05 * liabilities_1;
-}
-
 function inTermsOfEachToken(
   amount0: number,
   amount1: number,
@@ -237,20 +157,19 @@ function inTermsOfEachToken(
   token0: TokenData,
   token1: TokenData
 ): [number, number] {
-  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(q96);
+  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(BIGQ96);
 
   const inTermsOfToken1 =
     amount1 +
     priceX96
       .mul(amount0)
       .mul(10 ** token0.decimals)
-      .div(q96)
+      .div(BIGQ96)
       .div(10 ** token1.decimals)
       .toNumber();
   const inTermsOfToken0 =
     amount0 +
-    q96
-      .mul(amount1)
+    BIGQ96.mul(amount1)
       .mul(10 ** token1.decimals)
       .div(priceX96)
       .div(10 ** token0.decimals)
@@ -258,6 +177,10 @@ function inTermsOfEachToken(
 
   return [inTermsOfToken0, inTermsOfToken1];
 }
+
+type AccountParams = {
+  account: string;
+};
 
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
@@ -271,12 +194,9 @@ export default function BorrowActionsPage() {
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [isToken0Selected, setIsToken0Selected] = useState(false);
-  const [sqrtPriceX96, setSqrtPriceX96] = useState<Big | null>(null);
-  const [kitty, setKitty] = useState<[TokenData, TokenData] | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider();
-  // const { address } = useAccount();
   const marginAccountContract = useContract({
     addressOrName: accountAddressParam ?? '', // TODO better optional resolution
     contractInterface: MarginAccountABI,
@@ -291,68 +211,14 @@ export default function BorrowActionsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch(marginAccountAddress: string) {
-      const results = await Promise.all([
-        marginAccountContract.TOKEN0(),
-        marginAccountContract.TOKEN1(),
-        marginAccountContract.KITTY0(),
-        marginAccountContract.KITTY1(),
-        marginAccountContract.UNISWAP_POOL(),
-        marginAccountLensContract.getAssets(marginAccountAddress),
-        await marginAccountLensContract.getLiabilities(marginAccountAddress),
-      ]);
-
-      const uniswapPool = results[4];
-      const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-      const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
-
-      console.log(results[2]);
-
-      const token0 = GetTokenData(results[0] as string);
-      const token1 = GetTokenData(results[1] as string);
-      const kitty0 = GetTokenData(results[2] as string);
-      const kitty1 = GetTokenData(results[3] as string);
-      const assetsData = results[5] as BigNumber[];
-      const liabilitiesData = results[6] as BigNumber[];
-
-      const assets: Assets = {
-        token0Raw: Big(assetsData[0].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Raw: Big(assetsData[1].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        token0Plus: Big(assetsData[2].toString())
-          .div(10 ** 18)
-          .toNumber(),
-        token1Plus: Big(assetsData[3].toString())
-          .div(10 ** 18)
-          .toNumber(),
-        uni0: Big(assetsData[4].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        uni1: Big(assetsData[5].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
-      const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData[0].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        amount1: Big(liabilitiesData[1].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
+      const fetchedMarginAccount = await fetchMarginAccount(
+        marginAccountContract,
+        marginAccountLensContract,
+        provider,
+        marginAccountAddress
+      );
       if (mounted) {
-        setMarginAccount({
-          address: marginAccountAddress,
-          token0: token0,
-          token1: token1,
-          feeTier: NumericFeeTierToEnum(feeTier),
-          assets: assets,
-          liabilities: liabilities,
-        });
-        setSqrtPriceX96(new Big(slot0.sqrtPriceX96.toString()));
-        setKitty([kitty0, kitty1])
+        setMarginAccount(fetchedMarginAccount);
       }
     }
     if (accountAddressParam) {
@@ -368,51 +234,22 @@ export default function BorrowActionsPage() {
     return null;
   }
 
+  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
   // assets and liabilities before adding any hypothetical actions
   const assetsI = marginAccount.assets;
   const liabilitiesI = marginAccount.liabilities;
 
   // assets and liabilities after adding hypothetical actions
-  let assetsF = { ...assetsI };
-  let liabilitiesF = { ...liabilitiesI };
-  let problematicActionIdx: number | null = null;
 
-  for (let i = 0; i < actionResults.length; i += 1) {
-    const actionResult = actionResults[i];
+  // let assetsF = { ...assetsI };
+  // let liabilitiesF = { ...liabilitiesI };
+  // let problematicActionIdx: number | null = null;
 
-    const assetsTemp = { ...assetsF };
-    const liabilitiesTemp = { ...liabilitiesF };
-
-    // update assets
-    assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
-    assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;
-    assetsTemp.token0Plus += actionResult.aloeResult?.token0PlusDelta ?? 0;
-    assetsTemp.token1Plus += actionResult.aloeResult?.token1PlusDelta ?? 0;
-    assetsTemp.uni0 += actionResult.uniswapResult?.uniswapPosition.amount0 ?? 0;
-    assetsTemp.uni1 += actionResult.uniswapResult?.uniswapPosition.amount1 ?? 0;
-
-    // update liabilities
-    liabilitiesTemp.amount0 += actionResult.aloeResult?.token0DebtDelta ?? 0;
-    liabilitiesTemp.amount1 += actionResult.aloeResult?.token1DebtDelta ?? 0;
-
-    // if any assets or liabilities are < 0, we have an issue!
-    if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
-      problematicActionIdx = i;
-      break;
-    }
-    // if liabilities * 1.08 >= assets, we have an issue! // TODO fetch liquidation factor dynamically
-    if (
-      sqrtPriceX96 &&
-      !isSolvent(assetsTemp, liabilitiesTemp, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
-    ) {
-      problematicActionIdx = i;
-      break;
-    }
-
-    // otherwise continue accumulating
-    assetsF = assetsTemp;
-    liabilitiesF = liabilitiesTemp;
-  }
+  const { assetsF, liabilitiesF, problematicActionIdx } = calculateHypotheticalState(
+    assetsI,
+    liabilitiesI,
+    actionResults
+  );
 
   console.log(assetsF);
   console.log(liabilitiesF);
@@ -422,30 +259,34 @@ export default function BorrowActionsPage() {
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
   const hypotheticalChangesToShow = actionResults.length > 0;
 
-  const [assetsIInTermsOf0, assetsIInTermsOf1] = sqrtPriceX96
-    ? inTermsOfEachToken(assetsISum0, assetsISum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
-    : [0, 0];
-  const [assetsFInTermsOf0, assetsFInTermsOf1] = sqrtPriceX96
-    ? inTermsOfEachToken(assetsFSum0, assetsFSum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
-    : [0, 0];
-  const [liabilitiesIInTermsOf0, liabilitiesIInTermsOf1] = sqrtPriceX96
-    ? inTermsOfEachToken(
-        liabilitiesI.amount0,
-        liabilitiesI.amount1,
-        sqrtPriceX96,
-        marginAccount.token0,
-        marginAccount.token1
-      )
-    : [0, 0];
-  const [liabilitiesFInTermsOf0, liabilitiesFInTermsOf1] = sqrtPriceX96
-    ? inTermsOfEachToken(
-        liabilitiesF.amount0,
-        liabilitiesF.amount1,
-        sqrtPriceX96,
-        marginAccount.token0,
-        marginAccount.token1
-      )
-    : [0, 0];
+  const [assetsIInTermsOf0, assetsIInTermsOf1] = inTermsOfEachToken(
+    assetsISum0,
+    assetsISum1,
+    sqrtPriceX96,
+    marginAccount.token0,
+    marginAccount.token1
+  );
+  const [assetsFInTermsOf0, assetsFInTermsOf1] = inTermsOfEachToken(
+    assetsFSum0,
+    assetsFSum1,
+    sqrtPriceX96,
+    marginAccount.token0,
+    marginAccount.token1
+  );
+  const [liabilitiesIInTermsOf0, liabilitiesIInTermsOf1] = inTermsOfEachToken(
+    liabilitiesI.amount0,
+    liabilitiesI.amount1,
+    sqrtPriceX96,
+    marginAccount.token0,
+    marginAccount.token1
+  );
+  const [liabilitiesFInTermsOf0, liabilitiesFInTermsOf1] = inTermsOfEachToken(
+    liabilitiesF.amount0,
+    liabilitiesF.amount1,
+    sqrtPriceX96,
+    marginAccount.token0,
+    marginAccount.token1
+  );
 
   const [lowerLiquidationThreshold, upperLiquidationThreshold] = [0, 0]; // TODO
 
@@ -508,8 +349,8 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             token0={marginAccount.token0}
             token1={marginAccount.token1}
-            kitty0={kitty?.[0] ?? marginAccount.token0}
-            kitty1={kitty?.[1] ?? marginAccount.token1}
+            kitty0={marginAccount.kitty0}
+            kitty1={marginAccount.kitty1}
             feeTier={marginAccount.feeTier}
             activeActions={activeActions}
             actionResults={actionResults}

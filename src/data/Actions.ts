@@ -12,6 +12,7 @@ import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
 import JSBI from 'jsbi';
+import { Assets, Liabilities } from './MarginAccount';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -286,4 +287,51 @@ export function parseSelectedToken(
 ): SelectedToken | null {
   if (!value) return null;
   return value as SelectedToken;
+}
+
+export function calculateHypotheticalState(
+  assetsI: Assets,
+  liabilitiesI: Liabilities,
+  actionResults: ActionCardState[],
+): {
+  assetsF: Assets,
+  liabilitiesF: Liabilities,
+  problematicActionIdx: number,
+} {
+  let assetsF = {...assetsI};
+  let liabilitiesF = {...liabilitiesI};
+  let problematicActionIdx = -1;
+  for (let i = 0; i < actionResults.length; i += 1) {
+    const actionResult = actionResults[i];
+
+    const assetsTemp = { ...assetsF };
+    const liabilitiesTemp = { ...liabilitiesF };
+
+    // update assets
+    assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
+    assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;
+    assetsTemp.token0Plus += actionResult.aloeResult?.token0PlusDelta ?? 0;
+    assetsTemp.token1Plus += actionResult.aloeResult?.token1PlusDelta ?? 0;
+    assetsTemp.uni0 += actionResult.uniswapResult?.uniswapPosition.amount0 ?? 0;
+    assetsTemp.uni1 += actionResult.uniswapResult?.uniswapPosition.amount1 ?? 0;
+
+    // update liabilities
+    liabilitiesTemp.amount0 += actionResult.aloeResult?.token0DebtDelta ?? 0;
+    liabilitiesTemp.amount1 += actionResult.aloeResult?.token1DebtDelta ?? 0;
+
+    // if any assets or liabilities are < 0, we have an issue!
+    if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
+      problematicActionIdx = i;
+      break;
+    }
+
+    // otherwise continue accumulating
+    assetsF = assetsTemp;
+    liabilitiesF = liabilitiesTemp;
+  }
+  return {
+    assetsF,
+    liabilitiesF,
+    problematicActionIdx,
+  }
 }
