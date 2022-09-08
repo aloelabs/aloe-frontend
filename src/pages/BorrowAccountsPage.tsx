@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useContract, useProvider, useSigner } from 'wagmi';
+import { useAccount, useContract, useNetwork, useProvider, useSigner } from 'wagmi';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -35,6 +35,7 @@ export default function BorrowAccountsPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider();
+  const { chain } = useNetwork();
   const { address } = useAccount();
   const { data: signer } = useSigner();
   const marginAccountLensContract = useContract({
@@ -59,7 +60,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address]);
+  }, [address, marginAccountLensContract, chain, provider]);
 
   return (
     <AppPage>
