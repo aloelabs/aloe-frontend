@@ -2,10 +2,8 @@ import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { BigNumber, ethers } from 'ethers';
 import Big from 'big.js';
-import { TypeFlags } from 'typescript';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { BIGQ96 } from './constants/Values';
 
@@ -27,7 +25,7 @@ export type Liabilities = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountLite = {
+export type MarginAccountPreview = {
   address: string;
   token0: TokenData;
   token1: TokenData;
@@ -39,7 +37,7 @@ export type MarginAccountLite = {
 /**
  * For the use-cases that require all of the data
  */
-export type MarginAccount = MarginAccountLite & {
+export type MarginAccount = MarginAccountPreview & {
   kitty0: TokenData;
   kitty1: TokenData;
   sqrtPriceX96: Big;
@@ -75,8 +73,8 @@ export async function getMarginAccountsForUser(
   return accounts.filter((_, i) => accountOwners[i] === userAddress);
 }
 
-export async function resolveUniswapPools(fetchedMarginAccounts: { address: string; uniswapPool: string }[], provider: ethers.providers.BaseProvider) {
-  const uniqueUniswapPools = new Set(fetchedMarginAccounts.map((x) => x.uniswapPool));
+export async function resolveUniswapPools(marginAccounts: { address: string; uniswapPool: string }[], provider: ethers.providers.BaseProvider) {
+  const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
   // create an array to hold all the Promises we're about to create
   const uniswapPoolData: Promise<[string, { token0: string; token1: string; feeTier: number }]>[] = [];
   // for each pool, create a Promise that returns a tuple: (poolAddress, otherData)
@@ -93,14 +91,14 @@ export async function resolveUniswapPools(fetchedMarginAccounts: { address: stri
   return Object.fromEntries(await Promise.all(uniswapPoolData));
 }
 
-export async function fetchMarginAccountLites(
+export async function fetchMarginAccountPreviews(
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string,
-): Promise<MarginAccountLite[]> {
-  const fetchedMarginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
-  const uniswapPoolDataMap = await resolveUniswapPools(fetchedMarginAccountsAddresses, provider);
-  const fetchedMarginAccounts: Promise<MarginAccountLite>[] = fetchedMarginAccountsAddresses.map(
+): Promise<MarginAccountPreview[]> {
+  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
+  const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
+  const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
     async ({ address: accountAddress, uniswapPool }) => {
       const token0 = GetTokenData(uniswapPoolDataMap[uniswapPool].token0);
       const token1 = GetTokenData(uniswapPoolDataMap[uniswapPool].token1);
@@ -139,7 +137,7 @@ export async function fetchMarginAccountLites(
       return { address: accountAddress, token0, token1, feeTier, assets, liabilities };
     }
   );
-  return Promise.all(fetchedMarginAccounts);
+  return Promise.all(marginAccounts);
 }
 
 export async function fetchMarginAccount(
@@ -155,7 +153,7 @@ export async function fetchMarginAccount(
     marginAccountContract.KITTY1(),
     marginAccountContract.UNISWAP_POOL(),
     marginAccountLensContract.getAssets(marginAccountAddress),
-    await marginAccountLensContract.getLiabilities(marginAccountAddress),
+    marginAccountLensContract.getLiabilities(marginAccountAddress),
   ]);
 
   const uniswapPool = results[4];
