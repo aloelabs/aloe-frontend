@@ -8,7 +8,7 @@ import { GetTokenData } from '../data/TokenData';
 import { FeeTier, NumericFeeTierToEnum } from '../data/FeeTier';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
-import { useAccount, useContract, useProvider, useSigner } from 'wagmi';
+import { useAccount, useContract, useNetwork, useProvider, useSigner } from 'wagmi';
 import Big from 'big.js';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
 import { BigNumber, ethers } from 'ethers';
@@ -61,6 +61,7 @@ async function getMarginAccountsForUser(
 export default function BorrowAccountsPage() {
   // MARK: component state
   // --> transaction modals
+  const network = useNetwork();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
@@ -81,7 +82,6 @@ export default function BorrowAccountsPage() {
 
   useEffect(() => {
     let mounted = true;
-
     async function fetch() {
       const fetchedMarginAccounts = address ? await getMarginAccountsForUser(address, provider) : [];
 
@@ -151,7 +151,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address]);
+  }, [address, marginAccountLensContract, network.chain, provider]);
 
   return (
     <AppPage>

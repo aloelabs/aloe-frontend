@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { chain, useConnect, useDisconnect } from 'wagmi';
+import { useEffect, useState } from 'react';
+import { chain as wagmiChain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 
 import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
 import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
 import { Text } from '../common/Typography';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export type ConnectWalletButtonProps = {
   address?: string;
@@ -20,16 +21,33 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const buttonText = address ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 
   // MARK: component state
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] = useState<boolean>(false);
+  const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
+  const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
 
   // MARK: wagmi hooks
-  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: chain.goerli.id });
+  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: wagmiChain.goerli.id });
+  const { chain } = useNetwork();
+  const { isLoading, switchNetwork } = useSwitchNetwork({
+    chainId: wagmiChain.goerli.id,
+    onError: (error) => {
+      setShouldAttemptToSwitchNetwork(false);
+    },
+    onSuccess: () => {
+      setShouldAttemptToSwitchNetwork(false);
+    },
+  });
+  useEffect(() => {
+    if (!isLoading && chain?.id !== wagmiChain.goerli.id && shouldAttemptToSwitchNetwork) {
+      switchNetwork?.(wagmiChain.goerli.id);
+    }
+  }, [shouldAttemptToSwitchNetwork, chain, isLoading, switchNetwork]);
   const { disconnect } = useDisconnect();
-
+  
   return (
     <div>
       {!props.buttonStyle && (
-        <OutlinedGradientRoundedButton name={buttonText} size='S' onClick={() => setModalOpen(true)}>
+        <OutlinedGradientRoundedButton name={buttonText} size='S' onClick={() => setWalletModalOpen(true)}>
           {buttonText}
         </OutlinedGradientRoundedButton>
       )}
@@ -37,7 +55,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         <FilledStylizedButton
           name={buttonText}
           size='M'
-          onClick={() => setModalOpen(true)}
+          onClick={() => setWalletModalOpen(true)}
           backgroundColor='rgba(26, 41, 52, 1)'
           color='rgba(255, 255, 255, 1)'
           fillWidth={true}
@@ -49,14 +67,17 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         <FilledStylizedButton
           name={buttonText}
           size='M'
-          onClick={() => setModalOpen(true)}
+          onClick={() => setWalletModalOpen(true)}
           fillWidth={true}
           className='!rounded-none !pt-5 !pb-5'
         >
           {buttonText}
         </FilledStylizedButton>
       )}
-      <CloseableModal open={modalOpen} setOpen={setModalOpen} title={'Connect Wallet'}>
+      <CloseableModal open={switchChainPromptModalOpen} setOpen={setSwitchChainPromptModalOpen} title={'Switch Chain'}>
+        <div className='w-full'></div>
+      </CloseableModal>
+      <CloseableModal open={walletModalOpen} setOpen={setWalletModalOpen} title={'Connect Wallet'}>
         <div className='w-full'>
           {address ? (
             // We have an account connected
