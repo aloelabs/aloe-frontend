@@ -368,6 +368,7 @@ export default function BorrowActionsPage() {
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
             problematicActionIdx={problematicActionIdx}
+            setOfActionsIsProblematic={setOfActionsIsProblematic}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>

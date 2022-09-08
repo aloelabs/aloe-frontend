@@ -62,6 +62,7 @@ export type ManageAccountWidgetProps = {
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
   problematicActionIdx: number;
+  setOfActionsIsProblematic: boolean;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
@@ -77,7 +78,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     onAddAction,
     onRemoveAction,
     problematicActionIdx,
+    setOfActionsIsProblematic,
   } = props;
+  //TODO: add some sort of error message when setOfActionsIsProblematic
   return (
     <Wrapper>
       <div>
@@ -143,7 +146,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             position='trailing'
             size='M'
             svgColorType='stroke'
-            disabled={activeActions.length === 0}
+            disabled={activeActions.length === 0 || setOfActionsIsProblematic}
           >
             Confirm
           </FilledGradientButtonWithIcon>
