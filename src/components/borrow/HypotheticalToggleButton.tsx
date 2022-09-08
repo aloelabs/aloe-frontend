@@ -14,7 +14,7 @@ const StyledHypotheticalToggleButtonContent = styled.div.attrs(
   border: 1px solid rgba(242, 201, 76, 1);
   border-radius: 8px;
 
-  box-shadow: ${(props) => props.isActive ? '0px 0px 4px 2px rgba(242, 201, 76, 0.5)' : 'none'};
+  box-shadow: ${(props) => props.isActive ? '0px 0px 2px 1px rgba(242, 201, 76, 0.5)' : 'none'};
   opacity: ${(props) => props.isActive ? '1.0' : '0.5'};
 `;
 
