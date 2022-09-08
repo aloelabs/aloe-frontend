@@ -9,7 +9,7 @@ import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatUSDAuto } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
-import { MarginAccount, MarginAccountLite } from '../../data/MarginAccount';
+import { MarginAccount, MarginAccountPreview } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -91,7 +91,7 @@ function MetricContainer(props: MetricContainerProps) {
   );
 }
 
-export type MarginAccountCardProps = MarginAccountLite;
+export type MarginAccountCardProps = MarginAccountPreview;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
   const { address, assets, feeTier, liabilities, token0, token1 } = props;

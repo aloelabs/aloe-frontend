@@ -13,7 +13,7 @@ import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 import { Display } from '../components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
 import {
-  fetchMarginAccountLites, MarginAccountLite
+  fetchMarginAccountPreviews, MarginAccountPreview
 } from '../data/MarginAccount';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -31,7 +31,7 @@ export default function BorrowAccountsPage() {
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   const [isTransactionPending, setIsTransactionPending] = useState(false);
   // --> other
-  const [marginAccounts, setMarginAccounts] = useState<MarginAccountLite[]>([]);
+  const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
 
   // MARK: wagmi hooks
   const provider = useProvider();
@@ -47,7 +47,7 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch(userAddress: string) {
-      const updatedMarginAccounts = await fetchMarginAccountLites(marginAccountLensContract, provider, userAddress);
+      const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);
       }
@@ -80,7 +80,7 @@ export default function BorrowAccountsPage() {
         </FilledGradientButtonWithIcon>
       </div>
       <MarginAccountsContainner>
-        {marginAccounts.map((marginAccount: MarginAccountLite, index: number) => (
+        {marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
           <MarginAccountCard key={index} {...marginAccount} />
         ))}
       </MarginAccountsContainner>
