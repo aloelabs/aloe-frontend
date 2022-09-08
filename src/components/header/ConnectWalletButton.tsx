@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { chain as wagmiChain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
+import { chain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 
 import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
@@ -26,10 +26,10 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
 
   // MARK: wagmi hooks
-  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: wagmiChain.goerli.id });
-  const { chain } = useNetwork();
+  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: chain.goerli.id });
+  const { chain: currentChain } = useNetwork();
   const { isLoading, switchNetwork } = useSwitchNetwork({
-    chainId: wagmiChain.goerli.id,
+    chainId: chain.goerli.id,
     onError: (error) => {
       setShouldAttemptToSwitchNetwork(false);
     },
@@ -38,10 +38,10 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
     },
   });
   useEffect(() => {
-    if (!isLoading && chain?.id !== wagmiChain.goerli.id && shouldAttemptToSwitchNetwork) {
-      switchNetwork?.(wagmiChain.goerli.id);
+    if (!isLoading && currentChain?.id !== chain.goerli.id && shouldAttemptToSwitchNetwork) {
+      switchNetwork?.(chain.goerli.id);
     }
-  }, [shouldAttemptToSwitchNetwork, chain, isLoading, switchNetwork]);
+  }, [shouldAttemptToSwitchNetwork, currentChain, isLoading, switchNetwork]);
   const { disconnect } = useDisconnect();
   
   return (

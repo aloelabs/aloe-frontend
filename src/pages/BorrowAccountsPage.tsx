@@ -61,7 +61,6 @@ async function getMarginAccountsForUser(
 export default function BorrowAccountsPage() {
   // MARK: component state
   // --> transaction modals
-  const network = useNetwork();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
@@ -72,6 +71,7 @@ export default function BorrowAccountsPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider();
+  const { chain } = useNetwork();
   const { address } = useAccount();
   const { data: signer } = useSigner();
   const marginAccountLensContract = useContract({
@@ -151,7 +151,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address, marginAccountLensContract, network.chain, provider]);
+  }, [address, marginAccountLensContract, chain, provider]);
 
   return (
     <AppPage>
