@@ -227,7 +227,7 @@ function isSolvent(
       .div(10 ** token1.decimals)
       .toNumber();
 
-  return assets_1 >= 1.08 * liabilities_1;
+  return assets_1 >= 1.05 * liabilities_1;
 }
 
 function inTermsOfEachToken(
