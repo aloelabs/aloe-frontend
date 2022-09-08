@@ -4,6 +4,7 @@ import tw from 'twin.macro';
 import { Display, Text } from '../common/Typography';
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
 import { ActionID, ActionProvider, getNameOfAction } from '../../data/Actions';
+import Tooltip from '../common/Tooltip';
 
 const ActionCardContainer = styled.div.attrs(
   (props: { isCausingError: boolean }) => props
@@ -44,10 +45,11 @@ export type BaseActionCardProps = {
   isCausingError: boolean;
   children: React.ReactNode;
   onRemove: () => void;
+  tooltipContent?: React.ReactNode;
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, isCausingError, children, onRemove } = props;
+  const { actionProvider, action, isCausingError, children, onRemove, tooltipContent } = props;
   return (
     <ActionCardContainer isCausingError={isCausingError}>
       <div className='w-full flex justify-start items-center gap-4 mb-4'>
@@ -62,6 +64,14 @@ export function BaseActionCard(props: BaseActionCardProps) {
           </SvgWrapper>
           <Display size='S'>{actionProvider.name}</Display>
         </div>
+        {tooltipContent && (
+          <Tooltip
+            buttonSize='M'
+            position='top-center'
+            filled={true}
+            content={tooltipContent}
+          />
+        )}
         <button type='button' title='Remove' className='ml-auto'>
           <SvgWrapper>
             <CloseModal onClick={onRemove} />
