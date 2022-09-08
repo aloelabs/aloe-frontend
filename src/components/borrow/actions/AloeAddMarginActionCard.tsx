@@ -5,6 +5,7 @@ import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelect
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import { TokenData } from '../../../data/TokenData';
+import { Text } from '../../common/Typography';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -65,6 +66,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
+      tooltipContent={<Text>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Modi omnis quos facere provident, sapiente vero voluptas reiciendis esse eos iusto et accusamus molestias dolorem! Qui dignissimos in provident ullam voluptas?</Text>}
     >
       <div className='w-full flex flex-col gap-4 items-center'>
         <Dropdown
