@@ -53,9 +53,9 @@ const TokenDataMap = new Map<string, TokenData>([
   ],
   // USDC+ (Goerli)
   [
-    '0x73F9Dd058b2fF3fC2eEE2B757642fEa4A1Ab2a29',
+    '0x73f9dd058b2ff3fc2eee2b757642fea4a1ab2a29',
     {
-      address: '0x73F9Dd058b2fF3fC2eEE2B757642fEa4A1Ab2a29',
+      address: '0x73f9dd058b2ff3fc2eee2b757642fea4a1ab2a29',
       name: 'Aloe II USD Coin',
       ticker: 'USDC+',
       iconPath: UsdcLogo,
@@ -75,9 +75,9 @@ const TokenDataMap = new Map<string, TokenData>([
   ],
   // WETH+ (Goerli)
   [
-    '0xB50445758B4230ac29Ff8ECfFb8f8C8c29d98042',
+    '0xb50445758b4230ac29ff8ecffb8f8c8c29d98042',
     {
-      address: '0xB50445758B4230ac29Ff8ECfFb8f8C8c29d98042',
+      address: '0xb50445758b4230ac29ff8ecffb8f8c8c29d98042',
       name: 'Aloe II Wrapped Ether',
       ticker: 'WETH+',
       iconPath: WethLogo,

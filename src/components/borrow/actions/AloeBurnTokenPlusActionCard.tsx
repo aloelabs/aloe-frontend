@@ -5,7 +5,7 @@ import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelect
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
-  const { token0, token1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   //TODO: Temporary until these are finised, then we can just fetch the entire token
   const token0PlusAddress = token0.address + '1';
   const token1PlusAddress = token1.address + '1';

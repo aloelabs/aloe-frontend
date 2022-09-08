@@ -5,7 +5,7 @@ import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelect
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { token0, token1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',

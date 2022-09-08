@@ -53,6 +53,8 @@ const ActionItemCount = styled.span`
 export type ManageAccountWidgetProps = {
   token0: TokenData;
   token1: TokenData;
+  kitty0: TokenData;
+  kitty1: TokenData;
   feeTier: FeeTier;
   activeActions: Array<Action>;
   actionResults: Array<ActionCardState>;
@@ -66,6 +68,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const {
     token0,
     token1,
+    kitty0,
+    kitty1,
     feeTier,
     activeActions,
     actionResults,
@@ -95,6 +99,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               <action.actionCard
                 token0={token0}
                 token1={token1}
+                kitty0={kitty0}
+                kitty1={kitty1}
                 feeTier={feeTier}
                 previousActionCardState={actionResults[index]}
                 isCausingError={problematicActionIdx !== null && index >= problematicActionIdx}
@@ -102,6 +108,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   onRemoveAction(index);
                 }}
                 onChange={(result: ActionCardState) => {
+                  console.log(result);
                   updateActionResults([
                     ...actionResults.slice(0, index),
                     result,

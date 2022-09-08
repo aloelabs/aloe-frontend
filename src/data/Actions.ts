@@ -101,6 +101,8 @@ export type CumulativeActionCardResult = {
 export type ActionCardProps = {
   token0: TokenData;
   token1: TokenData;
+  kitty0: TokenData;
+  kitty1: TokenData;
   feeTier: FeeTier;
   previousActionCardState: ActionCardState | null;
   isCausingError: boolean;
