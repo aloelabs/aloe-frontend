@@ -90,7 +90,6 @@ export default function BorrowAccountsPage() {
         open={showConfirmModal}
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
-          console.log(selectedPool);
           setShowConfirmModal(false);
           setShowSubmittingModal(true);
           if (!signer || !address || !selectedPool) {
