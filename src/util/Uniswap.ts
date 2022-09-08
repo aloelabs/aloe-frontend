@@ -251,11 +251,11 @@ export function priceToTick(price0In1: number, token0Decimals: number, token1Dec
 }
 
 export function shouldAmount0InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
-  return currentTick < Math.min(lowerTick, upperTick);
+  return currentTick > Math.max(lowerTick, upperTick);
 }
 
 export function shouldAmount1InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
-  return currentTick > Math.max(lowerTick, upperTick);
+  return currentTick < Math.min(lowerTick, upperTick);
 }
 
 export function calculateAmount1FromAmount0(amount0: number, lowerTick: number, upperTick: number, currentTick: number, token0Decimals: number, token1Decimals: number): {
