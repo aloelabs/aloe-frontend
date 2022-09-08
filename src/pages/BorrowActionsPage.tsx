@@ -272,6 +272,7 @@ export default function BorrowActionsPage() {
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [isToken0Selected, setIsToken0Selected] = useState(false);
   const [sqrtPriceX96, setSqrtPriceX96] = useState<Big | null>(null);
+  const [kitty, setKitty] = useState<[TokenData, TokenData] | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider();
@@ -293,19 +294,25 @@ export default function BorrowActionsPage() {
       const results = await Promise.all([
         marginAccountContract.TOKEN0(),
         marginAccountContract.TOKEN1(),
+        marginAccountContract.KITTY0(),
+        marginAccountContract.KITTY1(),
         marginAccountContract.UNISWAP_POOL(),
         marginAccountLensContract.getAssets(marginAccountAddress),
         await marginAccountLensContract.getLiabilities(marginAccountAddress),
       ]);
 
-      const uniswapPool = results[2];
+      const uniswapPool = results[4];
       const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
       const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
 
+      console.log(results[2]);
+
       const token0 = GetTokenData(results[0] as string);
       const token1 = GetTokenData(results[1] as string);
-      const assetsData = results[3] as BigNumber[];
-      const liabilitiesData = results[4] as BigNumber[];
+      const kitty0 = GetTokenData(results[2] as string);
+      const kitty1 = GetTokenData(results[3] as string);
+      const assetsData = results[5] as BigNumber[];
+      const liabilitiesData = results[6] as BigNumber[];
 
       const assets: Assets = {
         token0Raw: Big(assetsData[0].toString())
@@ -345,6 +352,7 @@ export default function BorrowActionsPage() {
           liabilities: liabilities,
         });
         setSqrtPriceX96(new Big(slot0.sqrtPriceX96.toString()));
+        setKitty([kitty0, kitty1])
       }
     }
     if (accountAddressParam) {
@@ -412,7 +420,7 @@ export default function BorrowActionsPage() {
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
-  const hypotheticalChangesToShow = assetsISum0 !== assetsFSum0 || assetsISum1 !== assetsFSum1;
+  const hypotheticalChangesToShow = actionResults.length > 0;
 
   const [assetsIInTermsOf0, assetsIInTermsOf1] = sqrtPriceX96
     ? inTermsOfEachToken(assetsISum0, assetsISum1, sqrtPriceX96, marginAccount.token0, marginAccount.token1)
@@ -452,6 +460,7 @@ export default function BorrowActionsPage() {
   }
 
   function handleAddAction(action: Action) {
+    if (actionResults.length === 0) setIsShowingHypothetical(true);
     updateActionResults([
       ...actionResults,
       {
@@ -499,6 +508,8 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             token0={marginAccount.token0}
             token1={marginAccount.token1}
+            kitty0={kitty?.[0] ?? marginAccount.token0}
+            kitty1={kitty?.[1] ?? marginAccount.token1}
             feeTier={marginAccount.feeTier}
             activeActions={activeActions}
             actionResults={actionResults}

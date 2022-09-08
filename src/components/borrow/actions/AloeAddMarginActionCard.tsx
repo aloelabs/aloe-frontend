@@ -3,12 +3,12 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
+import { TokenData } from '../../../data/TokenData';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { token0, token1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
-  //TODO: Temporary until these are finised, then we can just fetch the entire token
-  const token0PlusAddress = token0.address + '1';
-  const token1PlusAddress = token1.address + '1';
+  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
@@ -20,17 +20,15 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       value: SelectedToken.TOKEN_ONE,
       icon: token1?.iconPath || '',
     },
-    //TODO: TEMPORARY, add type for token+
     {
-      label: token0?.ticker + '+' || '',
+      label: kitty0?.ticker || '',
       value: SelectedToken.TOKEN_ZERO_PLUS,
-      icon: token0?.iconPath || '',
+      icon: kitty0?.iconPath || '',
     },
-    //TODO: TEMPORARY, add type for token+
     {
-      label: token1?.ticker + '+' || '',
+      label: kitty1?.ticker || '',
       value: SelectedToken.TOKEN_ONE_PLUS,
-      icon: token1?.iconPath || '',
+      icon: kitty1?.iconPath || '',
     }
   ];
   const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
@@ -54,7 +52,12 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     }
   });
 
-  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const tokenMap = new Map<SelectedToken, TokenData>();
+  tokenMap.set(SelectedToken.TOKEN_ZERO, token0);
+  tokenMap.set(SelectedToken.TOKEN_ONE, token1);
+  tokenMap.set(SelectedToken.TOKEN_ZERO_PLUS, kitty0);
+  tokenMap.set(SelectedToken.TOKEN_ONE_PLUS, kitty1);
   
   return (
     <BaseActionCard
@@ -86,6 +89,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.TRANSFER_IN,
+              actionArgs: selectedToken ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
               textFields: [value],
               aloeResult: {
                 token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : undefined,

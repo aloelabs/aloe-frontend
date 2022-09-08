@@ -10,7 +10,7 @@ const ActionCardContainer = styled.div.attrs(
 )`
   ${tw`flex flex-col items-center justify-center`}
   width: 400px;
-  padding: 12px 24px;
+  padding: 12px 12px;
   border-radius: 8px;
   background-color: rgba(13, 24, 33, 1);
   border: 1px solid ${(props) => props.isCausingError ? 'rgba(255, 54, 69, 1)' : 'rgba(34, 54, 69, 1)'};
@@ -22,7 +22,7 @@ const ActionBadge = styled.div.attrs(
 )`
   ${tw`flex items-center justify-center`}
   width: max-width;
-  padding: 12px 8px;
+  padding: 8px 8px;
   border-radius: 8px;
   background-color: ${(props) => props.backgroundColor};
 `;
