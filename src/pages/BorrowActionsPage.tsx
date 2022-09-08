@@ -30,7 +30,7 @@ import {
 } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import { BIGQ96 } from '../data/constants/Values';
-import { fetchMarginAccount, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
+import { fetchMarginAccount, isSolvent, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { TokenData } from '../data/TokenData';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -250,6 +250,8 @@ export default function BorrowActionsPage() {
     liabilitiesI,
     actionResults
   );
+
+  const setOfActionsIsProblematic = (problematicActionIdx === -1) && !isSolvent(assetsF, liabilitiesF, sqrtPriceX96, marginAccount.token0, marginAccount.token1);
 
   console.log(assetsF);
   console.log(liabilitiesF);

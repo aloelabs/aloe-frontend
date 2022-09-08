@@ -61,7 +61,7 @@ export type ManageAccountWidgetProps = {
   updateActionResults: (actionResults: Array<ActionCardState>) => void;
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
-  problematicActionIdx: number | null;
+  problematicActionIdx: number;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
@@ -103,7 +103,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 kitty1={kitty1}
                 feeTier={feeTier}
                 previousActionCardState={actionResults[index]}
-                isCausingError={problematicActionIdx !== null && index >= problematicActionIdx}
+                isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                 onRemove={() => {
                   onRemoveAction(index);
                 }}
