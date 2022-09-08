@@ -22,26 +22,25 @@ export type Liabilities = {
 };
 
 /**
- * For the use-cases that may not require all of the data
- * (When we don't want to fetch more than we need)
+ * For the use-cases that require all of the data
  */
-export type MarginAccountPreview = {
+export type MarginAccount = {
   address: string;
   token0: TokenData;
   token1: TokenData;
   feeTier: FeeTier;
   assets: Assets;
   liabilities: Liabilities;
-};
-
-/**
- * For the use-cases that require all of the data
- */
-export type MarginAccount = MarginAccountPreview & {
   kitty0: TokenData;
   kitty1: TokenData;
   sqrtPriceX96: Big;
 };
+
+/**
+ * For the use-cases that may not require all of the data
+ * (When we don't want to fetch more than we need)
+ */
+ export type MarginAccountPreview = Omit<MarginAccount, 'kitty0' | 'kitty1' | 'sqrtPriceX96'>;
 
 export async function getMarginAccountsForUser(
   userAddress: string,
