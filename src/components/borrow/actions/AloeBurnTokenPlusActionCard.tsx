@@ -3,22 +3,20 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { getBurnActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
-  //TODO: Temporary until these are finised, then we can just fetch the entire token
-  const token0PlusAddress = token0.address + '1';
-  const token1PlusAddress = token1.address + '1';
   const dropdownOptions: DropdownOption[] = [
     {
-      label: token0?.ticker + '+' || '',
+      label: kitty0?.ticker || '',
       value: SelectedToken.TOKEN_ZERO_PLUS,
-      icon: token0?.iconPath || '',
+      icon: kitty0?.iconPath || '',
     },
     {
-      label: token1?.ticker + '+' || '',
+      label: kitty1?.ticker || '',
       value: SelectedToken.TOKEN_ONE_PLUS,
-      icon: token1?.iconPath || '',
+      icon: kitty1?.iconPath || '',
     },
   ];
 
@@ -43,7 +41,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     }
   });
 
-  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
 
   return (
     <BaseActionCard
@@ -75,6 +73,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.BURN,
+              actionArgs: getBurnActionArgs(selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? kitty0 : kitty1, parsedValue),
               textFields: [value],
               aloeResult: {
                 token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? parsedValue : undefined,

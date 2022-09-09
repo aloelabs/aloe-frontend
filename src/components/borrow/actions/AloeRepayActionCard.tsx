@@ -3,6 +3,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { getRepayActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
   const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -39,7 +40,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
     }
   });
   
-  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
   
   return (
     <BaseActionCard
@@ -69,8 +70,17 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           value={tokenAmount}
           onChange={(value) => {
             const parsedValue = parseFloat(value) || 0;
+            let amount0 = 0;
+            let amount1 = 0;
+            if (selectedToken === SelectedToken.TOKEN_ZERO) {
+              amount0 = parsedValue;
+            } else {
+              amount1 = parsedValue;
+            }
+
             onChange({
               actionId: ActionID.REPAY,
+              actionArgs: getRepayActionArgs(token0, amount0, token1, amount1),
               textFields: [value],
               aloeResult: {
                 token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : undefined,

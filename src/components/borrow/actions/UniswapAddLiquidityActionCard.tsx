@@ -16,6 +16,7 @@ import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder'
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
+import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
@@ -52,7 +53,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }
-      const tickData = await calculateTickData(poolAddress, poolBasics);
+      // TODO replace this hard-coded string with `poolAddress` once we're done with testnet!!!
+      const tickData = await calculateTickData('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', poolBasics);
       if (mounted) {
         setLiquidityData(tickData);
         setIsLiquidityDataLoading(false);
@@ -252,6 +254,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
     onChange({
       actionId: ActionID.ADD_LIQUIDITY,
+      actionArgs: (lowerTick !== null && upperTick !== null) ? getAddLiquidityActionArgs(lowerTick, upperTick, localLiquidityJSBI) : undefined,
       textFields: [amount0, amount1, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', previousActionCardState?.textFields?.[4] ?? ''],
       aloeResult: {
         token0RawDelta: -parseFloat(amount0) || undefined,

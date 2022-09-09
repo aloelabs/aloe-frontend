@@ -3,6 +3,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { getMintActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
   const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -39,7 +40,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
     }
   });
 
-  let tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
 
   return (
     <BaseActionCard
@@ -71,6 +72,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.MINT,
+              actionArgs: getMintActionArgs(selectedToken === SelectedToken.TOKEN_ZERO ? kitty0 : kitty1, parsedValue),
               textFields: [value],
               aloeResult: {
                 token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : undefined,
