@@ -1,34 +1,36 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import { TokenData } from '../../../data/TokenData';
 import { Text } from '../../common/Typography';
+import { getBalanceFor } from '../../../data/UserBalances';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, availableBalances, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: SelectedToken.TOKEN_ZERO,
+      value: TokenType.ASSET0,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: SelectedToken.TOKEN_ONE,
+      value: TokenType.ASSET1,
       icon: token1?.iconPath || '',
     },
     {
       label: kitty0?.ticker || '',
-      value: SelectedToken.TOKEN_ZERO_PLUS,
+      value: TokenType.KITTY0,
       icon: kitty0?.iconPath || '',
     },
     {
       label: kitty1?.ticker || '',
-      value: SelectedToken.TOKEN_ONE_PLUS,
+      value: TokenType.KITTY1,
       icon: kitty1?.iconPath || '',
     }
   ];
@@ -54,11 +56,14 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   });
 
   const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
-  const tokenMap = new Map<SelectedToken, TokenData>();
-  tokenMap.set(SelectedToken.TOKEN_ZERO, token0);
-  tokenMap.set(SelectedToken.TOKEN_ONE, token1);
-  tokenMap.set(SelectedToken.TOKEN_ZERO_PLUS, kitty0);
-  tokenMap.set(SelectedToken.TOKEN_ONE_PLUS, kitty1);
+  const tokenMap = new Map<TokenType, TokenData>();
+  tokenMap.set(TokenType.ASSET0, token0);
+  tokenMap.set(TokenType.ASSET1, token1);
+  tokenMap.set(TokenType.KITTY0, kitty0);
+  tokenMap.set(TokenType.KITTY1, kitty1);
+  const maxString = selectedToken
+    ? getBalanceFor(selectedToken, availableBalances).toFixed(6)
+    : '0';
   
   return (
     <BaseActionCard
@@ -91,20 +96,20 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.TRANSFER_IN,
-              actionArgs: selectedToken ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
+              actionArgs: (selectedToken && value !== '') ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
               textFields: [value],
               aloeResult: {
-                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : undefined,
-                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE ? parsedValue : undefined,
-                token0PlusDelta: selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? parsedValue : undefined,
-                token1PlusDelta: selectedToken === SelectedToken.TOKEN_ONE_PLUS ? parsedValue : undefined,
+                token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+                token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
+                token0PlusDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
+                token1PlusDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,
             });
           }}
-          max='100'
-          maxed={tokenAmount === '100'}
+          max={maxString}
+          maxed={tokenAmount === maxString}
         />
       </div>
     </BaseActionCard>

@@ -1,21 +1,23 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { getMintActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
-  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { token0, token1, kitty0, kitty1 } = marginAccount;
+  
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: SelectedToken.TOKEN_ZERO,
+      value: TokenType.ASSET0,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: SelectedToken.TOKEN_ONE,
+      value: TokenType.ASSET1,
       icon: token1?.iconPath || '',
     },
   ];
@@ -41,6 +43,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
   });
 
   const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const maxString = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'].toFixed(6);
 
   return (
     <BaseActionCard
@@ -72,20 +75,20 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.MINT,
-              actionArgs: getMintActionArgs(selectedToken === SelectedToken.TOKEN_ZERO ? kitty0 : kitty1, parsedValue),
+              actionArgs: value === '' ? undefined : getMintActionArgs(selectedToken === TokenType.ASSET0 ? kitty0 : kitty1, parsedValue),
               textFields: [value],
               aloeResult: {
-                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? -parsedValue : undefined,
-                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE ? -parsedValue : undefined,
-                token0PlusDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : undefined,
-                token1PlusDelta: selectedToken === SelectedToken.TOKEN_ONE ? parsedValue : undefined,
+                token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
+                token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
+                token0PlusDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+                token1PlusDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,
             });
           }}
-          max='100'
-          maxed={tokenAmount === '100'}
+          max={maxString}
+          maxed={tokenAmount === maxString}
         />
       </div>
     </BaseActionCard>

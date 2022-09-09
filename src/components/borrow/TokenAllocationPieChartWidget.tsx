@@ -6,6 +6,8 @@ import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOI
 import { Text } from '../common/Typography';
 import { TokenData } from '../../data/TokenData';
 import { Assets, MarginAccount } from '../../data/MarginAccount';
+import Big from 'big.js';
+import { BIGQ96 } from '../../data/constants/Values';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -206,10 +208,11 @@ export type TokenAllocationPieChartWidgetProps = {
   token0: TokenData;
   token1: TokenData;
   assets: Assets;
+  sqrtPriceX96: Big;
 };
 
 export default function TokenAllocationPieChartWidget(props: TokenAllocationPieChartWidgetProps) {
-  const { token0, token1, assets} = props;
+  const { token0, token1, assets, sqrtPriceX96} = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [currentPercent, setCurrentPercent] = useState('');
 
@@ -223,7 +226,12 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     setCurrentPercent('');
   };
 
-  const totalAssets: number = Object.values(assets).reduce((prev, cur) => cur + prev);
+  const price = BIGQ96.mul(BIGQ96).div(sqrtPriceX96).div(sqrtPriceX96).mul(10 ** (token1.decimals - token0.decimals)).toNumber();
+  const totalAssets: number = (
+    assets.token0Raw + assets.token1Raw * price +
+    assets.token0Plus + assets.token1Plus * price +
+    assets.uni0 + assets.uni1 * price
+  );
 
   const slices: AllocationPieChartSlice[] = [
     {
@@ -246,19 +254,19 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     },
     {
       index: 3,
-      percent: assets.uni1 / totalAssets,
+      percent: assets.uni1 * price / totalAssets,
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 4,
-      percent: assets.token1Plus / totalAssets,
+      percent: assets.token1Plus * price / totalAssets,
       color: TOKEN1_COLOR_INTEREST_BEARING,
       category: 'Interest Bearing',
     },
     {
       index: 5,
-      percent: assets.token1Raw / totalAssets,
+      percent: assets.token1Raw * price / totalAssets,
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
     },

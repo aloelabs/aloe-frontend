@@ -58,9 +58,11 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         <Text size='M' weight='medium' color={INPUT_LABEL_TEXT_COLOR}>
           {props.tokenLabel}
         </Text>
-        <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
-          Balance: {props?.max || '-'}
-        </Text>
+        {props.max !== undefined &&
+          <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
+            Balance: {props.max}
+          </Text>
+        }
       </div>
       <SquareInputWithMax
         size='L'
@@ -77,6 +79,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
           props.max && props.onChange(props.max.toString());
         }}
         maxDisabled={props.maxed}
+        maxHidden={props.max === undefined}
         fullWidth={true}
         onBlur={props?.onBlur}
         disabled={props?.disabled}

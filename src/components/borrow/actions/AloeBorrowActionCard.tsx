@@ -1,21 +1,23 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { getBorrowActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { token0, token1 } = marginAccount;
+
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
-      value: SelectedToken.TOKEN_ZERO,
+      value: TokenType.ASSET0,
       icon: token0?.iconPath || '',
     },
     {
       label: token1?.ticker || '',
-      value: SelectedToken.TOKEN_ONE,
+      value: TokenType.ASSET1,
       icon: token1?.iconPath || '',
     },
   ];
@@ -72,7 +74,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             let amount0 = 0;
             let amount1 = 0;
-            if (selectedToken === SelectedToken.TOKEN_ZERO) {
+            if (selectedToken === TokenType.ASSET0) {
               amount0 = parsedValue;
             } else {
               amount1 = parsedValue;
@@ -80,20 +82,18 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
 
             onChange({
               actionId: ActionID.BORROW,
-              actionArgs: getBorrowActionArgs(token0, amount0, token1, amount1),
+              actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
               textFields: [value],
               aloeResult: {
-                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : undefined,
-                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE ? parsedValue : undefined,
-                token0DebtDelta: selectedToken === SelectedToken.TOKEN_ZERO ? parsedValue : undefined,
-                token1DebtDelta: selectedToken === SelectedToken.TOKEN_ONE ? parsedValue : undefined,
+                token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+                token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
+                token0DebtDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+                token1DebtDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,
             });
           }}
-          max='100'
-          maxed={tokenAmount === '100'}
         />
       </div>
     </BaseActionCard>
