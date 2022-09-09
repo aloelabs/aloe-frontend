@@ -17,6 +17,7 @@ import {
 } from '../data/MarginAccount';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import { useNavigate } from 'react-router-dom';
 
 const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
@@ -42,6 +43,9 @@ export default function BorrowAccountsPage() {
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
+
+  // MARK: react-router-dom hooks
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -111,7 +115,9 @@ export default function BorrowAccountsPage() {
           setIsTransactionPending(false);
         }}
       />
-      <CreatedMarginAccountModal open={showSuccessModal} setOpen={setShowSuccessModal} />
+      <CreatedMarginAccountModal open={showSuccessModal} setOpen={setShowSuccessModal} onConfirm={() => {
+        navigate(0);
+      }} />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
     </AppPage>
