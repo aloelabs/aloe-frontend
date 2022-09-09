@@ -26,6 +26,7 @@ import {
   calculateHypotheticalStates,
   getNameOfAction,
   UniswapPosition,
+  UniswapPositionPrior,
 } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import { fetchMarginAccount, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
@@ -156,8 +157,6 @@ const AccountStatsGrid = styled.div`
 type AccountParams = {
   account: string;
 };
-
-type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
 
 export default function BorrowActionsPage() {
   const navigate = useNavigate();

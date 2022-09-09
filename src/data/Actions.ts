@@ -61,6 +61,8 @@ export type UniswapPosition = {
   liquidity: JSBI;
 };
 
+export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
+
 export enum TokenType {
   ASSET0 = 'ASSET0',
   ASSET1 = 'ASSET1',
