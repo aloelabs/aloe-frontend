@@ -366,8 +366,8 @@ export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]) : 
   let token0Amount = 0;
   let token1Amount = 0;
   for (let pos of uniPos) {
-    token0Amount += pos.amount0;
-    token1Amount += pos.amount1;
+    token0Amount += pos.amount0 || 0;
+    token1Amount += pos.amount1 || 0;
   }
   return [token0Amount, token1Amount];
 }

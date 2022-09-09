@@ -6,6 +6,7 @@ import { BigNumber, ethers } from 'ethers';
 import Big from 'big.js';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { BIGQ96 } from './constants/Values';
+import { toBig } from '../util/Numbers';
 
 export type Assets = {
   token0Raw: number;
@@ -26,6 +27,7 @@ export type Liabilities = {
  */
 export type MarginAccount = {
   address: string;
+  uniswapPool: string;
   token0: TokenData;
   token1: TokenData;
   feeTier: FeeTier;
@@ -133,7 +135,7 @@ export async function fetchMarginAccountPreviews(
           .div(10 ** token1.decimals)
           .toNumber(),
       };
-      return { address: accountAddress, token0, token1, feeTier, assets, liabilities };
+      return { address: accountAddress, uniswapPool, token0, token1, feeTier, assets, liabilities };
     }
   );
   return Promise.all(marginAccounts);
@@ -167,35 +169,36 @@ export async function fetchMarginAccount(
   const liabilitiesData = results[6] as BigNumber[];
 
   const assets: Assets = {
-    token0Raw: Big(assetsData[0].toString())
+    token0Raw: toBig(assetsData[0])
       .div(10 ** token0.decimals)
       .toNumber(),
-    token1Raw: Big(assetsData[1].toString())
+    token1Raw: toBig(assetsData[1])
       .div(10 ** token1.decimals)
       .toNumber(),
-    token0Plus: Big(assetsData[2].toString())
+    token0Plus: toBig(assetsData[2])
       .div(10 ** 18)
       .toNumber(),
-    token1Plus: Big(assetsData[3].toString())
+    token1Plus: toBig(assetsData[3])
       .div(10 ** 18)
       .toNumber(),
-    uni0: Big(assetsData[4].toString())
+    uni0: toBig(assetsData[4])
       .div(10 ** token0.decimals)
       .toNumber(),
-    uni1: Big(assetsData[5].toString())
+    uni1: toBig(assetsData[5])
       .div(10 ** token1.decimals)
       .toNumber(),
   };
   const liabilities: Liabilities = {
-    amount0: Big(liabilitiesData[0].toString())
+    amount0: toBig(liabilitiesData[0])
       .div(10 ** token0.decimals)
       .toNumber(),
-    amount1: Big(liabilitiesData[1].toString())
+    amount1: toBig(liabilitiesData[1])
       .div(10 ** token1.decimals)
       .toNumber(),
   };
   return {
     address: marginAccountAddress,
+    uniswapPool: uniswapPool,
     token0: token0,
     token1: token1,
     kitty0: kitty0,
@@ -203,7 +206,7 @@ export async function fetchMarginAccount(
     feeTier: NumericFeeTierToEnum(feeTier),
     assets: assets,
     liabilities: liabilities,
-    sqrtPriceX96: new Big(slot0.sqrtPriceX96.toString()),
+    sqrtPriceX96: toBig(slot0.sqrtPriceX96),
   };
 }
 
