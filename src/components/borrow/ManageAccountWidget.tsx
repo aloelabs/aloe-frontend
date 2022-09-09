@@ -86,7 +86,7 @@ function useAllowance(token: TokenData, owner: string, spender: string) {
 function useAllowanceWrite(onChain: Chain, token: TokenData, spender: string) {
   return useContractWrite({
     addressOrName: token.address,
-    // chainId: onChain.id,
+    chainId: onChain.id,
     contractInterface: erc20ABI,
     mode: 'recklesslyUnprepared',
     functionName: 'approve',

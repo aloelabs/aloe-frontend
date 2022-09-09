@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useContract, useProvider } from 'wagmi';
+import { chain, useContract, useProvider } from 'wagmi';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
@@ -196,7 +196,7 @@ export default function BorrowActionsPage() {
   const [isToken0Selected, setIsToken0Selected] = useState(false);
 
   // MARK: wagmi hooks
-  const provider = useProvider();
+  const provider = useProvider({ chainId: chain.goerli.id });
   const marginAccountContract = useContract({
     addressOrName: accountAddressParam ?? '', // TODO better optional resolution
     contractInterface: MarginAccountABI,
@@ -430,7 +430,14 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               PnL
             </Display>
-            <PnLGraph marginAccount={marginAccount} />
+            <PnLGraph
+              marginAccount={{
+                ...marginAccount,
+                assets: isShowingHypothetical ? assetsF : marginAccount.assets,
+                liabilities: isShowingHypothetical ? liabilitiesF : marginAccount.liabilities,
+              }}
+              inTermsOfToken0={isToken0Selected}
+            />
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>

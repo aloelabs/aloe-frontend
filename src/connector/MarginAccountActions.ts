@@ -50,6 +50,7 @@ export function getRepayActionArgs(token0: TokenData, amount0: number, token1: T
 }
 
 export function getAddLiquidityActionArgs(lower: number, upper: number, liquidity: JSBI): string {
+  if (lower > upper) [lower, upper] = [upper, lower];
   return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
 }
 
