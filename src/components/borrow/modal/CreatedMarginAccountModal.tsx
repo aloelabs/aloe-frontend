@@ -16,12 +16,14 @@ import { MODAL_BLACK_TEXT_COLOR } from '../../pool/PoolInteractionTabs';
 export type CreatedMarginAccountModalProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  onConfirm: () => void;
 };
 
 export default function CreatedMarginAccountModal(props: CreatedMarginAccountModalProps) {
   const {
     open,
-    setOpen
+    setOpen,
+    onConfirm,
   } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Account Created'>
@@ -34,7 +36,10 @@ export default function CreatedMarginAccountModal(props: CreatedMarginAccountMod
         fillWidth={true}
         color={MODAL_BLACK_TEXT_COLOR}
         className='mt-8'
-        onClick={() => {setOpen(false)}}
+        onClick={() => {
+          setOpen(false);
+          onConfirm();
+        }}
       >
         Sweet!
       </FilledStylizedButton>
