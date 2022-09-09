@@ -347,6 +347,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
 export type InputWithMaxProps = InputProps & {
   onMaxClick: () => void;
   maxDisabled?: boolean;
+  maxHidden?: boolean;
 };
 
 export function SquareInputWithMax(props: InputWithMaxProps) {
@@ -386,13 +387,15 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         }}
         onBlur={onBlur}
       />
-      <MaxButton
-        size={size}
-        onClick={onMaxClick}
-        disabled={disabled || maxDisabled}
-      >
-        MAX
-      </MaxButton>
+      {props.maxHidden !== true &&
+        <MaxButton
+          size={size}
+          onClick={onMaxClick}
+          disabled={disabled || maxDisabled}
+        >
+          MAX
+        </MaxButton>
+      }
     </SquareInputWrapper>
   );
 }

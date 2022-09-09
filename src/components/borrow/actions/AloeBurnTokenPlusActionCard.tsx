@@ -1,21 +1,23 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, SelectedToken } from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { getBurnActionArgs } from '../../../connector/MarginAccountActions';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
-  const { token0, token1, kitty0, kitty1, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { kitty0, kitty1 } = marginAccount;
+
   const dropdownOptions: DropdownOption[] = [
     {
       label: kitty0?.ticker || '',
-      value: SelectedToken.TOKEN_ZERO_PLUS,
+      value: TokenType.KITTY0,
       icon: kitty0?.iconPath || '',
     },
     {
       label: kitty1?.ticker || '',
-      value: SelectedToken.TOKEN_ONE_PLUS,
+      value: TokenType.KITTY1,
       icon: kitty1?.iconPath || '',
     },
   ];
@@ -42,6 +44,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   });
 
   const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
+  const maxString = marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'].toFixed(6);
 
   return (
     <BaseActionCard
@@ -73,20 +76,20 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.BURN,
-              actionArgs: getBurnActionArgs(selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? kitty0 : kitty1, parsedValue),
+              actionArgs: value === '' ? undefined : getBurnActionArgs(selectedToken === TokenType.KITTY0 ? kitty0 : kitty1, parsedValue),
               textFields: [value],
               aloeResult: {
-                token0RawDelta: selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? parsedValue : undefined,
-                token1RawDelta: selectedToken === SelectedToken.TOKEN_ONE_PLUS ? parsedValue : undefined,
-                token0PlusDelta: selectedToken === SelectedToken.TOKEN_ZERO_PLUS ? -parsedValue : undefined,
-                token1PlusDelta: selectedToken === SelectedToken.TOKEN_ONE_PLUS ? -parsedValue : undefined,
+                token0RawDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
+                token1RawDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
+                token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
+                token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
                 selectedToken: selectedToken,
               },
               uniswapResult: null,
             });
           }}
-          max='100'
-          maxed={tokenAmount === '100'}
+          max={maxString}
+          maxed={tokenAmount === maxString}
         />
       </div>
     </BaseActionCard>

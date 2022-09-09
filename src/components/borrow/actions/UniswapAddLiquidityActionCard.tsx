@@ -27,7 +27,8 @@ type TickPrice = {
 };
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { token0, token1, feeTier, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { token0, token1, feeTier } = marginAccount;
 
   const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
 
@@ -495,10 +496,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
           tokenLabel={token0?.ticker || ''}
-          value={isAmount0InputDisabled ? '' :localToken0Amount}
+          value={isAmount0InputDisabled ? '' : localToken0Amount}
           onChange={handleLocalToken0AmountInput}
           onBlur={updateTokenAmountInput}
           disabled={isAmount0InputDisabled}
+          max={marginAccount.assets.token0Raw.toFixed(6)}
+          maxed={localToken0Amount === marginAccount.assets.token0Raw.toFixed(6)}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
@@ -506,6 +509,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onChange={handleLocalToken1AmountInput}
           onBlur={updateTokenAmountInput}
           disabled={isAmount1InputDisabled}
+          max={marginAccount.assets.token1Raw.toFixed(6)}
+          maxed={localToken1Amount === marginAccount.assets.token1Raw.toFixed(6)}
         />
       </div>
     </BaseActionCard>

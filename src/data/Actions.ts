@@ -12,7 +12,9 @@ import { DropdownOption } from '../components/common/Dropdown';
 import { FeeTier } from './FeeTier';
 import { TokenData } from './TokenData';
 import JSBI from 'jsbi';
-import { Assets, Liabilities } from './MarginAccount';
+import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
+import Big from 'big.js';
+import { UserBalances } from './UserBalances';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -59,11 +61,11 @@ export type UniswapPosition = {
   liquidity: JSBI;
 };
 
-export enum SelectedToken {
-  TOKEN_ZERO = 'TOKEN_ZERO',
-  TOKEN_ONE = 'TOKEN_ONE',
-  TOKEN_ZERO_PLUS = 'TOKEN_ZERO_PLUS',
-  TOKEN_ONE_PLUS = 'TOKEN_ONE_PLUS',
+export enum TokenType {
+  ASSET0 = 'ASSET0',
+  ASSET1 = 'ASSET1',
+  KITTY0 = 'KITTY0',
+  KITTY1 = 'KITTY1',
 }
 
 export type AloeResult = {
@@ -73,7 +75,7 @@ export type AloeResult = {
   token1DebtDelta?: number;
   token0PlusDelta?: number;
   token1PlusDelta?: number;
-  selectedToken: SelectedToken | null;
+  selectedToken: TokenType | null;
 };
 
 export type UniswapResult = {
@@ -98,11 +100,8 @@ export type CumulativeActionCardResult = {
 };
 
 export type ActionCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
-  feeTier: FeeTier;
+  marginAccount: MarginAccount;
+  availableBalances: UserBalances;
   previousActionCardState: ActionCardState | null;
   isCausingError: boolean;
   onRemove: () => void;
@@ -204,7 +203,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['10'],
         aloeResult: {
           token0RawDelta: 10,
-          selectedToken: SelectedToken.TOKEN_ZERO,
+          selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
       },
@@ -214,7 +213,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         aloeResult: {
           token0RawDelta: 100,
           token0DebtDelta: 100,
-          selectedToken: SelectedToken.TOKEN_ZERO,
+          selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
       },
@@ -234,7 +233,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['10'],
         aloeResult: {
           token0RawDelta: 10,
-          selectedToken: SelectedToken.TOKEN_ZERO,
+          selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
       },
@@ -244,7 +243,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         aloeResult: {
           token0RawDelta: 50,
           token0DebtDelta: 50,
-          selectedToken: SelectedToken.TOKEN_ZERO,
+          selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
       },
@@ -254,7 +253,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         aloeResult: {
           token1RawDelta: 0.03,
           token1DebtDelta: 0.03,
-          selectedToken: SelectedToken.TOKEN_ONE,
+          selectedToken: TokenType.ASSET1,
         },
         uniswapResult: null,
       },
@@ -268,7 +267,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
 };
 
 export function getDropdownOptionFromSelectedToken(
-  selectedToken: SelectedToken | null,
+  selectedToken: TokenType | null,
   options: DropdownOption[]
 ): DropdownOption {
   if (options.length === 0) {
@@ -282,28 +281,25 @@ export function getDropdownOptionFromSelectedToken(
 
 export function parseSelectedToken(
   value: string | undefined
-): SelectedToken | null {
+): TokenType | null {
   if (!value) return null;
-  return value as SelectedToken;
+  return value as TokenType;
 }
 
-export function calculateHypotheticalState(
-  assetsI: Assets,
-  liabilitiesI: Liabilities,
+export function calculateHypotheticalStates(
+  marginAccount: MarginAccount,
   actionResults: ActionCardState[],
-): {
-  assetsF: Assets,
-  liabilitiesF: Liabilities,
-  problematicActionIdx: number,
-} {
-  let assetsF = {...assetsI};
-  let liabilitiesF = {...liabilitiesI};
-  let problematicActionIdx = -1;
+): { assets: Assets, liabilities: Liabilities }[] {
+  const hypotheticalStates: { assets: Assets, liabilities: Liabilities}[] = [{
+    assets: marginAccount.assets,
+    liabilities: marginAccount.liabilities,
+  }];
+
   for (let i = 0; i < actionResults.length; i += 1) {
     const actionResult = actionResults[i];
 
-    const assetsTemp = { ...assetsF };
-    const liabilitiesTemp = { ...liabilitiesF };
+    const assetsTemp = { ...hypotheticalStates[i].assets };
+    const liabilitiesTemp = { ...hypotheticalStates[i].liabilities };
 
     // update assets
     assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
@@ -319,17 +315,26 @@ export function calculateHypotheticalState(
 
     // if any assets or liabilities are < 0, we have an issue!
     if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
-      problematicActionIdx = i;
+      break;
+    }
+
+    // if the action would cause insolvency, we have an issue!
+    // note: Technically (in the contracts) solvency is only checked at the end of a series of actions,
+    //       not after each individual one. We tried following that pattern here, but it made the UX
+    //       confusing in some cases. For example, with one set of inputs, an entire set of actions would
+    //       be highlighted red to show a solvency error. But upon entering a massive value for one of those
+    //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
+    //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
+    // TLDR: It's simpler to check solvency inside this for loop
+    if (!isSolvent(assetsTemp, liabilitiesTemp, marginAccount.sqrtPriceX96, marginAccount.token0, marginAccount.token1)) {
       break;
     }
 
     // otherwise continue accumulating
-    assetsF = assetsTemp;
-    liabilitiesF = liabilitiesTemp;
+    hypotheticalStates.push({
+      assets: assetsTemp,
+      liabilities: liabilitiesTemp,
+    });
   }
-  return {
-    assetsF,
-    liabilitiesF,
-    problematicActionIdx,
-  }
+  return hypotheticalStates;
 }

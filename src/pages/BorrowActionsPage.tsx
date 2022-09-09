@@ -25,7 +25,7 @@ import {
   ActionProvider,
   ActionProviders,
   ActionTemplates,
-  calculateHypotheticalState,
+  calculateHypotheticalStates,
   getNameOfAction,
 } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
@@ -234,28 +234,26 @@ export default function BorrowActionsPage() {
     return null;
   }
 
-  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
   // assets and liabilities before adding any hypothetical actions
   const assetsI = marginAccount.assets;
   const liabilitiesI = marginAccount.liabilities;
 
   // assets and liabilities after adding hypothetical actions
-
-  // let assetsF = { ...assetsI };
-  // let liabilitiesF = { ...liabilitiesI };
-  // let problematicActionIdx: number | null = null;
-
-  const { assetsF, liabilitiesF, problematicActionIdx } = calculateHypotheticalState(
-    assetsI,
-    liabilitiesI,
+  const hypotheticalStates = calculateHypotheticalStates(
+    marginAccount,
     actionResults
   );
+  const numValidActions = hypotheticalStates.length - 1;
+  const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
+  const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
 
-  const setOfActionsIsProblematic = (problematicActionIdx === -1) && !isSolvent(assetsF, liabilitiesF, sqrtPriceX96, marginAccount.token0, marginAccount.token1);
+  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
+  // verify that every action is actually viable to send on-chain
+  const transactionIsViable = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
-  console.log(assetsF);
-  console.log(liabilitiesF);
-  console.log(problematicActionIdx);
+  // console.log(assetsF);
+  // console.log(liabilitiesF);
+  // console.log(problematicActionIdx);
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
@@ -349,11 +347,8 @@ export default function BorrowActionsPage() {
         </div>
         <GridExpandingDiv>
           <ManageAccountWidget
-            token0={marginAccount.token0}
-            token1={marginAccount.token1}
-            kitty0={marginAccount.kitty0}
-            kitty1={marginAccount.kitty1}
-            feeTier={marginAccount.feeTier}
+            marginAccount={marginAccount}
+            hypotheticalStates={hypotheticalStates}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -368,7 +363,7 @@ export default function BorrowActionsPage() {
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
             problematicActionIdx={problematicActionIdx}
-            setOfActionsIsProblematic={setOfActionsIsProblematic}
+            transactionIsViable={transactionIsViable}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
@@ -444,7 +439,8 @@ export default function BorrowActionsPage() {
             <TokenAllocationPieChartWidget
               token0={marginAccount.token0}
               token1={marginAccount.token1}
-              assets={marginAccount.assets}
+              assets={isShowingHypothetical ? assetsF : marginAccount.assets}
+              sqrtPriceX96={sqrtPriceX96}
             />
           </div>
         </div>
