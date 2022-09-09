@@ -9,6 +9,7 @@ import {
   YAxis,
 } from 'recharts';
 import styled from 'styled-components';
+import { MarginAccount } from '../../data/MarginAccount';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -24,35 +25,50 @@ const Container = styled.div`
   top: 0;
   width: 100%;
   height: 100%;
-`
+`;
 
-export default function PnLGraph() {
+function calculatePnL(price: number): number {
+  return 0;
+}
+
+/**
+ * X is price
+ * Y is PnL
+ */
+export type PnLEntry = {
+  x: number;
+  y: number;
+}
+
+export type PnLGraphProps = {
+  marginAccount: MarginAccount,
+};
+
+export default function PnLGraph(props: PnLGraphProps) {
+  const { marginAccount } = props;
+  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
   const data = [
     {
-      amount: -50,
-      pv: 2400,
-      amt: 2400,
+      x: 1,
+      y: -50,
     },
     {
-      amount: 0,
-      pv: 1398,
-      amt: 2210,
+      x: 2,
+      y: 0,
     },
     {
-      amount: 50,
-      pv: 9800,
-      amt: 2290,
+      x: 3,
+      y: 50,
     },
     {
-      amount: 50,
-      pv: 3908,
-      amt: 2000,
+      x: 4,
+      y: 50,
     },
   ];
 
   const gradientOffset = () => {
-    const dataMax = Math.max(...data.map((i) => i.amount));
-    const dataMin = Math.min(...data.map((i) => i.amount));
+    const dataMax = Math.max(...data.map((i) => i.y));
+    const dataMin = Math.min(...data.map((i) => i.y));
 
     if (dataMax <= 0) {
       return 0;
@@ -81,16 +97,19 @@ export default function PnLGraph() {
             <XAxis 
               domain={['auto', 'auto']}
               interval={0}
-              dataKey='name'
+              dataKey='x'
               axisLine={false}
               tickLine={false}
+              hide={true}
             />
             <YAxis stroke={SECONDARY_COLOR}  />
             <ReferenceLine
               y={0}
               stroke={SECONDARY_COLOR}
             />
-            <Tooltip isAnimationActive={false} />
+            {/* <Tooltip
+              isAnimationActive={false}
+            /> */}
             <defs>
               <linearGradient id='splitColor' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset={off} stopColor='rgba(128, 196, 128, 0.5)' stopOpacity={1} />
@@ -103,7 +122,7 @@ export default function PnLGraph() {
             </defs>
             <Area 
               type='linear'
-              dataKey='amount'
+              dataKey='y'
               stroke='url(#splitColorFill)'
               fill='url(#splitColor)'
               isAnimationActive={false}

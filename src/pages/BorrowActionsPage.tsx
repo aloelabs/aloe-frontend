@@ -431,11 +431,11 @@ export default function BorrowActionsPage() {
               />
             </AccountStatsGrid>
           </div>
-          <div className='w-full flex flex-col gap-4'>
+          <div className='w-full flex flex-col gap-4 mb-8'>
             <Display size='M' weight='medium'>
               PnL
             </Display>
-            <PnLGraph />
+            <PnLGraph marginAccount={marginAccount} />
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>
