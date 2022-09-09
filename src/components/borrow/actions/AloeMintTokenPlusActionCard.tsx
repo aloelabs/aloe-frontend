@@ -75,7 +75,11 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             const parsedValue = parseFloat(value) || 0;
             onChange({
               actionId: ActionID.MINT,
-              actionArgs: value === '' ? undefined : getMintActionArgs(selectedToken === TokenType.ASSET0 ? kitty0 : kitty1, parsedValue),
+              actionArgs: value === '' ? undefined : getMintActionArgs(
+                selectedToken === TokenType.ASSET0 ? token0 : token1,
+                selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
+                parsedValue
+              ),
               textFields: [value],
               aloeResult: {
                 token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,

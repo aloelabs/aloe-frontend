@@ -21,9 +21,9 @@ export function getTransferOutActionArgs(token: TokenData, amount: number): stri
   return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
 }
 
-export function getMintActionArgs(kitty: TokenData, amount: number): string {
+export function getMintActionArgs(token: TokenData, kitty: TokenData, amount: number): string {
   const address = kitty.address;
-  const bigAmount = new Big(amount.toFixed(Math.min(kitty.decimals, 20))).mul(10 ** 18);
+  const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
 
   return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
 }
@@ -77,8 +77,8 @@ export function getActionArgsFor(
       return null;
 
     case ActionID.MINT:
-      if (state.aloeResult?.token0PlusDelta) return getMintActionArgs(kitty0, state.aloeResult.token0PlusDelta);
-      if (state.aloeResult?.token1PlusDelta) return getMintActionArgs(kitty1, state.aloeResult.token1PlusDelta);
+      if (state.aloeResult?.token0PlusDelta) return getMintActionArgs(token0, kitty0, state.aloeResult.token0PlusDelta);
+      if (state.aloeResult?.token1PlusDelta) return getMintActionArgs(token1, kitty1, state.aloeResult.token1PlusDelta);
       return null;
 
     case ActionID.BURN:
