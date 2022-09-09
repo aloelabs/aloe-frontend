@@ -213,7 +213,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const needsKitty1Approval = !userAllowance1Kitty ||
     (isUsingKitty1 && toBig(userAllowance1Kitty as unknown as BigNumber).div(kitty1.decimals).toNumber() < userBalances.amount1Kitty);
 
-  const disableConfirmButton = activeActions.length === 0 || !transactionIsViable;/* || (
+  // Disable the confirm button if there ae no active actions, the transaction isn't viable, or if there are any problematic actions
+  const disableConfirmButton = activeActions.length === 0 || !transactionIsViable || problematicActionIdx !== -1;/* || (
     Number(needsAsset0Approval) + Number(needsAsset1Approval) + Number(needsKitty0Approval) + Number(needsKitty1Approval) <
     Number(!writeAsset0Allowance.isIdle) + Number(!writeAsset1Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle)
   );*/
