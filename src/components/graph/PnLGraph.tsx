@@ -9,7 +9,8 @@ import {
   YAxis,
 } from 'recharts';
 import styled from 'styled-components';
-import { MarginAccount } from '../../data/MarginAccount';
+import { BIGQ96 } from '../../data/constants/Values';
+import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -27,8 +28,20 @@ const Container = styled.div`
   height: 100%;
 `;
 
-function calculatePnL(price: number): number {
-  return 0;
+function calculatePnL0(price: number, assets: Assets, liabilities: Liabilities, initialValue = 0): number {
+  const fixedAssets = assets.token0Raw + assets.token0Plus + price * (assets.token1Raw + assets.token1Plus);
+  const fluidAssets = 0; // TODO
+  const fixedLiabilities = liabilities.amount0 + price * liabilities.amount1;
+
+  return (fixedAssets + fluidAssets - fixedLiabilities) - initialValue;
+}
+
+function calculatePnL1(price: number, assets: Assets, liabilities: Liabilities, initialValue = 0): number {
+  const fixedAssets = price * (assets.token0Raw + assets.token0Plus) + assets.token1Raw + assets.token1Plus;
+  const fluidAssets = 0; // TODO
+  const fixedLiabilities = price * liabilities.amount0 + liabilities.amount1;
+
+  return (fixedAssets + fluidAssets - fixedLiabilities) - initialValue;
 }
 
 /**
@@ -42,29 +55,30 @@ export type PnLEntry = {
 
 export type PnLGraphProps = {
   marginAccount: MarginAccount,
+  inTermsOfToken0: boolean,
 };
 
+const PLOT_X_SCALE = 1.2;
+
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount } = props;
-  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
-  const data = [
-    {
-      x: 1,
-      y: -50,
-    },
-    {
-      x: 2,
-      y: 0,
-    },
-    {
-      x: 3,
-      y: 50,
-    },
-    {
-      x: 4,
-      y: 50,
-    },
-  ];
+  const { marginAccount, inTermsOfToken0 } = props;
+  const { token0, token1, sqrtPriceX96, assets, liabilities } = marginAccount;
+
+  let price = sqrtPriceX96.mul(sqrtPriceX96).div(BIGQ96).div(BIGQ96).mul(10 ** (token0.decimals - token1.decimals)).toNumber();
+  if (inTermsOfToken0) price = 1 / price;
+  const priceA = price / PLOT_X_SCALE;
+  const priceB = price * PLOT_X_SCALE;
+
+  const calculatePnL = (inTermsOfToken0 ? calculatePnL0 : calculatePnL1);
+  const initialValue = calculatePnL(price, assets, liabilities);
+
+  let P = priceA;
+  let data: PnLEntry[] = [];
+
+  while (P < priceB) {
+    data.push({ x: P, y: calculatePnL(P, assets, liabilities, initialValue) });
+    P *= 1.0001;
+  }
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
@@ -107,9 +121,9 @@ export default function PnLGraph(props: PnLGraphProps) {
               y={0}
               stroke={SECONDARY_COLOR}
             />
-            {/* <Tooltip
+            <Tooltip
               isAnimationActive={false}
-            /> */}
+            />
             <defs>
               <linearGradient id='splitColor' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset={off} stopColor='rgba(128, 196, 128, 0.5)' stopOpacity={1} />
