@@ -18,9 +18,8 @@ export type CreateMarginAccountModalProps = {
 };
 
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
-  const [selectedPool, setSelectedPool] = useState<string | null>(null);
-
   const { open, setOpen, onConfirm, onCancel, availablePools } = props;
+  const [selectedPool, setSelectedPool] = useState<string | null>(availablePools.length > 0 ? availablePools[0].value : null);
   return (
     <CloseableModal
       open={open}
