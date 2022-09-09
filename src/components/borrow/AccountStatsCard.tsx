@@ -14,32 +14,26 @@ const AccountStatsCardWrapper = styled.div`
 
 export type AccountStatsCardProps = {
   label: string;
-  value: string;
-  hypothetical?: string;
-  showHypothetical?: boolean;
+  valueLine1: string;
+  valueLine2?: string;
+  showAsterisk: boolean;
   className?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, hypothetical, showHypothetical, className } = props;
+  const { label, valueLine1, valueLine2, showAsterisk, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
       <div className='flex'>
         <Text size='S' weight='medium' color={SECONDARY_COLOR}>
           {label}
         </Text>
-        {showHypothetical && (
+        {showAsterisk && (
           <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>*</Text>
         )}
       </div>
-      {!showHypothetical && (
-        <Text size='L' weight='medium'>
-          {value}
-        </Text>
-      )}
-      {showHypothetical && (
-        <Text size='L' weight='medium'>{hypothetical ?? value}</Text>
-      )}
+      <Text size='L' weight='medium'>{valueLine1}</Text>
+      {(valueLine2 !== undefined) && (<Text size='L' weight='medium'>{valueLine2}</Text>)}
     </AccountStatsCardWrapper>
   );
 }
