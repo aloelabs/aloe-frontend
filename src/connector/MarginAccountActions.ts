@@ -1,12 +1,9 @@
 import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
-import { BigNumber, Contract, ContractReceipt, Signer, ethers } from 'ethers';
 
-import BlendPoolAbi from '../assets/abis/AloeBlend.json';
+import { ethers } from 'ethers';
 import Big from 'big.js';
 import JSBI from 'jsbi';
-import { BlendPoolStats } from '../data/BlendPoolDataResolver';
 
-import MarginAccountAbi from '../assets/abis/MarginAccount.json';
 import { ActionCardState, ActionID } from '../data/Actions';
 import { TokenData } from '../data/TokenData';
 
@@ -53,7 +50,7 @@ export function getRepayActionArgs(token0: TokenData, amount0: number, token1: T
 }
 
 export function getAddLiquidityActionArgs(lower: number, upper: number, liquidity: JSBI): string {
-    return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
+  return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
 }
 
 export function getActionArgsFor(
@@ -103,25 +100,21 @@ export function getActionArgsFor(
       return null;
 
     case ActionID.ADD_LIQUIDITY:
-        if (state.uniswapResult?.uniswapPosition) {
-            const {lowerBound, upperBound, liquidity} = state.uniswapResult.uniswapPosition;
-            if (lowerBound === null || upperBound === null) return null;
+      if (state.uniswapResult?.uniswapPosition) {
+        const { lowerBound, upperBound, liquidity } = state.uniswapResult.uniswapPosition;
+        if (lowerBound === null || upperBound === null) return null;
 
-            return getAddLiquidityActionArgs(
-                Math.min(lowerBound, upperBound),
-                Math.max(lowerBound, upperBound),
-                liquidity
-            );
-        }
-        return null;
+        return getAddLiquidityActionArgs(Math.min(lowerBound, upperBound), Math.max(lowerBound, upperBound), liquidity);
+      }
+      return null;
 
     case ActionID.REMOVE_LIQUIDITY:
-        return null;
+      return null;
 
     case ActionID.SWAP:
-        return null;
+      return null;
 
     default:
-        return null
+      return null;
   }
 }
