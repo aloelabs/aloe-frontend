@@ -102,7 +102,7 @@ export async function calculateTickData(poolAddress: string, poolBasics: Uniswap
     (await theGraphUniswapV3Client.query({
       query: UniswapTicksQuery,
       variables: {
-        poolAddress: poolAddress,
+        poolAddress: poolAddress.toLowerCase(),
         minTick: minTick,
         maxTick: maxTick,
       },
