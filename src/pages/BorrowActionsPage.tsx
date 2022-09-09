@@ -24,6 +24,7 @@ import {
   ActionProviders,
   ActionTemplates,
   calculateHypotheticalStates,
+  calculateUniswapEndState,
   getNameOfAction,
   UniswapPosition,
   UniswapPositionPrior,
@@ -35,6 +36,7 @@ import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ethers } from 'ethers';
+import { uniswapPositionKey } from '../util/Uniswap';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -166,7 +168,7 @@ export default function BorrowActionsPage() {
   // MARK: component state
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  const [uniswapPositions, setUniswapPositions] = useState<UniswapPosition[]>([]);
+  const [uniswapPositions, setUniswapPositions] = useState(new Map<string, UniswapPosition>());
   const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
@@ -221,17 +223,15 @@ export default function BorrowActionsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch(marginAccountAddress: string, priors: UniswapPositionPrior[]) {
-      const results = await Promise.all(
-        priors.map(prior => {
-          const key = ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [marginAccountAddress, prior.lower, prior.upper])
-          return uniswapV3PoolContract.positions(key);
-        })
-      );
-      const fetchedUniswapPositions = priors.map((prior, i) => {
-        return {
+      const keys = priors.map(prior => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+      const results = await Promise.all(keys.map(key => uniswapV3PoolContract.positions(key)));
+
+      const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+      priors.forEach((prior, i) => {
+        fetchedUniswapPositions.set(keys[i], {
           ...prior,
           liquidity: JSBI.BigInt(results[i].liquidity.toString()),
-        }
+        });
       });
 
       if (mounted) {
@@ -260,15 +260,27 @@ export default function BorrowActionsPage() {
     marginAccount,
     actionResults
   );
-  const numValidActions = hypotheticalStates.length - 1;
+
+  // uniswap positions after adding hypothetical actions
+  console.log("calculating");
+  const [uniswapPositionsF, numValidActionsUniswap] = calculateUniswapEndState(
+    marginAccount,
+    actionResults,
+    uniswapPositions
+  );
+  console.log("done calculating");
+
+  console.log(uniswapPositions);
+  console.log(uniswapPositionsF);
+  console.log(numValidActionsUniswap);
+
+  // check whether actions seem valid on the frontend
+  const numValidActions =  Math.min(hypotheticalStates.length - 1, numValidActionsUniswap);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
 
-  // uniswap positions after adding hypothetical actions
-
-
-  // verify that every action is actually viable to send on-chain
-  const transactionIsViable = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
+  // verify that every action has contract params (ready to send on-chain)
+  const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
@@ -347,7 +359,7 @@ export default function BorrowActionsPage() {
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
             problematicActionIdx={problematicActionIdx}
-            transactionIsViable={transactionIsViable}
+            transactionIsViable={transactionIsReady}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
