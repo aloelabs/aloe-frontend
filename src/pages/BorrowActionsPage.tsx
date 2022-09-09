@@ -32,6 +32,7 @@ import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 import { BIGQ96 } from '../data/constants/Values';
 import { fetchMarginAccount, isSolvent, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { TokenData } from '../data/TokenData';
+import { formatTokenAmount } from '../util/Numbers';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -150,33 +151,6 @@ const AccountStatsGrid = styled.div`
   gap: 16px;
 `;
 
-function inTermsOfEachToken(
-  amount0: number,
-  amount1: number,
-  sqrtPriceX96: Big,
-  token0: TokenData,
-  token1: TokenData
-): [number, number] {
-  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(BIGQ96);
-
-  const inTermsOfToken1 =
-    amount1 +
-    priceX96
-      .mul(amount0)
-      .mul(10 ** token0.decimals)
-      .div(BIGQ96)
-      .div(10 ** token1.decimals)
-      .toNumber();
-  const inTermsOfToken0 =
-    amount0 +
-    BIGQ96.mul(amount1)
-      .mul(10 ** token1.decimals)
-      .div(priceX96)
-      .div(10 ** token0.decimals)
-      .toNumber();
-
-  return [inTermsOfToken0, inTermsOfToken1];
-}
 
 type AccountParams = {
   account: string;
@@ -247,46 +221,11 @@ export default function BorrowActionsPage() {
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
 
-  const sqrtPriceX96 = marginAccount.sqrtPriceX96;
   // verify that every action is actually viable to send on-chain
   const transactionIsViable = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
-  // console.log(assetsF);
-  // console.log(liabilitiesF);
-  // console.log(problematicActionIdx);
-
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
-  const hypotheticalChangesToShow = actionResults.length > 0;
-
-  const [assetsIInTermsOf0, assetsIInTermsOf1] = inTermsOfEachToken(
-    assetsISum0,
-    assetsISum1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  );
-  const [assetsFInTermsOf0, assetsFInTermsOf1] = inTermsOfEachToken(
-    assetsFSum0,
-    assetsFSum1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  );
-  const [liabilitiesIInTermsOf0, liabilitiesIInTermsOf1] = inTermsOfEachToken(
-    liabilitiesI.amount0,
-    liabilitiesI.amount1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  );
-  const [liabilitiesFInTermsOf0, liabilitiesFInTermsOf1] = inTermsOfEachToken(
-    liabilitiesF.amount0,
-    liabilitiesF.amount1,
-    sqrtPriceX96,
-    marginAccount.token0,
-    marginAccount.token1
-  );
 
   const [lowerLiquidationThreshold, upperLiquidationThreshold] = [0, 0]; // TODO
 
@@ -294,7 +233,6 @@ export default function BorrowActionsPage() {
   const [selectedToken, unselectedToken] = isToken0Selected
     ? [marginAccount.token0, marginAccount.token1]
     : [marginAccount.token1, marginAccount.token0];
-  const shouldDisplayHypotheticals = actionResults.length > 0;
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
@@ -379,7 +317,7 @@ export default function BorrowActionsPage() {
                 setIsToken0Selected={setIsToken0Selected}
               />
               <div className='ml-auto'>
-                {hypotheticalChangesToShow && (
+                {(actionResults.length > 0) && (
                   <HypotheticalToggleButton
                     showHypothetical={isShowingHypothetical}
                     setShowHypothetical={setIsShowingHypothetical}
@@ -390,39 +328,37 @@ export default function BorrowActionsPage() {
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
-                value={`${isToken0Selected ? assetsIInTermsOf0 : assetsIInTermsOf1} ${selectedToken.ticker || ''}`}
-                hypothetical={
-                  shouldDisplayHypotheticals
-                    ? `${isToken0Selected ? assetsFInTermsOf0 : assetsFInTermsOf1} ${selectedToken.ticker || ''}`
-                    : undefined
+                valueLine1={
+                  `${formatTokenAmount(isShowingHypothetical ? assetsFSum0 : assetsISum0, 5)} ${marginAccount.token0.ticker || ''}`
                 }
-                showHypothetical={isShowingHypothetical}
+                valueLine2={
+                  `${formatTokenAmount(isShowingHypothetical ? assetsFSum1 : assetsISum1, 5)} ${marginAccount.token1.ticker || ''}`
+                }
+                showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Liabilities'
-                value={`${isToken0Selected ? liabilitiesIInTermsOf0 : liabilitiesIInTermsOf1} ${
-                  selectedToken.ticker || ''
-                }`}
-                hypothetical={
-                  shouldDisplayHypotheticals
-                    ? `${isToken0Selected ? liabilitiesFInTermsOf0 : liabilitiesFInTermsOf1} ${
-                        selectedToken.ticker || ''
-                      }`
-                    : undefined
+                valueLine1={
+                  `${
+                    formatTokenAmount(isShowingHypothetical ? liabilitiesF.amount0 : liabilitiesI.amount0, 5)
+                  } ${marginAccount.token0.ticker || ''}`
                 }
-                showHypothetical={isShowingHypothetical}
+                valueLine2={
+                  `${
+                    formatTokenAmount(isShowingHypothetical ? liabilitiesF.amount1 : liabilitiesI.amount1, 5)
+                  } ${marginAccount.token1.ticker || ''}`
+                }
+                showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
-                value={`${lowerLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
-                hypothetical={undefined}
-                showHypothetical={isShowingHypothetical}
+                valueLine1={`${lowerLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
+                showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Upper Liquidation Threshold'
-                value={`${upperLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
-                hypothetical={undefined}
-                showHypothetical={isShowingHypothetical}
+                valueLine1={`${upperLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
+                showAsterisk={isShowingHypothetical}
               />
             </AccountStatsGrid>
           </div>
@@ -447,7 +383,7 @@ export default function BorrowActionsPage() {
               token0={marginAccount.token0}
               token1={marginAccount.token1}
               assets={isShowingHypothetical ? assetsF : marginAccount.assets}
-              sqrtPriceX96={sqrtPriceX96}
+              sqrtPriceX96={marginAccount.sqrtPriceX96}
             />
           </div>
         </div>

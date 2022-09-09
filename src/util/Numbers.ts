@@ -116,6 +116,6 @@ export function formatTokenAmount(amount: number, sigDigs: number = 4): string {
     style: 'decimal',
     maximumSignificantDigits: sigDigs,
     //avoid adding excess zeros at the end
-    minimumSignificantDigits: amount < 1 ? 1 : sigDigs,
+    minimumSignificantDigits: 2,//amount < 1 ? 1 : sigDigs,
   })
 }
