@@ -56,7 +56,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   useEffectOnce(() => {
     const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
     if (previousRemoveLiquidityPercentage) {
-      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(3));
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(2));
     } 
   })
 
@@ -97,7 +97,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     const lower = liquidityPosition?.lower || null; 
     const upper = liquidityPosition?.upper || null;
     const liquidity = liquidityPosition?.liquidity || JSBI.BigInt(0);
-    const updatedLiquidity = JSBI.BigInt(Big(liquidity.toString() || '0').mul(parsedPercentage / 100.0).toFixed(0));
+    const updatedLiquidity = JSBI.divide(JSBI.multiply(liquidity, JSBI.BigInt((parsedPercentage * 10000 / 100).toFixed(0))), JSBI.BigInt(10000))
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
       actionArgs: (lower !== null && upper !== null) ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
