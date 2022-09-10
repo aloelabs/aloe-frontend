@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
@@ -18,6 +18,9 @@ import Big from 'big.js';
 import { toBig } from '../../util/Numbers';
 import { UserBalances } from '../../data/UserBalances';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
+import PendingTxnModal from './modal/PendingTxnModal';
+import FailedTxnModal from './modal/FailedTxnModal';
+import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -167,6 +170,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     transactionIsViable,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showFailedModal, setShowFailedModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // MARK: wagmi hooks
   const contract = useContractWrite({
@@ -175,6 +181,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     contractInterface: MarginAccountAbi,
     mode: 'recklesslyUnprepared',
     functionName: 'modify',
+    onError: () => {
+      setShowConfirmModal(false);
+      setTimeout(() => {
+        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
+        setShowFailedModal(true);
+      }, 500);
+    },
+    onSuccess: () => {
+      setShowConfirmModal(false);
+      setTimeout(() => {
+        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
+        setShowSuccessModal(true);
+      }, 500);
+    },
   });
   const { address: userAddress } = useAccount();
   const { data: userBalance0Asset } = useBalance({ addressOrName: userAddress, token: token0.address });
@@ -293,17 +313,22 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 console.error('Oops! The transaction couldn\'t be formatted correctly. Please refresh and try again.');
                 return;
               }
+              setShowConfirmModal(true);
 
               if (needsAsset0Approval && writeAsset0Allowance.isIdle) {
+                console.log('approval a');
                 writeAsset0Allowance.write();
               }
               if (needsAsset1Approval && writeAsset1Allowance.isIdle) {
+                console.log('approval b');
                 writeAsset1Allowance.write();
               }
               if (needsKitty0Approval && writeKitty0Allowance.isIdle) {
+                console.log('approval c');
                 writeKitty0Allowance.write();
               }
               if (needsKitty1Approval && writeKitty1Allowance.isIdle) {
+                console.log('approval d');
                 writeKitty1Allowance.write();
               }
 
@@ -328,6 +353,18 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </FilledGradientButtonWithIcon>
         </div>
       </div>
+      <PendingTxnModal
+        open={showConfirmModal}
+        setOpen={setShowConfirmModal}
+      />
+      <FailedTxnModal
+        open={showFailedModal}
+        setOpen={setShowFailedModal}
+      />
+      {/* <SuccessModalContent
+        open={showSuccessModal}
+        setOpen={setShowSuccessModal}
+      /> */}
     </Wrapper>
   );
 }
