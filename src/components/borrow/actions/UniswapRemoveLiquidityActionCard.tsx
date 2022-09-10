@@ -106,7 +106,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       },
       uniswapResult: {
         uniswapPosition: {
-          liquidity: liquidityPosition?.liquidity || JSBI.BigInt(0),
+          liquidity: liquidity,
           amount0: -updatedAmount0,
           amount1: -updatedAmount1,
           lower: liquidityPosition ? liquidityPosition.lower : null,
