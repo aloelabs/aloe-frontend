@@ -24,6 +24,7 @@ import {
   ActionProviders,
   ActionTemplates,
   calculateHypotheticalStates,
+  calculateHypotheticalUniswapStates,
   calculateUniswapEndState,
   getNameOfAction,
   UniswapPosition,
@@ -265,15 +266,14 @@ export default function BorrowActionsPage() {
     actionResults
   );
 
-  // uniswap positions after adding hypothetical actions
-  const [uniswapPositionsF, numValidActionsUniswap] = calculateUniswapEndState(
+  const hypotheticalUniswapStates = calculateHypotheticalUniswapStates(
     marginAccount,
     actionResults,
     uniswapPositions,
   );
 
   // check whether actions seem valid on the frontend
-  const numValidActions =  Math.min(hypotheticalStates.length - 1, numValidActionsUniswap);
+  const numValidActions =  Math.min(hypotheticalStates.length - 1, hypotheticalUniswapStates.length - 1);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
 
