@@ -27,8 +27,10 @@ export default function FailedTxnModal(props: FailedTxnModalProps) {
         size='M'
         fillWidth={true}
         className='mt-8'
-        onClick={() => {props.setOpen(false)}}>Dismiss</FilledGreyButton
+        onClick={() => {props.setOpen(false)}}
       >
+        Dismiss
+      </FilledGreyButton>
     </CloseableModal>
   );
 }
