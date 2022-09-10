@@ -1,4 +1,4 @@
-import { ActionCardProps, ActionID, ActionProviders } from "../../../data/Actions";
+import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from "../../../data/Actions";
 import { DropdownOption, DropdownWithPlaceholder } from "../../common/Dropdown";
 import { Text } from "../../common/Typography";
 import { BaseActionCard } from "../BaseActionCard";
@@ -10,6 +10,8 @@ import { ChangeEvent, useState } from "react";
 import { formatNumberInput, formatTokenAmount } from "../../../util/Numbers";
 import useEffectOnce from "../../../data/hooks/UseEffectOnce";
 import JSBI from 'jsbi';
+import { getRemoveLiquidityActionArgs } from "../../../connector/MarginAccountActions";
+import Big from "big.js";
 
 //TOOD: merge this with the existing UniswapPosition?
 export type UniswapV3LiquidityPosition = {
@@ -19,23 +21,6 @@ export type UniswapV3LiquidityPosition = {
   tickUpper: number;
   liquidity: JSBI;
 }
-
-const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
-  {
-    amount0: 0.011,
-    amount1: 50,
-    tickLower: 190000,
-    tickUpper: 210000,
-    liquidity: JSBI.BigInt(0),
-  },
-  {
-    amount0: 200,
-    amount1: 100,
-    tickLower: 195000,
-    tickUpper: 215000,
-    liquidity: JSBI.BigInt(0),
-  },
-];
 
 const SVGIconWrapper = styled.div.attrs(
   (props: { 
@@ -55,12 +40,12 @@ const SVGIconWrapper = styled.div.attrs(
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
 
-  const dropdownOptions = FAKE_LIQUIDITY_POSITIONS.map((lp, index) => {
+  const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
-      label: `Lower: ${lp.tickLower} Upper: ${lp.tickUpper}`,
+      label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
       value: index.toString(),
       isDefault: index === 0,
     } as DropdownOption
@@ -71,22 +56,22 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   useEffectOnce(() => {
     const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
     if (previousRemoveLiquidityPercentage) {
-      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(3));
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(2));
     } 
   })
 
   let selectedOption: DropdownOption | undefined = undefined;
-  let selectedPosition: UniswapV3LiquidityPosition | undefined = undefined;
+  let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
   const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
   if (uniswapPosition) {
-    const selectedIndex = FAKE_LIQUIDITY_POSITIONS.findIndex((lp) => {
-      return lp.tickLower === uniswapPosition.lower && lp.tickUpper === uniswapPosition.upper;
-    })
+    const selectedIndex = uniswapPositions.findIndex((lp) => {
+      return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
+    });
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption =  dropdownOptions[selectedIndex];
-      selectedPosition = FAKE_LIQUIDITY_POSITIONS[selectedIndex];
+      selectedPosition = uniswapPositions[selectedIndex];
     }
     
     const previousAmount0 = uniswapPosition.amount0;
@@ -105,13 +90,17 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     return percentage !== 0 ? percentage.toFixed(2) : '';
   }
 
-  function updateResult(liquidityPosition: UniswapV3LiquidityPosition | undefined) {
+  function updateResult(liquidityPosition: UniswapPosition | undefined) {
     const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
-    const formattedPercentage = formatPercentage(parsedPercentage);
-    const updatedAmount0 = liquidityPosition ? liquidityPosition.amount0 * (parsedPercentage / 100.0) : 0;
-    const updatedAmount1 = liquidityPosition ? liquidityPosition.amount1 * (parsedPercentage / 100.0) : 0;
+    const updatedAmount0 = liquidityPosition ? (liquidityPosition?.amount0 || 0) * (parsedPercentage / 100.0) : 0;
+    const updatedAmount1 = liquidityPosition ? (liquidityPosition?.amount1 || 0) * (parsedPercentage / 100.0) : 0;
+    const lower = liquidityPosition?.lower || null; 
+    const upper = liquidityPosition?.upper || null;
+    const liquidity = liquidityPosition?.liquidity || JSBI.BigInt(0);
+    const updatedLiquidity = JSBI.divide(JSBI.multiply(liquidity, JSBI.BigInt((parsedPercentage * 10000 / 100).toFixed(0))), JSBI.BigInt(10000))
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
+      actionArgs: (lower !== null && upper !== null) ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
       aloeResult: {
         token0RawDelta: updatedAmount0,
         token1RawDelta: updatedAmount1,
@@ -119,11 +108,11 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       },
       uniswapResult: {
         uniswapPosition: {
-          liquidity: liquidityPosition?.liquidity || JSBI.BigInt(0),
+          liquidity: updatedLiquidity,
           amount0: -updatedAmount0,
           amount1: -updatedAmount1,
-          lower: liquidityPosition ? liquidityPosition.tickLower : null,
-          upper: liquidityPosition ? liquidityPosition.tickUpper : null,
+          lower: liquidityPosition ? liquidityPosition.lower : null,
+          upper: liquidityPosition ? liquidityPosition.upper : null,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: parsedPercentage,
@@ -134,7 +123,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {
-    const updatedPosition = FAKE_LIQUIDITY_POSITIONS[parseInt(updatedOption.value)];
+    const updatedPosition = uniswapPositions[parseInt(updatedOption.value)];
     updateResult(updatedPosition);
   }
 
@@ -183,16 +172,16 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                 <div className='flex items-center gap-4'>
                   <div className='flex flex-col'>
                     <Text size='S' color='#82a0b6'>Current Balance</Text>
-                    <Text size='M'>{formatTokenAmount(selectedPosition.amount0)} {token0?.ticker}</Text>
-                    <Text size='M'>{formatTokenAmount(selectedPosition.amount1)} {token1?.ticker}</Text>
+                    <Text size='M'>{formatTokenAmount(selectedPosition?.amount0 || 0)} {token0?.ticker}</Text>
+                    <Text size='M'>{formatTokenAmount(selectedPosition?.amount1 || 0)} {token1?.ticker}</Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
                     <RightArrowIcon width={24} height={24} />
                   </SVGIconWrapper>
                   <div>
                     <Text size='S' color='#82a0b6'>Updated Balance</Text>
-                    <Text size='M'>{amount0 ? formatTokenAmount(selectedPosition.amount0 + amount0) : formatTokenAmount(selectedPosition.amount0)} {token0?.ticker}</Text>
-                    <Text size='M'>{amount1 ? formatTokenAmount(selectedPosition.amount1 + amount1) : formatTokenAmount(selectedPosition.amount1)} {token1?.ticker}</Text>
+                    <Text size='M'>{amount0 ? formatTokenAmount((selectedPosition?.amount0 || 0) + amount0) : formatTokenAmount(selectedPosition?.amount0 || 0)} {token0?.ticker}</Text>
+                    <Text size='M'>{amount1 ? formatTokenAmount((selectedPosition?.amount1 || 0) + amount1) : formatTokenAmount(selectedPosition?.amount1 || 0)} {token1?.ticker}</Text>
                   </div>
                 </div>
               </div>
