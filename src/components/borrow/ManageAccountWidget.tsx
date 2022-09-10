@@ -21,6 +21,7 @@ import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 import PendingTxnModal from './modal/PendingTxnModal';
 import FailedTxnModal from './modal/FailedTxnModal';
 import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
+import CreatedMarginAccountModal from './modal/CreatedMarginAccountModal';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -128,29 +129,61 @@ function computeBalancesAvailableForEachAction(balances: UserBalances, actionRes
   return balancesList;
 }
 
-function determineWhichTokensAreBeingTransferredIn(actionResults: ActionCardState[]): boolean[] {
-  const result = [false, false, false, false];
+function determineAmountsBeingTransferredIn(actionResults: ActionCardState[]): number[] {
+  const result = [0, 0, 0, 0];
   for (const actionResult of actionResults) {
     if (actionResult.actionId !== ActionID.TRANSFER_IN) continue;
 
     switch (actionResult.aloeResult?.selectedToken) {
       case TokenType.ASSET0:
-        result[0] = true;
+        result[0] += actionResult.aloeResult.token0RawDelta || 0;
         break;
       case TokenType.ASSET1:
-        result[1] = true;
+        result[1] += actionResult.aloeResult.token1RawDelta || 0;
         break;
       case TokenType.KITTY0:
-        result[2] = true;
+        result[2] += actionResult.aloeResult.token0PlusDelta || 0;
         break;
       case TokenType.KITTY1:
-        result[3] = true;
+        result[3] += actionResult.aloeResult.token1PlusDelta || 0;
         break;
       default:
         break;
     }
   }
   return result;
+}
+
+enum ConfirmButtonState {
+  INSUFFICIENT_ASSET0,
+  INSUFFICIENT_ASSET1,
+  INSUFFICIENT_KITTY0,
+  INSUFFICIENT_KITTY1,
+  APPROVE_ASSET0,
+  APPROVE_ASSET1,
+  APPROVE_KITTY0,
+  APPROVE_KITTY1,
+  NO_ACTIONS,
+  ERRORING_ACTIONS,
+  PENDING,
+  READY,
+}
+
+function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: TokenData, kitty0: TokenData, kitty1: TokenData): {text: string, enabled: boolean} {
+  switch (state) {
+    case ConfirmButtonState.INSUFFICIENT_ASSET0: return {text: `Insufficient ${token0.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_ASSET1: return {text: `Insufficient ${token1.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY0: return {text: `Insufficient ${kitty0.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY1: return {text: `Insufficient ${kitty1.ticker}`, enabled: false};
+    case ConfirmButtonState.APPROVE_ASSET0: return {text: `Approve ${token0.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_ASSET1: return {text: `Approve ${token1.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY0: return {text: `Approve ${kitty0.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY1: return {text: `Approve ${kitty1.ticker}`, enabled: true};
+    case ConfirmButtonState.NO_ACTIONS:
+    case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', enabled: false};
+    case ConfirmButtonState.PENDING: return {text: 'Pending', enabled: false};
+    case ConfirmButtonState.READY: return {text: 'Confirm', enabled: true};
+  }
 }
 
 const MARGIN_ACCOUNT_CALLEE = '0xba9ad27ed23b5e002e831514e69554815a5820b3';
@@ -170,7 +203,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     transactionIsViable,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -182,14 +215,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     mode: 'recklesslyUnprepared',
     functionName: 'modify',
     onError: () => {
-      setShowConfirmModal(false);
+      setShowPendingModal(false);
       setTimeout(() => {
         //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
         setShowFailedModal(true);
       }, 500);
     },
     onSuccess: () => {
-      setShowConfirmModal(false);
+      setShowPendingModal(false);
       setTimeout(() => {
         //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
         setShowSuccessModal(true);
@@ -220,26 +253,56 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(userBalances, actionResults);
 
   // MARK: logic to determine what approvals are needed
-  const [
-    isUsingAsset0,
-    isUsingAsset1,
-    isUsingKitty0,
-    isUsingKitty1
-  ] = determineWhichTokensAreBeingTransferredIn(actionResults);
-  const needsAsset0Approval = !userAllowance0Asset ||
-    (isUsingAsset0 && toBig(userAllowance0Asset as unknown as BigNumber).div(token0.decimals).toNumber() < userBalances.amount0Asset);
-  const needsAsset1Approval = !userAllowance1Asset ||
-    (isUsingAsset1 && toBig(userAllowance1Asset as unknown as BigNumber).div(token1.decimals).toNumber() < userBalances.amount1Asset);
-  const needsKitty0Approval = !userAllowance0Kitty ||
-    (isUsingKitty0 && toBig(userAllowance0Kitty as unknown as BigNumber).div(kitty0.decimals).toNumber() < userBalances.amount0Kitty);
-  const needsKitty1Approval = !userAllowance1Kitty ||
-    (isUsingKitty1 && toBig(userAllowance1Kitty as unknown as BigNumber).div(kitty1.decimals).toNumber() < userBalances.amount1Kitty);
+  const requiredBalances = determineAmountsBeingTransferredIn(actionResults);
+  const insufficient = [
+    requiredBalances[0] > userBalances.amount0Asset,
+    requiredBalances[1] > userBalances.amount1Asset,
+    requiredBalances[2] > userBalances.amount0Kitty,
+    requiredBalances[3] > userBalances.amount1Kitty,
+  ];
+  const needsApproval = [
+    !userAllowance0Asset || (toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0]),
+    !userAllowance1Asset || (toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1]),
+    !userAllowance0Kitty || (toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2]),
+    !userAllowance1Kitty || (toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3]),
+  ];
 
-  // Disable the confirm button if there ae no active actions, the transaction isn't viable, or if there are any problematic actions
-  const disableConfirmButton = activeActions.length === 0 || !transactionIsViable || problematicActionIdx !== -1;/* || (
-    Number(needsAsset0Approval) + Number(needsAsset1Approval) + Number(needsKitty0Approval) + Number(needsKitty1Approval) <
-    Number(!writeAsset0Allowance.isIdle) + Number(!writeAsset1Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle)
-  );*/
+  if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
+  if (writeAsset1Allowance.isError) writeAsset1Allowance.reset();
+  if (writeKitty0Allowance.isError) writeKitty0Allowance.reset();
+  if (writeKitty1Allowance.isError) writeKitty1Allowance.reset();
+  if (contract.isError) setTimeout(contract.reset, 500);
+
+  let confirmButtonState = ConfirmButtonState.READY;
+  if (activeActions.length === 0) {
+    confirmButtonState = ConfirmButtonState.NO_ACTIONS;
+  } else if (!transactionIsViable || problematicActionIdx !== -1) {
+    confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
+  } else if (insufficient[0]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
+  } else if (insufficient[1]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET1;
+  } else if (insufficient[2]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY0;
+  } else if (insufficient[3]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY1;
+  } else if (needsApproval[0] && writeAsset0Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_ASSET0;
+  } else if (needsApproval[1] && writeAsset1Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_ASSET1;
+  } else if (needsApproval[2] && writeKitty0Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_KITTY0;
+  } else if (needsApproval[3] && writeKitty1Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_KITTY1;
+  } else if (needsApproval.includes(true)) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (contract.isIdle) {
+    confirmButtonState = ConfirmButtonState.READY;
+  } else {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  }
+
+  const confirmButton = getConfirmButton(confirmButtonState, token0, token1, kitty0, kitty1);
 
   //TODO: add some sort of error message when !transactionIsViable
   return (
@@ -313,24 +376,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 console.error('Oops! The transaction couldn\'t be formatted correctly. Please refresh and try again.');
                 return;
               }
-              setShowConfirmModal(true);
-
-              if (needsAsset0Approval && writeAsset0Allowance.isIdle) {
-                console.log('approval a');
-                writeAsset0Allowance.write();
-              }
-              if (needsAsset1Approval && writeAsset1Allowance.isIdle) {
-                console.log('approval b');
-                writeAsset1Allowance.write();
-              }
-              if (needsKitty0Approval && writeKitty0Allowance.isIdle) {
-                console.log('approval c');
-                writeKitty0Allowance.write();
-              }
-              if (needsKitty1Approval && writeKitty1Allowance.isIdle) {
-                console.log('approval d');
-                writeKitty1Allowance.write();
-              }
 
               const actionIds = actionResults.map((result) => result.actionId);
               const actionArgs = actionResults.map((result) => result.actionArgs!);
@@ -339,32 +384,52 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 [actionIds, actionArgs]
               );
 
-              console.log(contract.write?.({
-                recklesslySetUnpreparedArgs: [
-                  '0xba9ad27ed23b5e002e831514e69554815a5820b3',
-                  calldata,
-                  [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
-                ],
-              }));
+              switch (confirmButtonState) {
+                case ConfirmButtonState.APPROVE_ASSET0:
+                  writeAsset0Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_ASSET1:
+                  writeAsset1Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_KITTY0:
+                  writeKitty0Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_KITTY1:
+                  writeKitty1Allowance.write();
+                  break;
+                case ConfirmButtonState.READY:
+                  contract.write?.({
+                    recklesslySetUnpreparedArgs: [
+                      '0xba9ad27ed23b5e002e831514e69554815a5820b3',
+                      calldata,
+                      [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
+                    ],
+                  });
+                  setShowPendingModal(true);
+                  break;
+                default:
+                  break;
+              }
             }}
-            disabled={disableConfirmButton}
+            disabled={!confirmButton.enabled}
           >
-            Confirm
+            {confirmButton.text}
           </FilledGradientButtonWithIcon>
         </div>
       </div>
       <PendingTxnModal
-        open={showConfirmModal}
-        setOpen={setShowConfirmModal}
+        open={showPendingModal}
+        setOpen={setShowPendingModal}
       />
       <FailedTxnModal
         open={showFailedModal}
         setOpen={setShowFailedModal}
       />
-      {/* <SuccessModalContent
+      <CreatedMarginAccountModal // TODO duplicate this or rename it for this use-case
         open={showSuccessModal}
         setOpen={setShowSuccessModal}
-      /> */}
+        onConfirm={() => {}}
+      />
     </Wrapper>
   );
 }
