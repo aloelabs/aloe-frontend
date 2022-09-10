@@ -105,6 +105,7 @@ export type CumulativeActionCardResult = {
 export type ActionCardProps = {
   marginAccount: MarginAccount;
   availableBalances: UserBalances;
+  uniswapPositions: UniswapPosition[];
   previousActionCardState: ActionCardState | null;
   isCausingError: boolean;
   onRemove: () => void;
@@ -322,7 +323,6 @@ export function calculateUniswapEndState(
       if (!pos || !pos.lower || !pos.upper) continue; // TODO should maybe return early instead of just continuing
 
       const key = uniswapPositionKey(marginAccount.address, pos.lower, pos.upper);
-
       if (uniswapPositionsF.has(key)) {
         const oldPos = uniswapPositionsF.get(key)!;
 
