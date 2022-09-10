@@ -54,12 +54,14 @@ export function getNameOfAction(id: ActionID): string {
 // export type ActionValue = number;
 
 export type UniswapPosition = {
-  amount0: number;
-  amount1: number;
-  lowerBound: number | null;
-  upperBound: number | null;
+  amount0?: number;
+  amount1?: number;
+  lower: number | null;
+  upper: number | null;
   liquidity: JSBI;
 };
+
+export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
 
 export enum TokenType {
   ASSET0 = 'ASSET0',

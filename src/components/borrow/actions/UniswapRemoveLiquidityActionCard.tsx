@@ -82,7 +82,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
   if (uniswapPosition) {
     const selectedIndex = FAKE_LIQUIDITY_POSITIONS.findIndex((lp) => {
-      return lp.tickLower === uniswapPosition.lowerBound && lp.tickUpper === uniswapPosition.upperBound;
+      return lp.tickLower === uniswapPosition.lower && lp.tickUpper === uniswapPosition.upper;
     })
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption =  dropdownOptions[selectedIndex];
@@ -122,8 +122,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
           liquidity: liquidityPosition?.liquidity || JSBI.BigInt(0),
           amount0: -updatedAmount0,
           amount1: -updatedAmount1,
-          lowerBound: liquidityPosition ? liquidityPosition.tickLower : null,
-          upperBound: liquidityPosition ? liquidityPosition.tickUpper : null,
+          lower: liquidityPosition ? liquidityPosition.tickLower : null,
+          upper: liquidityPosition ? liquidityPosition.tickUpper : null,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: parsedPercentage,

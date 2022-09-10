@@ -1,11 +1,9 @@
-import Big from 'big.js';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useContract, useProvider } from 'wagmi';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import JSBI from 'jsbi';
+import { chain, useContract, useContractRead, useProvider } from 'wagmi';
 import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
@@ -27,12 +25,16 @@ import {
   ActionTemplates,
   calculateHypotheticalStates,
   getNameOfAction,
+  UniswapPosition,
+  UniswapPositionPrior,
 } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
-import { BIGQ96 } from '../data/constants/Values';
-import { fetchMarginAccount, isSolvent, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
-import { TokenData } from '../data/TokenData';
+import { fetchMarginAccount, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { formatTokenAmount } from '../util/Numbers';
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ethers } from 'ethers';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -159,11 +161,12 @@ type AccountParams = {
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
-  const accountAddressParam = params.account;
+  const accountAddressParam = `0x${params.account}`;
 
   // MARK: component state
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
+  const [uniswapPositions, setUniswapPositions] = useState<UniswapPosition[]>([]);
   const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
@@ -181,7 +184,18 @@ export default function BorrowActionsPage() {
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
+  const { data: uniswapPositionPriors } = useContractRead({
+    addressOrName: accountAddressParam ?? '', // TODO better optional resolution
+    contractInterface: MarginAccountABI,
+    functionName: 'getUniswapPositions',
+  });
+  const uniswapV3PoolContract = useContract({
+    addressOrName: marginAccount?.uniswapPool ?? '', // TODO better option resolution
+    contractInterface: UniswapV3PoolABI,
+    signerOrProvider: provider,
+  });
 
+  // MARK: fetch margin account
   useEffect(() => {
     let mounted = true;
     async function fetch(marginAccountAddress: string) {
@@ -203,6 +217,35 @@ export default function BorrowActionsPage() {
     };
   }, [provider]);
 
+  // MARK: fetch uniswap positions
+  useEffect(() => {
+    let mounted = true;
+    async function fetch(marginAccountAddress: string, priors: UniswapPositionPrior[]) {
+      const results = await Promise.all(
+        priors.map(prior => {
+          const key = ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [marginAccountAddress, prior.lower, prior.upper])
+          return uniswapV3PoolContract.positions(key);
+        })
+      );
+      const fetchedUniswapPositions = priors.map((prior, i) => {
+        return {
+          ...prior,
+          liquidity: JSBI.BigInt(results[i].liquidity.toString()),
+        }
+      });
+
+      if (mounted) {
+        setUniswapPositions(fetchedUniswapPositions);
+      }
+    }
+    if (Array.isArray(uniswapPositionPriors) && marginAccount) {
+      fetch(accountAddressParam, uniswapPositionPriors as UniswapPositionPrior[]);
+    }
+    return () => {
+      mounted = false;
+    }
+  }, [uniswapPositionPriors, uniswapV3PoolContract]);
+
   if (!marginAccount) {
     //If no account data is found, don't render the page
     return null;
@@ -220,6 +263,9 @@ export default function BorrowActionsPage() {
   const numValidActions = hypotheticalStates.length - 1;
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
+
+  // uniswap positions after adding hypothetical actions
+
 
   // verify that every action is actually viable to send on-chain
   const transactionIsViable = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
