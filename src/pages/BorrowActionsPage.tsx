@@ -269,7 +269,7 @@ export default function BorrowActionsPage() {
   const [uniswapPositionsF, numValidActionsUniswap] = calculateUniswapEndState(
     marginAccount,
     actionResults,
-    uniswapPositions
+    uniswapPositions,
   );
 
   // check whether actions seem valid on the frontend
@@ -343,7 +343,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
-            uniswapPositions={Array.from(uniswapPositionsF.values())}
+            uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
