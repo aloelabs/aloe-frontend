@@ -262,17 +262,11 @@ export default function BorrowActionsPage() {
   );
 
   // uniswap positions after adding hypothetical actions
-  console.log("calculating");
   const [uniswapPositionsF, numValidActionsUniswap] = calculateUniswapEndState(
     marginAccount,
     actionResults,
     uniswapPositions
   );
-  console.log("done calculating");
-
-  console.log(uniswapPositions);
-  console.log(uniswapPositionsF);
-  console.log(numValidActionsUniswap);
 
   // check whether actions seem valid on the frontend
   const numValidActions =  Math.min(hypotheticalStates.length - 1, numValidActionsUniswap);
