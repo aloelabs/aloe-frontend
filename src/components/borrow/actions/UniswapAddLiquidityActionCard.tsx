@@ -129,8 +129,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let lower: TickPrice | null = null;
   let upper: TickPrice | null = null;
   let currentTick: number | null = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
-  const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lowerBound;
-  const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upperBound;
+  const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lower;
+  const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upper;
   let slippagePercentage = previousActionCardState?.textFields?.[4] ?? '';
   
   if (tickInfo != null && lowerBound && upperBound) {
@@ -206,8 +206,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           liquidity: prevUniswapPosition?.liquidity || JSBI.BigInt(0),
           amount0: prevUniswapPosition?.amount0 || 0,
           amount1: prevUniswapPosition?.amount1 || 0,
-          lowerBound: prevUniswapPosition?.lowerBound || null,
-          upperBound: prevUniswapPosition?.upperBound || null,
+          lower: prevUniswapPosition?.lower || null,
+          upper: prevUniswapPosition?.upper || null,
         },
         slippageTolerance: parseFloat(updatedSlippage) || undefined,
         isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
@@ -267,8 +267,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           liquidity: localLiquidityJSBI,
           amount0: parseFloat(amount0) || 0,
           amount1: parseFloat(amount1) || 0,
-          lowerBound: lowerTick,
-          upperBound: upperTick,
+          lower: lowerTick,
+          upper: upperTick,
         },
         slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
@@ -333,8 +333,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                     liquidity: JSBI.BigInt(0),
                     amount0: 0,
                     amount1: 0,
-                    lowerBound: null,
-                    upperBound: null,
+                    lower: null,
+                    upper: null,
                   },
                   slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
                   isToken0Selected: updatedValue,

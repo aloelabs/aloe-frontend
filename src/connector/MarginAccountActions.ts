@@ -102,10 +102,10 @@ export function getActionArgsFor(
 
     case ActionID.ADD_LIQUIDITY:
       if (state.uniswapResult?.uniswapPosition) {
-        const { lowerBound, upperBound, liquidity } = state.uniswapResult.uniswapPosition;
-        if (lowerBound === null || upperBound === null) return null;
+        const { lower, upper, liquidity } = state.uniswapResult.uniswapPosition;
+        if (lower === null || upper === null) return null;
 
-        return getAddLiquidityActionArgs(Math.min(lowerBound, upperBound), Math.max(lowerBound, upperBound), liquidity);
+        return getAddLiquidityActionArgs(Math.min(lower, upper), Math.max(lower, upper), liquidity);
       }
       return null;
 
