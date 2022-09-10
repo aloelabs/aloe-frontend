@@ -38,6 +38,11 @@ export type MarginAccount = {
   sqrtPriceX96: Big;
 };
 
+export type LiquidationThresholds = {
+  lower: number;
+  upper: number;
+};
+
 /**
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)

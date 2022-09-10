@@ -31,7 +31,7 @@ import {
   UniswapPositionPrior,
 } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
-import { fetchMarginAccount, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
+import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -272,6 +272,11 @@ export default function BorrowActionsPage() {
     uniswapPositions,
   );
 
+  const liquidationThresholds: LiquidationThresholds = {
+    lower: 0,
+    upper: 0,
+  };
+
   // check whether actions seem valid on the frontend
   const numValidActions =  Math.min(hypotheticalStates.length - 1, hypotheticalUniswapStates.length - 1);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
@@ -430,6 +435,7 @@ export default function BorrowActionsPage() {
                 liabilities: isShowingHypothetical ? liabilitiesF : marginAccount.liabilities,
               }}
               inTermsOfToken0={isToken0Selected}
+              liquidationThresholds={liquidationThresholds}
             />
           </div>
           <div className='w-full flex flex-col gap-4'>
