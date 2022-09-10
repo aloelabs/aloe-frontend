@@ -279,7 +279,6 @@ export default function BorrowActionsPage() {
 
   // verify that every action has contract params (ready to send on-chain)
   const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
-  console.log(transactionIsReady, actionResults[0].actionArgs)
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical

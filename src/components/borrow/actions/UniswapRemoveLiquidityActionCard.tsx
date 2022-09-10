@@ -10,6 +10,7 @@ import { ChangeEvent, useState } from "react";
 import { formatNumberInput, formatTokenAmount } from "../../../util/Numbers";
 import useEffectOnce from "../../../data/hooks/UseEffectOnce";
 import JSBI from 'jsbi';
+import { getRemoveLiquidityActionArgs } from "../../../connector/MarginAccountActions";
 
 //TOOD: merge this with the existing UniswapPosition?
 export type UniswapV3LiquidityPosition = {
@@ -19,23 +20,6 @@ export type UniswapV3LiquidityPosition = {
   tickUpper: number;
   liquidity: JSBI;
 }
-
-const FAKE_LIQUIDITY_POSITIONS: Array<UniswapV3LiquidityPosition> = [
-  {
-    amount0: 0.011,
-    amount1: 50,
-    tickLower: 190000,
-    tickUpper: 210000,
-    liquidity: JSBI.BigInt(0),
-  },
-  {
-    amount0: 200,
-    amount1: 100,
-    tickLower: 195000,
-    tickUpper: 215000,
-    liquidity: JSBI.BigInt(0),
-  },
-];
 
 const SVGIconWrapper = styled.div.attrs(
   (props: { 
@@ -109,9 +93,12 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
     const updatedAmount0 = liquidityPosition ? (liquidityPosition?.amount0 || 0) * (parsedPercentage / 100.0) : 0;
     const updatedAmount1 = liquidityPosition ? (liquidityPosition?.amount1 || 0) * (parsedPercentage / 100.0) : 0;
-    console.log(updatedAmount0)
+    const lower = liquidityPosition?.lower || null; 
+    const upper = liquidityPosition?.upper || null;
+    const liquidity = liquidityPosition?.liquidity || JSBI.BigInt(0);
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
+      actionArgs: (lower !== null && upper !== null) ? getRemoveLiquidityActionArgs(lower, upper, liquidity) : undefined,
       aloeResult: {
         token0RawDelta: updatedAmount0,
         token1RawDelta: updatedAmount1,
