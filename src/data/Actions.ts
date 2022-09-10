@@ -383,6 +383,7 @@ export function calculateHypotheticalUniswapStates(
         const copy = JSON.parse(JSON.stringify(prevPosition));
         copy.liquidity = JSBI.subtract(prevPosition.liquidity, currentPosition.liquidity);
         uniswapPositionsTemp.set(key, copy);
+        hypotheticalUniswapStates.push(uniswapPositionsTemp);
       } else {
         console.error('Attempted to remove liquidity from a position that doens\'t exist');
         break;
