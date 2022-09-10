@@ -16,6 +16,7 @@ import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import Big from 'big.js';
 import { UserBalances } from './UserBalances';
 import { uniswapPositionKey } from '../util/Uniswap';
+import { deepCopyMap } from '../util/Maps';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -105,6 +106,7 @@ export type CumulativeActionCardResult = {
 export type ActionCardProps = {
   marginAccount: MarginAccount;
   availableBalances: UserBalances;
+  uniswapPositions: UniswapPosition[];
   previousActionCardState: ActionCardState | null;
   isCausingError: boolean;
   onRemove: () => void;
@@ -322,7 +324,6 @@ export function calculateUniswapEndState(
       if (!pos || !pos.lower || !pos.upper) continue; // TODO should maybe return early instead of just continuing
 
       const key = uniswapPositionKey(marginAccount.address, pos.lower, pos.upper);
-
       if (uniswapPositionsF.has(key)) {
         const oldPos = uniswapPositionsF.get(key)!;
 
@@ -344,11 +345,59 @@ export function calculateUniswapEndState(
   return [uniswapPositionsF, actionResults.length];
 }
 
+export function calculateHypotheticalUniswapStates(
+  marginAccount: MarginAccount,
+  actionResults: ActionCardState[],
+  uniswapPositionsI: Map<string, UniswapPosition>,
+): Array<Map<string, UniswapPosition>> {
+  const hypotheticalUniswapStates: Map<string, UniswapPosition>[] = [deepCopyMap(uniswapPositionsI)];
+  for (let i = 0; i < actionResults.length; i += 1) {
+    const actionResult = actionResults[i];
+    const currentPosition = actionResult.uniswapResult?.uniswapPosition;
+    const uniswapPositionsTemp: Map<string, UniswapPosition> = deepCopyMap(hypotheticalUniswapStates[i]);
+
+    if (!currentPosition || !currentPosition.lower || !currentPosition.upper) {
+      hypotheticalUniswapStates.push(uniswapPositionsTemp);
+      continue;
+    }
+
+    if (actionResult.actionId === ActionID.ADD_LIQUIDITY) {
+      const key = uniswapPositionKey(marginAccount.address, currentPosition.lower, currentPosition.upper);
+      if (uniswapPositionsTemp.has(key)) {
+        const prevPosition = uniswapPositionsTemp.get(key)!;
+        const copy = JSON.parse(JSON.stringify(prevPosition));
+        copy.liquidity = JSBI.add(prevPosition.liquidity, currentPosition.liquidity);
+        uniswapPositionsTemp.set(key, copy);
+      } else {
+        uniswapPositionsTemp.set(key, {...currentPosition});
+      }
+      hypotheticalUniswapStates.push(uniswapPositionsTemp);
+    } else if (actionResult.actionId === ActionID.REMOVE_LIQUIDITY) {
+      const key = uniswapPositionKey(marginAccount.address, currentPosition.lower, currentPosition.upper);
+      if (uniswapPositionsTemp.has(key)) {
+        const prevPosition = uniswapPositionsTemp.get(key)!;
+
+        if (JSBI.lessThan(prevPosition.liquidity, currentPosition.liquidity)) {
+          break;
+        }
+        const copy = JSON.parse(JSON.stringify(prevPosition));
+        copy.liquidity = JSBI.subtract(prevPosition.liquidity, currentPosition.liquidity);
+        uniswapPositionsTemp.set(key, copy);
+        hypotheticalUniswapStates.push(uniswapPositionsTemp);
+      } else {
+        console.error('Attempted to remove liquidity from a position that doens\'t exist');
+        break;
+      }
+    }
+  }
+  return hypotheticalUniswapStates;
+}
+
 export function calculateHypotheticalStates(
   marginAccount: MarginAccount,
   actionResults: ActionCardState[],
 ): { assets: Assets, liabilities: Liabilities }[] {
-  const hypotheticalStates: { assets: Assets, liabilities: Liabilities}[] = [{
+  const hypotheticalStates: { assets: Assets, liabilities: Liabilities }[] = [{
     assets: marginAccount.assets,
     liabilities: marginAccount.liabilities,
   }];

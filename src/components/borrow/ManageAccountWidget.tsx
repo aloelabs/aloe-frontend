@@ -5,7 +5,7 @@ import { FilledGradientButtonWithIcon } from '../common/Buttons';
 import { Text, Display } from '../common/Typography';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
-import { Action, ActionCardState, ActionID, TokenType } from '../../data/Actions';
+import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
 import { TokenData } from '../../data/TokenData';
 import { FeeTier } from '../../data/FeeTier';
 
@@ -63,6 +63,7 @@ const ActionItemCount = styled.span`
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
   hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
+  uniswapPositions: UniswapPosition[],
   activeActions: Array<Action>;
   actionResults: Array<ActionCardState>;
   updateActionResults: (actionResults: Array<ActionCardState>) => void;
@@ -156,6 +157,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const {
     marginAccount,
     hypotheticalStates,
+    uniswapPositions,
     activeActions,
     actionResults,
     updateActionResults,
@@ -245,6 +247,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities
                 }}
                 availableBalances={balancesAvailableForEachAction[index]}
+                uniswapPositions={uniswapPositions}
                 previousActionCardState={actionResults[index]}
                 isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                 onRemove={() => {

@@ -24,6 +24,7 @@ import {
   ActionProviders,
   ActionTemplates,
   calculateHypotheticalStates,
+  calculateHypotheticalUniswapStates,
   calculateUniswapEndState,
   getNameOfAction,
   UniswapPosition,
@@ -35,8 +36,7 @@ import { formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { ethers } from 'ethers';
-import { uniswapPositionKey } from '../util/Uniswap';
+import { getAmountsFromLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -222,15 +222,20 @@ export default function BorrowActionsPage() {
   // MARK: fetch uniswap positions
   useEffect(() => {
     let mounted = true;
-    async function fetch(marginAccountAddress: string, priors: UniswapPositionPrior[]) {
+    async function fetch(marginAccountAddress: string, priors: UniswapPositionPrior[], marginAccount: MarginAccount) {
       const keys = priors.map(prior => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
       const results = await Promise.all(keys.map(key => uniswapV3PoolContract.positions(key)));
 
       const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+      const sqrtPriceX96 = JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0));
       priors.forEach((prior, i) => {
+        const liquidity = JSBI.BigInt(results[i].liquidity.toString());
+        const amounts = getAmountsFromLiquidity(marginAccount.token0, marginAccount.token1, marginAccount.feeTier, sqrtPriceX96, liquidity, prior.lower!, prior.upper!);
         fetchedUniswapPositions.set(keys[i], {
           ...prior,
-          liquidity: JSBI.BigInt(results[i].liquidity.toString()),
+          liquidity: liquidity,
+          amount0: amounts != null ? amounts[0] : 0,
+          amount1: amounts != null ? amounts[1] : 0,
         });
       });
 
@@ -239,7 +244,7 @@ export default function BorrowActionsPage() {
       }
     }
     if (Array.isArray(uniswapPositionPriors) && marginAccount) {
-      fetch(accountAddressParam, uniswapPositionPriors as UniswapPositionPrior[]);
+      fetch(accountAddressParam, uniswapPositionPriors as UniswapPositionPrior[], marginAccount);
     }
     return () => {
       mounted = false;
@@ -261,15 +266,14 @@ export default function BorrowActionsPage() {
     actionResults
   );
 
-  // uniswap positions after adding hypothetical actions
-  const [uniswapPositionsF, numValidActionsUniswap] = calculateUniswapEndState(
+  const hypotheticalUniswapStates = calculateHypotheticalUniswapStates(
     marginAccount,
     actionResults,
-    uniswapPositions
+    uniswapPositions,
   );
 
   // check whether actions seem valid on the frontend
-  const numValidActions =  Math.min(hypotheticalStates.length - 1, numValidActionsUniswap);
+  const numValidActions =  Math.min(hypotheticalStates.length - 1, hypotheticalUniswapStates.length - 1);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
 
@@ -339,6 +343,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
+            uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
