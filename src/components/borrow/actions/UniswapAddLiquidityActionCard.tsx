@@ -328,6 +328,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               onChange({
                 actionId: ActionID.ADD_LIQUIDITY,
                 aloeResult: null,
+                textFields: ['', ''],
                 uniswapResult: {
                   uniswapPosition: {
                     liquidity: JSBI.BigInt(0),
