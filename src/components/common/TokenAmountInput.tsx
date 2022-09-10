@@ -39,10 +39,13 @@ const ErrorMessageText = styled.div`
   line-height: 20px;
 `;
 
+
 export type TokenAmountInputProps = {
   value: string;
   tokenLabel: string;
   onChange: (newValue: string) => void;
+  //NOTE: if onMax is defined, onChange will not run when max button is clicked
+  onMax?: (maxValue: string) => void;
   max?: string;
   maxed?: boolean;
   error?: boolean;
@@ -76,7 +79,9 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         }}
         value={props.value}
         onMaxClick={() => {
-          props.max && props.onChange(props.max.toString());
+          if (props.max) {
+            props.onMax ? props.onMax(props.max) : props.onChange(props.max.toString());
+          }
         }}
         maxDisabled={props.maxed}
         maxHidden={props.max === undefined}

@@ -116,7 +116,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (!uniswapPoolBasics) return;
     const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
     setTickInfo(updatedTickInfo);
-  }, [isToken0Selected, uniswapPoolBasics])
+  }, [isToken0Selected, uniswapPoolBasics]);
 
   useEffect(() => {
     //Handles the initial render and whenever the selected token changes
@@ -216,39 +216,49 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     })
   }
 
-  function handleLocalToken0AmountInput(value: string) {
+  function handleLocalToken0AmountInput(value: string, forceUpdate?: boolean) {
     if (uniswapPoolBasics == null || lower == null || upper == null) return;
     const output = formatNumberInput(value);
     if (output != null) {
       const floatOutput = parseFloat(output);
+      setLocalToken0Amount(output);
+      setLocalIsAmount0LastUpdated(true);
+      let updatedAmount1 = '';
       if (!isNaN(floatOutput)) {
         const {amount1, liquidity} = calculateAmount1FromAmount0(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
         setLocalToken1Amount(amount1);
         setLocalLiquidityJSBI(liquidity);
+        updatedAmount1 = amount1;
       } else {
         setLocalToken1Amount('');
         setLocalLiquidityJSBI(JSBI.BigInt(0));
       }
-      setLocalToken0Amount(output);
-      setLocalIsAmount0LastUpdated(true);
+      if (forceUpdate) {
+        updateRange(output, updatedAmount1, lower.tick, upper.tick);
+      }
     }
   }
 
-  function handleLocalToken1AmountInput(value: string) {
+  function handleLocalToken1AmountInput(value: string, forceUpdate?: boolean) {
     if (uniswapPoolBasics == null || lower == null || upper == null) return;
     const output = formatNumberInput(value);
     if (output != null) {
       const floatOutput = parseFloat(output);
+      setLocalToken1Amount(output);
+      setLocalIsAmount0LastUpdated(false);
+      let updatedAmount0 = '';
       if (!isNaN(floatOutput)) {
         const {amount0, liquidity} = calculateAmount0FromAmount1(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
         setLocalToken0Amount(amount0);
         setLocalLiquidityJSBI(liquidity);
+        updatedAmount0 = amount0;
       } else {
         setLocalToken0Amount('');
         setLocalLiquidityJSBI(JSBI.BigInt(0));
       }
-      setLocalToken1Amount(output);
-      setLocalIsAmount0LastUpdated(false);
+      if (forceUpdate) {
+        updateRange(updatedAmount0, output, lower.tick, upper.tick);
+      }
     }
   }
 
@@ -298,13 +308,29 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }
 
   function updateLower(updatedLower: TickPrice) {
-    const updatedAmounts = calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
+    let shouldResetAmounts = false;
+    if (upper != null && currentTick != null) {
+      const willAmount0BeDisabled = shouldAmount0InputBeDisabled(updatedLower.tick, upper.tick, currentTick);
+      shouldResetAmounts = willAmount0BeDisabled && localIsAmount0LastUpdated;
+    }
+    const updatedAmounts = shouldResetAmounts ? ['', localToken1Amount] : calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
     updateRange(updatedAmounts[0], updatedAmounts[1], updatedLower.tick, upper?.tick || null);
+    if (shouldResetAmounts) {
+      setLocalIsAmount0LastUpdated(false);
+    }
   }
 
   function updateUpper(updatedUpper: TickPrice) {
-    const updatedAmounts = calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
+    let shouldResetAmounts = false;
+    if (lower != null && currentTick != null) {
+      const willAmount1BeDisabled = shouldAmount1InputBeDisabled(lower.tick, updatedUpper.tick, currentTick);
+      shouldResetAmounts = willAmount1BeDisabled && !localIsAmount0LastUpdated;
+    }
+    const updatedAmounts = shouldResetAmounts ? [localToken0Amount, ''] : calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
     updateRange(updatedAmounts[0], updatedAmounts[1], lower?.tick || null, updatedUpper.tick);
+    if (shouldResetAmounts) {
+      setLocalIsAmount0LastUpdated(true);
+    }
   }
 
   function updateTokenAmountInput() {
@@ -328,6 +354,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               onChange({
                 actionId: ActionID.ADD_LIQUIDITY,
                 aloeResult: null,
+                textFields: ['', ''],
                 uniswapResult: {
                   uniswapPosition: {
                     liquidity: JSBI.BigInt(0),
@@ -502,6 +529,10 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           disabled={isAmount0InputDisabled}
           max={marginAccount.assets.token0Raw.toFixed(6)}
           maxed={localToken0Amount === marginAccount.assets.token0Raw.toFixed(6)}
+          onMax={(maxValue: string) => {
+            //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
+            handleLocalToken0AmountInput(maxValue, true);
+          }}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
@@ -511,6 +542,10 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           disabled={isAmount1InputDisabled}
           max={marginAccount.assets.token1Raw.toFixed(6)}
           maxed={localToken1Amount === marginAccount.assets.token1Raw.toFixed(6)}
+          onMax={(maxValue: string) => {
+            //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
+            handleLocalToken1AmountInput(maxValue, true);
+          }}
         />
       </div>
     </BaseActionCard>
