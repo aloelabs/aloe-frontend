@@ -371,3 +371,10 @@ export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]) : 
   }
   return [token0Amount, token1Amount];
 }
+
+export function uniswapPositionKey(owner: string, lower: number, upper: number): string {
+  return ethers.utils.solidityKeccak256(
+    ['address', 'int24', 'int24'],
+    [owner, lower, upper]
+  );
+}
