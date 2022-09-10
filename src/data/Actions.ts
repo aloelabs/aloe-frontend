@@ -355,7 +355,7 @@ export function calculateHypotheticalUniswapStates(
     const actionResult = actionResults[i];
     const currentPosition = actionResult.uniswapResult?.uniswapPosition;
     const uniswapPositionsTemp: Map<string, UniswapPosition> = deepCopyMap(hypotheticalUniswapStates[i]);
-    
+
     if (!currentPosition || !currentPosition.lower || !currentPosition.upper) {
       hypotheticalUniswapStates.push(uniswapPositionsTemp);
       continue;
@@ -365,7 +365,7 @@ export function calculateHypotheticalUniswapStates(
       const key = uniswapPositionKey(marginAccount.address, currentPosition.lower, currentPosition.upper);
       if (uniswapPositionsTemp.has(key)) {
         const prevPosition = uniswapPositionsTemp.get(key)!;
-        const copy = Object.assign(prevPosition);
+        const copy = JSON.parse(JSON.stringify(prevPosition));
         copy.liquidity = JSBI.add(prevPosition.liquidity, currentPosition.liquidity);
         uniswapPositionsTemp.set(key, copy);
       } else {
@@ -381,9 +381,7 @@ export function calculateHypotheticalUniswapStates(
           break;
         }
         const copy = JSON.parse(JSON.stringify(prevPosition));
-        console.log(copy === prevPosition);
         copy.liquidity = JSBI.subtract(prevPosition.liquidity, currentPosition.liquidity);
-        console.log(copy.liquidity, prevPosition.liquidity);
         uniswapPositionsTemp.set(key, copy);
       } else {
         console.error('Attempted to remove liquidity from a position that doens\'t exist');
