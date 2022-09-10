@@ -15,6 +15,7 @@ import JSBI from 'jsbi';
 import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import Big from 'big.js';
 import { UserBalances } from './UserBalances';
+import { uniswapPositionKey } from '../util/Uniswap';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -286,6 +287,61 @@ export function parseSelectedToken(
 ): TokenType | null {
   if (!value) return null;
   return value as TokenType;
+}
+
+export function calculateUniswapEndState(
+  marginAccount: MarginAccount,
+  actionResults: ActionCardState[],
+  uniswapPositionsI: Map<string, UniswapPosition>,
+): [Map<string, UniswapPosition>, number] {
+  const uniswapPositionsF = new Map<string, UniswapPosition>();
+  uniswapPositionsI.forEach((v, k) => uniswapPositionsF.set(k, v));
+
+  for (let i = 0; i < actionResults.length; i += 1) {
+    const actionResult = actionResults[i];
+
+    if (actionResult.actionId === ActionID.ADD_LIQUIDITY) {
+      const pos = actionResult.uniswapResult?.uniswapPosition;
+      if (!pos || !pos.lower || !pos.upper) continue; // TODO should maybe return early instead of just continuing
+
+      const key = uniswapPositionKey(marginAccount.address, pos.lower, pos.upper);
+
+      if (uniswapPositionsF.has(key)) {
+        const oldPos = uniswapPositionsF.get(key)!;
+        oldPos.liquidity = JSBI.add(oldPos.liquidity, pos.liquidity);
+        uniswapPositionsF.set(key, oldPos);
+        continue;
+      }
+      
+      uniswapPositionsF.set(key, {...pos});
+      continue;
+    }
+
+    if (actionResult.actionId === ActionID.REMOVE_LIQUIDITY) {
+      const pos = actionResult.uniswapResult?.uniswapPosition;
+      if (!pos || !pos.lower || !pos.upper) continue; // TODO should maybe return early instead of just continuing
+
+      const key = uniswapPositionKey(marginAccount.address, pos.lower, pos.upper);
+
+      if (uniswapPositionsF.has(key)) {
+        const oldPos = uniswapPositionsF.get(key)!;
+
+        if (JSBI.lessThan(oldPos.liquidity, pos.liquidity)) {
+          // Action would result in negative liquidity!
+          return [uniswapPositionsF, i];
+        }
+        oldPos.liquidity = JSBI.subtract(oldPos.liquidity, pos.liquidity);
+
+        uniswapPositionsF.set(key, oldPos);
+        continue;
+      }
+      
+      console.error('Attempted to remove liquidity from a position that doens\'t exist');
+      return [uniswapPositionsF, i];
+    }
+  }
+
+  return [uniswapPositionsF, actionResults.length];
 }
 
 export function calculateHypotheticalStates(
