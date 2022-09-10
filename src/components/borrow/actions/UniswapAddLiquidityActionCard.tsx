@@ -116,7 +116,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (!uniswapPoolBasics) return;
     const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
     setTickInfo(updatedTickInfo);
-  }, [isToken0Selected, uniswapPoolBasics])
+  }, [isToken0Selected, uniswapPoolBasics]);
 
   useEffect(() => {
     //Handles the initial render and whenever the selected token changes
@@ -308,13 +308,29 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   }
 
   function updateLower(updatedLower: TickPrice) {
-    const updatedAmounts = calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
+    let shouldResetAmounts = false;
+    if (upper != null && currentTick != null) {
+      const willAmount0BeDisabled = shouldAmount0InputBeDisabled(updatedLower.tick, upper.tick, currentTick);
+      shouldResetAmounts = willAmount0BeDisabled && localIsAmount0LastUpdated;
+    }
+    const updatedAmounts = shouldResetAmounts ? ['', localToken1Amount] : calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
     updateRange(updatedAmounts[0], updatedAmounts[1], updatedLower.tick, upper?.tick || null);
+    if (shouldResetAmounts) {
+      setLocalIsAmount0LastUpdated(false);
+    }
   }
 
   function updateUpper(updatedUpper: TickPrice) {
-    const updatedAmounts = calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
+    let shouldResetAmounts = false;
+    if (lower != null && currentTick != null) {
+      const willAmount1BeDisabled = shouldAmount1InputBeDisabled(lower.tick, updatedUpper.tick, currentTick);
+      shouldResetAmounts = willAmount1BeDisabled && !localIsAmount0LastUpdated;
+    }
+    const updatedAmounts = shouldResetAmounts ? [localToken0Amount, ''] : calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
     updateRange(updatedAmounts[0], updatedAmounts[1], lower?.tick || null, updatedUpper.tick);
+    if (shouldResetAmounts) {
+      setLocalIsAmount0LastUpdated(true);
+    }
   }
 
   function updateTokenAmountInput() {
