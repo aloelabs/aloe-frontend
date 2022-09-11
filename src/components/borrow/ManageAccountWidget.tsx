@@ -211,8 +211,8 @@ const MARGIN_ACCOUNT_CALLEE = '0x768aB3265F4C524A5899EfDC96184Ee50E8F7Ce0';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
-  hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: UniswapPosition[];
+  hypotheticalStates: { assets: Assets, liabilities: Liabilities, positions: Map<string, UniswapPosition> }[],
   activeActions: Array<Action>;
   actionResults: Array<ActionCardState>;
   updateActionResults: (actionResults: Array<ActionCardState>) => void;
@@ -367,7 +367,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                     liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities
                   }}
                   availableBalances={balancesAvailableForEachAction[index]}
-                  uniswapPositions={uniswapPositions}
+                  uniswapPositions={
+                    hypotheticalStates.length > index ? Array.from(hypotheticalStates[index].positions.values()) : uniswapPositions
+                  }
                   previousActionCardState={actionResults[index]}
                   isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                   onRemove={() => {
