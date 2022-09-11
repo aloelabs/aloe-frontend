@@ -23,13 +23,13 @@ import FailedTxnModal from './modal/FailedTxnModal';
 import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 import { useNavigate } from 'react-router-dom';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
   background: rgba(13, 24, 33, 1);
   padding: 24px;
   border-radius: 8px;
-  width: max-content;
 `;
 
 const ActionsList = styled.ul`
@@ -44,12 +44,23 @@ const ActionsList = styled.ul`
     width: 3px;
     height: 100%;
     border-left: 3px dotted rgba(255, 255, 255, 1);
+
+    @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+      display: none;
+    }
   }
 `;
 
 const ActionItem = styled.li`
-  ${tw`w-full flex flex-row items-center`}
+  ${tw`w-full flex`}
+  flex-direction: row;
+  align-items: center;
   margin-bottom: 16px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    align-items: start;
+    flex-direction: column;
+  }
 `;
 
 const ActionItemCount = styled.span`
@@ -63,6 +74,10 @@ const ActionItemCount = styled.span`
   margin-right: 32px;
   margin-top: 17px;
   margin-bottom: 17px;
+`;
+
+const ActionCardWrapper = styled.div`
+  width: 400px;
 `;
 
 function useAllowance(token: TokenData, owner: string, spender: string) {
@@ -326,27 +341,29 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   {index + 1}
                 </Text>
               </ActionItemCount>
-              <action.actionCard
-                marginAccount={{
-                  ...marginAccount,
-                  assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
-                  liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities
-                }}
-                availableBalances={balancesAvailableForEachAction[index]}
-                uniswapPositions={uniswapPositions}
-                previousActionCardState={actionResults[index]}
-                isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
-                onRemove={() => {
-                  onRemoveAction(index);
-                }}
-                onChange={(result: ActionCardState) => {
-                  updateActionResults([
-                    ...actionResults.slice(0, index),
-                    result,
-                    ...actionResults.slice(index + 1),
-                  ]);
-                }}
-              />
+              <ActionCardWrapper>
+                <action.actionCard
+                  marginAccount={{
+                    ...marginAccount,
+                    assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
+                    liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities
+                  }}
+                  availableBalances={balancesAvailableForEachAction[index]}
+                  uniswapPositions={uniswapPositions}
+                  previousActionCardState={actionResults[index]}
+                  isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
+                  onRemove={() => {
+                    onRemoveAction(index);
+                  }}
+                  onChange={(result: ActionCardState) => {
+                    updateActionResults([
+                      ...actionResults.slice(0, index),
+                      result,
+                      ...actionResults.slice(index + 1),
+                    ]);
+                  }}
+                />
+              </ActionCardWrapper>
             </ActionItem>
           ))}
           <ActionItem>
@@ -355,17 +372,19 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 {activeActions.length + 1}
               </Text>
             </ActionItemCount>
-            <FilledGradientButtonWithIcon
-              Icon={<PlusIcon />}
-              position='leading'
-              size='S'
-              svgColorType='stroke'
-              onClick={() => {
-                onAddAction();
-              }}
-            >
-              Add Action
-            </FilledGradientButtonWithIcon>
+            <ActionCardWrapper>
+              <FilledGradientButtonWithIcon
+                Icon={<PlusIcon />}
+                position='leading'
+                size='S'
+                svgColorType='stroke'
+                onClick={() => {
+                  onAddAction();
+                }}
+              >
+                Add Action
+              </FilledGradientButtonWithIcon>
+            </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
         <div className='flex justify-end gap-4 mt-4'>
