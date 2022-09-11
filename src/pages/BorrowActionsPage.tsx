@@ -30,7 +30,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
-import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
