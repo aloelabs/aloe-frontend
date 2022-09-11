@@ -66,13 +66,38 @@ const GridExpandingDiv = styled.div`
 const ActionModalHeader = styled.div`
   ${tw`flex justify-center items-center`}
   position: relative;
-  margin-bottom: 24px;
+  padding: 16px;
+  /* margin-bottom: 24px; */
+`;
+
+const ActionModalBody = styled.div`
+  ${tw`flex flex-col gap-4`}
+  height: calc(100vh - 64px);
+  padding-bottom: 16px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 `;
 
 const BackButtonWrapper = styled.button.attrs((props: { position?: string }) => props)`
   ${tw`flex items-center justify-center`}
   position: ${(props) => props.position || 'absolute'};
-  left: 0;
+  left: 16px;
 
   svg {
     width: 40px;
@@ -127,20 +152,29 @@ const ActionProviderContainer = styled.div`
 `;
 
 const ActionButtonsContainer = styled.div`
-  ${tw`w-full flex flex-wrap items-center`}
+  ${tw`w-full flex flex-wrap`}
+  align-items: stretch;
   gap: 25px;
 `;
 
 const ActionButton = styled.button.attrs((props: { borderColor: string }) => props)`
-  ${tw`flex items-center justify-center`}
+  ${tw`flex flex-col items-center justify-start`}
   width: 250px;
-  padding: 12px 8px;
+  padding: 12px;
   border-radius: 8px;
   border: 1px solid ${(props) => props.borderColor};
   background-color: rgba(13, 24, 33, 1);
 
+  .description {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
   &:hover {
     background-color: ${(props) => props.borderColor};
+
+    .description {
+      color: rgba(255, 255, 255, 1);
+    }
   }
 
   @media (max-width: 589px) {
@@ -478,7 +512,7 @@ export default function BorrowActionsPage() {
             New Action
           </Display>
         </ActionModalHeader>
-        <div className='flex flex-col gap-4'>
+        <ActionModalBody>
           {Object.values(ActionProviders).map((actionProvider: ActionProvider, index: number) => {
             return (
               <ActionProviderContainer key={index}>
@@ -502,8 +536,11 @@ export default function BorrowActionsPage() {
                           setActionModalOpen(false);
                         }}
                       >
-                        <Text size='S' weight='bold'>
+                        <Text size='L' weight='bold' className='mb-1'>
                           {getNameOfAction(action.id)}
+                        </Text>
+                        <Text size='XS' weight='medium' className='description'>
+                          {action.description}
                         </Text>
                       </ActionButton>
                     );
@@ -533,13 +570,18 @@ export default function BorrowActionsPage() {
                       setActionModalOpen(false);
                     }}
                   >
-                    {template.name}
+                    <Text size='L' weight='bold' className='mb-1'>
+                      {template.name}
+                    </Text>
+                    <Text size='XS' weight='medium' className='description'>
+                      {template.description}
+                    </Text>
                   </ActionButton>
                 );
               })}
             </ActionButtonsContainer>
           </ActionProviderContainer>
-        </div>
+        </ActionModalBody>
       </FullscreenModal>
     </AppPage>
   );
