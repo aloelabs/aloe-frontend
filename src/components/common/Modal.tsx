@@ -267,6 +267,7 @@ export function FullscreenModal(props: ModalProps) {
       borderGradient={DEFAULT_BORDER_GRADIENT}
       fullWidth
       fullHeight
+      noPadding={true}
     >
       {props.children}
     </ModalBase>
