@@ -332,6 +332,12 @@ export default function BorrowActionsPage() {
     setActiveActions([...activeActions, ...actions]);
   }
 
+  function clearActions() {
+    updateActionResults([]);
+    setActiveActions([]);
+    setIsShowingHypothetical(false);
+  }
+
   return (
     <AppPage>
       <BodyWrapper>
@@ -364,6 +370,7 @@ export default function BorrowActionsPage() {
             }}
             problematicActionIdx={problematicActionIdx}
             transactionIsViable={transactionIsReady}
+            clearActions={clearActions}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
