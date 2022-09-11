@@ -37,6 +37,8 @@ import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { getAmountsFromLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -90,6 +92,34 @@ const BackButtonWrapper = styled.button.attrs((props: { position?: string }) => 
     }
   }
 `;
+
+const EmptyStateWrapper = styled.div`
+  ${tw`w-full`}
+  background-color: rgba(13, 24, 33, 1);
+  border-radius: 4px;
+`;
+
+const EmptyStateContainer = styled.div`
+  ${tw`flex flex-col items-center text-center gap-2`}
+  width: 300px;
+  padding: 24px;
+  margin: 0 auto;
+`;
+
+const EmptyStateSvgWrapper = styled.div`
+  ${tw`flex items-center justify-center`}
+  width: 32px;
+  height: 32px;
+
+  svg {
+    width: 32px;
+    height: 32px;
+    path {
+      /* stroke: rgb(255, 255, 255); */
+      stroke: ${SECONDARY_COLOR};
+    }
+  }
+`
 
 const SvgWrapper = styled.div`
   ${tw`flex items-center justify-center`}
@@ -289,6 +319,11 @@ export default function BorrowActionsPage() {
 
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
+  
+  const activeAssets = isShowingHypothetical ? assetsF : marginAccount.assets;
+  const activeLiabilities = isShowingHypothetical ? liabilitiesF : marginAccount.liabilities;
+  const isActiveAssetsEmpty = Object.values(activeAssets).every((a) => a === 0);
+  const isActiveLiabilitiesEmpty = Object.values(activeLiabilities).every((l) => l === 0);
 
   const [lowerLiquidationThreshold, upperLiquidationThreshold] = [0, 0]; // TODO
 
@@ -435,28 +470,50 @@ export default function BorrowActionsPage() {
           </div>
           <div className='w-full flex flex-col gap-4 mb-8'>
             <Display size='M' weight='medium'>
-              PnL
+              P&L
             </Display>
-            <PnLGraph
-              marginAccount={{
-                ...marginAccount,
-                assets: isShowingHypothetical ? assetsF : marginAccount.assets,
-                liabilities: isShowingHypothetical ? liabilitiesF : marginAccount.liabilities,
-              }}
-              inTermsOfToken0={isToken0Selected}
-              liquidationThresholds={liquidationThresholds}
-            />
+            {(!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty) ? (
+              <PnLGraph
+                marginAccount={{
+                  ...marginAccount,
+                  assets: activeAssets,
+                  liabilities: activeLiabilities,
+                }}
+                inTermsOfToken0={isToken0Selected}
+                liquidationThresholds={liquidationThresholds}
+              />
+            ) : (
+              <EmptyStateWrapper>
+                <EmptyStateContainer>
+                  <EmptyStateSvgWrapper>
+                    <TrendingUpIcon />
+                  </EmptyStateSvgWrapper>
+                  <Display size='XS' color={SECONDARY_COLOR}>A P&L graph of your open positions will appear here.</Display>
+                </EmptyStateContainer>
+              </EmptyStateWrapper>
+            )}
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>
               Token Allocation
             </Display>
-            <TokenAllocationPieChartWidget
-              token0={marginAccount.token0}
-              token1={marginAccount.token1}
-              assets={isShowingHypothetical ? assetsF : marginAccount.assets}
-              sqrtPriceX96={marginAccount.sqrtPriceX96}
-            />
+            {!isActiveAssetsEmpty ? (
+              <TokenAllocationPieChartWidget
+                token0={marginAccount.token0}
+                token1={marginAccount.token1}
+                assets={isShowingHypothetical ? assetsF : marginAccount.assets}
+                sqrtPriceX96={marginAccount.sqrtPriceX96}
+              />
+            ) : (
+              <EmptyStateWrapper>
+                <EmptyStateContainer>
+                  <EmptyStateSvgWrapper>
+                    <PieChartIcon />
+                  </EmptyStateSvgWrapper>
+                  <Display size='XS' color={SECONDARY_COLOR}>A breakdown of your token allocation will appear here.</Display>
+                </EmptyStateContainer>
+              </EmptyStateWrapper>
+            )}
           </div>
         </div>
       </BodyWrapper>
