@@ -39,7 +39,7 @@ export default function BorrowAccountsPage() {
   const { address } = useAccount();
   const { data: signer } = useSigner();
   const marginAccountLensContract = useContract({
-    addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
+    addressOrName: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
