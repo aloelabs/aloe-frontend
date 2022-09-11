@@ -10,7 +10,7 @@ const compactCurrencyFormatter = new Intl.NumberFormat('en-US', {
   maximumSignificantDigits: 3,
 });
 
-export function toBig(value: ethers.BigNumber): Big {
+export function toBig(value: ethers.BigNumber | ethers.utils.Result): Big {
   return new Big(value.toString());
 }
 

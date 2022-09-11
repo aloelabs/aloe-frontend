@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
@@ -10,7 +10,7 @@ import { TokenData } from '../../data/TokenData';
 import { FeeTier } from '../../data/FeeTier';
 
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
-import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useSigner } from 'wagmi';
+import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useSigner, useWaitForTransaction } from 'wagmi';
 import { BigNumber, ethers } from 'ethers';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Chain, FetchBalanceResult } from '@wagmi/core';
@@ -18,6 +18,11 @@ import Big from 'big.js';
 import { toBig } from '../../util/Numbers';
 import { UserBalances } from '../../data/UserBalances';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
+import PendingTxnModal from './modal/PendingTxnModal';
+import FailedTxnModal from './modal/FailedTxnModal';
+import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
+import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
+import { useNavigate } from 'react-router-dom';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -59,19 +64,6 @@ const ActionItemCount = styled.span`
   margin-top: 17px;
   margin-bottom: 17px;
 `;
-
-export type ManageAccountWidgetProps = {
-  marginAccount: MarginAccount;
-  hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
-  uniswapPositions: UniswapPosition[],
-  activeActions: Array<Action>;
-  actionResults: Array<ActionCardState>;
-  updateActionResults: (actionResults: Array<ActionCardState>) => void;
-  onAddAction: () => void;
-  onRemoveAction: (index: number) => void;
-  problematicActionIdx: number;
-  transactionIsViable: boolean;
-};
 
 function useAllowance(token: TokenData, owner: string, spender: string) {
   return useContractRead({
@@ -125,23 +117,23 @@ function computeBalancesAvailableForEachAction(balances: UserBalances, actionRes
   return balancesList;
 }
 
-function determineWhichTokensAreBeingTransferredIn(actionResults: ActionCardState[]): boolean[] {
-  const result = [false, false, false, false];
+function determineAmountsBeingTransferredIn(actionResults: ActionCardState[]): number[] {
+  const result = [0, 0, 0, 0];
   for (const actionResult of actionResults) {
     if (actionResult.actionId !== ActionID.TRANSFER_IN) continue;
 
     switch (actionResult.aloeResult?.selectedToken) {
       case TokenType.ASSET0:
-        result[0] = true;
+        result[0] += actionResult.aloeResult.token0RawDelta || 0;
         break;
       case TokenType.ASSET1:
-        result[1] = true;
+        result[1] += actionResult.aloeResult.token1RawDelta || 0;
         break;
       case TokenType.KITTY0:
-        result[2] = true;
+        result[2] += actionResult.aloeResult.token0PlusDelta || 0;
         break;
       case TokenType.KITTY1:
-        result[3] = true;
+        result[3] += actionResult.aloeResult.token1PlusDelta || 0;
         break;
       default:
         break;
@@ -150,7 +142,55 @@ function determineWhichTokensAreBeingTransferredIn(actionResults: ActionCardStat
   return result;
 }
 
+enum ConfirmButtonState {
+  INSUFFICIENT_ASSET0,
+  INSUFFICIENT_ASSET1,
+  INSUFFICIENT_KITTY0,
+  INSUFFICIENT_KITTY1,
+  APPROVE_ASSET0,
+  APPROVE_ASSET1,
+  APPROVE_KITTY0,
+  APPROVE_KITTY1,
+  NO_ACTIONS,
+  ERRORING_ACTIONS,
+  PENDING,
+  LOADING,
+  READY,
+}
+
+function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: TokenData, kitty0: TokenData, kitty1: TokenData): {text: string, enabled: boolean} {
+  switch (state) {
+    case ConfirmButtonState.INSUFFICIENT_ASSET0: return {text: `Insufficient ${token0.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_ASSET1: return {text: `Insufficient ${token1.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY0: return {text: `Insufficient ${kitty0.ticker}`, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY1: return {text: `Insufficient ${kitty1.ticker}`, enabled: false};
+    case ConfirmButtonState.APPROVE_ASSET0: return {text: `Approve ${token0.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_ASSET1: return {text: `Approve ${token1.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY0: return {text: `Approve ${kitty0.ticker}`, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY1: return {text: `Approve ${kitty1.ticker}`, enabled: true};
+    case ConfirmButtonState.LOADING:
+    case ConfirmButtonState.NO_ACTIONS:
+    case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', enabled: false};
+    case ConfirmButtonState.PENDING: return {text: 'Waiting for wallet', enabled: false};
+    case ConfirmButtonState.READY: return {text: 'Confirm', enabled: true};
+  }
+}
+
 const MARGIN_ACCOUNT_CALLEE = '0xba9ad27ed23b5e002e831514e69554815a5820b3';
+
+export type ManageAccountWidgetProps = {
+  marginAccount: MarginAccount;
+  hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
+  uniswapPositions: UniswapPosition[],
+  activeActions: Array<Action>;
+  actionResults: Array<ActionCardState>;
+  updateActionResults: (actionResults: Array<ActionCardState>) => void;
+  onAddAction: () => void;
+  onRemoveAction: (index: number) => void;
+  problematicActionIdx: number;
+  transactionIsViable: boolean;
+  clearActions: () => void;
+};
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
@@ -165,16 +205,24 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     onRemoveAction,
     problematicActionIdx,
     transactionIsViable,
+    clearActions,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
+
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [showFailedModal, setShowFailedModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   // MARK: wagmi hooks
   const contract = useContractWrite({
     addressOrName: accountAddress,
-    // chainId: chain.goerli.id,
     contractInterface: MarginAccountAbi,
     mode: 'recklesslyUnprepared',
     functionName: 'modify',
+    onSuccess: () => {
+      setShowPendingModal(true);
+    },
   });
   const { address: userAddress } = useAccount();
   const { data: userBalance0Asset } = useBalance({ addressOrName: userAddress, token: token0.address });
@@ -200,26 +248,64 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(userBalances, actionResults);
 
   // MARK: logic to determine what approvals are needed
-  const [
-    isUsingAsset0,
-    isUsingAsset1,
-    isUsingKitty0,
-    isUsingKitty1
-  ] = determineWhichTokensAreBeingTransferredIn(actionResults);
-  const needsAsset0Approval = !userAllowance0Asset ||
-    (isUsingAsset0 && toBig(userAllowance0Asset as unknown as BigNumber).div(token0.decimals).toNumber() < userBalances.amount0Asset);
-  const needsAsset1Approval = !userAllowance1Asset ||
-    (isUsingAsset1 && toBig(userAllowance1Asset as unknown as BigNumber).div(token1.decimals).toNumber() < userBalances.amount1Asset);
-  const needsKitty0Approval = !userAllowance0Kitty ||
-    (isUsingKitty0 && toBig(userAllowance0Kitty as unknown as BigNumber).div(kitty0.decimals).toNumber() < userBalances.amount0Kitty);
-  const needsKitty1Approval = !userAllowance1Kitty ||
-    (isUsingKitty1 && toBig(userAllowance1Kitty as unknown as BigNumber).div(kitty1.decimals).toNumber() < userBalances.amount1Kitty);
+  const requiredBalances = determineAmountsBeingTransferredIn(actionResults);
+  const insufficient = [
+    requiredBalances[0] > userBalances.amount0Asset,
+    requiredBalances[1] > userBalances.amount1Asset,
+    requiredBalances[2] > userBalances.amount0Kitty,
+    requiredBalances[3] > userBalances.amount1Kitty,
+  ];
+  const loadingApprovals = [
+    requiredBalances[0] > 0 && !userAllowance0Asset,
+    requiredBalances[1] > 0 && !userAllowance1Asset,
+    requiredBalances[2] > 0 && !userAllowance0Kitty,
+    requiredBalances[3] > 0 && !userAllowance1Kitty,
+  ];
+  const needsApproval = [
+    userAllowance0Asset && (toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0]),
+    userAllowance1Asset && (toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1]),
+    userAllowance0Kitty && (toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2]),
+    userAllowance1Kitty && (toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3]),
+  ];
 
-  // Disable the confirm button if there ae no active actions, the transaction isn't viable, or if there are any problematic actions
-  const disableConfirmButton = activeActions.length === 0 || !transactionIsViable || problematicActionIdx !== -1;/* || (
-    Number(needsAsset0Approval) + Number(needsAsset1Approval) + Number(needsKitty0Approval) + Number(needsKitty1Approval) <
-    Number(!writeAsset0Allowance.isIdle) + Number(!writeAsset1Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle) + Number(!writeKitty0Allowance.isIdle)
-  );*/
+  if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
+  if (writeAsset1Allowance.isError) writeAsset1Allowance.reset();
+  if (writeKitty0Allowance.isError) writeKitty0Allowance.reset();
+  if (writeKitty1Allowance.isError) writeKitty1Allowance.reset();
+  if (contract.isError || contract.isSuccess) setTimeout(contract.reset, 500);
+
+  let confirmButtonState = ConfirmButtonState.READY;
+  if (activeActions.length === 0) {
+    confirmButtonState = ConfirmButtonState.NO_ACTIONS;
+  } else if (loadingApprovals.includes(true)) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (!transactionIsViable || problematicActionIdx !== -1) {
+    confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
+  } else if (insufficient[0]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
+  } else if (insufficient[1]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET1;
+  } else if (insufficient[2]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY0;
+  } else if (insufficient[3]) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY1;
+  } else if (needsApproval[0] && writeAsset0Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_ASSET0;
+  } else if (needsApproval[1] && writeAsset1Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_ASSET1;
+  } else if (needsApproval[2] && writeKitty0Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_KITTY0;
+  } else if (needsApproval[3] && writeKitty1Allowance.isIdle) {
+    confirmButtonState = ConfirmButtonState.APPROVE_KITTY1;
+  } else if (needsApproval.includes(true)) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (contract.isIdle) {
+    confirmButtonState = ConfirmButtonState.READY;
+  } else {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  }
+
+  const confirmButton = getConfirmButton(confirmButtonState, token0, token1, kitty0, kitty1);
 
   //TODO: add some sort of error message when !transactionIsViable
   return (
@@ -294,19 +380,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 return;
               }
 
-              if (needsAsset0Approval && writeAsset0Allowance.isIdle) {
-                writeAsset0Allowance.write();
-              }
-              if (needsAsset1Approval && writeAsset1Allowance.isIdle) {
-                writeAsset1Allowance.write();
-              }
-              if (needsKitty0Approval && writeKitty0Allowance.isIdle) {
-                writeKitty0Allowance.write();
-              }
-              if (needsKitty1Approval && writeKitty1Allowance.isIdle) {
-                writeKitty1Allowance.write();
-              }
-
               const actionIds = actionResults.map((result) => result.actionId);
               const actionArgs = actionResults.map((result) => result.actionArgs!);
               const calldata = ethers.utils.defaultAbiCoder.encode(
@@ -314,20 +387,82 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 [actionIds, actionArgs]
               );
 
-              console.log(contract.write?.({
-                recklesslySetUnpreparedArgs: [
-                  '0xba9ad27ed23b5e002e831514e69554815a5820b3',
-                  calldata,
-                  [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
-                ],
-              }));
+              switch (confirmButtonState) {
+                case ConfirmButtonState.APPROVE_ASSET0:
+                  writeAsset0Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_ASSET1:
+                  writeAsset1Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_KITTY0:
+                  writeKitty0Allowance.write();
+                  break;
+                case ConfirmButtonState.APPROVE_KITTY1:
+                  writeKitty1Allowance.write();
+                  break;
+                case ConfirmButtonState.READY:
+                  contract.writeAsync({
+                    recklesslySetUnpreparedArgs: [
+                      '0xba9ad27ed23b5e002e831514e69554815a5820b3',
+                      calldata,
+                      [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
+                    ],
+                    recklesslySetUnpreparedOverrides: {
+                      // TODO gas estimation was occassionally causing errors. To fix this,
+                      // we should probably work with the underlying ethers.Contract, but for now
+                      // we just provide hard-coded overrides.
+                      gasLimit: (600000 + 200000 * actionIds.length).toFixed(0)
+                    }
+                  }).then((txnResult) => {
+                    // In this callback, we have a txnResult. This means that the transaction has been submitted to the
+                    // blockchain and/or the user rejected it entirely. These states correspond to contract.isError and
+                    // contract.isSuccess, which we deal with elsewhere.
+                    setPendingTxnHash(txnResult.hash);
+
+                    txnResult.wait(1).then((txnReceipt) => {
+                      // In this callback, the transaction has been included on the blockchain and at least 1 block has been
+                      // built on top of it.
+                      setShowPendingModal(false);
+                      setPendingTxnHash(undefined);
+                      if (txnReceipt.status === 1) {
+                        // TODO in addition to clearing actions here, we should refresh the page to get updated data
+                        clearActions();
+                      }
+
+                      console.log(txnReceipt);
+
+                      setTimeout(() => {
+                        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
+                        if (txnReceipt.status === 1) setShowSuccessModal(true);
+                        else setShowFailedModal(true);
+                      }, 500);
+                    });
+                  });
+                  break;
+                default:
+                  break;
+              }
             }}
-            disabled={disableConfirmButton}
+            disabled={!confirmButton.enabled}
           >
-            Confirm
+            {confirmButton.text}
           </FilledGradientButtonWithIcon>
         </div>
       </div>
+      <PendingTxnModal
+        open={showPendingModal}
+        setOpen={setShowPendingModal}
+        txnHash={pendingTxnHash}
+      />
+      <FailedTxnModal
+        open={showFailedModal}
+        setOpen={setShowFailedModal}
+      />
+      <SuccessfulTxnModal
+        open={showSuccessModal}
+        setOpen={setShowSuccessModal}
+        onConfirm={() => {}}
+      />
     </Wrapper>
   );
 }

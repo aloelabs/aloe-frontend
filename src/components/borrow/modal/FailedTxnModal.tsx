@@ -21,14 +21,16 @@ export default function FailedTxnModal(props: FailedTxnModalProps) {
       borderGradient={FAILED_BORDER_GRADIENT}
     >
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
-        Oops! Something went wrong with your transaction, please try again later.
+        Oops! Something went wrong with your transaction. Try increasing the gas limit, and if that doesn't work, reach out on Discord.
       </Text>
       <FilledGreyButton
         size='M'
         fillWidth={true}
         className='mt-8'
-        onClick={() => {props.setOpen(false)}}>Dismiss</FilledGreyButton
+        onClick={() => {props.setOpen(false)}}
       >
+        Dismiss
+      </FilledGreyButton>
     </CloseableModal>
   );
 }
