@@ -24,8 +24,6 @@ import {
   ActionProviders,
   ActionTemplates,
   calculateHypotheticalStates,
-  calculateHypotheticalUniswapStates,
-  calculateUniswapEndState,
   getNameOfAction,
   UniswapPosition,
   UniswapPositionPrior,
@@ -36,7 +34,8 @@ import { formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { getAmountsFromLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import { TickMath } from '@uniswap/v3-sdk';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -266,7 +265,14 @@ export default function BorrowActionsPage() {
       const sqrtPriceX96 = JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0));
       priors.forEach((prior, i) => {
         const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-        const amounts = getAmountsFromLiquidity(marginAccount.token0, marginAccount.token1, marginAccount.feeTier, sqrtPriceX96, liquidity, prior.lower!, prior.upper!);
+        const amounts = getAmountsForLiquidity(
+          liquidity,
+          prior.lower!,
+          prior.upper!,
+          TickMath.getTickAtSqrtRatio(sqrtPriceX96),
+          marginAccount.token0.decimals,
+          marginAccount.token1.decimals
+        );
         fetchedUniswapPositions.set(keys[i], {
           ...prior,
           liquidity: liquidity,
@@ -299,13 +305,8 @@ export default function BorrowActionsPage() {
   // assets and liabilities after adding hypothetical actions
   const hypotheticalStates = calculateHypotheticalStates(
     marginAccount,
-    actionResults
-  );
-
-  const hypotheticalUniswapStates = calculateHypotheticalUniswapStates(
-    marginAccount,
-    actionResults,
     uniswapPositions,
+    actionResults
   );
 
   const liquidationThresholds: LiquidationThresholds = {
@@ -314,9 +315,13 @@ export default function BorrowActionsPage() {
   };
 
   // check whether actions seem valid on the frontend
-  const numValidActions =  Math.min(hypotheticalStates.length - 1, hypotheticalUniswapStates.length - 1);
+  const numValidActions =  Math.min(hypotheticalStates.length - 1);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
-  const { assets: assetsF, liabilities: liabilitiesF } = hypotheticalStates[numValidActions];
+  const {
+    assets: assetsF,
+    liabilities: liabilitiesF,
+    positions: uniswapPositionsF
+  } = hypotheticalStates[numValidActions];
 
   // verify that every action has contract params (ready to send on-chain)
   const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
@@ -477,6 +482,9 @@ export default function BorrowActionsPage() {
                 assets: isShowingHypothetical ? assetsF : marginAccount.assets,
                 liabilities: isShowingHypothetical ? liabilitiesF : marginAccount.liabilities,
               }}
+              uniswapPositions={
+                Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values())
+              }
               inTermsOfToken0={isToken0Selected}
               liquidationThresholds={liquidationThresholds}
             />
