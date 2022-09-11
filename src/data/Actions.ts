@@ -187,7 +187,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
   AloeII: {
     name: 'Aloe II',
     Icon: AloeLogo,
-    color: '#63b59a',
+    color: '#3a8d71',
     actions: {
       MINT_TOKEN_PLUS,
       BURN_TOKEN_PLUS,

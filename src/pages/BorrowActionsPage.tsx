@@ -165,8 +165,16 @@ const ActionButton = styled.button.attrs((props: { borderColor: string }) => pro
   border: 1px solid ${(props) => props.borderColor};
   background-color: rgba(13, 24, 33, 1);
 
+  .description {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
   &:hover {
     background-color: ${(props) => props.borderColor};
+
+    .description {
+      color: rgba(255, 255, 255, 1);
+    }
   }
 
   @media (max-width: 589px) {
@@ -529,7 +537,7 @@ export default function BorrowActionsPage() {
                         <Text size='L' weight='bold' className='mb-1'>
                           {getNameOfAction(action.id)}
                         </Text>
-                        <Text size='XS' weight='medium'>
+                        <Text size='XS' weight='medium' className='description'>
                           {action.description}
                         </Text>
                       </ActionButton>
@@ -563,7 +571,7 @@ export default function BorrowActionsPage() {
                     <Text size='L' weight='bold' className='mb-1'>
                       {template.name}
                     </Text>
-                    <Text size='XS' weight='medium'>
+                    <Text size='XS' weight='medium' className='description'>
                       {template.description}
                     </Text>
                   </ActionButton>
