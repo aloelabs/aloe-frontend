@@ -171,12 +171,12 @@ function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: 
     case ConfirmButtonState.LOADING:
     case ConfirmButtonState.NO_ACTIONS:
     case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', enabled: false};
-    case ConfirmButtonState.PENDING: return {text: 'Waiting for wallet', enabled: false};
+    case ConfirmButtonState.PENDING: return {text: 'Pending', enabled: false};
     case ConfirmButtonState.READY: return {text: 'Confirm', enabled: true};
   }
 }
 
-const MARGIN_ACCOUNT_CALLEE = '0xba9ad27ed23b5e002e831514e69554815a5820b3';
+const MARGIN_ACCOUNT_CALLEE = '0x768aB3265F4C524A5899EfDC96184Ee50E8F7Ce0';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
