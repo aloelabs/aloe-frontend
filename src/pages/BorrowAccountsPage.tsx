@@ -41,7 +41,6 @@ export default function BorrowAccountsPage() {
   const blockNumber = useBlockNumber({
     chainId: currentChainId,
     watch: true,
-    cacheTime: 2000,
   });
   const marginAccountLensContract = useContract({
     addressOrName: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
@@ -51,7 +50,6 @@ export default function BorrowAccountsPage() {
 
   useEffect(() => {
     let mounted = true;
-    console.log(blockNumber.data);
 
     async function fetch(userAddress: string) {
       const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
