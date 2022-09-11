@@ -10,7 +10,7 @@ import { TokenData } from '../../data/TokenData';
 import { FeeTier } from '../../data/FeeTier';
 
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
-import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useSigner } from 'wagmi';
+import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useSigner, useWaitForTransaction } from 'wagmi';
 import { BigNumber, ethers } from 'ethers';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Chain, FetchBalanceResult } from '@wagmi/core';
@@ -21,7 +21,8 @@ import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 import PendingTxnModal from './modal/PendingTxnModal';
 import FailedTxnModal from './modal/FailedTxnModal';
 import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
-import CreatedMarginAccountModal from './modal/CreatedMarginAccountModal';
+import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
+import { useNavigate } from 'react-router-dom';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -63,19 +64,6 @@ const ActionItemCount = styled.span`
   margin-top: 17px;
   margin-bottom: 17px;
 `;
-
-export type ManageAccountWidgetProps = {
-  marginAccount: MarginAccount;
-  hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
-  uniswapPositions: UniswapPosition[],
-  activeActions: Array<Action>;
-  actionResults: Array<ActionCardState>;
-  updateActionResults: (actionResults: Array<ActionCardState>) => void;
-  onAddAction: () => void;
-  onRemoveAction: (index: number) => void;
-  problematicActionIdx: number;
-  transactionIsViable: boolean;
-};
 
 function useAllowance(token: TokenData, owner: string, spender: string) {
   return useContractRead({
@@ -188,6 +176,20 @@ function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: 
 
 const MARGIN_ACCOUNT_CALLEE = '0xba9ad27ed23b5e002e831514e69554815a5820b3';
 
+export type ManageAccountWidgetProps = {
+  marginAccount: MarginAccount;
+  hypotheticalStates: { assets: Assets, liabilities: Liabilities }[],
+  uniswapPositions: UniswapPosition[],
+  activeActions: Array<Action>;
+  actionResults: Array<ActionCardState>;
+  updateActionResults: (actionResults: Array<ActionCardState>) => void;
+  onAddAction: () => void;
+  onRemoveAction: (index: number) => void;
+  problematicActionIdx: number;
+  transactionIsViable: boolean;
+  clearActions: () => void;
+};
+
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
   const {
@@ -201,6 +203,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     onRemoveAction,
     problematicActionIdx,
     transactionIsViable,
+    clearActions,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
   const [showPendingModal, setShowPendingModal] = useState(false);
@@ -272,6 +275,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   if (writeKitty0Allowance.isError) writeKitty0Allowance.reset();
   if (writeKitty1Allowance.isError) writeKitty1Allowance.reset();
   if (contract.isError) setTimeout(contract.reset, 500);
+  if (contract.isSuccess) setTimeout(() => {
+    contract.reset();
+  }, 500);
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (activeActions.length === 0) {
@@ -425,10 +431,13 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         open={showFailedModal}
         setOpen={setShowFailedModal}
       />
-      <CreatedMarginAccountModal // TODO duplicate this or rename it for this use-case
+      <SuccessfulTxnModal
         open={showSuccessModal}
         setOpen={setShowSuccessModal}
-        onConfirm={() => {}}
+        onConfirm={() => {
+          setShowSuccessModal(false);
+          clearActions();
+        }}
       />
     </Wrapper>
   );
