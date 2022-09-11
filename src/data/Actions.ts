@@ -115,6 +115,7 @@ export type ActionCardProps = {
 
 export type Action = {
   id: ActionID;
+  description: string;
   actionCard: React.FC<ActionCardProps>;
 };
 
@@ -135,41 +136,49 @@ export type ActionTemplate = {
 
 export const MINT_TOKEN_PLUS: Action = {
   id: ActionID.MINT,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeMintTokenPlusActionCard,
 };
 
 export const BURN_TOKEN_PLUS: Action = {
   id: ActionID.BURN,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeBurnTokenPlusActionCard,
 };
 
 export const BORROW: Action = {
   id: ActionID.BORROW,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeBorrowActionCard,
 };
 
 export const REPAY: Action = {
   id: ActionID.REPAY,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeRepayActionCard,
 };
 
 export const WITHDRAW: Action = {
   id: ActionID.TRANSFER_OUT,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeWithdrawActionCard,
 };
 
 export const ADD_MARGIN: Action = {
   id: ActionID.TRANSFER_IN,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: AloeAddMarginActionCard,
 };
 
 export const REMOVE_LIQUIDITY: Action = {
   id: ActionID.REMOVE_LIQUIDITY,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: UniswapRemoveLiquidityActionCard,
 };
 
 export const ADD_LIQUIDITY: Action = {
   id: ActionID.ADD_LIQUIDITY,
+  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
   actionCard: UniswapAddLiquidityActionCard,
 };
 
