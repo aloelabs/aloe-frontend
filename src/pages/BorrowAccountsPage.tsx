@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useContract, useNetwork, useProvider, useSigner } from 'wagmi';
+import { chain, useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -17,7 +17,6 @@ import {
 } from '../data/MarginAccount';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import { useNavigate } from 'react-router-dom';
 
 const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
@@ -35,17 +34,19 @@ export default function BorrowAccountsPage() {
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: chain.goerli.id });
+  const currentChainId = chain.goerli.id;
+  const provider = useProvider({ chainId: currentChainId });
   const { address } = useAccount();
   const { data: signer } = useSigner();
+  const blockNumber = useBlockNumber({
+    chainId: currentChainId,
+    watch: true,
+  });
   const marginAccountLensContract = useContract({
     addressOrName: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
-
-  // MARK: react-router-dom hooks
-  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -63,7 +64,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address, marginAccountLensContract, provider]);
+  }, [address, marginAccountLensContract, provider, blockNumber.data]);
 
   return (
     <AppPage>
@@ -95,7 +96,9 @@ export default function BorrowAccountsPage() {
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setShowConfirmModal(false);
-          setShowSubmittingModal(true);
+          setTimeout(() => {
+            setShowSubmittingModal(true);
+          }, 500);
           if (!signer || !address || !selectedPool) {
             setIsTransactionPending(false);
             return;
@@ -103,9 +106,14 @@ export default function BorrowAccountsPage() {
           createMarginAccount(signer, selectedPool, address, (receipt) => {
             setShowSubmittingModal(false);
             if (receipt?.status === 1) {
-              setShowSuccessModal(true);
+              setTimeout(() => {
+                setShowSuccessModal(true);
+              }, 500);
+              
             } else {
-              setShowFailedModal(true);
+              setTimeout(() => {
+                setShowFailedModal(true);
+              }, 500);
             }
             setIsTransactionPending(false);
             console.log(receipt);
@@ -116,7 +124,7 @@ export default function BorrowAccountsPage() {
         }}
       />
       <CreatedMarginAccountModal open={showSuccessModal} setOpen={setShowSuccessModal} onConfirm={() => {
-        navigate(0);
+        setShowSuccessModal(false);
       }} />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
