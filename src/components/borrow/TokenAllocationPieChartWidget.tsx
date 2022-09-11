@@ -332,7 +332,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
             >
               {token0?.ticker || ''}
             </TokenLabel>
-            <div className='w-64 flex flex-col'>
+            <div className='flex flex-col'>
               {firstHalfOfSlices.map((slice, index) => {
                 return (
                   <AllocationSection color={slice.color} key={index}>
@@ -382,7 +382,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
             >
               {token1?.ticker || ''}
             </TokenLabel>
-            <div className='w-64 flex flex-col'>
+            <div className='flex flex-col'>
               {secondHalfOfSlices.map((slice, index) => {
                 return (
                   <AllocationSection color={slice.color} key={index}>

@@ -4,6 +4,7 @@ import { ReactComponent as EyeOffIcon } from '../../assets/svg/eye-off.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Text } from '../common/Typography';
+import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const StyledHypotheticalToggleButtonContent = styled.div.attrs(
   (props: { isActive: boolean }) => props
@@ -16,6 +17,12 @@ const StyledHypotheticalToggleButtonContent = styled.div.attrs(
 
   box-shadow: ${(props) => props.isActive ? '0px 0px 2px 1px rgba(242, 201, 76, 0.5)' : 'none'};
   opacity: ${(props) => props.isActive ? '1.0' : '0.5'};
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    .hypothetical-button-title {
+      display: none;
+    }
+  }
 `;
 
 const EyeIconWrapper = styled.div`
@@ -45,7 +52,7 @@ export function HypotheticalToggleButton(props: HypotheticalToggleButtonProps) {
       setIsActive={setShowHypothetical}
     >
       <StyledHypotheticalToggleButtonContent isActive={showHypothetical}>
-        <Text weight='bold'>Hypothetical</Text>
+        <Text weight='bold' className='hypothetical-button-title'>Hypothetical</Text>
         <EyeIconWrapper>
           {showHypothetical ? <EyeIcon /> : <EyeOffIcon />}
         </EyeIconWrapper>
