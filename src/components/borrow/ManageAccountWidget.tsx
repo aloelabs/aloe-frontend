@@ -154,6 +154,7 @@ enum ConfirmButtonState {
   NO_ACTIONS,
   ERRORING_ACTIONS,
   PENDING,
+  LOADING,
   READY,
 }
 
@@ -167,9 +168,10 @@ function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: 
     case ConfirmButtonState.APPROVE_ASSET1: return {text: `Approve ${token1.ticker}`, enabled: true};
     case ConfirmButtonState.APPROVE_KITTY0: return {text: `Approve ${kitty0.ticker}`, enabled: true};
     case ConfirmButtonState.APPROVE_KITTY1: return {text: `Approve ${kitty1.ticker}`, enabled: true};
+    case ConfirmButtonState.LOADING:
     case ConfirmButtonState.NO_ACTIONS:
     case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', enabled: false};
-    case ConfirmButtonState.PENDING: return {text: 'Pending', enabled: false};
+    case ConfirmButtonState.PENDING: return {text: 'Waiting for wallet', enabled: false};
     case ConfirmButtonState.READY: return {text: 'Confirm', enabled: true};
   }
 }
@@ -206,30 +208,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     clearActions,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
+
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   // MARK: wagmi hooks
   const contract = useContractWrite({
     addressOrName: accountAddress,
-    // chainId: chain.goerli.id,
     contractInterface: MarginAccountAbi,
     mode: 'recklesslyUnprepared',
     functionName: 'modify',
-    onError: () => {
-      setShowPendingModal(false);
-      setTimeout(() => {
-        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
-        setShowFailedModal(true);
-      }, 500);
-    },
     onSuccess: () => {
-      setShowPendingModal(false);
-      setTimeout(() => {
-        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
-        setShowSuccessModal(true);
-      }, 500);
+      setShowPendingModal(true);
     },
   });
   const { address: userAddress } = useAccount();
@@ -263,25 +255,30 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     requiredBalances[2] > userBalances.amount0Kitty,
     requiredBalances[3] > userBalances.amount1Kitty,
   ];
+  const loadingApprovals = [
+    requiredBalances[0] > 0 && !userAllowance0Asset,
+    requiredBalances[1] > 0 && !userAllowance1Asset,
+    requiredBalances[2] > 0 && !userAllowance0Kitty,
+    requiredBalances[3] > 0 && !userAllowance1Kitty,
+  ];
   const needsApproval = [
-    !userAllowance0Asset || (toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0]),
-    !userAllowance1Asset || (toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1]),
-    !userAllowance0Kitty || (toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2]),
-    !userAllowance1Kitty || (toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3]),
+    userAllowance0Asset && (toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0]),
+    userAllowance1Asset && (toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1]),
+    userAllowance0Kitty && (toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2]),
+    userAllowance1Kitty && (toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3]),
   ];
 
   if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
   if (writeAsset1Allowance.isError) writeAsset1Allowance.reset();
   if (writeKitty0Allowance.isError) writeKitty0Allowance.reset();
   if (writeKitty1Allowance.isError) writeKitty1Allowance.reset();
-  if (contract.isError) setTimeout(contract.reset, 500);
-  if (contract.isSuccess) setTimeout(() => {
-    contract.reset();
-  }, 500);
+  if (contract.isError || contract.isSuccess) setTimeout(contract.reset, 500);
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (activeActions.length === 0) {
     confirmButtonState = ConfirmButtonState.NO_ACTIONS;
+  } else if (loadingApprovals.includes(true)) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   } else if (!transactionIsViable || problematicActionIdx !== -1) {
     confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
   } else if (insufficient[0]) {
@@ -404,14 +401,43 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   writeKitty1Allowance.write();
                   break;
                 case ConfirmButtonState.READY:
-                  contract.write?.({
+                  contract.writeAsync({
                     recklesslySetUnpreparedArgs: [
                       '0xba9ad27ed23b5e002e831514e69554815a5820b3',
                       calldata,
                       [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
                     ],
+                    recklesslySetUnpreparedOverrides: {
+                      // TODO gas estimation was occassionally causing errors. To fix this,
+                      // we should probably work with the underlying ethers.Contract, but for now
+                      // we just provide hard-coded overrides.
+                      gasLimit: (600000 + 200000 * actionIds.length).toFixed(0)
+                    }
+                  }).then((txnResult) => {
+                    // In this callback, we have a txnResult. This means that the transaction has been submitted to the
+                    // blockchain and/or the user rejected it entirely. These states correspond to contract.isError and
+                    // contract.isSuccess, which we deal with elsewhere.
+                    setPendingTxnHash(txnResult.hash);
+
+                    txnResult.wait(1).then((txnReceipt) => {
+                      // In this callback, the transaction has been included on the blockchain and at least 1 block has been
+                      // built on top of it.
+                      setShowPendingModal(false);
+                      setPendingTxnHash(undefined);
+                      if (txnReceipt.status === 1) {
+                        // TODO in addition to clearing actions here, we should refresh the page to get updated data
+                        clearActions();
+                      }
+
+                      console.log(txnReceipt);
+
+                      setTimeout(() => {
+                        //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
+                        if (txnReceipt.status === 1) setShowSuccessModal(true);
+                        else setShowFailedModal(true);
+                      }, 500);
+                    });
                   });
-                  setShowPendingModal(true);
                   break;
                 default:
                   break;
@@ -426,6 +452,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       <PendingTxnModal
         open={showPendingModal}
         setOpen={setShowPendingModal}
+        txnHash={pendingTxnHash}
       />
       <FailedTxnModal
         open={showFailedModal}
@@ -434,10 +461,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       <SuccessfulTxnModal
         open={showSuccessModal}
         setOpen={setShowSuccessModal}
-        onConfirm={() => {
-          setShowSuccessModal(false);
-          clearActions();
-        }}
+        onConfirm={() => {}}
       />
     </Wrapper>
   );
