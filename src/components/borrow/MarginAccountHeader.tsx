@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { formatAddressStart } from '../../util/FormatAddress';
 import FeeTierContainer from '../common/FeeTierContainer';
@@ -39,6 +39,14 @@ const Dash = styled.div`
   height: 4.64px;
 `;
 
+const MarginAccountBadges = styled.div`
+  ${tw`flex gap-4`}
+  
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    flex-direction: column;
+  }
+`;
+
 export type MarginAccountHeaderProps = {
   token0: TokenData;
   token1: TokenData;
@@ -68,10 +76,10 @@ export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
           </div>
         </div>
       </MarginPairContainer>
-      <div className='flex gap-4'>
+      <MarginAccountBadges>
         <FeeTierContainer feeTier={props.feeTier} />
         <RoundedBadge title={props.id}>ID - {formatAddressStart(props.id)}</RoundedBadge>
-      </div>
+      </MarginAccountBadges>
     </div>
   );
 }

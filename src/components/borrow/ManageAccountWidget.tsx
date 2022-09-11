@@ -30,6 +30,10 @@ const Wrapper = styled.div`
   background: rgba(13, 24, 33, 1);
   padding: 24px;
   border-radius: 8px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    width: 100%;
+  }
 `;
 
 const ActionsList = styled.ul`
@@ -74,10 +78,22 @@ const ActionItemCount = styled.span`
   margin-right: 32px;
   margin-top: 17px;
   margin-bottom: 17px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    margin-right: 0;
+  }
 `;
 
 const ActionCardWrapper = styled.div`
   width: 400px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    width: 350px;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    width: 300px;
+  }
 `;
 
 function useAllowance(token: TokenData, owner: string, spender: string) {
@@ -326,13 +342,15 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   return (
     <Wrapper>
       <div>
-        <Display size='M' weight='medium'>
-          Manage Account
-        </Display>
-        <Text size='S' weight='medium'>
-          Get started by clicking "Add Action" and transferring some funds as
-          margin.
-        </Text>
+        <ActionCardWrapper>
+          <Display size='M' weight='medium'>
+            Manage Account
+          </Display>
+          <Text size='S' weight='medium'>
+            Get started by clicking "Add Action" and transferring some funds as
+            margin.
+          </Text>
+        </ActionCardWrapper>
         <ActionsList>
           {activeActions.map((action, index) => (
             <ActionItem key={index}>
