@@ -7,6 +7,7 @@ import Big from 'big.js';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { BIGQ96 } from './constants/Values';
 import { toBig } from '../util/Numbers';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 
 export type Assets = {
   token0Raw: number;
@@ -55,8 +56,8 @@ export async function getMarginAccountsForUser(
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
-    '0x9F6d4681fD8c557e5dC75b6713078233e98CA351', // TODO replace with constant for FACTORY address
-    ['0x2e4e957c1260adb001f2d118cbfb21f455e78760f52247e8b9490521ac2254aa'],
+    ALOE_II_FACTORY_ADDRESS_GOERLI,
+    ['0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78', null, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
     'api-goerli'
   );
@@ -69,14 +70,16 @@ export async function getMarginAccountsForUser(
     };
   });
 
-  const accountOwners = await Promise.all(
-    accounts.map((account) => {
-      const contract = new ethers.Contract(account.address, MarginAccountABI, provider);
-      return contract.OWNER();
-    })
-  );
+  return accounts;
 
-  return accounts.filter((_, i) => accountOwners[i] === userAddress);
+  // const accountOwners = await Promise.all(
+  //   accounts.map((account) => {
+  //     const contract = new ethers.Contract(account.address, MarginAccountABI, provider);
+  //     return contract.OWNER();
+  //   })
+  // );
+
+  // return accounts.filter((_, i) => accountOwners[i] === userAddress);
 }
 
 export async function resolveUniswapPools(marginAccounts: { address: string; uniswapPool: string }[], provider: ethers.providers.BaseProvider) {
@@ -112,6 +115,8 @@ export async function fetchMarginAccountPreviews(
 
       const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(accountAddress);
       const liabilitiesData: BigNumber[] = await marginAccountLensContract.getLiabilities(accountAddress);
+      // const assetsData = [0, 0, 0, 0, 0, 0];
+      // const liabilitiesData = [0, 0];
       const assets: Assets = {
         token0Raw: Big(assetsData[0].toString())
           .div(10 ** token0.decimals)
