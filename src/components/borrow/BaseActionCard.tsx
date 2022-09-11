@@ -10,7 +10,7 @@ const ActionCardContainer = styled.div.attrs(
   (props: { isCausingError: boolean }) => props
 )`
   ${tw`flex flex-col items-center justify-center`}
-  width: 400px;
+  width: 100%;
   padding: 12px 12px;
   border-radius: 8px;
   background-color: rgba(13, 24, 33, 1);
