@@ -564,7 +564,7 @@ export default function BorrowActionsPage() {
                       {template.name}
                     </Text>
                     <Text size='XS' weight='medium'>
-                      Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.
+                      {template.description}
                     </Text>
                   </ActionButton>
                 );

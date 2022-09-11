@@ -130,6 +130,7 @@ export type ActionProvider = {
 
 export type ActionTemplate = {
   name: string;
+  description: string;
   actions: Array<Action>;
   defaultActionStates?: Array<ActionCardState>;
 };
@@ -210,6 +211,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
 export const ActionTemplates: { [key: string]: ActionTemplate } = {
   TEN_X_LEVERAGE: {
     name: '10x Leverage',
+    description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
     actions: [ADD_MARGIN, BORROW, ADD_LIQUIDITY],
     defaultActionStates: [
       {
@@ -240,6 +242,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
   },
   MARKET_MAKING: {
     name: 'Market-Making',
+    description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     defaultActionStates: [
       {
