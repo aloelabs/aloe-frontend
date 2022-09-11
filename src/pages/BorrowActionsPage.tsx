@@ -30,7 +30,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import { formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
@@ -150,11 +150,13 @@ const ActionButton = styled.button.attrs((props: { borderColor: string }) => pro
 
 const AccountStatsGrid = styled.div`
   display: grid;
-  //TODO: make this responsive
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-`;
 
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    grid-template-columns: 1fr;
+  }
+`;
 
 type AccountParams = {
   account: string;
