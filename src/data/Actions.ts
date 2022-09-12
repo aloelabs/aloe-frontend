@@ -389,7 +389,8 @@ export function calculateHypotheticalStates(
       0.025
     );
     if (!solvency.atA || !solvency.atB) {
-      console.log('Not solvent!')
+      console.log('Not solvent!');
+      console.log(solvency);
       break;
     }
 
