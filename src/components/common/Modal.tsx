@@ -13,6 +13,7 @@ const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';
 export const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 export const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 export const MESSAGE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
+export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
 
 const StyledDialog = styled.div`
   z-index: 100;

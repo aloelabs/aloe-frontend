@@ -5,7 +5,7 @@ import {
   CloseableModal,
   HorizontalDivider,
 } from '../../common/Modal';
-import { MODAL_BLACK_TEXT_COLOR } from '../../pool/PoolInteractionTabs';
+import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type SuccessfulTxnModalProps = {
   open: boolean;
