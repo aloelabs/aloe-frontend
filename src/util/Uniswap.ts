@@ -413,26 +413,99 @@ export function uniswapPositionKey(owner: string, lower: number, upper: number):
   return ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, lower, upper]);
 }
 
-export function getAmountsFromLiquidity(
-  token0: TokenData,
-  token1: TokenData,
-  feeTier: FeeTier,
-  sqrtRatioX96: JSBI,
-  liquidity: BigintIsh,
-  tickLower: number,
-  tickUpper: number
-): [number, number] | null {
-  const uniswapToken0 = new Token(5, token0?.address || '', token0.decimals);
-  const uniswapToken1 = new Token(5, token1?.address || '', token1.decimals);
-  const feeAmount = feeTierToFeeAmount(feeTier);
-  if (!feeAmount) return null;
-  const currentTick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
-  const pool = new Pool(uniswapToken0, uniswapToken1, feeAmount, sqrtRatioX96, liquidity, currentTick);
-  const position = new Position({
-    pool,
-    liquidity,
-    tickLower,
-    tickUpper,
-  });
-  return [parseFloat(position.amount0.toFixed()), parseFloat(position.amount1.toFixed())];
+function getAmount0ForLiquidity(
+  sqrtRatioAX96: JSBI,
+  sqrtRatioBX96: JSBI,
+  liquidity: JSBI
+): JSBI {
+  const res = JSBI.BigInt(96);
+  const numerator = JSBI.multiply(JSBI.leftShift(liquidity, res), JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
+  const denominator = JSBI.multiply(sqrtRatioBX96, sqrtRatioAX96);
+  return JSBI.divide(numerator, denominator);
+}
+
+function getAmount1ForLiquidity(
+  sqrtRatioAX96: JSBI,
+  sqrtRatioBX96: JSBI,
+  liquidity: JSBI
+): JSBI {
+  const numerator = JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
+  return JSBI.divide(numerator, JSBI.BigInt(Q96.toString()));
+}
+
+export function getAmountsForLiquidity(
+  liquidity: JSBI,
+  lowerTick: number,
+  upperTick: number,
+  currentTick: number,
+  token0Decimals: number,
+  token1Decimals: number
+): [number, number] {
+  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
+
+  //lower price
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
+  //upper price
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
+  //current price
+  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
+
+  let amount0 = JSBI.BigInt(0);
+  let amount1 = JSBI.BigInt(0);
+
+  if (currentTick <= lowerTick) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  } else if (currentTick < upperTick) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioX96, sqrtRatioBX96, liquidity);
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioX96, liquidity);
+  } else {
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  }
+
+  return [
+    new Big(amount0.toString(10)).div(10 ** token0Decimals).toNumber(),
+    new Big(amount1.toString(10)).div(10 ** token1Decimals).toNumber(),
+  ];
+}
+
+export function getValueOfLiquidity(
+  liquidity: JSBI,
+  lowerTick: number,
+  upperTick: number,
+  currentTick: number,
+  token1Decimals: number
+): number {
+  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
+
+  //lower price
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
+  //upper price
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
+  //current price
+  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
+
+  let value0 = JSBI.BigInt(0);
+  let value1 = JSBI.BigInt(0);
+
+  const jsbiQ96 = JSBI.BigInt(Q96.toString());
+  const res = JSBI.BigInt(96);
+
+  if (currentTick <= lowerTick) {
+    const priceX96 = JSBI.divide(JSBI.multiply(sqrtRatioX96, sqrtRatioX96), jsbiQ96);
+
+    const numerator = JSBI.multiply(JSBI.leftShift(liquidity, res), JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
+    const temp = JSBI.divide(numerator, sqrtRatioBX96);
+    value0 = JSBI.divide(JSBI.multiply(priceX96, temp), JSBI.leftShift(sqrtRatioAX96, res));
+  } else if (currentTick < upperTick) {
+    //mulDiv(sqrtRatioX96, sqrtRatioBX96 - sqrtRatioX96, FixedPoint96.Q96)
+    const numerator = JSBI.divide(JSBI.multiply(sqrtRatioX96, JSBI.subtract(sqrtRatioBX96, sqrtRatioX96)), jsbiQ96);
+    value0 = JSBI.divide(JSBI.multiply(liquidity, numerator), sqrtRatioBX96);
+    value1 = JSBI.divide(JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioX96, sqrtRatioAX96)), jsbiQ96);
+  } else {
+    value1 = JSBI.divide(JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96)), jsbiQ96);
+  }
+
+  const value = JSBI.add(value0, value1);
+
+  return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
 }

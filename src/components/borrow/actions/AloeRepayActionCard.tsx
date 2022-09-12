@@ -43,7 +43,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   });
   
   const tokenAmount = previousActionCardState?.textFields ? previousActionCardState.textFields[0] : '';
-  const maxString = marginAccount.liabilities[selectedToken == TokenType.ASSET0 ? 'amount0' : 'amount1'].toFixed(6);
+  const maxString = marginAccount.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'].toFixed(6);
   
   return (
     <BaseActionCard
