@@ -34,7 +34,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    return {
+    onChange({
       actionId: ActionID.MINT,
       actionArgs:
         value === ''
@@ -53,7 +53,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
-    };
+    });
   };
 
   const maxString = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'].toFixed(6);
