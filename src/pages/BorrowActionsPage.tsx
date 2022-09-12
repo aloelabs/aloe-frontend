@@ -389,6 +389,7 @@ export default function BorrowActionsPage() {
   }
 
   function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
+    if (actionResults.length === 0) setIsShowingHypothetical(true);
     if (defaultActionResults && actions.length !== defaultActionResults.length) {
       console.error(
         'You must pass in the same number of action results as you do actions (or pass no action results in).'
