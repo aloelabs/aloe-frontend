@@ -70,7 +70,7 @@ export async function getMarginAccountsForUser(
 
   const accounts: { address: string; uniswapPool: string }[] = etherscanResult.data.result.map((item: any) => {
     return {
-      address: item.topics[2].slice(26),
+      address: item.topics[2].slice(0, 2) + item.topics[2].slice(26),
       uniswapPool: item.topics[1].slice(26),
     };
   });
