@@ -134,49 +134,49 @@ export type ActionTemplate = {
 
 export const MINT_TOKEN_PLUS: Action = {
   id: ActionID.MINT,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Exchange raw assets for their interest-bearing counterpart. Using these as collateral reduces maximum leverage.',
   actionCard: AloeMintTokenPlusActionCard,
 };
 
 export const BURN_TOKEN_PLUS: Action = {
   id: ActionID.BURN,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Exchange interest-bearing tokens for the underlying asset.',
   actionCard: AloeBurnTokenPlusActionCard,
 };
 
 export const BORROW: Action = {
   id: ActionID.BORROW,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Request assets from the money market. This won\'t work if market utilization is already at 100%.',
   actionCard: AloeBorrowActionCard,
 };
 
 export const REPAY: Action = {
   id: ActionID.REPAY,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Pay off your loans.',
   actionCard: AloeRepayActionCard,
 };
 
 export const WITHDRAW: Action = {
   id: ActionID.TRANSFER_OUT,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Send funds from your Margin Account to your wallet.',
   actionCard: AloeWithdrawActionCard,
 };
 
 export const ADD_MARGIN: Action = {
   id: ActionID.TRANSFER_IN,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Send funds from your wallet to your Margin Account. You must do this before anything else.',
   actionCard: AloeAddMarginActionCard,
 };
 
 export const REMOVE_LIQUIDITY: Action = {
   id: ActionID.REMOVE_LIQUIDITY,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Remove liquidity from a Uniswap Position.',
   actionCard: UniswapRemoveLiquidityActionCard,
 };
 
 export const ADD_LIQUIDITY: Action = {
   id: ActionID.ADD_LIQUIDITY,
-  description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+  description: 'Create a new Uniswap Position or add liquidity to an existing one.',
   actionCard: UniswapAddLiquidityActionCard,
 };
 
@@ -186,12 +186,12 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
     Icon: AloeLogo,
     color: '#3a8d71',
     actions: {
-      MINT_TOKEN_PLUS,
-      BURN_TOKEN_PLUS,
+      ADD_MARGIN,
+      WITHDRAW,
       BORROW,
       REPAY,
-      WITHDRAW,
-      ADD_MARGIN,
+      MINT_TOKEN_PLUS,
+      BURN_TOKEN_PLUS,
     },
   },
   UniswapV3: {
@@ -207,39 +207,47 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
 
 export const ActionTemplates: { [key: string]: ActionTemplate } = {
   TEN_X_LEVERAGE: {
-    name: '10x Leverage',
-    description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
-    actions: [ADD_MARGIN, BORROW, ADD_LIQUIDITY],
+    name: 'Classic Borrow',
+    description: 'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
+    actions: [ADD_MARGIN, MINT_TOKEN_PLUS, BORROW, WITHDRAW],
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
-        textFields: ['10'],
+        textFields: ['100'],
         aloeResult: {
-          token0RawDelta: 10,
+          selectedToken: TokenType.ASSET0,
+        },
+        uniswapResult: null,
+      },
+      {
+        actionId: MINT_TOKEN_PLUS.id,
+        textFields: ['100'],
+        aloeResult: {
           selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
       },
       {
         actionId: BORROW.id,
-        textFields: ['100'],
+        textFields: ['0.044'],
         aloeResult: {
-          token0RawDelta: 100,
-          token0DebtDelta: 100,
-          selectedToken: TokenType.ASSET0,
+          selectedToken: TokenType.ASSET1,
         },
-        uniswapResult: null,
+        uniswapResult: null
       },
       {
-        actionId: ADD_LIQUIDITY.id,
-        aloeResult: null,
+        actionId: WITHDRAW.id,
+        textFields: ['0.044'],
+        aloeResult: {
+          selectedToken: TokenType.ASSET1,
+        },
         uniswapResult: null,
       },
     ],
   },
   MARKET_MAKING: {
     name: 'Market-Making',
-    description: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit.',
+    description: 'Create an in-range Uniswap Position at 20x leverage.',
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     defaultActionStates: [
       {
@@ -382,8 +390,9 @@ export function calculateHypotheticalStates(
     //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
     //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
     // TLDR: It's simpler to check solvency inside this for loop
+    const includeKittyReceipts = assetsTemp.token0Plus > 0 || assetsTemp.token1Plus > 0;
     const solvency = isSolvent(
-      { ...marginAccount, assets: assetsTemp, liabilities: liabilitiesTemp },
+      { ...marginAccount, assets: assetsTemp, liabilities: liabilitiesTemp, includeKittyReceipts },
       Array.from(positionsTemp.values()),
       marginAccount.sqrtPriceX96,
       0.025

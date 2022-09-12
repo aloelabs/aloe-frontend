@@ -445,7 +445,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 case ConfirmButtonState.READY:
                   contract.writeAsync({
                     recklesslySetUnpreparedArgs: [
-                      '0xba9ad27ed23b5e002e831514e69554815a5820b3',
+                      '0x768aB3265F4C524A5899EfDC96184Ee50E8F7Ce0',
                       calldata,
                       [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
                     ],
