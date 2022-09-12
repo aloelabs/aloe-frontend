@@ -1,4 +1,3 @@
-import React from 'react';
 import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
 import {
@@ -20,7 +19,7 @@ export default function SuccessfulTxnModal(props: SuccessfulTxnModalProps) {
     onConfirm,
   } = props;
   return (
-    <CloseableModal open={open} setOpen={setOpen} title='Transaction Successful'>
+    <CloseableModal open={open} setOpen={setOpen} onClose={onConfirm} title='Transaction Successful'>
       <div className='flex justify-center items-center'>
         <img src={SuccessIcon} alt='success' />
       </div>
