@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
@@ -24,6 +24,8 @@ import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 import { useNavigate } from 'react-router-dom';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
+import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
@@ -189,21 +191,21 @@ enum ConfirmButtonState {
   READY,
 }
 
-function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: TokenData, kitty0: TokenData, kitty1: TokenData): {text: string, enabled: boolean} {
+function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: TokenData, kitty0: TokenData, kitty1: TokenData): {text: string, Icon: ReactElement, enabled: boolean} {
   switch (state) {
-    case ConfirmButtonState.INSUFFICIENT_ASSET0: return {text: `Insufficient ${token0.ticker}`, enabled: false};
-    case ConfirmButtonState.INSUFFICIENT_ASSET1: return {text: `Insufficient ${token1.ticker}`, enabled: false};
-    case ConfirmButtonState.INSUFFICIENT_KITTY0: return {text: `Insufficient ${kitty0.ticker}`, enabled: false};
-    case ConfirmButtonState.INSUFFICIENT_KITTY1: return {text: `Insufficient ${kitty1.ticker}`, enabled: false};
-    case ConfirmButtonState.APPROVE_ASSET0: return {text: `Approve ${token0.ticker}`, enabled: true};
-    case ConfirmButtonState.APPROVE_ASSET1: return {text: `Approve ${token1.ticker}`, enabled: true};
-    case ConfirmButtonState.APPROVE_KITTY0: return {text: `Approve ${kitty0.ticker}`, enabled: true};
-    case ConfirmButtonState.APPROVE_KITTY1: return {text: `Approve ${kitty1.ticker}`, enabled: true};
+    case ConfirmButtonState.INSUFFICIENT_ASSET0: return {text: `Insufficient ${token0.ticker}`, Icon: <AlertTriangleIcon />, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_ASSET1: return {text: `Insufficient ${token1.ticker}`, Icon: <AlertTriangleIcon />, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY0: return {text: `Insufficient ${kitty0.ticker}`, Icon: <AlertTriangleIcon />, enabled: false};
+    case ConfirmButtonState.INSUFFICIENT_KITTY1: return {text: `Insufficient ${kitty1.ticker}`, Icon: <AlertTriangleIcon />, enabled: false};
+    case ConfirmButtonState.APPROVE_ASSET0: return {text: `Approve ${token0.ticker}`, Icon: <CheckIcon />, enabled: true};
+    case ConfirmButtonState.APPROVE_ASSET1: return {text: `Approve ${token1.ticker}`, Icon: <CheckIcon />, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY0: return {text: `Approve ${kitty0.ticker}`, Icon: <CheckIcon />, enabled: true};
+    case ConfirmButtonState.APPROVE_KITTY1: return {text: `Approve ${kitty1.ticker}`, Icon: <CheckIcon />, enabled: true};
     case ConfirmButtonState.LOADING:
     case ConfirmButtonState.NO_ACTIONS:
-    case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', enabled: false};
-    case ConfirmButtonState.PENDING: return {text: 'Pending', enabled: false};
-    case ConfirmButtonState.READY: return {text: 'Confirm', enabled: true};
+    case ConfirmButtonState.ERRORING_ACTIONS: return {text: 'Confirm', Icon: <CheckIcon />, enabled: false};
+    case ConfirmButtonState.PENDING: return {text: 'Pending', Icon: <LoaderIcon />, enabled: false};
+    case ConfirmButtonState.READY: return {text: 'Confirm', Icon: <CheckIcon />, enabled: true};
   }
 }
 
@@ -410,7 +412,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         </ActionsList>
         <div className='flex justify-end gap-4 mt-4'>
           <FilledGradientButtonWithIcon
-            Icon={<CheckIcon />}
+            Icon={confirmButton.Icon}
             position='trailing'
             size='M'
             svgColorType='stroke'
