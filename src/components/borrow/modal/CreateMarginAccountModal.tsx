@@ -7,7 +7,7 @@ import {
   LABEL_TEXT_COLOR,
 } from '../../common/Modal';
 import { Text } from '../../common/Typography';
-import { MODAL_BLACK_TEXT_COLOR } from '../../pool/PoolInteractionTabs';
+import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type CreateMarginAccountModalProps = {
   open: boolean;
