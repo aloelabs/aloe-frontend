@@ -358,8 +358,8 @@ export function isSolvent(
     assetsB, 
     liabilitiesA,
     liabilitiesB,
-    atA: assetsA > liabilitiesA,
-    atB: assetsB > liabilitiesB,
+    atA: assetsA >= liabilitiesA,
+    atB: assetsB >= liabilitiesB,
   };
 }
 
