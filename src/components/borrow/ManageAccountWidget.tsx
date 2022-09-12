@@ -209,7 +209,7 @@ function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: 
   }
 }
 
-const MARGIN_ACCOUNT_CALLEE = '0x768aB3265F4C524A5899EfDC96184Ee50E8F7Ce0';
+const MARGIN_ACCOUNT_CALLEE = '0xfb69e3d12421b8a6db96393473f89c3166692603';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
@@ -445,7 +445,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 case ConfirmButtonState.READY:
                   contract.writeAsync({
                     recklesslySetUnpreparedArgs: [
-                      '0xba9ad27ed23b5e002e831514e69554815a5820b3',
+                      MARGIN_ACCOUNT_CALLEE,
                       calldata,
                       [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
                     ],
