@@ -1,8 +1,7 @@
-import React from 'react';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import styled from 'styled-components';
-import { BIGQ96 } from '../../data/constants/Values';
-import { Assets, Liabilities, LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
+import { UniswapPosition } from '../../data/Actions';
+import { Assets, getAssets, Liabilities, LiquidationThresholds, MarginAccount, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/MarginAccount';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -30,20 +29,35 @@ export function formatNumberRelativeToSize(value: number): string {
   return Math.abs(value) <  10 ? value.toFixed(6) : value.toFixed(2);
 }
 
-function calculatePnL0(price: number, assets: Assets, liabilities: Liabilities, initialValue = 0): number {
-  const fixedAssets = assets.token0Raw + assets.token0Plus + price * (assets.token1Raw + assets.token1Plus);
-  const fluidAssets = 0; // TODO
-  const fixedLiabilities = liabilities.amount0 + price * liabilities.amount1;
-
-  return fixedAssets + fluidAssets - fixedLiabilities - initialValue;
+function calculatePnL1(
+  marginAccount: MarginAccount,
+  uniswapPositions: UniswapPosition[],
+  price: number,
+  initialValue = 0
+): number {
+  const sqrtPriceX96 = priceToSqrtRatio(price, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  return (
+    (assets.fixed0 + assets.fluid0C) * price + assets.fixed1 + assets.fluid1C - (
+    (marginAccount.liabilities.amount0 * price) + marginAccount.liabilities.amount1 +
+    initialValue
+  ));
 }
 
-function calculatePnL1(price: number, assets: Assets, liabilities: Liabilities, initialValue = 0): number {
-  const fixedAssets = price * (assets.token0Raw + assets.token0Plus) + assets.token1Raw + assets.token1Plus;
-  const fluidAssets = 0; // TODO
-  const fixedLiabilities = price * liabilities.amount0 + liabilities.amount1;
-
-  return fixedAssets + fluidAssets - fixedLiabilities - initialValue;
+function calculatePnL0(
+  marginAccount: MarginAccount,
+  uniswapPositions: UniswapPosition[],
+  price: number,
+  initialValue = 0
+): number {
+  const invertedPrice = 1 / price;
+  const sqrtPriceX96 = priceToSqrtRatio(invertedPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  return (
+    (assets.fixed1 + assets.fluid1C) * price + assets.fixed0 + assets.fluid0C - (
+    (marginAccount.liabilities.amount1 * price) + marginAccount.liabilities.amount0 +
+    initialValue
+  ));
 }
 
 /**
@@ -57,6 +71,7 @@ export type PnLEntry = {
 
 export type PnLGraphProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: UniswapPosition[];
   inTermsOfToken0: boolean;
   liquidationThresholds: LiquidationThresholds;
 };
@@ -64,28 +79,22 @@ export type PnLGraphProps = {
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount, inTermsOfToken0 } = props;
-  const { token0, token1, sqrtPriceX96, assets, liabilities } = marginAccount;
+  const { marginAccount, uniswapPositions, inTermsOfToken0 } = props;
 
-  let price = sqrtPriceX96
-    .mul(sqrtPriceX96)
-    .div(BIGQ96)
-    .div(BIGQ96)
-    .mul(10 ** (token0.decimals - token1.decimals))
-    .toNumber();
+  let price = sqrtRatioToPrice(marginAccount.sqrtPriceX96, marginAccount.token0.decimals, marginAccount.token1.decimals);
   if (inTermsOfToken0) price = 1 / price;
   const priceA = price / PLOT_X_SCALE;
   const priceB = price * PLOT_X_SCALE;
 
   const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
-  const initialValue = calculatePnL(price, assets, liabilities);
+  const initialValue = calculatePnL(marginAccount, uniswapPositions, price);
 
   let P = priceA;
   let data: PnLEntry[] = [];
 
   while (P < priceB) {
-    data.push({ x: P, y: calculatePnL(P, assets, liabilities, initialValue) });
-    P *= 1.0001;
+    data.push({ x: P, y: calculatePnL(marginAccount, uniswapPositions, P, initialValue) });
+    P *= 1.001;
   }
 
   const fakeLowerLiquidationThreshold = data.length > 0 ? data[Math.floor(data.length / 2 - data.length / 5)].x : 0;
