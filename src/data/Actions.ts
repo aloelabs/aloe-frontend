@@ -368,6 +368,9 @@ export function calculateHypotheticalStates(
 
     // if any assets or liabilities are < 0, we have an issue!
     if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
+      console.log('Margin Account balance dropped below 0!')
+      console.log(hypotheticalStates[i]);
+      console.log(actionResult);
       break;
     }
 
@@ -386,7 +389,7 @@ export function calculateHypotheticalStates(
       0.025
     );
     if (!solvency.atA || !solvency.atB) {
-      console.log('Not solvent!');
+      console.log('Margin Account not solvent!')
       console.log(solvency);
       break;
     }

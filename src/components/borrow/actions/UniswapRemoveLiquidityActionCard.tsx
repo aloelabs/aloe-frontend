@@ -7,7 +7,7 @@ import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_righ
 import styled from "styled-components";
 import { SquareInputWithTrailingUnit } from "../../common/Input";
 import { ChangeEvent, useState } from "react";
-import { formatNumberInput, formatTokenAmount } from "../../../util/Numbers";
+import { formatNumberInput, formatTokenAmount, roundDownToNearestN } from "../../../util/Numbers";
 import useEffectOnce from "../../../data/hooks/UseEffectOnce";
 import JSBI from 'jsbi';
 import { getRemoveLiquidityActionArgs } from "../../../connector/MarginAccountActions";
@@ -92,27 +92,30 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   function updateResult(liquidityPosition: UniswapPosition | undefined) {
     const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
-    const updatedAmount0 = liquidityPosition ? (liquidityPosition?.amount0 || 0) * (parsedPercentage / 100.0) : 0;
-    const updatedAmount1 = liquidityPosition ? (liquidityPosition?.amount1 || 0) * (parsedPercentage / 100.0) : 0;
-    const lower = liquidityPosition?.lower || null; 
-    const upper = liquidityPosition?.upper || null;
-    const liquidity = liquidityPosition?.liquidity || JSBI.BigInt(0);
-    const updatedLiquidity = JSBI.divide(JSBI.multiply(liquidity, JSBI.BigInt((parsedPercentage * 10000 / 100).toFixed(0))), JSBI.BigInt(10000))
+
+    const lower = liquidityPosition ? liquidityPosition.lower : null; 
+    const upper = liquidityPosition ? liquidityPosition.upper : null;
+    const liquidity = liquidityPosition?.liquidity ?? JSBI.BigInt(0);
+
+    const amount0ToRemove = (liquidityPosition?.amount0 || 0) * parsedPercentage / 100.0;
+    const amount1ToRemove = (liquidityPosition?.amount1 || 0) * parsedPercentage / 100.0;
+    const updatedLiquidity = JSBI.divide(JSBI.multiply(liquidity, JSBI.BigInt((parsedPercentage * 10000 / 100).toFixed(0))), JSBI.BigInt(10000));
+
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
       actionArgs: (lower !== null && upper !== null) ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
       aloeResult: {
-        token0RawDelta: updatedAmount0,
-        token1RawDelta: updatedAmount1,
+        token0RawDelta: amount0ToRemove,
+        token1RawDelta: amount1ToRemove,
         selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
           liquidity: updatedLiquidity,
-          amount0: -updatedAmount0,
-          amount1: -updatedAmount1,
-          lower: liquidityPosition ? liquidityPosition.lower : null,
-          upper: liquidityPosition ? liquidityPosition.upper : null,
+          amount0: -amount0ToRemove,
+          amount1: -amount1ToRemove,
+          lower,
+          upper,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: parsedPercentage,
