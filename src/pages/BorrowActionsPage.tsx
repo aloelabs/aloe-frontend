@@ -228,7 +228,7 @@ type AccountParams = {
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
-  const accountAddressParam = `0x${params.account}`;
+  const accountAddressParam = params.account;
 
   // MARK: component state
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
@@ -315,7 +315,7 @@ export default function BorrowActionsPage() {
         setUniswapPositions(fetchedUniswapPositions);
       }
     }
-    if (Array.isArray(uniswapPositionPriors) && marginAccount) {
+    if (accountAddressParam && Array.isArray(uniswapPositionPriors) && marginAccount) {
       fetch(accountAddressParam, uniswapPositionPriors as UniswapPositionPrior[], marginAccount);
     }
     return () => {
