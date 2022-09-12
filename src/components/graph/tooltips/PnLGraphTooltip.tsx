@@ -48,7 +48,7 @@ export default function PnLGraphTooltip(props: {token0: TokenData, token1: Token
           </div>
           <div className='flex flex-col justify-center items-center'>
             <Text size='S' weight='medium'>
-              PnL
+              P&L
             </Text>
             <Text size='M' weight='bold'>
               {formatNumberRelativeToSize(y)} {tickerActive}

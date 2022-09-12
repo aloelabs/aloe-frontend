@@ -318,7 +318,6 @@ export function isSolvent(
   sqrtPriceX96: Big,
   sigma: number
 ) {
-  // const sqrtPriceX96 = marginAccount.sqrtPriceX96;
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
 
