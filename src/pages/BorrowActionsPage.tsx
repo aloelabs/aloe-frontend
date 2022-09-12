@@ -328,6 +328,20 @@ export default function BorrowActionsPage() {
     return null;
   }
 
+  // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
+  // this is because one is computed on-chain and cached, while the other is computed locally.
+  // if we've fetched both, prefer the uniswapPositions version (local & newer).
+  {
+    const {amount0, amount1} = Array.from(uniswapPositions.values()).reduce((prev, curr) => {
+      return {
+        amount0: prev.amount0 + (curr.amount0 || 0),
+        amount1: prev.amount1 + (curr.amount1 || 0),
+      };
+    }, {amount0: 0, amount1: 0});
+    marginAccount.assets.uni0 = amount0;
+    marginAccount.assets.uni1 = amount1;
+  }
+
   // assets and liabilities before adding any hypothetical actions
   const assetsI = marginAccount.assets;
   const liabilitiesI = marginAccount.liabilities;

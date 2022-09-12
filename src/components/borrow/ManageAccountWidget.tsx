@@ -311,6 +311,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   } else if (loadingApprovals.includes(true)) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (!transactionIsViable || problematicActionIdx !== -1) {
+    console.info('Viable Transaction: ', transactionIsViable, 'Problematic Action: ', problematicActionIdx);
     confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
   } else if (insufficient[0]) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
