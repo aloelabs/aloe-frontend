@@ -4,24 +4,14 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import WagmiProvider from './connector/WagmiProvider';
 import Header from './components/header/Header';
 import Footer from './components/common/Footer';
-import BlendPoolSelectPage from './pages/BlendPoolSelectPage';
-import BlendPoolPage from './pages/BlendPoolPage';
-import PortfolioPage from './pages/PortfolioPage';
-import GovernancePage from './pages/GovernancePage';
 
 import AppBody from './components/common/AppBody';
 import { RedirectPartialPath } from './util/RedirectPartialPath';
-import { BlendTableProvider } from './data/context/BlendTableContext';
 import ScrollToTop from './util/ScrollToTop';
 import { IS_DEV } from './util/Env';
 import ButtonExamplesPage from './pages/ButtonExamplesPage';
 import InputExamplesPage from './pages/InputExamplesPage';
-import {
-  ApolloClient,
-  InMemoryCache,
-  HttpLink,
-  gql,
-} from '@apollo/react-hooks';
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import LendPage from './pages/LendPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
@@ -85,29 +75,29 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <BlendTableProvider>
-            <ScrollToTop />
-            <AppBody>
-              <Header />
-              <main className='flex-grow'>
-                <Routes>
-                  <Route path='/lend' element={<LendPage />} />
-                  <Route path='/borrow' element={<BorrowAccountsPage />} />
-                  <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                  { // Devmode-only example page routing
-                    IS_DEV && (
-                      <>
-                        <Route path='/buttons' element={<ButtonExamplesPage />} />
-                        <Route path='/inputs' element={<InputExamplesPage />} />
-                      </>
-                  )}
-                  <Route path='/' element={<Navigate replace to='/lend' />} />
-                  <Route path='*' element={<Navigate to='/' />} />
-                </Routes>
-              </main>
-              <Footer />
-            </AppBody>
-          </BlendTableProvider>
+          <ScrollToTop />
+          <AppBody>
+            <Header />
+            <main className='flex-grow'>
+              <Routes>
+                <Route path='/lend' element={<LendPage />} />
+                <Route path='/borrow' element={<BorrowAccountsPage />} />
+                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+                {
+                  // Devmode-only example page routing
+                  IS_DEV && (
+                    <>
+                      <Route path='/buttons' element={<ButtonExamplesPage />} />
+                      <Route path='/inputs' element={<InputExamplesPage />} />
+                    </>
+                  )
+                }
+                <Route path='/' element={<Navigate replace to='/lend' />} />
+                <Route path='*' element={<Navigate to='/' />} />
+              </Routes>
+            </main>
+            <Footer />
+          </AppBody>
         </WagmiProvider>
       </Suspense>
     </>

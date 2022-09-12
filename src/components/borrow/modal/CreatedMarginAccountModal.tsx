@@ -11,7 +11,7 @@ import {
 } from '../../common/Modal';
 import TokenBreakdown from '../../common/TokenBreakdown';
 import { Text } from '../../common/Typography';
-import { MODAL_BLACK_TEXT_COLOR } from '../../pool/PoolInteractionTabs';
+import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type CreatedMarginAccountModalProps = {
   open: boolean;
