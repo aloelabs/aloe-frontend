@@ -44,7 +44,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    return {
+    onChange({
       actionId: ActionID.TRANSFER_OUT,
       actionArgs: (selectedToken && value !== '') ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
       textFields: [value],
@@ -56,7 +56,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
-    };
+    });
   };
 
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
