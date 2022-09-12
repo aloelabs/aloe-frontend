@@ -9,11 +9,8 @@ import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBu
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import { DropdownOption } from '../components/common/Dropdown';
-import { FeeTier } from './FeeTier';
-import { TokenData } from './TokenData';
 import JSBI from 'jsbi';
 import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
-import Big from 'big.js';
 import { UserBalances } from './UserBalances';
 import { uniswapPositionKey } from '../util/Uniswap';
 import { deepCopyMap } from '../util/Maps';
