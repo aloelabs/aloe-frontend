@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import styled from 'styled-components';
 import { UniswapPosition } from '../../data/Actions';
-import { Assets, getAssets, Liabilities, LiquidationThresholds, MarginAccount, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/MarginAccount';
+import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
+import { getAssets, LiquidationThresholds, MarginAccount, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/MarginAccount';
+import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const DEBOUNCE_DELAY_MS = 750;
 
 const Wrapper = styled.div`
   position: relative;
@@ -80,6 +84,8 @@ const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
   const { marginAccount, uniswapPositions, inTermsOfToken0 } = props;
+  const [data, setData] = useState<Array<PnLEntry>>([]);
+  const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
 
   let price = sqrtRatioToPrice(marginAccount.sqrtPriceX96, marginAccount.token0.decimals, marginAccount.token1.decimals);
   if (inTermsOfToken0) price = 1 / price;
@@ -89,13 +95,16 @@ export default function PnLGraph(props: PnLGraphProps) {
   const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
   const initialValue = calculatePnL(marginAccount, uniswapPositions, price);
 
-  let P = priceA;
-  let data: PnLEntry[] = [];
-
-  while (P < priceB) {
-    data.push({ x: P, y: calculatePnL(marginAccount, uniswapPositions, P, initialValue) });
-    P *= 1.001;
-  }
+  useDebouncedEffect(() => {
+    let P = priceA;
+    let updatedData = [];
+    while (P < priceB) {
+      updatedData.push({ x: P, y: calculatePnL(marginAccount, uniswapPositions, P, initialValue) });
+      P *= 1.001;
+    }
+    setData(updatedData);
+    setLocalInTermsOfToken0(inTermsOfToken0);
+  }, DEBOUNCE_DELAY_MS, [inTermsOfToken0, marginAccount, uniswapPositions]);
 
   const fakeLowerLiquidationThreshold = data.length > 0 ? data[Math.floor(data.length / 2 - data.length / 5)].x : 0;
   const fakeUpperLiquidationThreshold = Infinity;
@@ -117,6 +126,11 @@ export default function PnLGraph(props: PnLGraphProps) {
   };
 
   const off = gradientOffset();
+  if (data.length === 0 || inTermsOfToken0 !== localInTermsOfToken0) {
+    return (
+      <PnLGraphPlaceholder />
+    );
+  }
   return (
     <Wrapper>
       <Container>
