@@ -77,6 +77,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
         token1RawDelta: selectedToken === TokenType.ASSET1 ? amount1 : -amount1,
         selectedToken: selectedToken,
       },
+      slipperageTolerance: previousActionCardState?.slipperageTolerance,
       uniswapResult: null,
     });
   };
@@ -122,6 +123,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
               },
               uniswapResult: null,
               textFields: [],
+              slipperageTolerance: previousActionCardState?.slipperageTolerance,
             });
           }
         }}
