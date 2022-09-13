@@ -391,12 +391,7 @@ export function computeLiquidationThresholds(
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
       searchPrice = lowerBoundPrice.add(upperBoundPrice).div(2);
-      const isSolventAtSearchPrice = isSolvent(
-        marginAccount,
-        uniswapPositions,
-        searchPrice,
-        sigma
-        );
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
         upperBoundPrice = searchPrice;
@@ -418,12 +413,7 @@ if (isSolventAtMax.atA && isSolventAtMax.atB) { // if solvent at end, short-circ
   let searchPrice: Big = new Big(0);
   for (let i = 0; i < iterations; i++) {
     searchPrice = lowerBoundPrice.add(upperBoundPrice).div(2);
-    const isSolventAtSearchPrice = isSolvent(
-      marginAccount,
-      uniswapPositions,
-      searchPrice,
-      sigma
-      );
+    const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
     const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
     if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
       lowerBoundPrice = searchPrice;
