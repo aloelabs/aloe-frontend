@@ -367,51 +367,64 @@ export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
   sigma: number
-) {
-  const START = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.05);
-  const END = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.05);
+): { begin: number, end: number } {
 
-  const beginSolventRange: number[] = [];
-  const endSolventRange: number[] = [];
-  let previousIsLiquidatable: boolean | null = null;
-  const currentPrice = sqrtRatioToPrice(marginAccount.sqrtPriceX96, marginAccount.token0.decimals, marginAccount.token1.decimals);
-
-  let sqrtPriceX96 = START;
-  while (sqrtPriceX96.lt(END)) {
-    const { atA, atB } = isSolvent(
-      marginAccount,
-      uniswapPositions,
-      sqrtPriceX96,
-      sigma
-    );
-    const isLiquidatable = !atA || !atB;
-
-    const price = sqrtRatioToPrice(sqrtPriceX96, marginAccount.token0.decimals, marginAccount.token1.decimals);
-    if (!previousIsLiquidatable && isLiquidatable) {
-      endSolventRange.push(price);
-    } else if (previousIsLiquidatable && !isLiquidatable) {
-      beginSolventRange.push(price);
-    }
-    previousIsLiquidatable = isLiquidatable;
-
-    if (currentPrice > price / 1.05 && currentPrice < price * 1.05) {
-      sqrtPriceX96 = sqrtPriceX96.mul(1.0001);
-    } else if (currentPrice > price / 1.10 && currentPrice < price * 1.10) {
-      sqrtPriceX96 = sqrtPriceX96.mul(1.001);
-    } else if (currentPrice > price / 2 && currentPrice < price * 2) {
-      sqrtPriceX96 = sqrtPriceX96.mul(1.01);
-    // } else if (currentPrice > price / 5 && currentPrice < price * 5) {
-    //   console.log('d');
-    //   sqrtPriceX96 = sqrtPriceX96.mul(1.05);
-    } else {
-      sqrtPriceX96 = sqrtPriceX96.mul(3);
-    }
+  let result = {
+    begin: 0,
+    end: 0,
   }
 
-  return {
-    begin: beginSolventRange,
-    end: endSolventRange,
-  };
+  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
+  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
+
+  // Binary search precision
+  const iterations = 120;
+  
+  // Find lower liquidation threshold
+  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
+  if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
+    result.begin = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  } else {
+    // Start binary search
+    let lowerBoundSqrtPrice = MINPRICE;
+    let upperBoundSqrtPrice = marginAccount.sqrtPriceX96;
+    let searchPrice: Big = new Big(0);
+    for (let i = 0; i < iterations; i++) {
+      searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
+      if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
+        lowerBoundSqrtPrice = searchPrice;
+      } else { // liquidation threshold is higher
+        upperBoundSqrtPrice = searchPrice;
+      }
+    }
+    result.begin = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  }
+
+  // Find upper liquidation threshold
+  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
+  if (isSolventAtMax.atA && isSolventAtMax.atB) { // if solvent at end, short-circuit
+    result.end = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  } else {
+    // Start binary search
+    let lowerBoundSqrtPrice = marginAccount.sqrtPriceX96;
+    let upperBoundSqrtPrice = MAXPRICE;
+    let searchPrice: Big = new Big(0);
+    for (let i = 0; i < iterations; i++) {
+      searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
+      if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
+        upperBoundSqrtPrice = searchPrice;
+      } else { // liquidation threshold is lower
+        lowerBoundSqrtPrice = searchPrice;
+      }
+    }
+    result.end = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  }
+
+  return result;
 }
 
 export function sumAssetsPerToken(assets: Assets): [number, number] {
