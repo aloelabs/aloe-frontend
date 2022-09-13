@@ -51,7 +51,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     });
   };
 
-  const maxString = marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'].toFixed(6);
+  const maxString = (marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'] - 1e-6).toFixed(6);
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);

@@ -121,7 +121,7 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       minimumSignificantDigits: 2,
     });
   }
-  else if (amount > 1e-8) {
+  else if (amount > 1e-8 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: sigDigs,
