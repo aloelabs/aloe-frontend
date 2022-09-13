@@ -110,12 +110,28 @@ export function roundUpToNearestN(value: number, n: number): number {
   return Math.ceil(value / n) * n;
 }
 
-export function formatTokenAmount(amount: number, sigDigs: number = 4): string {
+export function formatTokenAmount(amount: number, sigDigs = 4): string {
   //TODO: if we want to support more than one locale, we would need to add more logic here
-  return amount.toLocaleString('en-US', {
-    style: 'decimal',
-    maximumSignificantDigits: sigDigs,
-    //avoid adding excess zeros at the end
-    minimumSignificantDigits: 2,//amount < 1 ? 1 : sigDigs,
-  })
+  if (amount > 1e6) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumSignificantDigits: sigDigs,
+      minimumSignificantDigits: 2,
+    });
+  }
+  else if (amount > 1e-8) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      maximumSignificantDigits: sigDigs,
+      minimumSignificantDigits: 2,
+    });
+  } else {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'engineering',
+      maximumSignificantDigits: sigDigs,
+    });
+  }
 }

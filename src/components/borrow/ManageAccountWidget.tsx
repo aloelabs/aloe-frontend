@@ -247,6 +247,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
+  const navigate = useNavigate();
+
   // MARK: wagmi hooks
   const contract = useContractWrite({
     addressOrName: accountAddress,
@@ -503,7 +505,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       <SuccessfulTxnModal
         open={showSuccessModal}
         setOpen={setShowSuccessModal}
-        onConfirm={() => {}}
+        onConfirm={() => {
+          setTimeout(() => navigate(0), 100);
+        }}
       />
     </Wrapper>
   );
