@@ -88,6 +88,7 @@ export default function BorrowAccountsPage() {
           onClick={() => {
             setShowConfirmModal(true);
           }}
+          disabled={address === undefined}
         >
           New
         </FilledGradientButtonWithIcon>
