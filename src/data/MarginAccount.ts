@@ -367,11 +367,11 @@ export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
   sigma: number
-): { begin: number, end: number } {
+): { lower: number, upper: number } {
 
   let result = {
-    begin: 0,
-    end: 0,
+    lower: 0,
+    upper: 0,
   }
 
   const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
@@ -383,7 +383,7 @@ export function computeLiquidationThresholds(
   // Find lower liquidation threshold
   const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
   if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
-    result.begin = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = MINPRICE;
@@ -399,13 +399,13 @@ export function computeLiquidationThresholds(
         upperBoundSqrtPrice = searchPrice;
       }
     }
-    result.begin = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.lower = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
   }
 
   // Find upper liquidation threshold
   const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
   if (isSolventAtMax.atA && isSolventAtMax.atB) { // if solvent at end, short-circuit
-    result.end = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = marginAccount.sqrtPriceX96;
@@ -421,7 +421,7 @@ export function computeLiquidationThresholds(
         lowerBoundSqrtPrice = searchPrice;
       }
     }
-    result.end = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.upper = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
   }
 
   return result;
