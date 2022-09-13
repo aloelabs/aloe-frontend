@@ -14,7 +14,7 @@ import { useEffect } from 'react';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
-  const { kitty0, kitty1 } = marginAccount;
+  const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -38,7 +38,13 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     onChange({
       actionId: ActionID.BURN,
       actionArgs:
-        value === '' ? undefined : getBurnActionArgs(selectedToken === TokenType.KITTY0 ? kitty0 : kitty1, parsedValue),
+        value === ''
+          ? undefined
+          : getBurnActionArgs(
+              selectedToken === TokenType.KITTY0 ? token0 : token1,
+              selectedToken === TokenType.KITTY0 ? kitty0 : kitty1,
+              parsedValue
+            ),
       textFields: [value],
       aloeResult: {
         token0RawDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
@@ -51,7 +57,8 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     });
   };
 
-  const maxString = (marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'] - 1e-6).toFixed(6);
+  const max = marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'];
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);

@@ -209,7 +209,7 @@ function getConfirmButton(state: ConfirmButtonState, token0: TokenData, token1: 
   }
 }
 
-const MARGIN_ACCOUNT_CALLEE = '0xfb69e3d12421b8a6db96393473f89c3166692603';
+const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
