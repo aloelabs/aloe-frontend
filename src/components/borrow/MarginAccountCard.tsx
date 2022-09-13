@@ -7,9 +7,9 @@ import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
-import { formatUSDAuto } from '../../util/Numbers';
+import { formatTokenAmount, formatUSDAuto } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
-import { MarginAccount, MarginAccountPreview } from '../../data/MarginAccount';
+import { MarginAccount, MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -98,14 +98,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   const link = `/borrow/account/${address}`;
-  const totalAssets =
-    assets.token0Raw +
-    assets.token1Raw +
-    assets.token0Plus +
-    assets.token1Plus +
-    assets.uni0 +
-    assets.uni1;
-  const totalLiabilities = liabilities.amount0 + liabilities.amount1;
+  const [assets0, assets1] = sumAssetsPerToken(assets);
 
   useEffect(() => {
     let mounted = true;
@@ -151,12 +144,12 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
-          <MetricContainer label='Assets' value={formatUSDAuto(totalAssets)} />
+          <MetricContainer label={token0.ticker ?? 'Token0'} value={formatTokenAmount(assets0 - liabilities.amount0, 3)} />
           <MetricContainer
-            label='Liabilities'
-            value={formatUSDAuto(totalLiabilities)}
+            label={token1.ticker ?? 'Token1'}
+            value={formatTokenAmount(assets1 - liabilities.amount1, 3)}
           />
-          <MetricContainer label='Health' value='1.20' />
+          <MetricContainer label='Version' value='1' />
         </div>
         <IDContainer>
           <Text size='S' weight='medium' title={address}>
