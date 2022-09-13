@@ -380,7 +380,7 @@ export function computeLiquidationThresholds(
   // Binary search precision
   const iterations = 120;
   
-  // Find lower liuidation threshold
+  // Find lower liquidation threshold
   const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
   if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
     result.begin = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
