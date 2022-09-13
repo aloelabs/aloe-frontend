@@ -92,7 +92,7 @@ function App() {
                     </>
                   )
                 }
-                <Route path='/' element={<Navigate replace to='/lend' />} />
+                <Route path='/' element={<Navigate replace to='/borrow' />} />
                 <Route path='*' element={<Navigate to='/' />} />
               </Routes>
             </main>
