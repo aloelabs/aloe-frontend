@@ -377,7 +377,7 @@ export function computeLiquidationThresholds(
   const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.05);
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.05);
 
-  // Binary search prevision
+  // Binary search precision
   const iterations = 30;
   
   // Find lower liuidation threshold
