@@ -69,7 +69,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     });
   };
 
-  const maxString = selectedToken ? (getBalanceFor(selectedToken, availableBalances) - 1e-6).toFixed(6) : '0';
+  const max = selectedToken ? getBalanceFor(selectedToken, availableBalances) : 0;
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
