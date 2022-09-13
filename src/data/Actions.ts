@@ -326,6 +326,8 @@ export function calculateHypotheticalStates(
     const liabilitiesTemp = { ...hypotheticalStates[i].liabilities };
     const positionsTemp = deepCopyMap(hypotheticalStates[i].positions);
 
+    console.log(i, assetsTemp);
+
     // update assets
     assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
     assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;

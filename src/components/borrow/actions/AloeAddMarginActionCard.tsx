@@ -69,7 +69,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     });
   };
 
-  const maxString = selectedToken ? getBalanceFor(selectedToken, availableBalances).toFixed(6) : '0';
+  const maxString = selectedToken ? (getBalanceFor(selectedToken, availableBalances) - 1e-6).toFixed(6) : '0';
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
@@ -81,13 +81,13 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
-      tooltipContent={
-        <Text>
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Modi omnis quos facere provident, sapiente vero
-          voluptas reiciendis esse eos iusto et accusamus molestias dolorem! Qui dignissimos in provident ullam
-          voluptas?
-        </Text>
-      }
+      // tooltipContent={
+      //   <Text>
+      //     Lorem ipsum dolor sit amet, consectetur adipisicing elit. Modi omnis quos facere provident, sapiente vero
+      //     voluptas reiciendis esse eos iusto et accusamus molestias dolorem! Qui dignissimos in provident ullam
+      //     voluptas?
+      //   </Text>
+      // } TODO
     >
       <div className='w-full flex flex-col gap-4 items-center'>
         <Dropdown
