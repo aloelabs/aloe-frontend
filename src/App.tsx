@@ -80,7 +80,7 @@ function App() {
             <Header />
             <main className='flex-grow'>
               <Routes>
-                <Route path='/lend' element={<LendPage />} />
+                {/* <Route path='/lend' element={<LendPage />} /> */}
                 <Route path='/borrow' element={<BorrowAccountsPage />} />
                 <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
                 {
