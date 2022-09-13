@@ -373,8 +373,8 @@ export default function BorrowActionsPage() {
   const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
   const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
   
-  const activeAssets = isShowingHypothetical ? assetsF : marginAccount.assets;
-  const activeLiabilities = isShowingHypothetical ? liabilitiesF : marginAccount.liabilities;
+  const activeAssets = isShowingHypothetical ? assetsF : assetsI;
+  const activeLiabilities = isShowingHypothetical ? liabilitiesF : liabilitiesI;
   const isActiveAssetsEmpty = Object.values(activeAssets).every((a) => a === 0);
   const isActiveLiabilitiesEmpty = Object.values(activeLiabilities).every((l) => l === 0);
 
@@ -500,12 +500,12 @@ export default function BorrowActionsPage() {
                 label='Liabilities'
                 valueLine1={
                   `${
-                    formatTokenAmount(isShowingHypothetical ? liabilitiesF.amount0 : liabilitiesI.amount0, 5)
+                    formatTokenAmount(activeLiabilities.amount0, 5)
                   } ${marginAccount.token0.ticker || ''}`
                 }
                 valueLine2={
                   `${
-                    formatTokenAmount(isShowingHypothetical ? liabilitiesF.amount1 : liabilitiesI.amount1, 5)
+                    formatTokenAmount(activeLiabilities.amount1, 5)
                   } ${marginAccount.token1.ticker || ''}`
                 }
                 showAsterisk={isShowingHypothetical}
@@ -558,7 +558,7 @@ export default function BorrowActionsPage() {
               <TokenAllocationPieChartWidget
                 token0={marginAccount.token0}
                 token1={marginAccount.token1}
-                assets={isShowingHypothetical ? assetsF : marginAccount.assets}
+                assets={activeAssets}
                 sqrtPriceX96={marginAccount.sqrtPriceX96}
               />
             ) : (
