@@ -135,3 +135,32 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
     });
   }
 }
+
+export function formatPriceRatio(x: number, sigDigs = 4): string {
+  //TODO: if we want to support more than one locale, we would need to add more logic here
+  if (x > 1e9) {
+    return '∞';
+  } else if (x > 1e6) {
+    return x.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumSignificantDigits: sigDigs,
+      minimumSignificantDigits: 2,
+    });
+  } else if (x > 1e-6) {
+    return x.toLocaleString('en-US', {
+      style: 'decimal',
+      maximumSignificantDigits: sigDigs,
+      minimumSignificantDigits: 2,
+    });
+  } else if (x > 1e-9) {
+    return x.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'engineering',
+      maximumSignificantDigits: sigDigs,
+    });
+  } else {
+    return '0'
+  }
+}

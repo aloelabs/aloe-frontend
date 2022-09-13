@@ -28,9 +28,21 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
-import { formatTokenAmount } from '../util/Numbers';
+import {
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_SM,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../data/constants/Breakpoints';
+import {
+  Assets,
+  computeLiquidationThresholds,
+  fetchMarginAccount,
+  Liabilities,
+  LiquidationThresholds,
+  MarginAccount,
+  sumAssetsPerToken,
+} from '../data/MarginAccount';
+import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -38,6 +50,8 @@ import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 import { TickMath } from '@uniswap/v3-sdk';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
+import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
+import Big from 'big.js';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -143,7 +157,7 @@ const EmptyStateSvgWrapper = styled.div`
       stroke: ${SECONDARY_COLOR};
     }
   }
-`
+`;
 
 const SvgWrapper = styled.div`
   ${tw`flex items-center justify-center`}
@@ -225,6 +239,39 @@ type AccountParams = {
   account: string;
 };
 
+async function fetchUniswapPositions(
+  priors: UniswapPositionPrior[],
+  marginAccountAddress: string,
+  uniswapV3PoolContract: any,
+  sqrtPriceX96: Big,
+  token0Decimals: number,
+  token1Decimals: number
+) {
+  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+  const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
+
+  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+  priors.forEach((prior, i) => {
+    const liquidity = JSBI.BigInt(results[i].liquidity.toString());
+    const amounts = getAmountsForLiquidity(
+      liquidity,
+      prior.lower!,
+      prior.upper!,
+      TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
+      token0Decimals,
+      token1Decimals
+    );
+    fetchedUniswapPositions.set(keys[i], {
+      ...prior,
+      liquidity: liquidity,
+      amount0: amounts[0],
+      amount1: amounts[1],
+    });
+  });
+
+  return fetchedUniswapPositions;
+}
+
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
@@ -238,6 +285,17 @@ export default function BorrowActionsPage() {
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
+  // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
+  const [hypotheticalStates, setHypotheticalStates] = useState<
+    {
+      assets: Assets;
+      liabilities: Liabilities;
+      positions: Map<string, UniswapPosition>;
+    }[]
+  >([]);
+  const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
+  const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
+  const [liquidationThresholds, setLiquidationThresholds] = useState<{ lower: number; upper: number } | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
@@ -287,103 +345,116 @@ export default function BorrowActionsPage() {
   // MARK: fetch uniswap positions
   useEffect(() => {
     let mounted = true;
-    async function fetch(marginAccountAddress: string, priors: UniswapPositionPrior[], marginAccount: MarginAccount) {
-      const keys = priors.map(prior => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
-      const results = await Promise.all(keys.map(key => uniswapV3PoolContract.positions(key)));
+    async function fetch() {
+      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionPriors)) return;
 
-      const fetchedUniswapPositions = new Map<string, UniswapPosition>();
-      const sqrtPriceX96 = JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0));
-      priors.forEach((prior, i) => {
-        const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-        const amounts = getAmountsForLiquidity(
-          liquidity,
-          prior.lower!,
-          prior.upper!,
-          TickMath.getTickAtSqrtRatio(sqrtPriceX96),
-          marginAccount.token0.decimals,
-          marginAccount.token1.decimals
-        );
-        fetchedUniswapPositions.set(keys[i], {
-          ...prior,
-          liquidity: liquidity,
-          amount0: amounts != null ? amounts[0] : 0,
-          amount1: amounts != null ? amounts[1] : 0,
-        });
-      });
+      const fetchedUniswapPositions = await fetchUniswapPositions(
+        uniswapPositionPriors as UniswapPositionPrior[],
+        accountAddressParam,
+        uniswapV3PoolContract,
+        marginAccount.sqrtPriceX96,
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
+      );
 
       if (mounted) {
         setUniswapPositions(fetchedUniswapPositions);
+        // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
+        // this is because one is computed on-chain and cached, while the other is computed locally.
+        // if we've fetched both, prefer the uniswapPositions version (local & newer).
+        const i = { amount0: 0, amount1: 0 };
+        const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
+          return {
+            amount0: p.amount0 + (c.amount0 || 0),
+            amount1: p.amount1 + (c.amount1 || 0),
+          };
+        }, i);
+        setMarginAccount({
+          ...marginAccount,
+          assets: { ...marginAccount.assets, uni0: amount0, uni1: amount1 },
+        });
       }
     }
-    if (accountAddressParam && Array.isArray(uniswapPositionPriors) && marginAccount) {
-      fetch(accountAddressParam, uniswapPositionPriors as UniswapPositionPrior[], marginAccount);
-    }
+    fetch();
+
     return () => {
       mounted = false;
-    }
-  }, [uniswapPositionPriors, uniswapV3PoolContract]);
+    };
+  }, [
+    marginAccount?.sqrtPriceX96,
+    marginAccount?.token0,
+    marginAccount?.token1,
+    uniswapPositionPriors,
+    uniswapV3PoolContract,
+  ]);
 
-  if (!marginAccount) {
-    //If no account data is found, don't render the page
+  // MARK: compute hypothetical states
+  useEffect(() => {
+    if (!marginAccount) return;
+
+    // assets and liabilities after adding hypothetical actions
+    const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
+
+    // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
+    const numValidActions = Math.min(_hypotheticalStates.length - 1);
+
+    // get the latest *valid* hypothetical state. this will be the one we display
+    const {
+      assets: assetsF,
+      liabilities: liabilitiesF,
+      positions: uniswapPositionsF,
+    } = _hypotheticalStates[numValidActions];
+
+    // tell React about our findings
+    const _marginAccount = { ...marginAccount };
+    if (isShowingHypothetical) {
+      _marginAccount.assets = assetsF;
+      _marginAccount.liabilities = liabilitiesF;
+    }
+    setHypotheticalStates(_hypotheticalStates);
+    setDisplayedMarginAccount(_marginAccount);
+    setDisplayedUniswapPositions(Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()));
+    console.log('Running 1');
+  }, [marginAccount, uniswapPositions, actionResults, isShowingHypothetical]);
+
+  // compute liquidation thresholds for the currently-selected data (current or hypothetical)
+  useDebouncedEffect(
+    () => {
+      if (!displayedMarginAccount) return;
+      console.log('Running 2');
+      setLiquidationThresholds(computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025));
+    },
+    200,
+    [displayedMarginAccount, displayedUniswapPositions]
+  );
+
+  // if no account data is found, don't render the page
+  if (!marginAccount || !displayedMarginAccount) {
     return null;
   }
 
-  // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
-  // this is because one is computed on-chain and cached, while the other is computed locally.
-  // if we've fetched both, prefer the uniswapPositions version (local & newer).
-  {
-    const {amount0, amount1} = Array.from(uniswapPositions.values()).reduce((prev, curr) => {
-      return {
-        amount0: prev.amount0 + (curr.amount0 || 0),
-        amount1: prev.amount1 + (curr.amount1 || 0),
-      };
-    }, {amount0: 0, amount1: 0});
-    marginAccount.assets.uni0 = amount0;
-    marginAccount.assets.uni1 = amount1;
+  // flip liquidation thresholds if necessary
+  let displayedLiquidationThresholds = liquidationThresholds;
+  if (displayedLiquidationThresholds && isToken0Selected) {
+    displayedLiquidationThresholds = {
+      lower: 1.0 / displayedLiquidationThresholds.upper,
+      upper: 1.0 / displayedLiquidationThresholds.lower,
+    };
   }
 
-  // assets and liabilities before adding any hypothetical actions
-  const assetsI = marginAccount.assets;
-  const liabilitiesI = marginAccount.liabilities;
-
-  // assets and liabilities after adding hypothetical actions
-  const hypotheticalStates = calculateHypotheticalStates(
-    marginAccount,
-    uniswapPositions,
-    actionResults
-  );
-
-  const liquidationThresholds: LiquidationThresholds = {
-    lower: 0,
-    upper: 0,
-  };
-
-  // check whether actions seem valid on the frontend
-  const numValidActions =  Math.min(hypotheticalStates.length - 1);
+  // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
+  const numValidActions = Math.min(hypotheticalStates.length - 1);
   const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
-  const {
-    assets: assetsF,
-    liabilities: liabilitiesF,
-    positions: uniswapPositionsF
-  } = hypotheticalStates[numValidActions];
-
-  // verify that every action has contract params (ready to send on-chain)
+  // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
   const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
-  const [assetsISum0, assetsISum1] = sumAssetsPerToken(assetsI); // current
-  const [assetsFSum0, assetsFSum1] = sumAssetsPerToken(assetsF); // hypothetical
-  
-  const activeAssets = isShowingHypothetical ? assetsF : assetsI;
-  const activeLiabilities = isShowingHypothetical ? liabilitiesF : liabilitiesI;
-  const isActiveAssetsEmpty = Object.values(activeAssets).every((a) => a === 0);
-  const isActiveLiabilitiesEmpty = Object.values(activeLiabilities).every((l) => l === 0);
-
-  const [lowerLiquidationThreshold, upperLiquidationThreshold] = [0, 0]; // TODO
-
-  // MARK: Stuff to make display logic easier
-  const [selectedToken, unselectedToken] = isToken0Selected
-    ? [marginAccount.token0, marginAccount.token1]
-    : [marginAccount.token1, marginAccount.token0];
+  // pre-compute some values to cut down on logic in the HTML
+  const token0 = marginAccount.token0;
+  const token1 = marginAccount.token1;
+  const [selectedToken, unselectedToken] = isToken0Selected ? [token0, token1] : [token1, token0];
+  const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
+  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
+  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
@@ -435,8 +506,8 @@ export default function BorrowActionsPage() {
         <div className='flex gap-8 items-center mb-4'>
           <PreviousPageButton onClick={() => navigate('../borrow')} />
           <MarginAccountHeader
-            token0={marginAccount.token0}
-            token1={marginAccount.token1}
+            token0={token0}
+            token1={token1}
             feeTier={marginAccount.feeTier}
             id={accountAddressParam || ''}
           />
@@ -445,7 +516,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
-            uniswapPositions={Array.from(uniswapPositions.values())}
+            uniswapPositions={displayedUniswapPositions}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -471,13 +542,13 @@ export default function BorrowActionsPage() {
                 Summary
               </Display>
               <TokenChooser
-                token0={marginAccount.token0}
-                token1={marginAccount.token1}
+                token0={token0}
+                token1={token1}
                 isToken0Selected={isToken0Selected}
                 setIsToken0Selected={setIsToken0Selected}
               />
               <div className='ml-auto'>
-                {(actionResults.length > 0) && (
+                {actionResults.length > 0 && (
                   <HypotheticalToggleButton
                     showHypothetical={isShowingHypothetical}
                     setShowHypothetical={setIsShowingHypothetical}
@@ -488,36 +559,40 @@ export default function BorrowActionsPage() {
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
-                valueLine1={
-                  `${formatTokenAmount(isShowingHypothetical ? assetsFSum0 : assetsISum0, 5)} ${marginAccount.token0.ticker || ''}`
-                }
-                valueLine2={
-                  `${formatTokenAmount(isShowingHypothetical ? assetsFSum1 : assetsISum1, 5)} ${marginAccount.token1.ticker || ''}`
-                }
+                valueLine1={`${formatTokenAmount(assetsSum0, 5)} ${token0.ticker || ''}`}
+                valueLine2={`${formatTokenAmount(assetsSum1, 5)} ${token1.ticker || ''}`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Liabilities'
-                valueLine1={
-                  `${
-                    formatTokenAmount(activeLiabilities.amount0, 5)
-                  } ${marginAccount.token0.ticker || ''}`
-                }
-                valueLine2={
-                  `${
-                    formatTokenAmount(activeLiabilities.amount1, 5)
-                  } ${marginAccount.token1.ticker || ''}`
-                }
+                valueLine1={`${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 5)} ${
+                  token0.ticker || ''
+                }`}
+                valueLine2={`${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 5)} ${
+                  token1.ticker || ''
+                }`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
-                valueLine1={`${lowerLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
+                valueLine1={
+                  displayedLiquidationThresholds
+                    ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 5)} ${selectedToken?.ticker || ''}/${
+                        unselectedToken?.ticker || ''
+                      }`
+                    : '-'
+                }
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Upper Liquidation Threshold'
-                valueLine1={`${upperLiquidationThreshold} ${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`}
+                valueLine1={
+                  displayedLiquidationThresholds
+                    ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 5)} ${selectedToken?.ticker || ''}/${
+                        unselectedToken?.ticker || ''
+                      }`
+                    : '-'
+                }
                 showAsterisk={isShowingHypothetical}
               />
             </AccountStatsGrid>
@@ -526,18 +601,12 @@ export default function BorrowActionsPage() {
             <Display size='M' weight='medium'>
               P&L
             </Display>
-            {(!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty) ? (
+            {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
               <PnLGraph
-                marginAccount={{
-                  ...marginAccount,
-                  assets: activeAssets,
-                  liabilities: activeLiabilities,
-                }}
-                uniswapPositions={
-                  Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values())
-                }
+                marginAccount={displayedMarginAccount}
+                uniswapPositions={displayedUniswapPositions}
                 inTermsOfToken0={isToken0Selected}
-                liquidationThresholds={liquidationThresholds}
+                liquidationThresholds={displayedLiquidationThresholds}
               />
             ) : (
               <EmptyStateWrapper>
@@ -545,7 +614,9 @@ export default function BorrowActionsPage() {
                   <EmptyStateSvgWrapper>
                     <TrendingUpIcon />
                   </EmptyStateSvgWrapper>
-                  <Display size='XS' color={SECONDARY_COLOR}>A P&L graph of your open positions will appear here.</Display>
+                  <Display size='XS' color={SECONDARY_COLOR}>
+                    A P&L graph of your open positions will appear here.
+                  </Display>
                 </EmptyStateContainer>
               </EmptyStateWrapper>
             )}
@@ -556,9 +627,9 @@ export default function BorrowActionsPage() {
             </Display>
             {!isActiveAssetsEmpty ? (
               <TokenAllocationPieChartWidget
-                token0={marginAccount.token0}
-                token1={marginAccount.token1}
-                assets={activeAssets}
+                token0={token0}
+                token1={token1}
+                assets={displayedMarginAccount.assets}
                 sqrtPriceX96={marginAccount.sqrtPriceX96}
               />
             ) : (
@@ -567,7 +638,9 @@ export default function BorrowActionsPage() {
                   <EmptyStateSvgWrapper>
                     <PieChartIcon />
                   </EmptyStateSvgWrapper>
-                  <Display size='XS' color={SECONDARY_COLOR}>A breakdown of your token allocation will appear here.</Display>
+                  <Display size='XS' color={SECONDARY_COLOR}>
+                    A breakdown of your token allocation will appear here.
+                  </Display>
                 </EmptyStateContainer>
               </EmptyStateWrapper>
             )}

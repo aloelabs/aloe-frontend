@@ -77,13 +77,13 @@ export type PnLGraphProps = {
   marginAccount: MarginAccount;
   uniswapPositions: UniswapPosition[];
   inTermsOfToken0: boolean;
-  liquidationThresholds: LiquidationThresholds;
+  liquidationThresholds: LiquidationThresholds | null;
 };
 
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount, uniswapPositions, inTermsOfToken0 } = props;
+  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds } = props;
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
 
@@ -106,21 +106,19 @@ export default function PnLGraph(props: PnLGraphProps) {
     setLocalInTermsOfToken0(inTermsOfToken0);
   }, DEBOUNCE_DELAY_MS, [inTermsOfToken0, marginAccount, uniswapPositions]);
 
-  const fakeLowerLiquidationThreshold = data.length > 0 ? data[Math.floor(data.length / 2 - data.length / 5)].x : 0;
-  const fakeUpperLiquidationThreshold = Infinity;
+  const liquidationLower = liquidationThresholds?.lower ?? 0;
+  const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  const ticks = [fakeLowerLiquidationThreshold, price];
+  const ticks = [price];
+  if (liquidationLower > priceA) ticks.push(liquidationLower);
+  if (liquidationUpper < priceB) ticks.push(liquidationUpper);
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
     const dataMin = Math.min(...data.map((i) => i.y));
 
-    if (dataMax <= 0) {
-      return 0;
-    }
-    if (dataMin >= 0) {
-      return 1;
-    }
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
 
     return dataMax / (dataMax - dataMin);
   };
@@ -162,11 +160,11 @@ export default function PnLGraph(props: PnLGraphProps) {
             <YAxis stroke={SECONDARY_COLOR} fontSize='14px' />
             <ReferenceLine y={0} stroke={SECONDARY_COLOR} />
             <ReferenceLine x={price} stroke={SECONDARY_COLOR} strokeWidth={2} />
-            <ReferenceLine x={fakeLowerLiquidationThreshold} stroke='rgb(114, 167, 246)' strokeWidth={2} />
-            <ReferenceArea x1={data[0].x} x2={fakeLowerLiquidationThreshold} fill='rgba(114, 167, 246, 0.5)' />
-            <ReferenceLine x={fakeUpperLiquidationThreshold} stroke='rgb(114, 167, 246)' strokeWidth={2} />
+            <ReferenceLine x={liquidationLower} stroke='rgb(114, 167, 246)' strokeWidth={2} />
+            <ReferenceArea x1={data[0].x} x2={liquidationLower} fill='rgba(114, 167, 246, 0.5)' />
+            <ReferenceLine x={liquidationUpper} stroke='rgb(114, 167, 246)' strokeWidth={2} />
             <ReferenceArea
-              x1={fakeUpperLiquidationThreshold}
+              x1={liquidationUpper}
               x2={data[data.length - 1].x}
               fill='rgba(114, 167, 246, 0.5)'
             />

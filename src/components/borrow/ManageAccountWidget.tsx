@@ -372,9 +372,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                     liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities
                   }}
                   availableBalances={balancesAvailableForEachAction[index]}
-                  uniswapPositions={
-                    hypotheticalStates.length > index ? Array.from(hypotheticalStates[index].positions.values()) : uniswapPositions
-                  }
+                  uniswapPositions={uniswapPositions}
                   previousActionCardState={actionResults[index]}
                   isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                   onRemove={() => {
