@@ -12,11 +12,11 @@ import AppPage from '../components/common/AppPage';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 import { Display } from '../components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
-import {
-  fetchMarginAccountPreviews, MarginAccountPreview
-} from '../data/MarginAccount';
+import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import WelcomeModal from '../components/borrow/modal/WelcomeModal';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
 
 const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
@@ -31,6 +31,7 @@ export default function BorrowAccountsPage() {
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   const [isTransactionPending, setIsTransactionPending] = useState(false);
   // --> other
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
 
   // MARK: wagmi hooks
@@ -65,6 +66,13 @@ export default function BorrowAccountsPage() {
     };
     //TODO: temporary while we need metamask to fetch this info
   }, [address, marginAccountLensContract, provider, blockNumber.data]);
+
+  useEffectOnce(() => {
+    const shouldShowWelcomeModal = localStorage.getItem('acknowledgedWelcomeModal') !== 'true';
+    if (shouldShowWelcomeModal) {
+      setShowWelcomeModal(true);
+    }
+  });
 
   return (
     <AppPage>
@@ -109,7 +117,6 @@ export default function BorrowAccountsPage() {
               setTimeout(() => {
                 setShowSuccessModal(true);
               }, 500);
-              
             } else {
               setTimeout(() => {
                 setShowFailedModal(true);
@@ -123,11 +130,22 @@ export default function BorrowAccountsPage() {
           setIsTransactionPending(false);
         }}
       />
-      <CreatedMarginAccountModal open={showSuccessModal} setOpen={setShowSuccessModal} onConfirm={() => {
-        setShowSuccessModal(false);
-      }} />
+      <CreatedMarginAccountModal
+        open={showSuccessModal}
+        setOpen={setShowSuccessModal}
+        onConfirm={() => {
+          setShowSuccessModal(false);
+        }}
+      />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
+      <WelcomeModal
+        open={showWelcomeModal}
+        setOpen={setShowWelcomeModal}
+        onConfirm={() => {
+          localStorage.setItem('acknowledgedWelcomeModal', 'true');
+        }}
+      />
     </AppPage>
   );
 }
