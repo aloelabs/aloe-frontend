@@ -14,7 +14,7 @@ export default function WelcomeModal(props: WelcomeModalProps) {
     <CloseableModal open={open} setOpen={setOpen} title='Welcome to our Beta!'>
       <div>
         <Text size='M' weight='medium'>
-          To get started, make sure your wallet<br/>is set to Goerli. Have a look around,<br/>and if you have any issues, please reach<br/>out on Discord. We'll also send testnet<br/>USDC upon request.<br/><br/>Faucets for Goerli ETH:
+          To get started, make sure your wallet<br/>is set to Goerli. Have a look around,<br/>and if you have any issues, please reach<br/>out on Discord.<br/><br/>Faucets for Goerli ETH:
         </Text>
         <Text size='M' weight='medium' color='royalblue'>
           <a href='https://faucet.paradigm.xyz/' target='_blank' rel='noreferrer noopener' className='underline'>
