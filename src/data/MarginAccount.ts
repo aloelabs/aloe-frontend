@@ -386,17 +386,17 @@ export function computeLiquidationThresholds(
     result.begin = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
-    let lowerBoundPrice = MINPRICE;
-    let upperBoundPrice = marginAccount.sqrtPriceX96;
+    let lowerBoundSqrtPrice = MINPRICE;
+    let upperBoundSqrtPrice = marginAccount.sqrtPriceX96;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
-      searchPrice = lowerBoundPrice.add(upperBoundPrice).div(2);
+      searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
-        lowerBoundPrice = searchPrice;
+        lowerBoundSqrtPrice = searchPrice;
       } else { // liquidation threshold is higher
-        upperBoundPrice = searchPrice;
+        upperBoundSqrtPrice = searchPrice;
       }
     }
     result.begin = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -408,17 +408,17 @@ export function computeLiquidationThresholds(
     result.end = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
-    let lowerBoundPrice = marginAccount.sqrtPriceX96;
-    let upperBoundPrice = MAXPRICE;
+    let lowerBoundSqrtPrice = marginAccount.sqrtPriceX96;
+    let upperBoundSqrtPrice = MAXPRICE;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
-      searchPrice = lowerBoundPrice.add(upperBoundPrice).div(2);
+      searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
-        upperBoundPrice = searchPrice;
+        upperBoundSqrtPrice = searchPrice;
       } else { // liquidation threshold is lower
-        lowerBoundPrice = searchPrice;
+        lowerBoundSqrtPrice = searchPrice;
       }
     }
     result.end = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
