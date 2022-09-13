@@ -374,11 +374,11 @@ export function computeLiquidationThresholds(
     end: 0,
   }
 
-  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.05);
-  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.05);
+  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
+  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Binary search precision
-  const iterations = 30;
+  const iterations = 120;
   
   // Find lower liuidation threshold
   const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
@@ -394,9 +394,9 @@ export function computeLiquidationThresholds(
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
-        upperBoundPrice = searchPrice;
-      } else { // liquidation threshold is higher
         lowerBoundPrice = searchPrice;
+      } else { // liquidation threshold is higher
+        upperBoundPrice = searchPrice;
       }
     }
     result.begin = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -416,9 +416,9 @@ export function computeLiquidationThresholds(
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
-        lowerBoundPrice = searchPrice;
-      } else { // liquidation threshold is lower
         upperBoundPrice = searchPrice;
+      } else { // liquidation threshold is lower
+        lowerBoundPrice = searchPrice;
       }
     }
     result.end = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
