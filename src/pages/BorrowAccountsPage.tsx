@@ -33,7 +33,6 @@ export default function BorrowAccountsPage() {
   // --> other
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
-  
 
   // MARK: wagmi hooks
   const currentChainId = chain.goerli.id;

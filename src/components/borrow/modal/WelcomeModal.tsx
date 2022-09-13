@@ -11,10 +11,15 @@ export type WelcomeModalProps = {
 export default function WelcomeModal(props: WelcomeModalProps) {
   const { open, setOpen, onConfirm } = props;
   return (
-    <CloseableModal open={open} setOpen={setOpen} title='Welcome to the Beta!'>
+    <CloseableModal open={open} setOpen={setOpen} title='Welcome to our Beta!'>
       <div>
         <Text size='M' weight='medium'>
-          Faucet link:
+          To get started, make sure your wallet<br/>is set to Goerli. Have a look around,<br/>and if you have any issues, please reach<br/>out on Discord. We'll also send testnet<br/>USDC upon request.<br/><br/>Faucets for Goerli ETH:
+        </Text>
+        <Text size='M' weight='medium' color='royalblue'>
+          <a href='https://faucet.paradigm.xyz/' target='_blank' rel='noreferrer noopener' className='underline'>
+            https://faucet.paradigm.xyz/
+          </a>
         </Text>
         <Text size='M' weight='medium' color='royalblue'>
           <a href='https://goerli-faucet.pk910.de/' target='_blank' rel='noreferrer noopener' className='underline'>
