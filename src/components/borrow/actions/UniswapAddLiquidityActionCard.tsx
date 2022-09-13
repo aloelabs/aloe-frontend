@@ -337,6 +337,11 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     updateRange(localToken0Amount, localToken1Amount, lower?.tick ?? null, upper?.tick ?? null);
   }
 
+  const max0 = marginAccount.assets.token0Raw;
+  const max1 = marginAccount.assets.token1Raw;
+  const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
+  const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
+
   return (
     <BaseActionCard
       action={ActionID.ADD_LIQUIDITY}
@@ -527,8 +532,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onChange={handleLocalToken0AmountInput}
           onBlur={updateTokenAmountInput}
           disabled={isAmount0InputDisabled}
-          max={(marginAccount.assets.token0Raw - 1e-6).toFixed(6)}
-          maxed={localToken0Amount === (marginAccount.assets.token0Raw - 1e-6).toFixed(6)}
+          max={maxString0}
+          maxed={localToken0Amount === maxString0}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
             handleLocalToken0AmountInput(maxValue, true);
@@ -540,8 +545,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           onChange={handleLocalToken1AmountInput}
           onBlur={updateTokenAmountInput}
           disabled={isAmount1InputDisabled}
-          max={(marginAccount.assets.token1Raw - 1e-6).toFixed(6)}
-          maxed={localToken1Amount === (marginAccount.assets.token1Raw - 1e-6).toFixed(6)}
+          max={maxString1}
+          maxed={localToken1Amount === maxString1}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
             handleLocalToken1AmountInput(maxValue, true);

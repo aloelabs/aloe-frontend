@@ -52,7 +52,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
 
   const assetMax = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
   const liabilityMax = marginAccount.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
-  const maxString = (Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
+  const maxString = Math.max(0, (Math.min(assetMax, liabilityMax) - 1e-6)).toFixed(6);
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
