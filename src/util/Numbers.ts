@@ -164,3 +164,7 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
     return '0'
   }
 }
+
+export function areWithinNSigDigs(a: Big, b: Big, n: number): boolean {
+  return a.prec(n).eq(b.prec(n));
+}
