@@ -144,7 +144,9 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
-          <MetricContainer label={token0.ticker ?? 'Token0'} value={formatTokenAmount(assets0 - liabilities.amount0, 3)} />
+          <MetricContainer
+            label={token0.ticker ?? 'Token0'}
+            value={formatTokenAmount(assets0 - liabilities.amount0, 3)} />
           <MetricContainer
             label={token1.ticker ?? 'Token1'}
             value={formatTokenAmount(assets1 - liabilities.amount1, 3)}
