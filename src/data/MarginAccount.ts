@@ -6,7 +6,7 @@ import Big from 'big.js';
 import JSBI from 'jsbi';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { BIGQ96 } from './constants/Values';
-import { toBig } from '../util/Numbers';
+import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { UniswapPosition } from './Actions';
 import { TickMath } from '@uniswap/v3-sdk';
@@ -366,10 +366,12 @@ export function isSolvent(
 export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
-  sigma: number
-): { lower: number, upper: number } {
+  sigma: number,
+  iterations: number = 120,
+  precision: number = 7,
+): LiquidationThresholds {
 
-  let result = {
+  let result: LiquidationThresholds = {
     lower: 0,
     upper: 0,
   }
@@ -377,9 +379,6 @@ export function computeLiquidationThresholds(
   const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
-  // Binary search precision
-  const iterations = 120;
-  
   // Find lower liquidation threshold
   const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
   if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
@@ -390,7 +389,12 @@ export function computeLiquidationThresholds(
     let upperBoundSqrtPrice = marginAccount.sqrtPriceX96;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
+      const prevSearchPrice = searchPrice;
       searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
+      if (areWithinNSigDigs(searchPrice, prevSearchPrice, precision)) {
+        // binary search has converged
+        break;
+      }
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
@@ -412,7 +416,12 @@ export function computeLiquidationThresholds(
     let upperBoundSqrtPrice = MAXPRICE;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
+      const prevSearchPrice = searchPrice;
       searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
+      if (areWithinNSigDigs(searchPrice, prevSearchPrice, precision)) {
+        // binary search has converged
+        break;
+      }
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher

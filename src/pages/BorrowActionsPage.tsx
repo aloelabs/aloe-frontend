@@ -295,7 +295,7 @@ export default function BorrowActionsPage() {
   >([]);
   const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
   const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
-  const [liquidationThresholds, setLiquidationThresholds] = useState<{ lower: number; upper: number } | null>(null);
+  const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
@@ -422,7 +422,8 @@ export default function BorrowActionsPage() {
     () => {
       if (!displayedMarginAccount) return;
       console.log('Running 2');
-      setLiquidationThresholds(computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025));
+      const lt: LiquidationThresholds = computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025, 120, 6);
+      setLiquidationThresholds(lt);
     },
     200,
     [displayedMarginAccount, displayedUniswapPositions]
