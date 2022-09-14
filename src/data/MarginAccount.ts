@@ -368,6 +368,7 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sigma: number,
   iterations: number = 120,
+  precision: number = 7,
 ): LiquidationThresholds {
 
   let result: LiquidationThresholds = {
@@ -390,7 +391,7 @@ export function computeLiquidationThresholds(
     for (let i = 0; i < iterations; i++) {
       const prevSearchPrice = searchPrice;
       searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
-      if (areWithinNSigDigs(searchPrice, prevSearchPrice, 7)) {
+      if (areWithinNSigDigs(searchPrice, prevSearchPrice, precision)) {
         // binary search has converged
         break;
       }
@@ -417,7 +418,7 @@ export function computeLiquidationThresholds(
     for (let i = 0; i < iterations; i++) {
       const prevSearchPrice = searchPrice;
       searchPrice = lowerBoundSqrtPrice.add(upperBoundSqrtPrice).div(2);
-      if (areWithinNSigDigs(searchPrice, prevSearchPrice, 7)) {
+      if (areWithinNSigDigs(searchPrice, prevSearchPrice, precision)) {
         // binary search has converged
         break;
       }

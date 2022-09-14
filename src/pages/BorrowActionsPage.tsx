@@ -422,7 +422,7 @@ export default function BorrowActionsPage() {
     () => {
       if (!displayedMarginAccount) return;
       console.log('Running 2');
-      const lt: LiquidationThresholds = computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025, 120);
+      const lt: LiquidationThresholds = computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025, 120, 6);
       setLiquidationThresholds(lt);
     },
     200,
