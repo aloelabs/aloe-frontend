@@ -57,14 +57,18 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
+      "Chrome >= 67",
+      "Opera >= 54",
+      "Edge >= 79",
+      "Firefox >= 68",
+      "Safari >= 14"
     ],
     "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+      "Chrome >= 67",
+      "Opera >= 54",
+      "Edge >= 79",
+      "Firefox >= 68",
+      "Safari >= 14"
     ]
   },
   "devDependencies": {
