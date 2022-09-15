@@ -217,6 +217,7 @@ export type InputProps = {
   disabled?: boolean;
   onEnter?: () => void;
   onBlur?: () => void;
+  ref?: React.RefObject<HTMLInputElement>;
 };
 
 export function RoundedInput(props: InputProps) {
@@ -231,6 +232,7 @@ export function RoundedInput(props: InputProps) {
     disabled,
     onEnter,
     onBlur,
+    ref,
   } = props;
   return (
     <RoundedInputWrapper
@@ -253,6 +255,7 @@ export function RoundedInput(props: InputProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
     </RoundedInputWrapper>
   );
@@ -270,6 +273,7 @@ export function SquareInput(props: InputProps) {
     disabled,
     onEnter,
     onBlur,
+    ref,
   } = props;
   return (
     <SquareInputWrapper
@@ -292,6 +296,7 @@ export function SquareInput(props: InputProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
     </SquareInputWrapper>
   );
@@ -313,6 +318,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
     disabled,
     onEnter,
     onBlur,
+    ref,
     unit,
   } = props;
   return (
@@ -336,6 +342,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
       <TrailingUnit size={size}>
         {unit}
@@ -364,6 +371,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     disabled,
     onEnter,
     onBlur,
+    ref,
   } = props;
   return (
     <SquareInputWrapper
@@ -386,6 +394,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
       {props.maxHidden !== true &&
         <MaxButton
@@ -420,6 +429,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     onIconClick,
     onEnter,
     onBlur,
+    ref,
   } = props;
   return (
     <RoundedInputWrapper
@@ -442,6 +452,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
       <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
         {Icon}
@@ -464,6 +475,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     onIconClick,
     onEnter,
     onBlur,
+    ref,
   } = props;
   return (
     <SquareInputWrapper
@@ -486,6 +498,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
           }
         }}
         onBlur={onBlur}
+        ref={ref}
       />
       <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
         {Icon}
