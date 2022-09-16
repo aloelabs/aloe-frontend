@@ -82,23 +82,28 @@ export function roundPercentage(
 }
 
 //TODO: refactor this to handle edge cases better
-export function formatNumberInput(input: string): string | null {
-  if (input === '') {
+export function formatNumberInput(input: string, negative?: boolean): string | null {
+  if (input === '' || input === '-') {
     return '';
-  }
-
-  if (input === '.') {
+  } else if (input === '.' && !negative) {
     return '0.';
+  } else if (input === '.' && negative) {
+    return '-0.';
   }
-
-  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,18}$/;
+  
+  const re = new RegExp(`^${negative ? '-?' : ''}[0-9\b]+[.\b]?[0-9\b]{0,18}$`);
 
   if (re.test(input)) {
     // if (max && new Big(input).gt(new Big(max))) {
     //   return max;
     // }
 
-    return input;
+    let result = input;
+    if (negative && !input.startsWith('-')) {
+      result = `-${input}`;
+    }
+
+    return result;
   } else return null;
 }
 
