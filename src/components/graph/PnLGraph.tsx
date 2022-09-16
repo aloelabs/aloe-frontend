@@ -130,8 +130,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
   const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } = props;
   return (
     <Popover className='relative'>
-      <Popover.Button className=''>
-        <SvgWrapper className='ml-auto mr-2'>
+      <Popover.Button className='mr-2'>
+        <SvgWrapper className='ml-auto'>
           <CogIcon />
         </SvgWrapper>
       </Popover.Button>
