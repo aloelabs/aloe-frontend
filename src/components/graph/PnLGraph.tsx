@@ -23,6 +23,7 @@ import {
 } from '../../data/MarginAccount';
 import { formatNumberInput } from '../../util/Numbers';
 import { SquareInput } from '../common/Input';
+import { SvgWrapper } from '../common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
 import { Text } from '../common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
@@ -44,15 +45,6 @@ const Container = styled.div`
   top: 0;
   width: 100%;
   height: 100%;
-`;
-
-const SvgWrapper = styled.div`
-  padding: 4px;
-  svg {
-    path {
-      stroke: rgba(255, 255, 255, 1);
-    }
-  }
 `;
 
 const StyledSettingsContainer = styled.div`
@@ -127,11 +119,19 @@ type PnLGraphSettingsProps = {
 };
 
 function PnLGraphSettings(props: PnLGraphSettingsProps) {
-  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } = props;
+  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } =
+    props;
   return (
     <Popover className='relative'>
-      <Popover.Button className='mr-2'>
-        <SvgWrapper className='ml-auto'>
+      <Popover.Button>
+        <SvgWrapper
+          width={32}
+          height={32}
+          padding={4}
+          strokeColor='rgb(255, 255, 255)'
+          hoverStrokeColor='rgba(255, 255, 255, 0.7)'
+          className='ml-auto'
+        >
           <CogIcon />
         </SvgWrapper>
       </Popover.Button>
@@ -302,9 +302,9 @@ export default function PnLGraph(props: PnLGraphProps) {
   return (
     <div className='w-full'>
       <Text size='S' weight='medium' color={SECONDARY_COLOR}>
-        This graph estimates profit and losses arising solely from the structure of your positions.
-        To include time-based effects such as borrow interest (-) and swap fees (+), click on the
-        cog on the top right of the graph and enter your desired values.
+        This graph estimates profit and losses arising solely from the structure of your positions. To include
+        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
+        and enter your desired values.
       </Text>
       <div className='flex flex-col items-end'>
         <PnLGraphSettings
