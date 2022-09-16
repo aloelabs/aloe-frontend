@@ -608,6 +608,7 @@ export default function BorrowActionsPage() {
                 uniswapPositions={displayedUniswapPositions}
                 inTermsOfToken0={isToken0Selected}
                 liquidationThresholds={displayedLiquidationThresholds}
+                isShowingHypothetical={isShowingHypothetical}
               />
             ) : (
               <EmptyStateWrapper>
