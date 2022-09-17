@@ -53,6 +53,7 @@ import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import Big from 'big.js';
 
+export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const BodyWrapper = styled.div`
@@ -425,7 +426,7 @@ export default function BorrowActionsPage() {
       const lt: LiquidationThresholds = computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025, 120, 6);
       setLiquidationThresholds(lt);
     },
-    200,
+    GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
   );
 
