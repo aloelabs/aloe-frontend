@@ -58,8 +58,7 @@ const TokenAllocationWrapper = styled.div`
 `;
 
 const ExpandingPath = styled.path`
-  transition: all 0.15s ease-in;
-
+  transition: transform 0.15s ease-in;
   :hover {
     transform: scale(${PIE_CHART_HOVER_GROWTH});
   }
