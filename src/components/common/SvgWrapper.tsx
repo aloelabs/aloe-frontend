@@ -1,9 +1,12 @@
 import styled from 'styled-components';
+import tw from 'twin.macro';
 
 export const SvgWrapper = styled.div.attrs(
   (props: {
     width?: number;
     height?: number;
+    svgWidth?: number;
+    svgHeight?: number;
     padding?: number;
     fillColor?: string;
     strokeColor?: string;
@@ -13,11 +16,14 @@ export const SvgWrapper = styled.div.attrs(
     activeStrokeColor?: string;
   }) => props
 )`
+  ${tw`flex items-center justify-center`}
   ${(props) => props.width && `width: ${props.width}px;`};
   ${(props) => props.height && `height: ${props.height}px;`};
   ${(props) => props.padding && `padding: ${props.padding}px;`};
 
   svg {
+    ${(props) => props.svgWidth && `width: ${props.svgWidth}px;`};
+    ${(props) => props.svgHeight && `height: ${props.svgHeight}px;`};
     path {
       ${(props) => props.fillColor && `fill: ${props.fillColor};`};
       ${(props) => props.strokeColor && `stroke: ${props.strokeColor};`};
