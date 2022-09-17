@@ -19,11 +19,11 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  // {
-  //   title: 'Lend',
-  //   name: 'lend',
-  //   url: '/lend',
-  // },
+  {
+    title: 'Lend',
+    name: 'lend',
+    url: '/lend',
+  },
   {
     title: 'Borrow',
     name: 'borrow',
