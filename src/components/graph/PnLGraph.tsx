@@ -217,12 +217,13 @@ export type PnLGraphProps = {
   uniswapPositions: UniswapPosition[];
   inTermsOfToken0: boolean;
   liquidationThresholds: LiquidationThresholds | null;
+  isShowingHypothetical: boolean;
 };
 
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds } = props;
+  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds, isShowingHypothetical } = props;
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
@@ -358,6 +359,7 @@ export default function PnLGraph(props: PnLGraphProps) {
                     inTermsOfToken0={inTermsOfToken0}
                     data={props}
                     active={active}
+                    showAsterisk={isShowingHypothetical}
                   />
                 )}
               />
