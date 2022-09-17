@@ -1,38 +1,36 @@
+import { TickMath } from '@uniswap/v3-sdk';
+import Big from 'big.js';
+import JSBI from 'jsbi';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import JSBI from 'jsbi';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
-import { ReactComponent as BackArrowIcon } from '../assets/svg/back_arrow.svg';
-import { ReactComponent as LayersIcon } from '../assets/svg/layers.svg';
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
+import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
+import BorrowSelectActionModal from '../components/borrow/BorrowSelectActionModal';
 import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import AppPage from '../components/common/AppPage';
 import { PreviousPageButton } from '../components/common/Buttons';
-import { FullscreenModal } from '../components/common/Modal';
 import TokenChooser from '../components/common/TokenChooser';
-import { Display, Text } from '../components/common/Typography';
+import { Display } from '../components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
-  ActionCardState,
-  ActionProvider,
-  ActionProviders,
-  ActionTemplates,
-  calculateHypotheticalStates,
-  getNameOfAction,
-  UniswapPosition,
-  UniswapPositionPrior,
+  ActionCardState, calculateHypotheticalStates, UniswapPosition,
+  UniswapPositionPrior
 } from '../data/Actions';
 import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_SM,
-  RESPONSIVE_BREAKPOINT_XS,
+  RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS
 } from '../data/constants/Breakpoints';
+import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   Assets,
   computeLiquidationThresholds,
@@ -40,19 +38,12 @@ import {
   Liabilities,
   LiquidationThresholds,
   MarginAccount,
-  sumAssetsPerToken,
+  sumAssetsPerToken
 } from '../data/MarginAccount';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
-import { TickMath } from '@uniswap/v3-sdk';
-import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
-import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
-import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import Big from 'big.js';
 
+export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const BodyWrapper = styled.div`
@@ -75,59 +66,6 @@ const GridExpandingDiv = styled.div`
     justify-self: start;
     grid-row: 2 / span 1;
     grid-column: 1 / span 1;
-  }
-`;
-
-const ActionModalHeader = styled.div`
-  ${tw`flex justify-center items-center`}
-  position: relative;
-  padding: 16px;
-  /* margin-bottom: 24px; */
-`;
-
-const ActionModalBody = styled.div`
-  ${tw`flex flex-col gap-4`}
-  height: calc(100vh - 64px);
-  padding-bottom: 16px;
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-`;
-
-const BackButtonWrapper = styled.button.attrs((props: { position?: string }) => props)`
-  ${tw`flex items-center justify-center`}
-  position: ${(props) => props.position || 'absolute'};
-  left: 16px;
-
-  svg {
-    width: 40px;
-    height: 40px;
-    path {
-      stroke: ${SECONDARY_COLOR};
-    }
-  }
-
-  &:hover {
-    svg {
-      path {
-        stroke: rgb(255, 255, 255);
-      }
-    }
   }
 `;
 
@@ -156,72 +94,6 @@ const EmptyStateSvgWrapper = styled.div`
       /* stroke: rgb(255, 255, 255); */
       stroke: ${SECONDARY_COLOR};
     }
-  }
-`;
-
-const SvgWrapper = styled.div`
-  ${tw`flex items-center justify-center`}
-  width: 32px;
-  height: 32px;
-
-  svg {
-    width: 32px;
-    height: 32px;
-  }
-`;
-
-const TemplatesSvgWrapper = styled.div`
-  ${tw`flex items-center justify-center`}
-  width: 32px;
-  height: 32px;
-
-  svg {
-    path {
-      stroke: #4b6980;
-    }
-  }
-`;
-
-const ActionProviderContainer = styled.div`
-  ${tw`flex flex-col items-start justify-center`}
-  margin: 0 auto;
-  width: 100%;
-  max-width: 800px;
-  margin-bottom: 16px;
-
-  @media (max-width: 864px) {
-    max-width: 525px;
-  }
-`;
-
-const ActionButtonsContainer = styled.div`
-  ${tw`w-full flex flex-wrap`}
-  align-items: stretch;
-  gap: 25px;
-`;
-
-const ActionButton = styled.button.attrs((props: { borderColor: string }) => props)`
-  ${tw`flex flex-col items-center justify-start`}
-  width: 250px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid ${(props) => props.borderColor};
-  background-color: rgba(13, 24, 33, 1);
-
-  .description {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  &:hover {
-    background-color: ${(props) => props.borderColor};
-
-    .description {
-      color: rgba(255, 255, 255, 1);
-    }
-  }
-
-  @media (max-width: 589px) {
-    width: 100%;
   }
 `;
 
@@ -340,7 +212,7 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  }, [provider]);
+  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {
@@ -380,7 +252,9 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    accountAddressParam,
     marginAccount?.sqrtPriceX96,
     marginAccount?.token0,
     marginAccount?.token1,
@@ -422,10 +296,16 @@ export default function BorrowActionsPage() {
     () => {
       if (!displayedMarginAccount) return;
       console.log('Running 2');
-      const lt: LiquidationThresholds = computeLiquidationThresholds(displayedMarginAccount, displayedUniswapPositions, 0.025, 120, 6);
+      const lt: LiquidationThresholds = computeLiquidationThresholds(
+        displayedMarginAccount,
+        displayedUniswapPositions,
+        0.025,
+        120,
+        6
+      );
       setLiquidationThresholds(lt);
     },
-    200,
+    GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
   );
 
@@ -608,6 +488,7 @@ export default function BorrowActionsPage() {
                 uniswapPositions={displayedUniswapPositions}
                 inTermsOfToken0={isToken0Selected}
                 liquidationThresholds={displayedLiquidationThresholds}
+                isShowingHypothetical={isShowingHypothetical}
               />
             ) : (
               <EmptyStateWrapper>
@@ -648,95 +529,12 @@ export default function BorrowActionsPage() {
           </div>
         </div>
       </BodyWrapper>
-      <FullscreenModal
-        open={actionModalOpen}
-        setOpen={(open: boolean) => {
-          setActionModalOpen(open);
-        }}
-      >
-        <ActionModalHeader>
-          <BackButtonWrapper>
-            <BackArrowIcon
-              onClick={() => {
-                setActionModalOpen(false);
-              }}
-            />
-          </BackButtonWrapper>
-          <Display size='M' weight='medium'>
-            New Action
-          </Display>
-        </ActionModalHeader>
-        <ActionModalBody>
-          {Object.values(ActionProviders).map((actionProvider: ActionProvider, index: number) => {
-            return (
-              <ActionProviderContainer key={index}>
-                <div className='flex items-center mb-4'>
-                  <SvgWrapper>
-                    <actionProvider.Icon />
-                  </SvgWrapper>
-                  <Display size='M' weight='semibold'>
-                    {actionProvider.name}
-                  </Display>
-                </div>
-                <ActionButtonsContainer>
-                  {Object.entries(actionProvider.actions).map((actionData, index) => {
-                    const action = actionData[1];
-                    return (
-                      <ActionButton
-                        key={index}
-                        borderColor={actionProvider.color}
-                        onClick={() => {
-                          handleAddAction(action);
-                          setActionModalOpen(false);
-                        }}
-                      >
-                        <Text size='L' weight='bold' className='mb-1'>
-                          {getNameOfAction(action.id)}
-                        </Text>
-                        <Text size='XS' weight='medium' className='description'>
-                          {action.description}
-                        </Text>
-                      </ActionButton>
-                    );
-                  })}
-                </ActionButtonsContainer>
-              </ActionProviderContainer>
-            );
-          })}
-          <ActionProviderContainer>
-            <div className='flex items-center mb-4'>
-              <TemplatesSvgWrapper>
-                <LayersIcon width={20} height={20} />
-              </TemplatesSvgWrapper>
-              <Display size='M' weight='semibold'>
-                Templates
-              </Display>
-            </div>
-            <ActionButtonsContainer>
-              {Object.entries(ActionTemplates).map((templateData, index) => {
-                const template = templateData[1];
-                return (
-                  <ActionButton
-                    key={index}
-                    borderColor='#4B6980'
-                    onClick={() => {
-                      handleAddActions(template.actions, template.defaultActionStates);
-                      setActionModalOpen(false);
-                    }}
-                  >
-                    <Text size='L' weight='bold' className='mb-1'>
-                      {template.name}
-                    </Text>
-                    <Text size='XS' weight='medium' className='description'>
-                      {template.description}
-                    </Text>
-                  </ActionButton>
-                );
-              })}
-            </ActionButtonsContainer>
-          </ActionProviderContainer>
-        </ActionModalBody>
-      </FullscreenModal>
+      <BorrowSelectActionModal
+        isOpen={actionModalOpen}
+        setIsOpen={setActionModalOpen}
+        handleAddAction={handleAddAction}
+        handleAddActions={handleAddActions}
+      />
     </AppPage>
   );
 }

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
 import { Text } from '../common/Typography';
 import { TokenData } from '../../data/TokenData';
-import { Assets, MarginAccount } from '../../data/MarginAccount';
+import { Assets } from '../../data/MarginAccount';
 import Big from 'big.js';
 import { BIGQ96 } from '../../data/constants/Values';
 
@@ -58,8 +58,7 @@ const TokenAllocationWrapper = styled.div`
 `;
 
 const ExpandingPath = styled.path`
-  transition: all 0.15s ease-in;
-
+  transition: transform 0.15s ease-in;
   :hover {
     transform: scale(${PIE_CHART_HOVER_GROWTH});
   }
