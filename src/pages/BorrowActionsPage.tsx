@@ -43,6 +43,7 @@ import {
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
+export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const BodyWrapper = styled.div`
@@ -304,7 +305,7 @@ export default function BorrowActionsPage() {
       );
       setLiquidationThresholds(lt);
     },
-    200,
+    GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
   );
 

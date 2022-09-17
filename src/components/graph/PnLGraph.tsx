@@ -21,6 +21,7 @@ import {
   priceToSqrtRatio,
   sqrtRatioToPrice,
 } from '../../data/MarginAccount';
+import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
 import { SquareInput } from '../common/Input';
 import { SvgWrapper } from '../common/SvgWrapper';
@@ -30,7 +31,6 @@ import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
-const GENERAL_DEBOUNCE_DELAY_MS = 750;
 const INPUT_DEBOUNCE_DELAY_MS = 25;
 
 const Wrapper = styled.div`
@@ -281,9 +281,12 @@ export default function PnLGraph(props: PnLGraphProps) {
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
+  const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
+  const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
+
   const ticks = [price];
-  if (liquidationLower > priceA) ticks.push(liquidationLower);
-  if (liquidationUpper < priceB) ticks.push(liquidationUpper);
+  if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
+  if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
@@ -342,6 +345,7 @@ export default function PnLGraph(props: PnLGraphProps) {
                   return formatNumberRelativeToSize(value);
                 }}
                 tick={{ fill: SECONDARY_COLOR, fontSize: '14px' }}
+                minTickGap={25}
               />
               <YAxis stroke={SECONDARY_COLOR} fontSize='14px' />
               <ReferenceLine y={0} stroke={SECONDARY_COLOR} />
