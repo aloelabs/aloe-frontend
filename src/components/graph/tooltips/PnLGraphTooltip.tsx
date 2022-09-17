@@ -21,8 +21,8 @@ const TooltipContainer = styled.div.attrs(
   transform: translateX(${(props) => props.offset}px);
 `;
 
-export default function PnLGraphTooltip(props: {token0: TokenData, token1: TokenData, inTermsOfToken0: boolean, data: any, active?: boolean}) {
-  const { token0, token1, inTermsOfToken0, data, active } = props;
+export default function PnLGraphTooltip(props: {token0: TokenData, token1: TokenData, inTermsOfToken0: boolean, showAsterisk: boolean, data: any, active?: boolean}) {
+  const { token0, token1, inTermsOfToken0, showAsterisk, data, active } = props;
   if (active) {
     const y = data?.payload[0]?.value || 0;
     const x = data?.label || 0;
@@ -47,9 +47,14 @@ export default function PnLGraphTooltip(props: {token0: TokenData, token1: Token
             </Text>
           </div>
           <div className='flex flex-col justify-center items-center'>
-            <Text size='S' weight='medium'>
-              P&L
-            </Text>
+            <div className='flex'>
+              <Text size='S' weight='medium'>
+                P&L
+              </Text>
+              {showAsterisk && (
+                <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>*</Text>
+              )}
+            </div>
             <Text size='M' weight='bold'>
               {formatNumberRelativeToSize(y)} {tickerActive}
             </Text>
