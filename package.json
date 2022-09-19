@@ -5,7 +5,8 @@
   "workspaces": [
     "blend",
     "earn",
-    "prime"
+    "prime",
+    "shared"
   ],
   "devDependencies": {
     "@babel/core": "7.16.12",
