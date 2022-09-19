@@ -1,6 +1,6 @@
 {
-  "name": "aloe-ii-frontend",
-  "version": "0.1.0",
+  "name": "@aloelabs/prime",
+  "version": "0.0.1",
   "private": true,
   "dependencies": {
     "@apollo/react-hooks": "^4.0.0",

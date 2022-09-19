@@ -1,0 +1,24 @@
+{
+  "name": "@aloelabs/root",
+  "version": "0.0.1",
+  "author": "Aloe Labs, Inc.",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.11",
+    "babel-plugin-macros": "^3.1.0",
+    "postcss-cli": "^10.0.0",
+    "prettier": "^2.7.1",
+    "tailwindcss": "^3.1.8",
+    "twin.macro": "^2.8.2"
+  },
+  "scripts": {
+    "prettier": "prettier --write 'src/**/*.{ts,tsx}'",
+    "prettier:check": "prettier --check 'src/**/*.{ts,tsx}'"
+  }
+}
