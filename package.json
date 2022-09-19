@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "author": "Aloe Labs, Inc.",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "apps/*",
-      "packages/*"
-    ]
-  },
+  "workspaces": [
+    "shared",
+    "blend",
+    "earn",
+    "prime"
+  ],
   "devDependencies": {
     "autoprefixer": "^10.4.11",
     "babel-plugin-macros": "^3.1.0",
