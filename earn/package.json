@@ -1,5 +1,5 @@
 {
-  "name": "aloe-ii-frontend",
+  "name": "earn",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -70,16 +70,6 @@
       "Firefox >= 68",
       "Safari >= 14"
     ]
-  },
-  "devDependencies": {
-    "@babel/core": "7.16.12",
-    "@babel/eslint-parser": "^7.17.0",
-    "autoprefixer": "^10.4.2",
-    "babel-plugin-macros": "^3.1.0",
-    "postcss": "^8.4.6",
-    "react-app-rewired": "^2.1.11",
-    "tailwindcss": "^3.0.18",
-    "twin.macro": "^2.8.2"
   },
   "volta": {
     "node": "16.13.2",
