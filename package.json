@@ -1,6 +1,7 @@
 {
   "name": "aloe-frontend",
-  "version": "0.1.0",
+  "version": "0.0.1",
+  "author": "Aloe Labs, Inc.",
   "private": true,
   "workspaces": [
     "blend",
@@ -9,12 +10,13 @@
     "shared"
   ],
   "devDependencies": {
-    "@babel/core": "7.16.12",
-    "@babel/eslint-parser": "^7.17.0",
-    "autoprefixer": "^10.4.2",
+    "@babel/core": "^7.19.1",
+    "@babel/eslint-parser": "^7.19.1",
+    "autoprefixer": "^10.4.11",
     "babel-plugin-macros": "^3.1.0",
-    "postcss": "^8.4.6",
-    "tailwindcss": "^3.0.18",
+    "postcss-cli": "^10.0.0",
+    "prettier": "^2.7.1",
+    "tailwindcss": "^3.1.8",
     "twin.macro": "^2.8.2"
   },
   "scripts": {
