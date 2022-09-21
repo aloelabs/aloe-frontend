@@ -1,15 +1,7 @@
 {
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
   "compilerOptions": {
     "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -27,4 +19,12 @@
     "outDir": "lib",
     "jsx": "react-jsx"
   },
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "build",
+    "**/build",
+    "dist",
+    "**/dist"
+  ]
 }
