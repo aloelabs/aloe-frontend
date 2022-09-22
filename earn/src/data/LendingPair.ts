@@ -15,6 +15,8 @@ export type LendingPair = {
   kitty1: TokenData;
   token0APY: number;
   token1APY: number;
+  // token0Inventory: Big;
+  // token1Inventory: Big;
   token0TotalSupply: number;
   token1TotalSupply: number;
   token0Utilization: number;
@@ -35,8 +37,8 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
   const addresses: {pool: string, kitty0: string, kitty1: string}[] = etherscanResult.data.result.map((item: any) => {
     return {
       pool: item.topics[1].slice(26),
-      kitty0: item.topics[2].slice(26),
-      kitty1: item.topics[3].slice(26)
+      kitty0: `0x${item.topics[2].slice(26)}`,
+      kitty1: `0x${item.topics[3].slice(26)}`,
     };
   });
 
@@ -60,7 +62,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     const interestRate1 = new Big(result1.interestRate.toString());
     const APY0 = (interestRate0.div(10 ** 18).plus(1.0).toNumber() ** (365 * 24 * 60 * 60)) - 1.0;
     const APY1 = (interestRate1.div(10 ** 18).plus(1.0).toNumber() ** (365 * 24 * 60 * 60)) - 1.0;
-
+    // inventory != totalSupply due to interest rates (inflation)
     return {
       token0,
       token1,
@@ -68,6 +70,10 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
       kitty1,
       token0APY: APY0,
       token1APY: APY1,
+      // inventory is the total amount of raw token that has been deposited (or deposited - withdrawn technically)
+      // token0Inventory: result0.inventory,
+      // token1Inventory: result1.inventory,
+      // totalSupply is the total amount of plus tokens in existance
       token0TotalSupply: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
       token1TotalSupply: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
       token0Utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber(),
