@@ -1,7 +1,8 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
+import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -13,6 +14,10 @@ export type LendingPair = {
   token1: TokenData;
   kitty0: TokenData;
   kitty1: TokenData;
+  token0Balance: number;
+  token1Balance: number;
+  kitty0Balance: number;
+  kitty1Balance: number;
   token0APY: number;
   token1APY: number;
   // token0Inventory: Big;
@@ -24,7 +29,7 @@ export type LendingPair = {
   uniswapFeeTier: FeeTier;
 };
 
-export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider): Promise<LendingPair[]> {
+export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider, userAddress: string): Promise<LendingPair[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
@@ -58,6 +63,16 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     const kitty0 = GetTokenData(market.kitty0);
     const kitty1 = GetTokenData(market.kitty1);
 
+
+    const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
+    const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
+    const token0Balance: BigNumber = await token0Contract.balanceOf(userAddress);
+    const token1Balance: BigNumber = await token1Contract.balanceOf(userAddress);
+    const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
+    const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
+    const kitty0Balance: BigNumber = await kitty0Contract.balanceOf(userAddress);
+    const kitty1Balance: BigNumber = await kitty1Contract.balanceOf(userAddress);
+
     const interestRate0 = new Big(result0.interestRate.toString());
     const interestRate1 = new Big(result1.interestRate.toString());
     const APY0 = (interestRate0.div(10 ** 18).plus(1.0).toNumber() ** (365 * 24 * 60 * 60)) - 1.0;
@@ -68,6 +83,10 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
       token1,
       kitty0,
       kitty1,
+      token0Balance: new Big(token0Balance.toString()).div(10 ** token0.decimals).toNumber(),
+      token1Balance: new Big(token1Balance.toString()).div(10 ** token1.decimals).toNumber(),
+      kitty0Balance: new Big(kitty0Balance.toString()).div(10 ** 18).toNumber(),
+      kitty1Balance: new Big(kitty1Balance.toString()).div(10 ** 18).toNumber(),
       token0APY: APY0,
       token1APY: APY1,
       // inventory is the total amount of raw token that has been deposited (or deposited - withdrawn technically)

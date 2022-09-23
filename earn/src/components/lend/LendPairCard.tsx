@@ -25,6 +25,7 @@ import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import EditPositionModal from './modal/EditPositionModal';
+import { LendingPair } from '../../data/LendingPair';
 // import ConfirmModal, { ConfirmationType } from './modal/ConfirmModalState';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
@@ -62,21 +63,7 @@ function EditPositionButton(props: { onClick?: () => void, disabled?: boolean })
   );
 }
 
-export type LendPairCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
-  token0APY: number;
-  token1APY: number;
-  token0TotalSupply: number;
-  token1TotalSupply: number;
-  token0Utilization: number;
-  token1Utilization: number;
-  uniswapFeeTier: FeeTier;
-};
-
-export default function LendPairCard(props: LendPairCardProps) {
+export default function LendPairCard(props: LendingPair) {
   const {
     token0,
     token1,

@@ -4,13 +4,13 @@ import tw from 'twin.macro';
 import AppPage from '../components/common/AppPage';
 import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
 import { Text } from '../components/common/Typography';
-import BalanceSlider from '../components/lend/BalanceSlider';
+import BalanceSlider, { TokenBalance } from '../components/lend/BalanceSlider';
 import { GetTokenData, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { Divider } from '../components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
-import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
+import LendPairCard from '../components/lend/LendPairCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
 import {
   MultiDropdownButton,
@@ -19,7 +19,7 @@ import {
 import { SquareInputWithIcon } from '../components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-import { getAvailableLendingPairs } from '../data/LendingPair';
+import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -57,16 +57,16 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
 
 export default function LendPage() {
   // MARK: component state
-  const [lendingPairs, setLendingPairs] = useState<LendPairCardProps[]>([]);
+  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
 
   // MARK: wagmi hooks
-  const provider = useProvider(/*{ chainId: 5 }*/);
-  const { address, connector } = useAccount();
+  const provider = useProvider({ chainId: 5 });
+  const account = useAccount();
   const { data: ensName } = useEnsName({
-    address: address,
+    address: account.address,
     chainId: chain.mainnet.id,
   });
 
@@ -81,7 +81,7 @@ export default function LendPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider);
+      const results = await getAvailableLendingPairs(provider, account.address || '');
       if (mounted) {
         setLendingPairs(results);
       }
@@ -91,7 +91,29 @@ export default function LendPage() {
     return () => {
       mounted = false;
     }
-  }, [provider, connector]);
+  }, [provider, account.connector]);
+
+  const tokenBalances: TokenBalance[] = [];
+
+  lendingPairs.forEach((pair) => {
+    tokenBalances.push({
+      token: pair.token0,
+      balance: pair.token0Balance.toString(),
+    });
+    tokenBalances.push({
+      token: pair.token1,
+      balance: pair.token1Balance.toString(),
+    });
+    tokenBalances.push({
+      token: pair.kitty0,
+      balance: pair.kitty0Balance.toString(),
+    });
+    tokenBalances.push({
+      token: pair.kitty1,
+      balance: pair.kitty1Balance.toString(),
+    });
+  })
+  
 
   return (
     <AppPage>
@@ -146,26 +168,7 @@ export default function LendPage() {
                 flipDirection={true}
               />
               <BalanceSlider
-                tokenBalances={[
-                  {
-                    token: GetTokenData(
-                      '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'
-                    ),
-                    balance: '0.00',
-                  },
-                  {
-                    token: GetTokenData(
-                      '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'
-                    ),
-                    balance: '0.00',
-                  },
-                  {
-                    token: GetTokenData(
-                      '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
-                    ),
-                    balance: '0.00',
-                  },
-                ]}
+                tokenBalances={tokenBalances}
               />
             </div>
           </div>
