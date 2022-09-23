@@ -9,10 +9,7 @@ import AppBody from './components/common/AppBody';
 import { RedirectPartialPath } from './util/RedirectPartialPath';
 import ScrollToTop from './util/ScrollToTop';
 import { IS_DEV } from './util/Env';
-import ButtonExamplesPage from './pages/ButtonExamplesPage';
-import InputExamplesPage from './pages/InputExamplesPage';
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import LendPage from './pages/LendPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 
@@ -80,18 +77,8 @@ function App() {
             <Header />
             <main className='flex-grow'>
               <Routes>
-                <Route path='/lend' element={<LendPage />} />
                 <Route path='/borrow' element={<BorrowAccountsPage />} />
                 <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                {
-                  // Devmode-only example page routing
-                  IS_DEV && (
-                    <>
-                      <Route path='/buttons' element={<ButtonExamplesPage />} />
-                      <Route path='/inputs' element={<InputExamplesPage />} />
-                    </>
-                  )
-                }
                 <Route path='/' element={<Navigate replace to='/borrow' />} />
                 <Route path='*' element={<Navigate to='/' />} />
               </Routes>
