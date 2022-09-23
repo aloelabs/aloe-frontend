@@ -66,12 +66,15 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
 
     const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
     const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-    const token0Balance: BigNumber = await token0Contract.balanceOf(userAddress);
-    const token1Balance: BigNumber = await token1Contract.balanceOf(userAddress);
     const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
     const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-    const kitty0Balance: BigNumber = await kitty0Contract.balanceOf(userAddress);
-    const kitty1Balance: BigNumber = await kitty1Contract.balanceOf(userAddress);
+
+    const [token0Balance, token1Balance, kitty0Balance, kitty1Balance] = await Promise.all([
+      token0Contract.balanceOf(userAddress),
+      token1Contract.balanceOf(userAddress),
+      kitty0Contract.balanceOf(userAddress),
+      kitty1Contract.balanceOf(userAddress),
+    ]);
 
     const interestRate0 = new Big(result0.interestRate.toString());
     const interestRate1 = new Big(result1.interestRate.toString());
