@@ -8,7 +8,6 @@ import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import { Text } from '../common/Typography';
 import ConnectWalletButton from './ConnectWalletButton';
-import { IS_DEV } from '../../util/Env';
 import { chain, useAccount, useEnsName } from 'wagmi';
 
 type MenuItem = {
@@ -19,33 +18,17 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  {
-    title: 'Lend',
-    name: 'lend',
-    url: '/lend',
-  },
+  // {
+  //   title: 'Lend',
+  //   name: 'lend',
+  //   url: '/lend',
+  // },
   {
     title: 'Borrow',
     name: 'borrow',
     url: '/borrow',
-    // onlyShowIfConnected: true,
   }
 ];
-
-if (IS_DEV) {
-  menuItems.push(
-    {
-      title: 'Portfolio',
-      name: 'portfolio',
-      url: '/portfolio',
-    },
-    {
-      title: 'Vote',
-      name: 'governance',
-      url: '/governance',
-    },
-  )
-}
 
 const StyledNavLink = styled(Text)`
   ${tw`px-8 py-5`}
