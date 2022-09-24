@@ -20,7 +20,6 @@ import { UserBalances } from '../../data/UserBalances';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 import PendingTxnModal from './modal/PendingTxnModal';
 import FailedTxnModal from './modal/FailedTxnModal';
-import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 import { useNavigate } from 'react-router-dom';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
