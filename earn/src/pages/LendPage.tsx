@@ -20,6 +20,7 @@ import { SquareInputWithIcon } from '../components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
 import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
+import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -172,11 +173,12 @@ export default function LendPage() {
               />
             </div>
           </div>
-          <LendChart>
+          <LendPieChartWidget />
+          {/* <LendChart>
             {chartData.map((data, index) => (
               <LendChartItem key={index} />
             ))}
-          </LendChart>
+          </LendChart> */}
         </LendHeaderContainer>
         <Divider />
         <div>
