@@ -149,9 +149,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    Lorem ipsum, dolor sit amet consectetur adipisicing elit. Modi eum saepe debitis accusamus ratione,
-                    nihil fugiat eaque ullam nemo unde temporibus dolorem enim facilis laboriosam, veritatis velit.
-                    Corporis, asperiores deleniti?
+                    If you take out any loans, your liabilities will increase over time due to interest accrual. This has a negative impact on your P&L
+                    (thus the negative sign).
                   </Text>
                 }
                 filled={true}
@@ -184,9 +183,7 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptas sequi ipsam molestias placeat!
-                    Provident ab rerum blanditiis corrupti numquam quae, consectetur, quis quidem voluptas incidunt
-                    fugiat cumque veniam corporis dolorem!
+                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive impact on your P&L.
                   </Text>
                 }
                 filled={true}
