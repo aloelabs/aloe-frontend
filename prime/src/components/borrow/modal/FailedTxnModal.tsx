@@ -4,6 +4,7 @@ import {
   CloseableModal, MESSAGE_TEXT_COLOR,
 } from '../../common/Modal';
 import { Text } from '../../common/Typography';
+import FeedbackBlock from './common/FeedbackBlock';
 
 const FAILED_BORDER_GRADIENT = 'rgba(235, 87, 87, 1)';
 
@@ -23,6 +24,7 @@ export default function FailedTxnModal(props: FailedTxnModalProps) {
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
         Oops! Something went wrong with your transaction. Try increasing the gas limit, and if that doesn't work, reach out on Discord.
       </Text>
+      <FeedbackBlock />
       <FilledGreyButton
         size='M'
         fillWidth={true}
