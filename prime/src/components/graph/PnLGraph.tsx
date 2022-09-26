@@ -149,7 +149,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you take out any loans, your liabilities will increase over time due to interest accrual. This has a negative impact on your P&L.
+                    If you take out any loans, your liabilities will increase over time due to interest accrual. This has a negative impact on your P&L
+                    (thus the negative sign).
                   </Text>
                 }
                 filled={true}
