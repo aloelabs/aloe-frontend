@@ -401,9 +401,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 size='S'
                 svgColorType='stroke'
                 onClick={() => {
-                  // onAddAction();
-                  setShowSuccessModal(true);
-                  // setShowFailedModal(true);
+                  onAddAction();
                 }}
               >
                 Add Action
