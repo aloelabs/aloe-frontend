@@ -5,7 +5,7 @@ import {
   HorizontalDivider,
 } from '../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
-import FeedbackBlock from './FeedbackBlock';
+import FeedbackBlock from './common/FeedbackBlock';
 
 export type SuccessfulTxnModalProps = {
   open: boolean;

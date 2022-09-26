@@ -4,7 +4,7 @@ import {
   CloseableModal, MESSAGE_TEXT_COLOR,
 } from '../../common/Modal';
 import { Text } from '../../common/Typography';
-import FeedbackBlock from './FeedbackBlock';
+import FeedbackBlock from './common/FeedbackBlock';
 
 const FAILED_BORDER_GRADIENT = 'rgba(235, 87, 87, 1)';
 

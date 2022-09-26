@@ -1,6 +1,6 @@
 import React from "react";
-import { MESSAGE_TEXT_COLOR } from '../../common/Modal';
-import { Text } from '../../common/Typography';
+import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+import { Text } from '../../../common/Typography';
 
 export default function FeedbackBlock() {
   return (
@@ -9,9 +9,10 @@ export default function FeedbackBlock() {
         <a
         href={'https://coda.io/form/Aloe-II-Web-App-Feedback-Form_dtlDhQRDThF'}
         target='_blank'
+        className='underline'
         rel='noopener noreferrer'
         title='Share feedback!'
-        ><span className='underline'>share your experience</span></a>!
+        >share your experience</a>!
       </Text>
   );
 }
