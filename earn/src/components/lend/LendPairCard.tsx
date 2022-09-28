@@ -24,7 +24,6 @@ import {
 import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
-import AddPositionModal from './modal/AddPositionModal';
 import EditPositionModal from './modal/EditPositionModal';
 // import ConfirmModal, { ConfirmationType } from './modal/ConfirmModalState';
 
@@ -55,17 +54,9 @@ const CardActionButton = styled.button`
   }
 `;
 
-function AddPositionButton(props: { onClick?: () => void }) {
+function EditPositionButton(props: { onClick?: () => void, disabled?: boolean }) {
   return (
-    <CardActionButton onClick={props?.onClick}>
-      <PlusIcon width={32} height={32} />
-    </CardActionButton>
-  );
-}
-
-function EditPositionButton(props: { onClick?: () => void }) {
-  return (
-    <CardActionButton onClick={props?.onClick}>
+    <CardActionButton onClick={props?.onClick} disabled={props.disabled}>
       <EditIcon width={32} height={32} />
     </CardActionButton>
   );
@@ -89,6 +80,8 @@ export default function LendPairCard(props: LendPairCardProps) {
   const {
     token0,
     token1,
+    kitty0,
+    kitty1,
     token0APY,
     token1APY,
     token0TotalSupply,
@@ -97,10 +90,10 @@ export default function LendPairCard(props: LendPairCardProps) {
     token1Utilization,
     uniswapFeeTier,
   } = props;
-  const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
-    useState<boolean>(false);
-  const [isAddToken1PositionModalOpen, setIsAddToken1PositionModalOpen] =
-    useState<boolean>(false);
+  // const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
+  //   useState<boolean>(false);
+  // const [isAddToken1PositionModalOpen, setIsAddToken1PositionModalOpen] =
+  //   useState<boolean>(false);
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
     useState<boolean>(false);
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] =
@@ -136,10 +129,6 @@ export default function LendPairCard(props: LendPairCardProps) {
     getBrighterColor(token0Color, token1Color),
     0.16
   );
-
-  // Hard-coded for now...
-  const token0Position = 0;
-  const token1Position = 1000;
 
   return (
     <div>
@@ -191,19 +180,11 @@ export default function LendPairCard(props: LendPairCardProps) {
               utilization={token0Utilization}
             />
             {isCardHovered &&
-              (token0Position > 0 ? (
-                <EditPositionButton
-                  onClick={() => {
-                    setIsEditToken0PositionModalOpen(true);
-                  }}
-                />
-              ) : (
-                <AddPositionButton
-                  onClick={() => {
-                    setIsAddToken0PositionModalOpen(true);
-                  }}
-                />
-              ))}
+              (<EditPositionButton
+                onClick={() => {
+                  setIsEditToken0PositionModalOpen(true);
+                }}
+              />)}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -223,50 +204,19 @@ export default function LendPairCard(props: LendPairCardProps) {
               utilization={token1Utilization}
             />
             {isCardHovered &&
-              (token1Position > 0 ? (
+              (
                 <EditPositionButton
                   onClick={() => {
                     setIsEditToken1PositionModalOpen(true);
                   }}
                 />
-              ) : (
-                <AddPositionButton
-                  onClick={() => {
-                    setIsAddToken1PositionModalOpen(true);
-                  }}
-                />
-              ))}
+              )}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>
-      <AddPositionModal
-        token={token0}
-        open={isAddToken0PositionModalOpen}
-        setOpen={(open: boolean) => {
-          setIsAddToken0PositionModalOpen(open);
-        }}
-        onConfirm={() => {
-          setIsAddToken0PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsAddToken0PositionModalOpen(false);
-        }}
-      />
-      <AddPositionModal
-        token={token1}
-        open={isAddToken1PositionModalOpen}
-        setOpen={(open: boolean) => {
-          setIsAddToken1PositionModalOpen(open);
-        }}
-        onConfirm={() => {
-          setIsAddToken1PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsAddToken1PositionModalOpen(false);
-        }}
-      />
       <EditPositionModal
         token={token0}
+        kitty={kitty0}
         open={isEditToken0PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken0PositionModalOpen(open);
@@ -280,6 +230,7 @@ export default function LendPairCard(props: LendPairCardProps) {
       />
       <EditPositionModal
         token={token1}
+        kitty={kitty1}
         open={isEditToken1PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);

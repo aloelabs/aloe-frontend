@@ -1,26 +1,34 @@
 import { Tab } from '@headlessui/react';
-import React, { Fragment } from 'react';
+import { SendTransactionResult } from '@wagmi/core';
+import { Fragment, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { TokenData } from '../../../data/TokenData';
-import { formatUSDAuto } from '../../../util/Numbers';
-import { FilledStylizedButton } from '../../common/Buttons';
 import {
-  CloseableModal,
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
+  CloseableModal
 } from '../../common/Modal';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { Text } from '../../common/Typography';
-import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
-import ConfirmModalContent, {
-  ConfirmationType,
-  getConfirmationTypeValue,
-} from './content/ConfirmModalContent';
+import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
-import LoadingModalContent from './content/LoadingModalContent';
 import SuccessModalContent from './content/SuccessModalContent';
+import WithdrawModalContent from './content/WithdrawModalContent';
+import PendingTxnModal from './PendingTxnModal';
+
+export enum ConfirmationType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAW = 'WITHDRAW',
+};
+
+export function getConfirmationTypeValue(type: ConfirmationType): string {
+  switch (type) {
+    case ConfirmationType.DEPOSIT:
+      return 'Deposit';
+    case ConfirmationType.WITHDRAW:
+      return 'Withdraw';
+    default:
+      return '';
+  }
+}
 
 const TabsWrapper = styled.div`
   ${tw`w-full flex flex-row`}
@@ -49,6 +57,7 @@ enum EditPositionModalState {
 
 export type EditPositionModalProps = {
   token: TokenData;
+  kitty: TokenData;
   open: boolean;
   setOpen: (open: boolean) => void;
   onConfirm: () => void;
@@ -56,180 +65,145 @@ export type EditPositionModalProps = {
 };
 
 export default function EditPositionModal(props: EditPositionModalProps) {
-  const { token, open, setOpen, onConfirm, onCancel } = props;
-  const maxDeposit = '975';
-  const maxWithdraw = '423';
-  const [state, setState] = React.useState(
-    EditPositionModalState.EDIT_POSITION
+  const { token, kitty, open, setOpen, onConfirm, onCancel } = props;
+  const [state, setState] = useState(EditPositionModalState.EDIT_POSITION);
+  const [confirmationType, setConfirmationType] = useState<ConfirmationType>(
+    ConfirmationType.DEPOSIT
   );
-  const [depositAmount, setDepositAmount] = React.useState<string>('');
-  const [withdrawAmount, setWithdrawAmount] = React.useState<string>('');
-  const [confirmationType, setConfirmationType] =
-    React.useState<ConfirmationType>(ConfirmationType.DEPOSIT);
+  const [pendingTxnResult, setPendingTxnResult] =
+    useState<SendTransactionResult | null>(null);
+  const [lastTxnHash, setLastTxnHash] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (pendingTxnResult?.hash) {
+      setState(EditPositionModalState.LOADING);
+      // Wait for txn to finish
+      pendingTxnResult.wait(1).then((txnResult) => {
+        if (mounted) {
+          // Check if txn was successful
+          if (txnResult.status === 1) {
+            setLastTxnHash(pendingTxnResult.hash);
+            setState(EditPositionModalState.SUCCESS);
+            setPendingTxnResult(null);
+          } else {
+            setState(EditPositionModalState.FAILURE);
+            setPendingTxnResult(null);
+          }
+        }
+      }).catch((error) => {
+        if (mounted) {
+          setState(EditPositionModalState.FAILURE);
+          setPendingTxnResult(null);
+        }
+      });
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [pendingTxnResult]);
 
   function clearState() {
     /* Timeout used to take transition into account */
     setTimeout(() => {
       setConfirmationType(ConfirmationType.DEPOSIT);
-      setDepositAmount('');
-      setWithdrawAmount('');
+      setPendingTxnResult(null);
       setState(EditPositionModalState.EDIT_POSITION);
     }, 500);
   }
 
-  function getTitleFromState(state: EditPositionModalState) {
-    switch (state) {
-      case EditPositionModalState.EDIT_POSITION:
-        return 'Edit Position';
-      case EditPositionModalState.CONFIRM_EDIT_POSITION:
-        return `Confirm ${getConfirmationTypeValue(confirmationType)}`;
-      case EditPositionModalState.LOADING:
-        return 'Loading';
-      case EditPositionModalState.SUCCESS:
-        return `${getConfirmationTypeValue(confirmationType)} Successful`;
-      case EditPositionModalState.FAILURE:
-        return 'Transaction Failed';
-      default:
-        return '';
-    }
-  }
-
   return (
-    <CloseableModal
-      open={open}
-      setOpen={setOpen}
-      onClose={() => {
-        onCancel();
-        clearState();
-      }}
-      title={getTitleFromState(state)}
-    >
-      {state === EditPositionModalState.EDIT_POSITION && (
-        <Tab.Group>
-          <Tab.List className='flex rounded-md mb-6'>
-            <TabsWrapper>
-              {Object.keys(ConfirmationType).map(
-                (type: string, index: number) => (
-                  <Tab as={Fragment} key={index}>
-                    {({ selected }) => (
-                      <TabButton
-                        className={selected ? 'selected' : ''}
-                        onClick={() =>
-                          setConfirmationType(type as ConfirmationType)
-                        }
-                      >
-                        <Text size='M' weight='bold' color='rgb(255, 255, 255)'>
-                          {getConfirmationTypeValue(type as ConfirmationType)}
-                        </Text>
-                      </TabButton>
-                    )}
-                  </Tab>
-                )
-              )}
-            </TabsWrapper>
-          </Tab.List>
-          <Tab.Panels as={Fragment}>
-            <Tab.Panel>
-              <div className='flex justify-between items-center mb-4'>
-                <TokenAmountInput
-                  tokenLabel={token?.ticker || ''}
-                  onChange={(updatedAmount: string) => {
-                    setDepositAmount(updatedAmount);
-                  }}
-                  value={depositAmount}
-                  max={maxDeposit}
-                  maxed={depositAmount === maxDeposit}
-                />
-              </div>
-              <div className='flex justify-between items-center mb-8'>
-                <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
-                  Estimated Total
-                </Text>
-                <DashedDivider />
-                <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-                  {formatUSDAuto(parseFloat(depositAmount) || 0)}
-                </Text>
-              </div>
-              <FilledStylizedButton
-                size='M'
-                fillWidth={true}
-                color={MODAL_BLACK_TEXT_COLOR}
-                onClick={() => {
-                  setState(EditPositionModalState.CONFIRM_EDIT_POSITION);
-                }}
-              >
-                Deposit
-              </FilledStylizedButton>
-            </Tab.Panel>
-            <Tab.Panel>
-              <div className='flex justify-between items-center mb-4'>
-                <TokenAmountInput
-                  tokenLabel={token?.ticker || ''}
-                  onChange={(updatedAmount: string) => {
-                    setWithdrawAmount(updatedAmount);
-                  }}
-                  value={withdrawAmount}
-                  max={maxWithdraw}
-                  maxed={withdrawAmount === maxWithdraw}
-                />
-              </div>
-              <div className='flex justify-between items-center mb-8'>
-                <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
-                  Estimated Total
-                </Text>
-                <DashedDivider />
-                <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-                  {formatUSDAuto(parseFloat(withdrawAmount) || 0)}
-                </Text>
-              </div>
-              <FilledStylizedButton
-                size='M'
-                fillWidth={true}
-                color={MODAL_BLACK_TEXT_COLOR}
-                onClick={() => {
-                  setState(EditPositionModalState.CONFIRM_EDIT_POSITION);
-                }}
-              >
-                Withdraw
-              </FilledStylizedButton>
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tab.Group>
-      )}
-      {state === EditPositionModalState.CONFIRM_EDIT_POSITION && (
-        <ConfirmModalContent
-          confirmationType={confirmationType}
-          token={token}
-          tokenAmount={depositAmount}
-          onConfirm={() => {
-            // TODO: add logic to handle deposit/withdraw and properly set state
-            setState(EditPositionModalState.LOADING);
-            setTimeout(() => {
-              setState(EditPositionModalState.SUCCESS);
-            }, 5000);
-          }}
-        />
-      )}
-      {state === EditPositionModalState.SUCCESS && (
-        <SuccessModalContent
-          confirmationType={confirmationType}
-          token={token}
-          tokenAmount={withdrawAmount}
-          onConfirm={() => {
-            onConfirm();
-            clearState();
-          }}
-        />
-      )}
-      {state === EditPositionModalState.FAILURE && (
-        <FailureModalContent
-          onConfirm={() => {
+    <>
+      {state !== EditPositionModalState.LOADING && (
+        <CloseableModal
+          open={open}
+          setOpen={setOpen}
+          onClose={() => {
             onCancel();
             clearState();
           }}
+          title={
+            ConfirmationType.DEPOSIT === confirmationType
+              ? 'Deposit'
+              : 'Withdraw'
+          }
+        >
+          {EditPositionModalState.EDIT_POSITION === state && (
+            <Tab.Group>
+              <Tab.List className='flex rounded-md mb-6'>
+                <TabsWrapper>
+                  {Object.keys(ConfirmationType).map(
+                    (type: string, index: number) => (
+                      <Tab as={Fragment} key={index}>
+                        {({ selected }) => (
+                          <TabButton
+                            className={selected ? 'selected' : ''}
+                            onClick={() =>
+                              setConfirmationType(type as ConfirmationType)
+                            }
+                          >
+                            <Text
+                              size='M'
+                              weight='bold'
+                              color='rgb(255, 255, 255)'
+                            >
+                              {getConfirmationTypeValue(
+                                type as ConfirmationType
+                              )}
+                            </Text>
+                          </TabButton>
+                        )}
+                      </Tab>
+                    )
+                  )}
+                </TabsWrapper>
+              </Tab.List>
+              <Tab.Panels as={Fragment}>
+                <Tab.Panel>
+                  <DepositModalContent
+                    token={token}
+                    kitty={kitty}
+                    setPendingTxnResult={setPendingTxnResult}
+                  />
+                </Tab.Panel>
+                <Tab.Panel>
+                  <WithdrawModalContent
+                    token={token}
+                    kitty={kitty}
+                    setPendingTxnResult={setPendingTxnResult}
+                  />
+                </Tab.Panel>
+              </Tab.Panels>
+            </Tab.Group>
+          )}
+          {state === EditPositionModalState.SUCCESS && (
+            <SuccessModalContent
+              confirmationType={confirmationType}
+              txnHash={lastTxnHash || ''}
+              onConfirm={() => {
+                setLastTxnHash(null);
+                onConfirm();
+                clearState();
+              }}
+            />
+          )}
+          {state === EditPositionModalState.FAILURE && (
+            <FailureModalContent
+              onConfirm={() => {
+                onCancel();
+                clearState();
+              }}
+            />
+          )}
+        </CloseableModal>
+      )}
+      {state === EditPositionModalState.LOADING && (
+        <PendingTxnModal
+          open={open}
+          setOpen={setOpen}
+          txnHash={pendingTxnResult?.hash}
         />
       )}
-      {state === EditPositionModalState.LOADING && <LoadingModalContent />}
-    </CloseableModal>
+    </>
   );
 }
