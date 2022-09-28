@@ -20,7 +20,6 @@ import { UserBalances } from '../../data/UserBalances';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 import PendingTxnModal from './modal/PendingTxnModal';
 import FailedTxnModal from './modal/FailedTxnModal';
-import SuccessModalContent from '../lend/modal/content/SuccessModalContent';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 import { useNavigate } from 'react-router-dom';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
@@ -260,10 +259,10 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     },
   });
   const { address: userAddress } = useAccount();
-  const { data: userBalance0Asset } = useBalance({ addressOrName: userAddress, token: token0.address });
-  const { data: userBalance1Asset } = useBalance({ addressOrName: userAddress, token: token1.address });
-  const { data: userBalance0Kitty } = useBalance({ addressOrName: userAddress, token: kitty0.address });
-  const { data: userBalance1Kitty } = useBalance({ addressOrName: userAddress, token: kitty1.address });
+  const { data: userBalance0Asset } = useBalance({ addressOrName: userAddress, token: token0.address, watch: true });
+  const { data: userBalance1Asset } = useBalance({ addressOrName: userAddress, token: token1.address, watch: true });
+  const { data: userBalance0Kitty } = useBalance({ addressOrName: userAddress, token: kitty0.address, watch: true });
+  const { data: userBalance1Kitty } = useBalance({ addressOrName: userAddress, token: kitty1.address, watch: true });
   const { data: userAllowance0Asset } = useAllowance(token0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
   const { data: userAllowance1Asset } = useAllowance(token1, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
   const { data: userAllowance0Kitty } = useAllowance(kitty0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);

@@ -77,6 +77,17 @@ export default function Footer() {
         >
           Terms
         </FooterLink>
+        < VerticalDivider />
+        <FooterLink
+          as='a'
+          size='S'
+          weight='medium'
+          color={FOOTER_LINK_TEXT_COLOR}
+          href={'https://coda.io/form/Aloe-II-Web-App-Feedback-Form_dtlDhQRDThF'}
+          target='_blank'
+          rel='noopener noreferrer'>
+            Feedback
+        </FooterLink>
       </div>
       <div className='flex flex-row items-center gap-x-6'>
         <a
