@@ -1,12 +1,13 @@
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
-import { useContractWrite } from 'wagmi';
+import { useAccount, useContractWrite } from 'wagmi';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
-import { useWithdraw } from '../../../../data/hooks/UseWithdraw';
+import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
+import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenData } from '../../../../data/TokenData';
 import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
 import {
@@ -60,7 +61,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
 
-  const numericWithdrawAmount = Number(withdrawAmount) || 0;
+  const { address: accountAddress } = useAccount();
 
   const contract = useContractWrite({
     addressOrName: kitty.address,
@@ -69,15 +70,13 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'withdraw',
   });
 
-  const withdrawState = useWithdraw({
-    token,
-    kitty,
-    withdrawAmount,
-  });
+  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
+  const amountToShares = useAmountToShares(token, kitty, withdrawAmount);
+  
+  const sharesToWithdraw = amountToShares ?? '0';
+  const underlyingBalance = balanceOfUnderlying ?? '0';
 
-  const sharesToWithdraw = withdrawState?.sharesToWithdraw.toString() || '0';
-  const underlyingBalance = withdrawState?.underlyingBalance.toString() || '0';
-
+  const numericWithdrawAmount = Number(withdrawAmount) || 0;
   const numericWithdrawBalance = parseFloat(underlyingBalance);
 
   let confirmButtonState = ConfirmButtonState.READY;
