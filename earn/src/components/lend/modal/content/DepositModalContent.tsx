@@ -186,7 +186,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {depositAmount || 0} {kitty?.ticker}
+          {depositAmount || 0} {token?.ticker}
         </Text>
       </div>
       <div className='w-max ml-auto'>
