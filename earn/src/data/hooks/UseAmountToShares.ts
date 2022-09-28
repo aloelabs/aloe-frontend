@@ -7,17 +7,17 @@ import { ALOE_II_KITTY_LENS_ADDRESS } from '../constants/Addresses';
 
 export function useAmountToShares(token: TokenData, kitty: TokenData, withdrawAmount: string) {
   const [state, setState] = useState<string | null>(null);
-  const { data: amountToShares } = useContractRead({
+  const { data: amountOfShares } = useContractRead({
     addressOrName: ALOE_II_KITTY_LENS_ADDRESS,
     contractInterface: KittyLensABI,
     functionName: 'amountToShares',
-    args: [kitty.address, new Big(withdrawAmount || '0').times(10 ** token.decimals).toFixed(0)],
+    args: [kitty.address, new Big(withdrawAmount || '0').mul(10 ** token.decimals).toFixed(0)],
     watch: true,
   });
   useEffect(() => {
-    if (amountToShares) {
-      setState(new Big(amountToShares.toString()).div(10 ** token.decimals).toFixed(0));
+    if (amountOfShares) {
+      setState(amountOfShares.toString());
     }
-  }, [amountToShares, token.decimals]);
+  }, [amountOfShares, kitty.decimals]);
   return state;
 }

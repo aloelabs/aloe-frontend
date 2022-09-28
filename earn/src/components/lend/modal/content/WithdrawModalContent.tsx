@@ -97,9 +97,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         contract
           .writeAsync({
             recklesslySetUnpreparedArgs: [
-              ethers.utils
-                .parseUnits(sharesToWithdraw.toString(), token.decimals)
-                .toString(),
+              sharesToWithdraw
             ],
             recklesslySetUnpreparedOverrides: {
               gasLimit: (600000).toFixed(0),
@@ -136,7 +134,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {sharesToWithdraw} {token?.ticker}
+          {withdrawAmount || '0'} {token?.ticker}
         </Text>
       </div>
       <div className='w-max ml-auto'>
