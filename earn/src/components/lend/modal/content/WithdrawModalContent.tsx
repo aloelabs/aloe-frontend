@@ -1,18 +1,19 @@
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
-import { useAccount, useBalance, useContractWrite } from 'wagmi';
+import { useContractWrite } from 'wagmi';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
+import { useWithdraw } from '../../../../data/hooks/UseWithdraw';
 import { TokenData } from '../../../../data/TokenData';
-import {
-  FilledStylizedButtonWithIcon
-} from '../../../common/Buttons';
+import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
 import {
   DashedDivider,
-  LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR
+  LABEL_TEXT_COLOR,
+  MODAL_BLACK_TEXT_COLOR,
+  VALUE_TEXT_COLOR,
 } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from '../../../common/Typography';
@@ -58,13 +59,8 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
-  const account = useAccount();
 
-  const { data: withdrawBalance } = useBalance({
-    addressOrName: account?.address ?? '',
-    token: kitty.address,
-    watch: true,
-  });
+  const numericWithdrawAmount = Number(withdrawAmount) || 0;
 
   const contract = useContractWrite({
     addressOrName: kitty.address,
@@ -73,8 +69,16 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'withdraw',
   });
 
-  const numericWithdrawBalance = Number(withdrawBalance?.formatted ?? 0) || 0;
-  const numericWithdrawAmount = Number(withdrawAmount) || 0;
+  const withdrawState = useWithdraw({
+    token,
+    kitty,
+    withdrawAmount,
+  });
+
+  const sharesToWithdraw = withdrawState?.sharesToWithdraw.toString() || '0';
+  const underlyingBalance = withdrawState?.underlyingBalance.toString() || '0';
+
+  const numericWithdrawBalance = parseFloat(underlyingBalance);
 
   let confirmButtonState = ConfirmButtonState.READY;
 
@@ -91,18 +95,23 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     switch (confirmButtonState) {
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contract.writeAsync({
-          recklesslySetUnpreparedArgs: [
-            ethers.utils.parseUnits(withdrawAmount, kitty.decimals).toString(),
-          ],
-          recklesslySetUnpreparedOverrides: {
-            gasLimit: (600000).toFixed(0),
-          }
-        }).then((txnResult) => {
-          setPendingTxnResult(txnResult);
-        }).catch((error) => {
-          setIsPending(false);
-        });
+        contract
+          .writeAsync({
+            recklesslySetUnpreparedArgs: [
+              ethers.utils
+                .parseUnits(sharesToWithdraw.toString(), token.decimals)
+                .toString(),
+            ],
+            recklesslySetUnpreparedOverrides: {
+              gasLimit: (600000).toFixed(0),
+            },
+          })
+          .then((txnResult) => {
+            setPendingTxnResult(txnResult);
+          })
+          .catch((error) => {
+            setIsPending(false);
+          });
         break;
       default:
         break;
@@ -118,8 +127,8 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
             setWithdrawAmount(updatedAmount);
           }}
           value={withdrawAmount}
-          max={withdrawBalance?.formatted ?? '0'}
-          maxed={withdrawAmount === withdrawBalance?.formatted ?? '0'}
+          max={underlyingBalance}
+          maxed={withdrawAmount === underlyingBalance}
         />
       </div>
       <div className='flex justify-between items-center mb-8'>
@@ -128,7 +137,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {withdrawAmount || 0} {token?.ticker}
+          {sharesToWithdraw} {token?.ticker}
         </Text>
       </div>
       <div className='w-max ml-auto'>
