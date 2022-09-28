@@ -59,7 +59,7 @@ const TokenDataMap = new Map<string, TokenData>([
       name: 'Aloe II USD Coin',
       ticker: 'USDC+',
       iconPath: UsdcLogo,
-      decimals: 6,
+      decimals: 18,
     },
   ],
   // WETH
