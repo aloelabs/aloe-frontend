@@ -5,7 +5,7 @@ import WagmiProvider from './connector/WagmiProvider';
 import Header from './components/header/Header';
 import Footer from './components/common/Footer';
 
-import AppBody from 'shared';
+import AppBody from 'shared/lib/components/common/AppBody';
 import { RedirectPartialPath } from './util/RedirectPartialPath';
 import ScrollToTop from './util/ScrollToTop';
 import { IS_DEV } from './util/Env';
