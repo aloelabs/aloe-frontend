@@ -1,8 +1,14 @@
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
 export default styled.div`
-  ${tw`w-full h-full text-white flex flex-col min-h-screen py-16`}
+  width: 100%;
+  height: 100%;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-top: 64px;
+  padding-bottom: 64px;
   font-family: 'Satoshi-Variable';
   font-weight: 500;
 `;

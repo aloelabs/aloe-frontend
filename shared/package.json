@@ -32,5 +32,21 @@
     "clean": "rm -rf ./lib",
     "prebuild": "yarn clean",
     "build": "tsc --build \"./tsconfig.json\""
-  }
+  },
+  "browserslist": {
+    "production": [
+      "Chrome >= 67",
+      "Opera >= 54",
+      "Edge >= 79",
+      "Firefox >= 68",
+      "Safari >= 14"
+    ],
+    "development": [
+      "Chrome >= 67",
+      "Opera >= 54",
+      "Edge >= 79",
+      "Firefox >= 68",
+      "Safari >= 14"
+    ]
+  },
 }
