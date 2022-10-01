@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Text } from 'shared/src/components/common/Typography';
 
 export type WidgetHeadingProps = {
   children?: React.ReactNode;

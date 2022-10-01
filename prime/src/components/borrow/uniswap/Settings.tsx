@@ -6,7 +6,7 @@ import useClickOutside from '../../../data/hooks/UseClickOutside';
 import { formatNumberInput } from '../../../util/Numbers';
 import { SquareInputWithTrailingUnit } from '../../common/Input';
 import Tooltip from '../../common/Tooltip';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Text } from 'shared/src/components/common/Typography';
 
 const SvgButtonWrapper = styled.button`
   ${tw`flex justify-center items-center`}

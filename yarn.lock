@@ -12181,6 +12181,20 @@ shallowequal@^1.1.0:
   resolved "https://registry.yarnpkg.com/shallowequal/-/shallowequal-1.1.0.tgz#188d521de95b9087404fd4dcb68b13df0ae4e7f8"
   integrity sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==
 
+"shared@file:shared":
+  version "0.1.0"
+  dependencies:
+    "@types/node" "^16.11.22"
+    "@types/react" "^17.0.38"
+    "@types/react-dom" "^17.0.11"
+    "@types/styled-components" "^5.1.21"
+    node-polyfill-webpack-plugin "^1.1.4"
+    postcss-nested "^5.0.6"
+    prettier "^2.5.1"
+    react "^17.0.2"
+    styled-components "^5.3.3"
+    typescript "^4.5.5"
+
 shebang-command@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/shebang-command/-/shebang-command-2.0.0.tgz#ccd0af4f8835fbdc265b82461aaf0c36663f34ea"
