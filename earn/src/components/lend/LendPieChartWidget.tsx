@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { Text } from '../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { TokenBalanceUSD, TokenData } from '../../data/TokenData';
 import { getProminentColor, rgb } from '../../util/Colors';
 import { formatTokenAmountCompact } from '../../util/Numbers';
