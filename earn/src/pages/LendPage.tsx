@@ -8,7 +8,7 @@ import BalanceSlider from '../components/lend/BalanceSlider';
 import { GetTokenData, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
-import { Divider } from '../components/common/Divider';
+import { Divider } from 'shared/lib/components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
 import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
