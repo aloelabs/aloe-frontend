@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from './Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 
 const BADGE_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { FilledStylizedButton } from '../../../common/Buttons';
 import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
-import { Text } from '../../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
 import SuccessIcon from '../../../../assets/svg/success.svg';
 import {

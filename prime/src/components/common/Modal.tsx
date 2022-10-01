@@ -4,7 +4,7 @@ import CloseIcon from '../../assets/svg/close_modal.svg';
 import LoadingIcon from '../../assets/svg/loading.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Display } from './Typography';
+import { Display } from 'shared/lib/components/common/Typography';
 import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BORDER_GRADIENT =

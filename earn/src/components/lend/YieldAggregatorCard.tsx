@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { TokenData } from '../../data/TokenData';
-import { Display, Text } from '../common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from '../../util/Numbers';
 import LendTokenInfo from './LendTokenInfo';
 import {

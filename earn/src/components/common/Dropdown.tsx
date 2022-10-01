@@ -5,7 +5,7 @@ import DropdownArrowDown from '../../assets/svg/dropdown_arrow_down.svg';
 import DropdownArrowUp from '../../assets/svg/dropdown_arrow_up.svg';
 import { CheckIcon } from '@heroicons/react/solid';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from './Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';
 const DROPDOWN_LIST_BG_COLOR = 'rgba(7, 14, 18, 1)';

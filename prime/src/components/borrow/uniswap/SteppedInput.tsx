@@ -4,7 +4,7 @@ import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
 import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from '../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
