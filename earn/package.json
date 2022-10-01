@@ -44,8 +44,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
+    "start": "cd ../shared && yarn build && cd ../earn && craco start",
+    "build": "cd ../shared && yarn build && cd ../earn && craco build",
     "test": "craco test"
   },
   "eslintConfig": {

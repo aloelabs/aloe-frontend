@@ -3,7 +3,7 @@ import { roundPercentage } from '../../util/Numbers';
 import PositiveChangeIcon from '../../assets/svg/positive_change_chevron.svg';
 import NegativeChangeIcon from '../../assets/svg/negative_change_chevron.svg';
 import styled from 'styled-components';
-import { Text } from './Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { ReactComponent as UpArrow } from '../../assets/svg/up_arrow.svg';
 import { ReactComponent as DownArrow } from '../../assets/svg/down_arrow.svg';
 

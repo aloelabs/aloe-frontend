@@ -7,7 +7,7 @@ import { TokenData } from '../../../data/TokenData';
 import {
   CloseableModal
 } from '../../common/Modal';
-import { Text } from '../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
 import SuccessModalContent from './content/SuccessModalContent';

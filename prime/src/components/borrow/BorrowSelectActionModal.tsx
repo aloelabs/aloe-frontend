@@ -2,7 +2,7 @@ import { FullscreenModal } from '../common/Modal';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ActionProvider, ActionProviders, ActionTemplates, getNameOfAction } from '../../data/Actions';
-import { Text, Display } from '../common/Typography';
+import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
 import { Action, ActionCardState } from '../../data/Actions';

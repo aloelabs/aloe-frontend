@@ -17,10 +17,10 @@ import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggl
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
-import AppPage from '../components/common/AppPage';
+import AppPage from 'shared/lib/components/common/AppPage';
 import { PreviousPageButton } from '../components/common/Buttons';
 import TokenChooser from '../components/common/TokenChooser';
-import { Display } from '../components/common/Typography';
+import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,

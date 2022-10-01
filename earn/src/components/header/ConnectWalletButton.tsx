@@ -5,7 +5,7 @@ import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
 import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
-import { Text } from '../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export type ConnectWalletButtonProps = {
