@@ -28,7 +28,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC',
       iconPath: UsdcLogo,
       decimals: 6,
-      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
     },
   ],
   // WETH (Goerli)
@@ -40,7 +40,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH',
       iconPath: WethLogo,
       decimals: 18,
-      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
     },
   ],
   // USDC
@@ -63,7 +63,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC+',
       iconPath: UsdcLogo,
       decimals: 18,
-      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
     },
   ],
   // WETH
@@ -86,7 +86,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
-      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
     },
   ],
   // WBTC
