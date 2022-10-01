@@ -3,7 +3,7 @@ import InfoIcon from '../../assets/svg/info.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from './Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 
 const ICON_SIZES = {
   S: 16,

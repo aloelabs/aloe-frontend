@@ -2,7 +2,9 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 export const FilterBadge = styled.div`
-  ${tw`flex flex-row items-start`}
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 100px;
   padding: 8px 16px;
