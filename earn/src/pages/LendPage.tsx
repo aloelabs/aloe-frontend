@@ -20,6 +20,8 @@ import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
+import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -41,37 +43,8 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   } as MultiDropdownOption;
 });
 
-// function calculateTokenBalancesUSD(tokenBalances: TokenBalance[], tokenQuotes: TokenQuote[]): TokenBalanceUSD[] {
-//   console.log('tokenBalances', tokenBalances);
-//   if (tokenBalances.length === 0 || tokenQuotes.length === 0) {
-//     return [];
-//   }
-//   const tokenBalancesUSDDict: { [key: string]: TokenBalanceUSD } = {};
-//   tokenBalances.forEach((tokenBalance: TokenBalance) => {
-//     const tokenAddress = tokenBalance.token?.referenceAddress ?? tokenBalance.token.address;
-//     const correspondingQuote = tokenQuotes.find((tokenQuote: TokenQuote) => {
-//       return tokenQuote.token.address === tokenAddress;
-//     });
-//     const correspondingPrice = correspondingQuote?.price || 0;
-//     const numericBalance = parseFloat(tokenBalance.balance);
-//     const existingEntry = tokenBalancesUSDDict[tokenAddress];
-//     if (existingEntry) {
-//       tokenBalancesUSDDict[tokenAddress].balance += numericBalance;
-//       tokenBalancesUSDDict[tokenAddress].balanceUSD += numericBalance * correspondingPrice;
-//     } else {
-//       tokenBalancesUSDDict[tokenAddress] = {
-//         token: GetTokenData(tokenAddress),
-//         balance: numericBalance,
-//         balanceUSD: numericBalance * correspondingPrice,
-//       }
-//     }
-//   });
-//   return Object.values(tokenBalancesUSDDict);
-// }
-
 export default function LendPage() {
   // MARK: component state
-  // const [quoteData, setQuoteData] = useState<
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
@@ -93,10 +66,11 @@ export default function LendPage() {
 
   const apy = 5.54;
 
-  useEffect(() => {
+  useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
-      const quoteDataResponse: AxiosResponse = await axios.get('https://api-price.aloe.capital/price-relay');
+      // fetch token quotes
+      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
       const prResponse: PriceRelayResponse = quoteDataResponse.data;
       if (!prResponse || !prResponse.data) {
         return;
@@ -115,7 +89,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -131,32 +105,36 @@ export default function LendPage() {
     };
   }, [provider, connector, address]);
 
-  const tokenBalances: TokenBalance[] = lendingPairs.flatMap((pair) => {
-    return [
-      {
-        token: pair.token0,
-        balance: pair.token0Balance.toString(),
-      },
-      {
-        token: pair.token1,
-        balance: pair.token1Balance.toString(),
-      },
-      {
-        token: pair.kitty0,
-        balance: pair.kitty0Balance.toString(),
-      },
-      {
-        token: pair.kitty1,
-        balance: pair.kitty1Balance.toString(),
-      },
-    ];
-  });
+  // Flatten pairs into a single array of token balances
+  const tokenBalances: TokenBalance[] = useMemo(() => {
+    return lendingPairs.flatMap((pair) => {
+      return [
+        {
+          token: pair.token0,
+          balance: pair.token0Balance.toString(),
+        },
+        {
+          token: pair.token1,
+          balance: pair.token1Balance.toString(),
+        },
+        {
+          token: pair.kitty0,
+          balance: pair.kitty0Balance.toString(),
+        },
+        {
+          token: pair.kitty1,
+          balance: pair.kitty1Balance.toString(),
+        },
+      ];
+    });
+  }, [lendingPairs]);
 
+  // Combine token balances with token quotes (token, balance, balanceUSD)
   const tokenBalancesUSD = useMemo(() => {
     if (tokenBalances.length === 0 || tokenQuotes.length === 0) {
       return [];
     }
-    // Combine corresponding token/token+ quote data
+    // Coalesce corresponding token/token+ quote data (same mainnet address)
     const tokenBalancesUSDDict: { [key: string]: TokenBalanceUSD } = {};
     tokenBalances.forEach((tokenBalance: TokenBalance) => {
       const tokenAddress = tokenBalance.token?.referenceAddress ?? tokenBalance.token.address;
@@ -177,20 +155,18 @@ export default function LendPage() {
         };
       }
     });
+    // Convert from dict to array
     return Object.values(tokenBalancesUSDDict);
   }, [tokenBalances, tokenQuotes]);
 
+  // Calculate total USD value of all tokens
   const totalBalanceUSD = useMemo(() => {
     return tokenBalancesUSD.reduce((acc, tokenBalanceUSD) => {
       return acc + tokenBalanceUSD.balanceUSD;
     }, 0);
   }, [tokenBalancesUSD]);
 
-  // const totalBalanceUSD = tokenBalancesUSD
-  //   .map((tokenBalanceUSD) => {
-  //     return tokenBalanceUSD.balanceUSD;
-  //   })
-  //   .reduce((prev, cur) => prev + cur, 0);
+  console.log('rendering lend page');
 
   return (
     <AppPage>
