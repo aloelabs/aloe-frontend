@@ -20,7 +20,7 @@ import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationP
 import AppPage from 'shared/lib/components/common/AppPage';
 import { PreviousPageButton } from '../components/common/Buttons';
 import TokenChooser from '../components/common/TokenChooser';
-import { Display } from '../components/common/Typography';
+import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,

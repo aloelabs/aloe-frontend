@@ -6,7 +6,7 @@ import { TokenData } from '../../data/TokenData';
 import { formatAddressStart } from '../../util/FormatAddress';
 import FeeTierContainer from '../common/FeeTierContainer';
 import RoundedBadge from '../common/RoundedBadge';
-import { Display } from '../common/Typography';
+import { Display } from 'shared/lib/components/common/Typography';
 
 const MarginPairContainer = styled.div`
   ${tw`flex items-center`}
