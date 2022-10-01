@@ -6,7 +6,7 @@ import tw from 'twin.macro';
 import AloeLogo from '../../assets/svg/aloe_capital_nav_logo.svg';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
-import { Text } from '../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import ConnectWalletButton from './ConnectWalletButton';
 import { chain, useAccount, useEnsName } from 'wagmi';
 

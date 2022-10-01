@@ -1,6 +1,6 @@
 import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from "../../../data/Actions";
 import { DropdownOption, DropdownWithPlaceholder } from "../../common/Dropdown";
-import { Text } from "../../common/Typography";
+import { Text } from 'shared/lib/components/common/Typography';
 import { BaseActionCard } from "../BaseActionCard";
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg'

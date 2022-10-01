@@ -10,7 +10,7 @@ import {
 } from '../../util/Colors';
 import FeeTierContainer from '../common/FeeTierContainer';
 import TokenPairIcons from '../common/TokenPairIcons';
-import { Display, Text } from '../common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from '../../util/Numbers';
 import LendTokenInfo from './LendTokenInfo';
 import {

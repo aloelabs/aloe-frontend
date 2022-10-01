@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from '../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { TokenData } from '../../../data/TokenData';
 import { formatNumberRelativeToSize } from '../PnLGraph';
 

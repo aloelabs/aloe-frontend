@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
-import { Text, Display } from '../common/Typography';
+import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';

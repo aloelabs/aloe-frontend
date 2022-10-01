@@ -11,7 +11,7 @@ import {
 } from '../../../data/Actions';
 import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import { TokenData } from '../../../data/TokenData';
-import { Text } from '../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { getBalanceFor } from '../../../data/UserBalances';
 import { useEffect } from 'react';
 

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import AppPage from '../components/common/AppPage';
+import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
-import { Text } from '../components/common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import BalanceSlider from '../components/lend/BalanceSlider';
 import { GetTokenData, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
-import { Divider } from '../components/common/Divider';
+import { Divider } from 'shared/lib/components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
 import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';

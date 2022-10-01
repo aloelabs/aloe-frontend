@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Display, Text } from '../common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { TokenData } from '../../data/TokenData';
 import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
