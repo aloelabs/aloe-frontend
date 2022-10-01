@@ -140,6 +140,30 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
   }
 }
 
+export function formatTokenAmountCompact(amount: number, length = 4): string {
+  if (amount > 1e6) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumSignificantDigits: length,
+      minimumSignificantDigits: 2,
+    });
+  } else if (amount > (10 ** -(length / 2)) || amount === 0) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      maximumSignificantDigits: length + 1,
+      minimumSignificantDigits: 2,
+    });
+  } else {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'scientific',
+      maximumSignificantDigits: length - 1,
+    });
+  }
+}
+
 export function formatPriceRatio(x: number, sigDigs = 4): string {
   //TODO: if we want to support more than one locale, we would need to add more logic here
   if (x > 1e9) {
