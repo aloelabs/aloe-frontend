@@ -17,7 +17,7 @@ import {
   VALUE_TEXT_COLOR,
 } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
-import { Text } from '../../../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 
 enum ConfirmButtonState {
   INSUFFICIENT_KITTY,

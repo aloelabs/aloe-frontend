@@ -26,7 +26,7 @@ import { formatNumberInput } from '../../util/Numbers';
 import { SquareInput } from '../common/Input';
 import { SvgWrapper } from '../common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
-import { Text } from '../common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
