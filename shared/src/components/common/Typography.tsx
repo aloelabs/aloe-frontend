@@ -58,7 +58,7 @@ const TEXT_FONT_WEIGHTS = {
 };
 
 const TEXT_LINE_HEIGHTS = {
-  XXL: '34px',
+  XXL: '36px',
   XL: '32px',
   L: '30px',
   M: '24px',
