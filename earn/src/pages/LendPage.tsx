@@ -163,14 +163,14 @@ export default function LendPage() {
           token: pair.kitty0,
           balance: pair.kitty0Balance,
           balanceUSD: pair.kitty0Balance * token0Price,
-          apy: pair.token0APY,
+          apy: pair.kitty0APY,
           isKitty: true,
         },
         {
           token: pair.kitty1,
           balance: pair.kitty1Balance,
           balanceUSD: pair.kitty1Balance * token1Price,
-          apy: pair.token1APY,
+          apy: pair.kitty1APY,
           isKitty: true,
         },
       ];
