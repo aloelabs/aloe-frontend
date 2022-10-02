@@ -74,7 +74,7 @@ function getCoordinatesForPercent(percent: number) {
 }
 
 const TokenAllocationWrapper = styled.div`
-  ${tw`w-full h-full mt-4 pt-2 flex flex-nowrap justify-end items-end`}
+  ${tw`w-full h-full flex flex-nowrap justify-end items-end`}
   flex-direction: row;
   @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
     flex-direction: column;
@@ -185,7 +185,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
   const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
 
   return (
-    <div className='w-full flex flex-col items-start justify-start mb-8'>
+    <div className='w-full flex flex-col items-start justify-start self-baseline'>
       <TokenAllocationWrapper>
         <PieChartWrapper>
           <PieChartContainer>
@@ -213,6 +213,11 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                 </Text>
                 <Text size='L'>{currentPercent}</Text>
               </div>
+            )}
+            {!activeSlice && (
+              <Text size='L'>
+                Your Assets
+              </Text>
             )}
           </PieChartLabel>
         </PieChartWrapper>
