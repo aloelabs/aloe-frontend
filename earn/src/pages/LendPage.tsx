@@ -22,11 +22,21 @@ import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
   ${tw`flex justify-between`}
+`;
+
+const LendHeader = styled.div`
+  ${tw`flex flex-col justify-between`}
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    gap: 64px;
+  }
 `;
 
 const LendCards = styled.div`
@@ -166,14 +176,14 @@ export default function LendPage() {
     }, 0);
   }, [tokenBalancesUSD]);
 
-  console.log('rendering lend page');
+  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
 
   return (
     <AppPage>
       <div className='flex flex-col gap-6'>
         <LendHeaderContainer>
-          <div className='flex flex-col justify-between'>
-            <Text size='XL' weight='bold'>
+          <LendHeader>
+            <Text size='XXL' weight='bold'>
               <p>{ensName ? `Hi, ${ensName}.` : 'Hi!'}</p>
               <p>Your balance is {formatUSD(totalBalanceUSD)}</p>
               <p>and is growing at</p>
@@ -217,8 +227,10 @@ export default function LendPage() {
               />
               <BalanceSlider tokenBalances={tokenBalances} />
             </div>
-          </div>
-          <LendPieChartWidget tokenBalancesUSD={tokenBalancesUSD} totalBalanceUSD={totalBalanceUSD} />
+          </LendHeader>
+          {isGTMediumScreen && (
+            <LendPieChartWidget tokenBalancesUSD={tokenBalancesUSD} totalBalanceUSD={totalBalanceUSD} />
+          )}
         </LendHeaderContainer>
         <Divider />
         <div>

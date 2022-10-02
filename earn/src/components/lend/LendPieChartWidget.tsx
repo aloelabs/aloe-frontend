@@ -12,8 +12,41 @@ import { formatTokenAmountCompact } from '../../util/Numbers';
 
 const PIE_CHART_HOVER_GROWTH = 1.05;
 
+const PieChartWrapper = styled.div`
+  position: relative;
+  width: 240px;
+  height: 240px;
+`;
+
 const PieChartContainer = styled.div`
   transform: rotate(90deg);
+`;
+
+const PieChartLabel = styled.div`
+  --width: 165px;
+  --height: 165px;
+  position: absolute;
+  width: var(--width);
+  height: var(--height);
+  // set top left corner to be centered in parent
+  left: 50%;
+  top: 50%;
+  // offset top left corner by element width so that text is centered
+  margin-left: calc(var(--width) / -2);
+  margin-top: calc(var(--height) / -2);
+  // padding and alignment
+  padding: 4px 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  // stuff to make animation work
+  pointer-events: none;
+  transition: all 0.1s linear;
+  // colors, borders, text
+  border-radius: calc(var(--height) / 2);
+  background-color: rgba(7, 14, 18, 1);
+  color: rgba(255, 255, 255, 1);
+  ${tw`font-bold`};
 `;
 
 // MARK: Pie chart setup -------------------------------------------------------------
@@ -53,33 +86,6 @@ const ExpandingPath = styled.path`
   :hover {
     transform: scale(${PIE_CHART_HOVER_GROWTH});
   }
-`;
-
-const PieChartLabel = styled.div`
-  --width: 145.28px;
-  --height: 145.28px;
-  position: absolute;
-  width: var(--width);
-  height: var(--height);
-  // set top left corner to be centered in parent
-  left: 50%;
-  top: 50%;
-  // offset top left corner by element width so that text is centered
-  margin-left: calc(var(--width) / -2);
-  margin-top: calc(var(--height) / -2);
-  // padding and alignment
-  padding: 4px 15px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  // stuff to make animation work
-  pointer-events: none;
-  transition: all 0.1s linear;
-  // colors, borders, text
-  border-radius: calc(var(--height) / 2);
-  background-color: rgba(7, 14, 18, 1);
-  color: rgba(255, 255, 255, 1);
-  ${tw`font-bold`};
 `;
 
 type TokenColor = {
@@ -181,7 +187,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
   return (
     <div className='w-full flex flex-col items-start justify-start mb-8'>
       <TokenAllocationWrapper>
-        <div className='w-[227px] h-[227px] relative'>
+        <PieChartWrapper>
           <PieChartContainer>
             <svg viewBox='-1 -1 2 2' overflow='visible'>
               {paths.map((path, index) => {
@@ -201,15 +207,15 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
           <PieChartLabel>
             {activeSlice && (
               <div className='flex flex-col justify-center items-center gap-1'>
-                <Text size='S' weight='bold' color={activeSlice.color}>
+                <Text size='M' weight='bold' color={activeSlice.color}>
                   {formatTokenAmountCompact(activeSlice.tokenBalanceUSD.balance)}{' '}
                   {activeSlice.tokenBalanceUSD.token.ticker || ''}
                 </Text>
-                <Text size='M'>{currentPercent}</Text>
+                <Text size='L'>{currentPercent}</Text>
               </div>
             )}
           </PieChartLabel>
-        </div>
+        </PieChartWrapper>
       </TokenAllocationWrapper>
     </div>
   );
