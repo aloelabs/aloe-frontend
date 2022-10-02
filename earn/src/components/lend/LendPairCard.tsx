@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { FeeTier } from '../../data/FeeTier';
-import { TokenData } from '../../data/TokenData';
 import {
   getBrighterColor,
   getProminentColor,
@@ -25,7 +23,7 @@ import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import EditPositionModal from './modal/EditPositionModal';
-// import ConfirmModal, { ConfirmationType } from './modal/ConfirmModalState';
+import { LendingPair } from '../../data/LendingPair';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
@@ -62,21 +60,7 @@ function EditPositionButton(props: { onClick?: () => void, disabled?: boolean })
   );
 }
 
-export type LendPairCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
-  token0APY: number;
-  token1APY: number;
-  token0TotalSupply: number;
-  token1TotalSupply: number;
-  token0Utilization: number;
-  token1Utilization: number;
-  uniswapFeeTier: FeeTier;
-};
-
-export default function LendPairCard(props: LendPairCardProps) {
+export default function LendPairCard(props: LendingPair) {
   const {
     token0,
     token1,
@@ -84,10 +68,10 @@ export default function LendPairCard(props: LendPairCardProps) {
     kitty1,
     token0APY,
     token1APY,
-    token0TotalSupply,
-    token1TotalSupply,
-    token0Utilization,
-    token1Utilization,
+    kitty0Inventory,
+    kitty1Inventory,
+    kitty0Utilization,
+    kitty1Utilization,
     uniswapFeeTier,
   } = props;
   // const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
@@ -176,8 +160,8 @@ export default function LendPairCard(props: LendPairCardProps) {
             </div>
             <LendTokenInfo
               token={token0}
-              totalSupply={token0TotalSupply}
-              utilization={token0Utilization}
+              totalSupply={kitty0Inventory}
+              utilization={kitty0Utilization}
             />
             {isCardHovered &&
               (<EditPositionButton
@@ -200,8 +184,8 @@ export default function LendPairCard(props: LendPairCardProps) {
             </div>
             <LendTokenInfo
               token={token1}
-              totalSupply={token1TotalSupply}
-              utilization={token1Utilization}
+              totalSupply={kitty1Inventory}
+              utilization={kitty1Utilization}
             />
             {isCardHovered &&
               (
