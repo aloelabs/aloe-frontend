@@ -65,12 +65,6 @@ export type TokenBalance = {
   apy: number;
 };
 
-export type TokenAPY = {
-  token: TokenData;
-  balanceUSD: number;
-  apy: number;
-};
-
 const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   return {
     value: token.address,
