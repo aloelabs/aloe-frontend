@@ -9,12 +9,12 @@ import {
 } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string;
-  decimals: number;
-  ticker?: string;
-  name?: string;
-  iconPath?: string;
-  // TODO: Move this out of here, so that other uses of tokendata don't have to async wait to draw
+  address: string; // Address of the token
+  decimals: number; // Number of decimals for the token
+  ticker?: string; // Ticker of the token
+  name?: string; // Name of the token
+  iconPath?: string; // Path to the icon for the token
+  referenceAddress?: string;// Address of the token that is used to get the price of the token
 };
 
 const TokenDataMap = new Map<string, TokenData>([
@@ -27,6 +27,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC',
       iconPath: UsdcLogo,
       decimals: 6,
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
     },
   ],
   // WETH (Goerli)
@@ -38,6 +39,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH',
       iconPath: WethLogo,
       decimals: 18,
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
     },
   ],
   // USDC
@@ -60,6 +62,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC+',
       iconPath: UsdcLogo,
       decimals: 18,
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
     },
   ],
   // WETH
@@ -82,6 +85,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
     },
   ],
   // WBTC
@@ -154,3 +158,14 @@ export function GetTokenData(address: string): TokenData {
       decimals: 0,
     };
 }
+
+export type TokenQuote = {
+  token: TokenData;
+  price: number;
+};
+
+export type TokenBalanceUSD = {
+  token: TokenData;
+  balance: number;
+  balanceUSD: number;
+};
