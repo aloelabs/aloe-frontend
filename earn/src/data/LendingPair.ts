@@ -18,8 +18,8 @@ export type LendingPair = {
   token1Balance: number;
   kitty0Balance: number;
   kitty1Balance: number;
-  token0APY: number;
-  token1APY: number;
+  kitty0APY: number;
+  kitty1APY: number;
   kitty0Inventory: number;
   kitty1Inventory: number;
   kitty0TotalSupply: number;
@@ -92,8 +92,8 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
       token1Balance,
       kitty0Balance,
       kitty1Balance,
-      token0APY: APY0 * 100.0, // Percentage
-      token1APY: APY1 * 100.0, // Percentage
+      kitty0APY: APY0 * 100.0, // Percentage
+      kitty1APY: APY1 * 100.0, // Percentage
       // inventory is the total amount of raw token that has been deposited (or deposited - withdrawn technically)
       kitty0Inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
       kitty1Inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
