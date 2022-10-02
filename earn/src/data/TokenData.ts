@@ -9,13 +9,12 @@ import {
 } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string;
-  decimals: number;
-  ticker?: string;
-  name?: string;
-  iconPath?: string;
-  referenceAddress?: string;
-  // TODO: Move this out of here, so that other uses of tokendata don't have to async wait to draw
+  address: string; // Address of the token
+  decimals: number; // Number of decimals for the token
+  ticker?: string; // Ticker of the token
+  name?: string; // Name of the token
+  iconPath?: string; // Path to the icon for the token
+  referenceAddress?: string;// Address of the token that is used to get the price of the token
 };
 
 const TokenDataMap = new Map<string, TokenData>([
