@@ -1,25 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
+import BalanceSlider, { TokenBalance } from '../components/lend/BalanceSlider';
+import { GetTokenData, getTokens, TokenQuote, TokenBalanceUSD } from '../data/TokenData';
 import { Text } from 'shared/lib/components/common/Typography';
-import BalanceSlider from '../components/lend/BalanceSlider';
-import { GetTokenData, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { Divider } from 'shared/lib/components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
-import LendPairCard, { LendPairCardProps } from '../components/lend/LendPairCard';
+import LendPairCard from '../components/lend/LendPairCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
-import {
-  MultiDropdownButton,
-  MultiDropdownOption,
-} from '../components/common/Dropdown';
+import { MultiDropdownButton, MultiDropdownOption } from '../components/common/Dropdown';
 import { SquareInputWithIcon } from '../components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-import { getAvailableLendingPairs } from '../data/LendingPair';
+import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
+import LendPieChartWidget from '../components/lend/LendPieChartWidget';
+import axios, { AxiosResponse } from 'axios';
+import { PriceRelayResponse } from '../data/PriceRelayResponse';
+import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -27,18 +31,12 @@ const LendHeaderContainer = styled.div`
   ${tw`flex justify-between`}
 `;
 
-const LendChart = styled.div`
-  display: grid;
-  grid-template-columns: 12px 12px 12px 12px 12px 12px 12px 12px 12px 12px;
-  grid-column-gap: 12px;
-  grid-row-gap: 12px;
-`;
+const LendHeader = styled.div`
+  ${tw`flex flex-col justify-between`}
 
-const LendChartItem = styled.div`
-  width: 12px;
-  height: 12px;
-  border-radius: 1px;
-  background-color: orange;
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    gap: 64px;
+  }
 `;
 
 const LendCards = styled.div`
@@ -57,7 +55,8 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
 
 export default function LendPage() {
   // MARK: component state
-  const [lendingPairs, setLendingPairs] = useState<LendPairCardProps[]>([]);
+  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
+  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
@@ -74,33 +73,119 @@ export default function LendPage() {
   for (let i = 0; i < 100; i++) {
     chartData.push(i);
   }
-  
-  const balance = 1000.01;
+
   const apy = 5.54;
+
+  useEffectOnce(() => {
+    let mounted = true;
+    async function fetch() {
+      // fetch token quotes
+      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
+      const prResponse: PriceRelayResponse = quoteDataResponse.data;
+      if (!prResponse || !prResponse.data) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
+        return {
+          token: GetTokenData(pr?.platform?.token_address || ''),
+          price: pr?.quote['USD']?.price || 0,
+        };
+      });
+      if (mounted) {
+        setTokenQuotes(tokenQuoteData);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  });
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider);
+      const results = await getAvailableLendingPairs(provider, address || '');
       if (mounted) {
         setLendingPairs(results);
       }
     }
-
     fetch();
     return () => {
       mounted = false;
+    };
+  }, [provider, connector, address]);
+
+  // Flatten pairs into a single array of token balances
+  const tokenBalances: TokenBalance[] = useMemo(() => {
+    return lendingPairs.flatMap((pair) => {
+      return [
+        {
+          token: pair.token0,
+          balance: pair.token0Balance.toString(),
+        },
+        {
+          token: pair.token1,
+          balance: pair.token1Balance.toString(),
+        },
+        {
+          token: pair.kitty0,
+          balance: pair.kitty0Balance.toString(),
+        },
+        {
+          token: pair.kitty1,
+          balance: pair.kitty1Balance.toString(),
+        },
+      ];
+    });
+  }, [lendingPairs]);
+
+  // Combine token balances with token quotes (token, balance, balanceUSD)
+  const tokenBalancesUSD = useMemo(() => {
+    if (tokenBalances.length === 0 || tokenQuotes.length === 0) {
+      return [];
     }
-  }, [provider, connector]);
+    // Coalesce corresponding token/token+ quote data (same mainnet address)
+    const tokenBalancesUSDDict: { [key: string]: TokenBalanceUSD } = {};
+    tokenBalances.forEach((tokenBalance: TokenBalance) => {
+      const tokenAddress = tokenBalance.token?.referenceAddress ?? tokenBalance.token.address;
+      const correspondingQuote = tokenQuotes.find((tokenQuote: TokenQuote) => {
+        return tokenQuote.token.address === tokenAddress;
+      });
+      const correspondingPrice = correspondingQuote?.price || 0;
+      const numericBalance = parseFloat(tokenBalance.balance);
+      const existingEntry = tokenBalancesUSDDict[tokenAddress];
+      if (existingEntry) {
+        tokenBalancesUSDDict[tokenAddress].balance += numericBalance;
+        tokenBalancesUSDDict[tokenAddress].balanceUSD += numericBalance * correspondingPrice;
+      } else {
+        tokenBalancesUSDDict[tokenAddress] = {
+          token: GetTokenData(tokenAddress),
+          balance: numericBalance,
+          balanceUSD: numericBalance * correspondingPrice,
+        };
+      }
+    });
+    // Convert from dict to array
+    return Object.values(tokenBalancesUSDDict);
+  }, [tokenBalances, tokenQuotes]);
+
+  // Calculate total USD value of all tokens
+  const totalBalanceUSD = useMemo(() => {
+    return tokenBalancesUSD.reduce((acc, tokenBalanceUSD) => {
+      return acc + tokenBalanceUSD.balanceUSD;
+    }, 0);
+  }, [tokenBalancesUSD]);
+
+  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
 
   return (
     <AppPage>
       <div className='flex flex-col gap-6'>
         <LendHeaderContainer>
-          <div className='flex flex-col justify-between'>
-            <Text size='XL' weight='bold'>
+          <LendHeader>
+            <Text size='XXL' weight='bold'>
               <p>{ensName ? `Hi, ${ensName}.` : 'Hi!'}</p>
-              <p>Your balance is {formatUSD(balance)}</p>
+              <p>Your balance is {formatUSD(totalBalanceUSD)}</p>
               <p>and is growing at</p>
               <p>{roundPercentage(apy)}% APY.</p>
             </Text>
@@ -111,9 +196,7 @@ export default function LendPage() {
                 handleChange={(updatedOptions: MultiDropdownOption[]) => {
                   setSelectedOptions(updatedOptions);
                 }}
-                DropdownButton={(props: {
-                  onClick: () => void,
-                }) => {
+                DropdownButton={(props: { onClick: () => void }) => {
                   return (
                     <FilledGreyButtonWithIcon
                       onClick={props.onClick}
@@ -126,10 +209,7 @@ export default function LendPage() {
                     </FilledGreyButtonWithIcon>
                   );
                 }}
-                SearchInput={(props: {
-                  searchTerm: string,
-                  onSearch: (searchTerm: string) => void,
-                }) => {
+                SearchInput={(props: { searchTerm: string; onSearch: (searchTerm: string) => void }) => {
                   return (
                     <SquareInputWithIcon
                       placeholder='Search'
@@ -141,39 +221,16 @@ export default function LendPage() {
                       size='M'
                       svgColorType='stroke'
                     />
-                  )
+                  );
                 }}
                 flipDirection={true}
               />
-              <BalanceSlider
-                tokenBalances={[
-                  {
-                    token: GetTokenData(
-                      '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a'
-                    ),
-                    balance: '0.00',
-                  },
-                  {
-                    token: GetTokenData(
-                      '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'
-                    ),
-                    balance: '0.00',
-                  },
-                  {
-                    token: GetTokenData(
-                      '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
-                    ),
-                    balance: '0.00',
-                  },
-                ]}
-              />
+              <BalanceSlider tokenBalances={tokenBalances} />
             </div>
-          </div>
-          <LendChart>
-            {chartData.map((data, index) => (
-              <LendChartItem key={index} />
-            ))}
-          </LendChart>
+          </LendHeader>
+          {isGTMediumScreen && (
+            <LendPieChartWidget tokenBalancesUSD={tokenBalancesUSD} totalBalanceUSD={totalBalanceUSD} />
+          )}
         </LendHeaderContainer>
         <Divider />
         <div>
@@ -181,13 +238,7 @@ export default function LendPage() {
             <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
               Lending Pairs
             </Text>
-            <Tooltip
-              buttonSize='M'
-              buttonText=''
-              content='test'
-              position='top-center'
-              filled={true}
-            />
+            <Tooltip buttonSize='M' buttonText='' content='test' position='top-center' filled={true} />
           </div>
           <LendCards>
             {lendingPairs.map((lendPair) => (
@@ -195,10 +246,10 @@ export default function LendPage() {
             ))}
           </LendCards>
           <Pagination
-            totalItems={/*TODO*/10}
+            totalItems={/*TODO*/ 10}
             currentPage={currentPage}
             itemsPerPage={itemsPerPage}
-            loading={/*TODO*/false}
+            loading={/*TODO*/ false}
             onPageChange={(page: number) => {
               setCurrentPage(page);
             }}

@@ -34,6 +34,7 @@ const DISPLAY_LINE_HEIGHTS = {
 };
 
 const TEXT_FONT_SIZES = {
+  XXL: '28px',
   XL: '24px',
   L: '20px',
   M: '16px',
@@ -42,6 +43,7 @@ const TEXT_FONT_SIZES = {
 };
 
 const TEXT_FONT_SIZES_MOBILE = {
+  XXL: '24px',
   XL: '20px',
   L: '16px',
   M: '14px',
@@ -56,6 +58,7 @@ const TEXT_FONT_WEIGHTS = {
 };
 
 const TEXT_LINE_HEIGHTS = {
+  XXL: '36px',
   XL: '32px',
   L: '30px',
   M: '24px',
@@ -83,7 +86,7 @@ export const Display = styled.div.attrs(
 
 export const Text = styled.div.attrs(
   (props: {
-    size: 'XL' | 'L' | 'M' | 'S' | 'XS';
+    size: 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS';
     weight: 'regular' | 'medium' | 'bold';
     color?: string;
   }) => props
