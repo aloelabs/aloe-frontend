@@ -20,12 +20,12 @@ export type LendingPair = {
   kitty1Balance: number;
   token0APY: number;
   token1APY: number;
-  // token0Inventory: Big;
-  // token1Inventory: Big;
-  token0TotalSupply: number;
-  token1TotalSupply: number;
-  token0Utilization: number;
-  token1Utilization: number;
+  kitty0Inventory: number;
+  kitty1Inventory: number;
+  kitty0TotalSupply: number;
+  kitty1TotalSupply: number;
+  kitty0Utilization: number;
+  kitty1Utilization: number;
   uniswapFeeTier: FeeTier;
 };
 
@@ -92,16 +92,16 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
       token1Balance,
       kitty0Balance,
       kitty1Balance,
-      token0APY: APY0,
-      token1APY: APY1,
+      token0APY: APY0 * 100.0, // Percentage
+      token1APY: APY1 * 100.0, // Percentage
       // inventory is the total amount of raw token that has been deposited (or deposited - withdrawn technically)
-      // token0Inventory: result0.inventory,
-      // token1Inventory: result1.inventory,
+      kitty0Inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
+      kitty1Inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
       // totalSupply is the total amount of plus tokens in existance
-      token0TotalSupply: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
-      token1TotalSupply: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
-      token0Utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber(),
-      token1Utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber(),
+      kitty0TotalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
+      kitty1TotalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
+      kitty0Utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+      kitty1Utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
       uniswapFeeTier: NumericFeeTierToEnum(result2),
     };
   }));
