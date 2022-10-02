@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
 import { Text } from 'shared/lib/components/common/Typography';
-import { TokenBalanceUSD, TokenData } from '../../data/TokenData';
-import { getProminentColor, rgb } from '../../util/Colors';
+import { TokenData } from '../../data/TokenData';
+import { getProminentColor, rgba } from '../../util/Colors';
 import { formatTokenAmountCompact } from '../../util/Numbers';
+import { TokenBalance } from '../../pages/LendPage';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -58,13 +59,18 @@ type PieChartSlice = {
 };
 
 type LendPieChartSlice = PieChartSlice & {
-  tokenBalanceUSD: TokenBalanceUSD;
+  tokenBalance: TokenBalance;
 };
 
 type PieChartSlicePath = {
   data: string;
   color: string;
   percent: number;
+};
+
+type TokenColor = {
+  color: string;
+  token: TokenData;
 };
 
 function getCoordinatesForPercent(percent: number) {
@@ -88,18 +94,13 @@ const ExpandingPath = styled.path`
   }
 `;
 
-type TokenColor = {
-  color: string;
-  token: TokenData;
-};
-
 export type LendPieChartWidgetProps = {
-  tokenBalancesUSD: TokenBalanceUSD[];
+  tokenBalances: TokenBalance[];
   totalBalanceUSD: number;
 };
 
 export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
-  const { tokenBalancesUSD, totalBalanceUSD } = props;
+  const { tokenBalances, totalBalanceUSD } = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [tokenColors, setTokenColors] = useState<TokenColor[]>([]);
   const [slices, setSlices] = useState<LendPieChartSlice[]>([]);
@@ -112,24 +113,28 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
     setActiveIndex(-1);
   };
 
+  // Sort token balances by their corresponding token
+  const sortedTokenBalances = useMemo(() => {
+    return tokenBalances.sort((a, b) => (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address));
+  }, [tokenBalances]);
+
   useEffect(() => {
     let mounted = true;
     const calculateProminentColors = async () => {
-      const tokens = tokenBalancesUSD.map((tokenBalanceUSD) => {
-        return tokenBalanceUSD.token;
-      });
-      const tokenColorPromises = tokens.map(async (token) => {
+      const tokenColorPromises = sortedTokenBalances.map(async (tokenBalance: TokenBalance) => {
         return {
-          color: await getProminentColor(token.iconPath || ''),
-          token: token,
+          color: await getProminentColor(tokenBalance.token.iconPath || ''),
+          token: tokenBalance.token,
+          isKitty: tokenBalance.isKitty,
         };
       });
       const tokenColorData = await Promise.all(tokenColorPromises);
       if (mounted) {
         setTokenColors(
           tokenColorData.map((tokenColor) => {
+            const alpha = tokenColor.isKitty ? 0.75 : 1;
             return {
-              color: rgb(tokenColor.color),
+              color: rgba(tokenColor.color, alpha),
               token: tokenColor.token,
             };
           })
@@ -140,23 +145,23 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
     return () => {
       mounted = false;
     };
-  }, [tokenBalancesUSD, totalBalanceUSD]);
+  }, [sortedTokenBalances, totalBalanceUSD]);
 
   useEffect(() => {
-    if (tokenBalancesUSD.length === 0 || totalBalanceUSD === 0) {
+    if (sortedTokenBalances.length === 0 || totalBalanceUSD === 0) {
       return;
     }
-    const sliceData = tokenBalancesUSD.map((tokenBalanceUSD, index) => {
-      const tokenColor = tokenColors.find((tc) => tc.token.address === tokenBalanceUSD.token.address)?.color;
+    const sliceData = sortedTokenBalances.map((tokenBalance, index) => {
+      const tokenColor = tokenColors.find((tc) => tc.token.address === tokenBalance.token.address)?.color;
       return {
         index: index,
-        percent: tokenBalanceUSD.balanceUSD / totalBalanceUSD,
+        percent: tokenBalance.balanceUSD / totalBalanceUSD,
         color: tokenColor || 'transparent',
-        tokenBalanceUSD: tokenBalanceUSD,
+        tokenBalance: tokenBalance,
       };
     });
     setSlices(sliceData);
-  }, [tokenBalancesUSD, tokenColors, totalBalanceUSD]);
+  }, [sortedTokenBalances, tokenColors, totalBalanceUSD]);
 
   let cumulativePercent = 0;
   const paths: PieChartSlicePath[] = slices.map((slice) => {
@@ -208,8 +213,8 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
             {activeSlice && (
               <div className='flex flex-col justify-center items-center gap-1'>
                 <Text size='M' weight='bold' color={activeSlice.color}>
-                  {formatTokenAmountCompact(activeSlice.tokenBalanceUSD.balance)}{' '}
-                  {activeSlice.tokenBalanceUSD.token.ticker || ''}
+                  {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
+                  {activeSlice.tokenBalance.token.ticker || ''}
                 </Text>
                 <Text size='L'>{currentPercent}</Text>
               </div>
