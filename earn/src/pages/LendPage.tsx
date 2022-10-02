@@ -23,20 +23,17 @@ import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
   ${tw`flex justify-between`}
+  height: 275px;
 `;
 
 const LendHeader = styled.div`
   ${tw`flex flex-col justify-between`}
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    gap: 64px;
-  }
 `;
 
 const LowerLendHeader = styled.div`
@@ -44,7 +41,7 @@ const LowerLendHeader = styled.div`
   align-items: center;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: flex-start;
   }
 `;
