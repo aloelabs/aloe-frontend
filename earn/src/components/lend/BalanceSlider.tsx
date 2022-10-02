@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { TokenData } from '../../data/TokenData';
+import { formatTokenAmount } from '../../util/Numbers';
 
 const Wrapper = styled.div`
   width: 300px;
@@ -16,7 +17,7 @@ const Wrapper = styled.div`
     width: 40px;
     height: 100%;
     background: linear-gradient(to left, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
-    z-index: 100;
+    z-index: 10;
   }
 
   &:after {
@@ -27,7 +28,7 @@ const Wrapper = styled.div`
     width: 40px;
     height: 100%;
     background: linear-gradient(to right, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
-    z-index: 100;
+    z-index: 10;
   }
 `;
 
@@ -68,7 +69,7 @@ const TokenIcon = styled.img`
 
 export type TokenBalance = {
   token: TokenData;
-  balance: string;
+  balance: number;
 }
 
 export type BalanceSliderProps = {
@@ -103,7 +104,7 @@ export default function BalanceSlider(props: BalanceSliderProps) {
               <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
               {tokenBalance.token.name}
               {' - '}
-              {tokenBalance.balance}
+              {formatTokenAmount(tokenBalance.balance)}
               {' '}
               {tokenBalance.token.ticker}
             </SliderItem>
@@ -115,7 +116,7 @@ export default function BalanceSlider(props: BalanceSliderProps) {
               <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
               {tokenBalance.token.name}
               {' - '}
-              {tokenBalance.balance}
+              {formatTokenAmount(tokenBalance.balance)}
               {' '}
               {tokenBalance.token.ticker}
             </SliderItem>

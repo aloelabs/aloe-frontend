@@ -23,7 +23,7 @@ import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -36,6 +36,16 @@ const LendHeader = styled.div`
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     gap: 64px;
+  }
+`;
+
+const LowerLendHeader = styled.div`
+  display: flex;
+  align-items: center;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    flex-direction: column;
+    align-items: flex-start;
   }
 `;
 
@@ -57,6 +67,7 @@ export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
@@ -107,6 +118,7 @@ export default function LendPage() {
       const results = await getAvailableLendingPairs(provider, address || '');
       if (mounted) {
         setLendingPairs(results);
+        setIsLoading(false);
       }
     }
     fetch();
@@ -121,19 +133,19 @@ export default function LendPage() {
       return [
         {
           token: pair.token0,
-          balance: pair.token0Balance.toString(),
+          balance: pair.token0Balance,
         },
         {
           token: pair.token1,
-          balance: pair.token1Balance.toString(),
+          balance: pair.token1Balance,
         },
         {
           token: pair.kitty0,
-          balance: pair.kitty0Balance.toString(),
+          balance: pair.kitty0Balance,
         },
         {
           token: pair.kitty1,
-          balance: pair.kitty1Balance.toString(),
+          balance: pair.kitty1Balance,
         },
       ];
     });
@@ -152,16 +164,15 @@ export default function LendPage() {
         return tokenQuote.token.address === tokenAddress;
       });
       const correspondingPrice = correspondingQuote?.price || 0;
-      const numericBalance = parseFloat(tokenBalance.balance);
       const existingEntry = tokenBalancesUSDDict[tokenAddress];
       if (existingEntry) {
-        tokenBalancesUSDDict[tokenAddress].balance += numericBalance;
-        tokenBalancesUSDDict[tokenAddress].balanceUSD += numericBalance * correspondingPrice;
+        tokenBalancesUSDDict[tokenAddress].balance += tokenBalance.balance;
+        tokenBalancesUSDDict[tokenAddress].balanceUSD += tokenBalance.balance * correspondingPrice;
       } else {
         tokenBalancesUSDDict[tokenAddress] = {
           token: GetTokenData(tokenAddress),
-          balance: numericBalance,
-          balanceUSD: numericBalance * correspondingPrice,
+          balance: tokenBalance.balance,
+          balanceUSD: tokenBalance.balance * correspondingPrice,
         };
       }
     });
@@ -189,7 +200,7 @@ export default function LendPage() {
               <p>and is growing at</p>
               <p>{roundPercentage(apy)}% APY.</p>
             </Text>
-            <div className='flex items-center'>
+            <LowerLendHeader>
               <MultiDropdownButton
                 options={filterOptions}
                 activeOptions={selectedOptions}
@@ -226,7 +237,7 @@ export default function LendPage() {
                 flipDirection={true}
               />
               <BalanceSlider tokenBalances={tokenBalances} />
-            </div>
+            </LowerLendHeader>
           </LendHeader>
           {isGTMediumScreen && (
             <LendPieChartWidget tokenBalancesUSD={tokenBalancesUSD} totalBalanceUSD={totalBalanceUSD} />
@@ -246,10 +257,10 @@ export default function LendPage() {
             ))}
           </LendCards>
           <Pagination
-            totalItems={/*TODO*/ 10}
+            totalItems={lendingPairs.length}
             currentPage={currentPage}
             itemsPerPage={itemsPerPage}
-            loading={/*TODO*/ false}
+            loading={isLoading}
             onPageChange={(page: number) => {
               setCurrentPage(page);
             }}
