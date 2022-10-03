@@ -68,8 +68,8 @@ export default function LendPairCard(props: LendingPair) {
     kitty1,
     kitty0Balance,
     kitty1Balance,
-    kitty0APY: token0APY,
-    kitty1APY: token1APY,
+    kitty0APY,
+    kitty1APY,
     kitty0Inventory,
     kitty1Inventory,
     kitty0Utilization,
@@ -152,7 +152,7 @@ export default function LendPairCard(props: LendingPair) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token0APY)}% APY
+                  {roundPercentage(kitty0APY)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
@@ -177,7 +177,7 @@ export default function LendPairCard(props: LendingPair) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token1APY)}% APY
+                  {roundPercentage(kitty1APY)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
