@@ -24,6 +24,7 @@ import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
 import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -81,6 +82,14 @@ export default function LendPage() {
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffectOnce(() => {
+    const shouldShowWelcomeModal = localStorage.getItem('acknowledgedWelcomeModalLend') !== 'true';
+    if (shouldShowWelcomeModal) {
+      setShowWelcomeModal(true);
+    }
+  });
 
   // MARK: wagmi hooks
   const provider = useProvider(/*{ chainId: 5 }*/);
@@ -292,6 +301,13 @@ export default function LendPage() {
           />
         </div>
       </div>
+      <WelcomeModal
+        open={showWelcomeModal}
+        setOpen={setShowWelcomeModal}
+        onConfirm={() => {
+          localStorage.setItem('acknowledgedWelcomeModal', 'true');
+        }}
+      />
     </AppPage>
   );
 }
