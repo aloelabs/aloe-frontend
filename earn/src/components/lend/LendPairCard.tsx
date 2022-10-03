@@ -60,21 +60,17 @@ function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => voi
   );
 }
 
-export default function LendPairCard(props: LendingPair) {
+export default function LendPairCard(props: LendingPair & {hasDeposited0: boolean, hasDeposited1: boolean}) {
   const {
     token0,
     token1,
     kitty0,
     kitty1,
-    kitty0Balance,
-    kitty1Balance,
-    token0APY,
-    token1APY,
-    kitty0Inventory,
-    kitty1Inventory,
-    kitty0Utilization,
-    kitty1Utilization,
+    kitty0Info,
+    kitty1Info,
     uniswapFeeTier,
+    hasDeposited0,
+    hasDeposited1,
   } = props;
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
     useState<boolean>(false);
@@ -152,18 +148,18 @@ export default function LendPairCard(props: LendingPair) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token0APY)}% APY
+                  {roundPercentage(kitty0Info.apy)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
               token={token0}
-              totalSupply={kitty0Inventory}
-              utilization={kitty0Utilization}
+              totalSupply={kitty0Info.inventory}
+              utilization={kitty0Info.utilization}
             />
             {isCardHovered &&
               (<EditPositionButton
-                Icon={kitty0Balance > 0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
+                Icon={hasDeposited0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
@@ -177,19 +173,19 @@ export default function LendPairCard(props: LendingPair) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token1APY)}% APY
+                  {roundPercentage(kitty1Info.apy)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
               token={token1}
-              totalSupply={kitty1Inventory}
-              utilization={kitty1Utilization}
+              totalSupply={kitty1Info.inventory}
+              utilization={kitty1Info.utilization}
             />
             {isCardHovered &&
               (
                 <EditPositionButton
-                  Icon={kitty1Balance > 0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
+                  Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                   onClick={() => {
                     setIsEditToken1PositionModalOpen(true);
                   }}
