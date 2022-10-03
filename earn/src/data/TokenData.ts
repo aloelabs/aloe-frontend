@@ -76,7 +76,7 @@ const TokenDataMap = new Map<string, TokenData>([
       decimals: 18,
     },
   ],
-  // WETH+ (Goerli)
+  // WETH+ (Goerli) - USDC
   [
     '0xea1e4f047caaa24cf855ceeeda77cd353af81aec',
     {
@@ -86,6 +86,42 @@ const TokenDataMap = new Map<string, TokenData>([
       iconPath: WethLogo,
       decimals: 18,
       referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
+    },
+  ],
+  // WETH+ (Goerli) - WBTC
+  [
+    '0x8fd637b40a6ba572d1dc48fe853d9d06e6ab1ec6',
+    {
+      address: '0x8fd637b40a6ba572d1dc48fe853d9d06e6ab1ec6',
+      name: 'Aloe II Wrapped Ether',
+      ticker: 'WETH+',
+      iconPath: WethLogo,
+      decimals: 18,
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
+    },
+  ],
+  // WBTC (Goerli)
+  [
+    '0x886055958cdf2635ff47a2071264a3413d26f959',
+    {
+      address: '0x886055958cdf2635ff47a2071264a3413d26f959',
+      name: 'Wrapped Bitcoin',
+      ticker: 'WBTC',
+      iconPath: WbtcLogo,
+      decimals: 8,
+      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',// Mainnet WBTC
+    },
+  ],
+  // WBTC+ (Goerli)
+  [
+    '0x6950d4431fc13b465f9c93532823614fc8586598',
+    {
+      address: '0x6950d4431fc13b465f9c93532823614fc8586598',
+      name: 'Wrapped Bitcoin',
+      ticker: 'WBTC+',
+      iconPath: WbtcLogo,
+      decimals: 18,
+      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',// Mainnet WBTC
     },
   ],
   // WBTC
