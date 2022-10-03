@@ -30,6 +30,9 @@ import { ethers } from 'ethers';
 import Big from 'big.js';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
+const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
+const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
+
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -70,6 +73,7 @@ export type TokenBalance = {
   balanceUSD: number;
   isKitty: boolean;
   apy: number;
+  pairName: string;
 };
 
 const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
@@ -117,7 +121,7 @@ export default function LendPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal = localStorage.getItem('acknowledgedWelcomeModalLend') !== 'true';
+    const shouldShowWelcomeModal = localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
@@ -191,11 +195,12 @@ export default function LendPage() {
     if (tokenQuotes.length === 0) {
       return [];
     }
-    return lendingPairs.flatMap((pair, i) => {
+    let combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
       const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
+      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
       return [
         {
           token: pair.token0,
@@ -203,6 +208,7 @@ export default function LendPage() {
           balanceUSD: (lendingPairBalances?.[i]?.token0 || 0) * token0Price,
           apy: 0,
           isKitty: false,
+          pairName,
         },
         {
           token: pair.token1,
@@ -210,6 +216,7 @@ export default function LendPage() {
           balanceUSD: (lendingPairBalances?.[i]?.token1 || 0) * token1Price,
           apy: 0,
           isKitty: false,
+          pairName,
         },
         {
           token: pair.kitty0,
@@ -217,6 +224,7 @@ export default function LendPage() {
           balanceUSD: (lendingPairBalances?.[i]?.kitty0 || 0) * token0Price,
           apy: pair.kitty0Info.apy,
           isKitty: true,
+          pairName,
         },
         {
           token: pair.kitty1,
@@ -224,9 +232,19 @@ export default function LendPage() {
           balanceUSD: (lendingPairBalances?.[i]?.kitty1 || 0) * token1Price,
           apy: pair.kitty1Info.apy,
           isKitty: true,
+          pairName,
         },
       ];
     });
+    let distinct: TokenBalance[] = [];
+    // We don't want to show duplicate tokens
+    combined.forEach((balance) => {
+      const existing = distinct.find((d) => d.token.address === balance.token.address);
+      if (!existing) {
+        distinct.push(balance);
+      }
+    });
+    return distinct;
   }, [lendingPairBalances, lendingPairs, tokenQuotes]);
 
   const kittyBalances: TokenBalance[] = useMemo(() => {
@@ -234,7 +252,7 @@ export default function LendPage() {
   }, [combinedBalances]);
 
   const tokenBalances: TokenBalance[] = useMemo(() => {
-    return combinedBalances.filter((balance) => !balance.isKitty);
+    return Array.from(new Set(combinedBalances.filter((balance) => !balance.isKitty)).values());
   }, [combinedBalances]);
 
   // Calculate total USD value of all kitty balances
@@ -352,7 +370,7 @@ export default function LendPage() {
         open={showWelcomeModal}
         setOpen={setShowWelcomeModal}
         onConfirm={() => {
-          localStorage.setItem('acknowledgedWelcomeModal', 'true');
+          localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
         }}
       />
     </AppPage>
