@@ -24,6 +24,10 @@ import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
 import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import ERC20ABI from '../assets/abis/ERC20.json';
+import KittyABI from '../assets/abis/Kitty.json';
+import { ethers } from 'ethers';
+import Big from 'big.js';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -73,10 +77,36 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   } as MultiDropdownOption;
 });
 
+async function getLendingPairBalances(lendingPair: LendingPair, userAddress: string, provider: ethers.providers.Provider) {
+  const {token0, token1, kitty0, kitty1} = lendingPair;
+
+  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
+  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
+  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
+  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
+  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
+    token0Contract.balanceOf(userAddress),
+    token1Contract.balanceOf(userAddress),
+    kitty0Contract.balanceOfUnderlying(userAddress),
+    kitty1Contract.balanceOfUnderlying(userAddress),
+  ]);
+  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  return {
+    token0: token0Balance,
+    token1: token1Balance,
+    kitty0: kitty0Balance,
+    kitty1: kitty1Balance,
+  };
+}
+
 export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
+  const [lendingPairBalances, setLendingPairBalances] = useState<{token0: number, token1: number, kitty0: number, kitty1: number}[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -135,11 +165,27 @@ export default function LendPage() {
     };
   }, [provider, connector, address]);
 
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      if (!address) return;
+      const results = await Promise.all(lendingPairs.map(p => getLendingPairBalances(p, address, provider)));
+      if (mounted) {
+        setLendingPairBalances(results);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    }
+  }, [provider, address, lendingPairs]);
+
+
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
       return [];
     }
-    return lendingPairs.flatMap((pair) => {
+    return lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
       const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
       const token0Price = token0Quote?.price || 0;
@@ -147,30 +193,30 @@ export default function LendPage() {
       return [
         {
           token: pair.token0,
-          balance: pair.token0Balance,
-          balanceUSD: pair.token0Balance * token0Price,
+          balance: lendingPairBalances?.[i]?.token0 || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0 || 0) * token0Price,
           apy: 0,
           isKitty: false,
         },
         {
           token: pair.token1,
-          balance: pair.token1Balance,
-          balanceUSD: pair.token1Balance * token1Price,
+          balance: lendingPairBalances?.[i]?.token1 || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1 || 0) * token1Price,
           apy: 0,
           isKitty: false,
         },
         {
           token: pair.kitty0,
-          balance: pair.kitty0Balance,
-          balanceUSD: pair.kitty0Balance * token0Price,
-          apy: pair.kitty0APY,
+          balance: lendingPairBalances?.[i]?.kitty0 || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0 || 0) * token0Price,
+          apy: pair.kitty0Info.apy,
           isKitty: true,
         },
         {
           token: pair.kitty1,
-          balance: pair.kitty1Balance,
-          balanceUSD: pair.kitty1Balance * token1Price,
-          apy: pair.kitty1APY,
+          balance: lendingPairBalances?.[i]?.kitty1 || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1 || 0) * token1Price,
+          apy: pair.kitty1Info.apy,
           isKitty: true,
         },
       ];
@@ -274,8 +320,12 @@ export default function LendPage() {
             <Tooltip buttonSize='M' buttonText='' content='test' position='top-center' filled={true} />
           </div>
           <LendCards>
-            {lendingPairs.map((lendPair) => (
-              <LendPairCard key={lendPair.token0.address} {...lendPair} />
+            {lendingPairs.map((lendPair, i) => (
+              <LendPairCard key={lendPair.token0.address} {...{
+                ...lendPair,
+                hasDeposited0: (lendingPairBalances?.[i]?.kitty0 || 0) > 0,
+                hasDeposited1: (lendingPairBalances?.[i]?.kitty1 || 0) > 0
+              }} />
             ))}
           </LendCards>
           <Pagination
