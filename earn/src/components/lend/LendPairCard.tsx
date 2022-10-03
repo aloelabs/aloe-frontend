@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { FeeTier } from '../../data/FeeTier';
-import { TokenData } from '../../data/TokenData';
 import {
   getBrighterColor,
   getProminentColor,
@@ -10,7 +8,7 @@ import {
 } from '../../util/Colors';
 import FeeTierContainer from '../common/FeeTierContainer';
 import TokenPairIcons from '../common/TokenPairIcons';
-import { Display, Text } from '../common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from '../../util/Numbers';
 import LendTokenInfo from './LendTokenInfo';
 import {
@@ -24,9 +22,8 @@ import {
 import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
-import AddPositionModal from './modal/AddPositionModal';
 import EditPositionModal from './modal/EditPositionModal';
-// import ConfirmModal, { ConfirmationType } from './modal/ConfirmModalState';
+import { LendingPair } from '../../data/LendingPair';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
@@ -55,52 +52,26 @@ const CardActionButton = styled.button`
   }
 `;
 
-function AddPositionButton(props: { onClick?: () => void }) {
+function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => void, disabled?: boolean }) {
   return (
-    <CardActionButton onClick={props?.onClick}>
-      <PlusIcon width={32} height={32} />
+    <CardActionButton onClick={props?.onClick} disabled={props.disabled}>
+      {props.Icon}
     </CardActionButton>
   );
 }
 
-function EditPositionButton(props: { onClick?: () => void }) {
-  return (
-    <CardActionButton onClick={props?.onClick}>
-      <EditIcon width={32} height={32} />
-    </CardActionButton>
-  );
-}
-
-export type LendPairCardProps = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
-  token0APY: number;
-  token1APY: number;
-  token0TotalSupply: number;
-  token1TotalSupply: number;
-  token0Utilization: number;
-  token1Utilization: number;
-  uniswapFeeTier: FeeTier;
-};
-
-export default function LendPairCard(props: LendPairCardProps) {
+export default function LendPairCard(props: LendingPair & {hasDeposited0: boolean, hasDeposited1: boolean}) {
   const {
     token0,
     token1,
-    token0APY,
-    token1APY,
-    token0TotalSupply,
-    token1TotalSupply,
-    token0Utilization,
-    token1Utilization,
+    kitty0,
+    kitty1,
+    kitty0Info,
+    kitty1Info,
     uniswapFeeTier,
+    hasDeposited0,
+    hasDeposited1,
   } = props;
-  const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
-    useState<boolean>(false);
-  const [isAddToken1PositionModalOpen, setIsAddToken1PositionModalOpen] =
-    useState<boolean>(false);
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
     useState<boolean>(false);
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] =
@@ -136,10 +107,6 @@ export default function LendPairCard(props: LendPairCardProps) {
     getBrighterColor(token0Color, token1Color),
     0.16
   );
-
-  // Hard-coded for now...
-  const token0Position = 0;
-  const token1Position = 1000;
 
   return (
     <div>
@@ -181,29 +148,22 @@ export default function LendPairCard(props: LendPairCardProps) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token0APY)}% APY
+                  {roundPercentage(kitty0Info.apy)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
               token={token0}
-              totalSupply={token0TotalSupply}
-              utilization={token0Utilization}
+              totalSupply={kitty0Info.inventory}
+              utilization={kitty0Info.utilization}
             />
             {isCardHovered &&
-              (token0Position > 0 ? (
-                <EditPositionButton
-                  onClick={() => {
-                    setIsEditToken0PositionModalOpen(true);
-                  }}
-                />
-              ) : (
-                <AddPositionButton
-                  onClick={() => {
-                    setIsAddToken0PositionModalOpen(true);
-                  }}
-                />
-              ))}
+              (<EditPositionButton
+                Icon={hasDeposited0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
+                onClick={() => {
+                  setIsEditToken0PositionModalOpen(true);
+                }}
+              />)}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -213,60 +173,30 @@ export default function LendPairCard(props: LendPairCardProps) {
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
-                  {roundPercentage(token1APY)}% APY
+                  {roundPercentage(kitty1Info.apy)}% APY
                 </Text>
               </TokenAPYWrapper>
             </div>
             <LendTokenInfo
               token={token1}
-              totalSupply={token1TotalSupply}
-              utilization={token1Utilization}
+              totalSupply={kitty1Info.inventory}
+              utilization={kitty1Info.utilization}
             />
             {isCardHovered &&
-              (token1Position > 0 ? (
+              (
                 <EditPositionButton
+                  Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                   onClick={() => {
                     setIsEditToken1PositionModalOpen(true);
                   }}
                 />
-              ) : (
-                <AddPositionButton
-                  onClick={() => {
-                    setIsAddToken1PositionModalOpen(true);
-                  }}
-                />
-              ))}
+              )}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>
-      <AddPositionModal
-        token={token0}
-        open={isAddToken0PositionModalOpen}
-        setOpen={(open: boolean) => {
-          setIsAddToken0PositionModalOpen(open);
-        }}
-        onConfirm={() => {
-          setIsAddToken0PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsAddToken0PositionModalOpen(false);
-        }}
-      />
-      <AddPositionModal
-        token={token1}
-        open={isAddToken1PositionModalOpen}
-        setOpen={(open: boolean) => {
-          setIsAddToken1PositionModalOpen(open);
-        }}
-        onConfirm={() => {
-          setIsAddToken1PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsAddToken1PositionModalOpen(false);
-        }}
-      />
       <EditPositionModal
         token={token0}
+        kitty={kitty0}
         open={isEditToken0PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken0PositionModalOpen(open);
@@ -280,6 +210,7 @@ export default function LendPairCard(props: LendPairCardProps) {
       />
       <EditPositionModal
         token={token1}
+        kitty={kitty1}
         open={isEditToken1PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);

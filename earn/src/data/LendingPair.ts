@@ -2,27 +2,33 @@ import { ethers } from 'ethers';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
-import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import Big from 'big.js';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+
+export interface KittyInfo {
+  // The current APY being earned by Kitty token holders
+  apy: number;
+  // The amount of underlying owed to all Kitty token holders (both the amount currently sitting in contract, and the amount that has been lent out)
+  inventory: number;
+  // The total number of outstanding Kitty tokens
+  totalSupply: number;
+  // What percentage of inventory that has been lent out to borrowers
+  utilization: number;
+}
 
 export type LendingPair = {
   token0: TokenData;
   token1: TokenData;
   kitty0: TokenData;
   kitty1: TokenData;
-  token0APY: number;
-  token1APY: number;
-  token0TotalSupply: number;
-  token1TotalSupply: number;
-  token0Utilization: number;
-  token1Utilization: number;
+  kitty0Info: KittyInfo;
+  kitty1Info: KittyInfo;
   uniswapFeeTier: FeeTier;
 };
 
-export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider): Promise<LendingPair[]> {
+export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider, userAddress: string): Promise<LendingPair[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
@@ -35,8 +41,8 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
   const addresses: {pool: string, kitty0: string, kitty1: string}[] = etherscanResult.data.result.map((item: any) => {
     return {
       pool: item.topics[1].slice(26),
-      kitty0: item.topics[2].slice(26),
-      kitty1: item.topics[3].slice(26)
+      kitty0: `0x${item.topics[2].slice(26)}`,
+      kitty1: `0x${item.topics[3].slice(26)}`,
     };
   });
 
@@ -60,18 +66,24 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     const interestRate1 = new Big(result1.interestRate.toString());
     const APY0 = (interestRate0.div(10 ** 18).plus(1.0).toNumber() ** (365 * 24 * 60 * 60)) - 1.0;
     const APY1 = (interestRate1.div(10 ** 18).plus(1.0).toNumber() ** (365 * 24 * 60 * 60)) - 1.0;
-
+    // inventory != totalSupply due to interest rates (inflation)
     return {
       token0,
       token1,
       kitty0,
       kitty1,
-      token0APY: APY0,
-      token1APY: APY1,
-      token0TotalSupply: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
-      token1TotalSupply: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
-      token0Utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber(),
-      token1Utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber(),
+      kitty0Info: {
+        apy: APY0 * 100, // percentage
+        inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
+        totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
+        utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+      },
+      kitty1Info: {
+        apy: APY1 * 100, // percentage
+        inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
+        totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
+        utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+      },
       uniswapFeeTier: NumericFeeTierToEnum(result2),
     };
   }));
