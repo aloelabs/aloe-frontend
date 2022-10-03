@@ -213,7 +213,7 @@ export default function LendPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-6'>
+      <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
         <LendHeaderContainer>
           <LendHeader>
             <Text size='XXL' weight='bold'>
@@ -271,7 +271,7 @@ export default function LendPage() {
             <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
               Lending Pairs
             </Text>
-            <Tooltip buttonSize='M' buttonText='' content='test' position='top-center' filled={true} />
+            <Tooltip buttonSize='M' buttonText='' content='With lending pairs, you can pick which assets borrowers can post as collateral. For example, when you deposit to the USDC/WETH lending pair, borrowers can only use your funds if they post USDC or WETH as collateral. Never deposit to a pair that includes unknown/untrustworthy token(s).' position='top-center' filled={true} />
           </div>
           <LendCards>
             {lendingPairs.map((lendPair) => (
