@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { TokenData } from '../../data/TokenData';
+import { TokenBalance } from '../../pages/LendPage';
 import { formatTokenAmount } from '../../util/Numbers';
 
 const Wrapper = styled.div`
@@ -66,11 +66,6 @@ const TokenIcon = styled.img`
   background-color: #fff;
   border-radius: 50%;
 `;
-
-export type TokenBalance = {
-  token: TokenData;
-  balance: number;
-}
 
 export type BalanceSliderProps = {
   tokenBalances: TokenBalance[];

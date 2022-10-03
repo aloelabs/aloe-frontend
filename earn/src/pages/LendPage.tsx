@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
-import BalanceSlider, { TokenBalance } from '../components/lend/BalanceSlider';
-import { GetTokenData, getTokens, TokenQuote, TokenBalanceUSD } from '../data/TokenData';
+import BalanceSlider from '../components/lend/BalanceSlider';
+import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
 import { Text } from 'shared/lib/components/common/Typography';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
@@ -52,6 +52,19 @@ const LendCards = styled.div`
   margin-top: 24px;
 `;
 
+export type TokenQuote = {
+  token: TokenData;
+  price: number;
+};
+
+export type TokenBalance = {
+  token: TokenData;
+  balance: number;
+  balanceUSD: number;
+  isKitty: boolean;
+  apy: number;
+};
+
 const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   return {
     value: token.address,
@@ -81,8 +94,6 @@ export default function LendPage() {
   for (let i = 0; i < 100; i++) {
     chartData.push(i);
   }
-
-  const apy = 5.54;
 
   useEffectOnce(() => {
     let mounted = true;
@@ -124,65 +135,79 @@ export default function LendPage() {
     };
   }, [provider, connector, address]);
 
-  // Flatten pairs into a single array of token balances
-  const tokenBalances: TokenBalance[] = useMemo(() => {
+  const combinedBalances: TokenBalance[] = useMemo(() => {
+    if (tokenQuotes.length === 0) {
+      return [];
+    }
     return lendingPairs.flatMap((pair) => {
+      const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
       return [
         {
           token: pair.token0,
           balance: pair.token0Balance,
+          balanceUSD: pair.token0Balance * token0Price,
+          apy: 0,
+          isKitty: false,
         },
         {
           token: pair.token1,
           balance: pair.token1Balance,
+          balanceUSD: pair.token1Balance * token1Price,
+          apy: 0,
+          isKitty: false,
         },
         {
           token: pair.kitty0,
           balance: pair.kitty0Balance,
+          balanceUSD: pair.kitty0Balance * token0Price,
+          apy: pair.kitty0APY,
+          isKitty: true,
         },
         {
           token: pair.kitty1,
           balance: pair.kitty1Balance,
+          balanceUSD: pair.kitty1Balance * token1Price,
+          apy: pair.kitty1APY,
+          isKitty: true,
         },
       ];
     });
-  }, [lendingPairs]);
+  }, [lendingPairs, tokenQuotes]);
 
-  // Combine token balances with token quotes (token, balance, balanceUSD)
-  const tokenBalancesUSD = useMemo(() => {
-    if (tokenBalances.length === 0 || tokenQuotes.length === 0) {
-      return [];
-    }
-    // Coalesce corresponding token/token+ quote data (same mainnet address)
-    const tokenBalancesUSDDict: { [key: string]: TokenBalanceUSD } = {};
-    tokenBalances.forEach((tokenBalance: TokenBalance) => {
-      const tokenAddress = tokenBalance.token?.referenceAddress ?? tokenBalance.token.address;
-      const correspondingQuote = tokenQuotes.find((tokenQuote: TokenQuote) => {
-        return tokenQuote.token.address === tokenAddress;
-      });
-      const correspondingPrice = correspondingQuote?.price || 0;
-      const existingEntry = tokenBalancesUSDDict[tokenAddress];
-      if (existingEntry) {
-        tokenBalancesUSDDict[tokenAddress].balance += tokenBalance.balance;
-        tokenBalancesUSDDict[tokenAddress].balanceUSD += tokenBalance.balance * correspondingPrice;
-      } else {
-        tokenBalancesUSDDict[tokenAddress] = {
-          token: GetTokenData(tokenAddress),
-          balance: tokenBalance.balance,
-          balanceUSD: tokenBalance.balance * correspondingPrice,
-        };
-      }
-    });
-    // Convert from dict to array
-    return Object.values(tokenBalancesUSDDict);
-  }, [tokenBalances, tokenQuotes]);
+  const kittyBalances: TokenBalance[] = useMemo(() => {
+    return combinedBalances.filter((balance) => balance.isKitty);
+  }, [combinedBalances]);
 
-  // Calculate total USD value of all tokens
-  const totalBalanceUSD = useMemo(() => {
-    return tokenBalancesUSD.reduce((acc, tokenBalanceUSD) => {
-      return acc + tokenBalanceUSD.balanceUSD;
+  const tokenBalances: TokenBalance[] = useMemo(() => {
+    return combinedBalances.filter((balance) => !balance.isKitty);
+  }, [combinedBalances]);
+
+  // Calculate total USD value of all kitty balances
+  const totalKittyBalanceUSD = useMemo(() => {
+    return kittyBalances.reduce((acc, tokenBalance) => {
+      return acc + tokenBalance.balanceUSD;
     }, 0);
-  }, [tokenBalancesUSD]);
+  }, [kittyBalances]);
+
+  // Calculate total USD value of all token balances
+  const totalTokenBalanceUSD = useMemo(() => {
+    return tokenBalances.reduce((acc, tokenBalance) => {
+      return acc + tokenBalance.balanceUSD;
+    }, 0);
+  }, [tokenBalances]);
+
+  // Calculate the weighted average APY of all kitties
+  const apyWeightedAverage = useMemo(() => {
+    if (kittyBalances.length === 0 || totalKittyBalanceUSD === 0) {
+      return 0;
+    }
+    return kittyBalances.reduce((acc, tokenAPY) => {
+      return acc + tokenAPY.apy * tokenAPY.balanceUSD;
+    }, 0) / totalKittyBalanceUSD;
+  }, [kittyBalances, totalKittyBalanceUSD]);
 
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
 
@@ -193,9 +218,9 @@ export default function LendPage() {
           <LendHeader>
             <Text size='XXL' weight='bold'>
               <p>{ensName ? `Hi, ${ensName}.` : 'Hi!'}</p>
-              <p>Your balance is {formatUSD(totalBalanceUSD)}</p>
+              <p>Your balance is {formatUSD(totalKittyBalanceUSD)}</p>
               <p>and is growing at</p>
-              <p>{roundPercentage(apy)}% APY.</p>
+              <p>{roundPercentage(apyWeightedAverage)}% APY</p>
             </Text>
             <LowerLendHeader>
               <MultiDropdownButton
@@ -233,11 +258,11 @@ export default function LendPage() {
                 }}
                 flipDirection={true}
               />
-              <BalanceSlider tokenBalances={tokenBalances} />
+              <BalanceSlider tokenBalances={kittyBalances} />
             </LowerLendHeader>
           </LendHeader>
           {isGTMediumScreen && (
-            <LendPieChartWidget tokenBalancesUSD={tokenBalancesUSD} totalBalanceUSD={totalBalanceUSD} />
+            <LendPieChartWidget tokenBalances={[...kittyBalances, ...tokenBalances]} totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD} />
           )}
         </LendHeaderContainer>
         <Divider />

@@ -158,14 +158,3 @@ export function GetTokenData(address: string): TokenData {
       decimals: 0,
     };
 }
-
-export type TokenQuote = {
-  token: TokenData;
-  price: number;
-};
-
-export type TokenBalanceUSD = {
-  token: TokenData;
-  balance: number;
-  balanceUSD: number;
-};
