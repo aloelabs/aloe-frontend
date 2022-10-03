@@ -52,10 +52,10 @@ const CardActionButton = styled.button`
   }
 `;
 
-function EditPositionButton(props: { onClick?: () => void, disabled?: boolean }) {
+function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => void, disabled?: boolean }) {
   return (
     <CardActionButton onClick={props?.onClick} disabled={props.disabled}>
-      <EditIcon width={32} height={32} />
+      {props.Icon}
     </CardActionButton>
   );
 }
@@ -66,6 +66,8 @@ export default function LendPairCard(props: LendingPair) {
     token1,
     kitty0,
     kitty1,
+    kitty0Balance,
+    kitty1Balance,
     token0APY,
     token1APY,
     kitty0Inventory,
@@ -74,10 +76,6 @@ export default function LendPairCard(props: LendingPair) {
     kitty1Utilization,
     uniswapFeeTier,
   } = props;
-  // const [isAddToken0PositionModalOpen, setIsAddToken0PositionModalOpen] =
-  //   useState<boolean>(false);
-  // const [isAddToken1PositionModalOpen, setIsAddToken1PositionModalOpen] =
-  //   useState<boolean>(false);
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
     useState<boolean>(false);
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] =
@@ -165,6 +163,7 @@ export default function LendPairCard(props: LendingPair) {
             />
             {isCardHovered &&
               (<EditPositionButton
+                Icon={kitty0Balance > 0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
@@ -190,6 +189,7 @@ export default function LendPairCard(props: LendingPair) {
             {isCardHovered &&
               (
                 <EditPositionButton
+                  Icon={kitty1Balance > 0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                   onClick={() => {
                     setIsEditToken1PositionModalOpen(true);
                   }}
