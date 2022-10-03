@@ -122,7 +122,7 @@ export default function LendPage() {
   });
 
   // MARK: wagmi hooks
-  const provider = useProvider(/*{ chainId: 5 }*/);
+  const provider = useProvider({ chainId: chain.goerli.id });
   const { address, connector } = useAccount();
   const { data: ensName } = useEnsName({
     address: address,
