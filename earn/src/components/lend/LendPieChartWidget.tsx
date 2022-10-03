@@ -60,6 +60,7 @@ type PieChartSlice = {
 
 type LendPieChartSlice = PieChartSlice & {
   tokenBalance: TokenBalance;
+  pairName: string;
 };
 
 type PieChartSlicePath = {
@@ -158,6 +159,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
         percent: tokenBalance.balanceUSD / totalBalanceUSD,
         color: tokenColor || 'transparent',
         tokenBalance: tokenBalance,
+        pairName: tokenBalance.pairName,
       };
     });
     setSlices(sliceData);
@@ -216,6 +218,9 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                   {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
                   {activeSlice.tokenBalance.token.ticker || ''}
                 </Text>
+                {activeSlice.tokenBalance.isKitty && (
+                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>{activeSlice.pairName}</Text>
+                )}
                 <Text size='L'>{currentPercent}</Text>
               </div>
             )}
