@@ -120,11 +120,6 @@ export default function LendPage() {
     chainId: chain.mainnet.id,
   });
 
-  const chartData = [];
-  for (let i = 0; i < 100; i++) {
-    chartData.push(i);
-  }
-
   useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
