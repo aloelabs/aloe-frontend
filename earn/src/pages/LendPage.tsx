@@ -221,7 +221,7 @@ export default function LendPage() {
         },
       ];
     });
-  }, [lendingPairs, tokenQuotes]);
+  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
 
   const kittyBalances: TokenBalance[] = useMemo(() => {
     return combinedBalances.filter((balance) => balance.isKitty);
