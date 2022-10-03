@@ -63,20 +63,27 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     const kitty0 = GetTokenData(market.kitty0);
     const kitty1 = GetTokenData(market.kitty1);
 
-    const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-    const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-    const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-    const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-    const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
-      token0Contract.balanceOf(userAddress),
-      token1Contract.balanceOf(userAddress),
-      kitty0Contract.balanceOfUnderlying(userAddress),
-      kitty1Contract.balanceOfUnderlying(userAddress),
-    ]);
-    const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-    const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-    const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-    const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+    let token0Balance = 0;
+    let token1Balance = 0;
+    let kitty0Balance = 0;
+    let kitty1Balance = 0;
+
+    if (userAddress !== '') {
+      const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
+      const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
+      const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
+      const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
+      const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
+        token0Contract.balanceOf(userAddress),
+        token1Contract.balanceOf(userAddress),
+        kitty0Contract.balanceOfUnderlying(userAddress),
+        kitty1Contract.balanceOfUnderlying(userAddress),
+      ]);
+      token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+      token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+      kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+      kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+    }
 
     const interestRate0 = new Big(result0.interestRate.toString());
     const interestRate1 = new Big(result1.interestRate.toString());
