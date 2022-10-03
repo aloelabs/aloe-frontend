@@ -33,12 +33,14 @@ import WelcomeModal from '../components/lend/modal/WelcomeModal';
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
-  ${tw`flex justify-between`}
-  height: 275px;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  height: 300px;
 `;
 
 const LendHeader = styled.div`
   ${tw`flex flex-col justify-between`}
+  overflow: hidden;
 `;
 
 const LowerLendHeader = styled.div`
@@ -268,9 +270,9 @@ export default function LendPage() {
           <LendHeader>
             <Text size='XXL' weight='bold'>
               <p>{ensName ? `Hi, ${ensName}.` : 'Hi!'}</p>
-              <p>Your balance is {formatUSD(totalKittyBalanceUSD)}</p>
-              <p>and is growing at</p>
-              <p>{roundPercentage(apyWeightedAverage)}% APY</p>
+              <p>Your {formatUSD(totalKittyBalanceUSD)} investment</p>
+              <p>is growing at {roundPercentage(apyWeightedAverage)}% APY.</p>
+              <p></p>
             </Text>
             <LowerLendHeader>
               <MultiDropdownButton
@@ -308,7 +310,7 @@ export default function LendPage() {
                 }}
                 flipDirection={true}
               />
-              <BalanceSlider tokenBalances={kittyBalances} />
+              <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
           </LendHeader>
           {isGTMediumScreen && (
