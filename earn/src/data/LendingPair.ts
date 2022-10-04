@@ -4,6 +4,8 @@ import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import ERC20ABI from '../assets/abis/ERC20.json';
+import KittyABI from '../assets/abis/Kitty.json';
 import Big from 'big.js';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 
@@ -26,6 +28,13 @@ export type LendingPair = {
   kitty0Info: KittyInfo;
   kitty1Info: KittyInfo;
   uniswapFeeTier: FeeTier;
+};
+
+export type LendingPairBalances = {
+  token0Balance: number;
+  token1Balance: number;
+  kitty0Balance: number;
+  kitty1Balance: number;
 };
 
 export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider, userAddress: string): Promise<LendingPair[]> {
@@ -87,4 +96,29 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
       uniswapFeeTier: NumericFeeTierToEnum(result2),
     };
   }));
+}
+
+export async function getLendingPairBalances(lendingPair: LendingPair, userAddress: string, provider: ethers.providers.Provider): Promise<LendingPairBalances> {
+  const {token0, token1, kitty0, kitty1} = lendingPair;
+
+  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
+  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
+  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
+  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
+  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
+    token0Contract.balanceOf(userAddress),
+    token1Contract.balanceOf(userAddress),
+    kitty0Contract.balanceOfUnderlying(userAddress),
+    kitty1Contract.balanceOfUnderlying(userAddress),
+  ]);
+  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
+  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  return {
+    token0Balance,
+    token1Balance,
+    kitty0Balance,
+    kitty1Balance,
+  };
 }
