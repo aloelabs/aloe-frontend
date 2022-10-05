@@ -80,7 +80,10 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         <div className='w-full'>
           {address ? (
             // We have an account connected
-            <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
+            <div
+              className='flex flex-col gap-y-2 items-center justify-between
+             p-2 rounded-md border-2 border-grey-200 bg-grey-100'
+            >
               <div className='flex flex-col items-start justify-start w-full oveflow-hidden'>
                 <Text size='M' className='w-full overflow-hidden text-ellipsis' title={address}>
                   {ensName ? `${ensName} (${formattedAddr})` : address}

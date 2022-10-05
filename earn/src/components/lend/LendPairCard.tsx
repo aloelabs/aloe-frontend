@@ -13,7 +13,7 @@ import {
   CardSubTitleWrapper,
   CardTitleWrapper,
   CardWrapper,
-} from '../common/Card';
+} from 'shared/lib/components/common/Card';
 import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';

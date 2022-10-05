@@ -154,7 +154,12 @@ export default function PortfolioPage() {
         return {
           pool: pool,
           etherscanData: (await http.get(
-            `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${pairAddress}&address=${address}&tag=latest&apikey=F7XAB91MQBBZ1HSCUEI343VVP7CTASW4N1`,
+            `https://api.etherscan.io/api?module=account
+            &action=tokenbalance
+            &contractaddress=${pairAddress}
+            &address=${address}
+            &tag=latest
+            &apikey=F7XAB91MQBBZ1HSCUEI343VVP7CTASW4N1`,
             {
               transformResponse: (response) => {
                 const responseJSON = JSON.parse(response);

@@ -87,8 +87,8 @@ export default function ConfirmDepositModal(props: ConfirmDepositModalProps) {
             {maxSlippage}%
           </Text>
         </div>
-        {/*Hidden for the time being*/}
-        <div className='hidden flex justify-between items-center'>
+        {/*Hidden for the time being (was flex)*/}
+        <div className='hidden justify-between items-center'>
           <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
             Network fee
           </Text>

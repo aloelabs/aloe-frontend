@@ -242,9 +242,6 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
           subMinutes(toDate, 2).getTime() / 1000
         ).toFixed(0)}`
       );
-      // const netDepositsResponse = await axios.get(
-      //   `${API_URL}/net_deposits/0x74d92d4bd54123271c841e363915f7d8758e59e7/1/${buttonIdxToText(activeButton).toLowerCase()}/1651632134`
-      // );
       const getPool = makeRequest(
         `${API_URL}/pool_returns/0xE801c4175A0341e65dFef8F3B79e1889047AfEbb/1/${buttonIdxToText(
           activeButton

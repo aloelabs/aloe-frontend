@@ -24,7 +24,7 @@ import {
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
 import { SquareInput } from '../common/Input';
-import { SvgWrapper } from '../common/SvgWrapper';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';

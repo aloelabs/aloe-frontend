@@ -21,7 +21,8 @@ const StyledDialog = styled.div`
 const ModalWrapper = styled.div.attrs(
   (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props
 )`
-  ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left overflow-hidden transition-all sm:my-4 sm:align-middle`}
+  ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left
+   overflow-hidden transition-all sm:my-4 sm:align-middle`}
   transform: translateY(0);
   min-width: 368px; //TODO: make sure this doesn't break any modals
   max-width: 100%;
@@ -216,7 +217,8 @@ export function CloseableModal(props: CloseableModalProps) {
         </Display>
         <button
           type='button'
-          className='w-fit inline-flex justify-center rounded-full text-white focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm'
+          className='w-fit inline-flex justify-center rounded-full
+           text-white focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm'
           onClick={() => {
             props.onClose && props.onClose();
             props.setOpen(false);

@@ -147,7 +147,8 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
       const getPoolReturns = axios.get(`${API_URL}/pool_returns/${poolData.poolAddress}/1/all/${endTime}`);
       const getPrices0 = axios.get(`${API_URL}/token_returns/${poolData.token0Address}/1/all/${endTime}`);
       const getPrices1 = axios.get(`${API_URL}/token_returns/${poolData.token1Address}/1/all/${endTime}`);
-      // Get 3-month data for "Today's Returns" (we need data from exactly 24 hours ago, and 3m gives us that without as many extraneous entries as 1d)
+      // Get 3-month data for "Today's Returns"
+      // (we need data from exactly 24 hours ago, and 3m gives us that without as many extraneous entries as 1d)
       const getPoolReturns3M = axios.get(`${API_URL}/pool_returns/${poolData.poolAddress}/1/3m/${endTime}`);
       const getPrices03M = axios.get(`${API_URL}/token_returns/${poolData.token0Address}/1/3m/${endTime}`);
       const getPrices13M = axios.get(`${API_URL}/token_returns/${poolData.token1Address}/1/3m/${endTime}`);

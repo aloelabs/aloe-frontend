@@ -519,14 +519,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                       },
                     })
                     .then((txnResult) => {
-                      // In this callback, we have a txnResult. This means that the transaction has been submitted to the
-                      // blockchain and/or the user rejected it entirely. These states correspond to contract.isError and
-                      // contract.isSuccess, which we deal with elsewhere.
+                      // In this callback, we have a txnResult. This means that the transaction has been submitted
+                      // to the blockchain and/or the user rejected it entirely. These states correspond to
+                      // contract.isError and contract.isSuccess, which we deal with elsewhere.
                       setPendingTxnHash(txnResult.hash);
 
                       txnResult.wait(1).then((txnReceipt) => {
-                        // In this callback, the transaction has been included on the blockchain and at least 1 block has been
-                        // built on top of it.
+                        // In this callback, the transaction has been included on the blockchain and at least 1 block
+                        // has been built on top of it.
                         setShowPendingModal(false);
                         setPendingTxnHash(undefined);
                         if (txnReceipt.status === 1) {

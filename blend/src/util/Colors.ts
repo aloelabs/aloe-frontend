@@ -56,7 +56,8 @@ export async function getProminentColor(path: string): Promise<string> {
   // Prioritize things that are more colorful over things that are black/white.
   // If everything is black/white, prioritize white.
   const score = (hsv: number[]) => {
-    return 0.9 * hsv[1] + 0.1 * hsv[2]; // use (1 - hsv[2]) if we want to prioritize darker colors instead of lighter ones
+    // Use (1 - hsv[2]) if we want to prioritize darker colors instead of lighter ones
+    return 0.9 * hsv[1] + 0.1 * hsv[2];
   };
 
   const bestColor = colors.sort((a, b) => score(b.hsv) - score(a.hsv))[0];

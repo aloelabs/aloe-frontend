@@ -205,7 +205,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
       if (isMounted.current) {
         setActivePools(
           pools
-            .filter((pool) => IS_DEV || !isHiddenPool(pool.poolAddress)) // Hide pools that should only be shown in dev mode
+            .filter((pool) => IS_DEV || !isHiddenPool(pool.poolAddress)) // Only show hidden pools in dev mode
             .filter((pool) => {
               const { silo0Name, silo1Name, silo0Label, silo1Label, token0Label, token1Label } =
                 ResolveBlendPoolDrawData(pool);

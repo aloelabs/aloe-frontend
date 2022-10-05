@@ -10,7 +10,8 @@ import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './co
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
   apy: number;
-  // The amount of underlying owed to all Kitty token holders (both the amount currently sitting in contract, and the amount that has been lent out)
+  // The amount of underlying owed to all Kitty token holders
+  // (both the amount currently sitting in contract, and the amount that has been lent out)
   inventory: number;
   // The total number of outstanding Kitty tokens
   totalSupply: number;
