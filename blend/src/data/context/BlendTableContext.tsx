@@ -15,22 +15,18 @@ const defaultState: IBlendTableContext = {
   fetchPoolData: (address: string) => {},
 };
 
-export const BlendTableContext =
-  createContext<IBlendTableContext>(defaultState);
+export const BlendTableContext = createContext<IBlendTableContext>(defaultState);
 
 export type BlendTableContextProviderProps = {
   children?: React.ReactNode;
 };
 
 export function BlendTableProvider(props: BlendTableContextProviderProps) {
-  const [contextState, setContextState] =
-    useState<IBlendTableContext>(defaultState);
+  const [contextState, setContextState] = useState<IBlendTableContext>(defaultState);
   const [loading, setLoading] = useState<boolean>(false);
   const provider = useProvider();
 
-  const fetchBlendPoolDataCallback = React.useCallback<
-    (address: string) => void
-  >(
+  const fetchBlendPoolDataCallback = React.useCallback<(address: string) => void>(
     (address: string) => {
       fetchBlendPoolData(address, provider).then((poolData) => {
         contextState.poolDataMap.set(address, poolData);
@@ -72,9 +68,5 @@ export function BlendTableProvider(props: BlendTableContextProviderProps) {
     }
   }, [fetchBlendPoolDataCallback, loading, provider]);
 
-  return (
-    <BlendTableContext.Provider value={contextState}>
-      {props.children}
-    </BlendTableContext.Provider>
-  );
+  return <BlendTableContext.Provider value={contextState}>{props.children}</BlendTableContext.Provider>;
 }

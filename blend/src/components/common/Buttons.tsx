@@ -81,9 +81,9 @@ export const BaseButton = styled.button.attrs(
       return `padding-right: ${props.paddingRight}px;`;
     }
     if (props.empty) {
-      return `padding: ${EMPTY_PADDING[props.size]}px; width: ${
+      return `padding: ${EMPTY_PADDING[props.size]}px; width: ${ICON_SIZES[props.size]}px; height: ${
         ICON_SIZES[props.size]
-      }px; height: ${ICON_SIZES[props.size]}px; box-sizing: content-box;`;
+      }px; box-sizing: content-box;`;
     }
     if (props.fillWidth) {
       return `width: 100%;`;
@@ -112,23 +112,17 @@ export const FilledGradientButton = styled(BaseButton)`
   }};
 
   &:not(:disabled):hover {
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
     color: rgba(7, 14, 18, 1);
-    background: linear-gradient(
-      90deg,
-      rgba(155, 170, 243, 0.4) 0%,
-      rgba(123, 216, 192, 0.4) 100%
-    );
+    background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1),
-      0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -150,8 +144,7 @@ export const FilledGreyButton = styled(BaseButton)`
 
   &:not(:disabled):hover {
     position: relative;
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
 
     &:before {
       content: '';
@@ -161,8 +154,7 @@ export const FilledGreyButton = styled(BaseButton)`
       border-radius: 8px;
       padding: 1.5px;
       background: rgba(255, 255, 255, 1);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -186,8 +178,7 @@ export const FilledGreyButton = styled(BaseButton)`
       border-radius: 8px;
       padding: 2px;
       background: rgba(7, 14, 18, 1);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -218,8 +209,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -231,19 +221,14 @@ export const OutlinedGradientButton = styled(BaseButton)`
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-fill-color: transparent;
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
     background-color: rgba(7, 14, 18, 1);
     color: rgba(255, 255, 255, 0.4);
     &:before {
-      background: linear-gradient(
-        90deg,
-        rgba(155, 170, 243, 0.4) 0%,
-        rgba(123, 216, 192, 0.4) 100%
-      );
+      background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     }
   }
 
@@ -288,15 +273,13 @@ export const OutlinedWhiteButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: rgba(255, 255, 255, 1);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
 
   &:not(:disabled):hover {
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
     background-color: rgba(13, 23, 30, 1);
   }
 
@@ -339,23 +322,17 @@ export const FilledStylizedButton = styled(BaseButton)`
   }};
 
   &:not(:disabled):hover {
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
     color: rgba(7, 14, 18, 1);
-    background: linear-gradient(
-      90deg,
-      rgba(155, 170, 243, 0.4) 0%,
-      rgba(123, 216, 192, 0.4) 100%
-    );
+    background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1),
-      0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -383,8 +360,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     border-radius: 100px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -394,8 +370,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08),
-      0px 8px 24px -4px rgba(154, 173, 241, 0.12);
+    box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
@@ -403,11 +378,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     color: rgba(255, 255, 255, 0.4);
     &:before {
       content: '';
-      background: linear-gradient(
-        90deg,
-        rgba(155, 170, 243, 0.4) 0%,
-        rgba(123, 216, 192, 0.4) 100%
-      );
+      background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     }
   }
 
@@ -428,9 +399,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   }
 `;
 
-const ButtonWithIconWrapper = styled.div.attrs(
-  (props: { svgColorType?: 'fill' | 'stroke' }) => props
-)`
+const ButtonWithIconWrapper = styled.div.attrs((props: { svgColorType?: 'fill' | 'stroke' }) => props)`
   ${tw`relative`}
   width: max-content;
 
@@ -494,25 +463,16 @@ const SVGWrapper = styled.div.attrs(
 )`
   --default-color: ${(props) => props.color};
   --disabled-color: ${(props) => props.disabledColor};
-  --active-color: ${(props) =>
-    props.activeColor ? `url(${props.activeColor})` : props.color};
+  --active-color: ${(props) => (props.activeColor ? `url(${props.activeColor})` : props.color)};
   ${tw`absolute`}
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: none;
   ${(props) => {
     switch (props.position) {
       case 'leading':
-        return `left: ${
-          ICON_PADDING[props.size] -
-          ICON_SIZES[props.size] -
-          ICON_SPACING[props.size]
-        }px`;
+        return `left: ${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`;
       case 'trailing':
-        return `right: ${
-          ICON_PADDING[props.size] -
-          ICON_SIZES[props.size] -
-          ICON_SPACING[props.size]
-        }px`;
+        return `right: ${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`;
       case 'center':
         return `left: calc(50% - ${ICON_SIZES[props.size] / 2}px);`;
     }
@@ -540,19 +500,8 @@ export type ButtonWithIconProps = {
 };
 
 export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
-  const {
-    size,
-    Icon,
-    svgColorType,
-    position,
-    disabled,
-    children,
-    onClick,
-    name,
-    backgroundColor,
-    color,
-    fillWidth,
-  } = props;
+  const { size, Icon, svgColorType, position, disabled, children, onClick, name, backgroundColor, color, fillWidth } =
+    props;
   return (
     <ButtonWithIconWrapper svgColorType={svgColorType}>
       <FilledGradientButton
@@ -569,12 +518,7 @@ export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
       >
         {children}
       </FilledGradientButton>
-      <SVGWrapper
-        size={props.size}
-        position={props.position}
-        color={DEFAULT_BLACK}
-        disabledColor={DISABLED_BLACK}
-      >
+      <SVGWrapper size={props.size} position={props.position} color={DEFAULT_BLACK} disabledColor={DISABLED_BLACK}>
         {!!Icon && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
@@ -582,19 +526,8 @@ export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
 }
 
 export function FilledGreyButtonWithIcon(props: ButtonWithIconProps) {
-  const {
-    size,
-    Icon,
-    svgColorType,
-    position,
-    disabled,
-    children,
-    onClick,
-    name,
-    backgroundColor,
-    color,
-    fillWidth,
-  } = props;
+  const { size, Icon, svgColorType, position, disabled, children, onClick, name, backgroundColor, color, fillWidth } =
+    props;
   return (
     <ButtonWithIconWrapper svgColorType={svgColorType}>
       <FilledGreyButton
@@ -611,12 +544,7 @@ export function FilledGreyButtonWithIcon(props: ButtonWithIconProps) {
       >
         {children}
       </FilledGreyButton>
-      <SVGWrapper
-        size={props.size}
-        position={props.position}
-        color={DEFAULT_WHITE}
-        disabledColor={DISABLED_WHITE}
-      >
+      <SVGWrapper size={props.size} position={props.position} color={DEFAULT_WHITE} disabledColor={DISABLED_WHITE}>
         {!!Icon && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
@@ -668,19 +596,8 @@ export function OutlinedGradientButtonWithIcon(props: ButtonWithIconProps) {
 }
 
 export function OutlinedWhiteButtonWithIcon(props: ButtonWithIconProps) {
-  const {
-    size,
-    Icon,
-    svgColorType,
-    position,
-    disabled,
-    children,
-    onClick,
-    name,
-    backgroundColor,
-    color,
-    fillWidth,
-  } = props;
+  const { size, Icon, svgColorType, position, disabled, children, onClick, name, backgroundColor, color, fillWidth } =
+    props;
   return (
     <ButtonWithIconWrapper svgColorType={svgColorType}>
       <OutlinedWhiteButton
@@ -697,12 +614,7 @@ export function OutlinedWhiteButtonWithIcon(props: ButtonWithIconProps) {
       >
         {children}
       </OutlinedWhiteButton>
-      <SVGWrapper
-        size={props.size}
-        position={props.position}
-        color={DEFAULT_WHITE}
-        disabledColor={DISABLED_WHITE}
-      >
+      <SVGWrapper size={props.size} position={props.position} color={DEFAULT_WHITE} disabledColor={DISABLED_WHITE}>
         {!!Icon && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
@@ -710,19 +622,8 @@ export function OutlinedWhiteButtonWithIcon(props: ButtonWithIconProps) {
 }
 
 export function FilledStylizedButtonWithIcon(props: ButtonWithIconProps) {
-  const {
-    size,
-    Icon,
-    svgColorType,
-    position,
-    disabled,
-    children,
-    onClick,
-    name,
-    backgroundColor,
-    color,
-    fillWidth,
-  } = props;
+  const { size, Icon, svgColorType, position, disabled, children, onClick, name, backgroundColor, color, fillWidth } =
+    props;
   return (
     <ButtonWithIconWrapper svgColorType={svgColorType}>
       <FilledStylizedButton
@@ -739,21 +640,14 @@ export function FilledStylizedButtonWithIcon(props: ButtonWithIconProps) {
       >
         {children}
       </FilledStylizedButton>
-      <SVGWrapper
-        size={props.size}
-        position={props.position}
-        color={DEFAULT_BLACK}
-        disabledColor={DISABLED_BLACK}
-      >
+      <SVGWrapper size={props.size} position={props.position} color={DEFAULT_BLACK} disabledColor={DISABLED_BLACK}>
         {!!Icon && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
 }
 
-export function OutlinedGradientRoundedButtonWithIcon(
-  props: ButtonWithIconProps
-) {
+export function OutlinedGradientRoundedButtonWithIcon(props: ButtonWithIconProps) {
   const {
     size,
     Icon,
@@ -870,11 +764,7 @@ export type ButtonWithIconWrapperOldProps = {
 export function LinkButtonWithIcon(props: ButtonWithIconWrapperOldProps) {
   return (
     <ButtonWithIconWrapperOld onClick={props.onClick || (() => {})}>
-      <img
-        src={props.icon}
-        alt=''
-        className={classNames('w-6 h-6 absolute', props.className || '')}
-      />
+      <img src={props.icon} alt='' className={classNames('w-6 h-6 absolute', props.className || '')} />
       <LinkButton
         disabled={props.disabled || false}
         className={classNames('pl-8', props.buttonClassName || '')}
@@ -889,11 +779,7 @@ export function LinkButtonWithIcon(props: ButtonWithIconWrapperOldProps) {
 export function WarningButtonWithIcon(props: ButtonWithIconWrapperOldProps) {
   return (
     <ButtonWithIconWrapperOld onClick={props.onClick || (() => {})}>
-      <img
-        src={props.icon}
-        alt=''
-        className={classNames('w-6 h-6 absolute', props.className || '')}
-      />
+      <img src={props.icon} alt='' className={classNames('w-6 h-6 absolute', props.className || '')} />
       <WarningButton
         className={classNames('pl-8', props.buttonClassName || '')}
         name={props.name || ''}

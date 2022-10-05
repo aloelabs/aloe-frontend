@@ -1,5 +1,4 @@
 import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
 import { useAccount, useContractWrite } from 'wagmi';
 import KittyABI from '../../../../assets/abis/Kitty.json';
@@ -10,12 +9,7 @@ import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenData } from '../../../../data/TokenData';
 import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
-import {
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  MODAL_BLACK_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from '../../../common/Modal';
+import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 
@@ -72,7 +66,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
   const amountToShares = useAmountToShares(token, kitty, withdrawAmount);
-  
+
   const sharesToWithdraw = amountToShares ?? '0';
   const underlyingBalance = balanceOfUnderlying ?? '0';
 
@@ -96,9 +90,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         setIsPending(true);
         contract
           .writeAsync({
-            recklesslySetUnpreparedArgs: [
-              sharesToWithdraw
-            ],
+            recklesslySetUnpreparedArgs: [sharesToWithdraw],
             recklesslySetUnpreparedOverrides: {
               gasLimit: (600000).toFixed(0),
             },

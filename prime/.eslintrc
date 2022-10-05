@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "react-app",
+    "react-app/jest",
+    "plugin:react-hooks/recommended"
+  ],
+  "overrides": [
+    {
+      "files": ["*/src/**/*.ts", "*/src/**/*.tsx"]
+    }
+  ],
+  "rules": {
+    "no-var": "warn",
+    "max-len": ["warn", { "code": 120 }],
+    "no-eval": "error",
+    "eqeqeq": ["warn", "smart"]
+  }
+}

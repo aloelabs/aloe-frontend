@@ -1,9 +1,6 @@
 import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
-import {
-  CloseableModal,
-  HorizontalDivider,
-} from '../../common/Modal';
+import { CloseableModal, HorizontalDivider } from '../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 import FeedbackBlock from './common/FeedbackBlock';
 
@@ -14,11 +11,7 @@ export type SuccessfulTxnModalProps = {
 };
 
 export default function SuccessfulTxnModal(props: SuccessfulTxnModalProps) {
-  const {
-    open,
-    setOpen,
-    onConfirm,
-  } = props;
+  const { open, setOpen, onConfirm } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} onClose={onConfirm} title='Transaction Successful'>
       <div className='flex justify-center items-center mb-2'>

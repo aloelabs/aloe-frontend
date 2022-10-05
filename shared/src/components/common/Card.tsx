@@ -1,16 +1,11 @@
 import styled from 'styled-components';
-import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_SM,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
 const CARD_BODY_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const TOKEN_ICON_BORDER_COLOR = 'rgba(0, 0, 0, 1)';
 const BODY_DIVIDER_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
 
-export const CardWrapper = styled.div.attrs(
-  (props: { borderGradient: string; shadowColor: string }) => props
-)`
+export const CardWrapper = styled.div.attrs((props: { borderGradient: string; shadowColor: string }) => props)`
   display: grid;
   grid-template-columns: 89fr 159fr;
   width: 100%;
@@ -28,8 +23,7 @@ export const CardWrapper = styled.div.attrs(
       border-radius: 8px;
       padding: 1.5px;
       background: ${(props) => props.borderGradient};
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -40,9 +34,7 @@ export const CardWrapper = styled.div.attrs(
   }
 `;
 
-export const CardTitleWrapper = styled.div.attrs(
-  (props: { backgroundGradient: string }) => props
-)`
+export const CardTitleWrapper = styled.div.attrs((props: { backgroundGradient: string }) => props)`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -96,7 +88,7 @@ export const TokenIconsWrapper = styled.div`
 
 export const TokenIcon = styled.img`
   border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 1);	
+  background-color: rgba(255, 255, 255, 1);
   position: relative;
   width: 32px;
   height: 32px;

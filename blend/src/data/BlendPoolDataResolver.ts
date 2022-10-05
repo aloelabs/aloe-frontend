@@ -32,22 +32,14 @@ export function ResolveBlendPoolDrawData(poolData: BlendPoolMarkers) {
   const silo0Data = GetSiloData(poolData.silo0Address.toLowerCase());
   const silo1Data = GetSiloData(poolData.silo1Address.toLowerCase());
 
-  const token0Label = token0Data.ticker
-    ? token0Data.ticker
-    : FormatAddressStart(poolData.token0Address, 4);
-  const token1Label = token1Data.ticker
-    ? token1Data.ticker
-    : FormatAddressStart(poolData.token1Address, 4);
+  const token0Label = token0Data.ticker ? token0Data.ticker : FormatAddressStart(poolData.token0Address, 4);
+  const token1Label = token1Data.ticker ? token1Data.ticker : FormatAddressStart(poolData.token1Address, 4);
 
   const token0Img = token0Data.iconPath || UnknownTokenLogo;
   const token1Img = token1Data.iconPath || UnknownTokenLogo;
 
-  const silo0Label = silo0Data.shortName
-    ? silo0Data.shortName
-    : FormatAddressStart(poolData.silo0Address, 4);
-  const silo1Label = silo1Data.shortName
-    ? silo1Data.shortName
-    : FormatAddressStart(poolData.silo1Address, 4);
+  const silo0Label = silo0Data.shortName ? silo0Data.shortName : FormatAddressStart(poolData.silo0Address, 4);
+  const silo1Label = silo1Data.shortName ? silo1Data.shortName : FormatAddressStart(poolData.silo1Address, 4);
 
   const feeTierText = PrintFeeTier(poolData.feeTier);
 
@@ -152,12 +144,8 @@ export async function ResolveBlendStats(
   inventory0_Float = inventory0_Float.minus(maintenanceBudget0);
   inventory1_Float = inventory1_Float.minus(maintenanceBudget1);
 
-  const inventory0_Uniswap = inventory0
-    .minus(inventory0_Silo)
-    .minus(inventory0_Float);
-  const inventory1_Uniswap = inventory1
-    .minus(inventory1_Silo)
-    .minus(inventory1_Float);
+  const inventory0_Uniswap = inventory0.minus(inventory0_Silo).minus(inventory0_Float);
+  const inventory1_Uniswap = inventory1.minus(inventory1_Silo).minus(inventory1_Float);
 
   // ------------------------------------------------ pricing ------------------------------------------------
   const pairAddress = results[9];
@@ -186,16 +174,13 @@ export async function ResolveBlendStats(
     float1Percent = inventory1_Float.div(tvl_1).toNumber();
     silo0Percent = inventory0_Silo_1.div(tvl_1).toNumber();
     silo1Percent = inventory1_Silo.div(tvl_1).toNumber();
-    uniswapPercent = inventory0_Uniswap_1
-      .plus(inventory1_Uniswap)
-      .div(tvl_1)
-      .toNumber();
+    uniswapPercent = inventory0_Uniswap_1.plus(inventory1_Uniswap).div(tvl_1).toNumber();
   }
 
   // ------------------------------------------------- ticks -------------------------------------------------
   const lower = results[11].primaryLower;
   const upper = results[11].primaryUpper;
-  const IV = (1.0 - Math.pow(1.0001, - (upper - lower) / 2.0)) / 2.0
+  const IV = (1.0 - Math.pow(1.0001, -(upper - lower) / 2.0)) / 2.0;
 
   return {
     inventory0: {

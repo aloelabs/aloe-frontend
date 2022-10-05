@@ -67,11 +67,7 @@ const TEXT_LINE_HEIGHTS = {
 };
 
 export const Display = styled.div.attrs(
-  (props: {
-    size: 'XL' | 'L' | 'M' | 'S' | 'XS';
-    weight: 'regular' | 'medium' | 'semibold';
-    color?: string;
-  }) => props
+  (props: { size: 'XL' | 'L' | 'M' | 'S' | 'XS'; weight: 'regular' | 'medium' | 'semibold'; color?: string }) => props
 )`
   font-family: 'ClashDisplay-Variable';
   font-size: ${(props) => DISPLAY_FONT_SIZES[props.size]};
@@ -85,11 +81,8 @@ export const Display = styled.div.attrs(
 `;
 
 export const Text = styled.div.attrs(
-  (props: {
-    size: 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS';
-    weight: 'regular' | 'medium' | 'bold';
-    color?: string;
-  }) => props
+  (props: { size: 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS'; weight: 'regular' | 'medium' | 'bold'; color?: string }) =>
+    props
 )`
   font-family: 'Satoshi-Variable';
   font-size: ${(props) => TEXT_FONT_SIZES[props.size]};

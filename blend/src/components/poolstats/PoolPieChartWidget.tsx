@@ -307,9 +307,7 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
       ? ` and ${drawData.silo0Label}`
       : `, ${drawData.silo0Label}, and ${drawData.silo1Label}`;
   const combinedSiloLabelB = drawData.silo0Label.concat(
-    drawData.silo0Label === drawData.silo1Label
-      ? ''
-      : ` and ${drawData.silo1Label}`
+    drawData.silo0Label === drawData.silo1Label ? '' : ` and ${drawData.silo1Label}`
   );
 
   const firstHalfOfSlices = slices.slice(0, slices.length / 2).reverse();
@@ -317,24 +315,16 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
 
   const tooltipContent = (
     <>
-      As prices shift, tokens are moved between Uniswap{combinedSiloLabelA} to
-      keep liquidity in range. Blend replicates Uniswap V2 payoffs with extreme
-      capital efficiency, so most tokens can earn yield in {combinedSiloLabelB}.
-      Value marked as {<em>"Float"</em>} helps facilitate gas-efficient
-      withdrawals.
+      As prices shift, tokens are moved between Uniswap{combinedSiloLabelA} to keep liquidity in range. Blend replicates
+      Uniswap V2 payoffs with extreme capital efficiency, so most tokens can earn yield in {combinedSiloLabelB}. Value
+      marked as {<em>"Float"</em>} helps facilitate gas-efficient withdrawals.
     </>
   );
 
   return (
     <div className='w-full flex flex-col items-start justify-start mb-8'>
       <WidgetHeading>
-        Token Allocation{' '}
-        <Tooltip
-          buttonSize='S'
-          content={tooltipContent}
-          position='top-center'
-          filled={true}
-        />
+        Token Allocation <Tooltip buttonSize='S' content={tooltipContent} position='top-center' filled={true} />
       </WidgetHeading>
       <TokenAllocationWrapper>
         <div className='w-[227px] h-[227px] relative'>
@@ -346,9 +336,7 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
                     key={index}
                     d={path.data}
                     fill={path.color}
-                    onMouseEnter={() =>
-                      onMouseEnter(index, path.percent.toString())
-                    }
+                    onMouseEnter={() => onMouseEnter(index, path.percent.toString())}
                     onMouseLeave={() => onMouseLeave()}
                   ></ExpandingPath>
                 );
@@ -359,13 +347,7 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
         </div>
         <TokenAllocationBreakdown>
           <div className='flex items-center gap-4 w-full'>
-            <TokenLabel
-              className={
-                activeIndex !== -1 && activeIndex >= firstHalfOfSlices.length
-                  ? 'inactive'
-                  : ''
-              }
-            >
+            <TokenLabel className={activeIndex !== -1 && activeIndex >= firstHalfOfSlices.length ? 'inactive' : ''}>
               {drawData.token0Label}
             </TokenLabel>
             <div className='w-64 flex flex-col'>
@@ -409,13 +391,7 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
             </div>
           </div>
           <div className='flex items-center gap-4'>
-            <TokenLabel
-              className={
-                activeIndex !== -1 && activeIndex < firstHalfOfSlices.length
-                  ? 'inactive'
-                  : ''
-              }
-            >
+            <TokenLabel className={activeIndex !== -1 && activeIndex < firstHalfOfSlices.length ? 'inactive' : ''}>
               {drawData.token1Label}
             </TokenLabel>
             <div className='w-64 flex flex-col'>

@@ -15,12 +15,8 @@ export async function withdraw(
 ): Promise<void> {
   const tokenContract = new Contract(poolAddress, BlendPoolAbi, signer);
 
-  const estimated0 = poolStats.inventory0.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
-  const estimated1 = poolStats.inventory1.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
+  const estimated0 = poolStats.inventory0.total.mul(shares).div(poolStats.outstandingShares);
+  const estimated1 = poolStats.inventory1.total.mul(shares).div(poolStats.outstandingShares);
 
   const amount0Min = estimated0.mul(1 - ratioChange / 100);
   const amount1Min = estimated1.mul(1 - ratioChange / 100);

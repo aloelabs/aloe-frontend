@@ -12,12 +12,7 @@ import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
 import { TokenData } from '../../../../data/TokenData';
 import { toBig } from '../../../../util/Numbers';
 import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
-import {
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  MODAL_BLACK_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from '../../../common/Modal';
+import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 
@@ -78,17 +73,9 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     watch: true,
   });
 
-  const { data: userAllowanceToken } = useAllowance(
-    token,
-    account?.address ?? '',
-    kitty.address
-  );
+  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '', kitty.address);
 
-  const writeAllowanceToken = useAllowanceWrite(
-    network?.chain ?? DEFAULT_CHAIN,
-    token,
-    kitty.address
-  );
+  const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, kitty.address);
 
   const contract = useContractWrite({
     addressOrName: kitty.address,
@@ -102,9 +89,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
 
   const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
   const needsApproval =
-    userAllowanceToken &&
-    toBig(userAllowanceToken).div(token.decimals).toNumber() <
-      numericDepositBalance;
+    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
   let confirmButtonState = ConfirmButtonState.READY;
 
@@ -142,9 +127,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         setIsPending(true);
         contract
           .writeAsync({
-            recklesslySetUnpreparedArgs: [
-              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
-            ],
+            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
             recklesslySetUnpreparedOverrides: {
               gasLimit: (600000).toFixed(0),
             },
@@ -163,9 +146,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
 
   const isDepositAmountValid = numericDepositAmount > 0;
   const shouldConfirmButtonBeDisabled =
-    !confirmButton.enabled ||
-    (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET &&
-      !isDepositAmountValid);
+    !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
 
   return (
     <>
