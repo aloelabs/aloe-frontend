@@ -1,9 +1,4 @@
-import {
-  ActionCardProps,
-  ActionID,
-  ActionProviders,
-  UniswapPosition,
-} from '../../../data/Actions';
+import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
 import { DropdownOption, DropdownWithPlaceholder } from '../../common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import { BaseActionCard } from '../BaseActionCard';
@@ -26,9 +21,7 @@ export type UniswapV3LiquidityPosition = {
   liquidity: JSBI;
 };
 
-const SVGIconWrapper = styled.div.attrs(
-  (props: { width: number; height: number }) => props
-)`
+const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number }) => props)`
   width: ${(props) => props.width}px;
   height: ${(props) => props.height}px;
   svg {
@@ -40,17 +33,8 @@ const SVGIconWrapper = styled.div.attrs(
 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
-export default function UniswapRemoveLiquidityActionCard(
-  props: ActionCardProps
-) {
-  const {
-    marginAccount,
-    uniswapPositions,
-    previousActionCardState,
-    isCausingError,
-    onChange,
-    onRemove,
-  } = props;
+export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
+  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
@@ -61,16 +45,12 @@ export default function UniswapRemoveLiquidityActionCard(
     } as DropdownOption;
   });
 
-  const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] =
-    useState('');
+  const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
   useEffectOnce(() => {
-    const previousRemoveLiquidityPercentage =
-      previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
+    const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
     if (previousRemoveLiquidityPercentage) {
-      setLocalRemoveLiquidityPercentage(
-        previousRemoveLiquidityPercentage.toFixed(2)
-      );
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(2));
     }
   });
 
@@ -78,13 +58,10 @@ export default function UniswapRemoveLiquidityActionCard(
   let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
-  const uniswapPosition =
-    previousActionCardState?.uniswapResult?.uniswapPosition;
+  const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
   if (uniswapPosition) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
-      return (
-        lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper
-      );
+      return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
     });
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption = dropdownOptions[selectedIndex];
@@ -114,24 +91,17 @@ export default function UniswapRemoveLiquidityActionCard(
     const upper = liquidityPosition ? liquidityPosition.upper : null;
     const liquidity = liquidityPosition?.liquidity ?? JSBI.BigInt(0);
 
-    const amount0ToRemove =
-      ((liquidityPosition?.amount0 || 0) * parsedPercentage) / 100.0;
-    const amount1ToRemove =
-      ((liquidityPosition?.amount1 || 0) * parsedPercentage) / 100.0;
+    const amount0ToRemove = ((liquidityPosition?.amount0 || 0) * parsedPercentage) / 100.0;
+    const amount1ToRemove = ((liquidityPosition?.amount1 || 0) * parsedPercentage) / 100.0;
     const updatedLiquidity = JSBI.divide(
-      JSBI.multiply(
-        liquidity,
-        JSBI.BigInt(((parsedPercentage * 10000) / 100).toFixed(0))
-      ),
+      JSBI.multiply(liquidity, JSBI.BigInt(((parsedPercentage * 10000) / 100).toFixed(0))),
       JSBI.BigInt(10000)
     );
 
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
       actionArgs:
-        lower !== null && upper !== null
-          ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity)
-          : undefined,
+        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
       aloeResult: {
         token0RawDelta: amount0ToRemove,
         token1RawDelta: amount1ToRemove,
@@ -188,15 +158,10 @@ export default function UniswapRemoveLiquidityActionCard(
                   size='L'
                   unit='%'
                   placeholder='0.00'
-                  inputClassName={
-                    localRemoveLiquidityPercentage !== '' ? 'active' : ''
-                  }
+                  inputClassName={localRemoveLiquidityPercentage !== '' ? 'active' : ''}
                   onBlur={() => {
-                    const parsedPercentage = parsePercentage(
-                      localRemoveLiquidityPercentage
-                    );
-                    const formattedPercentage =
-                      formatPercentage(parsedPercentage);
+                    const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
+                    const formattedPercentage = formatPercentage(parsedPercentage);
                     updateResult(selectedPosition);
                     setLocalRemoveLiquidityPercentage(formattedPercentage);
                   }}
@@ -211,12 +176,10 @@ export default function UniswapRemoveLiquidityActionCard(
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(selectedPosition?.amount0 || 0)}{' '}
-                      {token0?.ticker}
+                      {formatTokenAmount(selectedPosition?.amount0 || 0)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(selectedPosition?.amount1 || 0)}{' '}
-                      {token1?.ticker}
+                      {formatTokenAmount(selectedPosition?.amount1 || 0)} {token1?.ticker}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -228,22 +191,14 @@ export default function UniswapRemoveLiquidityActionCard(
                     </Text>
                     <Text size='M'>
                       {amount0
-                        ? formatTokenAmount(
-                            (selectedPosition?.amount0 || 0) + amount0
-                          )
-                        : formatTokenAmount(
-                            selectedPosition?.amount0 || 0
-                          )}{' '}
+                        ? formatTokenAmount((selectedPosition?.amount0 || 0) + amount0)
+                        : formatTokenAmount(selectedPosition?.amount0 || 0)}{' '}
                       {token0?.ticker}
                     </Text>
                     <Text size='M'>
                       {amount1
-                        ? formatTokenAmount(
-                            (selectedPosition?.amount1 || 0) + amount1
-                          )
-                        : formatTokenAmount(
-                            selectedPosition?.amount1 || 0
-                          )}{' '}
+                        ? formatTokenAmount((selectedPosition?.amount1 || 0) + amount1)
+                        : formatTokenAmount(selectedPosition?.amount1 || 0)}{' '}
                       {token1?.ticker}
                     </Text>
                   </div>

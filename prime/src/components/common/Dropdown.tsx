@@ -23,21 +23,16 @@ const DropdownWrapper = styled.div`
   overflow: visible;
 `;
 
-const DropdownHeader = styled.button.attrs(
-  (props: { small?: boolean }) => props
-)`
+const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props)`
   ${tw`flex flex-row items-center justify-between`}
   background: transparent;
-  padding: ${(props) =>
-    props.small ? '12px 36px 12px 16px' : '16px 52px 16px 24px'};
+  padding: ${(props) => (props.small ? '12px 36px 12px 16px' : '16px 52px 16px 24px')};
   border: 1px solid ${DROPDOWN_HEADER_BORDER_COLOR};
   border-radius: 100px;
   white-space: nowrap;
 `;
 
-const DropdownList = styled.div.attrs(
-  (props: { small?: boolean; flipDirection?: boolean }) => props
-)`
+const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?: boolean }) => props)`
   ${tw`flex flex-col`}
   position: absolute;
   ${(props) => (props.flipDirection ? 'left: 0px;' : 'right: 0px;')};
@@ -173,8 +168,7 @@ export type DropdownWithPlaceholderProps = {
 };
 
 export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
-  const { options, selectedOption, onSelect, placeholder, placeAbove, small } =
-    props;
+  const { options, selectedOption, onSelect, placeholder, placeAbove, small } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
@@ -215,11 +209,7 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
           {options.map((option) => (
             <DropdownOptionContainer
-              className={
-                selectedOption && option.value === selectedOption.value
-                  ? 'active'
-                  : ''
-              }
+              className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
               key={option.value}
               onClick={() => selectItem(option)}
             >
@@ -250,9 +240,7 @@ export type DropdownWithPlaceholderValueProps = {
   placeholder: string;
 };
 
-export function DropdownWithPlaceholderValue(
-  props: DropdownWithPlaceholderValueProps
-) {
+export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValueProps) {
   const { options, selectedOption, onSelect, placeholder } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -262,10 +250,7 @@ export function DropdownWithPlaceholderValue(
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (
-    option: DropdownWithPlaceholderValueOption,
-    index: number
-  ) => {
+  const selectItem = (option: DropdownWithPlaceholderValueOption, index: number) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -273,14 +258,8 @@ export function DropdownWithPlaceholderValue(
   return (
     <DropdownWrapper ref={dropdownRef}>
       <DropdownHeader onClick={toggleList}>
-        <Text size='M'>
-          {selectedOption.isDefault ? placeholder : selectedOption.label}
-        </Text>
-        <img
-          className='absolute right-6'
-          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
-          alt=''
-        />
+        <Text size='M'>{selectedOption.isDefault ? placeholder : selectedOption.label}</Text>
+        <img className='absolute right-6' src={isOpen ? DropdownArrowUp : DropdownArrowDown} alt='' />
       </DropdownHeader>
       {isOpen && (
         <DropdownList>
@@ -321,16 +300,7 @@ type MultiDropdownBaseProps = {
 };
 
 function MultiDropdownBase(props: MultiDropdownBaseProps) {
-  const {
-    options,
-    activeOptions,
-    handleChange,
-    isOpen,
-    setIsOpen,
-    flipDirection,
-    DropdownButton,
-    SearchInput,
-  } = props;
+  const { options, activeOptions, handleChange, isOpen, setIsOpen, flipDirection, DropdownButton, SearchInput } = props;
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(
@@ -343,14 +313,8 @@ function MultiDropdownBase(props: MultiDropdownBaseProps) {
 
   const selectItem = (option: MultiDropdownOption, index: number) => {
     let updatedOptions;
-    if (
-      activeOptions.some(
-        (currentOption) => currentOption.value === option.value
-      )
-    ) {
-      updatedOptions = activeOptions.filter(
-        (currentOption) => currentOption.value !== option.value
-      );
+    if (activeOptions.some((currentOption) => currentOption.value === option.value)) {
+      updatedOptions = activeOptions.filter((currentOption) => currentOption.value !== option.value);
     } else {
       updatedOptions = [...activeOptions, option];
     }
@@ -361,56 +325,29 @@ function MultiDropdownBase(props: MultiDropdownBaseProps) {
     setSearchTerm(updatedSearchTerm);
   };
 
-  const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter((option) => option.label.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <DropdownWrapper ref={dropdownRef}>
       <DropdownButton />
       {isOpen && (
         <MultiDropdownList ref={dropdownRef} flipDirection={flipDirection}>
-          {SearchInput && (
-            <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />
-          )}
+          {SearchInput && <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />}
           {filteredOptions.map((option, index) => {
             const { label, icon } = option;
-            const isActive = activeOptions.some(
-              (currentOption) => currentOption.value === option.value
-            );
+            const isActive = activeOptions.some((currentOption) => currentOption.value === option.value);
             return (
               <MultiDropdownOptionContainer
-                className={
-                  activeOptions.some(
-                    (currentOption) => currentOption.value === option.value
-                  )
-                    ? 'active'
-                    : ''
-                }
+                className={activeOptions.some((currentOption) => currentOption.value === option.value) ? 'active' : ''}
                 key={index}
                 onClick={() => selectItem(option, index)}
               >
-                {icon && (
-                  <img
-                    className='bg-white w-5 h-5 rounded-full'
-                    src={icon}
-                    width={20}
-                    height={20}
-                    alt=''
-                  />
-                )}
+                {icon && <img className='bg-white w-5 h-5 rounded-full' src={icon} width={20} height={20} alt='' />}
                 <div className='flex-grow h-6'>
                   <Text size='M'>{label}</Text>
                 </div>
                 <CheckContainer className={isActive ? 'active' : ''}>
-                  {isActive && (
-                    <CheckIcon
-                      color='black'
-                      className='w-5 h-5'
-                      width={20}
-                      height={20}
-                    />
-                  )}
+                  {isActive && <CheckIcon color='black' className='w-5 h-5' width={20} height={20} />}
                 </CheckContainer>
               </MultiDropdownOptionContainer>
             );
@@ -434,23 +371,11 @@ export type MultiDropdownWithPlaceholderProps = {
   }>;
 };
 
-export function MultiDropdownWithPlaceholder(
-  props: MultiDropdownWithPlaceholderProps
-) {
-  const {
-    options,
-    activeOptions,
-    handleChange,
-    placeholder,
-    selectedText,
-    flipDirection,
-    SearchInput,
-  } = props;
+export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholderProps) {
+  const { options, activeOptions, handleChange, placeholder, selectedText, flipDirection, SearchInput } = props;
   const [isOpen, setIsOpen] = useState(false);
   let dropdownLabel =
-    activeOptions.length === options.length
-      ? placeholder
-      : `${selectedText} (${activeOptions.length})`;
+    activeOptions.length === options.length ? placeholder : `${selectedText} (${activeOptions.length})`;
   console.log(options, activeOptions);
   return MultiDropdownBase({
     options,
@@ -462,11 +387,7 @@ export function MultiDropdownWithPlaceholder(
     DropdownButton: () => (
       <DropdownHeader onClick={() => setIsOpen(!isOpen)}>
         <Text size='M'>{dropdownLabel}</Text>
-        <img
-          className='absolute right-6'
-          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
-          alt=''
-        />
+        <img className='absolute right-6' src={isOpen ? DropdownArrowUp : DropdownArrowDown} alt='' />
       </DropdownHeader>
     ),
     SearchInput,
@@ -488,14 +409,7 @@ export type MultiDropdownButtonProps = {
 };
 
 export function MultiDropdownButton(props: MultiDropdownButtonProps) {
-  const {
-    options,
-    activeOptions,
-    handleChange,
-    flipDirection,
-    DropdownButton,
-    SearchInput,
-  } = props;
+  const { options, activeOptions, handleChange, flipDirection, DropdownButton, SearchInput } = props;
   const [isOpen, setIsOpen] = useState(false);
   return MultiDropdownBase({
     options,

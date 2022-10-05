@@ -13,13 +13,7 @@ import { getBorrowActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const {
-    marginAccount,
-    previousActionCardState,
-    isCausingError,
-    onRemove,
-    onChange,
-  } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -34,12 +28,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken =
-    previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(
-    previouslySelectedToken,
-    dropdownOptions
-  );
+  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const callbackWithFullResult = (value: string) => {
@@ -54,20 +44,13 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
 
     onChange({
       actionId: ActionID.BORROW,
-      actionArgs:
-        value === ''
-          ? undefined
-          : getBorrowActionArgs(token0, amount0, token1, amount1),
+      actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
       textFields: [value],
       aloeResult: {
-        token0RawDelta:
-          selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1RawDelta:
-          selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        token0DebtDelta:
-          selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1DebtDelta:
-          selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
+        token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+        token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
+        token0DebtDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+        token1DebtDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
         selectedToken: selectedToken,
       },
       uniswapResult: null,
@@ -76,8 +59,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
 
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '')
-      callbackWithFullResult(tokenAmount);
+    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

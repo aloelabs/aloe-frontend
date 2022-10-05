@@ -9,9 +9,7 @@ export type CreatedMarginAccountModalProps = {
   onConfirm: () => void;
 };
 
-export default function CreatedMarginAccountModal(
-  props: CreatedMarginAccountModalProps
-) {
+export default function CreatedMarginAccountModal(props: CreatedMarginAccountModalProps) {
   const { open, setOpen, onConfirm } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Account Created'>

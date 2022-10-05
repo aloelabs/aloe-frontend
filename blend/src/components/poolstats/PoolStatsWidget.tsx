@@ -70,16 +70,9 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
           <Text size='S' weight='medium' color={POOL_STAT_LABEL_TEXT_COLOR}>
             APR (14d avg)
           </Text>
-          <Display
-            size='S'
-            weight='semibold'
-            color={POOL_STAT_VALUE_TEXT_COLOR}
-          >
+          <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
             {offChainPoolStats
-              ? roundPercentage(
-                  100 * offChainPoolStats.annual_percentage_rate,
-                  ROUNDING_PRECISION
-                )
+              ? roundPercentage(100 * offChainPoolStats.annual_percentage_rate, ROUNDING_PRECISION)
                   .toFixed(ROUNDING_PRECISION)
                   .concat('%')
               : '--'}
@@ -92,30 +85,16 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
           <Display
             size='S'
             weight='semibold'
-            color={
-              poolStats
-                ? poolStats.isInRange
-                  ? IN_RANGE_COLOR
-                  : OUT_OF_RANGE_COLOR
-                : POOL_STAT_VALUE_TEXT_COLOR
-            }
+            color={poolStats ? (poolStats.isInRange ? IN_RANGE_COLOR : OUT_OF_RANGE_COLOR) : POOL_STAT_VALUE_TEXT_COLOR}
           >
-            {poolStats
-              ? poolStats.isInRange
-                ? 'In-Range'
-                : 'Out-of-Range'
-              : '--'}
+            {poolStats ? (poolStats.isInRange ? 'In-Range' : 'Out-of-Range') : '--'}
           </Display>
         </PoolStat>
         <PoolStat>
           <Text size='S' weight='medium' color={POOL_STAT_LABEL_TEXT_COLOR}>
             24H Uniswap Volume
           </Text>
-          <Display
-            size='S'
-            weight='semibold'
-            color={POOL_STAT_VALUE_TEXT_COLOR}
-          >
+          <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
             {formatUSDAuto(uniswapVolume, '--')}
           </Display>
         </PoolStat>
@@ -123,11 +102,7 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
           <Text size='S' weight='medium' color={POOL_STAT_LABEL_TEXT_COLOR}>
             Implied Volatility
           </Text>
-          <Display
-            size='S'
-            weight='semibold'
-            color={POOL_STAT_VALUE_TEXT_COLOR}
-          >
+          <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
             {poolStats
               ? roundPercentage(100 * poolStats.IV, ROUNDING_PRECISION)
                   .toFixed(ROUNDING_PRECISION)
@@ -139,11 +114,7 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
           <Text size='S' weight='medium' color={POOL_STAT_LABEL_TEXT_COLOR}>
             TVL
           </Text>
-          <Display
-            size='S'
-            weight='semibold'
-            color={POOL_STAT_VALUE_TEXT_COLOR}
-          >
+          <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
             {formatUSDAuto(offChainPoolStats?.total_value_locked || null, '--')}
           </Display>
         </PoolStat>
@@ -151,11 +122,7 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
           <Text size='S' weight='medium' color={POOL_STAT_LABEL_TEXT_COLOR}>
             Last Rebalance
           </Text>
-          <Display
-            size='S'
-            weight='semibold'
-            color={POOL_STAT_VALUE_TEXT_COLOR}
-          >
+          <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
             {poolStats
               ? formatDistance(poolStats.recenterTimestamp * 1000, Date.now(), {
                   addSuffix: true,

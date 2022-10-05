@@ -74,25 +74,13 @@ function calculatePnL1(
   price: number,
   initialValue = 0
 ): number {
-  const sqrtPriceX96 = priceToSqrtRatio(
-    price,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
-  );
-  const assets = getAssets(
-    marginAccount,
-    uniswapPositions,
-    sqrtPriceX96,
-    sqrtPriceX96,
-    sqrtPriceX96
-  );
+  const sqrtPriceX96 = priceToSqrtRatio(price, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
   return (
     (assets.fixed0 + assets.fluid0C) * price +
     assets.fixed1 +
     assets.fluid1C -
-    (marginAccount.liabilities.amount0 * price +
-      marginAccount.liabilities.amount1 +
-      initialValue)
+    (marginAccount.liabilities.amount0 * price + marginAccount.liabilities.amount1 + initialValue)
   );
 }
 
@@ -103,25 +91,13 @@ function calculatePnL0(
   initialValue = 0
 ): number {
   const invertedPrice = 1 / price;
-  const sqrtPriceX96 = priceToSqrtRatio(
-    invertedPrice,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
-  );
-  const assets = getAssets(
-    marginAccount,
-    uniswapPositions,
-    sqrtPriceX96,
-    sqrtPriceX96,
-    sqrtPriceX96
-  );
+  const sqrtPriceX96 = priceToSqrtRatio(invertedPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
   return (
     (assets.fixed1 + assets.fluid1C) * price +
     assets.fixed0 +
     assets.fluid0C -
-    (marginAccount.liabilities.amount1 * price +
-      marginAccount.liabilities.amount0 +
-      initialValue)
+    (marginAccount.liabilities.amount1 * price + marginAccount.liabilities.amount0 + initialValue)
   );
 }
 
@@ -143,13 +119,8 @@ type PnLGraphSettingsProps = {
 };
 
 function PnLGraphSettings(props: PnLGraphSettingsProps) {
-  const {
-    borrowInterestInputValue,
-    setBorrowInterestInputValue,
-    swapFeeInputValue,
-    setSwapFeeInputValue,
-    disabled,
-  } = props;
+  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } =
+    props;
   return (
     <Popover className='relative'>
       <Popover.Button>
@@ -178,9 +149,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you take out any loans, your liabilities will increase
-                    over time due to interest accrual. This has a negative
-                    impact on your P&L (thus the negative sign).
+                    If you take out any loans, your liabilities will increase over time due to interest accrual. This
+                    has a negative impact on your P&L (thus the negative sign).
                   </Text>
                 }
                 filled={true}
@@ -213,8 +183,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you hold any in-range Uniswap Positions, they'll earn
-                    swap fees over time. This has a positive impact on your P&L.
+                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive
+                    impact on your P&L.
                   </Text>
                 }
                 filled={true}
@@ -251,18 +221,10 @@ export type PnLGraphProps = {
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const {
-    marginAccount,
-    uniswapPositions,
-    inTermsOfToken0,
-    liquidationThresholds,
-    isShowingHypothetical,
-  } = props;
+  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds, isShowingHypothetical } = props;
   const [data, setData] = useState<Array<PnLEntry>>([]);
-  const [localInTermsOfToken0, setLocalInTermsOfToken0] =
-    useState<boolean>(inTermsOfToken0);
-  const [borrowInterestInputValue, setBorrowInterestInputValue] =
-    useState<string>('');
+  const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
+  const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeeInputValue, setSwapFeeInputValue] = useState<string>('');
 
   let price = sqrtRatioToPrice(
@@ -280,8 +242,7 @@ export default function PnLGraph(props: PnLGraphProps) {
   function calculateGraphData(): Array<PnLEntry> {
     let P = priceA;
     let updatedData = [];
-    const borrowInterestNumericValue =
-      parseFloat(borrowInterestInputValue) || 0;
+    const borrowInterestNumericValue = parseFloat(borrowInterestInputValue) || 0;
     const swapFeeNumericValue = parseFloat(swapFeeInputValue) || 0;
     while (P < priceB) {
       updatedData.push({
@@ -318,16 +279,12 @@ export default function PnLGraph(props: PnLGraphProps) {
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  const closestLowerTickToShow =
-    data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
-  const closestUpperTickToShow =
-    data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
+  const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
+  const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
 
   const ticks = [price];
-  if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow)
-    ticks.push(liquidationLower);
-  if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow)
-    ticks.push(liquidationUpper);
+  if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
+  if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
@@ -347,9 +304,8 @@ export default function PnLGraph(props: PnLGraphProps) {
   return (
     <div className='w-full'>
       <Text size='S' weight='medium' color={SECONDARY_COLOR}>
-        This graph estimates profit and losses arising solely from the structure
-        of your positions. To include time-based effects such as borrow interest
-        (-) and swap fees (+), click on the cog on the top right of the graph
+        This graph estimates profit and losses arising solely from the structure of your positions. To include
+        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
         and enter your desired values.
       </Text>
       <div className='flex flex-col items-end'>
@@ -391,31 +347,11 @@ export default function PnLGraph(props: PnLGraphProps) {
               />
               <YAxis stroke={SECONDARY_COLOR} fontSize='14px' />
               <ReferenceLine y={0} stroke={SECONDARY_COLOR} />
-              <ReferenceLine
-                x={price}
-                stroke={SECONDARY_COLOR}
-                strokeWidth={2}
-              />
-              <ReferenceLine
-                x={liquidationLower}
-                stroke='rgb(114, 167, 246)'
-                strokeWidth={2}
-              />
-              <ReferenceArea
-                x1={data[0].x}
-                x2={liquidationLower}
-                fill='rgba(114, 167, 246, 0.5)'
-              />
-              <ReferenceLine
-                x={liquidationUpper}
-                stroke='rgb(114, 167, 246)'
-                strokeWidth={2}
-              />
-              <ReferenceArea
-                x1={liquidationUpper}
-                x2={data[data.length - 1].x}
-                fill='rgba(114, 167, 246, 0.5)'
-              />
+              <ReferenceLine x={price} stroke={SECONDARY_COLOR} strokeWidth={2} />
+              <ReferenceLine x={liquidationLower} stroke='rgb(114, 167, 246)' strokeWidth={2} />
+              <ReferenceArea x1={data[0].x} x2={liquidationLower} fill='rgba(114, 167, 246, 0.5)' />
+              <ReferenceLine x={liquidationUpper} stroke='rgb(114, 167, 246)' strokeWidth={2} />
+              <ReferenceArea x1={liquidationUpper} x2={data[data.length - 1].x} fill='rgba(114, 167, 246, 0.5)' />
               <RechartsTooltip
                 isAnimationActive={false}
                 content={(props: any, active = false) => (
@@ -431,28 +367,12 @@ export default function PnLGraph(props: PnLGraphProps) {
               />
               <defs>
                 <linearGradient id='splitColor' x1='0' y1='0' x2='0' y2='1'>
-                  <stop
-                    offset={off}
-                    stopColor='rgba(128, 196, 128, 0.5)'
-                    stopOpacity={1}
-                  />
-                  <stop
-                    offset={off}
-                    stopColor='rgba(206, 87, 87, 0.5)'
-                    stopOpacity={1}
-                  />
+                  <stop offset={off} stopColor='rgba(128, 196, 128, 0.5)' stopOpacity={1} />
+                  <stop offset={off} stopColor='rgba(206, 87, 87, 0.5)' stopOpacity={1} />
                 </linearGradient>
                 <linearGradient id='splitColorFill' x1='0' y1='0' x2='0' y2='1'>
-                  <stop
-                    offset={off}
-                    stopColor='rgba(128, 196, 128, 1)'
-                    stopOpacity={1}
-                  />
-                  <stop
-                    offset={off}
-                    stopColor='rgba(206, 87, 87, 1)'
-                    stopOpacity={1}
-                  />
+                  <stop offset={off} stopColor='rgba(128, 196, 128, 1)' stopOpacity={1} />
+                  <stop offset={off} stopColor='rgba(206, 87, 87, 1)' stopOpacity={1} />
                 </linearGradient>
               </defs>
               <Area

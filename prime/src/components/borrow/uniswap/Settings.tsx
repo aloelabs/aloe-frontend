@@ -45,9 +45,7 @@ const SettingsMenuWrapper = styled.div`
 `;
 
 //TODO: Improve styling and possibly create a more generic reusable button to replace this
-const AutoSlippageButton = styled.button.attrs(
-  (props: { active: boolean }) => props
-)`
+const AutoSlippageButton = styled.button.attrs((props: { active: boolean }) => props)`
   padding: 4px 8px;
   border-radius: 8px;
   background-color: ${(props) => (props.active ? '#63b59a' : 'transparent')};
@@ -116,9 +114,7 @@ export default function Settings(props: SettingsProps) {
               }}
               onBlur={() => {
                 const currentValue = parseFloat(localSlippagePercentage);
-                const output = isNaN(currentValue)
-                  ? ''
-                  : currentValue.toFixed(2);
+                const output = isNaN(currentValue) ? '' : currentValue.toFixed(2);
                 if (slippagePercentage !== output) {
                   updateSlippagePercentage(output);
                 } else {

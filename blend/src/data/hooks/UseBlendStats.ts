@@ -39,13 +39,7 @@ export function useBlendStats(poolData: BlendPoolMarkers) {
 
   useEffect(() => {
     const collectStats = async () => {
-      const stats = await ResolveBlendStats(
-        blend,
-        silo0,
-        silo1,
-        token0,
-        token1
-      );
+      const stats = await ResolveBlendStats(blend, silo0, silo1, token0, token1);
       setBlendStats(stats);
     };
 

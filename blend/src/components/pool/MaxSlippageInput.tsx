@@ -113,19 +113,8 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
   const { updateMaxSlippage, tooltipContent } = props;
   return (
     <div className='w-full flex flex-col gap-y-2 mt-6'>
-      <Text
-        size='S'
-        weight='medium'
-        color='rgba(130, 160, 182, 1)'
-        className='flex gap-x-2 mb-1'
-      >
-        <Tooltip
-          content={tooltipContent}
-          buttonText='Max Slippage'
-          buttonSize='S'
-          position='top-left'
-          filled={true}
-        />
+      <Text size='S' weight='medium' color='rgba(130, 160, 182, 1)' className='flex gap-x-2 mb-1'>
+        <Tooltip content={tooltipContent} buttonText='Max Slippage' buttonSize='S' position='top-left' filled={true} />
       </Text>
       <Tab.Group>
         <Tab.List>
@@ -133,10 +122,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
             {PREDEFINED_MAX_SLIPPAGE_OPTIONS.map(({ label, value }) => (
               <Tab as={Fragment} key={value}>
                 {({ selected }) => (
-                  <SlippageButton
-                    className={selected ? 'selected' : ''}
-                    onClick={() => updateMaxSlippage(value)}
-                  >
+                  <SlippageButton className={selected ? 'selected' : ''} onClick={() => updateMaxSlippage(value)}>
                     <span>{label}</span>
                   </SlippageButton>
                 )}
@@ -150,8 +136,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                       <CustomSlippageInputWrapper>
                         <CustomSlippageInput
                           onChange={(e) => {
-                            let newValue =
-                              e.target.value !== '' ? e.target.value : '0';
+                            let newValue = e.target.value !== '' ? e.target.value : '0';
                             updateMaxSlippage(newValue);
                           }}
                           type='text'
@@ -177,12 +162,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
         <Tab.Panels as={Fragment}>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text
-                size='XS'
-                weight='bold'
-                color={MESSAGE_TEXT_COLOR}
-                className='inline'
-              >
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
                 Low slippage
               </Text>{' '}
               is recommended.
@@ -190,12 +170,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
           </Tab.Panel>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text
-                size='XS'
-                weight='bold'
-                color={MESSAGE_TEXT_COLOR}
-                className='inline'
-              >
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
                 Medium slippage
               </Text>{' '}
               is a compromise between transaction execution and precision.
@@ -203,12 +178,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
           </Tab.Panel>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text
-                size='XS'
-                weight='bold'
-                color={MESSAGE_TEXT_COLOR}
-                className='inline'
-              >
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
                 Set a custom slippage
               </Text>{' '}
               if you really know what you're doing.

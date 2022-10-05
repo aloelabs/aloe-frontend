@@ -42,12 +42,7 @@ export default function ConfirmDepositModal(props: ConfirmDepositModalProps) {
     networkFee,
   } = props;
   return (
-    <CloseableModal
-      open={open}
-      setOpen={setOpen}
-      onClose={onCancel}
-      title='Confirm Deposit'
-    >
+    <CloseableModal open={open} setOpen={setOpen} onClose={onCancel} title='Confirm Deposit'>
       <div className='flex justify-between items-center mb-4'>
         <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
           Estimated Total
@@ -109,12 +104,7 @@ export default function ConfirmDepositModal(props: ConfirmDepositModalProps) {
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{networkFee} WETH</Text>
       </div> */}
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        onClick={onConfirm}
-      >
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} onClick={onConfirm}>
         Confirm Deposit
       </FilledStylizedButton>
     </CloseableModal>

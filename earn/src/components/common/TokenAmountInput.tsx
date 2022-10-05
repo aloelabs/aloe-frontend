@@ -79,9 +79,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         value={props.value}
         onMaxClick={() => {
           if (props.max) {
-            props.onMax
-              ? props.onMax(props.max)
-              : props.onChange(props.max.toString());
+            props.onMax ? props.onMax(props.max) : props.onChange(props.max.toString());
           }
         }}
         maxDisabled={props.maxed}
@@ -93,9 +91,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
       {props.error && (
         <ErrorMessageWrapper>
           <img src={ErrorIcon} width={16} height={16} alt='error' />
-          <ErrorMessageText>
-            {props.errorMessage ? props.errorMessage : 'Invalid input'}
-          </ErrorMessageText>
+          <ErrorMessageText>{props.errorMessage ? props.errorMessage : 'Invalid input'}</ErrorMessageText>
         </ErrorMessageWrapper>
       )}
     </div>

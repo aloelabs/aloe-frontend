@@ -25,16 +25,8 @@ export type SharesWithdrawnModalProps = {
 };
 
 export default function SharesWithdrawnModal(props: SharesWithdrawnModalProps) {
-  const {
-    open,
-    setOpen,
-    estimatedValue,
-    token0Ticker,
-    token1Ticker,
-    token0Estimate,
-    token1Estimate,
-    numberOfShares,
-  } = props;
+  const { open, setOpen, estimatedValue, token0Ticker, token1Ticker, token0Estimate, token1Estimate, numberOfShares } =
+    props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Shares Withdrawn'>
       <div className='flex justify-center items-center'>
@@ -79,12 +71,7 @@ export default function SharesWithdrawnModal(props: SharesWithdrawnModalProps) {
         token0Estimate={token0Estimate}
         token1Estimate={token1Estimate}
       />
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        className='mt-8'
-      >
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} className='mt-8'>
         View Your Position
       </FilledStylizedButton>
     </CloseableModal>

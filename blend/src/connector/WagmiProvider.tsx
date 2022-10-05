@@ -14,11 +14,7 @@ const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY;
 
 const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet],
-  [
-    alchemyProvider({ apiKey: alchemyApiKey }),
-    infuraProvider({ apiKey: infuraId }),
-    publicProvider(),
-  ]
+  [alchemyProvider({ apiKey: alchemyApiKey }), infuraProvider({ apiKey: infuraId }), publicProvider()]
 );
 
 const client = createClient({

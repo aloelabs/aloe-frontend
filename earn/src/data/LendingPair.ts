@@ -5,10 +5,7 @@ import { GetTokenData, TokenData } from './TokenData';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import Big from 'big.js';
-import {
-  ALOE_II_FACTORY_ADDRESS_GOERLI,
-  ALOE_II_KITTY_LENS_ADDRESS,
-} from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -44,28 +41,19 @@ export async function getAvailableLendingPairs(
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
-  const addresses: { pool: string; kitty0: string; kitty1: string }[] =
-    etherscanResult.data.result.map((item: any) => {
-      return {
-        pool: item.topics[1].slice(26),
-        kitty0: `0x${item.topics[2].slice(26)}`,
-        kitty1: `0x${item.topics[3].slice(26)}`,
-      };
-    });
+  const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
+    return {
+      pool: item.topics[1].slice(26),
+      kitty0: `0x${item.topics[2].slice(26)}`,
+      kitty1: `0x${item.topics[3].slice(26)}`,
+    };
+  });
 
-  const kittyLens = new ethers.Contract(
-    ALOE_II_KITTY_LENS_ADDRESS,
-    KittyLensABI,
-    provider
-  );
+  const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
   return await Promise.all(
     addresses.map(async (market) => {
-      const uniswapPool = new ethers.Contract(
-        market.pool,
-        UniswapV3PoolABI,
-        provider
-      );
+      const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
       const [result0, result1, result2] = await Promise.all([
         kittyLens.readBasics(market.kitty0),
@@ -102,27 +90,15 @@ export async function getAvailableLendingPairs(
         kitty1,
         kitty0Info: {
           apy: APY0 * 100, // percentage
-          inventory: new Big(result0.inventory.toString())
-            .div(10 ** token0.decimals)
-            .toNumber(),
-          totalSupply: new Big(result0.totalSupply.toString())
-            .div(10 ** kitty0.decimals)
-            .toNumber(),
-          utilization:
-            new Big(result0.utilization.toString()).div(10 ** 18).toNumber() *
-            100.0, // Percentage
+          inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
+          totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
+          utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
         },
         kitty1Info: {
           apy: APY1 * 100, // percentage
-          inventory: new Big(result1.inventory.toString())
-            .div(10 ** token1.decimals)
-            .toNumber(),
-          totalSupply: new Big(result1.totalSupply.toString())
-            .div(10 ** kitty1.decimals)
-            .toNumber(),
-          utilization:
-            new Big(result1.utilization.toString()).div(10 ** 18).toNumber() *
-            100.0, // Percentage
+          inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
+          totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
+          utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
         },
         uniswapFeeTier: NumericFeeTierToEnum(result2),
       };

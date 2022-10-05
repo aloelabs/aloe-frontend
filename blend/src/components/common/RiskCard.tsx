@@ -90,15 +90,11 @@ const RISK_CARDS = [
     description: (
       <Text size='S' weight='medium' color={DESCRIPTION_TEXT_COLOR}>
         Though Aloe Blend has been{' '}
-        <a
-          href='https://github.com/aloelabs/aloe-blend/blob/master/audits/aloe_1.1_signed.pdf'
-          className='underline'
-        >
+        <a href='https://github.com/aloelabs/aloe-blend/blob/master/audits/aloe_1.1_signed.pdf' className='underline'>
           audited
         </a>
-        , there’s always a chance that something goes wrong. The contract code
-        is immutable, and there is no failsafe by which Aloe Labs or anyone else
-        can pause execution.
+        , there’s always a chance that something goes wrong. The contract code is immutable, and there is no failsafe by
+        which Aloe Labs or anyone else can pause execution.
       </Text>
     ),
     image: ExecutionRiskIcon,
@@ -107,9 +103,8 @@ const RISK_CARDS = [
     title: <Title>Base Protocol Risk</Title>,
     description: (
       <Text size='S' weight='medium' color={DESCRIPTION_TEXT_COLOR}>
-        The underlying protocols (Uniswap and protocols used in silos) present
-        risk from both their code and the potential for deleterious governance
-        action.
+        The underlying protocols (Uniswap and protocols used in silos) present risk from both their code and the
+        potential for deleterious governance action.
       </Text>
     ),
     image: BaseProtocolRiskIcon,
@@ -118,8 +113,7 @@ const RISK_CARDS = [
     title: <Title>Impermanent Loss</Title>,
     description: (
       <Text size='S' weight='medium' color={DESCRIPTION_TEXT_COLOR}>
-        This pool is subject to similar impermanent loss as a standard Uniswap
-        V2 position.
+        This pool is subject to similar impermanent loss as a standard Uniswap V2 position.
       </Text>
     ),
     image: ImpermanentLossIcon,
@@ -128,9 +122,8 @@ const RISK_CARDS = [
     title: <Title>Tokens and Base Layer Risk</Title>,
     description: (
       <Text size='S' weight='medium' color={DESCRIPTION_TEXT_COLOR}>
-        Risks associated with holding the underlying tokens are still present
-        when depositing to this pool. Ethereum blockchain clients can break and
-        bugs can be exploited. This interface may not always work.
+        Risks associated with holding the underlying tokens are still present when depositing to this pool. Ethereum
+        blockchain clients can break and bugs can be exploited. This interface may not always work.
       </Text>
     ),
     image: TokenAndBaseLayerRiskIcon,
@@ -157,21 +150,11 @@ export default function RiskCard() {
             disabled={isPreviousButtonDisabled}
             onClick={() => setCurrentCardIndex(currentCardIndex - 1)}
           >
-            <img
-              src={
-                isPreviousButtonDisabled
-                  ? PreviousChevronInactive
-                  : PreviousChevronActive
-              }
-              alt='Previous'
-            />
+            <img src={isPreviousButtonDisabled ? PreviousChevronInactive : PreviousChevronActive} alt='Previous' />
           </NavigationButton>
           <div className='flex items-center gap-x-2'>
             {RISK_CARDS.map((_riskCard, index) => (
-              <NavigationDot
-                className={index === currentCardIndex ? 'active' : ''}
-                key={index}
-              />
+              <NavigationDot className={index === currentCardIndex ? 'active' : ''} key={index} />
             ))}
           </div>
           <NavigationButton
@@ -180,12 +163,7 @@ export default function RiskCard() {
               setCurrentCardIndex(currentCardIndex + 1);
             }}
           >
-            <img
-              src={
-                isNextButtonDisabled ? NextChevronInactive : NextChevronActive
-              }
-              alt='Next'
-            />
+            <img src={isNextButtonDisabled ? NextChevronInactive : NextChevronActive} alt='Next' />
           </NavigationButton>
         </div>
       </RiskBody>

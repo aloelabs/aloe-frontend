@@ -7,8 +7,7 @@ import tw from 'twin.macro';
 import { Display } from 'shared/lib/components/common/Typography';
 import { classNames } from '../../util/ClassNames';
 
-const DEFAULT_BORDER_GRADIENT =
-  'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
+const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
 const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';
 export const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 export const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -20,12 +19,7 @@ const StyledDialog = styled.div`
 `;
 
 const ModalWrapper = styled.div.attrs(
-  (props: {
-    borderGradient: string;
-    backgroundColor?: string;
-    fullWidth?: boolean;
-    fullHeight?: boolean;
-  }) => props
+  (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props
 )`
   ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left overflow-hidden transition-all sm:my-4 sm:align-middle`}
   transform: translateY(0);
@@ -35,8 +29,7 @@ const ModalWrapper = styled.div.attrs(
   height: ${(props) => (props.fullHeight ? '100vh' : 'auto')};
   ${(props) => (props.fullHeight ? 'margin: 0 !important;' : '')}
   background-color: rgba(13, 23, 30, 1);
-  ${(props) =>
-    props.backgroundColor && `background-color: ${props.backgroundColor};`}
+  ${(props) => props.backgroundColor && `background-color: ${props.backgroundColor};`}
   color: rgba(255, 255, 255, 1);
   position: relative;
 
@@ -48,8 +41,7 @@ const ModalWrapper = styled.div.attrs(
     border-radius: 8px;
     padding: 1.25px;
     background: ${(props) => props.borderGradient};
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     ${(props) => (props.fullWidth || props.fullHeight ? 'display: none;' : '')}
@@ -174,10 +166,7 @@ function ModalBase(props: ModalBaseProps) {
             </Transition.Child>
 
             {/* This element is to trick the browser into centering the modal contents. */}
-            <span
-              className='hidden sm:inline-block sm:align-middle sm:h-screen'
-              aria-hidden='true'
-            >
+            <span className='hidden sm:inline-block sm:align-middle sm:h-screen' aria-hidden='true'>
               &#8203;
             </span>
             <Transition.Child
@@ -195,9 +184,7 @@ function ModalBase(props: ModalBaseProps) {
                 fullHeight={props.fullHeight}
                 backgroundColor={props.backgroundColor}
               >
-                <div className={props.noPadding ? '' : 'p-8'}>
-                  {props.children}
-                </div>
+                <div className={props.noPadding ? '' : 'p-8'}>{props.children}</div>
               </ModalWrapper>
             </Transition.Child>
           </div>
@@ -252,11 +239,7 @@ type LoadingModalProps = ModalProps & {
 export function LoadingModal(props: LoadingModalProps) {
   const borderGradient = props.borderGradient || LOADING_BORDER_GRADIENT;
   return (
-    <ModalBase
-      open={props.open}
-      setOpen={(_open: boolean) => {}}
-      borderGradient={borderGradient}
-    >
+    <ModalBase open={props.open} setOpen={(_open: boolean) => {}} borderGradient={borderGradient}>
       <div className='w-full flex flex-row items-center justify-between mb-8'>
         <Display size='M' weight='semibold'>
           {props.title}

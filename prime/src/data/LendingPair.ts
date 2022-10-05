@@ -5,10 +5,7 @@ import { GetTokenData, TokenData } from './TokenData';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import Big from 'big.js';
-import {
-  ALOE_II_FACTORY_ADDRESS_GOERLI,
-  ALOE_II_KITTY_LENS_ADDRESS,
-} from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 
 export type LendingPair = {
   token0: TokenData;
@@ -24,9 +21,7 @@ export type LendingPair = {
   uniswapFeeTier: FeeTier;
 };
 
-export async function getAvailableLendingPairs(
-  provider: ethers.providers.BaseProvider
-): Promise<LendingPair[]> {
+export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider): Promise<LendingPair[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
@@ -36,28 +31,19 @@ export async function getAvailableLendingPairs(
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
-  const addresses: { pool: string; kitty0: string; kitty1: string }[] =
-    etherscanResult.data.result.map((item: any) => {
-      return {
-        pool: item.topics[1].slice(26),
-        kitty0: item.topics[2].slice(26),
-        kitty1: item.topics[3].slice(26),
-      };
-    });
+  const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
+    return {
+      pool: item.topics[1].slice(26),
+      kitty0: item.topics[2].slice(26),
+      kitty1: item.topics[3].slice(26),
+    };
+  });
 
-  const kittyLens = new ethers.Contract(
-    ALOE_II_KITTY_LENS_ADDRESS,
-    KittyLensABI,
-    provider
-  );
+  const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
   return await Promise.all(
     addresses.map(async (market) => {
-      const uniswapPool = new ethers.Contract(
-        market.pool,
-        UniswapV3PoolABI,
-        provider
-      );
+      const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
       const [result0, result1, result2] = await Promise.all([
         kittyLens.readBasics(market.kitty0),
@@ -94,18 +80,10 @@ export async function getAvailableLendingPairs(
         kitty1,
         token0APY: APY0,
         token1APY: APY1,
-        token0TotalSupply: new Big(result0.inventory.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1TotalSupply: new Big(result1.inventory.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        token0Utilization: new Big(result0.utilization.toString())
-          .div(10 ** 18)
-          .toNumber(),
-        token1Utilization: new Big(result1.utilization.toString())
-          .div(10 ** 18)
-          .toNumber(),
+        token0TotalSupply: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
+        token1TotalSupply: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
+        token0Utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber(),
+        token1Utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber(),
         uniswapFeeTier: NumericFeeTierToEnum(result2),
       };
     })

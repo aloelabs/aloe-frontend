@@ -66,9 +66,7 @@ export default function PortfolioGraphTooltip(data: any, active = false) {
             {labelBottom}
           </Text>
         </TooltipTitleContainer>
-        <div className='flex flex-col justify-between gap-2 mt-4 pl-3 pr-3 pb-3'>
-          {tooltipValues}
-        </div>
+        <div className='flex flex-col justify-between gap-2 mt-4 pl-3 pr-3 pb-3'>{tooltipValues}</div>
       </TooltipContainer>
     );
   }

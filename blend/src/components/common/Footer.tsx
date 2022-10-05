@@ -85,12 +85,7 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Join our Discord'
         >
-          <img
-            src={DiscordFooterIcon}
-            alt='Discord Icon'
-            width={14}
-            height={11}
-          />
+          <img src={DiscordFooterIcon} alt='Discord Icon' width={14} height={11} />
         </a>
         <a
           href={'https://twitter.com/aloecapital'}
@@ -98,12 +93,7 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Follow us on Twitter'
         >
-          <img
-            src={TwitterFooterIcon}
-            alt='Twitter Icon'
-            width={15}
-            height={11}
-          />
+          <img src={TwitterFooterIcon} alt='Twitter Icon' width={15} height={11} />
         </a>
         <a
           href={'https://aloelabs.medium.com/'}
@@ -111,12 +101,7 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Connect with us on Medium'
         >
-          <img
-            src={MediumFooterIcon}
-            alt='Medium Icon'
-            width={21}
-            height={11}
-          />
+          <img src={MediumFooterIcon} alt='Medium Icon' width={21} height={11} />
         </a>
       </div>
     </StyledFooter>

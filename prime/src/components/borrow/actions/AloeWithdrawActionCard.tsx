@@ -14,13 +14,7 @@ import { getTransferOutActionArgs } from '../../../connector/MarginAccountAction
 import { useEffect } from 'react';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
-  const {
-    marginAccount,
-    previousActionCardState,
-    isCausingError,
-    onRemove,
-    onChange,
-  } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -45,12 +39,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken =
-    previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(
-    previouslySelectedToken,
-    dropdownOptions
-  );
+  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const tokenMap = new Map<TokenType, TokenData>();
@@ -64,19 +54,13 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
     onChange({
       actionId: ActionID.TRANSFER_OUT,
       actionArgs:
-        selectedToken && value !== ''
-          ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue)
-          : undefined,
+        selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
       textFields: [value],
       aloeResult: {
-        token0RawDelta:
-          selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta:
-          selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta:
-          selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
-        token1PlusDelta:
-          selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
+        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
+        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
+        token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
+        token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
         selectedToken: selectedToken,
       },
       uniswapResult: null,
@@ -85,8 +69,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
 
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '')
-      callbackWithFullResult(tokenAmount);
+    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

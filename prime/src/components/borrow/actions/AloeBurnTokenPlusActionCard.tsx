@@ -13,13 +13,7 @@ import { getBurnActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
-  const {
-    marginAccount,
-    previousActionCardState,
-    isCausingError,
-    onRemove,
-    onChange,
-  } = prop;
+  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -35,12 +29,8 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
     },
   ];
 
-  const previouslySelectedToken =
-    previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(
-    previouslySelectedToken,
-    dropdownOptions
-  );
+  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const callbackWithFullResult = (value: string) => {
@@ -57,29 +47,21 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             ),
       textFields: [value],
       aloeResult: {
-        token0RawDelta:
-          selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
-        token1RawDelta:
-          selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
-        token0PlusDelta:
-          selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
-        token1PlusDelta:
-          selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
+        token0RawDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
+        token1RawDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
+        token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
+        token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
         selectedToken: selectedToken,
       },
       uniswapResult: null,
     });
   };
 
-  const max =
-    marginAccount.assets[
-      selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'
-    ];
+  const max = marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'];
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '')
-      callbackWithFullResult(tokenAmount);
+    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

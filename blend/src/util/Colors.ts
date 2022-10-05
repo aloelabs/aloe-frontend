@@ -13,10 +13,10 @@ function rgb_to_hsv(rgb: number[]): number[] {
   const b = rgb[2] / 255.0;
 
   // h, s, v = hue, saturation, value
-  var cmax = Math.max(r, Math.max(g, b)); // maximum of r, g, b
-  var cmin = Math.min(r, Math.min(g, b)); // minimum of r, g, b
-  var diff = cmax - cmin; // diff of cmax and cmin.
-  var h = -1,
+  let cmax = Math.max(r, Math.max(g, b)); // maximum of r, g, b
+  let cmin = Math.min(r, Math.min(g, b)); // minimum of r, g, b
+  let diff = cmax - cmin; // diff of cmax and cmin.
+  let h = -1,
     s = -1;
 
   // if cmax and cmax are equal then h = 0
@@ -33,7 +33,7 @@ function rgb_to_hsv(rgb: number[]): number[] {
   else s = (diff / cmax) * 100;
 
   // compute v
-  var v = cmax * 100;
+  let v = cmax * 100;
   return [h, s, v];
 }
 

@@ -89,14 +89,7 @@ export type PaginationProps = {
 };
 
 export default function Pagination(props: PaginationProps) {
-  const {
-    totalItems,
-    itemsPerPage,
-    currentPage,
-    loading,
-    onPageChange,
-    onItemsPerPageChange,
-  } = props;
+  const { totalItems, itemsPerPage, currentPage, loading, onPageChange, onItemsPerPageChange } = props;
   const itemsPerPageValues: ItemsPerPage[] = [10, 20, 50, 100];
   const itemsPerPageOptions = itemsPerPageValues.map((value) => ({
     label: `${value.toString()} Results`,
@@ -129,8 +122,7 @@ export default function Pagination(props: PaginationProps) {
     onPageChange(currentPage + 1);
   };
 
-  const startItem =
-    totalItems > 0 ? Math.max((currentPage - 1) * itemsPerPage + 1, 1) : 0;
+  const startItem = totalItems > 0 ? Math.max((currentPage - 1) * itemsPerPage + 1, 1) : 0;
   const endItem = Math.min(startItem + itemsPerPage - 1, totalItems);
 
   return (
@@ -139,9 +131,7 @@ export default function Pagination(props: PaginationProps) {
         <Dropdown
           options={itemsPerPageOptions}
           selectedOption={itemsPerPageOption}
-          onSelect={(updatedOption) =>
-            onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)
-          }
+          onSelect={(updatedOption) => onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)}
           placeAbove={true}
           small={true}
         />
@@ -158,11 +148,7 @@ export default function Pagination(props: PaginationProps) {
             return <EllipsisWrapper key={index}>&#8230;</EllipsisWrapper>;
           }
           return (
-            <PageButton
-              key={index}
-              className={page === currentPage ? 'active' : ''}
-              onClick={() => onPageChange(page)}
-            >
+            <PageButton key={index} className={page === currentPage ? 'active' : ''} onClick={() => onPageChange(page)}>
               {page}
             </PageButton>
           );

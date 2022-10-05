@@ -6,9 +6,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 const DASHED_DIVIDER_BORDER_COLOR = 'rgba(255, 255, 255, 0.6)';
 const SILO_TEXT_COLOR = 'rgba(228, 237, 246, 1)';
 
-const InfoContainer = styled.div.attrs(
-  (props: { shouldGrow: boolean }) => props
-)`
+const InfoContainer = styled.div.attrs((props: { shouldGrow: boolean }) => props)`
   ${tw`flex flex-col`}
   flex-grow: ${(props) => (props.shouldGrow ? 1 : 0)};
   gap: 8px;

@@ -5,20 +5,13 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import GraphButtons, { buttonIdxToText } from '../graph/GraphButtons';
 import axios from 'axios';
-import {
-  calculateReturns,
-  PoolReturns,
-  TokenReturns,
-} from '../../util/ReturnsCalculations';
+import { calculateReturns, PoolReturns, TokenReturns } from '../../util/ReturnsCalculations';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { GetTokenData } from '../../data/TokenData';
 import { Text } from '../common/Typography';
 import { fixTimestamp } from '../../util/Dates';
 import { API_URL } from '../../data/constants/Values';
-import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { BlendGraphPlaceholder } from '../graph/BlendGraphPlaceholder';
 
 const GraphButtonsWrapper = styled.div`
@@ -149,15 +142,9 @@ export default function BlendAllocationGraph(props: BlendAllocationGraphProps) {
       let range = buttonIdxToText(activeButton).toLowerCase();
 
       const toDateParam = (toDate.getTime() / 1000).toFixed(0);
-      const getPoolReturns = makeRequest(
-        `${API_URL}/pool_returns/${pool}/1/${range}/${toDateParam}`
-      );
-      const getToken0 = makeRequest(
-        `${API_URL}/token_returns/${token0}/1/${range}/${toDateParam}`
-      );
-      const getToken1 = makeRequest(
-        `${API_URL}/token_returns/${token1}/1/${range}/${toDateParam}`
-      );
+      const getPoolReturns = makeRequest(`${API_URL}/pool_returns/${pool}/1/${range}/${toDateParam}`);
+      const getToken0 = makeRequest(`${API_URL}/token_returns/${token0}/1/${range}/${toDateParam}`);
+      const getToken1 = makeRequest(`${API_URL}/token_returns/${token1}/1/${range}/${toDateParam}`);
 
       axios
         .all([getPoolReturns, getToken0, getToken1])
@@ -168,26 +155,16 @@ export default function BlendAllocationGraph(props: BlendAllocationGraphProps) {
             const token1Data = token1.data as TokenReturns;
 
             try {
-              const calculatedReturns = calculateReturns(
-                poolReturnsData,
-                token0Data,
-                token1Data
-              );
+              const calculatedReturns = calculateReturns(poolReturnsData, token0Data, token1Data);
               let updatedData = [];
               for (let i = 0; i < calculatedReturns.length; i++) {
                 let updatedObj = {} as any;
-                updatedObj['Blend Pool'] =
-                  (calculatedReturns[i]['pool'] - 1.0) * 100;
-                updatedObj['Uniswap Baseline'] =
-                  (calculatedReturns[i]['sqrt'] - 1.0) * 100;
+                updatedObj['Blend Pool'] = (calculatedReturns[i]['pool'] - 1.0) * 100;
+                updatedObj['Uniswap Baseline'] = (calculatedReturns[i]['sqrt'] - 1.0) * 100;
                 // updatedObj['50/50 HODL'] = (calculatedReturns[i]['fifty_fifty'] - 1.0) * 100;
-                updatedObj[token0Key] =
-                  (calculatedReturns[i]['token0'] - 1.0) * 100;
-                updatedObj[token1Key] =
-                  (calculatedReturns[i]['token1'] - 1.0) * 100;
-                updatedObj['x'] = new Date(
-                  fixTimestamp(calculatedReturns[i]['timestamp'].toString())
-                ).toISOString();
+                updatedObj[token0Key] = (calculatedReturns[i]['token0'] - 1.0) * 100;
+                updatedObj[token1Key] = (calculatedReturns[i]['token1'] - 1.0) * 100;
+                updatedObj['x'] = new Date(fixTimestamp(calculatedReturns[i]['timestamp'].toString())).toISOString();
                 updatedData.push(updatedObj);
               }
               if (mounted) {
@@ -216,16 +193,7 @@ export default function BlendAllocationGraph(props: BlendAllocationGraphProps) {
     return () => {
       mounted = false;
     };
-  }, [
-    activeButton,
-    toDate,
-    fromDate,
-    pool,
-    token0,
-    token1,
-    token0Key,
-    token1Key,
-  ]);
+  }, [activeButton, toDate, fromDate, pool, token0, token1, token0Key, token1Key]);
 
   return (
     <Wrapper>

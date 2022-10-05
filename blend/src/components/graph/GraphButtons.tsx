@@ -24,9 +24,7 @@ export function buttonIdxToText(idx: number): string {
   }
 }
 
-const StyledGraphButton = styled.button.attrs(
-  (props: { buttonWidth: number }) => props
-)`
+const StyledGraphButton = styled.button.attrs((props: { buttonWidth: number }) => props)`
   ${tw`rounded-md p-1 bg-transparent disabled:text-grey-500`}
   width: ${(props) => props.buttonWidth}px;
   height: 36px;

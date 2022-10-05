@@ -8,17 +8,13 @@ import { Text } from './Typography';
 const DASHED_DIVIDER_BORDER_COLOR = 'rgba(255, 255, 255, 0.6)';
 const SILO_TEXT_COLOR = 'rgba(228, 237, 246, 1)';
 
-const InvestedTypesContainer = styled.div.attrs(
-  (props: { shouldGrow: boolean }) => props
-)`
+const InvestedTypesContainer = styled.div.attrs((props: { shouldGrow: boolean }) => props)`
   ${tw`flex flex-col`}
   flex-grow: ${(props) => (props.shouldGrow ? 1 : 0)};
   gap: 8px;
 `;
 
-const InvestedType = styled.div.attrs(
-  (props: { figureColor: string }) => props
-)`
+const InvestedType = styled.div.attrs((props: { figureColor: string }) => props)`
   display: flex;
   align-items: center;
   padding-left: 24px;

@@ -7,12 +7,7 @@ import Footer from './components/common/Footer';
 
 import AppBody from './components/common/AppBody';
 import ScrollToTop from './util/ScrollToTop';
-import {
-  ApolloClient,
-  InMemoryCache,
-  HttpLink,
-  gql,
-} from '@apollo/react-hooks';
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import LendPage from './pages/LendPage';
 
 export const theGraphUniswapV2Client = new ApolloClient({

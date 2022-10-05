@@ -26,9 +26,7 @@ export type ConfirmWithdrawalModalProps = {
   networkFee: string;
 };
 
-export default function ConfirmWithdrawalModal(
-  props: ConfirmWithdrawalModalProps
-) {
+export default function ConfirmWithdrawalModal(props: ConfirmWithdrawalModalProps) {
   const {
     open,
     setOpen,
@@ -44,12 +42,7 @@ export default function ConfirmWithdrawalModal(
     networkFee,
   } = props;
   return (
-    <CloseableModal
-      open={open}
-      setOpen={setOpen}
-      onClose={onCancel}
-      title='Confirm Withdrawal'
-    >
+    <CloseableModal open={open} setOpen={setOpen} onClose={onCancel} title='Confirm Withdrawal'>
       <div className='flex flex-col gap-y-4 mb-4'>
         <div className='flex justify-between items-center'>
           <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
@@ -113,12 +106,7 @@ export default function ConfirmWithdrawalModal(
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{networkFee} WETH</Text>
       </div> */}
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        onClick={onConfirm}
-      >
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} onClick={onConfirm}>
         Confirm Withdrawal
       </FilledStylizedButton>
     </CloseableModal>

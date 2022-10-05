@@ -98,13 +98,7 @@ export default function Header() {
             <div className='flex flex-row align-middle items-center h-full text-md'>
               {menuItems.map((menuItem, index) => (
                 <React.Fragment key={index}>
-                  <div
-                    className={`${
-                      !menuItem.onlyShowIfConnected || address
-                        ? 'flex'
-                        : 'hidden'
-                    }`}
-                  >
+                  <div className={`${!menuItem.onlyShowIfConnected || address ? 'flex' : 'hidden'}`}>
                     <StyledNavLink
                       size='M'
                       weight='medium'
@@ -138,13 +132,7 @@ export default function Header() {
         <NavDropdown>
           {menuItems.map((menuItem, index) => (
             <React.Fragment key={index}>
-              <div
-                className={`${
-                  !menuItem.onlyShowIfConnected || address
-                    ? 'w-full flex'
-                    : 'hidden'
-                }`}
-              >
+              <div className={`${!menuItem.onlyShowIfConnected || address ? 'w-full flex' : 'hidden'}`}>
                 <StyledNavLink
                   size='M'
                   weight='medium'
@@ -162,11 +150,7 @@ export default function Header() {
             </React.Fragment>
           ))}
           <div className='w-full'>
-            <ConnectWalletButton
-              address={address}
-              ensName={ensName as string}
-              buttonStyle='tertiary'
-            />
+            <ConnectWalletButton address={address} ensName={ensName as string} buttonStyle='tertiary' />
           </div>
         </NavDropdown>
       )}

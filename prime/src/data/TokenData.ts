@@ -1,12 +1,4 @@
-import {
-  FeiLogo,
-  UsdcLogo,
-  WbtcLogo,
-  WethLogo,
-  TribeLogo,
-  RaiLogo,
-  LooksLogo,
-} from '../assets/svg/tokens';
+import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
   address: string;

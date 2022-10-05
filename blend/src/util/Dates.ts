@@ -53,7 +53,5 @@ export function isUnixTimestamp(str: string): boolean {
  * the unix timestamp with the milliseconds appended
  */
 export function fixTimestamp(timestamp: string | number): string | number {
-  return isUnixTimestamp(timestamp.toString())
-    ? parseInt(timestamp.toString()) * 1000
-    : timestamp;
+  return isUnixTimestamp(timestamp.toString()) ? parseInt(timestamp.toString()) * 1000 : timestamp;
 }

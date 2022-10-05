@@ -10,9 +10,7 @@ export type TransactionFailedModalProps = {
   setOpen: (open: boolean) => void;
 };
 
-export default function TransactionFailedModal(
-  props: TransactionFailedModalProps
-) {
+export default function TransactionFailedModal(props: TransactionFailedModalProps) {
   return (
     <CloseableModal
       open={props.open}
@@ -21,8 +19,7 @@ export default function TransactionFailedModal(
       borderGradient={FAILED_BORDER_GRADIENT}
     >
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
-        Oops! Something went wrong with your transaction, please try again
-        later.
+        Oops! Something went wrong with your transaction, please try again later.
       </Text>
       <FilledGreyButton size='M' fillWidth={true} className='mt-8'>
         Dismiss

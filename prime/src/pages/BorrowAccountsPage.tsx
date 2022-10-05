@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import {
-  chain,
-  useAccount,
-  useContract,
-  useProvider,
-  useSigner,
-  useBlockNumber,
-} from 'wagmi';
+import { chain, useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -19,10 +12,7 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
 import { Display } from 'shared/lib/components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
-import {
-  fetchMarginAccountPreviews,
-  MarginAccountPreview,
-} from '../data/MarginAccount';
+import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
@@ -41,9 +31,7 @@ export default function BorrowAccountsPage() {
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>(
-    []
-  );
+  const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
 
   // MARK: wagmi hooks
   const currentChainId = chain.goerli.id;
@@ -64,11 +52,7 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch(userAddress: string) {
-      const updatedMarginAccounts = await fetchMarginAccountPreviews(
-        marginAccountLensContract,
-        provider,
-        userAddress
-      );
+      const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);
       }
@@ -83,8 +67,7 @@ export default function BorrowAccountsPage() {
   }, [address, marginAccountLensContract, provider, blockNumber.data]);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal =
-      localStorage.getItem('acknowledgedWelcomeModal') !== 'true';
+    const shouldShowWelcomeModal = localStorage.getItem('acknowledgedWelcomeModal') !== 'true';
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
@@ -110,11 +93,9 @@ export default function BorrowAccountsPage() {
         </FilledGradientButtonWithIcon>
       </div>
       <MarginAccountsContainner>
-        {marginAccounts.map(
-          (marginAccount: MarginAccountPreview, index: number) => (
-            <MarginAccountCard key={index} {...marginAccount} />
-          )
-        )}
+        {marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
+          <MarginAccountCard key={index} {...marginAccount} />
+        ))}
       </MarginAccountsContainner>
 
       <CreateMarginAccountModal
@@ -161,10 +142,7 @@ export default function BorrowAccountsPage() {
         }}
       />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
-      <PendingTxnModal
-        open={showSubmittingModal}
-        setOpen={setShowSubmittingModal}
-      />
+      <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
       <WelcomeModal
         open={showWelcomeModal}
         setOpen={setShowWelcomeModal}

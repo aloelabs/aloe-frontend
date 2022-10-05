@@ -13,12 +13,7 @@ export type SuccessfulTxnModalProps = {
 export default function SuccessfulTxnModal(props: SuccessfulTxnModalProps) {
   const { open, setOpen, onConfirm } = props;
   return (
-    <CloseableModal
-      open={open}
-      setOpen={setOpen}
-      onClose={onConfirm}
-      title='Transaction Successful'
-    >
+    <CloseableModal open={open} setOpen={setOpen} onClose={onConfirm} title='Transaction Successful'>
       <div className='flex justify-center items-center mb-2'>
         <img src={SuccessIcon} alt='success' />
       </div>

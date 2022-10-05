@@ -18,8 +18,7 @@ export default function FailureModalContent(props: FailureModalContentProps) {
       </div>
       <div className='flex justify-between items-center mb-8 max-w-sm'>
         <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
-          Oops! Something went wrong with your transaction, please try again
-          later.
+          Oops! Something went wrong with your transaction, please try again later.
         </Text>
       </div>
       <FilledGreyButton size='M' fillWidth={true} onClick={onConfirm}>

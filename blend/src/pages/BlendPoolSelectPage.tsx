@@ -37,12 +37,9 @@ import { isHiddenPool } from '../data/HiddenBlendPools';
 import { isPoolDeprecated } from '../util/Pool';
 
 const BROWSE_CARD_GAP = '24px';
-const MAX_WIDTH_XL =
-  parseInt(BROWSE_CARD_WIDTH_XL) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
-const MAX_WIDTH_L =
-  parseInt(BROWSE_CARD_WIDTH_LG) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
-const MAX_WIDTH_M =
-  parseInt(BROWSE_CARD_WIDTH_MD) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
+const MAX_WIDTH_XL = parseInt(BROWSE_CARD_WIDTH_XL) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
+const MAX_WIDTH_L = parseInt(BROWSE_CARD_WIDTH_LG) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
+const MAX_WIDTH_M = parseInt(BROWSE_CARD_WIDTH_MD) * 2 + parseInt(BROWSE_CARD_GAP) + 'px';
 
 const PageWrapper = styled.div`
   min-width: 300px;
@@ -103,16 +100,12 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
   const [searchText, setSearchText] = useState<string>('');
   const [activeSearchText, setActiveSearchText] = useState<string>('');
   const [pools, setPools] = useState<BlendPoolMarkers[]>([]);
-  const [searchablePools, setSearchablePools] = useState<BlendPoolMarkers[]>(
-    []
-  );
+  const [searchablePools, setSearchablePools] = useState<BlendPoolMarkers[]>([]);
   const [filteredPools, setFilteredPools] = useState<BlendPoolMarkers[]>([]);
   const [activePools, setActivePools] = useState<BlendPoolMarkers[]>([]);
   const [poolsToDisplay, setPoolsToDisplay] = useState<BlendPoolMarkers[]>([]);
   const [tokenOptions, setTokenOptions] = useState<MultiDropdownOption[]>([]);
-  const [activeTokenOptions, setActiveTokenOptions] = useState<
-    MultiDropdownOption[]
-  >([]);
+  const [activeTokenOptions, setActiveTokenOptions] = useState<MultiDropdownOption[]>([]);
   const [page, setPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<10 | 20 | 50 | 100>(10);
   const sortByOptions = [
@@ -132,8 +125,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
       isDefault: false,
     },
   ] as DropdownWithPlaceholderOption[];
-  const [selectedSortByOption, setSelectedSortByOption] =
-    useState<DropdownWithPlaceholderOption>(sortByOptions[0]);
+  const [selectedSortByOption, setSelectedSortByOption] = useState<DropdownWithPlaceholderOption>(sortByOptions[0]);
 
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
   const { poolDataMap } = useContext(BlendTableContext);
@@ -150,9 +142,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
   const loadData = useCallback(async () => {
     let poolData = Array.from(poolDataMap.values()) as BlendPoolMarkers[];
     // Filter out deprecated pools
-    let nonDeprecatedPoolData = poolData.filter(
-      (pool) => !isPoolDeprecated(pool)
-    );
+    let nonDeprecatedPoolData = poolData.filter((pool) => !isPoolDeprecated(pool));
     if (isMounted.current) {
       setPools(nonDeprecatedPoolData);
       setSearchablePools(poolData);
@@ -192,27 +182,12 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
       if (isMounted.current) {
         setFilteredPools(
           searchablePools.filter((pool) => {
-            const {
-              silo0Name,
-              silo1Name,
-              silo0Label,
-              silo1Label,
-              token0Label,
-              token1Label,
-            } = ResolveBlendPoolDrawData(pool);
+            const { silo0Name, silo1Name, silo0Label, silo1Label, token0Label, token1Label } =
+              ResolveBlendPoolDrawData(pool);
 
             return (
-              [
-                silo0Name,
-                silo1Name,
-                silo0Label,
-                silo1Label,
-                token0Label,
-                token1Label,
-              ].findIndex((field) => {
-                return field
-                  .toLowerCase()
-                  .includes(activeSearchText.toLowerCase());
+              [silo0Name, silo1Name, silo0Label, silo1Label, token0Label, token1Label].findIndex((field) => {
+                return field.toLowerCase().includes(activeSearchText.toLowerCase());
               }) !== -1
             );
           })
@@ -232,27 +207,12 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           pools
             .filter((pool) => IS_DEV || !isHiddenPool(pool.poolAddress)) // Hide pools that should only be shown in dev mode
             .filter((pool) => {
-              const {
-                silo0Name,
-                silo1Name,
-                silo0Label,
-                silo1Label,
-                token0Label,
-                token1Label,
-              } = ResolveBlendPoolDrawData(pool);
+              const { silo0Name, silo1Name, silo0Label, silo1Label, token0Label, token1Label } =
+                ResolveBlendPoolDrawData(pool);
 
               return (
-                [
-                  silo0Name,
-                  silo1Name,
-                  silo0Label,
-                  silo1Label,
-                  token0Label,
-                  token1Label,
-                ].findIndex((field) => {
-                  return activeTokenOptions
-                    .map((option) => option.label.toLowerCase())
-                    .includes(field.toLowerCase());
+                [silo0Name, silo1Name, silo0Label, silo1Label, token0Label, token1Label].findIndex((field) => {
+                  return activeTokenOptions.map((option) => option.label.toLowerCase()).includes(field.toLowerCase());
                 }) !== -1
               );
             })
@@ -333,8 +293,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           </Display>
           {numberOfFiltersApplied > 0 && (
             <FilterBadge>
-              {numberOfFiltersApplied}{' '}
-              {numberOfFiltersApplied === 1 ? 'Filter' : 'Filters'} Applied
+              {numberOfFiltersApplied} {numberOfFiltersApplied === 1 ? 'Filter' : 'Filters'} Applied
             </FilterBadge>
           )}
         </div>
@@ -390,24 +349,12 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           )}
         </div>
         <BrowseCards>
-          {toDisplayLoading &&
-            [...Array(5)].map((_placeholder, index) => (
-              <BrowseCardPlaceholder key={index} />
-            ))}
+          {toDisplayLoading && [...Array(5)].map((_placeholder, index) => <BrowseCardPlaceholder key={index} />)}
           {!toDisplayLoading &&
             poolsToDisplay
-              .slice(
-                (page - 1) * itemsPerPage,
-                (page - 1) * itemsPerPage + itemsPerPage
-              )
+              .slice((page - 1) * itemsPerPage, (page - 1) * itemsPerPage + itemsPerPage)
               .map((pool, index) => {
-                return (
-                  <BrowseCard
-                    blendPoolMarkers={pool}
-                    blockNumber={blockNumber}
-                    key={index}
-                  />
-                );
+                return <BrowseCard blendPoolMarkers={pool} blockNumber={blockNumber} key={index} />;
               })}
         </BrowseCards>
         <Pagination

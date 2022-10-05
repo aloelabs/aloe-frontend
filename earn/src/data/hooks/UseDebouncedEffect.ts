@@ -6,11 +6,7 @@ import { DependencyList, EffectCallback, useEffect } from 'react';
  * @param delayMs the delay in milliseconds
  * @param deps the dependencies of the effect
  */
-export function useDebouncedEffect(
-  effect: EffectCallback,
-  delayMs: number,
-  deps?: DependencyList
-): void {
+export function useDebouncedEffect(effect: EffectCallback, delayMs: number, deps?: DependencyList): void {
   useEffect(() => {
     const timeoutId = setTimeout(effect, delayMs);
     return () => clearTimeout(timeoutId);

@@ -1,7 +1,4 @@
-import {
-  BLOCKS_TO_WAIT,
-  GAS_ESTIMATION_SCALING,
-} from '../data/constants/Values';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
 
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
@@ -18,12 +15,8 @@ export async function withdraw(
 ): Promise<void> {
   const tokenContract = new Contract(poolAddress, BlendPoolAbi, signer);
 
-  const estimated0 = poolStats.inventory0.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
-  const estimated1 = poolStats.inventory1.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
+  const estimated0 = poolStats.inventory0.total.mul(shares).div(poolStats.outstandingShares);
+  const estimated1 = poolStats.inventory1.total.mul(shares).div(poolStats.outstandingShares);
 
   const amount0Min = estimated0.mul(1 - ratioChange / 100);
   const amount1Min = estimated1.mul(1 - ratioChange / 100);
@@ -39,9 +32,7 @@ export async function withdraw(
       )) as BigNumber
     ).toNumber();
 
-    transactionOptions['gasLimit'] = (
-      estimatedGas * GAS_ESTIMATION_SCALING
-    ).toFixed(0);
+    transactionOptions['gasLimit'] = (estimatedGas * GAS_ESTIMATION_SCALING).toFixed(0);
   } catch (e) {
     console.error('Error while estimating gas');
     console.error(e);

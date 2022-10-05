@@ -78,15 +78,11 @@ const CombinedPercentChangeContainer = styled.div`
   padding: 8px 10px;
 `;
 
-const PositiveCombinedPercentChangeContainer = styled(
-  CombinedPercentChangeContainer
-)`
+const PositiveCombinedPercentChangeContainer = styled(CombinedPercentChangeContainer)`
   background: ${POSITIVE_PERCENT_BG_COLOR};
 `;
 
-const NegativeCombinedPercentChangeContainer = styled(
-  CombinedPercentChangeContainer
-)`
+const NegativeCombinedPercentChangeContainer = styled(CombinedPercentChangeContainer)`
   background: ${NEGATIVE_PERCENT_BG_COLOR};
 `;
 

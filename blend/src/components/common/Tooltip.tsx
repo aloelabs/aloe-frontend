@@ -17,9 +17,7 @@ const ICON_GAPS = {
   L: 10,
 };
 
-const InfoButton = styled.button.attrs(
-  (props: { icon: string; iconSize: 'S' | 'M' | 'L' }) => props
-)`
+const InfoButton = styled.button.attrs((props: { icon: string; iconSize: 'S' | 'M' | 'L' }) => props)`
   ${tw`flex justify-center items-center`}
   gap: ${(props) => ICON_GAPS[props.iconSize]}px;
   color: rgba(130, 160, 182, 1);
@@ -40,13 +38,7 @@ const InfoButton = styled.button.attrs(
 
 const TooltipContainer = styled.div.attrs(
   (props: {
-    position:
-      | 'top-left'
-      | 'top-center'
-      | 'top-right'
-      | 'bottom-left'
-      | 'bottom-center'
-      | 'bottom-right';
+    position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     filled?: boolean;
   }) => props
 )`
@@ -71,10 +63,8 @@ const TooltipContainer = styled.div.attrs(
   z-index: 30;
   border-radius: 8px;
   width: 240px;
-  background-color: ${(props) =>
-    props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);'};
-  border: ${(props) =>
-    props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'};
+  background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
+  border: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
 
   &:before {
     content: '';
@@ -100,25 +90,16 @@ const TooltipContainer = styled.div.attrs(
     height: 16px;
     transform: rotate(-45deg);
     border-radius: 0 4px 0 0;
-    background-color: ${(props) =>
-      props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);'};
-    border-left: ${(props) =>
-      props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'};
-    border-bottom: ${(props) =>
-      props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'};
+    background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
+    border-left: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
+    border-bottom: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
   }
 `;
 
 export type TooltipProps = {
   buttonSize: 'S' | 'M' | 'L';
   content: string | React.ReactNode;
-  position:
-    | 'top-left'
-    | 'top-center'
-    | 'top-right'
-    | 'bottom-left'
-    | 'bottom-center'
-    | 'bottom-right';
+  position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
   buttonClassName?: string;
   buttonText?: string;
   title?: string;
@@ -126,15 +107,7 @@ export type TooltipProps = {
 };
 
 export default function Tooltip(props: TooltipProps) {
-  const {
-    buttonSize,
-    content,
-    position,
-    buttonClassName,
-    buttonText,
-    title,
-    filled,
-  } = props;
+  const { buttonSize, content, position, buttonClassName, buttonText, title, filled } = props;
   const [isOpen, setIsOpen] = React.useState(false);
   const tooltipRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(tooltipRef, () => setIsOpen(false), isOpen);
@@ -143,11 +116,7 @@ export default function Tooltip(props: TooltipProps) {
       {isOpen && (
         <TooltipContainer position={position} filled={filled}>
           {title && (
-            <Text
-              size='M'
-              weight='medium'
-              className='w-full text-left mb-2 opacity-80'
-            >
+            <Text size='M' weight='medium' className='w-full text-left mb-2 opacity-80'>
               {title}
             </Text>
           )}
@@ -156,18 +125,9 @@ export default function Tooltip(props: TooltipProps) {
           </Text>
         </TooltipContainer>
       )}
-      <InfoButton
-        icon={InfoIcon}
-        iconSize={buttonSize}
-        onClick={() => setIsOpen(!isOpen)}
-        className={buttonClassName}
-      >
+      <InfoButton icon={InfoIcon} iconSize={buttonSize} onClick={() => setIsOpen(!isOpen)} className={buttonClassName}>
         {buttonText && (
-          <Text
-            size={buttonSize}
-            weight='medium'
-            color='rgba(130, 160, 182, 1)'
-          >
+          <Text size={buttonSize} weight='medium' color='rgba(130, 160, 182, 1)'>
             {buttonText}
           </Text>
         )}

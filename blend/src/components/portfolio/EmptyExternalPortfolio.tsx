@@ -35,12 +35,9 @@ export default function EmptyExternalPortfolio() {
   return (
     <Container>
       <div className='flex flex-col items-center'>
-        <EmptyExternalPortfolioText>
-          Your external positions will appear here.
-        </EmptyExternalPortfolioText>
+        <EmptyExternalPortfolioText>Your external positions will appear here.</EmptyExternalPortfolioText>
         <EmptyExternalPortfolioSubText>
-          Aloe allows you to import your existing external positions with just
-          one click.
+          Aloe allows you to import your existing external positions with just one click.
         </EmptyExternalPortfolioSubText>
       </div>
       <ExternalPortfolioCardSkeleton />

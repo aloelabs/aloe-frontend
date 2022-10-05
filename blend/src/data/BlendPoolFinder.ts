@@ -53,14 +53,12 @@ export async function fetchBlendPoolData(
   };
 }
 
-export default async function findPools(
-  provider: ethers.providers.BaseProvider
-) {
+export default async function findPools(provider: ethers.providers.BaseProvider) {
   const response = await axios.get(`${API_URL}/deployed_pools/1`);
   const data = response.data;
   const poolAddresses = data.map((pool: any) => pool['pool_address']);
-  const promises: Promise<BlendPoolMarkers>[] = poolAddresses.map(
-    (address: string) => fetchBlendPoolData(address, provider)
+  const promises: Promise<BlendPoolMarkers>[] = poolAddresses.map((address: string) =>
+    fetchBlendPoolData(address, provider)
   );
   const BlendPoolMarkers = await Promise.all(promises);
 

@@ -34,61 +34,25 @@ export default function ButtonExamplesPage() {
         <FilledStylizedButton size='L'>Label</FilledStylizedButton>
         <FilledStylizedButton size='M'>Label</FilledStylizedButton>
         <FilledStylizedButton size='S'>Label</FilledStylizedButton>
-        <OutlinedGradientRoundedButton size='L'>
-          Label
-        </OutlinedGradientRoundedButton>
-        <OutlinedGradientRoundedButton size='M'>
-          Label
-        </OutlinedGradientRoundedButton>
-        <OutlinedGradientRoundedButton size='S'>
-          Label
-        </OutlinedGradientRoundedButton>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <OutlinedGradientRoundedButton size='L'>Label</OutlinedGradientRoundedButton>
+        <OutlinedGradientRoundedButton size='M'>Label</OutlinedGradientRoundedButton>
+        <OutlinedGradientRoundedButton size='S'>Label</OutlinedGradientRoundedButton>
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
         <OutlinedGradientButtonWithIcon
@@ -118,52 +82,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
         <OutlinedGradientRoundedButtonWithIcon
@@ -193,52 +127,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientRoundedButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledGreyButtonWithIcon>
         <OutlinedGradientButtonWithIcon
@@ -268,52 +172,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-        >
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill'>
           Label
         </FilledStylizedButtonWithIcon>
         <OutlinedGradientRoundedButtonWithIcon
@@ -343,42 +217,12 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientRoundedButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
         <OutlinedGradientButtonWithIcon
           size='L'
           Icon={<MigrateIcon />}
@@ -400,42 +244,12 @@ export default function ButtonExamplesPage() {
           svgColorType='fill'
           activeGradientId='#migrate-icon-gradient'
         />
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-        />
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' />
         <OutlinedGradientRoundedButtonWithIcon
           size='L'
           Icon={<MigrateIcon />}
@@ -513,58 +327,22 @@ export default function ButtonExamplesPage() {
         <OutlinedGradientRoundedButton size='S' disabled>
           Label
         </OutlinedGradientRoundedButton>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
         <OutlinedGradientButtonWithIcon
@@ -597,58 +375,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='leading'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='leading' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
         <OutlinedGradientRoundedButtonWithIcon
@@ -681,58 +423,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientRoundedButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGradientButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledGreyButtonWithIcon>
         <OutlinedGradientButtonWithIcon
@@ -765,58 +471,22 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </OutlinedWhiteButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='trailing'
-          svgColorType='fill'
-          disabled
-        >
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='trailing' svgColorType='fill' disabled>
           Label
         </FilledStylizedButtonWithIcon>
         <OutlinedGradientRoundedButtonWithIcon
@@ -849,48 +519,12 @@ export default function ButtonExamplesPage() {
         >
           Label
         </OutlinedGradientRoundedButtonWithIcon>
-        <FilledGradientButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledGradientButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledGradientButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledGreyButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledGreyButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledGreyButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
+        <FilledGradientButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledGradientButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledGradientButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledGreyButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledGreyButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledGreyButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
         <OutlinedGradientButtonWithIcon
           size='L'
           Icon={<MigrateIcon />}
@@ -915,48 +549,12 @@ export default function ButtonExamplesPage() {
           activeGradientId='#migrate-icon-gradient'
           disabled
         />
-        <OutlinedWhiteButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <OutlinedWhiteButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <OutlinedWhiteButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledStylizedButtonWithIcon
-          size='L'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledStylizedButtonWithIcon
-          size='M'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
-        <FilledStylizedButtonWithIcon
-          size='S'
-          Icon={<MigrateIcon />}
-          position='center'
-          svgColorType='fill'
-          disabled
-        />
+        <OutlinedWhiteButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <OutlinedWhiteButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <OutlinedWhiteButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledStylizedButtonWithIcon size='L' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledStylizedButtonWithIcon size='M' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
+        <FilledStylizedButtonWithIcon size='S' Icon={<MigrateIcon />} position='center' svgColorType='fill' disabled />
         <OutlinedGradientRoundedButtonWithIcon
           size='L'
           Icon={<MigrateIcon />}

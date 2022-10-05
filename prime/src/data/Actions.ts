@@ -60,10 +60,7 @@ export type UniswapPosition = {
   liquidity: JSBI;
 };
 
-export type UniswapPositionPrior = Omit<
-  UniswapPosition,
-  'amount0' | 'amount1' | 'liquidity'
->;
+export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
 
 export enum TokenType {
   ASSET0 = 'ASSET0',
@@ -150,8 +147,7 @@ export const BURN_TOKEN_PLUS: Action = {
 
 export const BORROW: Action = {
   id: ActionID.BORROW,
-  description:
-    "Request assets from the money market. This won't work if market utilization is already at 100%.",
+  description: "Request assets from the money market. This won't work if market utilization is already at 100%.",
   actionCard: AloeBorrowActionCard,
 };
 
@@ -169,8 +165,7 @@ export const WITHDRAW: Action = {
 
 export const ADD_MARGIN: Action = {
   id: ActionID.TRANSFER_IN,
-  description:
-    'Send funds from your wallet to your Margin Account. You must do this before anything else.',
+  description: 'Send funds from your wallet to your Margin Account. You must do this before anything else.',
   actionCard: AloeAddMarginActionCard,
 };
 
@@ -182,8 +177,7 @@ export const REMOVE_LIQUIDITY: Action = {
 
 export const ADD_LIQUIDITY: Action = {
   id: ActionID.ADD_LIQUIDITY,
-  description:
-    'Create a new Uniswap Position or add liquidity to an existing one.',
+  description: 'Create a new Uniswap Position or add liquidity to an existing one.',
   actionCard: UniswapAddLiquidityActionCard,
 };
 
@@ -215,8 +209,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
 export const ActionTemplates: { [key: string]: ActionTemplate } = {
   TEN_X_LEVERAGE: {
     name: 'Classic Borrow',
-    description:
-      'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
+    description: 'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
     actions: [ADD_MARGIN, MINT_TOKEN_PLUS, BORROW, WITHDRAW],
     defaultActionStates: [
       {
@@ -303,15 +296,10 @@ export function getDropdownOptionFromSelectedToken(
   if (options.length === 0) {
     throw new Error();
   }
-  return (
-    options.find((option: DropdownOption) => option.value === selectedToken) ||
-    options[0]
-  );
+  return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
 }
 
-export function parseSelectedToken(
-  value: string | undefined
-): TokenType | null {
+export function parseSelectedToken(value: string | undefined): TokenType | null {
   if (!value) return null;
   return value as TokenType;
 }
@@ -360,18 +348,11 @@ export function calculateHypotheticalStates(
     if (actionResult.actionId === ActionID.ADD_LIQUIDITY) {
       const position = actionResult.uniswapResult?.uniswapPosition;
       if (position && position.lower && position.upper) {
-        const key = uniswapPositionKey(
-          marginAccount.address,
-          position.lower,
-          position.upper
-        );
+        const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
 
         if (positionsTemp.has(key)) {
           const posOldCopy = { ...positionsTemp.get(key)! };
-          posOldCopy.liquidity = JSBI.add(
-            posOldCopy.liquidity,
-            position.liquidity
-          );
+          posOldCopy.liquidity = JSBI.add(posOldCopy.liquidity, position.liquidity);
           positionsTemp.set(key, posOldCopy);
         } else {
           positionsTemp.set(key, { ...position });
@@ -380,41 +361,27 @@ export function calculateHypotheticalStates(
     } else if (actionResult.actionId === ActionID.REMOVE_LIQUIDITY) {
       const position = actionResult.uniswapResult?.uniswapPosition;
       if (position && position.lower && position.upper) {
-        const key = uniswapPositionKey(
-          marginAccount.address,
-          position.lower,
-          position.upper
-        );
+        const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
 
         if (positionsTemp.has(key)) {
           const posOldCopy = { ...positionsTemp.get(key)! };
 
           if (JSBI.lessThan(posOldCopy.liquidity, position.liquidity)) {
-            console.error(
-              'Attempted to remove more than 100% of liquidity from a position'
-            );
+            console.error('Attempted to remove more than 100% of liquidity from a position');
             break;
           }
 
-          posOldCopy.liquidity = JSBI.subtract(
-            posOldCopy.liquidity,
-            position.liquidity
-          );
+          posOldCopy.liquidity = JSBI.subtract(posOldCopy.liquidity, position.liquidity);
           positionsTemp.set(key, posOldCopy);
         } else {
-          console.error(
-            "Attempted to remove liquidity from a position that doens't exist"
-          );
+          console.error("Attempted to remove liquidity from a position that doens't exist");
           break;
         }
       }
     }
 
     // if any assets or liabilities are < 0, we have an issue!
-    if (
-      Object.values(assetsTemp).find((x) => x < 0) ||
-      Object.values(liabilitiesTemp).find((x) => x < 0)
-    ) {
+    if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
       console.log('Margin Account balance dropped below 0!');
       console.log(hypotheticalStates[i]);
       console.log(actionResult);
@@ -429,8 +396,7 @@ export function calculateHypotheticalStates(
     //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
     //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
     // TLDR: It's simpler to check solvency inside this for loop
-    const includeKittyReceipts =
-      assetsTemp.token0Plus > 0 || assetsTemp.token1Plus > 0;
+    const includeKittyReceipts = assetsTemp.token0Plus > 0 || assetsTemp.token1Plus > 0;
     const solvency = isSolvent(
       {
         ...marginAccount,

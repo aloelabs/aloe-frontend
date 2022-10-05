@@ -29,10 +29,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
-import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   Assets,
@@ -122,12 +119,8 @@ async function fetchUniswapPositions(
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const keys = priors.map((prior) =>
-    uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!)
-  );
-  const results = await Promise.all(
-    keys.map((key) => uniswapV3PoolContract.positions(key))
-  );
+  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+  const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
 
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
   priors.forEach((prior, i) => {
@@ -157,14 +150,9 @@ export default function BorrowActionsPage() {
   const accountAddressParam = params.account;
 
   // MARK: component state
-  const [isShowingHypothetical, setIsShowingHypothetical] =
-    useState<boolean>(false);
-  const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(
-    null
-  );
-  const [uniswapPositions, setUniswapPositions] = useState(
-    new Map<string, UniswapPosition>()
-  );
+  const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
+  const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
+  const [uniswapPositions, setUniswapPositions] = useState(new Map<string, UniswapPosition>());
   const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
@@ -177,13 +165,9 @@ export default function BorrowActionsPage() {
       positions: Map<string, UniswapPosition>;
     }[]
   >([]);
-  const [displayedMarginAccount, setDisplayedMarginAccount] =
-    useState<MarginAccount | null>(null);
-  const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<
-    UniswapPosition[]
-  >([]);
-  const [liquidationThresholds, setLiquidationThresholds] =
-    useState<LiquidationThresholds | null>(null);
+  const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
+  const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
+  const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
@@ -228,23 +212,13 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  }, [
-    accountAddressParam,
-    marginAccountContract,
-    marginAccountLensContract,
-    provider,
-  ]);
+  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (
-        !marginAccount ||
-        !accountAddressParam ||
-        !Array.isArray(uniswapPositionPriors)
-      )
-        return;
+      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionPriors)) return;
 
       const fetchedUniswapPositions = await fetchUniswapPositions(
         uniswapPositionPriors as UniswapPositionPrior[],
@@ -261,9 +235,7 @@ export default function BorrowActionsPage() {
         // this is because one is computed on-chain and cached, while the other is computed locally.
         // if we've fetched both, prefer the uniswapPositions version (local & newer).
         const i = { amount0: 0, amount1: 0 };
-        const { amount0, amount1 } = Array.from(
-          fetchedUniswapPositions.values()
-        ).reduce((p, c) => {
+        const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
           return {
             amount0: p.amount0 + (c.amount0 || 0),
             amount1: p.amount1 + (c.amount1 || 0),
@@ -295,11 +267,7 @@ export default function BorrowActionsPage() {
     if (!marginAccount) return;
 
     // assets and liabilities after adding hypothetical actions
-    const _hypotheticalStates = calculateHypotheticalStates(
-      marginAccount,
-      uniswapPositions,
-      actionResults
-    );
+    const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
 
     // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
     const numValidActions = Math.min(_hypotheticalStates.length - 1);
@@ -319,11 +287,7 @@ export default function BorrowActionsPage() {
     }
     setHypotheticalStates(_hypotheticalStates);
     setDisplayedMarginAccount(_marginAccount);
-    setDisplayedUniswapPositions(
-      Array.from(
-        (isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()
-      )
-    );
+    setDisplayedUniswapPositions(Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()));
     console.log('Running 1');
   }, [marginAccount, uniswapPositions, actionResults, isShowingHypothetical]);
 
@@ -361,27 +325,17 @@ export default function BorrowActionsPage() {
 
   // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
   const numValidActions = Math.min(hypotheticalStates.length - 1);
-  const problematicActionIdx =
-    numValidActions < actionResults.length ? numValidActions : -1;
+  const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
-  const transactionIsReady =
-    actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
+  const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
   // pre-compute some values to cut down on logic in the HTML
   const token0 = marginAccount.token0;
   const token1 = marginAccount.token1;
-  const [selectedToken, unselectedToken] = isToken0Selected
-    ? [token0, token1]
-    : [token1, token0];
-  const [assetsSum0, assetsSum1] = sumAssetsPerToken(
-    displayedMarginAccount.assets
-  );
-  const isActiveAssetsEmpty = Object.values(
-    displayedMarginAccount.assets
-  ).every((a) => a === 0);
-  const isActiveLiabilitiesEmpty = Object.values(
-    displayedMarginAccount.liabilities
-  ).every((l) => l === 0);
+  const [selectedToken, unselectedToken] = isToken0Selected ? [token0, token1] : [token1, token0];
+  const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
+  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
+  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
@@ -400,15 +354,9 @@ export default function BorrowActionsPage() {
     setActiveActions([...activeActions, action]);
   }
 
-  function handleAddActions(
-    actions: Action[],
-    defaultActionResults?: ActionCardState[]
-  ) {
+  function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
     if (actionResults.length === 0) setIsShowingHypothetical(true);
-    if (
-      defaultActionResults &&
-      actions.length !== defaultActionResults.length
-    ) {
+    if (defaultActionResults && actions.length !== defaultActionResults.length) {
       console.error(
         'You must pass in the same number of action results as you do actions (or pass no action results in).'
       );
@@ -458,9 +406,7 @@ export default function BorrowActionsPage() {
             }}
             onRemoveAction={(index: number) => {
               let actionResultsCopy = [...actionResults];
-              const updatedActionResults = actionResultsCopy.filter(
-                (_, i) => i !== index
-              );
+              const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
               setActionResults(updatedActionResults);
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
@@ -494,34 +440,25 @@ export default function BorrowActionsPage() {
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
-                valueLine1={`${formatTokenAmount(assetsSum0, 5)} ${
-                  token0.ticker || ''
-                }`}
-                valueLine2={`${formatTokenAmount(assetsSum1, 5)} ${
-                  token1.ticker || ''
-                }`}
+                valueLine1={`${formatTokenAmount(assetsSum0, 5)} ${token0.ticker || ''}`}
+                valueLine2={`${formatTokenAmount(assetsSum1, 5)} ${token1.ticker || ''}`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Liabilities'
-                valueLine1={`${formatTokenAmount(
-                  displayedMarginAccount.liabilities.amount0,
-                  5
-                )} ${token0.ticker || ''}`}
-                valueLine2={`${formatTokenAmount(
-                  displayedMarginAccount.liabilities.amount1,
-                  5
-                )} ${token1.ticker || ''}`}
+                valueLine1={`${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 5)} ${
+                  token0.ticker || ''
+                }`}
+                valueLine2={`${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 5)} ${
+                  token1.ticker || ''
+                }`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
                 valueLine1={
                   displayedLiquidationThresholds
-                    ? `${formatPriceRatio(
-                        displayedLiquidationThresholds.lower,
-                        5
-                      )} ${selectedToken?.ticker || ''}/${
+                    ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 5)} ${selectedToken?.ticker || ''}/${
                         unselectedToken?.ticker || ''
                       }`
                     : '-'
@@ -532,10 +469,7 @@ export default function BorrowActionsPage() {
                 label='Upper Liquidation Threshold'
                 valueLine1={
                   displayedLiquidationThresholds
-                    ? `${formatPriceRatio(
-                        displayedLiquidationThresholds.upper,
-                        5
-                      )} ${selectedToken?.ticker || ''}/${
+                    ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 5)} ${selectedToken?.ticker || ''}/${
                         unselectedToken?.ticker || ''
                       }`
                     : '-'

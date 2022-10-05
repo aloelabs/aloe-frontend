@@ -4,34 +4,18 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import {
-  Action,
-  ActionCardState,
-  ActionID,
-  TokenType,
-  UniswapPosition,
-} from '../../data/Actions';
+import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
 import { TokenData } from '../../data/TokenData';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
 
 import { Chain } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
-import {
-  chain,
-  erc20ABI,
-  useAccount,
-  useBalance,
-  useContractRead,
-  useContractWrite,
-} from 'wagmi';
+import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite } from 'wagmi';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
-import {
-  RESPONSIVE_BREAKPOINT_SM,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
 import { UserBalances } from '../../data/UserBalances';
@@ -166,9 +150,7 @@ function computeBalancesAvailableForEachAction(
   return balancesList;
 }
 
-function determineAmountsBeingTransferredIn(
-  actionResults: ActionCardState[]
-): number[] {
+function determineAmountsBeingTransferredIn(actionResults: ActionCardState[]): number[] {
   const result = [0, 0, 0, 0];
   for (const actionResult of actionResults) {
     if (actionResult.actionId !== ActionID.TRANSFER_IN) continue;
@@ -311,20 +293,12 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     transactionIsViable,
     clearActions,
   } = props;
-  const {
-    address: accountAddress,
-    token0,
-    token1,
-    kitty0,
-    kitty1,
-  } = marginAccount;
+  const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
 
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(
-    undefined
-  );
+  const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   const navigate = useNavigate();
 
@@ -359,46 +333,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     token: kitty1.address,
     watch: true,
   });
-  const { data: userAllowance0Asset } = useAllowance(
-    token0,
-    userAddress ?? '',
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const { data: userAllowance1Asset } = useAllowance(
-    token1,
-    userAddress ?? '',
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const { data: userAllowance0Kitty } = useAllowance(
-    kitty0,
-    userAddress ?? '',
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const { data: userAllowance1Kitty } = useAllowance(
-    kitty1,
-    userAddress ?? '',
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const writeAsset0Allowance = useAllowanceWrite(
-    chain.goerli,
-    token0,
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const writeAsset1Allowance = useAllowanceWrite(
-    chain.goerli,
-    token1,
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const writeKitty0Allowance = useAllowanceWrite(
-    chain.goerli,
-    kitty0,
-    MARGIN_ACCOUNT_CALLEE
-  );
-  const writeKitty1Allowance = useAllowanceWrite(
-    chain.goerli,
-    kitty1,
-    MARGIN_ACCOUNT_CALLEE
-  );
+  const { data: userAllowance0Asset } = useAllowance(token0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Asset } = useAllowance(token1, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Kitty } = useAllowance(kitty0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Kitty } = useAllowance(kitty1, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
+  const writeAsset0Allowance = useAllowanceWrite(chain.goerli, token0, MARGIN_ACCOUNT_CALLEE);
+  const writeAsset1Allowance = useAllowanceWrite(chain.goerli, token1, MARGIN_ACCOUNT_CALLEE);
+  const writeKitty0Allowance = useAllowanceWrite(chain.goerli, kitty0, MARGIN_ACCOUNT_CALLEE);
+  const writeKitty1Allowance = useAllowanceWrite(chain.goerli, kitty1, MARGIN_ACCOUNT_CALLEE);
 
   // MARK: logic to ensure that listed balances and MAXes work
   const userBalances: UserBalances = {
@@ -407,10 +349,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
     amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
   };
-  const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(
-    userBalances,
-    actionResults
-  );
+  const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(userBalances, actionResults);
 
   // MARK: logic to determine what approvals are needed
   const requiredBalances = determineAmountsBeingTransferredIn(actionResults);
@@ -427,18 +366,10 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     requiredBalances[3] > 0 && !userAllowance1Kitty,
   ];
   const needsApproval = [
-    userAllowance0Asset &&
-      toBig(userAllowance0Asset).div(token0.decimals).toNumber() <
-        requiredBalances[0],
-    userAllowance1Asset &&
-      toBig(userAllowance1Asset).div(token1.decimals).toNumber() <
-        requiredBalances[1],
-    userAllowance0Kitty &&
-      toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() <
-        requiredBalances[2],
-    userAllowance1Kitty &&
-      toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() <
-        requiredBalances[3],
+    userAllowance0Asset && toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0],
+    userAllowance1Asset && toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1],
+    userAllowance0Kitty && toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2],
+    userAllowance1Kitty && toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3],
   ];
 
   if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
@@ -453,12 +384,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   } else if (loadingApprovals.includes(true)) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (!transactionIsViable || problematicActionIdx !== -1) {
-    console.info(
-      'Viable Transaction: ',
-      transactionIsViable,
-      'Problematic Action: ',
-      problematicActionIdx
-    );
+    console.info('Viable Transaction: ', transactionIsViable, 'Problematic Action: ', problematicActionIdx);
     confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
   } else if (insufficient[0]) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
@@ -484,13 +410,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
-  const confirmButton = getConfirmButton(
-    confirmButtonState,
-    token0,
-    token1,
-    kitty0,
-    kitty1
-  );
+  const confirmButton = getConfirmButton(confirmButtonState, token0, token1, kitty0, kitty1);
 
   //TODO: add some sort of error message when !transactionIsViable
   return (
@@ -501,8 +421,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             Manage Account
           </Display>
           <Text size='S' weight='medium'>
-            Get started by clicking "Add Action" and transferring some funds as
-            margin.
+            Get started by clicking "Add Action" and transferring some funds as margin.
           </Text>
         </ActionCardWrapper>
         <ActionsList>
@@ -517,26 +436,18 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 <action.actionCard
                   marginAccount={{
                     ...marginAccount,
-                    assets: (hypotheticalStates.at(index) ?? marginAccount)
-                      .assets,
-                    liabilities: (hypotheticalStates.at(index) ?? marginAccount)
-                      .liabilities,
+                    assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
+                    liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
                   }}
                   availableBalances={balancesAvailableForEachAction[index]}
                   uniswapPositions={uniswapPositions}
                   previousActionCardState={actionResults[index]}
-                  isCausingError={
-                    problematicActionIdx !== -1 && index >= problematicActionIdx
-                  }
+                  isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                   onRemove={() => {
                     onRemoveAction(index);
                   }}
                   onChange={(result: ActionCardState) => {
-                    updateActionResults([
-                      ...actionResults.slice(0, index),
-                      result,
-                      ...actionResults.slice(index + 1),
-                    ]);
+                    updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
                   }}
                 />
               </ActionCardWrapper>
@@ -571,20 +482,13 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             svgColorType='stroke'
             onClick={() => {
               if (!transactionIsViable) {
-                console.error(
-                  "Oops! The transaction couldn't be formatted correctly. Please refresh and try again."
-                );
+                console.error("Oops! The transaction couldn't be formatted correctly. Please refresh and try again.");
                 return;
               }
 
               const actionIds = actionResults.map((result) => result.actionId);
-              const actionArgs = actionResults.map(
-                (result) => result.actionArgs!
-              );
-              const calldata = ethers.utils.defaultAbiCoder.encode(
-                ['uint8[]', 'bytes[]'],
-                [actionIds, actionArgs]
-              );
+              const actionArgs = actionResults.map((result) => result.actionArgs!);
+              const calldata = ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]'], [actionIds, actionArgs]);
 
               switch (confirmButtonState) {
                 case ConfirmButtonState.APPROVE_ASSET0:
@@ -611,9 +515,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                         // TODO gas estimation was occassionally causing errors. To fix this,
                         // we should probably work with the underlying ethers.Contract, but for now
                         // we just provide hard-coded overrides.
-                        gasLimit: (600000 + 200000 * actionIds.length).toFixed(
-                          0
-                        ),
+                        gasLimit: (600000 + 200000 * actionIds.length).toFixed(0),
                       },
                     })
                     .then((txnResult) => {
@@ -636,8 +538,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
                         setTimeout(() => {
                           //Wait till the other modal is fully closed (since otherwise we will mess up page scrolling)
-                          if (txnReceipt.status === 1)
-                            setShowSuccessModal(true);
+                          if (txnReceipt.status === 1) setShowSuccessModal(true);
                           else setShowFailedModal(true);
                         }, 500);
                       });
@@ -653,11 +554,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </FilledGradientButtonWithIcon>
         </div>
       </div>
-      <PendingTxnModal
-        open={showPendingModal}
-        setOpen={setShowPendingModal}
-        txnHash={pendingTxnHash}
-      />
+      <PendingTxnModal open={showPendingModal} setOpen={setShowPendingModal} txnHash={pendingTxnHash} />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <SuccessfulTxnModal
         open={showSuccessModal}

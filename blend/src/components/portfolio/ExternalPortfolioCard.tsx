@@ -2,23 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as MigrateIcon } from '../../assets/svg/migrate.svg';
-import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_SM,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { formatUSDAuto } from '../../util/Numbers';
 import { OutlinedGradientButtonWithIcon } from '../common/Buttons';
 import { PercentChange } from '../common/PercentChange';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { Display, Text } from '../common/Typography';
-import {
-  CardBodyWrapper,
-  CardSubTitleWrapper,
-  CardTitleWrapper,
-  CardWrapper,
-  ValueText,
-} from './PortfolioCard';
+import { CardBodyWrapper, CardSubTitleWrapper, CardTitleWrapper, CardWrapper, ValueText } from './PortfolioCard';
 
 const EXTERNAL_CARD_WRAPPER_HOVER_SHADOW_COLOR = 'rgba(26, 41, 52, 0.65)';
 const EXTERNAL_CARD_WRAPPER_HOVER_OUTLINE_COLOR = 'rgba(56, 82, 101, 1)';
@@ -73,16 +64,8 @@ export type ExternalPortfolioCardProps = {
   percentageChange: number;
 };
 
-export default function ExternalPortfolioCard(
-  props: ExternalPortfolioCardProps
-) {
-  const {
-    token0,
-    token1,
-    externalPositionName,
-    estimatedValue,
-    percentageChange,
-  } = props;
+export default function ExternalPortfolioCard(props: ExternalPortfolioCardProps) {
+  const { token0, token1, externalPositionName, estimatedValue, percentageChange } = props;
   return (
     <ExternalCardWrapper>
       <CardTitleWrapper backgroundGradient={CARD_TITLE_BG_COLOR}>

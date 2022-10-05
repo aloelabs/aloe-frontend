@@ -7,10 +7,7 @@ export interface UserBalances {
   amount1Kitty: number;
 }
 
-export function getBalanceFor(
-  tokenType: TokenType,
-  userBalances: UserBalances
-): number {
+export function getBalanceFor(tokenType: TokenType, userBalances: UserBalances): number {
   switch (tokenType) {
     case TokenType.ASSET0:
       return userBalances.amount0Asset;

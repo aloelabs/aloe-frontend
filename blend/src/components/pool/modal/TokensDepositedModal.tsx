@@ -24,15 +24,7 @@ export type TokensDepositedModalProps = {
 };
 
 export default function TokensDepositedModal(props: TokensDepositedModalProps) {
-  const {
-    open,
-    setOpen,
-    totalEstimatedValue,
-    token0Ticker,
-    token1Ticker,
-    token0Estimate,
-    token1Estimate,
-  } = props;
+  const { open, setOpen, totalEstimatedValue, token0Ticker, token1Ticker, token0Estimate, token1Estimate } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Tokens Deposited'>
       <div className='flex justify-center items-center'>
@@ -68,12 +60,7 @@ export default function TokensDepositedModal(props: TokensDepositedModalProps) {
         token0Estimate={token0Estimate}
         token1Estimate={token1Estimate}
       />
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        className='mt-8'
-      >
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} className='mt-8'>
         View Your Position
       </FilledStylizedButton>
     </CloseableModal>

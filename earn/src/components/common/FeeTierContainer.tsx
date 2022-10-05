@@ -9,9 +9,5 @@ export type FeeTierProps = {
 
 export default function FeeTierContainer(props: FeeTierProps) {
   const { feeTier, className } = props;
-  return (
-    <RoundedBadge className={className}>
-      Uniswap Fee Tier - {PrintFeeTier(feeTier)}
-    </RoundedBadge>
-  );
+  return <RoundedBadge className={className}>Uniswap Fee Tier - {PrintFeeTier(feeTier)}</RoundedBadge>;
 }

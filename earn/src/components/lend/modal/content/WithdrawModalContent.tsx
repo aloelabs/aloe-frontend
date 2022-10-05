@@ -9,12 +9,7 @@ import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenData } from '../../../../data/TokenData';
 import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
-import {
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  MODAL_BLACK_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from '../../../common/Modal';
+import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 
@@ -69,11 +64,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'withdraw',
   });
 
-  const balanceOfUnderlying = useBalanceOfUnderlying(
-    token,
-    kitty,
-    accountAddress || ''
-  );
+  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
   const amountToShares = useAmountToShares(token, kitty, withdrawAmount);
 
   const sharesToWithdraw = amountToShares ?? '0';

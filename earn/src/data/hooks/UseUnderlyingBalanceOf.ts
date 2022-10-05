@@ -4,11 +4,7 @@ import { TokenData } from '../TokenData';
 import KittyABI from '../../assets/abis/Kitty.json';
 import Big from 'big.js';
 
-export function useBalanceOfUnderlying(
-  token: TokenData,
-  kitty: TokenData,
-  accountAddress: string
-) {
+export function useBalanceOfUnderlying(token: TokenData, kitty: TokenData, accountAddress: string) {
   const [state, setState] = useState<string | null>(null);
   const { data: balanceOfUnderlying } = useContractRead({
     addressOrName: kitty.address,
@@ -19,11 +15,7 @@ export function useBalanceOfUnderlying(
   });
   useEffect(() => {
     if (balanceOfUnderlying) {
-      setState(
-        new Big(balanceOfUnderlying.toString())
-          .div(10 ** token.decimals)
-          .toString()
-      );
+      setState(new Big(balanceOfUnderlying.toString()).div(10 ** token.decimals).toString());
     }
   }, [balanceOfUnderlying, token.decimals]);
   return state;

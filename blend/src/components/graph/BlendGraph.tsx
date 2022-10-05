@@ -3,10 +3,7 @@ import BlendGraphTooltip from './tooltips/BlendGraphTooltip';
 import styled from 'styled-components';
 import { Text } from '../common/Typography';
 import Graph from './Graph';
-import {
-  RESPONSIVE_BREAKPOINT_SM,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const TEXT_COLOR = '#82a0b6';
 // const GREEN_GRADIENT_COLOR = '#59d67c';
@@ -126,16 +123,8 @@ export default function BlendGraph(props: BlendGraphProps) {
         containerHeight={330}
         linearGradients={[
           <linearGradient id='totalReturnsGradient' x1='0' y1='0' x2='0' y2='1'>
-            <stop
-              offset='-29%'
-              stopColor={GRAY_GRADIENT_COLOR}
-              stopOpacity={0.25}
-            />
-            <stop
-              offset='75%'
-              stopColor={GRAY_GRADIENT_COLOR}
-              stopOpacity={0}
-            />
+            <stop offset='-29%' stopColor={GRAY_GRADIENT_COLOR} stopOpacity={0.25} />
+            <stop offset='75%' stopColor={GRAY_GRADIENT_COLOR} stopOpacity={0} />
           </linearGradient>,
         ]}
         tickTextColor={TEXT_COLOR}
@@ -171,9 +160,7 @@ export default function BlendGraph(props: BlendGraphProps) {
           },
         ]}
         showLegend={true}
-        LegendContent={
-          <BlendGraphLegend token0Label={token0Key} token1Label={token1Key} />
-        }
+        LegendContent={<BlendGraphLegend token0Label={token0Key} token1Label={token1Key} />}
         yAxisDomain={['dataMin', 'dataMax']}
       />
     </ResponsiveContainerStyled>

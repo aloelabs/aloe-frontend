@@ -7,12 +7,7 @@ import Footer from './components/common/Footer';
 
 import AppBody from './components/common/AppBody';
 import ScrollToTop from './util/ScrollToTop';
-import {
-  ApolloClient,
-  InMemoryCache,
-  HttpLink,
-  gql,
-} from '@apollo/react-hooks';
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 
@@ -81,10 +76,7 @@ function App() {
             <main className='flex-grow'>
               <Routes>
                 <Route path='/borrow' element={<BorrowAccountsPage />} />
-                <Route
-                  path='/borrow/account/:account'
-                  element={<BorrowActionsPage />}
-                />
+                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
                 <Route path='/' element={<Navigate replace to='/borrow' />} />
                 <Route path='*' element={<Navigate to='/' />} />
               </Routes>

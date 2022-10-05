@@ -26,22 +26,12 @@ export default function WelcomeModal(props: WelcomeModalProps) {
           Faucets for Goerli ETH:
         </Text>
         <Text size='M' weight='medium' color='royalblue'>
-          <a
-            href='https://faucet.paradigm.xyz/'
-            target='_blank'
-            rel='noreferrer noopener'
-            className='underline'
-          >
+          <a href='https://faucet.paradigm.xyz/' target='_blank' rel='noreferrer noopener' className='underline'>
             https://faucet.paradigm.xyz/
           </a>
         </Text>
         <Text size='M' weight='medium' color='royalblue'>
-          <a
-            href='https://goerli-faucet.pk910.de/'
-            target='_blank'
-            rel='noreferrer noopener'
-            className='underline'
-          >
+          <a href='https://goerli-faucet.pk910.de/' target='_blank' rel='noreferrer noopener' className='underline'>
             https://goerli-faucet.pk910.de/
           </a>
         </Text>

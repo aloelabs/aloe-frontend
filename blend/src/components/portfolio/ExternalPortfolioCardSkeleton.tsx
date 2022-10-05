@@ -2,17 +2,9 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ValuePercentContainer } from './ExternalPortfolioCard';
-import {
-  CardBodyWrapper,
-  CardTitleWrapper,
-  CardWrapper,
-  CardSubTitleWrapper,
-} from './PortfolioCard';
+import { CardBodyWrapper, CardTitleWrapper, CardWrapper, CardSubTitleWrapper } from './PortfolioCard';
 import { PositivePercentChangeContainer } from '../common/PercentChange';
-import {
-  RESPONSIVE_BREAKPOINT_SM,
-  RESPONSIVE_BREAKPOINT_MD,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 import TokenPairIcons from '../common/TokenPairIcons';
 
 const SKELETON_BG_COLOR = 'rgba(43, 64, 80, 1)';

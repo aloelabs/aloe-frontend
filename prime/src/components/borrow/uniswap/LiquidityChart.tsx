@@ -1,11 +1,4 @@
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  ResponsiveContainer,
-  ReferenceLine,
-  ReferenceArea,
-} from 'recharts';
+import { BarChart, Bar, XAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import styled from 'styled-components';
 
 export type ChartEntry = {
@@ -61,65 +54,29 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd, currentPrice } = props;
   const minPrice = data.length > 0 ? data[0].price : 0;
   const maxPrice = data.length > 0 ? data[data.length - 1].price : 0;
-  const updatedRangeStart = nearestPriceInGraphOrNull(
-    parseFloat(rangeStart),
-    minPrice,
-    maxPrice,
-    data
-  );
-  const updatedRangeEnd = nearestPriceInGraphOrNull(
-    parseFloat(rangeEnd),
-    minPrice,
-    maxPrice,
-    data
-  );
-  const updatedCurrentPrice = nearestPriceInGraphOrNull(
-    parseFloat(currentPrice),
-    minPrice,
-    maxPrice,
-    data
-  );
+  const updatedRangeStart = nearestPriceInGraphOrNull(parseFloat(rangeStart), minPrice, maxPrice, data);
+  const updatedRangeEnd = nearestPriceInGraphOrNull(parseFloat(rangeEnd), minPrice, maxPrice, data);
+  const updatedCurrentPrice = nearestPriceInGraphOrNull(parseFloat(currentPrice), minPrice, maxPrice, data);
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,
-    data[
-      Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)
-    ].price,
+    data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price,
   ];
   // console.log(data);
   return (
     <Wrapper>
       <ResponsiveContainer width='100%' height='100%'>
-        <BarChart
-          width={300}
-          height={200}
-          data={data}
-          barGap={0}
-          barCategoryGap={0}
-        >
+        <BarChart width={300} height={200} data={data} barGap={0} barCategoryGap={0}>
           <Bar
             dataKey='liquidityDensity'
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
             shape={(props) => {
-              return (
-                <StyledBar
-                  x={props.x}
-                  y={props.y}
-                  width={props.width}
-                  height={props.height}
-                  fill={props.fill}
-                />
-              );
+              return <StyledBar x={props.x} y={props.y} width={props.width} height={props.height} fill={props.fill} />;
             }}
           />
           {updatedRangeStart && (
-            <ReferenceLine
-              x={updatedRangeStart}
-              stroke='rgb(114, 167, 246)'
-              strokeWidth={4}
-              isFront={true}
-            />
+            <ReferenceLine x={updatedRangeStart} stroke='rgb(114, 167, 246)' strokeWidth={4} isFront={true} />
           )}
           <ReferenceArea
             x1={updatedRangeStart || minPrice}
@@ -127,20 +84,10 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             fill='rgba(114, 167, 246, 0.5)'
           />
           {updatedRangeEnd && (
-            <ReferenceLine
-              x={updatedRangeEnd}
-              stroke='rgb(114, 167, 246)'
-              strokeWidth={4}
-              isFront={true}
-            />
+            <ReferenceLine x={updatedRangeEnd} stroke='rgb(114, 167, 246)' strokeWidth={4} isFront={true} />
           )}
           {updatedCurrentPrice && (
-            <ReferenceLine
-              x={updatedCurrentPrice}
-              stroke='rgba(255, 255, 255, 0.5)'
-              strokeWidth={2}
-              isFront={false}
-            />
+            <ReferenceLine x={updatedCurrentPrice} stroke='rgba(255, 255, 255, 0.5)' strokeWidth={2} isFront={false} />
           )}
           <XAxis
             dataKey='price'

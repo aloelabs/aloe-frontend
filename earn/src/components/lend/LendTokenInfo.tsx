@@ -1,9 +1,5 @@
 import { TokenData } from '../../data/TokenData';
-import {
-  roundPercentage,
-  formatTokenAmount,
-  formatUSDAuto,
-} from '../../util/Numbers';
+import { roundPercentage, formatTokenAmount, formatUSDAuto } from '../../util/Numbers';
 import InfoFigure from '../common/InfoFigure';
 
 const FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
@@ -20,11 +16,7 @@ export default function LendTokenInfo(props: LendTokenInfoProps) {
   return (
     <InfoFigure
       label0='Total Supply'
-      value0={
-        token
-          ? `${formatTokenAmount(totalSupply)} ${token.ticker}`
-          : formatUSDAuto(totalSupply)
-      }
+      value0={token ? `${formatTokenAmount(totalSupply)} ${token.ticker}` : formatUSDAuto(totalSupply)}
       label1='Utilization'
       value1={`${roundPercentage(utilization)}%`}
       figureColor={FIGURE_COLOR}

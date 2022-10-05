@@ -54,9 +54,7 @@ export default function BlendGraphTooltip(data: any, active = false) {
             {labelBottom}
           </Text>
         </TooltipTitleContainer>
-        <div className='flex flex-col justify-between gap-2 mt-1 pl-3 pr-3 pb-3'>
-          {tooltipValues}
-        </div>
+        <div className='flex flex-col justify-between gap-2 mt-1 pl-3 pr-3 pb-3'>{tooltipValues}</div>
       </TooltipContainer>
     );
   }

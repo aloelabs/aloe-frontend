@@ -9,14 +9,9 @@ export type SubmittingOrderModalProps = {
 
 export default function SubmittingOrderModal(props: SubmittingOrderModalProps) {
   return (
-    <LoadingModal
-      open={props.open}
-      setOpen={props.setOpen}
-      title='Submitting Order'
-    >
+    <LoadingModal open={props.open} setOpen={props.setOpen} title='Submitting Order'>
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
-        This might take a while. Feel free to leave the page and come back
-        later.
+        This might take a while. Feel free to leave the page and come back later.
       </Text>
     </LoadingModal>
   );

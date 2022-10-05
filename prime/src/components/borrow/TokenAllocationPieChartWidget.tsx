@@ -210,9 +210,7 @@ export type TokenAllocationPieChartWidgetProps = {
   sqrtPriceX96: Big;
 };
 
-export default function TokenAllocationPieChartWidget(
-  props: TokenAllocationPieChartWidgetProps
-) {
+export default function TokenAllocationPieChartWidget(props: TokenAllocationPieChartWidgetProps) {
   const { token0, token1, assets, sqrtPriceX96 } = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [currentPercent, setCurrentPercent] = useState('');
@@ -317,9 +315,7 @@ export default function TokenAllocationPieChartWidget(
                     key={index}
                     d={path.data}
                     fill={path.color}
-                    onMouseEnter={() =>
-                      onMouseEnter(index, path.percent.toString())
-                    }
+                    onMouseEnter={() => onMouseEnter(index, path.percent.toString())}
                     onMouseLeave={() => onMouseLeave()}
                   ></ExpandingPath>
                 );
@@ -330,13 +326,7 @@ export default function TokenAllocationPieChartWidget(
         </div>
         <TokenAllocationBreakdown>
           <div className='flex items-center gap-4 w-full'>
-            <TokenLabel
-              className={
-                activeIndex !== -1 && activeIndex >= firstHalfOfSlices.length
-                  ? 'inactive'
-                  : ''
-              }
-            >
+            <TokenLabel className={activeIndex !== -1 && activeIndex >= firstHalfOfSlices.length ? 'inactive' : ''}>
               {token0?.ticker || ''}
             </TokenLabel>
             <div className='flex flex-col'>
@@ -380,13 +370,7 @@ export default function TokenAllocationPieChartWidget(
             </div>
           </div>
           <div className='flex items-center gap-4'>
-            <TokenLabel
-              className={
-                activeIndex !== -1 && activeIndex < firstHalfOfSlices.length
-                  ? 'inactive'
-                  : ''
-              }
-            >
+            <TokenLabel className={activeIndex !== -1 && activeIndex < firstHalfOfSlices.length ? 'inactive' : ''}>
               {token1?.ticker || ''}
             </TokenLabel>
             <div className='flex flex-col'>

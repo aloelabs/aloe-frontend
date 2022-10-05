@@ -2,18 +2,10 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { FeeTier } from '../../data/BlendPoolMarkers';
-import {
-  RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_SM,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
-import {
-  getBrighterColor,
-  getProminentColor,
-  rgb,
-  rgba,
-} from '../../util/Colors';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import FeeTierContainer from '../common/FeeTierContainer';
 import InvestedTypes from '../common/InvestedTypes';
 import TokenPairIcons from '../common/TokenPairIcons';
@@ -27,9 +19,7 @@ const TOKEN_ICON_BORDER_COLOR = 'rgba(0, 0, 0, 1)';
 const SILO_TEXT_COLOR = 'rgba(228, 237, 246, 1)';
 const BODY_DIVIDER_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
 
-export const CardWrapper = styled.div.attrs(
-  (props: { borderGradient: string; shadowColor: string }) => props
-)`
+export const CardWrapper = styled.div.attrs((props: { borderGradient: string; shadowColor: string }) => props)`
   display: grid;
   grid-template-columns: 89fr 159fr;
   width: 100%;
@@ -47,8 +37,7 @@ export const CardWrapper = styled.div.attrs(
       border-radius: 8px;
       padding: 1.5px;
       background: ${(props) => props.borderGradient};
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -59,9 +48,7 @@ export const CardWrapper = styled.div.attrs(
   }
 `;
 
-export const CardTitleWrapper = styled.div.attrs(
-  (props: { backgroundGradient: string }) => props
-)`
+export const CardTitleWrapper = styled.div.attrs((props: { backgroundGradient: string }) => props)`
   ${tw`flex flex-col items-start justify-center`}
   padding: 32px;
   gap: 18px;
@@ -165,15 +152,7 @@ export type PortfolioCardProps = {
 };
 
 export default function PortfolioCard(props: PortfolioCardProps) {
-  const {
-    token0,
-    token1,
-    silo0,
-    silo1,
-    uniswapFeeTier,
-    estimatedValue,
-    percentageChange,
-  } = props;
+  const { token0, token1, silo0, silo1, uniswapFeeTier, estimatedValue, percentageChange } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   useEffect(() => {
@@ -193,22 +172,14 @@ export default function PortfolioCard(props: PortfolioCardProps) {
     };
   });
   // Create the variables for the gradients.
-  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(
-    token0Color,
+  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
+    token1Color,
     0.25
-  )} 0%, ${rgba(token1Color, 0.25)} 100%)`;
-  const cardBorderGradient = `linear-gradient(90deg, ${rgb(
-    token0Color
-  )} 0%, ${rgb(token1Color)} 100%)`;
-  const cardShadowColor = rgba(
-    getBrighterColor(token0Color, token1Color),
-    0.16
-  );
+  )} 100%)`;
+  const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
+  const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);
   return (
-    <CardWrapper
-      borderGradient={cardBorderGradient}
-      shadowColor={cardShadowColor}
-    >
+    <CardWrapper borderGradient={cardBorderGradient} shadowColor={cardShadowColor}>
       <CardTitleWrapper backgroundGradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
           {token0.ticker} - {token1.ticker}

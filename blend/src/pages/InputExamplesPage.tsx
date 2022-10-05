@@ -9,34 +9,21 @@ import {
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 
 export default function InputExamplesPage() {
-  const [largeRoundedInputValue, setLargeRoundedInputValue] =
-    React.useState('');
-  const [mediumRoundedInputValue, setMediumRoundedInputValue] =
-    React.useState('');
-  const [smallRoundedInputValue, setSmallRoundedInputValue] =
-    React.useState('');
-  const [largeRoundedInputWithIconValue, setLargeRoundedInputWithIconValue] =
-    React.useState('');
-  const [mediumRoundedInputWithIconValue, setMediumRoundedInputWithIconValue] =
-    React.useState('');
-  const [smallRoundedInputWithIconValue, setSmallRoundedInputWithIconValue] =
-    React.useState('');
+  const [largeRoundedInputValue, setLargeRoundedInputValue] = React.useState('');
+  const [mediumRoundedInputValue, setMediumRoundedInputValue] = React.useState('');
+  const [smallRoundedInputValue, setSmallRoundedInputValue] = React.useState('');
+  const [largeRoundedInputWithIconValue, setLargeRoundedInputWithIconValue] = React.useState('');
+  const [mediumRoundedInputWithIconValue, setMediumRoundedInputWithIconValue] = React.useState('');
+  const [smallRoundedInputWithIconValue, setSmallRoundedInputWithIconValue] = React.useState('');
   const [largeSquareInputValue, setLargeSquareInputValue] = React.useState('');
-  const [mediumSquareInputValue, setMediumSquareInputValue] =
-    React.useState('');
+  const [mediumSquareInputValue, setMediumSquareInputValue] = React.useState('');
   const [smallSquareInputValue, setSmallSquareInputValue] = React.useState('');
-  const [largeSquareInputWithIconValue, setLargeSquareInputWithIconValue] =
-    React.useState('');
-  const [mediumSquareInputWithIconValue, setMediumSquareInputWithIconValue] =
-    React.useState('');
-  const [smallSquareInputWithIconValue, setSmallSquareInputWithIconValue] =
-    React.useState('');
-  const [largeSquareInputWithMaxValue, setLargeSquareInputWithMaxValue] =
-    React.useState('');
-  const [mediumSquareInputWithMaxValue, setMediumSquareInputWithMaxValue] =
-    React.useState('');
-  const [smallSquareInputWithMaxValue, setSmallSquareInputWithMaxValue] =
-    React.useState('');
+  const [largeSquareInputWithIconValue, setLargeSquareInputWithIconValue] = React.useState('');
+  const [mediumSquareInputWithIconValue, setMediumSquareInputWithIconValue] = React.useState('');
+  const [smallSquareInputWithIconValue, setSmallSquareInputWithIconValue] = React.useState('');
+  const [largeSquareInputWithMaxValue, setLargeSquareInputWithMaxValue] = React.useState('');
+  const [mediumSquareInputWithMaxValue, setMediumSquareInputWithMaxValue] = React.useState('');
+  const [smallSquareInputWithMaxValue, setSmallSquareInputWithMaxValue] = React.useState('');
   return (
     <div className='flex flex-col gap-y-4 mt-8 mb-8'>
       <div className='flex flex-col gap-y-4 items-center'>
