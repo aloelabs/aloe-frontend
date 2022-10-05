@@ -12,7 +12,7 @@ import {
   CardTitleWrapper,
   CardWrapper,
   ValueText,
-} from '../common/Card';
+} from 'shared/lib/components/common/Card';
 import YieldTokenIcons from './YieldTokenIcons';
 import tw from 'twin.macro';
 
