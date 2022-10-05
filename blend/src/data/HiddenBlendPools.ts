@@ -3,6 +3,6 @@ const HiddenBlendPools: Set<string> = new Set([
   // "0x37dc6fcb5c03d46b097b094785c9fa557aa32fd4", // Rae-Eth 0.3 Pool - Fuse 9, Yearn
 ]);
 
-export function isHiddenPool(poolAddress: string) : boolean {
+export function isHiddenPool(poolAddress: string): boolean {
   return HiddenBlendPools.has(poolAddress);
 }

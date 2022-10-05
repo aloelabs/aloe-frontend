@@ -9,9 +9,7 @@ export const PORTFOLIO_TOOLTIP_WIDTH = 175;
 const TOOLTIP_BG_COLOR = 'rgba(13, 23, 30, 0.75)';
 const TOOLTIP_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
 
-const TooltipContainer = styled.div.attrs(
-  (props: {offset: number}) => props
-)`
+const TooltipContainer = styled.div.attrs((props: { offset: number }) => props)`
   ${tw`rounded-md shadow-md`}
   background: ${TOOLTIP_BG_COLOR};
   border: 1px solid ${TOOLTIP_BORDER_COLOR};
@@ -21,7 +19,14 @@ const TooltipContainer = styled.div.attrs(
   transform: translateX(${(props) => props.offset}px);
 `;
 
-export default function PnLGraphTooltip(props: {token0: TokenData, token1: TokenData, inTermsOfToken0: boolean, showAsterisk: boolean, data: any, active?: boolean}) {
+export default function PnLGraphTooltip(props: {
+  token0: TokenData;
+  token1: TokenData;
+  inTermsOfToken0: boolean;
+  showAsterisk: boolean;
+  data: any;
+  active?: boolean;
+}) {
   const { token0, token1, inTermsOfToken0, showAsterisk, data, active } = props;
   if (active) {
     const y = data?.payload[0]?.value || 0;
@@ -52,7 +57,9 @@ export default function PnLGraphTooltip(props: {token0: TokenData, token1: Token
                 P&L
               </Text>
               {showAsterisk && (
-                <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>*</Text>
+                <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>
+                  *
+                </Text>
               )}
             </div>
             <Text size='M' weight='bold'>

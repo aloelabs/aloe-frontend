@@ -102,9 +102,7 @@ const HeaderBarContainer = styled.div`
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
     display: grid;
-    grid-template-columns: fit-content(35px) fit-content(400px) fit-content(
-        24px
-      );
+    grid-template-columns: fit-content(35px) fit-content(400px) fit-content(24px);
     align-items: flex-start;
     justify-content: flex-start;
     gap: 16px;
@@ -134,8 +132,7 @@ export type BlendPoolPageProps = {
 
 export default function BlendPoolPage(props: BlendPoolPageProps) {
   const { blockNumber } = props;
-  const [offChainPoolStats, setOffChainPoolStats] =
-    React.useState<OffChainPoolStats>();
+  const [offChainPoolStats, setOffChainPoolStats] = React.useState<OffChainPoolStats>();
   const [uniswapVolume, setUniswapVolume] = React.useState<number | null>(null);
   const params = useParams<PoolParams>();
   const navigate = useNavigate();
@@ -149,9 +146,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
   useEffect(() => {
     let mounted = true;
     const fetchPoolStats = async () => {
-      const response = await axios.get(
-        `${API_URL}/pool_stats/${poolData?.poolAddress}/1`
-      );
+      const response = await axios.get(`${API_URL}/pool_stats/${poolData?.poolAddress}/1`);
       const poolStatsData = response.data[0] as OffChainPoolStats;
       if (mounted && poolStatsData) {
         setOffChainPoolStats(poolStatsData);
@@ -167,17 +162,8 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
 
   useEffect(() => {
     let mounted = true;
-    const fetchData = async (
-      token0Address: string,
-      token1Address: string,
-      feeTier: FeeTier
-    ) => {
-      const uniswapVolumeQuery = getUniswapVolumeQuery(
-        blockNumber,
-        token0Address,
-        token1Address,
-        feeTier
-      );
+    const fetchData = async (token0Address: string, token1Address: string, feeTier: FeeTier) => {
+      const uniswapVolumeQuery = getUniswapVolumeQuery(blockNumber, token0Address, token1Address, feeTier);
       const uniswapVolumeData = await theGraphUniswapV3Client.query({
         query: uniswapVolumeQuery,
       });
@@ -185,18 +171,13 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
       if (mounted) {
         setUniswapVolume(
           uniswapVolumeData['data']
-            ? uniswapVolumeData['data']['curr'][0]['volumeUSD'] -
-                uniswapVolumeData['data']['prev'][0]['volumeUSD']
+            ? uniswapVolumeData['data']['curr'][0]['volumeUSD'] - uniswapVolumeData['data']['prev'][0]['volumeUSD']
             : null
         );
       }
     };
     if (blockNumber && poolData) {
-      fetchData(
-        poolData.token0Address,
-        poolData.token1Address,
-        poolData.feeTier
-      );
+      fetchData(poolData.token0Address, poolData.token1Address, poolData.feeTier);
     }
     return () => {
       mounted = false;
@@ -212,9 +193,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
     }
     return (
       <LoaderWrapper>
-        <IOSStyleSpinner
-          size={isGTMediumScreen ? 'L' : isGTSmallScreen ? 'M' : 'S'}
-        />
+        <IOSStyleSpinner size={isGTMediumScreen ? 'L' : isGTSmallScreen ? 'M' : 'S'} />
       </LoaderWrapper>
     );
   }
@@ -261,33 +240,22 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
               accountAddress={address}
             />
           )}
-          <PoolStatsWidget
-            offChainPoolStats={offChainPoolStats}
-            uniswapVolume={uniswapVolume}
-          />
+          <PoolStatsWidget offChainPoolStats={offChainPoolStats} uniswapVolume={uniswapVolume} />
           <PoolPieChartWidget poolData={poolData} />
           <GeneralPoolSectionContainer>
             <WidgetHeading>About The Pool</WidgetHeading>
-            <Text
-              size='M'
-              weight='medium'
-              color={ABOUT_MESSAGE_TEXT_COLOR}
-              className='flex flex-col gap-y-6'
-            >
+            <Text size='M' weight='medium' color={ABOUT_MESSAGE_TEXT_COLOR} className='flex flex-col gap-y-6'>
               <p>
-                Placing assets into a Blend Pool will allow the Aloe Protocol to
-                use Uniswap V3 and yield-earning silos on your behalf.
+                Placing assets into a Blend Pool will allow the Aloe Protocol to use Uniswap V3 and yield-earning silos
+                on your behalf.
               </p>
               <p>
-                When you deposit, your tokens are pooled together with other
-                users'. Once conditions are right, the pool can be rebalanced.
-                During a rebalance, the pool's algorithm redistributes funds
-                between Uniswap and silos to earn the best mix of swap fees and
-                yield. It also tries to keep itself balanced — 50%{' '}
-                {GetTokenData(poolData.token0Address.toLowerCase()).ticker} and
-                50% {GetTokenData(poolData.token1Address.toLowerCase()).ticker},
-                just like Uniswap V2. In the right market conditions, this can
-                massively{' '}
+                When you deposit, your tokens are pooled together with other users'. Once conditions are right, the pool
+                can be rebalanced. During a rebalance, the pool's algorithm redistributes funds between Uniswap and
+                silos to earn the best mix of swap fees and yield. It also tries to keep itself balanced — 50%{' '}
+                {GetTokenData(poolData.token0Address.toLowerCase()).ticker} and 50%{' '}
+                {GetTokenData(poolData.token1Address.toLowerCase()).ticker}, just like Uniswap V2. In the right market
+                conditions, this can massively{' '}
                 <a
                   href='https://research.paradigm.xyz/uniswaps-alchemy'
                   target='_blank'

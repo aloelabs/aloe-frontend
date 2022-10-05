@@ -6,9 +6,7 @@ import Header from './components/header/Header';
 import Footer from './components/common/Footer';
 
 import AppBody from './components/common/AppBody';
-import { RedirectPartialPath } from './util/RedirectPartialPath';
 import ScrollToTop from './util/ScrollToTop';
-import { IS_DEV } from './util/Env';
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';

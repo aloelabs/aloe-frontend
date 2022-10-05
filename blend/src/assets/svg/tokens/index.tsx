@@ -8,14 +8,4 @@ import LooksLogo from './looks.svg';
 import OSqthLogo from './oSQTH.svg';
 import UnknownTokenLogo from './unknown_token.svg';
 
-export {
-  FeiLogo,
-  UsdcLogo,
-  WbtcLogo,
-  WethLogo,
-  UnknownTokenLogo,
-  TribeLogo,
-  RaiLogo,
-  LooksLogo,
-  OSqthLogo,
-};
+export { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, UnknownTokenLogo, TribeLogo, RaiLogo, LooksLogo, OSqthLogo };

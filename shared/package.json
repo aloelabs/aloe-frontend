@@ -31,6 +31,7 @@
     "start": "yarn tsc -w",
     "clean": "rm -rf ./lib",
     "prebuild": "yarn clean",
-    "build": "tsc --build \"./tsconfig.json\""
+    "build": "tsc --build \"./tsconfig.json\"",
+    "lint": "eslint --fix --ext .tsx,.ts ."
   }
 }

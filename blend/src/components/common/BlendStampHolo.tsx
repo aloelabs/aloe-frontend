@@ -114,17 +114,7 @@ const useMove = () => {
 
 export default function BlendStampHolo(props: BlendStampProps) {
   const drawData = ResolveBlendPoolDrawData(props.poolData);
-  const {
-    x,
-    y,
-    elX,
-    elY,
-    elW,
-    elH,
-    isActive,
-    handleMouseMove,
-    handleMouseLeave,
-  } = useMove();
+  const { x, y, elX, elY, elW, elH, isActive, handleMouseMove, handleMouseLeave } = useMove();
 
   return (
     <CardContainer>
@@ -142,9 +132,7 @@ export default function BlendStampHolo(props: BlendStampProps) {
         <div className='flex flex-row items-center justify-evenly w-full h-42'>
           <div className='flex flex-col items-center justify-evenly flex-initial mx-2 p-4'>
             <TokenPairLogos drawData={drawData} excludeNames={true} />
-            <p className='text-xs text-grey-1000 mt-4 mb-1'>
-              Uniswap&nbsp;Fee&nbsp;Tier
-            </p>
+            <p className='text-xs text-grey-1000 mt-4 mb-1'>Uniswap&nbsp;Fee&nbsp;Tier</p>
             <div className='border-2 border-grey-400 rounded-md p-0.5 text-center w-fit'>
               <p className='text-md text-grey-1000'>{drawData.feeTierText}</p>
             </div>
@@ -158,21 +146,11 @@ export default function BlendStampHolo(props: BlendStampProps) {
               [drawData.token1Label, drawData.silo1Label],
             ].map((tokenDataPair: string[], index) => {
               return (
-                <div
-                  key={index}
-                  className='flex flex-row items-center justify-start my-2 w-full'
-                >
-                  <div className='text-xl font-semibold'>
-                    {tokenDataPair[0]}
-                  </div>
+                <div key={index} className='flex flex-row items-center justify-start my-2 w-full'>
+                  <div className='text-xl font-semibold'>{tokenDataPair[0]}</div>
                   <div className='px-2 grow'>
                     {/* color is grey-400 */}
-                    <SiloBlob
-                      width='40px'
-                      className='text-md w-full'
-                      color='#4A687F'
-                      expand
-                    >
+                    <SiloBlob width='40px' className='text-md w-full' color='#4A687F' expand>
                       {tokenDataPair[1]}
                     </SiloBlob>
                   </div>

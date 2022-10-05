@@ -15,8 +15,7 @@ export type UsePaginationState = {
 };
 
 export function usePagination(paginationState: UsePaginationState) {
-  const { totalItems, itemsPerPage, currentPage, maxDisplayedCount } =
-    paginationState;
+  const { totalItems, itemsPerPage, currentPage, maxDisplayedCount } = paginationState;
   const paginationRange = useMemo(() => {
     const numberOfPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -35,11 +34,7 @@ export function usePagination(paginationState: UsePaginationState) {
       return [1, ELLIPSIS, ...range(start, end), ELLIPSIS, numberOfPages];
     } else if (showStartEllipsis) {
       /* example: (1 ... 6 7 8 9 10) */
-      return [
-        1,
-        ELLIPSIS,
-        ...range(numberOfPages - (maxDisplayedCount - 2), numberOfPages),
-      ];
+      return [1, ELLIPSIS, ...range(numberOfPages - (maxDisplayedCount - 2), numberOfPages)];
     } else if (showEndEllipsis) {
       /* example: (1 2 3 4 5 ... 10) */
       return [...range(1, maxDisplayedCount - 1), ELLIPSIS, numberOfPages];

@@ -26,12 +26,12 @@ export function prettyFormatBalance(amount?: Big, decimals?: number): string {
 }
 
 /**
- * 
+ *
  * @param amount the amount of money in USD to format
  * @param placeholder the placeholder to use if the amount is null
  * @returns a formatted string representing the amount of money in USD
  */
-export function formatUSD(amount: number | null, placeholder='-'): string {
+export function formatUSD(amount: number | null, placeholder = '-'): string {
   if (amount === null) {
     return placeholder;
   }
@@ -39,12 +39,12 @@ export function formatUSD(amount: number | null, placeholder='-'): string {
 }
 
 /**
- * 
+ *
  * @param amount the amount of money in USD to format
  * @param placeholder the placeholder to use if the amount is null
  * @returns a compact, formatted string representing the amount of money in USD
  */
-export function formatUSDCompact(amount: number | null, placeholder='-'): string {
+export function formatUSDCompact(amount: number | null, placeholder = '-'): string {
   if (amount === null) {
     return placeholder;
   }
@@ -52,13 +52,13 @@ export function formatUSDCompact(amount: number | null, placeholder='-'): string
 }
 
 /**
- * 
+ *
  * @param amount the amount of money in USD to format
  * @param placeholder the placeholder to use if the amount is null
- * @returns a formatted string representing the amount of money in USD using 
+ * @returns a formatted string representing the amount of money in USD using
  * either the compact or regular format depending on the amount
  */
-export function formatUSDAuto(amount: number | null, placeholder='-'): string {
+export function formatUSDAuto(amount: number | null, placeholder = '-'): string {
   if (amount && amount < 1000) {
     return formatUSD(amount, placeholder);
   }
@@ -70,15 +70,9 @@ export function formatUSDAuto(amount: number | null, placeholder='-'): string {
  * @param precision the number of decimal places to round to
  * @returns the given percentage rounded to the given precision, without forcing a decimal point
  */
-export function roundPercentage(
-  percentage: number,
-  precision?: number
-): number {
+export function roundPercentage(percentage: number, precision?: number): number {
   precision = precision || DEFAULT_PRECISION;
-  return (
-    Math.round((percentage + Number.EPSILON) * Math.pow(10, precision)) /
-    Math.pow(10, precision)
-  );
+  return Math.round((percentage + Number.EPSILON) * Math.pow(10, precision)) / Math.pow(10, precision);
 }
 
 //TODO: refactor this to handle edge cases better
@@ -88,7 +82,7 @@ export function formatNumberInput(input: string, negative?: boolean): string | n
   } else if (input === '.') {
     return negative ? '-0.' : '0.';
   }
-  
+
   const re = new RegExp(`^${negative ? '-?' : ''}[0-9\b]+[.\b]?[0-9\b]{0,18}$`);
 
   if (re.test(input)) {
@@ -124,8 +118,7 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       maximumSignificantDigits: sigDigs,
       minimumSignificantDigits: 2,
     });
-  }
-  else if (amount > 1e-8 || amount === 0) {
+  } else if (amount > 1e-8 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: sigDigs,
@@ -149,7 +142,7 @@ export function formatTokenAmountCompact(amount: number, length = 4): string {
       maximumSignificantDigits: length,
       minimumSignificantDigits: 2,
     });
-  } else if (amount > (10 ** -(length / 2)) || amount === 0) {
+  } else if (amount > 10 ** -(length / 2) || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: length + 1,
@@ -189,7 +182,7 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
       maximumSignificantDigits: sigDigs,
     });
   } else {
-    return '0'
+    return '0';
   }
 }
 

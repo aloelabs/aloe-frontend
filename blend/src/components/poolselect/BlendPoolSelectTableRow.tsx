@@ -27,14 +27,11 @@ const AnimatedTr = styled.tr`
   }
 `;
 
-export default function BlendPoolSelectTableRow(
-  props: BlendPoolSelectTableRowProps
-) {
+export default function BlendPoolSelectTableRow(props: BlendPoolSelectTableRowProps) {
   const navigate = useNavigate();
   const drawData = ResolveBlendPoolDrawData(props.poolData);
 
-  const { token0Label, token1Label, silo0Label, silo1Label, feeTierText } =
-    drawData;
+  const { token0Label, token1Label, silo0Label, silo1Label, feeTierText } = drawData;
 
   return (
     <AnimatedTr

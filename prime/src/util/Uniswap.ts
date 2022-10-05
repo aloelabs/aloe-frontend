@@ -4,17 +4,8 @@ import { ethers } from 'ethers';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import {
-  TickMath,
-  tickToPrice as uniswapTickToPrice,
-  maxLiquidityForAmounts,
-  Position,
-  Pool,
-  SqrtPriceMath,
-  nearestUsableTick,
-  FeeAmount,
-} from '@uniswap/v3-sdk';
-import { BigintIsh, MaxUint256, Token } from '@uniswap/sdk-core';
+import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
+import { MaxUint256 } from '@uniswap/sdk-core';
 import { TokenData } from '../data/TokenData';
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { theGraphUniswapV3Client } from '../App';
@@ -413,22 +404,14 @@ export function uniswapPositionKey(owner: string, lower: number, upper: number):
   return ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, lower, upper]);
 }
 
-function getAmount0ForLiquidity(
-  sqrtRatioAX96: JSBI,
-  sqrtRatioBX96: JSBI,
-  liquidity: JSBI
-): JSBI {
+function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
   const numerator = JSBI.multiply(JSBI.leftShift(liquidity, res), JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
   const denominator = JSBI.multiply(sqrtRatioBX96, sqrtRatioAX96);
   return JSBI.divide(numerator, denominator);
 }
 
-function getAmount1ForLiquidity(
-  sqrtRatioAX96: JSBI,
-  sqrtRatioBX96: JSBI,
-  liquidity: JSBI
-): JSBI {
+function getAmount1ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const numerator = JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
   return JSBI.divide(numerator, JSBI.BigInt(Q96.toString()));
 }

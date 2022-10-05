@@ -47,7 +47,8 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "lint": "eslint --fix --ext .tsx,.ts ."
   },
   "eslintConfig": {
     "extends": [

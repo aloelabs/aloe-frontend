@@ -17,10 +17,7 @@ export async function approve(
   const tokenContract = new Contract(tokenAddress, Erc20Abi, signer);
 
   try {
-    const transactionResponse = await tokenContract.approve(
-      poolAddress,
-      amount
-    );
+    const transactionResponse = await tokenContract.approve(poolAddress, amount);
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);
   } catch (e) {

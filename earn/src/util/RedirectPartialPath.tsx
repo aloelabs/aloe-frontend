@@ -11,9 +11,7 @@ export function RedirectPartialPath(props: RedirectPartialPathProps) {
 
   return (
     <>
-      {props.from.includes(location.pathname) && (
-        <Navigate replace to={props.to} />
-      )}
+      {props.from.includes(location.pathname) && <Navigate replace to={props.to} />}
       <Outlet />
     </>
   );

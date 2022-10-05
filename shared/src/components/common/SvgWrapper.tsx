@@ -16,7 +16,7 @@ export const SvgWrapper = styled.div.attrs(
   }) => props
 )`
   display: flex;
-  align-items: center; 
+  align-items: center;
   justify-content: center;
   ${(props) => props.width && `width: ${props.width}px;`};
   ${(props) => props.height && `height: ${props.height}px;`};

@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { TokenData } from '../../data/TokenData';
-import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
+import { PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
 import { getProminentColor, rgba } from '../../util/Colors';
-import { formatTokenAmount, formatUSDAuto } from '../../util/Numbers';
+import { formatTokenAmount } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
-import { MarginAccount, MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
+import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -26,9 +25,7 @@ const CardWrapper = styled(NavLink)`
   border: 4px solid rgba(26, 41, 52, 1);
 `;
 
-const CardTitleWrapper = styled.div.attrs(
-  (props: { gradient: string }) => props
-)`
+const CardTitleWrapper = styled.div.attrs((props: { gradient: string }) => props)`
   ${tw`flex flex-col items-start justify-start`}
   padding: 32px 32px 40px 32px;
   position: relative;
@@ -117,10 +114,10 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   }, [token0, token1]);
 
   // Create the variables for the gradients.
-  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(
-    token0Color,
+  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
+    token1Color,
     0.25
-  )} 0%, ${rgba(token1Color, 0.25)} 100%)`;
+  )} 100%)`;
 
   return (
     <CardWrapper to={link}>
@@ -146,7 +143,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
         <div className='w-full flex flex-row justify-between'>
           <MetricContainer
             label={token0.ticker ?? 'Token0'}
-            value={formatTokenAmount(assets0 - liabilities.amount0, 3)} />
+            value={formatTokenAmount(assets0 - liabilities.amount0, 3)}
+          />
           <MetricContainer
             label={token1.ticker ?? 'Token1'}
             value={formatTokenAmount(assets1 - liabilities.amount1, 3)}

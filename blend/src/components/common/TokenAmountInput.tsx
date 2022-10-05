@@ -80,9 +80,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
       {props.error && (
         <ErrorMessageWrapper>
           <img src={ErrorIcon} width={16} height={16} alt='error' />
-          <ErrorMessageText>
-            {props.errorMessage ? props.errorMessage : 'Invalid input'}
-          </ErrorMessageText>
+          <ErrorMessageText>{props.errorMessage ? props.errorMessage : 'Invalid input'}</ErrorMessageText>
         </ErrorMessageWrapper>
       )}
     </div>

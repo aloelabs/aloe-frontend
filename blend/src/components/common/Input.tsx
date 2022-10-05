@@ -67,9 +67,7 @@ const MAX_BUTTON_HEIGHT = {
   L: 19,
 };
 
-const InputBase = styled.input.attrs(
-  (props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean }) => props
-)`
+const InputBase = styled.input.attrs((props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean }) => props)`
   ${tw`relative text-left flex-grow`}
   background-color: ${INPUT_BG_COLOR};
   color: ${INPUT_TEXT_COLOR};
@@ -145,19 +143,14 @@ const SquareInputWrapper = styled.div`
 `;
 
 const SvgWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean; }) => props
+  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean }) => props
 )`
   ${tw`absolute`}
 
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: ${(props) => (props.isClickable ? 'auto' : 'none')};
   cursor: ${(props) => (props.isClickable ? 'pointer' : 'default')};
-  right: ${(props) =>
-    `${
-      ICON_PADDING[props.size] -
-      ICON_SIZES[props.size] -
-      ICON_SPACING[props.size]
-    }px`};
+  right: ${(props) => `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
   svg {
     width: ${(props) => ICON_SIZES[props.size]}px;
     height: ${(props) => ICON_SIZES[props.size]}px;
@@ -167,17 +160,13 @@ const SvgWrapper = styled.div.attrs(
     svg {
       path {
         ${(props) =>
-          props.svgColorType === 'fill'
-            ? `fill: ${INPUT_ICON_COLOR_DISABLED}`
-            : `stroke: ${INPUT_ICON_COLOR_DISABLED}`}
+          props.svgColorType === 'fill' ? `fill: ${INPUT_ICON_COLOR_DISABLED}` : `stroke: ${INPUT_ICON_COLOR_DISABLED}`}
       }
     }
   }
 `;
 
-const MaxButton = styled.button.attrs(
-  (props: { size: 'S' | 'M' | 'L' }) => props
-)`
+const MaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
   ${tw`ml-3 p-0`}
   color: rgba(0, 193, 67, 1);
   position: absolute;
@@ -207,24 +196,9 @@ export type InputProps = {
 };
 
 export function RoundedInput(props: InputProps) {
-  const {
-    value,
-    onChange,
-    size,
-    fullWidth,
-    wrapperClassName,
-    inputClassName,
-    placeholder,
-    disabled,
-    onEnter,
-  } = props;
+  const { value, onChange, size, fullWidth, wrapperClassName, inputClassName, placeholder, disabled, onEnter } = props;
   return (
-    <RoundedInputWrapper
-      className={classNames(
-        fullWidth ? 'w-full' : 'w-max',
-        wrapperClassName || ''
-      )}
-    >
+    <RoundedInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
       <InputBase
         value={value}
         onChange={onChange}
@@ -244,24 +218,9 @@ export function RoundedInput(props: InputProps) {
 }
 
 export function SquareInput(props: InputProps) {
-  const {
-    value,
-    onChange,
-    size,
-    fullWidth,
-    wrapperClassName,
-    inputClassName,
-    placeholder,
-    disabled,
-    onEnter,
-  } = props;
+  const { value, onChange, size, fullWidth, wrapperClassName, inputClassName, placeholder, disabled, onEnter } = props;
   return (
-    <SquareInputWrapper
-      className={classNames(
-        fullWidth ? 'w-full' : 'w-max',
-        wrapperClassName || ''
-      )}
-    >
+    <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
       <InputBase
         value={value}
         onChange={onChange}
@@ -300,12 +259,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     onEnter,
   } = props;
   return (
-    <SquareInputWrapper
-      className={classNames(
-        fullWidth ? 'w-full' : 'w-max',
-        wrapperClassName || ''
-      )}
-    >
+    <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
       <InputBase
         value={value}
         onChange={onChange}
@@ -320,11 +274,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
           }
         }}
       />
-      <MaxButton
-        size={size}
-        onClick={onMaxClick}
-        disabled={disabled || maxDisabled}
-      >
+      <MaxButton size={size} onClick={onMaxClick} disabled={disabled || maxDisabled}>
         MAX
       </MaxButton>
     </SquareInputWrapper>
@@ -352,12 +302,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     onEnter,
   } = props;
   return (
-    <RoundedInputWrapper
-      className={classNames(
-        fullWidth ? 'w-full' : 'w-max',
-        wrapperClassName || ''
-      )}
-    >
+    <RoundedInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
       <InputBase
         value={value}
         onChange={onChange}
@@ -372,7 +317,12 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
           }
         }}
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </RoundedInputWrapper>
@@ -394,12 +344,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     onEnter,
   } = props;
   return (
-    <SquareInputWrapper
-      className={classNames(
-        fullWidth ? 'w-full' : 'w-max',
-        wrapperClassName || ''
-      )}
-    >
+    <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
       <InputBase
         value={value}
         onChange={onChange}
@@ -408,13 +353,22 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={onEnter !== undefined ? (e) => {
-          if (e.key === 'Enter') {
-            onEnter();
-          }
-        } : undefined}
+        onKeyPress={
+          onEnter !== undefined
+            ? (e) => {
+                if (e.key === 'Enter') {
+                  onEnter();
+                }
+              }
+            : undefined
+        }
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </SquareInputWrapper>

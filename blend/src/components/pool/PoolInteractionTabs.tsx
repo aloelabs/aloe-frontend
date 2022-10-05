@@ -39,8 +39,7 @@ const TabButton = styled.button`
       border-top-right-radius: 8px;
       padding: 1.5px 1.5px 0px 1.5px;
       background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -75,8 +74,7 @@ const PanelsWrapper = styled.div`
     border-bottom-right-radius: 8px;
     padding: 0px 1.5px 1.5px 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -91,8 +89,7 @@ const PanelsWrapper = styled.div`
     border-bottom-right-radius: 8px;
     padding: 1.5px 0px 0px 0px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -115,11 +112,7 @@ export default function PoolInteractionTabs(props: PoolInteractionTabsProps) {
           <Tab.List className='flex rounded-md'>
             {['Deposit', 'Withdraw', 'Swap'].map((tabName) => (
               <Tab key={tabName} as={Fragment}>
-                {({ selected }) => (
-                  <TabButton className={selected ? 'selected' : ''}>
-                    {tabName}
-                  </TabButton>
-                )}
+                {({ selected }) => <TabButton className={selected ? 'selected' : ''}>{tabName}</TabButton>}
               </Tab>
             ))}
           </Tab.List>

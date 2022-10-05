@@ -29,7 +29,6 @@ export default function BorrowAccountsPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
-  const [isTransactionPending, setIsTransactionPending] = useState(false);
   // --> other
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
@@ -100,7 +99,12 @@ export default function BorrowAccountsPage() {
       </MarginAccountsContainner>
 
       <CreateMarginAccountModal
-        availablePools={[{ label: 'USDC/WETH 0.05%', value: '0xfBe57C73A82171A773D3328F1b563296151be515' }]}
+        availablePools={[
+          {
+            label: 'USDC/WETH 0.05%',
+            value: '0xfBe57C73A82171A773D3328F1b563296151be515',
+          },
+        ]}
         open={showConfirmModal}
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
@@ -109,7 +113,7 @@ export default function BorrowAccountsPage() {
             setShowSubmittingModal(true);
           }, 500);
           if (!signer || !address || !selectedPool) {
-            setIsTransactionPending(false);
+            // TODO
             return;
           }
           createMarginAccount(signer, selectedPool, address, (receipt) => {
@@ -123,12 +127,11 @@ export default function BorrowAccountsPage() {
                 setShowFailedModal(true);
               }, 500);
             }
-            setIsTransactionPending(false);
             console.log(receipt);
           });
         }}
         onCancel={() => {
-          setIsTransactionPending(false);
+          // TODO
         }}
       />
       <CreatedMarginAccountModal

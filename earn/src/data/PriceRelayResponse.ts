@@ -10,7 +10,7 @@ export type PriceRelayResponse = {
         symbol: string;
         slug: string;
         token_address: string;
-      }
+      };
       quote: {
         [key: string]: {
           price: number;

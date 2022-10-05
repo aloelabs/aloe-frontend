@@ -116,7 +116,9 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
 
   // Sort token balances by their corresponding token
   const sortedTokenBalances = useMemo(() => {
-    return tokenBalances.sort((a, b) => (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address));
+    return tokenBalances.sort((a, b) =>
+      (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address)
+    );
   }, [tokenBalances]);
 
   useEffect(() => {
@@ -219,16 +221,14 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                   {activeSlice.tokenBalance.token.ticker || ''}
                 </Text>
                 {activeSlice.tokenBalance.isKitty && (
-                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>{activeSlice.pairName}</Text>
+                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>
+                    {activeSlice.pairName}
+                  </Text>
                 )}
                 <Text size='L'>{currentPercent}</Text>
               </div>
             )}
-            {!activeSlice && (
-              <Text size='L'>
-                Your Assets
-              </Text>
-            )}
+            {!activeSlice && <Text size='L'>Your Assets</Text>}
           </PieChartLabel>
         </PieChartWrapper>
       </TokenAllocationWrapper>
