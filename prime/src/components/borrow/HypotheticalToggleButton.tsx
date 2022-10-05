@@ -1,4 +1,4 @@
-import ToggleButton from '../../components/common/ToggleButton';
+import ToggleButton from 'shared/lib/components/common/ToggleButton';
 import { ReactComponent as EyeIcon } from '../../assets/svg/eye.svg';
 import { ReactComponent as EyeOffIcon } from '../../assets/svg/eye-off.svg';
 import styled from 'styled-components';
