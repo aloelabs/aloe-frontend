@@ -52,7 +52,11 @@ const CardActionButton = styled.button`
   }
 `;
 
-function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => void, disabled?: boolean }) {
+function EditPositionButton(props: {
+  Icon: React.ReactChild;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <CardActionButton onClick={props?.onClick} disabled={props.disabled}>
       {props.Icon}
@@ -60,7 +64,9 @@ function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => voi
   );
 }
 
-export default function LendPairCard(props: LendingPair & {hasDeposited0: boolean, hasDeposited1: boolean}) {
+export default function LendPairCard(
+  props: LendingPair & { hasDeposited0: boolean; hasDeposited1: boolean }
+) {
   const {
     token0,
     token1,
@@ -157,13 +163,20 @@ export default function LendPairCard(props: LendingPair & {hasDeposited0: boolea
               totalSupply={kitty0Info.inventory}
               utilization={kitty0Info.utilization}
             />
-            {isCardHovered &&
-              (<EditPositionButton
-                Icon={hasDeposited0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
+            {isCardHovered && (
+              <EditPositionButton
+                Icon={
+                  hasDeposited0 ? (
+                    <EditIcon width={32} height={32} />
+                  ) : (
+                    <PlusIcon width={32} height={32} />
+                  )
+                }
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
-              />)}
+              />
+            )}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -182,15 +195,20 @@ export default function LendPairCard(props: LendingPair & {hasDeposited0: boolea
               totalSupply={kitty1Info.inventory}
               utilization={kitty1Info.utilization}
             />
-            {isCardHovered &&
-              (
-                <EditPositionButton
-                  Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
-                  onClick={() => {
-                    setIsEditToken1PositionModalOpen(true);
-                  }}
-                />
-              )}
+            {isCardHovered && (
+              <EditPositionButton
+                Icon={
+                  hasDeposited1 ? (
+                    <EditIcon width={32} height={32} />
+                  ) : (
+                    <PlusIcon width={32} height={32} />
+                  )
+                }
+                onClick={() => {
+                  setIsEditToken1PositionModalOpen(true);
+                }}
+              />
+            )}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>

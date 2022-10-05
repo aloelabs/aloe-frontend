@@ -1,8 +1,8 @@
 export const RESPONSIVE_BREAKPOINTS = {
-    LG: 1400,
-    MD: 1200,
-    SM: 768,
-    XS: 480,
+  LG: 1400,
+  MD: 1200,
+  SM: 768,
+  XS: 480,
 };
 
 export const RESPONSIVE_BREAKPOINT_LG = `${RESPONSIVE_BREAKPOINTS.LG}px`;

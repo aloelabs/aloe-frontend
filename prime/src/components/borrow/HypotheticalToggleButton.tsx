@@ -15,8 +15,9 @@ const StyledHypotheticalToggleButtonContent = styled.div.attrs(
   border: 1px solid rgba(242, 201, 76, 1);
   border-radius: 8px;
 
-  box-shadow: ${(props) => props.isActive ? '0px 0px 2px 1px rgba(242, 201, 76, 0.5)' : 'none'};
-  opacity: ${(props) => props.isActive ? '1.0' : '0.5'};
+  box-shadow: ${(props) =>
+    props.isActive ? '0px 0px 2px 1px rgba(242, 201, 76, 0.5)' : 'none'};
+  opacity: ${(props) => (props.isActive ? '1.0' : '0.5')};
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     .hypothetical-button-title {
@@ -47,12 +48,11 @@ export type HypotheticalToggleButtonProps = {
 export function HypotheticalToggleButton(props: HypotheticalToggleButtonProps) {
   const { showHypothetical, setShowHypothetical } = props;
   return (
-    <ToggleButton
-      isActive={showHypothetical}
-      setIsActive={setShowHypothetical}
-    >
+    <ToggleButton isActive={showHypothetical} setIsActive={setShowHypothetical}>
       <StyledHypotheticalToggleButtonContent isActive={showHypothetical}>
-        <Text weight='bold' className='hypothetical-button-title'>Hypothetical</Text>
+        <Text weight='bold' className='hypothetical-button-title'>
+          Hypothetical
+        </Text>
         <EyeIconWrapper>
           {showHypothetical ? <EyeIcon /> : <EyeOffIcon />}
         </EyeIconWrapper>

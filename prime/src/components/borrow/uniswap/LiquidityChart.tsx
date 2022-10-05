@@ -9,8 +9,8 @@ import {
 import styled from 'styled-components';
 
 export type ChartEntry = {
-  price: number,
-  liquidityDensity: number,
+  price: number;
+  liquidityDensity: number;
 };
 
 const Wrapper = styled.div`
@@ -36,9 +36,13 @@ function StyledBar(props: StyledBarProps) {
   );
 }
 
-function nearestPriceInGraphOrNull(price: number, minPrice: number, maxPrice: number, data: ChartEntry[]): number | null {
-  
-  if (price < minPrice || price > maxPrice) return null; 
+function nearestPriceInGraphOrNull(
+  price: number,
+  minPrice: number,
+  maxPrice: number,
+  data: ChartEntry[]
+): number | null {
+  if (price < minPrice || price > maxPrice) return null;
   return data.reduce((prev: ChartEntry, curr: ChartEntry) => {
     let prevDiff = Math.abs(price - prev.price);
     let currDiff = Math.abs(price - curr.price);
@@ -57,9 +61,24 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd, currentPrice } = props;
   const minPrice = data.length > 0 ? data[0].price : 0;
   const maxPrice = data.length > 0 ? data[data.length - 1].price : 0;
-  const updatedRangeStart = nearestPriceInGraphOrNull(parseFloat(rangeStart), minPrice, maxPrice, data);
-  const updatedRangeEnd = nearestPriceInGraphOrNull(parseFloat(rangeEnd), minPrice, maxPrice, data);
-  const updatedCurrentPrice = nearestPriceInGraphOrNull(parseFloat(currentPrice), minPrice, maxPrice, data);
+  const updatedRangeStart = nearestPriceInGraphOrNull(
+    parseFloat(rangeStart),
+    minPrice,
+    maxPrice,
+    data
+  );
+  const updatedRangeEnd = nearestPriceInGraphOrNull(
+    parseFloat(rangeEnd),
+    minPrice,
+    maxPrice,
+    data
+  );
+  const updatedCurrentPrice = nearestPriceInGraphOrNull(
+    parseFloat(currentPrice),
+    minPrice,
+    maxPrice,
+    data
+  );
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,

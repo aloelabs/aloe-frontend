@@ -145,7 +145,11 @@ const SquareInputWrapper = styled.div`
 `;
 
 const SvgWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean; }) => props
+  (props: {
+    size: 'S' | 'M' | 'L';
+    svgColorType: 'fill' | 'stroke';
+    isClickable: boolean;
+  }) => props
 )`
   ${tw`absolute`}
 
@@ -372,7 +376,12 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
           }
         }}
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </RoundedInputWrapper>
@@ -408,13 +417,22 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={onEnter !== undefined ? (e) => {
-          if (e.key === 'Enter') {
-            onEnter();
-          }
-        } : undefined}
+        onKeyPress={
+          onEnter !== undefined
+            ? (e) => {
+                if (e.key === 'Enter') {
+                  onEnter();
+                }
+              }
+            : undefined
+        }
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </SquareInputWrapper>

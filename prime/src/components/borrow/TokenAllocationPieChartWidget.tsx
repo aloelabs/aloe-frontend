@@ -210,8 +210,10 @@ export type TokenAllocationPieChartWidgetProps = {
   sqrtPriceX96: Big;
 };
 
-export default function TokenAllocationPieChartWidget(props: TokenAllocationPieChartWidgetProps) {
-  const { token0, token1, assets, sqrtPriceX96} = props;
+export default function TokenAllocationPieChartWidget(
+  props: TokenAllocationPieChartWidgetProps
+) {
+  const { token0, token1, assets, sqrtPriceX96 } = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [currentPercent, setCurrentPercent] = useState('');
 
@@ -225,12 +227,18 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     setCurrentPercent('');
   };
 
-  const price = BIGQ96.mul(BIGQ96).div(sqrtPriceX96).div(sqrtPriceX96).mul(10 ** (token1.decimals - token0.decimals)).toNumber();
-  const totalAssets: number = (
-    assets.token0Raw + assets.token1Raw * price +
-    assets.token0Plus + assets.token1Plus * price +
-    assets.uni0 + assets.uni1 * price
-  );
+  const price = BIGQ96.mul(BIGQ96)
+    .div(sqrtPriceX96)
+    .div(sqrtPriceX96)
+    .mul(10 ** (token1.decimals - token0.decimals))
+    .toNumber();
+  const totalAssets: number =
+    assets.token0Raw +
+    assets.token1Raw * price +
+    assets.token0Plus +
+    assets.token1Plus * price +
+    assets.uni0 +
+    assets.uni1 * price;
 
   const slices: AllocationPieChartSlice[] = [
     {
@@ -253,19 +261,19 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     },
     {
       index: 3,
-      percent: assets.uni1 * price / totalAssets,
+      percent: (assets.uni1 * price) / totalAssets,
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 4,
-      percent: assets.token1Plus * price / totalAssets,
+      percent: (assets.token1Plus * price) / totalAssets,
       color: TOKEN1_COLOR_INTEREST_BEARING,
       category: 'Interest Bearing',
     },
     {
       index: 5,
-      percent: assets.token1Raw * price / totalAssets,
+      percent: (assets.token1Raw * price) / totalAssets,
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
     },

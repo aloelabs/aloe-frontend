@@ -195,7 +195,7 @@ export async function ResolveBlendStats(
   // ------------------------------------------------- ticks -------------------------------------------------
   const lower = results[11].primaryLower;
   const upper = results[11].primaryUpper;
-  const IV = (1.0 - Math.pow(1.0001, - (upper - lower) / 2.0)) / 2.0
+  const IV = (1.0 - Math.pow(1.0001, -(upper - lower) / 2.0)) / 2.0;
 
   return {
     inventory0: {

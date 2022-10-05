@@ -19,7 +19,7 @@ const StyledDialog = styled.div`
 `;
 
 const ModalWrapper = styled.div.attrs(
-  (props: { 
+  (props: {
     borderGradient: string;
     backgroundColor?: string;
     fullWidth?: boolean;
@@ -28,12 +28,13 @@ const ModalWrapper = styled.div.attrs(
 )`
   ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left overflow-hidden transition-all sm:my-4 sm:align-middle`}
   transform: translateY(0);
-  min-width: 368px;//TODO: make sure this doesn't break any modals
+  min-width: 368px; //TODO: make sure this doesn't break any modals
   max-width: 100%;
-  height: ${(props) => props.fullHeight ? '100vh' : 'auto'};
-  ${(props) => props.fullHeight ? 'margin: 0 !important;' : ''}
+  height: ${(props) => (props.fullHeight ? '100vh' : 'auto')};
+  ${(props) => (props.fullHeight ? 'margin: 0 !important;' : '')}
   background-color: rgba(13, 23, 30, 1);
-  ${(props) => props.backgroundColor && `background-color: ${props.backgroundColor};`}
+  ${(props) =>
+    props.backgroundColor && `background-color: ${props.backgroundColor};`}
   color: rgba(255, 255, 255, 1);
   position: relative;
 
@@ -49,7 +50,7 @@ const ModalWrapper = styled.div.attrs(
       linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    ${props => props.fullWidth || props.fullHeight ? 'display: none;' : ''}
+    ${(props) => (props.fullWidth || props.fullHeight ? 'display: none;' : '')}
   }
 `;
 
@@ -151,7 +152,12 @@ function ModalBase(props: ModalBaseProps) {
             props.setOpen(false);
           }}
         >
-          <div className={classNames('flex items-end justify-center min-h-screen text-center sm:block sm:p-0', props.fullHeight ? '' : 'pt-4 px-4 pb-20')}>
+          <div
+            className={classNames(
+              'flex items-end justify-center min-h-screen text-center sm:block sm:p-0',
+              props.fullHeight ? '' : 'pt-4 px-4 pb-20'
+            )}
+          >
             <Transition.Child
               as={Fragment}
               enter='ease-out duration-300'
@@ -180,7 +186,12 @@ function ModalBase(props: ModalBaseProps) {
               leaveFrom='opacity-100 translate-y-0 sm:scale-100'
               leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
             >
-              <ModalWrapper borderGradient={borderGradient} fullWidth={props.fullWidth} fullHeight={props.fullHeight} backgroundColor={props.backgroundColor}>
+              <ModalWrapper
+                borderGradient={borderGradient}
+                fullWidth={props.fullWidth}
+                fullHeight={props.fullHeight}
+                backgroundColor={props.backgroundColor}
+              >
                 <div className={props.noPadding ? '' : 'p-8'}>
                   {props.children}
                 </div>

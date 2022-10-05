@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import AppPage from '../components/common/AppPage';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -41,7 +47,7 @@ type UniswapV2PositionResponse = {
     reserveUSD: string;
     totalSupply: string;
     __typename: string;
-  }
+  };
 };
 
 const PORTFOLIO_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -85,15 +91,16 @@ function poolToUniswapV2Pair(address: string): string {
 
 // const aloeAddress = '0x2b6dbde60278f19c742bd6861aa39e0a565f5aa3'//'0xcf2b7c6bc98bfe0d6138a25a3b6162b51f75e05d';
 // const externalAddress = '0xfae511813cc7a823f95bbc8bfd9aa3c31e6cc52a';
-export type PortfolioPageProps = {
-}; 
+export type PortfolioPageProps = {};
 export default function PortfolioPage() {
-  const {address} = useAccount();
+  const { address } = useAccount();
   const [positionsLoading, setPositionsLoading] = useState(true);
   const [externalPositionsLoading, setExternalPositionsLoading] =
     useState(true);
   const [positions, setPositions] = useState<Position[]>([]);
-  const [externalPositions, setExternalPositions] = useState<ExternalPosition[]>([]);
+  const [externalPositions, setExternalPositions] = useState<
+    ExternalPosition[]
+  >([]);
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
 
   const { poolDataMap } = useContext(BlendTableContext);
@@ -104,7 +111,7 @@ export default function PortfolioPage() {
     mounted.current = true;
     return () => {
       mounted.current = false;
-    }
+    };
   }, []);
 
   const loadData = useCallback(async () => {
@@ -137,9 +144,11 @@ export default function PortfolioPage() {
         const pool = positionResponse.pool;
         const balance = positionResponse.balance;
         const totalSupply =
-          positionResponse.poolReturns.data[positionResponse.poolReturns.data.length - 1]
-            .total_supply;
-        const totalValueLocked = positionResponse.poolStats.data[0].total_value_locked;
+          positionResponse.poolReturns.data[
+            positionResponse.poolReturns.data.length - 1
+          ].total_supply;
+        const totalValueLocked =
+          positionResponse.poolStats.data[0].total_value_locked;
         const estimatedValue = (balance / totalSupply) * totalValueLocked;
         return {
           pool,
@@ -162,40 +171,53 @@ export default function PortfolioPage() {
         const pairAddress = poolToUniswapV2Pair(pool.poolAddress);
         return {
           pool: pool,
-          etherscanData: await http.get(
+          etherscanData: (await http.get(
             `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${pairAddress}&address=${address}&tag=latest&apikey=F7XAB91MQBBZ1HSCUEI343VVP7CTASW4N1`,
             {
               transformResponse: (response) => {
                 const responseJSON = JSON.parse(response);
                 return {
-                  balance: isNaN(responseJSON.result) ? 0 : parseInt(responseJSON.result),
+                  balance: isNaN(responseJSON.result)
+                    ? 0
+                    : parseInt(responseJSON.result),
                   error: responseJSON.message !== '1',
                 } as EtherscanBalanceResponse;
-              }
-            },
-          ) as AxiosResponse<EtherscanBalanceResponse, any>,
-          uniswapData: await theGraphUniswapV2Client.query({
+              },
+            }
+          )) as AxiosResponse<EtherscanBalanceResponse, any>,
+          uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,
             variables: {
               pairAddress: pairAddress,
             },
-          }) as ApolloQueryResult<UniswapV2PositionResponse>,
+          })) as ApolloQueryResult<UniswapV2PositionResponse>,
         };
       });
-      const uniswapPositionResponse = await Promise.all(uniswapPositionRequests);
-      const nonZeroUniswapPositions = uniswapPositionResponse.filter((uniswapPosition) => {
-        return uniswapPosition.etherscanData.data.balance > 0;
-      });
-      const uniswapPositionData = nonZeroUniswapPositions.map((nonZeroUniswapPosition) => {
-        const userBalance = nonZeroUniswapPosition.etherscanData.data.balance / 10 ** 18;
-        const pairTotalSupply = parseFloat(nonZeroUniswapPosition.uniswapData.data.pair.totalSupply);
-        const pairValue = parseFloat(nonZeroUniswapPosition.uniswapData.data.pair.reserveUSD);
-        return {
-          pool: nonZeroUniswapPosition.pool,
-          estimatedValue: (userBalance * pairValue) / pairTotalSupply,
-          externalPositionName: 'Uniswap V2',
-        };
-      });
+      const uniswapPositionResponse = await Promise.all(
+        uniswapPositionRequests
+      );
+      const nonZeroUniswapPositions = uniswapPositionResponse.filter(
+        (uniswapPosition) => {
+          return uniswapPosition.etherscanData.data.balance > 0;
+        }
+      );
+      const uniswapPositionData = nonZeroUniswapPositions.map(
+        (nonZeroUniswapPosition) => {
+          const userBalance =
+            nonZeroUniswapPosition.etherscanData.data.balance / 10 ** 18;
+          const pairTotalSupply = parseFloat(
+            nonZeroUniswapPosition.uniswapData.data.pair.totalSupply
+          );
+          const pairValue = parseFloat(
+            nonZeroUniswapPosition.uniswapData.data.pair.reserveUSD
+          );
+          return {
+            pool: nonZeroUniswapPosition.pool,
+            estimatedValue: (userBalance * pairValue) / pairTotalSupply,
+            externalPositionName: 'Uniswap V2',
+          };
+        }
+      );
       if (mounted.current) {
         setExternalPositions(uniswapPositionData);
         setExternalPositionsLoading(false);
@@ -248,7 +270,7 @@ export default function PortfolioPage() {
                     />
                   );
                 })}
-              {positionsLoading && <PortfolioCardPlaceholder /> }
+              {positionsLoading && <PortfolioCardPlaceholder />}
             </PortfolioCards>
           )}
           {!positionsLoading && positions.length === 0 && (
@@ -259,11 +281,7 @@ export default function PortfolioPage() {
         </div>
         <div className='w-full max-w-[1280px]'>
           <div className='flex justify-between items-center'>
-            <Text
-              size='XL'
-              weight='medium'
-              color={PORTFOLIO_TITLE_TEXT_COLOR}
-            >
+            <Text size='XL' weight='medium' color={PORTFOLIO_TITLE_TEXT_COLOR}>
               Your External Positions
             </Text>
             <Tooltip

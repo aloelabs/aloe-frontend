@@ -6,7 +6,9 @@ export type PendingTxnModalContentProps = {
   txnHash?: string;
 };
 
-export default function PendingTxnModalContent(props: PendingTxnModalContentProps) {
+export default function PendingTxnModalContent(
+  props: PendingTxnModalContentProps
+) {
   return (
     <div className='mt-4'>
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>

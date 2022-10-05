@@ -24,9 +24,6 @@ export function buttonIdxToText(idx: number): string {
   }
 }
 
-
-
-
 const StyledGraphButton = styled.button.attrs(
   (props: { buttonWidth: number }) => props
 )`
@@ -57,7 +54,7 @@ const StyledGraphButton = styled.button.attrs(
 const GraphButtonsContainer = styled.div`
   ${tw`flex gap-3`}
   padding: 4px 8px;
-`
+`;
 
 export type GraphButtonProps = {
   idx: number;

@@ -4,9 +4,7 @@ import { Fragment, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { TokenData } from '../../../data/TokenData';
-import {
-  CloseableModal
-} from '../../common/Modal';
+import { CloseableModal } from '../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
@@ -17,7 +15,7 @@ import PendingTxnModal from './PendingTxnModal';
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',
   WITHDRAW = 'WITHDRAW',
-};
+}
 
 export function getConfirmationTypeValue(type: ConfirmationType): string {
   switch (type) {
@@ -79,24 +77,27 @@ export default function EditPositionModal(props: EditPositionModalProps) {
     if (pendingTxnResult?.hash) {
       setState(EditPositionModalState.LOADING);
       // Wait for txn to finish
-      pendingTxnResult.wait(1).then((txnResult) => {
-        if (mounted) {
-          // Check if txn was successful
-          if (txnResult.status === 1) {
-            setLastTxnHash(pendingTxnResult.hash);
-            setState(EditPositionModalState.SUCCESS);
-            setPendingTxnResult(null);
-          } else {
+      pendingTxnResult
+        .wait(1)
+        .then((txnResult) => {
+          if (mounted) {
+            // Check if txn was successful
+            if (txnResult.status === 1) {
+              setLastTxnHash(pendingTxnResult.hash);
+              setState(EditPositionModalState.SUCCESS);
+              setPendingTxnResult(null);
+            } else {
+              setState(EditPositionModalState.FAILURE);
+              setPendingTxnResult(null);
+            }
+          }
+        })
+        .catch((error) => {
+          if (mounted) {
             setState(EditPositionModalState.FAILURE);
             setPendingTxnResult(null);
           }
-        }
-      }).catch((error) => {
-        if (mounted) {
-          setState(EditPositionModalState.FAILURE);
-          setPendingTxnResult(null);
-        }
-      });
+        });
     }
     return () => {
       mounted = false;

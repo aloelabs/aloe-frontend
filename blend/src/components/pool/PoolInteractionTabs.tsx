@@ -126,10 +126,17 @@ export default function PoolInteractionTabs(props: PoolInteractionTabsProps) {
           <Tab.Panels as={Fragment}>
             <PanelsWrapper>
               <Tab.Panel>
-                <DepositTab poolData={props.poolData} offChainPoolStats={offChainPoolStats} deprecated={isDeprecated} />
+                <DepositTab
+                  poolData={props.poolData}
+                  offChainPoolStats={offChainPoolStats}
+                  deprecated={isDeprecated}
+                />
               </Tab.Panel>
               <Tab.Panel>
-                <WithdrawTab poolData={props.poolData} offChainPoolStats={offChainPoolStats} />
+                <WithdrawTab
+                  poolData={props.poolData}
+                  offChainPoolStats={offChainPoolStats}
+                />
               </Tab.Panel>
               <Tab.Panel>
                 <SwapTab poolData={props.poolData} />

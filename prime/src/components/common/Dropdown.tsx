@@ -170,10 +170,11 @@ export type DropdownWithPlaceholderProps = {
   placeholder: string;
   placeAbove?: boolean;
   small?: boolean;
-}
+};
 
 export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
-  const { options, selectedOption, onSelect, placeholder, placeAbove, small } = props;
+  const { options, selectedOption, onSelect, placeholder, placeAbove, small } =
+    props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
@@ -202,7 +203,7 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
             </>
           ) : (
             <Text size='M'>{placeholder}</Text>
-          )}          
+          )}
         </div>
         <img
           className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-6'}
@@ -214,7 +215,11 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
           {options.map((option) => (
             <DropdownOptionContainer
-              className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
+              className={
+                selectedOption && option.value === selectedOption.value
+                  ? 'active'
+                  : ''
+              }
               key={option.value}
               onClick={() => selectItem(option)}
             >
@@ -245,7 +250,9 @@ export type DropdownWithPlaceholderValueProps = {
   placeholder: string;
 };
 
-export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValueProps) {
+export function DropdownWithPlaceholderValue(
+  props: DropdownWithPlaceholderValueProps
+) {
   const { options, selectedOption, onSelect, placeholder } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -255,7 +262,10 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (option: DropdownWithPlaceholderValueOption, index: number) => {
+  const selectItem = (
+    option: DropdownWithPlaceholderValueOption,
+    index: number
+  ) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -349,10 +359,10 @@ function MultiDropdownBase(props: MultiDropdownBaseProps) {
 
   const handleSearch = (updatedSearchTerm: string) => {
     setSearchTerm(updatedSearchTerm);
-  }
+  };
 
-  const filteredOptions = options.filter(
-    (option) => option.label.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -424,9 +434,18 @@ export type MultiDropdownWithPlaceholderProps = {
   }>;
 };
 
-export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholderProps) {
-  const { options, activeOptions, handleChange, placeholder, selectedText, flipDirection, SearchInput } =
-    props;
+export function MultiDropdownWithPlaceholder(
+  props: MultiDropdownWithPlaceholderProps
+) {
+  const {
+    options,
+    activeOptions,
+    handleChange,
+    placeholder,
+    selectedText,
+    flipDirection,
+    SearchInput,
+  } = props;
   const [isOpen, setIsOpen] = useState(false);
   let dropdownLabel =
     activeOptions.length === options.length
@@ -466,10 +485,17 @@ export type MultiDropdownButtonProps = {
     searchTerm: string;
     onSearch: (searchTerm: string) => void;
   }>;
-}
+};
 
 export function MultiDropdownButton(props: MultiDropdownButtonProps) {
-  const { options, activeOptions, handleChange, flipDirection, DropdownButton, SearchInput } = props;
+  const {
+    options,
+    activeOptions,
+    handleChange,
+    flipDirection,
+    DropdownButton,
+    SearchInput,
+  } = props;
   const [isOpen, setIsOpen] = useState(false);
   return MultiDropdownBase({
     options,
@@ -478,9 +504,7 @@ export function MultiDropdownButton(props: MultiDropdownButtonProps) {
     isOpen,
     setIsOpen,
     flipDirection,
-    DropdownButton: () => (
-      <DropdownButton onClick={() => setIsOpen(!isOpen)} />
-    ),
+    DropdownButton: () => <DropdownButton onClick={() => setIsOpen(!isOpen)} />,
     SearchInput,
   });
 }

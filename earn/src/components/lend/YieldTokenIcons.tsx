@@ -13,17 +13,21 @@ function calculatePerTokenOffset(numTokens: number) {
 }
 
 const TokenIconsWrapper = styled.div.attrs(
-  (props: { numTokens: number; perTokenOffset: number; }) => props
+  (props: { numTokens: number; perTokenOffset: number }) => props
 )`
   ${tw`flex flex-row items-center justify-start`}
   --num-tokens: ${(props) => props.numTokens};
-  --per-token-offset: ${props => props.perTokenOffset};
-  width: calc(calc(var(--per-token-offset) * -1px) + var(--num-tokens) * var(--per-token-offset));
+  --per-token-offset: ${(props) => props.perTokenOffset};
+  width: calc(
+    calc(var(--per-token-offset) * -1px) + var(--num-tokens) *
+      var(--per-token-offset)
+  );
   height: 32px;
 `;
 
 const TokenIcon = styled.img.attrs(
-  (props: { backgroundColor: string; borderColor: string; offset: number; }) => props
+  (props: { backgroundColor: string; borderColor: string; offset: number }) =>
+    props
 )`
   ${tw`w-8 h-8 rounded-full bg-white`}
   background-color: ${(props) => props.backgroundColor};
@@ -41,14 +45,13 @@ export type YieldTokenIconsProps = {
 };
 
 export default function YieldTokenIcons(props: YieldTokenIconsProps) {
-  const {
-    tokens,
-    iconBorderColor,
-    omitBackground,
-  } = props;
+  const { tokens, iconBorderColor, omitBackground } = props;
   const perTokenOffset = calculatePerTokenOffset(tokens.length);
   return (
-    <TokenIconsWrapper numTokens={tokens.length} perTokenOffset={perTokenOffset}>
+    <TokenIconsWrapper
+      numTokens={tokens.length}
+      perTokenOffset={perTokenOffset}
+    >
       {tokens.map((token, index) => {
         if (!token) {
           return <TokenIcon key={index} src={UnknownTokenIcon} />;
@@ -67,8 +70,7 @@ export default function YieldTokenIcons(props: YieldTokenIconsProps) {
             offset={perTokenOffset}
           />
         );
-      }
-      )}
+      })}
     </TokenIconsWrapper>
   );
 }

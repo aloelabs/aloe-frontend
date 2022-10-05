@@ -1,7 +1,12 @@
 import { FullscreenModal } from '../common/Modal';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ActionProvider, ActionProviders, ActionTemplates, getNameOfAction } from '../../data/Actions';
+import {
+  ActionProvider,
+  ActionProviders,
+  ActionTemplates,
+  getNameOfAction,
+} from '../../data/Actions';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
@@ -41,7 +46,9 @@ const ActionModalBody = styled.div`
   }
 `;
 
-const BackButtonWrapper = styled.button.attrs((props: { position?: string }) => props)`
+const BackButtonWrapper = styled.button.attrs(
+  (props: { position?: string }) => props
+)`
   ${tw`flex items-center justify-center`}
   position: ${(props) => props.position || 'absolute'};
   left: 16px;
@@ -81,7 +88,9 @@ const ActionButtonsContainer = styled.div`
   gap: 25px;
 `;
 
-const ActionButton = styled.button.attrs((props: { borderColor: string }) => props)`
+const ActionButton = styled.button.attrs(
+  (props: { borderColor: string }) => props
+)`
   ${tw`flex flex-col items-center justify-start`}
   width: 250px;
   padding: 12px;
@@ -110,10 +119,15 @@ export type BorrowSelectActionModalProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   handleAddAction: (action: Action) => void;
-  handleAddActions: (actions: Action[], defaultActionResults?: ActionCardState[]) => void;
+  handleAddActions: (
+    actions: Action[],
+    defaultActionResults?: ActionCardState[]
+  ) => void;
 };
 
-export default function BorrowSelectActionModal(props: BorrowSelectActionModalProps) {
+export default function BorrowSelectActionModal(
+  props: BorrowSelectActionModalProps
+) {
   const { isOpen, setIsOpen, handleAddAction, handleAddActions } = props;
   return (
     <FullscreenModal open={isOpen} setOpen={setIsOpen}>
@@ -147,7 +161,10 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
                   key={index}
                   borderColor='#4B6980'
                   onClick={() => {
-                    handleAddActions(template.actions, template.defaultActionStates);
+                    handleAddActions(
+                      template.actions,
+                      template.defaultActionStates
+                    );
                     setIsOpen(false);
                   }}
                 >
@@ -162,42 +179,56 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
             })}
           </ActionButtonsContainer>
         </ActionProviderContainer>
-        {Object.values(ActionProviders).map((actionProvider: ActionProvider, index: number) => {
-          return (
-            <ActionProviderContainer key={index}>
-              <div className='flex items-center mb-4'>
-                <SvgWrapper width={32} height={32} svgWidth={32} svgHeight={32} strokeColor='rgb(255, 255, 255)'>
-                  <actionProvider.Icon />
-                </SvgWrapper>
-                <Display size='M' weight='semibold'>
-                  {actionProvider.name}
-                </Display>
-              </div>
-              <ActionButtonsContainer>
-                {Object.entries(actionProvider.actions).map((actionData, index) => {
-                  const action = actionData[1];
-                  return (
-                    <ActionButton
-                      key={index}
-                      borderColor={actionProvider.color}
-                      onClick={() => {
-                        handleAddAction(action);
-                        setIsOpen(false);
-                      }}
-                    >
-                      <Text size='L' weight='bold' className='mb-1'>
-                        {getNameOfAction(action.id)}
-                      </Text>
-                      <Text size='XS' weight='medium' className='description'>
-                        {action.description}
-                      </Text>
-                    </ActionButton>
-                  );
-                })}
-              </ActionButtonsContainer>
-            </ActionProviderContainer>
-          );
-        })}
+        {Object.values(ActionProviders).map(
+          (actionProvider: ActionProvider, index: number) => {
+            return (
+              <ActionProviderContainer key={index}>
+                <div className='flex items-center mb-4'>
+                  <SvgWrapper
+                    width={32}
+                    height={32}
+                    svgWidth={32}
+                    svgHeight={32}
+                    strokeColor='rgb(255, 255, 255)'
+                  >
+                    <actionProvider.Icon />
+                  </SvgWrapper>
+                  <Display size='M' weight='semibold'>
+                    {actionProvider.name}
+                  </Display>
+                </div>
+                <ActionButtonsContainer>
+                  {Object.entries(actionProvider.actions).map(
+                    (actionData, index) => {
+                      const action = actionData[1];
+                      return (
+                        <ActionButton
+                          key={index}
+                          borderColor={actionProvider.color}
+                          onClick={() => {
+                            handleAddAction(action);
+                            setIsOpen(false);
+                          }}
+                        >
+                          <Text size='L' weight='bold' className='mb-1'>
+                            {getNameOfAction(action.id)}
+                          </Text>
+                          <Text
+                            size='XS'
+                            weight='medium'
+                            className='description'
+                          >
+                            {action.description}
+                          </Text>
+                        </ActionButton>
+                      );
+                    }
+                  )}
+                </ActionButtonsContainer>
+              </ActionProviderContainer>
+            );
+          }
+        )}
       </ActionModalBody>
     </FullscreenModal>
   );

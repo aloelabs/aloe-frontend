@@ -12,7 +12,10 @@ import { Divider } from 'shared/lib/components/common/Divider';
 import Tooltip from '../components/common/Tooltip';
 import LendPairCard from '../components/lend/LendPairCard';
 import Pagination, { ItemsPerPage } from '../components/common/Pagination';
-import { MultiDropdownButton, MultiDropdownOption } from '../components/common/Dropdown';
+import {
+  MultiDropdownButton,
+  MultiDropdownOption,
+} from '../components/common/Dropdown';
 import { SquareInputWithIcon } from '../components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
@@ -23,7 +26,10 @@ import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINTS,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../data/constants/Breakpoints';
 import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
 import { ethers } from 'ethers';
@@ -84,23 +90,56 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   } as MultiDropdownOption;
 });
 
-async function getLendingPairBalances(lendingPair: LendingPair, userAddress: string, provider: ethers.providers.Provider) {
-  const {token0, token1, kitty0, kitty1} = lendingPair;
+async function getLendingPairBalances(
+  lendingPair: LendingPair,
+  userAddress: string,
+  provider: ethers.providers.Provider
+) {
+  const { token0, token1, kitty0, kitty1 } = lendingPair;
 
-  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
+  const token0Contract = new ethers.Contract(
+    token0.address,
+    ERC20ABI,
+    provider
+  );
+  const token1Contract = new ethers.Contract(
+    token1.address,
+    ERC20ABI,
+    provider
+  );
+  const kitty0Contract = new ethers.Contract(
+    kitty0.address,
+    KittyABI,
+    provider
+  );
+  const kitty1Contract = new ethers.Contract(
+    kitty1.address,
+    KittyABI,
+    provider
+  );
+  const [
+    token0BalanceBig,
+    token1BalanceBig,
+    kitty0BalanceBig,
+    kitty1BalanceBig,
+  ] = await Promise.all([
     token0Contract.balanceOf(userAddress),
     token1Contract.balanceOf(userAddress),
     kitty0Contract.balanceOfUnderlying(userAddress),
     kitty1Contract.balanceOfUnderlying(userAddress),
   ]);
-  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  const token0Balance = new Big(token0BalanceBig.toString())
+    .div(10 ** token0.decimals)
+    .toNumber();
+  const token1Balance = new Big(token1BalanceBig.toString())
+    .div(10 ** token1.decimals)
+    .toNumber();
+  const kitty0Balance = new Big(kitty0BalanceBig.toString())
+    .div(10 ** token0.decimals)
+    .toNumber();
+  const kitty1Balance = new Big(kitty1BalanceBig.toString())
+    .div(10 ** token1.decimals)
+    .toNumber();
   return {
     token0: token0Balance,
     token1: token1Balance,
@@ -113,15 +152,21 @@ export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<{token0: number, token1: number, kitty0: number, kitty1: number}[] | undefined>(undefined);
+  const [lendingPairBalances, setLendingPairBalances] = useState<
+    | { token0: number; token1: number; kitty0: number; kitty1: number }[]
+    | undefined
+  >(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
+  const [selectedOptions, setSelectedOptions] =
+    useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal = localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
+    const shouldShowWelcomeModal =
+      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !==
+      WELCOME_MODAL_LOCAL_STORAGE_VALUE;
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
@@ -139,17 +184,21 @@ export default function LendPage() {
     let mounted = true;
     async function fetch() {
       // fetch token quotes
-      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
+      const quoteDataResponse: AxiosResponse = await axios.get(
+        API_PRICE_RELAY_URL
+      );
       const prResponse: PriceRelayResponse = quoteDataResponse.data;
       if (!prResponse || !prResponse.data) {
         return;
       }
-      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
-        return {
-          token: GetTokenData(pr?.platform?.token_address || ''),
-          price: pr?.quote['USD']?.price || 0,
-        };
-      });
+      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map(
+        (pr: any) => {
+          return {
+            token: GetTokenData(pr?.platform?.token_address || ''),
+            price: pr?.quote['USD']?.price || 0,
+          };
+        }
+      );
       if (mounted) {
         setTokenQuotes(tokenQuoteData);
       }
@@ -179,7 +228,9 @@ export default function LendPage() {
     let mounted = true;
     async function fetch() {
       if (!address) return;
-      const results = await Promise.all(lendingPairs.map(p => getLendingPairBalances(p, address, provider)));
+      const results = await Promise.all(
+        lendingPairs.map((p) => getLendingPairBalances(p, address, provider))
+      );
       if (mounted) {
         setLendingPairBalances(results);
       }
@@ -187,17 +238,24 @@ export default function LendPage() {
     fetch();
     return () => {
       mounted = false;
-    }
+    };
   }, [provider, address, lendingPairs]);
-
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
       return [];
     }
     let combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
+      const token0Quote = tokenQuotes.find(
+        (quote) =>
+          quote.token.address ===
+          (pair.token0?.referenceAddress || pair.token0.address)
+      );
+      const token1Quote = tokenQuotes.find(
+        (quote) =>
+          quote.token.address ===
+          (pair.token1?.referenceAddress || pair.token1.address)
+      );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
@@ -239,7 +297,9 @@ export default function LendPage() {
     let distinct: TokenBalance[] = [];
     // We don't want to show duplicate tokens
     combined.forEach((balance) => {
-      const existing = distinct.find((d) => d.token.address === balance.token.address);
+      const existing = distinct.find(
+        (d) => d.token.address === balance.token.address
+      );
       if (!existing) {
         distinct.push(balance);
       }
@@ -252,7 +312,9 @@ export default function LendPage() {
   }, [combinedBalances]);
 
   const tokenBalances: TokenBalance[] = useMemo(() => {
-    return Array.from(new Set(combinedBalances.filter((balance) => !balance.isKitty)).values());
+    return Array.from(
+      new Set(combinedBalances.filter((balance) => !balance.isKitty)).values()
+    );
   }, [combinedBalances]);
 
   // Calculate total USD value of all kitty balances
@@ -274,9 +336,11 @@ export default function LendPage() {
     if (kittyBalances.length === 0 || totalKittyBalanceUSD === 0) {
       return 0;
     }
-    return kittyBalances.reduce((acc, tokenAPY) => {
-      return acc + tokenAPY.apy * tokenAPY.balanceUSD;
-    }, 0) / totalKittyBalanceUSD;
+    return (
+      kittyBalances.reduce((acc, tokenAPY) => {
+        return acc + tokenAPY.apy * tokenAPY.balanceUSD;
+      }, 0) / totalKittyBalanceUSD
+    );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
@@ -312,7 +376,10 @@ export default function LendPage() {
                     </FilledGreyButtonWithIcon>
                   );
                 }}
-                SearchInput={(props: { searchTerm: string; onSearch: (searchTerm: string) => void }) => {
+                SearchInput={(props: {
+                  searchTerm: string;
+                  onSearch: (searchTerm: string) => void;
+                }) => {
                   return (
                     <SquareInputWithIcon
                       placeholder='Search'
@@ -332,7 +399,10 @@ export default function LendPage() {
             </LowerLendHeader>
           </LendHeader>
           {isGTMediumScreen && (
-            <LendPieChartWidget tokenBalances={[...kittyBalances, ...tokenBalances]} totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD} />
+            <LendPieChartWidget
+              tokenBalances={[...kittyBalances, ...tokenBalances]}
+              totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+            />
           )}
         </LendHeaderContainer>
         <Divider />
@@ -341,15 +411,24 @@ export default function LendPage() {
             <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
               Lending Pairs
             </Text>
-            <Tooltip buttonSize='M' buttonText='' content='With lending pairs, you can pick which assets borrowers can post as collateral. For example, when you deposit to the USDC/WETH lending pair, borrowers can only use your funds if they post USDC or WETH as collateral. Never deposit to a pair that includes unknown/untrustworthy token(s).' position='top-center' filled={true} />
+            <Tooltip
+              buttonSize='M'
+              buttonText=''
+              content='With lending pairs, you can pick which assets borrowers can post as collateral. For example, when you deposit to the USDC/WETH lending pair, borrowers can only use your funds if they post USDC or WETH as collateral. Never deposit to a pair that includes unknown/untrustworthy token(s).'
+              position='top-center'
+              filled={true}
+            />
           </div>
           <LendCards>
             {lendingPairs.map((lendPair, i) => (
-              <LendPairCard key={lendPair.token0.address} {...{
-                ...lendPair,
-                hasDeposited0: (lendingPairBalances?.[i]?.kitty0 || 0) > 0,
-                hasDeposited1: (lendingPairBalances?.[i]?.kitty1 || 0) > 0
-              }} />
+              <LendPairCard
+                key={lendPair.token0.address}
+                {...{
+                  ...lendPair,
+                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0 || 0) > 0,
+                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1 || 0) > 0,
+                }}
+              />
             ))}
           </LendCards>
           <Pagination
@@ -370,7 +449,10 @@ export default function LendPage() {
         open={showWelcomeModal}
         setOpen={setShowWelcomeModal}
         onConfirm={() => {
-          localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
+          localStorage.setItem(
+            WELCOME_MODAL_LOCAL_STORAGE_KEY,
+            WELCOME_MODAL_LOCAL_STORAGE_VALUE
+          );
         }}
       />
     </AppPage>

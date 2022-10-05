@@ -215,6 +215,7 @@ export default function DepositTab(props: DepositTabProps) {
     signer,
     offChainPoolStats,
     poolStats,
+    props.deprecated,
   ]);
 
   const buttonLabel = printButtonState(buttonState, drawData);

@@ -155,7 +155,7 @@ function makeRequest(reqUrl: string) {
   });
 }
 
-function calculateNextDate(currentDate: Date, activeButton: number) : Date {
+function calculateNextDate(currentDate: Date, activeButton: number): Date {
   switch (activeButton) {
     case 0:
       return addHours(currentDate, 1);
@@ -346,9 +346,11 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
       mounted = false;
     };
   }, [accountAddress, activeButton, fromDate, toDate]);
-  
-  const initialEstimatedValue = data.length > 0 ? data[0]['Portfolio Value'] : 0;
-  const currentEstimatedValue = data.length > 0 ? data[data.length - 1]['Portfolio Value'] : 0;
+
+  const initialEstimatedValue =
+    data.length > 0 ? data[0]['Portfolio Value'] : 0;
+  const currentEstimatedValue =
+    data.length > 0 ? data[data.length - 1]['Portfolio Value'] : 0;
   const estimatedValueChange = currentEstimatedValue - initialEstimatedValue;
   const estimatedValueChangePercent =
     (estimatedValueChange / initialEstimatedValue) * 100 || 0;

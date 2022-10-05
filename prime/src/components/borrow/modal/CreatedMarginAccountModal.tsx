@@ -1,16 +1,6 @@
-import React from 'react';
 import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
-import {
-  CloseableModal,
-  DashedDivider,
-  HorizontalDivider,
-  LABEL_TEXT_COLOR,
-  MESSAGE_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from '../../common/Modal';
-import TokenBreakdown from '../../common/TokenBreakdown';
-import { Text } from 'shared/lib/components/common/Typography';
+import { CloseableModal, HorizontalDivider } from '../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type CreatedMarginAccountModalProps = {
@@ -19,12 +9,10 @@ export type CreatedMarginAccountModalProps = {
   onConfirm: () => void;
 };
 
-export default function CreatedMarginAccountModal(props: CreatedMarginAccountModalProps) {
-  const {
-    open,
-    setOpen,
-    onConfirm,
-  } = props;
+export default function CreatedMarginAccountModal(
+  props: CreatedMarginAccountModalProps
+) {
+  const { open, setOpen, onConfirm } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Account Created'>
       <div className='flex justify-center items-center'>

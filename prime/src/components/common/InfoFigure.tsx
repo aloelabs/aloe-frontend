@@ -14,9 +14,7 @@ const InfoContainer = styled.div.attrs(
   gap: 8px;
 `;
 
-const InfoItem = styled.div.attrs(
-  (props: { figureColor: string }) => props
-)`
+const InfoItem = styled.div.attrs((props: { figureColor: string }) => props)`
   display: flex;
   align-items: center;
   padding-left: 24px;
@@ -72,14 +70,22 @@ export default function InfoFigure(props: InfoFigureProps) {
   return (
     <InfoContainer shouldGrow={shouldGrow}>
       <InfoItem figureColor={figureColor}>
-        <Text size='M' weight='medium'>{label0}</Text>
+        <Text size='M' weight='medium'>
+          {label0}
+        </Text>
         <DashedDivider />
-        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>{value0}</Text>
+        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+          {value0}
+        </Text>
       </InfoItem>
       <InfoItem figureColor={figureColor}>
-        <Text size='M' weight='medium'>{label1}</Text>
+        <Text size='M' weight='medium'>
+          {label1}
+        </Text>
         <DashedDivider />
-        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>{value1}</Text>
+        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+          {value1}
+        </Text>
       </InfoItem>
     </InfoContainer>
   );

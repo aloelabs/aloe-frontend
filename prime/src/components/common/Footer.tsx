@@ -77,16 +77,19 @@ export default function Footer() {
         >
           Terms
         </FooterLink>
-        < VerticalDivider />
+        <VerticalDivider />
         <FooterLink
           as='a'
           size='S'
           weight='medium'
           color={FOOTER_LINK_TEXT_COLOR}
-          href={'https://coda.io/form/Aloe-II-Web-App-Feedback-Form_dtlDhQRDThF'}
+          href={
+            'https://coda.io/form/Aloe-II-Web-App-Feedback-Form_dtlDhQRDThF'
+          }
           target='_blank'
-          rel='noopener noreferrer'>
-            Feedback
+          rel='noopener noreferrer'
+        >
+          Feedback
         </FooterLink>
       </div>
       <div className='flex flex-row items-center gap-x-6'>
@@ -96,7 +99,12 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Join our Discord'
         >
-          <img src={DiscordFooterIcon} alt='Discord Icon' width={14} height={11} />
+          <img
+            src={DiscordFooterIcon}
+            alt='Discord Icon'
+            width={14}
+            height={11}
+          />
         </a>
         <a
           href={'https://discord.com/invite/gpt4sUv6sw'}
@@ -104,7 +112,12 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Follow us on Twitter'
         >
-          <img src={TwitterFooterIcon} alt='Twitter Icon' width={15} height={11} />
+          <img
+            src={TwitterFooterIcon}
+            alt='Twitter Icon'
+            width={15}
+            height={11}
+          />
         </a>
         <a
           href={'https://discord.com/invite/gpt4sUv6sw'}
@@ -112,7 +125,12 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Connect with us on Medium'
         >
-          <img src={MediumFooterIcon} alt='Medium Icon' width={21} height={11} />
+          <img
+            src={MediumFooterIcon}
+            alt='Medium Icon'
+            width={21}
+            height={11}
+          />
         </a>
       </div>
     </StyledFooter>

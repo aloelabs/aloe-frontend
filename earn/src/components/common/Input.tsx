@@ -146,7 +146,11 @@ const SquareInputWrapper = styled.div`
 `;
 
 const SvgWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean; }) => props
+  (props: {
+    size: 'S' | 'M' | 'L';
+    svgColorType: 'fill' | 'stroke';
+    isClickable: boolean;
+  }) => props
 )`
   ${tw`absolute`}
 
@@ -177,7 +181,7 @@ const SvgWrapper = styled.div.attrs(
 `;
 
 const TrailingUnit = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'}) => props
+  (props: { size: 'S' | 'M' | 'L' }) => props
 )`
   ${tw`absolute`}
   right: ${(props) => ICON_SPACING[props.size]}px;
@@ -309,7 +313,7 @@ export function SquareInput(props: InputProps) {
 
 export type InputWithUnitProps = InputProps & {
   unit: string;
-}
+};
 
 export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
   const {
@@ -351,11 +355,9 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
         id={id}
         ref={ref}
       />
-      <TrailingUnit size={size}>
-        {unit}
-      </TrailingUnit>
+      <TrailingUnit size={size}>{unit}</TrailingUnit>
     </SquareInputWrapper>
-  )
+  );
 }
 
 export type InputWithMaxProps = InputProps & {
@@ -405,7 +407,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         id={id}
         ref={ref}
       />
-      {props.maxHidden !== true &&
+      {props.maxHidden !== true && (
         <MaxButton
           size={size}
           onClick={onMaxClick}
@@ -413,7 +415,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         >
           MAX
         </MaxButton>
-      }
+      )}
     </SquareInputWrapper>
   );
 }
@@ -465,7 +467,12 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         id={id}
         ref={ref}
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </RoundedInputWrapper>
@@ -513,7 +520,12 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         id={id}
         ref={ref}
       />
-      <SvgWrapper size={size} className={disabled ? 'disabled' : ''} onClick={onIconClick} isClickable={onIconClick !== undefined}>
+      <SvgWrapper
+        size={size}
+        className={disabled ? 'disabled' : ''}
+        onClick={onIconClick}
+        isClickable={onIconClick !== undefined}
+      >
         {Icon}
       </SvgWrapper>
     </SquareInputWrapper>

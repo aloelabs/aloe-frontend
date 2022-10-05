@@ -13,9 +13,7 @@ const prettify = (value: number) => {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const TooltipContainer = styled.div.attrs(
-  (props: {offset: number}) => props
-)`
+const TooltipContainer = styled.div.attrs((props: { offset: number }) => props)`
   ${tw`rounded-md shadow-md`}
   background: ${TOOLTIP_BG_COLOR};
   border: 1px solid ${TOOLTIP_BORDER_COLOR};
@@ -39,10 +37,10 @@ export default function PortfolioGraphTooltip(data: any, active = false) {
     const coordinateX = data.coordinate.x;
     const graphWidth = data.viewBox.width;
     let offsetPixels = 0;
-    if (coordinateX - (PORTFOLIO_TOOLTIP_WIDTH / 2) < 0) {
+    if (coordinateX - PORTFOLIO_TOOLTIP_WIDTH / 2 < 0) {
       offsetPixels = PORTFOLIO_TOOLTIP_WIDTH / 2 - coordinateX;
-    } else if (coordinateX + (PORTFOLIO_TOOLTIP_WIDTH / 2) > graphWidth) {
-      offsetPixels = graphWidth - coordinateX - (PORTFOLIO_TOOLTIP_WIDTH / 2);
+    } else if (coordinateX + PORTFOLIO_TOOLTIP_WIDTH / 2 > graphWidth) {
+      offsetPixels = graphWidth - coordinateX - PORTFOLIO_TOOLTIP_WIDTH / 2;
     }
 
     const tooltipValues = payload.map((item: any, index: number) => {

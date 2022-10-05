@@ -116,19 +116,25 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
 
   // Sort token balances by their corresponding token
   const sortedTokenBalances = useMemo(() => {
-    return tokenBalances.sort((a, b) => (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address));
+    return tokenBalances.sort((a, b) =>
+      (b.token?.referenceAddress || b.token.address).localeCompare(
+        a.token?.referenceAddress || a.token.address
+      )
+    );
   }, [tokenBalances]);
 
   useEffect(() => {
     let mounted = true;
     const calculateProminentColors = async () => {
-      const tokenColorPromises = sortedTokenBalances.map(async (tokenBalance: TokenBalance) => {
-        return {
-          color: await getProminentColor(tokenBalance.token.iconPath || ''),
-          token: tokenBalance.token,
-          isKitty: tokenBalance.isKitty,
-        };
-      });
+      const tokenColorPromises = sortedTokenBalances.map(
+        async (tokenBalance: TokenBalance) => {
+          return {
+            color: await getProminentColor(tokenBalance.token.iconPath || ''),
+            token: tokenBalance.token,
+            isKitty: tokenBalance.isKitty,
+          };
+        }
+      );
       const tokenColorData = await Promise.all(tokenColorPromises);
       if (mounted) {
         setTokenColors(
@@ -153,7 +159,9 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
       return;
     }
     const sliceData = sortedTokenBalances.map((tokenBalance, index) => {
-      const tokenColor = tokenColors.find((tc) => tc.token.address === tokenBalance.token.address)?.color;
+      const tokenColor = tokenColors.find(
+        (tc) => tc.token.address === tokenBalance.token.address
+      )?.color;
       return {
         index: index,
         percent: tokenBalance.balanceUSD / totalBalanceUSD,
@@ -188,8 +196,13 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
     };
   });
 
-  const activeSlice = activeIndex !== -1 ? slices.find((slice) => slice.index === activeIndex) : undefined;
-  const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
+  const activeSlice =
+    activeIndex !== -1
+      ? slices.find((slice) => slice.index === activeIndex)
+      : undefined;
+  const currentPercent = activeSlice
+    ? `${(activeSlice.percent * 100).toFixed(2)}%`
+    : '';
 
   return (
     <div className='w-full flex flex-col items-start justify-start self-baseline'>
@@ -203,7 +216,9 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                     key={index}
                     d={path.data}
                     fill={path.color}
-                    onMouseEnter={() => onMouseEnter(index, path.percent.toString())}
+                    onMouseEnter={() =>
+                      onMouseEnter(index, path.percent.toString())
+                    }
                     onMouseLeave={() => onMouseLeave()}
                   ></ExpandingPath>
                 );
@@ -219,16 +234,14 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                   {activeSlice.tokenBalance.token.ticker || ''}
                 </Text>
                 {activeSlice.tokenBalance.isKitty && (
-                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>{activeSlice.pairName}</Text>
+                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>
+                    {activeSlice.pairName}
+                  </Text>
                 )}
                 <Text size='L'>{currentPercent}</Text>
               </div>
             )}
-            {!activeSlice && (
-              <Text size='L'>
-                Your Assets
-              </Text>
-            )}
+            {!activeSlice && <Text size='L'>Your Assets</Text>}
           </PieChartLabel>
         </PieChartWrapper>
       </TokenAllocationWrapper>

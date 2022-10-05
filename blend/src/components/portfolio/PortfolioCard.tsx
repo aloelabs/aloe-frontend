@@ -225,7 +225,9 @@ export default function PortfolioCard(props: PortfolioCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <BodySubContainer>
-          <Text size='M' weight='medium'>Invested</Text>
+          <Text size='M' weight='medium'>
+            Invested
+          </Text>
           <InvestedTypes
             token0={token0}
             token1={token1}

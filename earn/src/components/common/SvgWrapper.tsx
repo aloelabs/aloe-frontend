@@ -34,7 +34,8 @@ export const SvgWrapper = styled.div.attrs(
     svg {
       path {
         ${(props) => props.hoverFillColor && `fill: ${props.hoverFillColor};`};
-        ${(props) => props.hoverStrokeColor && `stroke: ${props.hoverStrokeColor};`};
+        ${(props) =>
+          props.hoverStrokeColor && `stroke: ${props.hoverStrokeColor};`};
       }
     }
   }
@@ -42,8 +43,10 @@ export const SvgWrapper = styled.div.attrs(
   &:active {
     svg {
       path {
-        ${(props) => props.activeFillColor && `fill: ${props.activeFillColor};`};
-        ${(props) => props.activeStrokeColor && `stroke: ${props.activeStrokeColor};`};
+        ${(props) =>
+          props.activeFillColor && `fill: ${props.activeFillColor};`};
+        ${(props) =>
+          props.activeStrokeColor && `stroke: ${props.activeStrokeColor};`};
       }
     }
   }

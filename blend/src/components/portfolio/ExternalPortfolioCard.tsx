@@ -4,7 +4,7 @@ import tw from 'twin.macro';
 import { ReactComponent as MigrateIcon } from '../../assets/svg/migrate.svg';
 import {
   RESPONSIVE_BREAKPOINT_MD,
-  RESPONSIVE_BREAKPOINT_SM
+  RESPONSIVE_BREAKPOINT_SM,
 } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { formatUSDAuto } from '../../util/Numbers';
@@ -17,7 +17,7 @@ import {
   CardSubTitleWrapper,
   CardTitleWrapper,
   CardWrapper,
-  ValueText
+  ValueText,
 } from './PortfolioCard';
 
 const EXTERNAL_CARD_WRAPPER_HOVER_SHADOW_COLOR = 'rgba(26, 41, 52, 0.65)';
@@ -76,8 +76,13 @@ export type ExternalPortfolioCardProps = {
 export default function ExternalPortfolioCard(
   props: ExternalPortfolioCardProps
 ) {
-  const { token0, token1, externalPositionName, estimatedValue, percentageChange } =
-    props;
+  const {
+    token0,
+    token1,
+    externalPositionName,
+    estimatedValue,
+    percentageChange,
+  } = props;
   return (
     <ExternalCardWrapper>
       <CardTitleWrapper backgroundGradient={CARD_TITLE_BG_COLOR}>

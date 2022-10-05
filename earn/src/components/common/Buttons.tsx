@@ -933,20 +933,23 @@ export function PreviousPageButton(props: PreviousPageButtonProps) {
 }
 
 const StyledRadioButtonWrapper = styled.div.attrs(
-  (props: { checked: boolean; disabled: boolean; }) => props
+  (props: { checked: boolean; disabled: boolean }) => props
 )`
   ${tw`flex items-center justify-center`}
   padding: 6px 16px;
   border-radius: 8px;
-  background-color: ${(props) => props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent'};
+  background-color: ${(props) =>
+    props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent'};
   cursor: pointer;
 
   &:hover {
-    background-color: ${(props) => props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.25)'};
+    background-color: ${(props) =>
+      props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.25)'};
   }
 
   &:active {
-    background-color: ${(props) => props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.5)'};
+    background-color: ${(props) =>
+      props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.5)'};
   }
 `;
 

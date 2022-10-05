@@ -8,7 +8,7 @@ const UNIX_TIMESTAMP_REGEX = /^[0-9]{10}$/;
  * @param step a duration to add to the date
  * @returns the date plus the duration that ignores timezone differences
  */
-export function agnosticAdd(date: Date, step: Duration) : Date {
+export function agnosticAdd(date: Date, step: Duration): Date {
   const originalTimezoneOffset = date.getTimezoneOffset();
   const updatedDate = add(date, step);
   const updatedTimezoneOffset = updatedDate.getTimezoneOffset();
@@ -25,7 +25,7 @@ export function agnosticAdd(date: Date, step: Duration) : Date {
  * @param n number of dates to return (+/- 1)
  * @returns Array of dates (as string) that are evenly spaced throughout the given array of dates
  */
-export function getEvenlySpacedDates(dates: string[], n: number) : string[] {
+export function getEvenlySpacedDates(dates: string[], n: number): string[] {
   n += 2;
   const offset = dates.length % n;
   const sliceStart = Math.floor(offset / 2);
@@ -36,7 +36,7 @@ export function getEvenlySpacedDates(dates: string[], n: number) : string[] {
   const step = Math.ceil(updatedDates.length / n);
   const result = [];
   for (let i = 0; i < n; i++) {
-    result.push(updatedDates[i * step] || dates[0]);//TODO: find a better way to handle this
+    result.push(updatedDates[i * step] || dates[0]); //TODO: find a better way to handle this
   }
   return result;
 }
@@ -46,12 +46,14 @@ export function isUnixTimestamp(str: string): boolean {
 }
 
 /**
- * 
+ *
  * @param timestamp a timestamp (either a string or a number)
  * @returns either a string or number, depending on the input, but if the input was a number
  * and it was a unix timestamp (i.e. 10 digits), it will return a 13-digit number representing
  * the unix timestamp with the milliseconds appended
  */
 export function fixTimestamp(timestamp: string | number): string | number {
-  return isUnixTimestamp(timestamp.toString()) ? parseInt(timestamp.toString()) * 1000 : timestamp;
+  return isUnixTimestamp(timestamp.toString())
+    ? parseInt(timestamp.toString()) * 1000
+    : timestamp;
 }

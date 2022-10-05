@@ -76,8 +76,8 @@ const ItemsPerPageToOption = (itemsPerPage: ItemsPerPage) => {
   return {
     label: `${itemsPerPage.toString()} Results`,
     value: itemsPerPage.toString(),
-  }
-}
+  };
+};
 
 export type PaginationProps = {
   totalItems: number;
@@ -129,7 +129,8 @@ export default function Pagination(props: PaginationProps) {
     onPageChange(currentPage + 1);
   };
 
-  const startItem = totalItems > 0 ? Math.max((currentPage - 1) * itemsPerPage + 1, 1) : 0;
+  const startItem =
+    totalItems > 0 ? Math.max((currentPage - 1) * itemsPerPage + 1, 1) : 0;
   const endItem = Math.min(startItem + itemsPerPage - 1, totalItems);
 
   return (

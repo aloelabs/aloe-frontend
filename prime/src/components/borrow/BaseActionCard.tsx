@@ -14,8 +14,11 @@ const ActionCardContainer = styled.div.attrs(
   padding: 12px 12px;
   border-radius: 8px;
   background-color: rgba(13, 24, 33, 1);
-  border: 1px solid ${(props) => props.isCausingError ? 'rgba(255, 54, 69, 1)' : 'rgba(34, 54, 69, 1)'};
-  box-shadow: ${(props) => props.isCausingError ? '0px 0px 10px rgba(255, 54, 69, 0.5)' : 'none'};
+  border: 1px solid
+    ${(props) =>
+      props.isCausingError ? 'rgba(255, 54, 69, 1)' : 'rgba(34, 54, 69, 1)'};
+  box-shadow: ${(props) =>
+    props.isCausingError ? '0px 0px 10px rgba(255, 54, 69, 0.5)' : 'none'};
 `;
 
 const ActionBadge = styled.div.attrs(
@@ -49,7 +52,14 @@ export type BaseActionCardProps = {
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, isCausingError, children, onRemove, tooltipContent } = props;
+  const {
+    actionProvider,
+    action,
+    isCausingError,
+    children,
+    onRemove,
+    tooltipContent,
+  } = props;
   return (
     <ActionCardContainer isCausingError={isCausingError}>
       <div className='w-full flex justify-start items-center gap-4 mb-4'>

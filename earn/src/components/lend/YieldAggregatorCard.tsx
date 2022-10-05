@@ -18,8 +18,10 @@ import tw from 'twin.macro';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 const YIELD_AGGREGATOR_LABEL_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
-const BACKGROUND_GRADIENT = 'linear-gradient(90deg, rgba(43, 43, 43, 1) 0%, rgba(97, 99, 101, 1) 100%)';
-const BORDER_GRADIENT = 'linear-gradient(90deg, rgb(122, 122, 122) 0%, rgb(170, 170, 170) 100%)';
+const BACKGROUND_GRADIENT =
+  'linear-gradient(90deg, rgba(43, 43, 43, 1) 0%, rgba(97, 99, 101, 1) 100%)';
+const BORDER_GRADIENT =
+  'linear-gradient(90deg, rgb(122, 122, 122) 0%, rgb(170, 170, 170) 100%)';
 const SHADOW_COLOR = 'rgba(0, 0, 0, 0.1)';
 
 const YieldAggregatorLabelWrapper = styled.div`
@@ -46,20 +48,19 @@ export type YieldAggregatorCardProps = {
 export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
   const { tokens, totalAPY, totalSupply, totalUtilization } = props;
   return (
-    <CardWrapper
-      borderGradient={BORDER_GRADIENT}
-      shadowColor={SHADOW_COLOR}
-    >
+    <CardWrapper borderGradient={BORDER_GRADIENT} shadowColor={SHADOW_COLOR}>
       <CardTitleWrapper backgroundGradient={BACKGROUND_GRADIENT}>
         <Display size='M' weight='semibold'>
           WETH
         </Display>
         <CardSubTitleWrapper>
-          <YieldTokenIcons
-            tokens={tokens}
-          />
+          <YieldTokenIcons tokens={tokens} />
           <YieldAggregatorLabelWrapper>
-            <Text size='S' weight='medium' color={YIELD_AGGREGATOR_LABEL_TEXT_COLOR}>
+            <Text
+              size='S'
+              weight='medium'
+              color={YIELD_AGGREGATOR_LABEL_TEXT_COLOR}
+            >
               Yield Aggregator
             </Text>
           </YieldAggregatorLabelWrapper>
@@ -79,7 +80,7 @@ export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
           </div>
           <LendTokenInfo
             totalSupply={totalSupply}
-            utilization={totalUtilization} 
+            utilization={totalUtilization}
           />
         </BodySubContainer>
         <BodyDivider />

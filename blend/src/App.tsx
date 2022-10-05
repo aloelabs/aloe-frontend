@@ -97,7 +97,12 @@ function App() {
                       />
                     }
                   >
-                    <Route path='pools' element={<BlendPoolSelectPage blockNumber={blockNumber} />} />
+                    <Route
+                      path='pools'
+                      element={
+                        <BlendPoolSelectPage blockNumber={blockNumber} />
+                      }
+                    />
                     <Route
                       path='pool/:pooladdress'
                       element={<BlendPoolPage blockNumber={blockNumber} />}
@@ -112,15 +117,23 @@ function App() {
                     />
                   </Route>
                   {/* <Route path='/portfolio' element={<PortfolioPage />} /> */}
-                  { // Devmode-only example page routing
+                  {
+                    // Devmode-only example page routing
                     IS_DEV && (
                       <>
-                        <Route path='/buttons' element={<ButtonExamplesPage />} />
+                        <Route
+                          path='/buttons'
+                          element={<ButtonExamplesPage />}
+                        />
                         <Route path='/inputs' element={<InputExamplesPage />} />
                         <Route path='/portfolio' element={<PortfolioPage />} />
-                        <Route path='/governance' element={<GovernancePage />} />
+                        <Route
+                          path='/governance'
+                          element={<GovernancePage />}
+                        />
                       </>
-                  )}
+                    )
+                  }
                   <Route path='/' element={<Navigate replace to='/blend' />} />
                   <Route path='*' element={<Navigate to='/' />} />
                 </Routes>

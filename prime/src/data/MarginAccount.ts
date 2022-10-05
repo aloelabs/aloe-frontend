@@ -53,7 +53,14 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
- export type MarginAccountPreview = Omit<MarginAccount, 'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts'>;
+export type MarginAccountPreview = Omit<
+  MarginAccount,
+  | 'kitty0'
+  | 'kitty1'
+  | 'sqrtPriceX96'
+  | 'tickAtLastModify'
+  | 'includeKittyReceipts'
+>;
 
 export async function getMarginAccountsForUser(
   userAddress: string,
@@ -62,31 +69,48 @@ export async function getMarginAccountsForUser(
   const etherscanResult = await makeEtherscanRequest(
     7569633,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
-    ['0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78', null, null, `0x000000000000000000000000${userAddress.slice(2)}`],
+    [
+      '0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78',
+      null,
+      null,
+      `0x000000000000000000000000${userAddress.slice(2)}`,
+    ],
     true,
     'api-goerli'
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
-  const accounts: { address: string; uniswapPool: string }[] = etherscanResult.data.result.map((item: any) => {
-    return {
-      address: item.topics[2].slice(0, 2) + item.topics[2].slice(26),
-      uniswapPool: item.topics[1].slice(26),
-    };
-  });
+  const accounts: { address: string; uniswapPool: string }[] =
+    etherscanResult.data.result.map((item: any) => {
+      return {
+        address: item.topics[2].slice(0, 2) + item.topics[2].slice(26),
+        uniswapPool: item.topics[1].slice(26),
+      };
+    });
 
   return accounts;
 }
 
-export async function resolveUniswapPools(marginAccounts: { address: string; uniswapPool: string }[], provider: ethers.providers.BaseProvider) {
+export async function resolveUniswapPools(
+  marginAccounts: { address: string; uniswapPool: string }[],
+  provider: ethers.providers.BaseProvider
+) {
   const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
   // create an array to hold all the Promises we're about to create
-  const uniswapPoolData: Promise<[string, { token0: string; token1: string; feeTier: number }]>[] = [];
+  const uniswapPoolData: Promise<
+    [string, { token0: string; token1: string; feeTier: number }]
+  >[] = [];
   // for each pool, create a Promise that returns a tuple: (poolAddress, otherData)
   uniqueUniswapPools.forEach((pool) => {
-    async function getUniswapPoolData(): Promise<[string, { token0: string; token1: string; feeTier: number }]> {
+    async function getUniswapPoolData(): Promise<
+      [string, { token0: string; token1: string; feeTier: number }]
+    > {
       const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
-      const [token0, token1, feeTier] = await Promise.all([contract.token0(), contract.token1(), contract.fee()]);
+      const [token0, token1, feeTier] = await Promise.all([
+        contract.token0(),
+        contract.token1(),
+        contract.fee(),
+      ]);
       //     |key|  |          value           |
       return [pool, { token0, token1, feeTier }];
     }
@@ -99,50 +123,69 @@ export async function resolveUniswapPools(marginAccounts: { address: string; uni
 export async function fetchMarginAccountPreviews(
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  userAddress: string,
+  userAddress: string
 ): Promise<MarginAccountPreview[]> {
-  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
-  const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
-  const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
-    async ({ address: accountAddress, uniswapPool }) => {
-      const token0 = GetTokenData(uniswapPoolDataMap[uniswapPool].token0);
-      const token1 = GetTokenData(uniswapPoolDataMap[uniswapPool].token1);
-      const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
-
-      const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(accountAddress);
-      const liabilitiesData: BigNumber[] = await marginAccountLensContract.getLiabilities(accountAddress);
-
-      const assets: Assets = {
-        token0Raw: Big(assetsData[0].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Raw: Big(assetsData[1].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        token0Plus: Big(assetsData[2].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Plus: Big(assetsData[3].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        uni0: Big(assetsData[4].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        uni1: Big(assetsData[5].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
-      const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData[0].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        amount1: Big(liabilitiesData[1].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
-      return { address: accountAddress, uniswapPool, token0, token1, feeTier, assets, liabilities };
-    }
+  const marginAccountsAddresses = await getMarginAccountsForUser(
+    userAddress,
+    provider
   );
+  const uniswapPoolDataMap = await resolveUniswapPools(
+    marginAccountsAddresses,
+    provider
+  );
+  const marginAccounts: Promise<MarginAccountPreview>[] =
+    marginAccountsAddresses.map(
+      async ({ address: accountAddress, uniswapPool }) => {
+        const token0 = GetTokenData(uniswapPoolDataMap[uniswapPool].token0);
+        const token1 = GetTokenData(uniswapPoolDataMap[uniswapPool].token1);
+        const feeTier = NumericFeeTierToEnum(
+          uniswapPoolDataMap[uniswapPool].feeTier
+        );
+
+        const assetsData: BigNumber[] =
+          await marginAccountLensContract.getAssets(accountAddress);
+        const liabilitiesData: BigNumber[] =
+          await marginAccountLensContract.getLiabilities(accountAddress);
+
+        const assets: Assets = {
+          token0Raw: Big(assetsData[0].toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          token1Raw: Big(assetsData[1].toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+          token0Plus: Big(assetsData[2].toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          token1Plus: Big(assetsData[3].toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+          uni0: Big(assetsData[4].toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          uni1: Big(assetsData[5].toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+        };
+        const liabilities: Liabilities = {
+          amount0: Big(liabilitiesData[0].toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          amount1: Big(liabilitiesData[1].toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+        };
+        return {
+          address: accountAddress,
+          uniswapPool,
+          token0,
+          token1,
+          feeTier,
+          assets,
+          liabilities,
+        };
+      }
+    );
   return Promise.all(marginAccounts);
 }
 
@@ -164,8 +207,15 @@ export async function fetchMarginAccount(
   ]);
 
   const uniswapPool = results[4];
-  const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
+  const uniswapPoolContract = new ethers.Contract(
+    uniswapPool,
+    UniswapV3PoolABI,
+    provider
+  );
+  const [feeTier, slot0] = await Promise.all([
+    uniswapPoolContract.fee(),
+    uniswapPoolContract.slot0(),
+  ]);
 
   const token0 = GetTokenData(results[0] as string);
   const token1 = GetTokenData(results[1] as string);
@@ -173,7 +223,7 @@ export async function fetchMarginAccount(
   const kitty1 = GetTokenData(results[3] as string);
   const assetsData = results[5] as BigNumber[];
   const liabilitiesData = results[6] as BigNumber[];
-  const packedSlot = results[7]
+  const packedSlot = results[7];
 
   const assets: Assets = {
     token0Raw: toBig(assetsData[0])
@@ -219,7 +269,11 @@ export async function fetchMarginAccount(
   };
 }
 
-export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, token1Decimals: number): number {
+export function sqrtRatioToPrice(
+  sqrtPriceX96: Big,
+  token0Decimals: number,
+  token1Decimals: number
+): number {
   return sqrtPriceX96
     .mul(sqrtPriceX96)
     .div(BIGQ96)
@@ -228,18 +282,22 @@ export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, toke
     .toNumber();
 }
 
-export function priceToSqrtRatio(price: number, token0Decimals: number, token1Decimals: number): Big {
-  return new Big(price).mul(10 ** (token1Decimals - token0Decimals)).sqrt().mul(BIGQ96);
+export function priceToSqrtRatio(
+  price: number,
+  token0Decimals: number,
+  token1Decimals: number
+): Big {
+  return new Big(price)
+    .mul(10 ** (token1Decimals - token0Decimals))
+    .sqrt()
+    .mul(BIGQ96);
 }
 
 const MIN_SIGMA = 0.02;
 const MAX_SIGMA = 0.15;
 const SIGMA_B = 2;
 
-function _computeProbePrices(
-  sqrtMeanPriceX96: Big,
-  sigma: number
-): [Big, Big] {
+function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   sigma = Math.min(Math.max(MIN_SIGMA, sigma), MAX_SIGMA);
   sigma *= SIGMA_B;
 
@@ -253,7 +311,7 @@ export function getAssets(
   uniswapPositions: UniswapPosition[],
   a: Big,
   b: Big,
-  c: Big,
+  c: Big
 ) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
@@ -272,21 +330,42 @@ export function getAssets(
   let fluid1C = 0;
 
   for (const position of uniswapPositions) {
-    const {liquidity, lower, upper} = position;
+    const { liquidity, lower, upper } = position;
     if (lower === null || upper === null) {
-      console.error('Attempted to compute liquidation thresholds for account with malformed Uniswap Position');
+      console.error(
+        'Attempted to compute liquidation thresholds for account with malformed Uniswap Position'
+      );
       console.error(position);
       continue;
     }
 
-    fluid1A += getValueOfLiquidity(liquidity, lower, upper, tickA, marginAccount.token1.decimals);
-    fluid1B += getValueOfLiquidity(liquidity, lower, upper, tickB, marginAccount.token1.decimals);
-    const temp = getAmountsForLiquidity(liquidity, lower, upper, tickC, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    fluid1A += getValueOfLiquidity(
+      liquidity,
+      lower,
+      upper,
+      tickA,
+      marginAccount.token1.decimals
+    );
+    fluid1B += getValueOfLiquidity(
+      liquidity,
+      lower,
+      upper,
+      tickB,
+      marginAccount.token1.decimals
+    );
+    const temp = getAmountsForLiquidity(
+      liquidity,
+      lower,
+      upper,
+      tickC,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
     fluid0C += temp[0];
     fluid1C += temp[1];
   }
 
-  return { fixed0, fixed1, fluid1A, fluid1B, fluid0C, fluid1C }
+  return { fixed0, fixed1, fluid1A, fluid1B, fluid0C, fluid1C };
 }
 
 function _computeLiquidationIncentive(
@@ -345,17 +424,17 @@ export function isSolvent(
   liabilities0 = liabilities0 * 1.005;
   liabilities1 = liabilities1 * 1.005 + liquidationIncentive;
 
-  const liabilitiesA = liabilities1 + (liabilities0 * priceA);
-  const assetsA = mem.fluid1A + mem.fixed1 + (mem.fixed0 * priceA);
-  
-  const liabilitiesB = liabilities1 + (liabilities0 * priceB);
-  const assetsB = mem.fluid1B + mem.fixed1 + (mem.fixed0 * priceB);
+  const liabilitiesA = liabilities1 + liabilities0 * priceA;
+  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+
+  const liabilitiesB = liabilities1 + liabilities0 * priceB;
+  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
 
   return {
     priceA,
     priceB,
     assetsA,
-    assetsB, 
+    assetsB,
     liabilitiesA,
     liabilitiesB,
     atA: assetsA >= liabilitiesA,
@@ -368,21 +447,30 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sigma: number,
   iterations: number = 120,
-  precision: number = 7,
+  precision: number = 7
 ): LiquidationThresholds {
-
   let result: LiquidationThresholds = {
     lower: 0,
     upper: 0,
-  }
+  };
 
   const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
-  if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
-    result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const isSolventAtMin = isSolvent(
+    marginAccount,
+    uniswapPositions,
+    MINPRICE,
+    sigma
+  );
+  if (isSolventAtMin.atA && isSolventAtMin.atB) {
+    // if solvent at beginning, short-circuit
+    result.lower = sqrtRatioToPrice(
+      MINPRICE,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = MINPRICE;
@@ -395,21 +483,43 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
-      const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
-      if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
+      const isSolventAtSearchPrice = isSolvent(
+        marginAccount,
+        uniswapPositions,
+        searchPrice,
+        sigma
+      );
+      const isLiquidatableAtSearchPrice =
+        !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
+      if (isLiquidatableAtSearchPrice) {
+        // liquidation threshold is lower
         lowerBoundSqrtPrice = searchPrice;
-      } else { // liquidation threshold is higher
+      } else {
+        // liquidation threshold is higher
         upperBoundSqrtPrice = searchPrice;
       }
     }
-    result.lower = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.lower = sqrtRatioToPrice(
+      searchPrice,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
-  if (isSolventAtMax.atA && isSolventAtMax.atB) { // if solvent at end, short-circuit
-    result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const isSolventAtMax = isSolvent(
+    marginAccount,
+    uniswapPositions,
+    MAXPRICE,
+    sigma
+  );
+  if (isSolventAtMax.atA && isSolventAtMax.atB) {
+    // if solvent at end, short-circuit
+    result.upper = sqrtRatioToPrice(
+      MAXPRICE,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = marginAccount.sqrtPriceX96;
@@ -422,20 +532,35 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
-      const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
-      if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
+      const isSolventAtSearchPrice = isSolvent(
+        marginAccount,
+        uniswapPositions,
+        searchPrice,
+        sigma
+      );
+      const isLiquidatableAtSearchPrice =
+        !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
+      if (isLiquidatableAtSearchPrice) {
+        // liquidation threshold is higher
         upperBoundSqrtPrice = searchPrice;
-      } else { // liquidation threshold is lower
+      } else {
+        // liquidation threshold is lower
         lowerBoundSqrtPrice = searchPrice;
       }
     }
-    result.upper = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.upper = sqrtRatioToPrice(
+      searchPrice,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
   }
 
   return result;
 }
 
 export function sumAssetsPerToken(assets: Assets): [number, number] {
-  return [assets.token0Raw + assets.token0Plus + assets.uni0, assets.token1Raw + assets.token1Plus + assets.uni1];
+  return [
+    assets.token0Raw + assets.token0Plus + assets.uni0,
+    assets.token1Raw + assets.token1Plus + assets.uni1,
+  ];
 }

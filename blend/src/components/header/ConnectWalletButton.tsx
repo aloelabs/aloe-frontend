@@ -21,12 +21,16 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const { address, ensName, activeConnector } = props;
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-  const {error: connectError, connect, connectors } = useConnect({
+  const {
+    error: connectError,
+    connect,
+    connectors,
+  } = useConnect({
     onSuccess(data) {
       setModalOpen(false);
-    }
-  })
-  const { disconnect } = useDisconnect()
+    },
+  });
+  const { disconnect } = useDisconnect();
 
   const formattedAddr = address ? FormatAddress(address) : '';
   const buttonText = address
@@ -75,7 +79,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         title={'Connect Wallet'}
       >
         <div className='w-full'>
-          {(activeConnector && address) ? (
+          {activeConnector && address ? (
             // We have an account connected
             <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
               {/*<img src={accountData.ens?.avatar || undefined} alt="ENS Avatar" />*/}
@@ -85,11 +89,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                   className='w-full overflow-hidden text-ellipsis'
                   title={address}
                 >
-                  {ensName
-                    ? `${ensName} (${FormatAddress(
-                        address
-                      )})`
-                    : address}
+                  {ensName ? `${ensName} (${FormatAddress(address)})` : address}
                 </Text>
                 <Text
                   size='S'

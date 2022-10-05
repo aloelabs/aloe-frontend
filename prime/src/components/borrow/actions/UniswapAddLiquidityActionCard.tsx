@@ -1,20 +1,39 @@
 import { useEffect, useState } from 'react';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
+import {
+  ActionCardProps,
+  ActionID,
+  ActionProviders,
+} from '../../../data/Actions';
 import SteppedInput from '../uniswap/SteppedInput';
-import LiquidityChart, {
-  ChartEntry,
-} from '../uniswap/LiquidityChart';
+import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import Settings from '../uniswap/Settings';
-import { calculateAmount0FromAmount1, calculateAmount1FromAmount0, calculateTickData, calculateTickInfo, getPoolAddressFromTokens, getUniswapPoolBasics, priceToTick, shouldAmount0InputBeDisabled, shouldAmount1InputBeDisabled, TickData, TickInfo, tickToPrice, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import {
+  calculateAmount0FromAmount1,
+  calculateAmount1FromAmount0,
+  calculateTickData,
+  calculateTickInfo,
+  getPoolAddressFromTokens,
+  getUniswapPoolBasics,
+  priceToTick,
+  shouldAmount0InputBeDisabled,
+  shouldAmount1InputBeDisabled,
+  TickData,
+  TickInfo,
+  tickToPrice,
+  UniswapV3PoolBasics,
+} from '../../../util/Uniswap';
 import { useProvider } from 'wagmi';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import {
+  formatNumberInput,
+  roundDownToNearestN,
+  roundUpToNearestN,
+} from '../../../util/Numbers';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
 import JSBI from 'jsbi';
 import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 
@@ -27,16 +46,25 @@ type TickPrice = {
 };
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const {
+    marginAccount,
+    previousActionCardState,
+    isCausingError,
+    onChange,
+    onRemove,
+  } = props;
   const { token0, token1, feeTier } = marginAccount;
 
-  const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
+  const isToken0Selected =
+    previousActionCardState?.uniswapResult?.isToken0Selected || false;
 
-  const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] = useState(false);
+  const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] =
+    useState(false);
   const [localToken0Amount, setLocalToken0Amount] = useState('');
   const [localToken1Amount, setLocalToken1Amount] = useState('');
   const [localLiquidityJSBI, setLocalLiquidityJSBI] = useState(JSBI.BigInt(0));
-  const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
+  const [uniswapPoolBasics, setUniswapPoolBasics] =
+    useState<UniswapV3PoolBasics | null>(null);
   const [tickInfo, setTickInfo] = useState<TickInfo | null>(null);
   const [isLiquidityDataLoading, setIsLiquidityDataLoading] = useState(true);
   const [liquidityData, setLiquidityData] = useState<TickData[]>([]);
@@ -55,7 +83,10 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         setUniswapPoolBasics(poolBasics);
       }
       // TODO replace this hard-coded string with `poolAddress` once we're done with testnet!!!
-      const tickData = await calculateTickData('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', poolBasics);
+      const tickData = await calculateTickData(
+        '0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8',
+        poolBasics
+      );
       if (mounted) {
         setLiquidityData(tickData);
         setIsLiquidityDataLoading(false);
@@ -105,18 +136,23 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }
-    }    
+    }
     fetch(poolAddress);
     return () => {
       mounted = false;
-    }
+    };
   });
 
   useEffect(() => {
     if (!uniswapPoolBasics) return;
-    const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
+    const updatedTickInfo = calculateTickInfo(
+      uniswapPoolBasics,
+      token0,
+      token1,
+      isToken0Selected
+    );
     setTickInfo(updatedTickInfo);
-  }, [isToken0Selected, uniswapPoolBasics]);
+  }, [isToken0Selected, token0, token1, uniswapPoolBasics]);
 
   useEffect(() => {
     //Handles the initial render and whenever the selected token changes
@@ -124,34 +160,37 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       setLocalToken0Amount(previousActionCardState.textFields[0]);
       setLocalToken1Amount(previousActionCardState.textFields[1]);
     }
-  }, [isToken0Selected]);
-  
+  }, [isToken0Selected, previousActionCardState?.textFields]);
+
   let lower: TickPrice | null = null;
   let upper: TickPrice | null = null;
-  let currentTick: number | null = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
-  const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lower;
-  const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upper;
+  let currentTick: number | null =
+    (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
+  const lowerBound =
+    previousActionCardState?.uniswapResult?.uniswapPosition.lower;
+  const upperBound =
+    previousActionCardState?.uniswapResult?.uniswapPosition.upper;
   let slippagePercentage = previousActionCardState?.textFields?.[4] ?? '';
-  
+
   if (tickInfo != null && lowerBound && upperBound) {
     lower = {
       price: tickToPrice(
         lowerBound,
         token0.decimals,
         token1.decimals,
-        isToken0Selected,
+        isToken0Selected
       ),
       tick: lowerBound,
-    }
+    };
     upper = {
       price: tickToPrice(
         upperBound,
         token0.decimals,
         token1.decimals,
-        isToken0Selected,
+        isToken0Selected
       ),
       tick: upperBound,
-    }
+    };
   } else if (tickInfo != null && uniswapPoolBasics != null) {
     const lowerTick = roundDownToNearestN(
       uniswapPoolBasics.slot0.tick - 100,
@@ -188,13 +227,28 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let isAmount1InputDisabled = true;
 
   if (lower != null && upper != null && currentTick != null) {
-    isAmount0InputDisabled = shouldAmount0InputBeDisabled(lower.tick, upper.tick, currentTick);
-    isAmount1InputDisabled = shouldAmount1InputBeDisabled(lower.tick, upper.tick, currentTick);
+    isAmount0InputDisabled = shouldAmount0InputBeDisabled(
+      lower.tick,
+      upper.tick,
+      currentTick
+    );
+    isAmount1InputDisabled = shouldAmount1InputBeDisabled(
+      lower.tick,
+      upper.tick,
+      currentTick
+    );
   }
 
   function handleUpdateSlippagePercentage(updatedSlippage: string) {
-    const prevUniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-    const prevTextFields = previousActionCardState?.textFields ?? ['', '', '', '', ''];
+    const prevUniswapPosition =
+      previousActionCardState?.uniswapResult?.uniswapPosition;
+    const prevTextFields = previousActionCardState?.textFields ?? [
+      '',
+      '',
+      '',
+      '',
+      '',
+    ];
     prevTextFields[4] = updatedSlippage;
 
     onChange({
@@ -210,10 +264,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           upper: prevUniswapPosition?.upper || null,
         },
         slippageTolerance: parseFloat(updatedSlippage) || undefined,
-        isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
-        isToken0Selected: previousActionCardState?.uniswapResult?.isToken0Selected,
-      }
-    })
+        isAmount0LastUpdated:
+          previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
+        isToken0Selected:
+          previousActionCardState?.uniswapResult?.isToken0Selected,
+      },
+    });
   }
 
   function handleLocalToken0AmountInput(value: string, forceUpdate?: boolean) {
@@ -225,7 +281,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       setLocalIsAmount0LastUpdated(true);
       let updatedAmount1 = '';
       if (!isNaN(floatOutput)) {
-        const {amount1, liquidity} = calculateAmount1FromAmount0(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
+        const { amount1, liquidity } = calculateAmount1FromAmount0(
+          floatOutput,
+          lower.tick,
+          upper.tick,
+          uniswapPoolBasics.slot0.tick,
+          token0.decimals,
+          token1.decimals
+        );
         setLocalToken1Amount(amount1);
         setLocalLiquidityJSBI(liquidity);
         updatedAmount1 = amount1;
@@ -248,7 +311,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       setLocalIsAmount0LastUpdated(false);
       let updatedAmount0 = '';
       if (!isNaN(floatOutput)) {
-        const {amount0, liquidity} = calculateAmount0FromAmount1(floatOutput, lower.tick, upper.tick, uniswapPoolBasics.slot0.tick, token0.decimals, token1.decimals);
+        const { amount0, liquidity } = calculateAmount0FromAmount1(
+          floatOutput,
+          lower.tick,
+          upper.tick,
+          uniswapPoolBasics.slot0.tick,
+          token0.decimals,
+          token1.decimals
+        );
         setLocalToken0Amount(amount0);
         setLocalLiquidityJSBI(liquidity);
         updatedAmount0 = amount0;
@@ -262,11 +332,25 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
   }
 
-  function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
+  function updateRange(
+    amount0: string,
+    amount1: string,
+    lowerTick: number | null,
+    upperTick: number | null
+  ) {
     onChange({
       actionId: ActionID.ADD_LIQUIDITY,
-      actionArgs: (lowerTick !== null && upperTick !== null) ? getAddLiquidityActionArgs(lowerTick, upperTick, localLiquidityJSBI) : undefined,
-      textFields: [amount0, amount1, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', previousActionCardState?.textFields?.[4] ?? ''],
+      actionArgs:
+        lowerTick !== null && upperTick !== null
+          ? getAddLiquidityActionArgs(lowerTick, upperTick, localLiquidityJSBI)
+          : undefined,
+      textFields: [
+        amount0,
+        amount1,
+        lowerTick?.toFixed(0) ?? '',
+        upperTick?.toFixed(0) ?? '',
+        previousActionCardState?.textFields?.[4] ?? '',
+      ],
       aloeResult: {
         token0RawDelta: -parseFloat(amount0) || undefined,
         token1RawDelta: -parseFloat(amount1) || undefined,
@@ -280,25 +364,49 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           lower: lowerTick,
           upper: upperTick,
         },
-        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
+        slippageTolerance:
+          previousActionCardState?.uniswapResult?.slippageTolerance,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
         isToken0Selected: isToken0Selected,
       },
     });
   }
 
-  function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
+  function calculateUpdatedAmounts(
+    lowerTick: number | null,
+    upperTick: number | null
+  ) {
     const numericAmount0 = parseFloat(localToken0Amount);
     const numericAmount1 = parseFloat(localToken1Amount);
 
-    if (!isNaN(numericAmount0) && !isNaN(numericAmount1) && lowerTick != null && upperTick != null && currentTick != null) {
+    if (
+      !isNaN(numericAmount0) &&
+      !isNaN(numericAmount1) &&
+      lowerTick != null &&
+      upperTick != null &&
+      currentTick != null
+    ) {
       if (localIsAmount0LastUpdated) {
-        const {amount1, liquidity} = calculateAmount1FromAmount0(numericAmount0, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
+        const { amount1, liquidity } = calculateAmount1FromAmount0(
+          numericAmount0,
+          lowerTick,
+          upperTick,
+          currentTick,
+          token0.decimals,
+          token1.decimals
+        );
         setLocalToken1Amount(amount1);
         setLocalLiquidityJSBI(liquidity);
         return [localToken0Amount, amount1];
       } else {
-        const {amount0, liquidity} = calculateAmount0FromAmount1(numericAmount1, lowerTick, upperTick, currentTick, token0.decimals, token1.decimals);
+        const { amount0, liquidity } = calculateAmount0FromAmount1(
+          numericAmount1,
+          lowerTick,
+          upperTick,
+          currentTick,
+          token0.decimals,
+          token1.decimals
+        );
         setLocalToken0Amount(amount0);
         setLocalLiquidityJSBI(liquidity);
         return [amount0, localToken1Amount];
@@ -310,11 +418,22 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   function updateLower(updatedLower: TickPrice) {
     let shouldResetAmounts = false;
     if (upper != null && currentTick != null) {
-      const willAmount0BeDisabled = shouldAmount0InputBeDisabled(updatedLower.tick, upper.tick, currentTick);
+      const willAmount0BeDisabled = shouldAmount0InputBeDisabled(
+        updatedLower.tick,
+        upper.tick,
+        currentTick
+      );
       shouldResetAmounts = willAmount0BeDisabled && localIsAmount0LastUpdated;
     }
-    const updatedAmounts = shouldResetAmounts ? ['', localToken1Amount] : calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
-    updateRange(updatedAmounts[0], updatedAmounts[1], updatedLower.tick, upper?.tick || null);
+    const updatedAmounts = shouldResetAmounts
+      ? ['', localToken1Amount]
+      : calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
+    updateRange(
+      updatedAmounts[0],
+      updatedAmounts[1],
+      updatedLower.tick,
+      upper?.tick || null
+    );
     if (shouldResetAmounts) {
       setLocalIsAmount0LastUpdated(false);
     }
@@ -323,18 +442,34 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   function updateUpper(updatedUpper: TickPrice) {
     let shouldResetAmounts = false;
     if (lower != null && currentTick != null) {
-      const willAmount1BeDisabled = shouldAmount1InputBeDisabled(lower.tick, updatedUpper.tick, currentTick);
+      const willAmount1BeDisabled = shouldAmount1InputBeDisabled(
+        lower.tick,
+        updatedUpper.tick,
+        currentTick
+      );
       shouldResetAmounts = willAmount1BeDisabled && !localIsAmount0LastUpdated;
     }
-    const updatedAmounts = shouldResetAmounts ? [localToken0Amount, ''] : calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
-    updateRange(updatedAmounts[0], updatedAmounts[1], lower?.tick || null, updatedUpper.tick);
+    const updatedAmounts = shouldResetAmounts
+      ? [localToken0Amount, '']
+      : calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
+    updateRange(
+      updatedAmounts[0],
+      updatedAmounts[1],
+      lower?.tick || null,
+      updatedUpper.tick
+    );
     if (shouldResetAmounts) {
       setLocalIsAmount0LastUpdated(true);
     }
   }
 
   function updateTokenAmountInput() {
-    updateRange(localToken0Amount, localToken1Amount, lower?.tick ?? null, upper?.tick ?? null);
+    updateRange(
+      localToken0Amount,
+      localToken1Amount,
+      lower?.tick ?? null,
+      upper?.tick ?? null
+    );
   }
 
   const max0 = marginAccount.assets.token0Raw;
@@ -368,7 +503,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                     lower: null,
                     upper: null,
                   },
-                  slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
+                  slippageTolerance:
+                    previousActionCardState?.uniswapResult?.slippageTolerance,
                   isToken0Selected: updatedValue,
                   isAmount0LastUpdated: false,
                 },
@@ -381,17 +517,26 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           updateSlippagePercentage={handleUpdateSlippagePercentage}
         />
       </div>
-      {chartData.length > 0 && uniswapPoolBasics != null && lower != null && upper != null && (
-        <LiquidityChart
-          data={chartData}
-          rangeStart={lower.price}
-          rangeEnd={upper.price}
-          currentPrice={tickToPrice(uniswapPoolBasics?.slot0.tick, token0.decimals, token1.decimals, isToken0Selected)}
-        />
-      )}
-      {(chartData.length === 0 || uniswapPoolBasics == null || lower == null || upper == null) && (
-        <LiquidityChartPlaceholder />
-      )}
+      {chartData.length > 0 &&
+        uniswapPoolBasics != null &&
+        lower != null &&
+        upper != null && (
+          <LiquidityChart
+            data={chartData}
+            rangeStart={lower.price}
+            rangeEnd={upper.price}
+            currentPrice={tickToPrice(
+              uniswapPoolBasics?.slot0.tick,
+              token0.decimals,
+              token1.decimals,
+              isToken0Selected
+            )}
+          />
+        )}
+      {(chartData.length === 0 ||
+        uniswapPoolBasics == null ||
+        lower == null ||
+        upper == null) && <LiquidityChartPlaceholder />}
       <div className='flex flex-row gap-2 mb-4'>
         <SteppedInput
           value={lower?.price || ''}
@@ -401,15 +546,33 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           isToken0Selected={isToken0Selected}
           onChange={(value) => {
             const valueAsFloat = parseFloat(value);
-            if (isNaN(valueAsFloat) || valueAsFloat === 0 || tickInfo == null || lower == null || upper == null) {
+            if (
+              isNaN(valueAsFloat) ||
+              valueAsFloat === 0 ||
+              tickInfo == null ||
+              lower == null ||
+              upper == null
+            ) {
               return;
             }
             //Always in terms of token0
-            const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
-            const nearestTick = roundUpToNearestN(priceToTick(numericValue, token0.decimals, token1.decimals), tickInfo.tickSpacing);
-            const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if ((parseFloat(nearestPrice) < parseFloat(upper.price)) &&
-                (nearestTick >= MIN_TICK)) {
+            const numericValue = isToken0Selected
+              ? valueAsFloat
+              : 1.0 / valueAsFloat;
+            const nearestTick = roundUpToNearestN(
+              priceToTick(numericValue, token0.decimals, token1.decimals),
+              tickInfo.tickSpacing
+            );
+            const nearestPrice = tickToPrice(
+              nearestTick,
+              token0.decimals,
+              token1.decimals,
+              isToken0Selected
+            );
+            if (
+              parseFloat(nearestPrice) < parseFloat(upper.price) &&
+              nearestTick >= MIN_TICK
+            ) {
               updateLower({
                 price: nearestPrice,
                 tick: nearestTick,
@@ -421,12 +584,22 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               return;
             }
             //If token1 is selected, we want to increment the lower tick as ticks are in reverse order
-            const updatedTick = isToken0Selected ? lower.tick - tickInfo.tickSpacing : lower.tick + tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
+            const updatedTick = isToken0Selected
+              ? lower.tick - tickInfo.tickSpacing
+              : lower.tick + tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds =
+              MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
+            const isUpdatedTickLessThanUpper = isToken0Selected
+              ? updatedTick < upper.tick
+              : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               updateLower({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
+                price: tickToPrice(
+                  updatedTick,
+                  token0.decimals,
+                  token1.decimals,
+                  isToken0Selected
+                ),
                 tick: updatedTick,
               });
             }
@@ -436,12 +609,22 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               return;
             }
             //If token1 is selected, we want to decrement the lower tick as ticks are in reverse order
-            const updatedTick = isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
+            const updatedTick = isToken0Selected
+              ? lower.tick + tickInfo.tickSpacing
+              : lower.tick - tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds =
+              MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
+            const isUpdatedTickLessThanUpper = isToken0Selected
+              ? updatedTick < upper.tick
+              : updatedTick > upper.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
               updateLower({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
+                price: tickToPrice(
+                  updatedTick,
+                  token0.decimals,
+                  token1.decimals,
+                  isToken0Selected
+                ),
                 tick: updatedTick,
               });
             }
@@ -451,10 +634,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             tickInfo == null ||
             lower == null ||
             upper == null ||
-            !(isToken0Selected ? 
-              (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) < upper.tick :
-              (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) > upper.tick
-            )
+            !(isToken0Selected
+              ? (isToken0Selected
+                  ? lower.tick + tickInfo.tickSpacing
+                  : lower.tick - tickInfo.tickSpacing) < upper.tick
+              : (isToken0Selected
+                  ? lower.tick + tickInfo.tickSpacing
+                  : lower.tick - tickInfo.tickSpacing) > upper.tick)
           }
           disabled={poolAddress == null}
         />
@@ -466,15 +652,33 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           isToken0Selected={isToken0Selected}
           onChange={(value) => {
             const valueAsFloat = parseFloat(value);
-            if (isNaN(valueAsFloat) || valueAsFloat === 0 || tickInfo == null || lower == null || upper == null) {
+            if (
+              isNaN(valueAsFloat) ||
+              valueAsFloat === 0 ||
+              tickInfo == null ||
+              lower == null ||
+              upper == null
+            ) {
               return;
             }
             //Always in terms of token0
-            const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
-            const nearestTick = roundUpToNearestN(priceToTick(numericValue, token0.decimals, token1.decimals), tickInfo.tickSpacing);
-            const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if ((parseFloat(nearestPrice) > parseFloat(lower.price)) &&
-                (nearestTick <= MAX_TICK)) {
+            const numericValue = isToken0Selected
+              ? valueAsFloat
+              : 1.0 / valueAsFloat;
+            const nearestTick = roundUpToNearestN(
+              priceToTick(numericValue, token0.decimals, token1.decimals),
+              tickInfo.tickSpacing
+            );
+            const nearestPrice = tickToPrice(
+              nearestTick,
+              token0.decimals,
+              token1.decimals,
+              isToken0Selected
+            );
+            if (
+              parseFloat(nearestPrice) > parseFloat(lower.price) &&
+              nearestTick <= MAX_TICK
+            ) {
               updateUpper({
                 price: nearestPrice,
                 tick: nearestTick,
@@ -485,12 +689,22 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo || !lower || !upper) {
               return;
             }
-            const updatedTick = isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
+            const updatedTick = isToken0Selected
+              ? upper.tick - tickInfo.tickSpacing
+              : upper.tick + tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds =
+              MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
+            const isUpdatedTickGreaterThanLower = isToken0Selected
+              ? updatedTick > lower.tick
+              : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               updateUpper({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
+                price: tickToPrice(
+                  updatedTick,
+                  token0.decimals,
+                  token1.decimals,
+                  isToken0Selected
+                ),
                 tick: updatedTick,
               });
             }
@@ -499,12 +713,22 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             if (!tickInfo || !lower || !upper) {
               return;
             }
-            const updatedTick = isToken0Selected ? upper.tick + tickInfo.tickSpacing : upper.tick - tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickGreaterThanLower = isToken0Selected ? updatedTick > lower.tick : updatedTick < lower.tick;
+            const updatedTick = isToken0Selected
+              ? upper.tick + tickInfo.tickSpacing
+              : upper.tick - tickInfo.tickSpacing;
+            const isUpdatedTickWithinBounds =
+              MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
+            const isUpdatedTickGreaterThanLower = isToken0Selected
+              ? updatedTick > lower.tick
+              : updatedTick < lower.tick;
             if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
               updateUpper({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
+                price: tickToPrice(
+                  updatedTick,
+                  token0.decimals,
+                  token1.decimals,
+                  isToken0Selected
+                ),
                 tick: updatedTick,
               });
             }
@@ -513,15 +737,15 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             tickInfo == null ||
             lower == null ||
             upper == null ||
-            !(isToken0Selected ? 
-              (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) > lower.tick :
-              (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) < lower.tick
-            )
+            !(isToken0Selected
+              ? (isToken0Selected
+                  ? upper.tick - tickInfo.tickSpacing
+                  : upper.tick + tickInfo.tickSpacing) > lower.tick
+              : (isToken0Selected
+                  ? upper.tick - tickInfo.tickSpacing
+                  : upper.tick + tickInfo.tickSpacing) < lower.tick)
           }
-          incrementDisabled={
-            tickInfo == null ||
-            upper == null
-          }
+          incrementDisabled={tickInfo == null || upper == null}
           disabled={poolAddress == null}
         />
       </div>

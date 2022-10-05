@@ -50,7 +50,7 @@ const AutoSlippageButton = styled.button.attrs(
 )`
   padding: 4px 8px;
   border-radius: 8px;
-  background-color: ${props => props.active ? '#63b59a' : 'transparent'};
+  background-color: ${(props) => (props.active ? '#63b59a' : 'transparent')};
   border: 1px solid rgba(26, 41, 52, 1);
 `;
 
@@ -69,6 +69,7 @@ export default function Settings(props: SettingsProps) {
     if (slippagePercentage !== localSlippagePercentage) {
       setLocalSlippagePercentage(slippagePercentage);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slippagePercentage]);
   useClickOutside(settingsMenuRef, () => {
     setIsMenuOpen(false);
@@ -115,13 +116,14 @@ export default function Settings(props: SettingsProps) {
               }}
               onBlur={() => {
                 const currentValue = parseFloat(localSlippagePercentage);
-                const output = isNaN(currentValue) ? '' : currentValue.toFixed(2);
+                const output = isNaN(currentValue)
+                  ? ''
+                  : currentValue.toFixed(2);
                 if (slippagePercentage !== output) {
                   updateSlippagePercentage(output);
                 } else {
                   setLocalSlippagePercentage(output);
                 }
-                
               }}
               inputClassName={localSlippagePercentage !== '' ? 'active' : ''}
               placeholder='0.50'

@@ -1,5 +1,4 @@
 import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
 import { useAccount, useContractWrite } from 'wagmi';
 import KittyABI from '../../../../assets/abis/Kitty.json';
@@ -70,9 +69,13 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'withdraw',
   });
 
-  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
+  const balanceOfUnderlying = useBalanceOfUnderlying(
+    token,
+    kitty,
+    accountAddress || ''
+  );
   const amountToShares = useAmountToShares(token, kitty, withdrawAmount);
-  
+
   const sharesToWithdraw = amountToShares ?? '0';
   const underlyingBalance = balanceOfUnderlying ?? '0';
 
@@ -96,9 +99,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         setIsPending(true);
         contract
           .writeAsync({
-            recklesslySetUnpreparedArgs: [
-              sharesToWithdraw
-            ],
+            recklesslySetUnpreparedArgs: [sharesToWithdraw],
             recklesslySetUnpreparedOverrides: {
               gasLimit: (600000).toFixed(0),
             },

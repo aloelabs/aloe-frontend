@@ -39,7 +39,6 @@ const ErrorMessageText = styled.div`
   line-height: 20px;
 `;
 
-
 export type TokenAmountInputProps = {
   value: string;
   tokenLabel: string;
@@ -61,11 +60,11 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         <Text size='M' weight='medium' color={INPUT_LABEL_TEXT_COLOR}>
           {props.tokenLabel}
         </Text>
-        {props.max !== undefined &&
+        {props.max !== undefined && (
           <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
             Balance: {props.max}
           </Text>
-        }
+        )}
       </div>
       <SquareInputWithMax
         size='L'
@@ -80,7 +79,9 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         value={props.value}
         onMaxClick={() => {
           if (props.max) {
-            props.onMax ? props.onMax(props.max) : props.onChange(props.max.toString());
+            props.onMax
+              ? props.onMax(props.max)
+              : props.onChange(props.max.toString());
           }
         }}
         maxDisabled={props.maxed}

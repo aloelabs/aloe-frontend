@@ -40,7 +40,9 @@ export default function TokensDepositedModal(props: TokensDepositedModalProps) {
       </div>
       <HorizontalDivider />
       <div className='flex flex-col gap-y-4 mb-4'>
-        <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>Deposit Summary:</Text>
+        <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
+          Deposit Summary:
+        </Text>
         <div className='flex justify-between items-center'>
           <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
             Pool Selected
@@ -66,7 +68,12 @@ export default function TokensDepositedModal(props: TokensDepositedModalProps) {
         token0Estimate={token0Estimate}
         token1Estimate={token1Estimate}
       />
-      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} className='mt-8'>
+      <FilledStylizedButton
+        size='M'
+        fillWidth={true}
+        color={MODAL_BLACK_TEXT_COLOR}
+        className='mt-8'
+      >
         View Your Position
       </FilledStylizedButton>
     </CloseableModal>

@@ -6,7 +6,7 @@ import {
 } from '../../data/constants/Breakpoints';
 
 export const ExternalPortfolioCardPlaceholder = styled.div`
-${tw`flex flex-col items-start justify-evenly`}
+  ${tw`flex flex-col items-start justify-evenly`}
   width: 100%;
   height: 150px;
   background: #0d171e;

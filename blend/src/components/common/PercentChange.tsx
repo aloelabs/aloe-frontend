@@ -103,9 +103,10 @@ export function CombinedPercentChange(props: CombinedPercentChangeProps) {
         <UpArrow />
         <Text size='S' weight='medium' color={POSITIVE_PERCENT_TEXT_COLOR}>
           {value.toLocaleString('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            })} ({roundPercentage(percent, PERCENT_ROUNDING_PRECISION)}%)
+            style: 'currency',
+            currency: 'USD',
+          })}{' '}
+          ({roundPercentage(percent, PERCENT_ROUNDING_PRECISION)}%)
         </Text>
       </PositiveCombinedPercentChangeContainer>
     );

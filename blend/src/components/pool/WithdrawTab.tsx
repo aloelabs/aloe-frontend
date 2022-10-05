@@ -5,15 +5,20 @@ import { useAccount, useBalance, useSigner } from 'wagmi';
 import { withdraw } from '../../connector/BlendWithdrawActions';
 import {
   BlendPoolDrawData,
-  ResolveBlendPoolDrawData
+  ResolveBlendPoolDrawData,
 } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import {
   DEFAULT_RATIO_CHANGE,
-  RATIO_CHANGE_CUTOFF
+  RATIO_CHANGE_CUTOFF,
 } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
-import { formatUSDCompact, prettyFormatBalance, String1E, toBig } from '../../util/Numbers';
+import {
+  formatUSDCompact,
+  prettyFormatBalance,
+  String1E,
+  toBig,
+} from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
 import Pending from '../common/Pending';
 import TokenAmountInput from '../common/TokenAmountInput';
@@ -64,7 +69,8 @@ const HorizontalDivider = styled.div`
   background-color: rgba(26, 41, 52, 1);
 `;
 
-const TOOLTIP_CONTENT_WITHDRAW = 'Withdrawal amounts are based on current prices. If prices shift while your transaction is pending, you may receive a different combination of tokens. If the token amounts differ by more than your selected slippage, the transaction will be cancelled instead.';
+const TOOLTIP_CONTENT_WITHDRAW =
+  'Withdrawal amounts are based on current prices. If prices shift while your transaction is pending, you may receive a different combination of tokens. If the token amounts differ by more than your selected slippage, the transaction will be cancelled instead.';
 
 export default function WithdrawTab(props: WithdrawTabProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -79,7 +85,7 @@ export default function WithdrawTab(props: WithdrawTabProps) {
 
   const [token0Estimate, setToken0Estimate] = useState('-');
   const [token1Estimate, setToken1Estimate] = useState('-');
-  const [usdEstimate, setUsdEstimate] = useState('-')
+  const [usdEstimate, setUsdEstimate] = useState('-');
 
   const { poolStats } = useContext(BlendPoolContext);
   const { address } = useAccount();
@@ -148,9 +154,13 @@ export default function WithdrawTab(props: WithdrawTabProps) {
 
     // Generate USD estimate
     if (offChainPoolStats) {
-      setUsdEstimate(formatUSDCompact(
-        sharesBig.mul(offChainPoolStats.total_value_locked)
-          .div(poolStats.outstandingShares).toNumber())
+      setUsdEstimate(
+        formatUSDCompact(
+          sharesBig
+            .mul(offChainPoolStats.total_value_locked)
+            .div(poolStats.outstandingShares)
+            .toNumber()
+        )
       );
     }
 
@@ -178,7 +188,7 @@ export default function WithdrawTab(props: WithdrawTabProps) {
     }
     return () => {
       mounted = false;
-    }
+    };
   }, [
     isTransactionPending,
     maxShares,

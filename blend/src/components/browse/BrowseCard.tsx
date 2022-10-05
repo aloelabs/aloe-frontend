@@ -3,10 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import {
-  BlendPoolMarkers,
-  PrintFeeTier,
-} from '../../data/BlendPoolMarkers';
+import { BlendPoolMarkers, PrintFeeTier } from '../../data/BlendPoolMarkers';
 import {
   BROWSE_CARD_WIDTH_LG,
   BROWSE_CARD_WIDTH_MD,
@@ -27,10 +24,7 @@ import {
 } from '../../util/Colors';
 import InvestedTypes from '../common/InvestedTypes';
 import TokenPairIcons from '../common/TokenPairIcons';
-import {
-  formatUSDAuto,
-  roundPercentage,
-} from '../../util/Numbers';
+import { formatUSDAuto, roundPercentage } from '../../util/Numbers';
 import { Display, Text } from '../common/Typography';
 import { theGraphUniswapV3Client } from '../../App';
 import { getUniswapVolumeQuery } from '../../util/GraphQL';
@@ -169,18 +163,31 @@ export default function BrowseCard(props: BrowseCardProps) {
   useEffect(() => {
     let mounted = true;
     const fetchData = async () => {
-      const uniswapVolumeQuery = getUniswapVolumeQuery(blockNumber, token0.address, token1.address, blendPoolMarkers.feeTier);
-      const uniswapVolumeData = await theGraphUniswapV3Client.query({ query: uniswapVolumeQuery});
+      const uniswapVolumeQuery = getUniswapVolumeQuery(
+        blockNumber,
+        token0.address,
+        token1.address,
+        blendPoolMarkers.feeTier
+      );
+      const uniswapVolumeData = await theGraphUniswapV3Client.query({
+        query: uniswapVolumeQuery,
+      });
 
       if (mounted) {
         setUniswapVolume(
-          uniswapVolumeData['data'] ?
-            uniswapVolumeData['data']['curr'][0]['volumeUSD'] - uniswapVolumeData['data']['prev'][0]['volumeUSD'] :
-            null
+          uniswapVolumeData['data']
+            ? uniswapVolumeData['data']['curr'][0]['volumeUSD'] -
+                uniswapVolumeData['data']['prev'][0]['volumeUSD']
+            : null
         );
       }
     };
-    if (blockNumber && token0.address && token1.address && blendPoolMarkers.feeTier) {
+    if (
+      blockNumber &&
+      token0.address &&
+      token1.address &&
+      blendPoolMarkers.feeTier
+    ) {
       fetchData();
     }
     return () => {

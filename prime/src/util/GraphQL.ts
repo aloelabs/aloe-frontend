@@ -51,21 +51,29 @@ export const UniswapPairValueQuery = gql`
 `;
 
 export const UniswapTicksQuery = gql`
-  query GetUniswapTicks($poolAddress: String!, $minTick: BigInt!, $maxTick: BigInt!) {
+  query GetUniswapTicks(
+    $poolAddress: String!
+    $minTick: BigInt!
+    $maxTick: BigInt!
+  ) {
     pools(where: { id: $poolAddress }) {
       token0 {
         decimals
-      },
+      }
       token1 {
         decimals
-      },
-      liquidity,
-      tick,
-      ticks(first: 1000, orderBy: tickIdx, where: { tickIdx_gt: $minTick, tickIdx_lt: $maxTick }) {
-        tickIdx,
-        liquidityNet,
-        price0,
-        price1,
+      }
+      liquidity
+      tick
+      ticks(
+        first: 1000
+        orderBy: tickIdx
+        where: { tickIdx_gt: $minTick, tickIdx_lt: $maxTick }
+      ) {
+        tickIdx
+        liquidityNet
+        price0
+        price1
       }
     }
   }

@@ -1,6 +1,9 @@
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINT_SM,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../../data/constants/Breakpoints';
 
 export const BlendGraphPlaceholder = styled.div`
   ${tw`flex flex-col items-start justify-evenly`}

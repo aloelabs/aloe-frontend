@@ -16,7 +16,11 @@ const Wrapper = styled.div`
     top: 0;
     width: 40px;
     height: 100%;
-    background: linear-gradient(to left, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
+    background: linear-gradient(
+      to left,
+      rgba(8, 14, 18, 0),
+      rgba(8, 14, 18, 0.8)
+    );
     z-index: 10;
   }
 
@@ -27,18 +31,22 @@ const Wrapper = styled.div`
     top: 0;
     width: 40px;
     height: 100%;
-    background: linear-gradient(to right, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
+    background: linear-gradient(
+      to right,
+      rgba(8, 14, 18, 0),
+      rgba(8, 14, 18, 0.8)
+    );
     z-index: 10;
   }
 `;
 
 const Slider = styled.div.attrs(
-  (props: { duration: number, shouldAnimate: boolean }) => props
+  (props: { duration: number; shouldAnimate: boolean }) => props
 )`
   ${tw`flex`}
   width: max-content;
-  animation-name: ${(props) => props.shouldAnimate ? 'slide' : 'none'};
-  animation-duration: ${props => props.duration ?? 0}s;
+  animation-name: ${(props) => (props.shouldAnimate ? 'slide' : 'none')};
+  animation-duration: ${(props) => props.duration ?? 0}s;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 
@@ -69,7 +77,7 @@ const TokenIcon = styled.img`
 
 export type BalanceSliderProps = {
   tokenBalances: TokenBalance[];
-}
+};
 
 export default function BalanceSlider(props: BalanceSliderProps) {
   const { tokenBalances } = props;
@@ -81,7 +89,8 @@ export default function BalanceSlider(props: BalanceSliderProps) {
     const wasAnimating = shouldAnimate;
     if (wrapperRef.current && sliderRef.current) {
       const wrapperWidth = wrapperRef.current.offsetWidth;
-      const sliderWidth = sliderRef.current.offsetWidth / (wasAnimating ? 2 : 1);
+      const sliderWidth =
+        sliderRef.current.offsetWidth / (wasAnimating ? 2 : 1);
       if (wrapperWidth < sliderWidth && !wasAnimating) {
         setShouldAnimate(true);
       } else if (wrapperWidth >= sliderWidth && wasAnimating) {
@@ -89,34 +98,43 @@ export default function BalanceSlider(props: BalanceSliderProps) {
       }
     }
   }, [tokenBalances, shouldAnimate]);
-  
+
   return (
     <Wrapper ref={wrapperRef}>
-      <Slider ref={sliderRef} duration={tokenBalances.length * 2} shouldAnimate={shouldAnimate}>
+      <Slider
+        ref={sliderRef}
+        duration={tokenBalances.length * 2}
+        shouldAnimate={shouldAnimate}
+      >
         {tokenBalances.map((tokenBalance, index) => {
           return (
             <SliderItem key={index}>
-              <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
+              <TokenIcon
+                src={tokenBalance.token.iconPath || ''}
+                alt={tokenBalance.token.name}
+              />
               {tokenBalance.token.name}
               {' - '}
-              {formatTokenAmount(tokenBalance.balance)}
-              {' '}
+              {formatTokenAmount(tokenBalance.balance)}{' '}
               {tokenBalance.token.ticker}
             </SliderItem>
           );
         })}
-        {shouldAnimate && tokenBalances.map((tokenBalance, index) => {
-          return (
-            <SliderItem key={index}>
-              <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
-              {tokenBalance.token.name}
-              {' - '}
-              {formatTokenAmount(tokenBalance.balance)}
-              {' '}
-              {tokenBalance.token.ticker}
-            </SliderItem>
-          );
-        })}
+        {shouldAnimate &&
+          tokenBalances.map((tokenBalance, index) => {
+            return (
+              <SliderItem key={index}>
+                <TokenIcon
+                  src={tokenBalance.token.iconPath || ''}
+                  alt={tokenBalance.token.name}
+                />
+                {tokenBalance.token.name}
+                {' - '}
+                {formatTokenAmount(tokenBalance.balance)}{' '}
+                {tokenBalance.token.ticker}
+              </SliderItem>
+            );
+          })}
       </Slider>
     </Wrapper>
   );

@@ -103,7 +103,9 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
   const [searchText, setSearchText] = useState<string>('');
   const [activeSearchText, setActiveSearchText] = useState<string>('');
   const [pools, setPools] = useState<BlendPoolMarkers[]>([]);
-  const [searchablePools, setSearchablePools] = useState<BlendPoolMarkers[]>([]);
+  const [searchablePools, setSearchablePools] = useState<BlendPoolMarkers[]>(
+    []
+  );
   const [filteredPools, setFilteredPools] = useState<BlendPoolMarkers[]>([]);
   const [activePools, setActivePools] = useState<BlendPoolMarkers[]>([]);
   const [poolsToDisplay, setPoolsToDisplay] = useState<BlendPoolMarkers[]>([]);
@@ -142,13 +144,15 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-    }
+    };
   }, []);
 
   const loadData = useCallback(async () => {
     let poolData = Array.from(poolDataMap.values()) as BlendPoolMarkers[];
     // Filter out deprecated pools
-    let nonDeprecatedPoolData = poolData.filter((pool) => !isPoolDeprecated(pool));
+    let nonDeprecatedPoolData = poolData.filter(
+      (pool) => !isPoolDeprecated(pool)
+    );
     if (isMounted.current) {
       setPools(nonDeprecatedPoolData);
       setSearchablePools(poolData);
@@ -226,32 +230,32 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
       if (isMounted.current) {
         setActivePools(
           pools
-          .filter((pool) => IS_DEV || !isHiddenPool(pool.poolAddress)) // Hide pools that should only be shown in dev mode
-          .filter((pool) => {
-            const {
-              silo0Name,
-              silo1Name,
-              silo0Label,
-              silo1Label,
-              token0Label,
-              token1Label,
-            } = ResolveBlendPoolDrawData(pool);
-
-            return (
-              [
+            .filter((pool) => IS_DEV || !isHiddenPool(pool.poolAddress)) // Hide pools that should only be shown in dev mode
+            .filter((pool) => {
+              const {
                 silo0Name,
                 silo1Name,
                 silo0Label,
                 silo1Label,
                 token0Label,
                 token1Label,
-              ].findIndex((field) => {
-                return activeTokenOptions
-                  .map((option) => option.label.toLowerCase())
-                  .includes(field.toLowerCase());
-              }) !== -1
-            );
-          })
+              } = ResolveBlendPoolDrawData(pool);
+
+              return (
+                [
+                  silo0Name,
+                  silo1Name,
+                  silo0Label,
+                  silo1Label,
+                  token0Label,
+                  token1Label,
+                ].findIndex((field) => {
+                  return activeTokenOptions
+                    .map((option) => option.label.toLowerCase())
+                    .includes(field.toLowerCase());
+                }) !== -1
+              );
+            })
         );
         setActiveLoading(false);
       }

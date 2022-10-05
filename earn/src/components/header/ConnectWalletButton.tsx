@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { chain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
+import {
+  chain,
+  useConnect,
+  useDisconnect,
+  useNetwork,
+  useSwitchNetwork,
+} from 'wagmi';
 
 import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
-import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
+import {
+  FilledStylizedButton,
+  OutlinedGradientRoundedButton,
+} from '../common/Buttons';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 export type ConnectWalletButtonProps = {
   address?: string;
@@ -16,17 +24,28 @@ export type ConnectWalletButtonProps = {
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { address, ensName, buttonStyle } = props;
+  const { address, ensName } = props;
   const formattedAddr = address ? formatAddress(address) : '';
-  const buttonText = address ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
+  const buttonText = address
+    ? ensName
+      ? ensName
+      : formattedAddr
+    : 'Connect Wallet';
 
   // MARK: component state
-  const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] = useState<boolean>(false);
+  const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] =
+    useState<boolean>(false);
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
-  const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
+  const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] =
+    useState<boolean>(true);
 
   // MARK: wagmi hooks
-  const { connect, connectors, data: connectionData, error } = useConnect({ chainId: chain.goerli.id });
+  const {
+    connect,
+    connectors,
+    data: connectionData,
+    error,
+  } = useConnect({ chainId: chain.goerli.id });
   const { chain: currentChain } = useNetwork();
   const { isLoading, switchNetwork } = useSwitchNetwork({
     chainId: chain.goerli.id,
@@ -38,16 +57,24 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
     },
   });
   useEffect(() => {
-    if (!isLoading && currentChain?.id !== chain.goerli.id && shouldAttemptToSwitchNetwork) {
+    if (
+      !isLoading &&
+      currentChain?.id !== chain.goerli.id &&
+      shouldAttemptToSwitchNetwork
+    ) {
       switchNetwork?.(chain.goerli.id);
     }
   }, [shouldAttemptToSwitchNetwork, currentChain, isLoading, switchNetwork]);
   const { disconnect } = useDisconnect();
-  
+
   return (
     <div>
       {!props.buttonStyle && (
-        <OutlinedGradientRoundedButton name={buttonText} size='S' onClick={() => setWalletModalOpen(true)}>
+        <OutlinedGradientRoundedButton
+          name={buttonText}
+          size='S'
+          onClick={() => setWalletModalOpen(true)}
+        >
           {buttonText}
         </OutlinedGradientRoundedButton>
       )}
@@ -74,19 +101,35 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           {buttonText}
         </FilledStylizedButton>
       )}
-      <CloseableModal open={switchChainPromptModalOpen} setOpen={setSwitchChainPromptModalOpen} title={'Switch Chain'}>
+      <CloseableModal
+        open={switchChainPromptModalOpen}
+        setOpen={setSwitchChainPromptModalOpen}
+        title={'Switch Chain'}
+      >
         <div className='w-full'></div>
       </CloseableModal>
-      <CloseableModal open={walletModalOpen} setOpen={setWalletModalOpen} title={'Connect Wallet'}>
+      <CloseableModal
+        open={walletModalOpen}
+        setOpen={setWalletModalOpen}
+        title={'Connect Wallet'}
+      >
         <div className='w-full'>
           {address ? (
             // We have an account connected
             <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
               <div className='flex flex-col items-start justify-start w-full oveflow-hidden'>
-                <Text size='M' className='w-full overflow-hidden text-ellipsis' title={address}>
+                <Text
+                  size='M'
+                  className='w-full overflow-hidden text-ellipsis'
+                  title={address}
+                >
                   {ensName ? `${ensName} (${formattedAddr})` : address}
                 </Text>
-                <Text size='S' color='rgb(194, 209, 221)' className='w-full overflow-hidden text-ellipsis'>
+                <Text
+                  size='S'
+                  color='rgb(194, 209, 221)'
+                  className='w-full overflow-hidden text-ellipsis'
+                >
                   Connected to {connectionData?.connector?.name}
                 </Text>
               </div>
@@ -126,8 +169,15 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                 .
               </Text>
               {connectors.map((connector) => (
-                <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
-                  <img src={mapConnectorNameToIcon(connector.name)} alt='' className='w-10 h-10 mr-4' />
+                <div
+                  key={connector.id}
+                  className=' py-2 w-full flex flex-row items-center justify-between'
+                >
+                  <img
+                    src={mapConnectorNameToIcon(connector.name)}
+                    alt=''
+                    className='w-10 h-10 mr-4'
+                  />
                   <FilledStylizedButton
                     name='Disconnect'
                     size='M'

@@ -74,14 +74,22 @@ export default function InvestedTypes(props: InvestedTypeProps) {
   return (
     <InvestedTypesContainer shouldGrow={shouldGrow}>
       <InvestedType figureColor={figureColor}>
-        <Text size='M' weight='medium'>{token0.ticker}</Text>
+        <Text size='M' weight='medium'>
+          {token0.ticker}
+        </Text>
         <DashedDivider />
-        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>via {silo0.shortName}</Text>
+        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+          via {silo0.shortName}
+        </Text>
       </InvestedType>
       <InvestedType figureColor={figureColor}>
-        <Text size='M' weight='medium'>{token1.ticker}</Text>
+        <Text size='M' weight='medium'>
+          {token1.ticker}
+        </Text>
         <DashedDivider />
-        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>via {silo1.shortName}</Text>
+        <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+          via {silo1.shortName}
+        </Text>
       </InvestedType>
     </InvestedTypesContainer>
   );
