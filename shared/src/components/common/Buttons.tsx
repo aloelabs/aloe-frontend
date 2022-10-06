@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { classNames } from '../../utils/ClassNames';
-import LeftChevron from '../../assets/svg/left_chevron.svg';
+import { classNames } from '../../util/ClassNames';
+import LeftChevron from '../../assets/svg/LeftChevron';
 import { Text } from './Typography';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
@@ -793,16 +793,13 @@ export function WarningButtonWithIcon(props: ButtonWithIconWrapperOldProps) {
 }
 
 const PreviousPageButtonWrapper = styled.button`
-  ${tw`flex items-center justify-center`}
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 35px;
   height: 35px;
   border-radius: 8px;
   background-color: rgba(26, 41, 52, 1);
-`;
-
-const PreviousPageIcon = styled.img`
-  width: 19px;
-  height: 19px;
 `;
 
 export type PreviousPageButtonProps = {
@@ -813,7 +810,7 @@ export function PreviousPageButton(props: PreviousPageButtonProps) {
   const { onClick } = props;
   return (
     <PreviousPageButtonWrapper onClick={onClick}>
-      <PreviousPageIcon src={LeftChevron} alt='Previous Page' />
+      <LeftChevron />
     </PreviousPageButtonWrapper>
   );
 }
