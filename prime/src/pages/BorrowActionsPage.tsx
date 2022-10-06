@@ -194,6 +194,11 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
 
+  useEffect(() => {
+    setBorrowInterestInputValue('');
+    setSwapFeesInputValue('');
+  }, [isToken0Selected]);
+
   // MARK: fetch margin account
   useEffect(() => {
     let mounted = true;
