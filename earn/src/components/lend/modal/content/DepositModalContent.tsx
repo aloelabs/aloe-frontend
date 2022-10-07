@@ -11,7 +11,7 @@ import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
 import { TokenData } from '../../../../data/TokenData';
 import { toBig } from '../../../../util/Numbers';
-import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
+import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';

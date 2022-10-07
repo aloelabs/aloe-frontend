@@ -3,7 +3,7 @@ import { chain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from '
 
 import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
-import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
+import { FilledStylizedButton, OutlinedGradientRoundedButton } from 'shared/lib/components/common/Buttons';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
 import { Text } from 'shared/lib/components/common/Typography';
 

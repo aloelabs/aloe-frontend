@@ -8,7 +8,7 @@ import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses
 import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenData } from '../../../../data/TokenData';
-import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
+import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
