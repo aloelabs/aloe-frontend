@@ -1,6 +1,6 @@
 import React from 'react';
 import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
-import RoundedBadge from './RoundedBadge';
+import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
 
 export type FeeTierProps = {
   feeTier: FeeTier;
@@ -9,9 +9,5 @@ export type FeeTierProps = {
 
 export default function FeeTierContainer(props: FeeTierProps) {
   const { feeTier, className } = props;
-  return (
-    <RoundedBadge className={className}>
-      Uniswap Fee Tier - {PrintFeeTier(feeTier)}
-    </RoundedBadge>
-  );
+  return <RoundedBadge className={className}>Uniswap Fee Tier - {PrintFeeTier(feeTier)}</RoundedBadge>;
 }

@@ -13,9 +13,7 @@ export const IOS_STYLE_SPINNER_SIZES = {
   L: 1,
 };
 
-export const AltSpinner = styled.div.attrs(
-  (props: { size?: 'S' | 'M' | 'L' }) => props
-)`
+export const AltSpinner = styled.div.attrs((props: { size?: 'S' | 'M' | 'L' }) => props)`
   --size: ${(props) => ALT_SPINNER_SIZES[props.size || 'L']}px;
   --offset: ${(props) => ALT_SPINNER_SIZES[props.size || 'L'] / 2}px;
   position: absolute;
@@ -39,19 +37,13 @@ export const AltSpinner = styled.div.attrs(
   }
 `;
 
-const IOSStyleSpinnerWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L' }) => props
-)`
+const IOSStyleSpinnerWrapper = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
   span {
-    --translate-y: ${(props) =>
-      `calc(-30px * ${IOS_STYLE_SPINNER_SIZES[props.size]})`};
+    --translate-y: ${(props) => `calc(-30px * ${IOS_STYLE_SPINNER_SIZES[props.size]})`};
     --width: ${(props) => `calc(8px * ${IOS_STYLE_SPINNER_SIZES[props.size]})`};
-    --height: ${(props) =>
-      `calc(20px * ${IOS_STYLE_SPINNER_SIZES[props.size]})`};
-    --offset-left: ${(props) =>
-      `calc(50% - calc(8px / 2 * ${IOS_STYLE_SPINNER_SIZES[props.size]}))`};
-    --offset-top: ${(props) =>
-      `calc(50% - calc(20px / 2 * ${IOS_STYLE_SPINNER_SIZES[props.size]}))`};
+    --height: ${(props) => `calc(20px * ${IOS_STYLE_SPINNER_SIZES[props.size]})`};
+    --offset-left: ${(props) => `calc(50% - calc(8px / 2 * ${IOS_STYLE_SPINNER_SIZES[props.size]}))`};
+    --offset-top: ${(props) => `calc(50% - calc(20px / 2 * ${IOS_STYLE_SPINNER_SIZES[props.size]}))`};
     display: block;
     position: absolute;
     left: var(--offset-left);

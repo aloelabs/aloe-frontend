@@ -46,7 +46,8 @@
   "scripts": {
     "start": "cd ../shared && yarn build && cd ../earn && craco start",
     "build": "cd ../shared && yarn build && cd ../earn && craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "lint": "eslint --fix --ext .tsx,.ts ."
   },
   "eslintConfig": {
     "extends": [

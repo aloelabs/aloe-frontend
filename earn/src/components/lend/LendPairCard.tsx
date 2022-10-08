@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import {
-  getBrighterColor,
-  getProminentColor,
-  rgb,
-  rgba,
-} from '../../util/Colors';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import FeeTierContainer from '../common/FeeTierContainer';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -18,7 +13,7 @@ import {
   CardSubTitleWrapper,
   CardTitleWrapper,
   CardWrapper,
-} from '../common/Card';
+} from 'shared/lib/components/common/Card';
 import tw from 'twin.macro';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
@@ -52,7 +47,7 @@ const CardActionButton = styled.button`
   }
 `;
 
-function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => void, disabled?: boolean }) {
+function EditPositionButton(props: { Icon: React.ReactChild; onClick?: () => void; disabled?: boolean }) {
   return (
     <CardActionButton onClick={props?.onClick} disabled={props.disabled}>
       {props.Icon}
@@ -60,22 +55,11 @@ function EditPositionButton(props: { Icon: React.ReactChild, onClick?: () => voi
   );
 }
 
-export default function LendPairCard(props: LendingPair & {hasDeposited0: boolean, hasDeposited1: boolean}) {
-  const {
-    token0,
-    token1,
-    kitty0,
-    kitty1,
-    kitty0Info,
-    kitty1Info,
-    uniswapFeeTier,
-    hasDeposited0,
-    hasDeposited1,
-  } = props;
-  const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] =
-    useState<boolean>(false);
-  const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] =
-    useState<boolean>(false);
+export default function LendPairCard(props: LendingPair & { hasDeposited0: boolean; hasDeposited1: boolean }) {
+  const { token0, token1, kitty0, kitty1, kitty0Info, kitty1Info, uniswapFeeTier, hasDeposited0, hasDeposited1 } =
+    props;
+  const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] = useState<boolean>(false);
+  const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] = useState<boolean>(false);
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
@@ -96,17 +80,12 @@ export default function LendPairCard(props: LendingPair & {hasDeposited0: boolea
     };
   });
   // Create the variables for the gradients.
-  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(
-    token0Color,
+  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
+    token1Color,
     0.25
-  )} 0%, ${rgba(token1Color, 0.25)} 100%)`;
-  const cardBorderGradient = `linear-gradient(90deg, ${rgb(
-    token0Color
-  )} 0%, ${rgb(token1Color)} 100%)`;
-  const cardShadowColor = rgba(
-    getBrighterColor(token0Color, token1Color),
-    0.16
-  );
+  )} 100%)`;
+  const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
+  const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);
 
   return (
     <div>
@@ -152,18 +131,15 @@ export default function LendPairCard(props: LendingPair & {hasDeposited0: boolea
                 </Text>
               </TokenAPYWrapper>
             </div>
-            <LendTokenInfo
-              token={token0}
-              totalSupply={kitty0Info.inventory}
-              utilization={kitty0Info.utilization}
-            />
-            {isCardHovered &&
-              (<EditPositionButton
+            <LendTokenInfo token={token0} totalSupply={kitty0Info.inventory} utilization={kitty0Info.utilization} />
+            {isCardHovered && (
+              <EditPositionButton
                 Icon={hasDeposited0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
-              />)}
+              />
+            )}
           </CustomBodySubContainer>
           <BodyDivider />
           <CustomBodySubContainer>
@@ -177,20 +153,15 @@ export default function LendPairCard(props: LendingPair & {hasDeposited0: boolea
                 </Text>
               </TokenAPYWrapper>
             </div>
-            <LendTokenInfo
-              token={token1}
-              totalSupply={kitty1Info.inventory}
-              utilization={kitty1Info.utilization}
-            />
-            {isCardHovered &&
-              (
-                <EditPositionButton
-                  Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
-                  onClick={() => {
-                    setIsEditToken1PositionModalOpen(true);
-                  }}
-                />
-              )}
+            <LendTokenInfo token={token1} totalSupply={kitty1Info.inventory} utilization={kitty1Info.utilization} />
+            {isCardHovered && (
+              <EditPositionButton
+                Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
+                onClick={() => {
+                  setIsEditToken1PositionModalOpen(true);
+                }}
+              />
+            )}
           </CustomBodySubContainer>
         </CardBodyWrapper>
       </CardWrapper>

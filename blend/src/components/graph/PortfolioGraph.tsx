@@ -18,9 +18,7 @@ import { Display, Text } from '../common/Typography';
 import Graph from './Graph';
 import GraphButtons, { buttonIdxToText } from './GraphButtons';
 import { PortfolioGraphPlaceholder } from './PortfolioGraphPlaceholder';
-import PortfolioGraphTooltip, {
-  PORTFOLIO_TOOLTIP_WIDTH,
-} from './tooltips/PortfolioGraphTooltip';
+import PortfolioGraphTooltip, { PORTFOLIO_TOOLTIP_WIDTH } from './tooltips/PortfolioGraphTooltip';
 
 const GRAPH_HEIGHT = 222.5;
 
@@ -64,9 +62,7 @@ const ResponsiveContainerStyled = styled.div`
   }
 `;
 
-const GraphButtonsWrapper = styled.div.attrs(
-  (props: { blur: boolean }) => props
-)`
+const GraphButtonsWrapper = styled.div.attrs((props: { blur: boolean }) => props)`
   position: absolute;
   top: 6px;
   right: 88px;
@@ -155,7 +151,7 @@ function makeRequest(reqUrl: string) {
   });
 }
 
-function calculateNextDate(currentDate: Date, activeButton: number) : Date {
+function calculateNextDate(currentDate: Date, activeButton: number): Date {
   switch (activeButton) {
     case 0:
       return addHours(currentDate, 1);
@@ -242,13 +238,10 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
     let mounted = true;
     const fetchPoolStats = async (accountAddress: string) => {
       const getShareBalances = makeRequest(
-        `${API_URL}/share_balances/${accountAddress}/1/${buttonIdxToText(
-          activeButton
-        ).toLowerCase()}/${(subMinutes(toDate, 2).getTime() / 1000).toFixed(0)}`
+        `${API_URL}/share_balances/${accountAddress}/1/${buttonIdxToText(activeButton).toLowerCase()}/${(
+          subMinutes(toDate, 2).getTime() / 1000
+        ).toFixed(0)}`
       );
-      // const netDepositsResponse = await axios.get(
-      //   `${API_URL}/net_deposits/0x74d92d4bd54123271c841e363915f7d8758e59e7/1/${buttonIdxToText(activeButton).toLowerCase()}/1651632134`
-      // );
       const getPool = makeRequest(
         `${API_URL}/pool_returns/0xE801c4175A0341e65dFef8F3B79e1889047AfEbb/1/${buttonIdxToText(
           activeButton
@@ -267,70 +260,60 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
       axios
         .all([getShareBalances, getPool, getWbtc, getWeth])
         .then(
-          axios.spread(
-            (
-              shareBalancesResponse,
-              poolResponse,
-              wbtcResponse,
-              wethResponse
-            ) => {
-              const shareBalanaces = shareBalancesResponse.data;
-              // const netDeposits = netDepositsResponse.data;
-              const poolReturns = poolResponse.data;
-              const wbtcReturns = wbtcResponse.data;
-              const wethReturns = wethResponse.data;
-              let totalSupplyData = {} as any;
-              let portfolioData = [];
-              const shareBalancesKeys = Object.keys(shareBalanaces);
-              // const netDepositsKeys = Object.keys(netDeposits);
-              for (let i = 0; i < poolReturns.length; i++) {
-                const poolReturn = poolReturns[i];
-                const wbtcReturn = wbtcReturns[i];
-                const wethReturn = wethReturns[i];
-                const timestamp = poolReturn.timestamp;
-                totalSupplyData[new Date(timestamp).toISOString()] = {
-                  value:
-                    poolReturn.inventory0 * wbtcReturn.price +
-                    poolReturn.inventory1 * wethReturn.price,
-                  supply: poolReturn.total_supply,
-                };
-              }
-              const dates = Object.keys(totalSupplyData);
-              for (let i = 0; i < shareBalancesKeys.length; i++) {
-                const shareBalancesKey = shareBalancesKeys[i];
-                // const netDepositsKey = netDepositsKeys[i];
-                const shareBalancesValue = shareBalanaces[shareBalancesKey];
-                // const netDepositsValue = netDeposits[netDepositsKey];
-                for (let j = 0; j < shareBalancesValue.length; j++) {
-                  const timestamp = shareBalancesValue[j].timestamp * 1000;
-                  const date = new Date(timestamp);
-                  const closestDate = closestTo(
-                    date,
-                    dates.map((d) => new Date(d))
-                  );
-                  if (closestDate) {
-                    const obj = totalSupplyData[closestDate.toISOString()];
-                    const percentOwned =
-                      shareBalancesValue[j].balance / obj.supply;
-                    portfolioData.push({
-                      'Portfolio Value': percentOwned * obj.value,
-                      'Net Deposits': 0, //netDepositsValue[j].net_deposit,
-                      x: new Date(timestamp).toISOString(),
-                    });
-                  }
+          axios.spread((shareBalancesResponse, poolResponse, wbtcResponse, wethResponse) => {
+            const shareBalanaces = shareBalancesResponse.data;
+            // const netDeposits = netDepositsResponse.data;
+            const poolReturns = poolResponse.data;
+            const wbtcReturns = wbtcResponse.data;
+            const wethReturns = wethResponse.data;
+            let totalSupplyData = {} as any;
+            let portfolioData = [];
+            const shareBalancesKeys = Object.keys(shareBalanaces);
+            // const netDepositsKeys = Object.keys(netDeposits);
+            for (let i = 0; i < poolReturns.length; i++) {
+              const poolReturn = poolReturns[i];
+              const wbtcReturn = wbtcReturns[i];
+              const wethReturn = wethReturns[i];
+              const timestamp = poolReturn.timestamp;
+              totalSupplyData[new Date(timestamp).toISOString()] = {
+                value: poolReturn.inventory0 * wbtcReturn.price + poolReturn.inventory1 * wethReturn.price,
+                supply: poolReturn.total_supply,
+              };
+            }
+            const dates = Object.keys(totalSupplyData);
+            for (let i = 0; i < shareBalancesKeys.length; i++) {
+              const shareBalancesKey = shareBalancesKeys[i];
+              // const netDepositsKey = netDepositsKeys[i];
+              const shareBalancesValue = shareBalanaces[shareBalancesKey];
+              // const netDepositsValue = netDeposits[netDepositsKey];
+              for (let j = 0; j < shareBalancesValue.length; j++) {
+                const timestamp = shareBalancesValue[j].timestamp * 1000;
+                const date = new Date(timestamp);
+                const closestDate = closestTo(
+                  date,
+                  dates.map((d) => new Date(d))
+                );
+                if (closestDate) {
+                  const obj = totalSupplyData[closestDate.toISOString()];
+                  const percentOwned = shareBalancesValue[j].balance / obj.supply;
+                  portfolioData.push({
+                    'Portfolio Value': percentOwned * obj.value,
+                    'Net Deposits': 0, //netDepositsValue[j].net_deposit,
+                    x: new Date(timestamp).toISOString(),
+                  });
                 }
-              }
-              if (mounted) {
-                if (portfolioData.length > 0) {
-                  setData(portfolioData);
-                } else {
-                  setData(generateEmptyData(fromDate, toDate, activeButton));
-                }
-                setGraphError(false);
-                setGraphLoading(false);
               }
             }
-          )
+            if (mounted) {
+              if (portfolioData.length > 0) {
+                setData(portfolioData);
+              } else {
+                setData(generateEmptyData(fromDate, toDate, activeButton));
+              }
+              setGraphError(false);
+              setGraphLoading(false);
+            }
+          })
         )
         .catch(() => {
           if (mounted) {
@@ -346,12 +329,11 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
       mounted = false;
     };
   }, [accountAddress, activeButton, fromDate, toDate]);
-  
+
   const initialEstimatedValue = data.length > 0 ? data[0]['Portfolio Value'] : 0;
   const currentEstimatedValue = data.length > 0 ? data[data.length - 1]['Portfolio Value'] : 0;
   const estimatedValueChange = currentEstimatedValue - initialEstimatedValue;
-  const estimatedValueChangePercent =
-    (estimatedValueChange / initialEstimatedValue) * 100 || 0;
+  const estimatedValueChangePercent = (estimatedValueChange / initialEstimatedValue) * 100 || 0;
   return (
     <ResponsiveContainerStyled>
       <InfoContainer blur={isTooltipActive}>
@@ -366,10 +348,7 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
             })}{' '}
             USD
           </Display>
-          <CombinedPercentChange
-            value={estimatedValueChange}
-            percent={estimatedValueChangePercent}
-          />
+          <CombinedPercentChange value={estimatedValueChange} percent={estimatedValueChangePercent} />
         </ValueAndChangeContainer>
       </InfoContainer>
       <GraphButtonsWrapper blur={isTooltipActive}>
@@ -404,9 +383,7 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
             {
               type: 'stepAfter',
               dataKey: 'Net Deposits',
-              stroke: isTooltipActive
-                ? NET_DEPOSITS_STROKE_COLOR
-                : 'transparent',
+              stroke: isTooltipActive ? NET_DEPOSITS_STROKE_COLOR : 'transparent',
               fill: 'none',
               fillOpacity: 0,
               strokeDasharray: '5 5',
@@ -415,23 +392,9 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
           ]}
           tickTextColor={TEXT_COLOR}
           linearGradients={[
-            <linearGradient
-              id='totalReturnsGradient'
-              x1='0'
-              y1='0'
-              x2='0'
-              y2='1'
-            >
-              <stop
-                offset='-29%'
-                stopColor={TOTAL_RETURNS_GRADIENT_COLOR}
-                stopOpacity={0.25}
-              />
-              <stop
-                offset='99.93%'
-                stopColor={TOTAL_RETURNS_GRADIENT_COLOR}
-                stopOpacity={0}
-              />
+            <linearGradient id='totalReturnsGradient' x1='0' y1='0' x2='0' y2='1'>
+              <stop offset='-29%' stopColor={TOTAL_RETURNS_GRADIENT_COLOR} stopOpacity={0.25} />
+              <stop offset='99.93%' stopColor={TOTAL_RETURNS_GRADIENT_COLOR} stopOpacity={0} />
             </linearGradient>,
           ]}
           CustomTooltip={<PortfolioGraphTooltip />}

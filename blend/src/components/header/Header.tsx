@@ -43,8 +43,8 @@ if (IS_DEV) {
       title: 'Vote',
       name: 'governance',
       url: '/governance',
-    },
-  )
+    }
+  );
 }
 
 const StyledNavLink = styled(Text)`
@@ -165,7 +165,12 @@ export default function Header() {
             </React.Fragment>
           ))}
           <div className='w-full'>
-            <ConnectWalletButton address={address} ensName={ensName as string} activeConnector={activeConnector} buttonStyle='tertiary' />
+            <ConnectWalletButton
+              address={address}
+              ensName={ensName as string}
+              activeConnector={activeConnector}
+              buttonStyle='tertiary'
+            />
           </div>
         </NavDropdown>
       )}

@@ -1,22 +1,11 @@
 import React from 'react';
-import {
-  Area,
-  AreaChart,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { differenceInDays, format, parseISO } from 'date-fns/esm';
 import { CurveType } from 'recharts/types/shape/Curve';
 import { AxisDomain } from 'recharts/types/util/types';
 import { getEvenlySpacedDates } from '../../util/Dates';
 
-export function getIdealStep(
-  diffInDays: number,
-  numUniqueYears: number
-): number {
+export function getIdealStep(diffInDays: number, numUniqueYears: number): number {
   if (diffInDays <= 7) {
     return 5;
   } else if (diffInDays <= 366) {
@@ -57,9 +46,7 @@ export type CustomizedResponsiveContainerProps = {
   setIsActive?: (isActive: boolean) => void;
 };
 
-function CustomizedResponsiveContainer(
-  props: CustomizedResponsiveContainerProps
-) {
+function CustomizedResponsiveContainer(props: CustomizedResponsiveContainerProps) {
   const { className, height, children, setIsActive } = props;
   return (
     <div
@@ -113,20 +100,14 @@ export default function Graph(props: GraphProps) {
   const dates = data.map((d: any) => d.x) as string[];
   const updatedTo = new Date(dates[dates.length - 1]);
   const updatedFrom = new Date(dates[0]);
-  const numberOfUniqueYears = new Set(
-    dates.map((d) => parseISO(d).getFullYear())
-  ).size;
+  const numberOfUniqueYears = new Set(dates.map((d) => parseISO(d).getFullYear())).size;
   const diffInDays = differenceInDays(updatedTo, updatedFrom);
   const step = getIdealStep(diffInDays, numberOfUniqueYears);
   const dateFormat = getIdealDateFormat(diffInDays);
   const ticks = getEvenlySpacedDates(dates, step).slice(1);
 
   return (
-    <CustomizedResponsiveContainer
-      className={containerClassName}
-      height={containerHeight}
-      setIsActive={setIsActive}
-    >
+    <CustomizedResponsiveContainer className={containerClassName} height={containerHeight} setIsActive={setIsActive}>
       <AreaChart
         width={964}
         data={data}
@@ -136,9 +117,7 @@ export default function Graph(props: GraphProps) {
       >
         <defs>
           {linearGradients &&
-            linearGradients.map((gradient, index) => (
-              <React.Fragment key={index}>{gradient}</React.Fragment>
-            ))}
+            linearGradients.map((gradient, index) => <React.Fragment key={index}>{gradient}</React.Fragment>)}
         </defs>
         <XAxis
           dataKey='x'
@@ -147,9 +126,7 @@ export default function Graph(props: GraphProps) {
           interval={0}
           ticks={ticks}
           tick={{ fill: tickTextColor, fontSize: '14px' }}
-          tickFormatter={(tickString) =>
-            format(parseISO(tickString), dateFormat)
-          }
+          tickFormatter={(tickString) => format(parseISO(tickString), dateFormat)}
           tickLine={false}
         />
         <YAxis axisLine={false} tick={false} width={0} domain={yAxisDomain} />
@@ -174,9 +151,7 @@ export default function Graph(props: GraphProps) {
             activeDot={chart.activeDot}
           />
         ))}
-        {showLegend && (
-          <Legend iconType='rect' content={LegendContent}></Legend>
-        )}
+        {showLegend && <Legend iconType='rect' content={LegendContent}></Legend>}
       </AreaChart>
     </CustomizedResponsiveContainer>
   );

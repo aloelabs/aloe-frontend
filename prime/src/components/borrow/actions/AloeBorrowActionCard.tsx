@@ -1,7 +1,14 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
+import {
+  ActionCardProps,
+  ActionID,
+  ActionProviders,
+  getDropdownOptionFromSelectedToken,
+  parseSelectedToken,
+  TokenType,
+} from '../../../data/Actions';
 import { getBorrowActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
 
@@ -54,7 +61,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
-  
+
   return (
     <BaseActionCard
       action={ActionID.BORROW}

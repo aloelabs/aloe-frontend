@@ -27,7 +27,7 @@ const menuItems: MenuItem[] = [
     title: 'Borrow',
     name: 'borrow',
     url: '/borrow',
-  }
+  },
 ];
 
 const StyledNavLink = styled(Text)`

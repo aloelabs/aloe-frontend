@@ -27,24 +27,40 @@ export type ConfirmWithdrawalModalProps = {
 };
 
 export default function ConfirmWithdrawalModal(props: ConfirmWithdrawalModalProps) {
-  const { open, setOpen, onConfirm, onCancel, estimatedReturn, token0Ticker, token1Ticker, token0Estimate, token1Estimate, numberOfShares, maxSlippage, networkFee } = props;
+  const {
+    open,
+    setOpen,
+    onConfirm,
+    onCancel,
+    estimatedReturn,
+    token0Ticker,
+    token1Ticker,
+    token0Estimate,
+    token1Estimate,
+    numberOfShares,
+    maxSlippage,
+    networkFee,
+  } = props;
   return (
-    <CloseableModal
-      open={open}
-      setOpen={setOpen}
-      onClose={onCancel}
-      title='Confirm Withdrawal'
-    >
+    <CloseableModal open={open} setOpen={setOpen} onClose={onCancel} title='Confirm Withdrawal'>
       <div className='flex flex-col gap-y-4 mb-4'>
         <div className='flex justify-between items-center'>
-          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>Shares</Text>
+          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
+            Shares
+          </Text>
           <DashedDivider />
-          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{numberOfShares} Shares</Text>
+          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
+            {numberOfShares} Shares
+          </Text>
         </div>
         <div className='flex justify-between items-center'>
-          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>Estimated Return</Text>
+          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
+            Estimated Return
+          </Text>
           <DashedDivider />
-          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{estimatedReturn}</Text>
+          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
+            {estimatedReturn}
+          </Text>
         </div>
       </div>
       <TokenBreakdown
@@ -56,20 +72,32 @@ export default function ConfirmWithdrawalModal(props: ConfirmWithdrawalModalProp
       <HorizontalDivider />
       <div className='flex flex-col gap-y-4 mb-8'>
         <div className='flex justify-between items-center'>
-          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>Pool Selected</Text>
+          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
+            Pool Selected
+          </Text>
           <DashedDivider />
-          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{token0Ticker} - {token1Ticker}</Text>
+          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
+            {token0Ticker} - {token1Ticker}
+          </Text>
         </div>
         <div className='flex justify-between items-center'>
-          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>Max Slippage</Text>
+          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
+            Max Slippage
+          </Text>
           <DashedDivider />
-          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{maxSlippage}%</Text>
+          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
+            {maxSlippage}%
+          </Text>
         </div>
         {/*Hidden for the time being*/}
         <div className='hidden flex justify-between items-center'>
-          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>Network fee</Text>
+          <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
+            Network fee
+          </Text>
           <DashedDivider />
-          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{networkFee}%</Text>
+          <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
+            {networkFee}%
+          </Text>
         </div>
       </div>
       {/* <HorizontalDivider />
@@ -78,7 +106,9 @@ export default function ConfirmWithdrawalModal(props: ConfirmWithdrawalModalProp
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>{networkFee} WETH</Text>
       </div> */}
-      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} onClick={onConfirm}>Confirm Withdrawal</FilledStylizedButton>
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} onClick={onConfirm}>
+        Confirm Withdrawal
+      </FilledStylizedButton>
     </CloseableModal>
   );
 }

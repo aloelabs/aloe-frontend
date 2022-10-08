@@ -1,7 +1,14 @@
 import { Dropdown, DropdownOption } from '../../common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
-import { ActionCardProps, ActionID, ActionProviders, getDropdownOptionFromSelectedToken, parseSelectedToken, TokenType } from '../../../data/Actions';
+import {
+  ActionCardProps,
+  ActionID,
+  ActionProviders,
+  getDropdownOptionFromSelectedToken,
+  parseSelectedToken,
+  TokenType,
+} from '../../../data/Actions';
 import { TokenData } from '../../../data/TokenData';
 import { getTransferOutActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
@@ -9,7 +16,7 @@ import { useEffect } from 'react';
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
-  
+
   const dropdownOptions: DropdownOption[] = [
     {
       label: token0?.ticker || '',
@@ -30,12 +37,12 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       label: kitty1?.ticker || '',
       value: TokenType.KITTY1,
       icon: kitty1?.iconPath || '',
-    }
+    },
   ];
   const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
-  
+
   const tokenMap = new Map<TokenType, TokenData>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
@@ -46,7 +53,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
     const parsedValue = parseFloat(value) || 0;
     onChange({
       actionId: ActionID.TRANSFER_OUT,
-      actionArgs: (selectedToken && value !== '') ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
+      actionArgs:
+        selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
       textFields: [value],
       aloeResult: {
         token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
@@ -63,7 +71,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
-  
+
   return (
     <BaseActionCard
       action={ActionID.TRANSFER_OUT}

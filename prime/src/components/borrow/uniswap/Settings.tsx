@@ -45,12 +45,10 @@ const SettingsMenuWrapper = styled.div`
 `;
 
 //TODO: Improve styling and possibly create a more generic reusable button to replace this
-const AutoSlippageButton = styled.button.attrs(
-  (props: { active: boolean }) => props
-)`
+const AutoSlippageButton = styled.button.attrs((props: { active: boolean }) => props)`
   padding: 4px 8px;
   border-radius: 8px;
-  background-color: ${props => props.active ? '#63b59a' : 'transparent'};
+  background-color: ${(props) => (props.active ? '#63b59a' : 'transparent')};
   border: 1px solid rgba(26, 41, 52, 1);
 `;
 
@@ -69,6 +67,7 @@ export default function Settings(props: SettingsProps) {
     if (slippagePercentage !== localSlippagePercentage) {
       setLocalSlippagePercentage(slippagePercentage);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slippagePercentage]);
   useClickOutside(settingsMenuRef, () => {
     setIsMenuOpen(false);
@@ -121,7 +120,6 @@ export default function Settings(props: SettingsProps) {
                 } else {
                   setLocalSlippagePercentage(output);
                 }
-                
               }}
               inputClassName={localSlippagePercentage !== '' ? 'active' : ''}
               placeholder='0.50'

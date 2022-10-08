@@ -134,7 +134,8 @@ export type ActionTemplate = {
 
 export const MINT_TOKEN_PLUS: Action = {
   id: ActionID.MINT,
-  description: 'Exchange raw assets for their interest-bearing counterpart. Using these as collateral reduces maximum leverage.',
+  description:
+    'Exchange raw assets for their interest-bearing counterpart. Using these as collateral reduces maximum leverage.',
   actionCard: AloeMintTokenPlusActionCard,
 };
 
@@ -146,7 +147,7 @@ export const BURN_TOKEN_PLUS: Action = {
 
 export const BORROW: Action = {
   id: ActionID.BORROW,
-  description: 'Request assets from the money market. This won\'t work if market utilization is already at 100%.',
+  description: "Request assets from the money market. This won't work if market utilization is already at 100%.",
   actionCard: AloeBorrowActionCard,
 };
 
@@ -233,7 +234,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         aloeResult: {
           selectedToken: TokenType.ASSET1,
         },
-        uniswapResult: null
+        uniswapResult: null,
       },
       {
         actionId: WITHDRAW.id,
@@ -295,15 +296,10 @@ export function getDropdownOptionFromSelectedToken(
   if (options.length === 0) {
     throw new Error();
   }
-  return (
-    options.find((option: DropdownOption) => option.value === selectedToken) ||
-    options[0]
-  );
+  return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
 }
 
-export function parseSelectedToken(
-  value: string | undefined
-): TokenType | null {
+export function parseSelectedToken(value: string | undefined): TokenType | null {
   if (!value) return null;
   return value as TokenType;
 }
@@ -311,13 +307,23 @@ export function parseSelectedToken(
 export function calculateHypotheticalStates(
   marginAccount: MarginAccount,
   uniswapPositions: Map<string, UniswapPosition>,
-  actionResults: ActionCardState[],
-): { assets: Assets, liabilities: Liabilities, positions: Map<string, UniswapPosition> }[] {
-  const hypotheticalStates: { assets: Assets, liabilities: Liabilities, positions: Map<string, UniswapPosition> }[] = [{
-    assets: marginAccount.assets,
-    liabilities: marginAccount.liabilities,
-    positions: deepCopyMap(uniswapPositions),
-  }];
+  actionResults: ActionCardState[]
+): {
+  assets: Assets;
+  liabilities: Liabilities;
+  positions: Map<string, UniswapPosition>;
+}[] {
+  const hypotheticalStates: {
+    assets: Assets;
+    liabilities: Liabilities;
+    positions: Map<string, UniswapPosition>;
+  }[] = [
+    {
+      assets: marginAccount.assets,
+      liabilities: marginAccount.liabilities,
+      positions: deepCopyMap(uniswapPositions),
+    },
+  ];
 
   for (let i = 0; i < actionResults.length; i += 1) {
     const actionResult = actionResults[i];
@@ -343,7 +349,7 @@ export function calculateHypotheticalStates(
       const position = actionResult.uniswapResult?.uniswapPosition;
       if (position && position.lower && position.upper) {
         const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
-        
+
         if (positionsTemp.has(key)) {
           const posOldCopy = { ...positionsTemp.get(key)! };
           posOldCopy.liquidity = JSBI.add(posOldCopy.liquidity, position.liquidity);
@@ -356,7 +362,7 @@ export function calculateHypotheticalStates(
       const position = actionResult.uniswapResult?.uniswapPosition;
       if (position && position.lower && position.upper) {
         const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
-        
+
         if (positionsTemp.has(key)) {
           const posOldCopy = { ...positionsTemp.get(key)! };
 
@@ -368,7 +374,7 @@ export function calculateHypotheticalStates(
           posOldCopy.liquidity = JSBI.subtract(posOldCopy.liquidity, position.liquidity);
           positionsTemp.set(key, posOldCopy);
         } else {
-          console.error('Attempted to remove liquidity from a position that doens\'t exist');
+          console.error("Attempted to remove liquidity from a position that doens't exist");
           break;
         }
       }
@@ -376,7 +382,7 @@ export function calculateHypotheticalStates(
 
     // if any assets or liabilities are < 0, we have an issue!
     if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
-      console.log('Margin Account balance dropped below 0!')
+      console.log('Margin Account balance dropped below 0!');
       console.log(hypotheticalStates[i]);
       console.log(actionResult);
       break;
@@ -392,13 +398,18 @@ export function calculateHypotheticalStates(
     // TLDR: It's simpler to check solvency inside this for loop
     const includeKittyReceipts = assetsTemp.token0Plus > 0 || assetsTemp.token1Plus > 0;
     const solvency = isSolvent(
-      { ...marginAccount, assets: assetsTemp, liabilities: liabilitiesTemp, includeKittyReceipts },
+      {
+        ...marginAccount,
+        assets: assetsTemp,
+        liabilities: liabilitiesTemp,
+        includeKittyReceipts,
+      },
       Array.from(positionsTemp.values()),
       marginAccount.sqrtPriceX96,
       0.025
     );
     if (!solvency.atA || !solvency.atB) {
-      console.log('Margin Account not solvent!')
+      console.log('Margin Account not solvent!');
       console.log(solvency);
       break;
     }

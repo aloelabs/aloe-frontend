@@ -24,7 +24,7 @@ import {
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
 import { SquareInput } from '../common/Input';
-import { SvgWrapper } from '../common/SvgWrapper';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
@@ -149,8 +149,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you take out any loans, your liabilities will increase over time due to interest accrual. This has a negative impact on your P&L
-                    (thus the negative sign).
+                    If you take out any loans, your liabilities will increase over time due to interest accrual. This
+                    has a negative impact on your P&L (thus the negative sign).
                   </Text>
                 }
                 filled={true}
@@ -183,7 +183,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive impact on your P&L.
+                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive
+                    impact on your P&L.
                   </Text>
                 }
                 filled={true}

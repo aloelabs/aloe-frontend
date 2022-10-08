@@ -6,7 +6,7 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
 import { Action, ActionCardState } from '../../data/Actions';
-import { SvgWrapper } from '../common/SvgWrapper';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TEMPLATE_COLOR = '#4b6980';

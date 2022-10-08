@@ -7,13 +7,4 @@ import RaiLogo from './rai.svg';
 import LooksLogo from './looks.svg';
 import UnknownTokenLogo from './unknown_token.svg';
 
-export {
-  FeiLogo,
-  UsdcLogo,
-  WbtcLogo,
-  WethLogo,
-  UnknownTokenLogo,
-  TribeLogo,
-  RaiLogo,
-  LooksLogo,
-};
+export { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, UnknownTokenLogo, TribeLogo, RaiLogo, LooksLogo };

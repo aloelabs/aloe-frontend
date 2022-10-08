@@ -12,7 +12,7 @@ import {
   CardTitleWrapper,
   CardWrapper,
   ValueText,
-} from '../common/Card';
+} from 'shared/lib/components/common/Card';
 import YieldTokenIcons from './YieldTokenIcons';
 import tw from 'twin.macro';
 
@@ -46,18 +46,13 @@ export type YieldAggregatorCardProps = {
 export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
   const { tokens, totalAPY, totalSupply, totalUtilization } = props;
   return (
-    <CardWrapper
-      borderGradient={BORDER_GRADIENT}
-      shadowColor={SHADOW_COLOR}
-    >
+    <CardWrapper borderGradient={BORDER_GRADIENT} shadowColor={SHADOW_COLOR}>
       <CardTitleWrapper backgroundGradient={BACKGROUND_GRADIENT}>
         <Display size='M' weight='semibold'>
           WETH
         </Display>
         <CardSubTitleWrapper>
-          <YieldTokenIcons
-            tokens={tokens}
-          />
+          <YieldTokenIcons tokens={tokens} />
           <YieldAggregatorLabelWrapper>
             <Text size='S' weight='medium' color={YIELD_AGGREGATOR_LABEL_TEXT_COLOR}>
               Yield Aggregator
@@ -77,10 +72,7 @@ export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
               </Text>
             </TokenAPYWrapper>
           </div>
-          <LendTokenInfo
-            totalSupply={totalSupply}
-            utilization={totalUtilization} 
-          />
+          <LendTokenInfo totalSupply={totalSupply} utilization={totalUtilization} />
         </BodySubContainer>
         <BodyDivider />
         <BodySubContainer>

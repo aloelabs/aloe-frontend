@@ -24,12 +24,12 @@ import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
-  ActionCardState, calculateHypotheticalStates, UniswapPosition,
-  UniswapPositionPrior
+  ActionCardState,
+  calculateHypotheticalStates,
+  UniswapPosition,
+  UniswapPositionPrior,
 } from '../data/Actions';
-import {
-  RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS
-} from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   Assets,
@@ -38,7 +38,7 @@ import {
   Liabilities,
   LiquidationThresholds,
   MarginAccount,
-  sumAssetsPerToken
+  sumAssetsPerToken,
 } from '../data/MarginAccount';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
@@ -252,7 +252,7 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     accountAddressParam,
     marginAccount?.sqrtPriceX96,

@@ -3,15 +3,9 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useAccount, useBalance, useSigner } from 'wagmi';
 import { withdraw } from '../../connector/BlendWithdrawActions';
-import {
-  BlendPoolDrawData,
-  ResolveBlendPoolDrawData
-} from '../../data/BlendPoolDataResolver';
+import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import {
-  DEFAULT_RATIO_CHANGE,
-  RATIO_CHANGE_CUTOFF
-} from '../../data/constants/Values';
+import { DEFAULT_RATIO_CHANGE, RATIO_CHANGE_CUTOFF } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { formatUSDCompact, prettyFormatBalance, String1E, toBig } from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
@@ -42,10 +36,7 @@ enum ButtonState {
   PENDING_TRANSACTION,
 }
 
-function printButtonState(
-  buttonState: ButtonState,
-  drawData: BlendPoolDrawData
-) {
+function printButtonState(buttonState: ButtonState, drawData: BlendPoolDrawData) {
   switch (buttonState) {
     case ButtonState.NO_WALLET:
       return 'Withdraw';
@@ -64,7 +55,9 @@ const HorizontalDivider = styled.div`
   background-color: rgba(26, 41, 52, 1);
 `;
 
-const TOOLTIP_CONTENT_WITHDRAW = 'Withdrawal amounts are based on current prices. If prices shift while your transaction is pending, you may receive a different combination of tokens. If the token amounts differ by more than your selected slippage, the transaction will be cancelled instead.';
+const TOOLTIP_CONTENT_WITHDRAW = `Withdrawal amounts are based on current prices.${' '}
+  If prices shift while your transaction is pending, you may receive a different combination of tokens.${' '}
+  If the token amounts differ by more than your selected slippage, the transaction will be cancelled instead.`;
 
 export default function WithdrawTab(props: WithdrawTabProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -79,7 +72,7 @@ export default function WithdrawTab(props: WithdrawTabProps) {
 
   const [token0Estimate, setToken0Estimate] = useState('-');
   const [token1Estimate, setToken1Estimate] = useState('-');
-  const [usdEstimate, setUsdEstimate] = useState('-')
+  const [usdEstimate, setUsdEstimate] = useState('-');
 
   const { poolStats } = useContext(BlendPoolContext);
   const { address } = useAccount();
@@ -90,25 +83,16 @@ export default function WithdrawTab(props: WithdrawTabProps) {
   });
   const { data: signer } = useSigner();
 
-  const [buttonState, setButtonState] = useState<ButtonState>(
-    ButtonState.NO_WALLET
-  );
-  const [isTransactionPending, setIsTransactionPending] =
-    useState<boolean>(false);
+  const [buttonState, setButtonState] = useState<ButtonState>(ButtonState.NO_WALLET);
+  const [isTransactionPending, setIsTransactionPending] = useState<boolean>(false);
 
   const sharesBig = useMemo(() => {
-    return sharesAmount === ''
-      ? new Big(0)
-      : new Big(sharesAmount).mul(String1E(18));
+    return sharesAmount === '' ? new Big(0) : new Big(sharesAmount).mul(String1E(18));
   }, [sharesAmount]);
 
-  const maxShares: Big | undefined = shareBalanceData
-    ? toBig(shareBalanceData.value)
-    : undefined;
+  const maxShares: Big | undefined = shareBalanceData ? toBig(shareBalanceData.value) : undefined;
 
-  const maxSharesString = maxShares
-    ? maxShares.div(String1E(18)).toFixed(18)
-    : undefined;
+  const maxSharesString = maxShares ? maxShares.div(String1E(18)).toFixed(18) : undefined;
 
   // Print estimated returns
   useEffect(() => {
@@ -118,39 +102,26 @@ export default function WithdrawTab(props: WithdrawTabProps) {
       setUsdEstimate('-');
       return;
     }
-    const estimated0 = poolStats.inventory0.total
-      .mul(sharesBig)
-      .div(poolStats.outstandingShares);
-    const estimated1 = poolStats.inventory1.total
-      .mul(sharesBig)
-      .div(poolStats.outstandingShares);
+    const estimated0 = poolStats.inventory0.total.mul(sharesBig).div(poolStats.outstandingShares);
+    const estimated1 = poolStats.inventory1.total.mul(sharesBig).div(poolStats.outstandingShares);
 
-    let estimated0Label = prettyFormatBalance(
-      estimated0,
-      poolStats.token0Decimals
-    );
-    let estimated1Label = prettyFormatBalance(
-      estimated1,
-      poolStats.token1Decimals
-    );
+    let estimated0Label = prettyFormatBalance(estimated0, poolStats.token0Decimals);
+    let estimated1Label = prettyFormatBalance(estimated1, poolStats.token1Decimals);
 
     if (estimated0Label.length > 9) {
-      estimated0Label = estimated0
-        .div(String1E(poolStats.token0Decimals))
-        .toExponential(2);
+      estimated0Label = estimated0.div(String1E(poolStats.token0Decimals)).toExponential(2);
     }
 
     if (estimated1Label.length > 9) {
-      estimated1Label = estimated1
-        .div(String1E(poolStats.token1Decimals))
-        .toExponential(2);
+      estimated1Label = estimated1.div(String1E(poolStats.token1Decimals)).toExponential(2);
     }
 
     // Generate USD estimate
     if (offChainPoolStats) {
-      setUsdEstimate(formatUSDCompact(
-        sharesBig.mul(offChainPoolStats.total_value_locked)
-          .div(poolStats.outstandingShares).toNumber())
+      setUsdEstimate(
+        formatUSDCompact(
+          sharesBig.mul(offChainPoolStats.total_value_locked).div(poolStats.outstandingShares).toNumber()
+        )
       );
     }
 
@@ -178,30 +149,19 @@ export default function WithdrawTab(props: WithdrawTabProps) {
     }
     return () => {
       mounted = false;
-    }
-  }, [
-    isTransactionPending,
-    maxShares,
-    poolStats,
-    maxSlippage,
-    sharesAmount,
-    sharesBig,
-  ]);
+    };
+  }, [isTransactionPending, maxShares, poolStats, maxSlippage, sharesAmount, sharesBig]);
 
   const buttonLabel = printButtonState(buttonState, drawData);
 
-  const constructButtonAction: (buttonState: ButtonState) => () => void = (
-    buttonState
-  ) => {
+  const constructButtonAction: (buttonState: ButtonState) => () => void = (buttonState) => {
     if (!signer) return () => {};
 
     switch (buttonState) {
       case ButtonState.READY:
         return () => {
           if (!poolStats) {
-            console.log(
-              'No pool stats in withdraw handler, something bad happened...'
-            );
+            console.log('No pool stats in withdraw handler, something bad happened...');
             return;
           }
           setIsTransactionPending(true);
@@ -247,9 +207,7 @@ export default function WithdrawTab(props: WithdrawTabProps) {
         </div>
         <MaxSlippageInput
           tooltipContent={TOOLTIP_CONTENT_WITHDRAW}
-          updateMaxSlippage={(updatedMaxSlippage) =>
-            setMaxSlippage(updatedMaxSlippage)
-          }
+          updateMaxSlippage={(updatedMaxSlippage) => setMaxSlippage(updatedMaxSlippage)}
         />
         <div className='w-full mt-8'>
           <FilledStylizedButton
@@ -267,11 +225,7 @@ export default function WithdrawTab(props: WithdrawTabProps) {
             ].includes(buttonState)}
           >
             <div className='flex flex-row items-center justify-center'>
-              {buttonState === ButtonState.PENDING_TRANSACTION ? (
-                <Pending />
-              ) : (
-                <span>{buttonLabel}</span>
-              )}
+              {buttonState === ButtonState.PENDING_TRANSACTION ? <Pending /> : <span>{buttonLabel}</span>}
             </div>
           </FilledStylizedButton>
         </div>
@@ -287,23 +241,16 @@ export default function WithdrawTab(props: WithdrawTabProps) {
             return;
           }
           const shares = new Big(sharesAmount).mul(String1E(18));
-          withdraw(
-            signer,
-            props.poolData.poolAddress,
-            shares,
-            Number(maxSlippage),
-            poolStats,
-            (receipt) => {
-              setShowSubmittingModal(false);
-              if (receipt?.status === 1) {
-                setShowSuccessModal(true);
-              } else {
-                setShowFailedModal(true);
-              }
-              setIsTransactionPending(false);
-              console.log(receipt);
+          withdraw(signer, props.poolData.poolAddress, shares, Number(maxSlippage), poolStats, (receipt) => {
+            setShowSubmittingModal(false);
+            if (receipt?.status === 1) {
+              setShowSuccessModal(true);
+            } else {
+              setShowFailedModal(true);
             }
-          );
+            setIsTransactionPending(false);
+            console.log(receipt);
+          });
         }}
         onCancel={() => {
           setIsTransactionPending(false);
@@ -327,14 +274,8 @@ export default function WithdrawTab(props: WithdrawTabProps) {
         token1Estimate={token1Estimate}
         numberOfShares={sharesBig.toExponential(2)}
       />
-      <TransactionFailedModal
-        open={showFailedModal}
-        setOpen={setShowFailedModal}
-      />
-      <SubmittingOrderModal
-        open={showSubmittingModal}
-        setOpen={setShowSubmittingModal}
-      />
+      <TransactionFailedModal open={showFailedModal} setOpen={setShowFailedModal} />
+      <SubmittingOrderModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
     </TabWrapper>
   );
 }

@@ -16,7 +16,12 @@ import { MultiDropdownButton, MultiDropdownOption } from '../components/common/D
 import { SquareInputWithIcon } from '../components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-import { getAvailableLendingPairs, getLendingPairBalances, LendingPair, LendingPairBalances } from '../data/LendingPair';
+import {
+  getAvailableLendingPairs,
+  getLendingPairBalances,
+  LendingPair,
+  LendingPairBalances,
+} from '../data/LendingPair';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
@@ -91,7 +96,8 @@ export default function LendPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal = localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
+    const shouldShowWelcomeModal =
+      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
@@ -133,7 +139,7 @@ export default function LendPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider, address || '');
+      const results = await getAvailableLendingPairs(provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -149,7 +155,7 @@ export default function LendPage() {
     let mounted = true;
     async function fetch() {
       if (!address) return;
-      const results = await Promise.all(lendingPairs.map(p => getLendingPairBalances(p, address, provider)));
+      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
       if (mounted) {
         setLendingPairBalances(results);
       }
@@ -157,7 +163,7 @@ export default function LendPage() {
     fetch();
     return () => {
       mounted = false;
-    }
+    };
   }, [provider, address, lendingPairs]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
@@ -165,8 +171,12 @@ export default function LendPage() {
       return [];
     }
     let combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
+      const token0Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+      );
+      const token1Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+      );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
@@ -243,9 +253,11 @@ export default function LendPage() {
     if (kittyBalances.length === 0 || totalKittyBalanceUSD === 0) {
       return 0;
     }
-    return kittyBalances.reduce((acc, tokenAPY) => {
-      return acc + tokenAPY.apy * tokenAPY.balanceUSD;
-    }, 0) / totalKittyBalanceUSD;
+    return (
+      kittyBalances.reduce((acc, tokenAPY) => {
+        return acc + tokenAPY.apy * tokenAPY.balanceUSD;
+      }, 0) / totalKittyBalanceUSD
+    );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
@@ -301,7 +313,10 @@ export default function LendPage() {
             </LowerLendHeader>
           </LendHeader>
           {isGTMediumScreen && (
-            <LendPieChartWidget tokenBalances={[...kittyBalances, ...tokenBalances]} totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD} />
+            <LendPieChartWidget
+              tokenBalances={[...kittyBalances, ...tokenBalances]}
+              totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+            />
           )}
         </LendHeaderContainer>
         <Divider />
@@ -310,15 +325,27 @@ export default function LendPage() {
             <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
               Lending Pairs
             </Text>
-            <Tooltip buttonSize='M' buttonText='' content='With lending pairs, you can pick which assets borrowers can post as collateral. For example, when you deposit to the USDC/WETH lending pair, borrowers can only use your funds if they post USDC or WETH as collateral. Never deposit to a pair that includes unknown/untrustworthy token(s).' position='top-center' filled={true} />
+            <Tooltip
+              buttonSize='M'
+              buttonText=''
+              content={`With lending pairs, you can pick which assets borrowers can post as collateral.${' '}
+              For example, when you deposit to the USDC/WETH lending pair,${' '}
+              borrowers can only use your funds if they post USDC or WETH as collateral.${' '}
+              Never deposit to a pair that includes unknown/untrustworthy token(s).`}
+              position='top-center'
+              filled={true}
+            />
           </div>
           <LendCards>
             {lendingPairs.map((lendPair, i) => (
-              <LendPairCard key={lendPair.token0.address} {...{
-                ...lendPair,
-                hasDeposited0: (lendingPairBalances?.[i]?.kitty0Balance || 0) > 0,
-                hasDeposited1: (lendingPairBalances?.[i]?.kitty1Balance || 0) > 0
-              }} />
+              <LendPairCard
+                key={lendPair.token0.address}
+                {...{
+                  ...lendPair,
+                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0Balance || 0) > 0,
+                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1Balance || 0) > 0,
+                }}
+              />
             ))}
           </LendCards>
           <Pagination

@@ -14,11 +14,7 @@ const BlobContainer = styled.div`
 const Blob = styled.div`
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    100.12deg,
-    rgba(108, 207, 228, 1) 30.51%,
-    rgba(136, 226, 161, 1) 117.32%
-  );
+  background: linear-gradient(100.12deg, rgba(108, 207, 228, 1) 30.51%, rgba(136, 226, 161, 1) 117.32%);
 
   @keyframes float {
     0% {

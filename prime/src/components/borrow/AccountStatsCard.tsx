@@ -29,11 +29,19 @@ export function AccountStatsCard(props: AccountStatsCardProps) {
           {label}
         </Text>
         {showAsterisk && (
-          <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>*</Text>
+          <Text size='S' weight='medium' color='rgba(242, 201, 76, 1)'>
+            *
+          </Text>
         )}
       </div>
-      <Text size='L' weight='medium'>{valueLine1}</Text>
-      {(valueLine2 !== undefined) && (<Text size='L' weight='medium'>{valueLine2}</Text>)}
+      <Text size='L' weight='medium'>
+        {valueLine1}
+      </Text>
+      {valueLine2 !== undefined && (
+        <Text size='L' weight='medium'>
+          {valueLine2}
+        </Text>
+      )}
     </AccountStatsCardWrapper>
   );
 }

@@ -3,8 +3,8 @@ import tw from 'twin.macro';
 import { useSigner } from 'wagmi';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 
-import { SwapWidget, Theme } from '@uniswap/widgets'
-import '@uniswap/widgets/fonts.css'
+import { SwapWidget, Theme } from '@uniswap/widgets';
+import '@uniswap/widgets/fonts.css';
 
 export type DepositTabProps = {
   poolData: BlendPoolMarkers;
@@ -35,7 +35,7 @@ const theme: Theme = {
   fontFamily: 'Satoshi-Variable',
   borderRadius: 0.5,
   tokenColorExtraction: false,
-}
+};
 
 export default function SwapTab(props: DepositTabProps) {
   const { data: signer } = useSigner();
@@ -46,14 +46,14 @@ export default function SwapTab(props: DepositTabProps) {
         provider={signer?.provider as any}
         hideConnectionUI={true}
         onConnectWalletClick={async () => {
-          return false
+          return false;
         }}
         defaultInputTokenAddress={props.poolData.token0Address}
         defaultOutputTokenAddress={props.poolData.token1Address}
         tokenList={'https://tokens.coingecko.com/uniswap/all.json'}
         width={'100%'}
         theme={theme}
-        />
+      />
     </TabWrapper>
   );
 }
