@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilledGreyButton } from '../../common/Buttons';
+import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { CloseableModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import FeedbackBlock from './common/FeedbackBlock';

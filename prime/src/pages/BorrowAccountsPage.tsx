@@ -9,7 +9,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
+import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display } from 'shared/lib/components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
 import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
