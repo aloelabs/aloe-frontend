@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FilledStylizedButton } from '../../common/Buttons';
-import { Dropdown } from '../../common/Dropdown';
+import { Dropdown } from 'shared/lib/components/common/Dropdown';
 import { CloseableModal, DashedDivider, LABEL_TEXT_COLOR } from '../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';

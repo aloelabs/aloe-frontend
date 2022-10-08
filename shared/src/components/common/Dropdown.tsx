@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import tw from 'twin.macro';
-import DropdownArrowDown from '../../assets/svg/dropdown_arrow_down.svg';
-import DropdownArrowUp from '../../assets/svg/dropdown_arrow_up.svg';
+import DropdownArrowDown from '../../assets/svg/DropdownArrowDown';
+import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
 import { CheckIcon } from '@heroicons/react/solid';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Text } from './Typography';
 
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';
 const DROPDOWN_LIST_BG_COLOR = 'rgba(7, 14, 18, 1)';
@@ -17,14 +16,20 @@ const CHECKBOX_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
 const CHECKBOX_BG_COLOR_ACTIVE = 'rgba(82, 182, 154, 1)';
 
 const DropdownWrapper = styled.div`
-  ${tw`flex flex-col items-start justify-evenly`}
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: space-evenly;
   position: relative;
   width: fit-content;
   overflow: visible;
 `;
 
 const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props)`
-  ${tw`flex flex-row items-center justify-between`}
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   background: transparent;
   padding: ${(props) => (props.small ? '12px 36px 12px 16px' : '16px 52px 16px 24px')};
   border: 1px solid ${DROPDOWN_HEADER_BORDER_COLOR};
@@ -33,7 +38,8 @@ const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props
 `;
 
 const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?: boolean }) => props)`
-  ${tw`flex flex-col`}
+  display: flex;
+  flex-direction: column;
   position: absolute;
   ${(props) => (props.flipDirection ? 'left: 0px;' : 'right: 0px;')};
   z-index: 10;
@@ -59,7 +65,7 @@ const MultiDropdownList = styled(DropdownList)`
 `;
 
 const DropdownOptionContainer = styled.button`
-  ${tw`w-full`}
+  width: 100%;
   text-align: start;
   padding: 6px 12px;
   white-space: nowrap;
@@ -73,7 +79,12 @@ const DropdownOptionContainer = styled.button`
 `;
 
 const MultiDropdownOptionContainer = styled(DropdownOptionContainer)`
-  ${tw`w-full flex flex-row items-center justify-start`}
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start
+  display # TODO CHECK THIS
   gap: 8px;
 `;
 
@@ -128,11 +139,7 @@ export function Dropdown(props: DropdownProps) {
           )}
           <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
         </div>
-        <img
-          className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-6'}
-          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
-          alt=''
-        />
+        {isOpen ? <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} /> : <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />}
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
@@ -199,11 +206,7 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
             <Text size='M'>{placeholder}</Text>
           )}
         </div>
-        <img
-          className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-6'}
-          src={isOpen ? DropdownArrowUp : DropdownArrowDown}
-          alt=''
-        />
+        {isOpen ? <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} /> : <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />}
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
@@ -259,7 +262,7 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
     <DropdownWrapper ref={dropdownRef}>
       <DropdownHeader onClick={toggleList}>
         <Text size='M'>{selectedOption.isDefault ? placeholder : selectedOption.label}</Text>
-        <img className='absolute right-6' src={isOpen ? DropdownArrowUp : DropdownArrowDown} alt='' />
+        {isOpen ? <DropdownArrowUp className="absolute right-3" /> : <DropdownArrowDown className="absolute right-3" />}
       </DropdownHeader>
       {isOpen && (
         <DropdownList>
@@ -387,7 +390,7 @@ export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholder
     DropdownButton: () => (
       <DropdownHeader onClick={() => setIsOpen(!isOpen)}>
         <Text size='M'>{dropdownLabel}</Text>
-        <img className='absolute right-6' src={isOpen ? DropdownArrowUp : DropdownArrowDown} alt='' />
+        {isOpen ? <DropdownArrowUp className="absolute right-3" /> : <DropdownArrowDown className="absolute right-3" />}
       </DropdownHeader>
     ),
     SearchInput,
