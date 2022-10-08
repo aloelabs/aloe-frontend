@@ -2,13 +2,14 @@ import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
-import tw from 'twin.macro';
 import { Dropdown } from './Dropdown';
 
 const MAX_DISPLAYED_COUNT = 6;
 
 const Wrapper = styled.div`
-  ${tw`w-full flex justify-between`}
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
   margin-top: 42px;
   margin-bottom: 34px;
 `;
@@ -19,7 +20,9 @@ const PaginationRangeText = styled.span`
 `;
 
 const PaginationContainer = styled.div`
-  ${tw`flex justify-end items-center`}
+  display: flex;
+  justify-content: flex-end;	
+  align-items: center;
   flex-wrap: wrap;
   width: 100%;
 `;
