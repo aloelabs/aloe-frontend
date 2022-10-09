@@ -423,3 +423,14 @@ export function calculateHypotheticalStates(
   }
   return hypotheticalStates;
 }
+
+export function isValidUniswapPosition(position: UniswapPosition): boolean {
+  return (
+    position?.amount0 !== undefined &&
+    position?.amount1 !== undefined &&
+    position.lower != null &&
+    position.upper != null &&
+    position.amount0 > 0 &&
+    position.amount1 > 0
+  );
+}
