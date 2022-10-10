@@ -307,7 +307,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
 `;
 
 export const FilledStylizedButton = styled(BaseButton)`
-  position: relative
+  position: relative;
   font-family: 'ClashDisplay-Variable';
   background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
   color: rgba(0, 0, 0, 1);
@@ -341,7 +341,7 @@ export const FilledStylizedButton = styled(BaseButton)`
 `;
 
 export const OutlinedGradientRoundedButton = styled(BaseButton)`
-  position: relative
+  position: relative;
   border-radius: 100px;
 
   ${(props) => {
@@ -700,9 +700,7 @@ export const LinkButton = styled.button`
   color: rgba(139, 92, 246, 1);	
   background-color: transparent;	
   font-weight: 500;
-  disabled:text-[#6447B5]
   border-radius: 0.375rem;
-  color: rgba(139, 92, 246, 1);
 
   position: relative;
 
@@ -726,16 +724,18 @@ export const LinkButton = styled.button`
     color: rgba(124, 58, 237, 1);
     box-shadow: none;
     //outline: none;
+  }
+  
+  :disabled {
+    color: #6447B5;
   }
 `;
 
 export const WarningButton = styled.button`
   border-radius: 0.375rem;
-  text-caution: #FF7A00
+  color: #FF7A00
   background-color: transparent;
-  disabled: text-[#6447B5];
   font-weight: 500;
-  disabled:text-[#6447B5]
   position: relative;
 
   // Pseudo-element trick to keep width constant despite font weight changes
@@ -758,6 +758,10 @@ export const WarningButton = styled.button`
     box-shadow: none;
     color: #ff912e;
     //outline: none;
+  }
+
+  :disabled {
+    color: #6447B5;
   }
 `;
 

@@ -83,8 +83,7 @@ const MultiDropdownOptionContainer = styled(DropdownOptionContainer)`
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start
-  display # TODO CHECK THIS
+  justify-content: flex-start;
   gap: 8px;
 `;
 
