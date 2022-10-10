@@ -697,8 +697,8 @@ export function OutlinedGradientRoundedButtonWithIcon(props: ButtonWithIconProps
 
 export const LinkButton = styled.button`
   border-radius: 0.375rem;
-  color: rgba(139, 92, 246, 1);	
-  background-color: transparent;	
+  color: rgba(139, 92, 246, 1);
+  background-color: transparent;
   font-weight: 500;
   border-radius: 0.375rem;
 
@@ -725,9 +725,9 @@ export const LinkButton = styled.button`
     box-shadow: none;
     //outline: none;
   }
-  
+
   :disabled {
-    color: #6447B5;
+    color: #6447b5;
   }
 `;
 
@@ -832,7 +832,7 @@ export function PreviousPageButton(props: PreviousPageButtonProps) {
   const { onClick } = props;
   return (
     <PreviousPageButtonWrapper onClick={onClick}>
-      <LeftChevron width={19} height={19}/>
+      <LeftChevron width={19} height={19} />
     </PreviousPageButtonWrapper>
   );
 }

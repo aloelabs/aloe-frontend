@@ -138,7 +138,11 @@ export function Dropdown(props: DropdownProps) {
           )}
           <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
         </div>
-        {isOpen ? <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} /> : <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />}
+        {isOpen ? (
+          <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />
+        ) : (
+          <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />
+        )}
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
@@ -205,7 +209,11 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
             <Text size='M'>{placeholder}</Text>
           )}
         </div>
-        {isOpen ? <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} /> : <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />}
+        {isOpen ? (
+          <DropdownArrowUp className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />
+        ) : (
+          <DropdownArrowDown className={small ? 'w-4 absolute right-3' : 'w-5 absolute right-3'} />
+        )}
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
@@ -261,7 +269,7 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
     <DropdownWrapper ref={dropdownRef}>
       <DropdownHeader onClick={toggleList}>
         <Text size='M'>{selectedOption.isDefault ? placeholder : selectedOption.label}</Text>
-        {isOpen ? <DropdownArrowUp className="absolute right-3" /> : <DropdownArrowDown className="absolute right-3" />}
+        {isOpen ? <DropdownArrowUp className='absolute right-3' /> : <DropdownArrowDown className='absolute right-3' />}
       </DropdownHeader>
       {isOpen && (
         <DropdownList>
@@ -389,7 +397,7 @@ export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholder
     DropdownButton: () => (
       <DropdownHeader onClick={() => setIsOpen(!isOpen)}>
         <Text size='M'>{dropdownLabel}</Text>
-        {isOpen ? <DropdownArrowUp className="absolute right-3" /> : <DropdownArrowDown className="absolute right-3" />}
+        {isOpen ? <DropdownArrowUp className='absolute right-3' /> : <DropdownArrowDown className='absolute right-3' />}
       </DropdownHeader>
     ),
     SearchInput,

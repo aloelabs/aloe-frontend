@@ -21,7 +21,7 @@ const PaginationRangeText = styled.span`
 
 const PaginationContainer = styled.div`
   display: flex;
-  justify-content: flex-end;	
+  justify-content: flex-end;
   align-items: center;
   flex-wrap: wrap;
   width: 100%;
