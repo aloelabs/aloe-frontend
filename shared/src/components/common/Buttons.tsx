@@ -733,7 +733,7 @@ export const LinkButton = styled.button`
 
 export const WarningButton = styled.button`
   border-radius: 0.375rem;
-  color: #FF7A00
+  color: #FF7A00;
   background-color: transparent;
   font-weight: 500;
   position: relative;
