@@ -18,7 +18,7 @@ import { ContractReceipt } from 'ethers';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { DropdownOption } from '../components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
