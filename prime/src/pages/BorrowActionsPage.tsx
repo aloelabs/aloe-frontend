@@ -538,6 +538,19 @@ export default function BorrowActionsPage() {
               </EmptyStateWrapper>
             )}
           </div>
+          <div className='w-full flex flex-col gap-4 mb-8'>
+            <Display size='M' weight='medium'>
+              Uniswap Positions
+            </Display>
+            <UniswapPositionTable
+              accountAddress={accountAddressParam || ''}
+              marginAccount={marginAccount}
+              marginAccountLensContract={marginAccountLensContract}
+              provider={provider}
+              uniswapPositions={displayedUniswapPositions}
+              isInTermsOfToken0={isToken0Selected}
+            />
+          </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>
               Token Allocation
@@ -561,19 +574,6 @@ export default function BorrowActionsPage() {
                 </EmptyStateContainer>
               </EmptyStateWrapper>
             )}
-          </div>
-          <div className='w-full flex flex-col gap-4'>
-            <Display size='M' weight='medium'>
-              Uniswap Positions
-            </Display>
-            <UniswapPositionTable
-              accountAddress={accountAddressParam || ''}
-              marginAccount={marginAccount}
-              marginAccountLensContract={marginAccountLensContract}
-              provider={provider}
-              uniswapPositions={displayedUniswapPositions}
-              isInTermsOfToken0={isToken0Selected}
-            />
           </div>
         </div>
       </BodyWrapper>
