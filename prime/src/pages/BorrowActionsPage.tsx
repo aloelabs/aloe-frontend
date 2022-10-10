@@ -168,6 +168,8 @@ export default function BorrowActionsPage() {
   const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
   const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
   const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
+  const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
+  const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
@@ -191,6 +193,11 @@ export default function BorrowActionsPage() {
     contractInterface: UniswapV3PoolABI,
     signerOrProvider: provider,
   });
+
+  useEffect(() => {
+    setBorrowInterestInputValue('');
+    setSwapFeesInputValue('');
+  }, [isToken0Selected]);
 
   // MARK: fetch margin account
   useEffect(() => {
@@ -270,7 +277,7 @@ export default function BorrowActionsPage() {
     const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
 
     // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
-    const numValidActions = Math.min(_hypotheticalStates.length - 1);
+    const numValidActions = _hypotheticalStates.length - 1;
 
     // get the latest *valid* hypothetical state. this will be the one we display
     const {
@@ -282,14 +289,34 @@ export default function BorrowActionsPage() {
     // tell React about our findings
     const _marginAccount = { ...marginAccount };
     if (isShowingHypothetical) {
-      _marginAccount.assets = assetsF;
-      _marginAccount.liabilities = liabilitiesF;
+      const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
+      const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+      // Apply the user's inputted swap fees to the displayed margin account's assets
+      _marginAccount.assets = {
+        ...assetsF,
+        token0Raw: assetsF.token0Raw + (isToken0Selected ? numericSwapFees : 0),
+        token1Raw: assetsF.token1Raw + (isToken0Selected ? 0 : numericSwapFees),
+      };
+      // Apply the user's inputted borrow interest to the displayed margin account's liabilities
+      _marginAccount.liabilities = {
+        ...liabilitiesF,
+        amount0: liabilitiesF.amount0 - (isToken0Selected ? numericBorrowInterest : 0),
+        amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
+      };
     }
     setHypotheticalStates(_hypotheticalStates);
     setDisplayedMarginAccount(_marginAccount);
     setDisplayedUniswapPositions(Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()));
     console.log('Running 1');
-  }, [marginAccount, uniswapPositions, actionResults, isShowingHypothetical]);
+  }, [
+    marginAccount,
+    uniswapPositions,
+    actionResults,
+    isShowingHypothetical,
+    isToken0Selected,
+    borrowInterestInputValue,
+    swapFeesInputValue,
+  ]);
 
   // compute liquidation thresholds for the currently-selected data (current or hypothetical)
   useDebouncedEffect(
@@ -489,6 +516,10 @@ export default function BorrowActionsPage() {
                 inTermsOfToken0={isToken0Selected}
                 liquidationThresholds={displayedLiquidationThresholds}
                 isShowingHypothetical={isShowingHypothetical}
+                borrowInterestInputValue={borrowInterestInputValue}
+                swapFeesInputValue={swapFeesInputValue}
+                setBorrowInterestInputValue={setBorrowInterestInputValue}
+                setSwapFeesInputValue={setSwapFeesInputValue}
               />
             ) : (
               <EmptyStateWrapper>

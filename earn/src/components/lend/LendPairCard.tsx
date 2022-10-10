@@ -172,12 +172,6 @@ export default function LendPairCard(props: LendingPair & { hasDeposited0: boole
         setOpen={(open: boolean) => {
           setIsEditToken0PositionModalOpen(open);
         }}
-        onConfirm={() => {
-          setIsEditToken0PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsEditToken0PositionModalOpen(false);
-        }}
       />
       <EditPositionModal
         token={token1}
@@ -185,12 +179,6 @@ export default function LendPairCard(props: LendingPair & { hasDeposited0: boole
         open={isEditToken1PositionModalOpen}
         setOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);
-        }}
-        onConfirm={() => {
-          setIsEditToken1PositionModalOpen(false);
-        }}
-        onCancel={() => {
-          setIsEditToken1PositionModalOpen(false);
         }}
       />
     </div>

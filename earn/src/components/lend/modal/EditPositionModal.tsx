@@ -11,6 +11,7 @@ import FailureModalContent from './content/FailureModalContent';
 import SuccessModalContent from './content/SuccessModalContent';
 import WithdrawModalContent from './content/WithdrawModalContent';
 import PendingTxnModal from './PendingTxnModal';
+import { useNavigate } from 'react-router-dom';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',
@@ -58,16 +59,15 @@ export type EditPositionModalProps = {
   kitty: TokenData;
   open: boolean;
   setOpen: (open: boolean) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
 };
 
 export default function EditPositionModal(props: EditPositionModalProps) {
-  const { token, kitty, open, setOpen, onConfirm, onCancel } = props;
+  const { token, kitty, open, setOpen } = props;
   const [state, setState] = useState(EditPositionModalState.EDIT_POSITION);
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
   const [pendingTxnResult, setPendingTxnResult] = useState<SendTransactionResult | null>(null);
   const [lastTxnHash, setLastTxnHash] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -102,6 +102,7 @@ export default function EditPositionModal(props: EditPositionModalProps) {
   }, [pendingTxnResult]);
 
   function clearState() {
+    setOpen(false);
     /* Timeout used to take transition into account */
     setTimeout(() => {
       setConfirmationType(ConfirmationType.DEPOSIT);
@@ -116,13 +117,18 @@ export default function EditPositionModal(props: EditPositionModalProps) {
         <CloseableModal
           open={open}
           setOpen={setOpen}
-          onClose={() => {
-            onCancel();
-            clearState();
+          onClose={() => {            
+            if (state === EditPositionModalState.SUCCESS) {
+              // If the transaction was successful, refresh the page to load updated data
+              navigate(0);
+            } else {
+              // Otherwise, just clear the state
+              clearState();
+            }
           }}
           title={ConfirmationType.DEPOSIT === confirmationType ? 'Deposit' : 'Withdraw'}
         >
-          {EditPositionModalState.EDIT_POSITION === state && (
+          {state === EditPositionModalState.EDIT_POSITION && (
             <Tab.Group>
               <Tab.List className='flex rounded-md mb-6'>
                 <TabsWrapper>
@@ -157,16 +163,14 @@ export default function EditPositionModal(props: EditPositionModalProps) {
               confirmationType={confirmationType}
               txnHash={lastTxnHash || ''}
               onConfirm={() => {
-                setLastTxnHash(null);
-                onConfirm();
-                clearState();
+                // Since we are refreshing the page, we do not need to clear the state
+                navigate(0);
               }}
             />
           )}
           {state === EditPositionModalState.FAILURE && (
             <FailureModalContent
               onConfirm={() => {
-                onCancel();
                 clearState();
               }}
             />

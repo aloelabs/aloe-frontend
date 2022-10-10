@@ -16,7 +16,12 @@ import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
+import {
+  getAvailableLendingPairs,
+  getLendingPairBalances,
+  LendingPair,
+  LendingPairBalances,
+} from '../data/LendingPair';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
@@ -24,10 +29,6 @@ import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
 import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import ERC20ABI from '../assets/abis/ERC20.json';
-import KittyABI from '../assets/abis/Kitty.json';
-import { ethers } from 'ethers';
-import Big from 'big.js';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
@@ -43,7 +44,6 @@ const LendHeaderContainer = styled.div`
 
 const LendHeader = styled.div`
   ${tw`flex flex-col justify-between`}
-  overflow: hidden;
 `;
 
 const LowerLendHeader = styled.div`
@@ -84,42 +84,11 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   } as MultiDropdownOption;
 });
 
-async function getLendingPairBalances(
-  lendingPair: LendingPair,
-  userAddress: string,
-  provider: ethers.providers.Provider
-) {
-  const { token0, token1, kitty0, kitty1 } = lendingPair;
-
-  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
-    token0Contract.balanceOf(userAddress),
-    token1Contract.balanceOf(userAddress),
-    kitty0Contract.balanceOfUnderlying(userAddress),
-    kitty1Contract.balanceOfUnderlying(userAddress),
-  ]);
-  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  return {
-    token0: token0Balance,
-    token1: token1Balance,
-    kitty0: kitty0Balance,
-    kitty1: kitty1Balance,
-  };
-}
-
 export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<
-    { token0: number; token1: number; kitty0: number; kitty1: number }[] | undefined
-  >(undefined);
+  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -136,7 +105,7 @@ export default function LendPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
-  const { address, connector } = useAccount();
+  const { address } = useAccount();
   const { data: ensName } = useEnsName({
     address: address,
     chainId: chain.mainnet.id,
@@ -170,7 +139,7 @@ export default function LendPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider, address || '');
+      const results = await getAvailableLendingPairs(provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -180,7 +149,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, connector, address]);
+  }, [provider, address]);
 
   useEffect(() => {
     let mounted = true;
@@ -214,32 +183,32 @@ export default function LendPage() {
       return [
         {
           token: pair.token0,
-          balance: lendingPairBalances?.[i]?.token0 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token0 || 0) * token0Price,
+          balance: lendingPairBalances?.[i]?.token0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
           apy: 0,
           isKitty: false,
           pairName,
         },
         {
           token: pair.token1,
-          balance: lendingPairBalances?.[i]?.token1 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token1 || 0) * token1Price,
+          balance: lendingPairBalances?.[i]?.token1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
           apy: 0,
           isKitty: false,
           pairName,
         },
         {
           token: pair.kitty0,
-          balance: lendingPairBalances?.[i]?.kitty0 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty0 || 0) * token0Price,
+          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
           apy: pair.kitty0Info.apy,
           isKitty: true,
           pairName,
         },
         {
           token: pair.kitty1,
-          balance: lendingPairBalances?.[i]?.kitty1 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty1 || 0) * token1Price,
+          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
           apy: pair.kitty1Info.apy,
           isKitty: true,
           pairName,
@@ -373,8 +342,8 @@ export default function LendPage() {
                 key={lendPair.token0.address}
                 {...{
                   ...lendPair,
-                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0 || 0) > 0,
-                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1 || 0) > 0,
+                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0Balance || 0) > 0,
+                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1Balance || 0) > 0,
                 }}
               />
             ))}

@@ -114,12 +114,12 @@ type PnLGraphSettingsProps = {
   borrowInterestInputValue: string;
   setBorrowInterestInputValue: (value: string) => void;
   swapFeeInputValue: string;
-  setSwapFeeInputValue: (value: string) => void;
+  setSwapFeesInputValue: (value: string) => void;
   disabled: boolean;
 };
 
 function PnLGraphSettings(props: PnLGraphSettingsProps) {
-  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } =
+  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeesInputValue, disabled } =
     props;
   return (
     <Popover className='relative'>
@@ -194,7 +194,7 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
               value={swapFeeInputValue}
               onChange={(e) => {
                 const output = formatNumberInput(e.target.value);
-                if (output !== null) setSwapFeeInputValue(output);
+                if (output !== null) setSwapFeesInputValue(output);
               }}
               size='S'
               disabled={disabled}
@@ -216,16 +216,28 @@ export type PnLGraphProps = {
   inTermsOfToken0: boolean;
   liquidationThresholds: LiquidationThresholds | null;
   isShowingHypothetical: boolean;
+  borrowInterestInputValue: string;
+  swapFeesInputValue: string;
+  setBorrowInterestInputValue: (value: string) => void;
+  setSwapFeesInputValue: (value: string) => void;
 };
 
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds, isShowingHypothetical } = props;
+  const {
+    marginAccount,
+    uniswapPositions,
+    inTermsOfToken0,
+    liquidationThresholds,
+    isShowingHypothetical,
+    borrowInterestInputValue,
+    swapFeesInputValue,
+    setBorrowInterestInputValue,
+    setSwapFeesInputValue,
+  } = props;
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
-  const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
-  const [swapFeeInputValue, setSwapFeeInputValue] = useState<string>('');
 
   let price = sqrtRatioToPrice(
     marginAccount.sqrtPriceX96,
@@ -237,20 +249,18 @@ export default function PnLGraph(props: PnLGraphProps) {
   const priceB = price * PLOT_X_SCALE;
 
   const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
-  const initialValue = calculatePnL(marginAccount, uniswapPositions, price);
+  const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
+  const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+  // Offset the initial value by the borrowInterest and swapFees
+  const initialValue = calculatePnL(marginAccount, uniswapPositions, price) - numericBorrowInterest - numericSwapFees;
 
   function calculateGraphData(): Array<PnLEntry> {
     let P = priceA;
     let updatedData = [];
-    const borrowInterestNumericValue = parseFloat(borrowInterestInputValue) || 0;
-    const swapFeeNumericValue = parseFloat(swapFeeInputValue) || 0;
     while (P < priceB) {
       updatedData.push({
         x: P,
-        y:
-          calculatePnL(marginAccount, uniswapPositions, P, initialValue) +
-          borrowInterestNumericValue +
-          swapFeeNumericValue,
+        y: calculatePnL(marginAccount, uniswapPositions, P, initialValue),
       });
       P *= 1.001;
     }
@@ -273,7 +283,7 @@ export default function PnLGraph(props: PnLGraphProps) {
       setData(updatedData);
     },
     INPUT_DEBOUNCE_DELAY_MS,
-    [borrowInterestInputValue, swapFeeInputValue]
+    [borrowInterestInputValue, swapFeesInputValue]
   );
 
   const liquidationLower = liquidationThresholds?.lower ?? 0;
@@ -312,8 +322,8 @@ export default function PnLGraph(props: PnLGraphProps) {
         <PnLGraphSettings
           borrowInterestInputValue={borrowInterestInputValue}
           setBorrowInterestInputValue={setBorrowInterestInputValue}
-          swapFeeInputValue={swapFeeInputValue}
-          setSwapFeeInputValue={setSwapFeeInputValue}
+          swapFeeInputValue={swapFeesInputValue}
+          setSwapFeesInputValue={setSwapFeesInputValue}
           disabled={data.length === 0}
         />
       </div>

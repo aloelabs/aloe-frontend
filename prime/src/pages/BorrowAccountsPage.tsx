@@ -13,10 +13,26 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { Display } from 'shared/lib/components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
 import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
+import { ContractReceipt } from 'ethers';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
+import { DropdownOption } from '../components/common/Dropdown';
+
+const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
+const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
+
+const MARGIN_ACCOUNT_OPTIONS: DropdownOption[] = [
+  {
+    label: 'USDC/WETH 0.05%',
+    value: '0xfBe57C73A82171A773D3328F1b563296151be515',
+  },
+  {
+    label: 'WBTC/WETH 0.3%',
+    value: '0xc0A1c271efD6D6325D5db33db5e7cF42A715CD12',
+  },
+];
 
 const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
@@ -32,6 +48,7 @@ export default function BorrowAccountsPage() {
   // --> other
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
+  const [isTxnPending, setIsTxnPending] = useState(false);
 
   // MARK: wagmi hooks
   const currentChainId = chain.goerli.id;
@@ -67,11 +84,38 @@ export default function BorrowAccountsPage() {
   }, [address, marginAccountLensContract, provider, blockNumber.data]);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal = localStorage.getItem('acknowledgedWelcomeModal') !== 'true';
+    const shouldShowWelcomeModal =
+      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
   });
+
+  function onCommencement() {
+    setIsTxnPending(false);
+    setShowConfirmModal(false);
+    setTimeout(() => {
+      setShowSubmittingModal(true);
+    }, 500);
+  }
+
+  function onCompletion(receipt?: ContractReceipt) {
+    // Reset state (close out of potentially open modals)
+    if (receipt === undefined) {
+      setIsTxnPending(false);
+      return;
+    }
+    setShowSubmittingModal(false);
+    if (receipt?.status === 1) {
+      setTimeout(() => {
+        setShowSuccessModal(true);
+      }, 500);
+    } else {
+      setTimeout(() => {
+        setShowFailedModal(true);
+      }, 500);
+    }
+  }
 
   return (
     <AppPage>
@@ -97,38 +141,18 @@ export default function BorrowAccountsPage() {
           <MarginAccountCard key={index} {...marginAccount} />
         ))}
       </MarginAccountsContainner>
-
       <CreateMarginAccountModal
-        availablePools={[
-          {
-            label: 'USDC/WETH 0.05%',
-            value: '0xfBe57C73A82171A773D3328F1b563296151be515',
-          },
-        ]}
+        availablePools={MARGIN_ACCOUNT_OPTIONS}
         open={showConfirmModal}
+        isTxnPending={isTxnPending}
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
-          setShowConfirmModal(false);
-          setTimeout(() => {
-            setShowSubmittingModal(true);
-          }, 500);
+          setIsTxnPending(true);
           if (!signer || !address || !selectedPool) {
             // TODO
             return;
           }
-          createMarginAccount(signer, selectedPool, address, (receipt) => {
-            setShowSubmittingModal(false);
-            if (receipt?.status === 1) {
-              setTimeout(() => {
-                setShowSuccessModal(true);
-              }, 500);
-            } else {
-              setTimeout(() => {
-                setShowFailedModal(true);
-              }, 500);
-            }
-            console.log(receipt);
-          });
+          createMarginAccount(signer, selectedPool, address, onCommencement, onCompletion);
         }}
         onCancel={() => {
           // TODO
@@ -147,7 +171,7 @@ export default function BorrowAccountsPage() {
         open={showWelcomeModal}
         setOpen={setShowWelcomeModal}
         onConfirm={() => {
-          localStorage.setItem('acknowledgedWelcomeModal', 'true');
+          localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
         }}
       />
     </AppPage>
