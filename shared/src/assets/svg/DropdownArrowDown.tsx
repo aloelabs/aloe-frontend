@@ -6,9 +6,9 @@ export default function DropdownArrowDown(props: SVGProps) {
       <path
         d='M5 7.5L10 12.5L15 7.5'
         stroke='white'
-        stroke-width='1.66667'
-        stroke-linecap='round'
-        stroke-linejoin='round'
+        strokeWidth='1.66667'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
   );
