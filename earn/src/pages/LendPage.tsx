@@ -27,7 +27,7 @@ import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
+import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
