@@ -3,7 +3,7 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 
 import WagmiProvider from './connector/WagmiProvider';
 import Header from './components/header/Header';
-import Footer from './components/common/Footer';
+import Footer from 'shared/lib/components/common/Footer';
 
 import AppBody from './components/common/AppBody';
 import ScrollToTop from './util/ScrollToTop';
