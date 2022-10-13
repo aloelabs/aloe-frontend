@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';

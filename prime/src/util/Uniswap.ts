@@ -10,7 +10,7 @@ import { TokenData } from '../data/TokenData';
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { theGraphUniswapV3Client } from '../App';
 import { UniswapTicksQuery } from './GraphQL';
-import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { UniswapPosition } from '../data/Actions';
 
 const BINS_TO_FETCH = 500;

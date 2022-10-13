@@ -1,6 +1,6 @@
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
-import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 
 /**
  * GraphQL query to get the uniswap volume of a pool at a given block and currently.

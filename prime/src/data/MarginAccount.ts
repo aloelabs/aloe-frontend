@@ -1,4 +1,4 @@
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BigNumber, ethers } from 'ethers';

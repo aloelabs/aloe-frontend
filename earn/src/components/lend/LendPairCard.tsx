@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import FeeTierContainer from '../common/FeeTierContainer';
+import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from '../../util/Numbers';
