@@ -27,8 +27,7 @@ import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
@@ -260,8 +259,6 @@ export default function LendPage() {
     );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
-  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
-
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -312,12 +309,10 @@ export default function LendPage() {
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
           </LendHeader>
-          {isGTMediumScreen && (
-            <LendPieChartWidget
-              tokenBalances={[...kittyBalances, ...tokenBalances]}
-              totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
-            />
-          )}
+          <LendPieChartWidget
+            tokenBalances={[...kittyBalances, ...tokenBalances]}
+            totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+          />
         </LendHeaderContainer>
         <Divider />
         <div>
