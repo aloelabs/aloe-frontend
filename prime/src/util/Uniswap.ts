@@ -11,7 +11,6 @@ import { ApolloQueryResult } from '@apollo/react-hooks';
 import { theGraphUniswapV3Client } from '../App';
 import { UniswapTicksQuery } from './GraphQL';
 import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
-import { UniswapPosition } from '../data/Actions';
 
 const BINS_TO_FETCH = 500;
 export const Q48 = ethers.BigNumber.from('0x1000000000000');
@@ -365,6 +364,57 @@ export function calculateAmount0FromAmount1(
   };
 }
 
+export function calculateAmountFromAmount(
+  amount: number,
+  lowerTick: number,
+  upperTick: number,
+  currentTick: number,
+  token0Decimals: number,
+  token1Decimals: number,
+  fromToken0: boolean
+): {
+  amount: string;
+  liquidity: JSBI;
+} {
+  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
+
+  //lower price
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
+  //upper price
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
+  //current price
+  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
+
+  const fromTokenDecimals = fromToken0 ? token0Decimals : token1Decimals;
+  const toTokenDecimals = fromToken0 ? token1Decimals : token0Decimals;
+
+  const bigAmount = JSBI.BigInt(new Big(amount).mul(10 ** fromTokenDecimals).toFixed(0));
+  const liquidity = maxLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, MaxUint256, bigAmount, true);
+
+  let toAmount = JSBI.BigInt(0);
+  const toAmountDeltaFunc = fromToken0 ? SqrtPriceMath.getAmount1Delta : SqrtPriceMath.getAmount0Delta;
+  if (currentTick <= lowerTick) {
+    //current price < lower price
+    //everything to the right of currentTick is token0. so we look between lowerTick and upperTick
+    toAmount = toAmountDeltaFunc(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
+  } else if (currentTick < upperTick) {
+    //lower price < current price < upper price
+    //only stuff to the right of currentTick is token0. so we look between currentTick and upperTick
+    toAmount = toAmountDeltaFunc(sqrtRatioX96, sqrtRatioBX96, liquidity, false);
+  } else {
+    //current price >= upper price
+    //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
+    return {
+      amount: '0',
+      liquidity,
+    };
+  }
+  return {
+    amount: new Big(toAmount.toString()).div(10 ** toTokenDecimals).toFixed(6),
+    liquidity,
+  };
+}
+
 export function getMinTick(tickSpacing: number) {
   return nearestUsableTick(TickMath.MIN_TICK, tickSpacing);
 }
@@ -388,16 +438,6 @@ export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, f
   // if (uniswapFeeAmount == null) return null;
   // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
   return '0xfbe57c73a82171a773d3328f1b563296151be515';
-}
-
-export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]): [number, number] {
-  let token0Amount = 0;
-  let token1Amount = 0;
-  for (let pos of uniPos) {
-    token0Amount += pos.amount0 || 0;
-    token1Amount += pos.amount1 || 0;
-  }
-  return [token0Amount, token1Amount];
 }
 
 export function uniswapPositionKey(owner: string, lower: number, upper: number): string {

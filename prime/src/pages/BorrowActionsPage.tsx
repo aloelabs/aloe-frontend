@@ -55,7 +55,7 @@ const BodyWrapper = styled.div`
   gap: 32px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
 `;
 
@@ -410,8 +410,6 @@ export default function BorrowActionsPage() {
     setIsShowingHypothetical(false);
   }
 
-  console.log(marginAccount.address);
-
   return (
     <AppPage>
       <BodyWrapper>
@@ -549,6 +547,7 @@ export default function BorrowActionsPage() {
               provider={provider}
               uniswapPositions={displayedUniswapPositions}
               isInTermsOfToken0={isToken0Selected}
+              showAsterisk={isShowingHypothetical}
             />
           </div>
           <div className='w-full flex flex-col gap-4'>
