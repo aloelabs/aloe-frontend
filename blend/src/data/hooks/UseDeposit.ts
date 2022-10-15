@@ -43,18 +43,18 @@ export function useDeposit(poolData: BlendPoolMarkers) {
     watch: true,
   });
   const { data: token0Allowance } = useContractRead({
-    addressOrName: poolData.token0Address,
-    contractInterface: erc20ABI,
+    address: poolData.token0Address,
+    abi: erc20ABI,
     functionName: 'allowance',
-    args: [address, poolData.poolAddress],
+    args: [address || '0x', poolData.poolAddress],
     cacheOnBlock: true,
     watch: true,
   });
   const { data: token1Allowance } = useContractRead({
-    addressOrName: poolData.token1Address,
-    contractInterface: erc20ABI,
+    address: poolData.token1Address,
+    abi: erc20ABI,
     functionName: 'allowance',
-    args: [address, poolData.poolAddress],
+    args: [address || '0x', poolData.poolAddress],
     cacheOnBlock: true,
     watch: true,
   });

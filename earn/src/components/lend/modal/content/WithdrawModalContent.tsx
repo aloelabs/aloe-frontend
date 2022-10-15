@@ -12,6 +12,7 @@ import { FilledStylizedButtonWithIcon } from '../../../common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { BigNumber } from 'ethers';
 
 enum ConfirmButtonState {
   INSUFFICIENT_KITTY,
@@ -58,8 +59,8 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   const { address: accountAddress } = useAccount();
 
   const contract = useContractWrite({
-    addressOrName: kitty.address,
-    contractInterface: KittyABI,
+    address: kitty.address,
+    abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'withdraw',
   });
@@ -89,10 +90,10 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
       case ConfirmButtonState.READY:
         setIsPending(true);
         contract
-          .writeAsync({
+          .writeAsync?.({
             recklesslySetUnpreparedArgs: [sharesToWithdraw],
             recklesslySetUnpreparedOverrides: {
-              gasLimit: (600000).toFixed(0),
+              gasLimit: BigNumber.from((600000).toFixed(0)),
             },
           })
           .then((txnResult) => {

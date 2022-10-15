@@ -60,8 +60,8 @@ export default function BorrowAccountsPage() {
     watch: true,
   });
   const marginAccountLensContract = useContract({
-    addressOrName: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
-    contractInterface: MarginAccountLensABI,
+    address: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
+    abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
 
@@ -69,6 +69,10 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch(userAddress: string) {
+      // Guard clause: if the margin account lens contract is null, don't fetch
+      if (!marginAccountLensContract) {
+        return;
+      }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);

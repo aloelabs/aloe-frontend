@@ -1,7 +1,8 @@
+import { Address } from 'wagmi';
 import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string; // Address of the token
+  address: Address; // Address of the token
   decimals: number; // Number of decimals for the token
   ticker?: string; // Ticker of the token
   name?: string; // Name of the token
@@ -177,12 +178,15 @@ export function getTokens(): TokenData[] {
   return Array.from(TokenDataMap.values());
 }
 
-export function GetTokenData(address: string): TokenData {
+export function GetTokenData(address: Address | string): TokenData {
+  if (!address.startsWith('0x')) {
+    throw new Error('Invalid address');
+  }
   if (TokenDataMap.has(address.toLowerCase())) {
     return TokenDataMap.get(address.toLowerCase())!;
   } else
     return {
-      address: address,
+      address: address as Address,
       decimals: 0,
     };
 }

@@ -28,7 +28,7 @@ import { GetTokenData } from '../data/TokenData';
 import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
 import tw from 'twin.macro';
 import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { useAccount } from 'wagmi';
+import { Address, useAccount } from 'wagmi';
 import { FeeTier } from '../data/BlendPoolMarkers';
 import { theGraphUniswapV3Client } from '../App';
 import { getUniswapVolumeQuery } from '../util/GraphQL';
@@ -37,7 +37,8 @@ import { IOSStyleSpinner } from '../components/common/Spinner';
 const ABOUT_MESSAGE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 type PoolParams = {
-  pooladdress: string;
+  // Addresses must start with 0x
+  pooladdress: Address;
 };
 
 const LoaderWrapper = styled.div`

@@ -7,12 +7,13 @@ import Big from 'big.js';
 export function useBalanceOfUnderlying(token: TokenData, kitty: TokenData, accountAddress: string) {
   const [state, setState] = useState<string | null>(null);
   const { data: balanceOfUnderlying } = useContractRead({
-    addressOrName: kitty.address,
-    contractInterface: KittyABI,
+    address: kitty.address,
+    abi: KittyABI,
     functionName: 'balanceOfUnderlying',
-    args: [accountAddress],
+    args: [accountAddress] as const,
     watch: true,
   });
+  console.log('balanceOfUnderlying', balanceOfUnderlying);
   useEffect(() => {
     if (balanceOfUnderlying) {
       setState(new Big(balanceOfUnderlying.toString()).div(10 ** token.decimals).toString());

@@ -1,5 +1,5 @@
 import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
 import { useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
 import KittyABI from '../../../../assets/abis/Kitty.json';
@@ -73,13 +73,13 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     watch: true,
   });
 
-  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '0x', kitty.address);
 
   const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, kitty.address);
 
   const contract = useContractWrite({
-    addressOrName: kitty.address,
-    contractInterface: KittyABI,
+    address: kitty.address,
+    abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'deposit',
   });
@@ -113,7 +113,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
       case ConfirmButtonState.APPROVE_ASSET:
         setIsPending(true);
         writeAllowanceToken
-          .writeAsync()
+          .writeAsync?.()
           .then((txnResult) => {
             txnResult.wait(1).then(() => {
               setIsPending(false);
@@ -126,10 +126,10 @@ export default function DepositModalContent(props: DepositModalContentProps) {
       case ConfirmButtonState.READY:
         setIsPending(true);
         contract
-          .writeAsync({
+          .writeAsync?.({
             recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
             recklesslySetUnpreparedOverrides: {
-              gasLimit: (600000).toFixed(0),
+              gasLimit: BigNumber.from((600000).toFixed(0)),
             },
           })
           .then((txnResult) => {
