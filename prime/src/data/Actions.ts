@@ -107,7 +107,7 @@ export type ActionCardProps = {
   previousActionCardState: ActionCardState | null;
   isCausingError: boolean;
   onRemove: () => void;
-  onChange: (result: ActionCardState) => void;
+  onChange: (result: ActionCardState, cumulativeState: MarginAccount) => void;
 };
 
 export type Action = {

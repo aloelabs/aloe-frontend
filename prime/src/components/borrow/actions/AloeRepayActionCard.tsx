@@ -11,6 +11,7 @@ import {
 } from '../../../data/Actions';
 import { getRepayActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
+import { Assets, Liabilities } from '../../../data/MarginAccount';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -41,20 +42,36 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
     } else {
       amount1 = parsedValue;
     }
+    const updatedAssets: Assets = {
+      ...marginAccount.assets,
+      token0Raw: marginAccount.assets.token0Raw - (selectedToken === TokenType.ASSET0 ? parsedValue : 0),
+      token1Raw: marginAccount.assets.token1Raw - (selectedToken === TokenType.ASSET1 ? parsedValue : 0),
+    };
+    const updatedLiabilities: Liabilities = {
+      amount0: marginAccount.liabilities.amount0 - (selectedToken === TokenType.ASSET0 ? parsedValue : 0),
+      amount1: marginAccount.liabilities.amount1 - (selectedToken === TokenType.ASSET1 ? parsedValue : 0),
+    };
 
-    onChange({
-      actionId: ActionID.REPAY,
-      actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0DebtDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1DebtDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
+    onChange(
+      {
+        actionId: ActionID.REPAY,
+        actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
+        textFields: [value],
+        aloeResult: {
+          token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
+          token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
+          token0DebtDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
+          token1DebtDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
+          selectedToken: selectedToken,
+        },
+        uniswapResult: null,
       },
-      uniswapResult: null,
-    });
+      {
+        ...marginAccount,
+        assets: updatedAssets,
+        liabilities: updatedLiabilities,
+      }
+    );
   };
 
   const assetMax = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
@@ -78,13 +95,16 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.REPAY,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
+              onChange(
+                {
+                  actionId: ActionID.REPAY,
+                  aloeResult: {
+                    selectedToken: parseSelectedToken(option.value),
+                  },
+                  uniswapResult: null,
                 },
-                uniswapResult: null,
-              });
+                marginAccount
+              );
             }
           }}
         />

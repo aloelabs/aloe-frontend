@@ -12,6 +12,7 @@ import {
 import { TokenData } from '../../../data/TokenData';
 import { getTransferOutActionArgs } from '../../../connector/MarginAccountActions';
 import { useEffect } from 'react';
+import { Assets } from '../../../data/MarginAccount';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -51,20 +52,35 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.TRANSFER_OUT,
-      actionArgs:
-        selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
+    const updatedAssets: Assets = {
+      ...marginAccount.assets,
+      token0Raw: marginAccount.assets.token0Raw - (selectedToken === TokenType.ASSET0 ? parsedValue : 0),
+      token1Raw: marginAccount.assets.token1Raw - (selectedToken === TokenType.ASSET1 ? parsedValue : 0),
+      token0Plus: marginAccount.assets.token0Plus - (selectedToken === TokenType.KITTY0 ? parsedValue : 0),
+      token1Plus: marginAccount.assets.token1Plus - (selectedToken === TokenType.KITTY1 ? parsedValue : 0),
+    };
+    onChange(
+      {
+        actionId: ActionID.TRANSFER_OUT,
+        actionArgs:
+          selectedToken && value !== ''
+            ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue)
+            : undefined,
+        textFields: [value],
+        aloeResult: {
+          token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
+          token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
+          token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
+          token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
+          selectedToken: selectedToken,
+        },
+        uniswapResult: null,
       },
-      uniswapResult: null,
-    });
+      {
+        ...marginAccount,
+        assets: updatedAssets,
+      }
+    );
   };
 
   const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
@@ -85,13 +101,16 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.TRANSFER_OUT,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
+              onChange(
+                {
+                  actionId: ActionID.TRANSFER_OUT,
+                  aloeResult: {
+                    selectedToken: parseSelectedToken(option.value),
+                  },
+                  uniswapResult: null,
                 },
-                uniswapResult: null,
-              });
+                marginAccount
+              );
             }
           }}
         />

@@ -1,6 +1,3 @@
-import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
-import JSBI from 'jsbi';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
@@ -22,26 +19,17 @@ import { PreviousPageButton } from '../components/common/Buttons';
 import TokenChooser from '../components/common/TokenChooser';
 import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
-import {
-  Action,
-  ActionCardState,
-  calculateHypotheticalStates,
-  UniswapPosition,
-  UniswapPositionPrior,
-} from '../data/Actions';
+import { Action, ActionCardState, UniswapPositionPrior } from '../data/Actions';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
-  Assets,
   computeLiquidationThresholds,
   fetchMarginAccount,
-  Liabilities,
   LiquidationThresholds,
   MarginAccount,
   sumAssetsPerToken,
 } from '../data/MarginAccount';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
-import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -111,39 +99,6 @@ type AccountParams = {
   account: string;
 };
 
-async function fetchUniswapPositions(
-  priors: UniswapPositionPrior[],
-  marginAccountAddress: string,
-  uniswapV3PoolContract: any,
-  sqrtPriceX96: Big,
-  token0Decimals: number,
-  token1Decimals: number
-) {
-  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
-  const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
-
-  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
-  priors.forEach((prior, i) => {
-    const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    const amounts = getAmountsForLiquidity(
-      liquidity,
-      prior.lower!,
-      prior.upper!,
-      TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
-      token0Decimals,
-      token1Decimals
-    );
-    fetchedUniswapPositions.set(keys[i], {
-      ...prior,
-      liquidity: liquidity,
-      amount0: amounts[0],
-      amount1: amounts[1],
-    });
-  });
-
-  return fetchedUniswapPositions;
-}
-
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
@@ -152,21 +107,21 @@ export default function BorrowActionsPage() {
   // MARK: component state
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  const [uniswapPositions, setUniswapPositions] = useState(new Map<string, UniswapPosition>());
+  const [cumulativeState, setCumulativeState] = useState<MarginAccount | null>(null);
   const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
-  const [hypotheticalStates, setHypotheticalStates] = useState<
-    {
-      assets: Assets;
-      liabilities: Liabilities;
-      positions: Map<string, UniswapPosition>;
-    }[]
-  >([]);
-  const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
-  const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
+  // const [hypotheticalStates, setHypotheticalStates] = useState<
+  //   {
+  //     assets: Assets;
+  //     liabilities: Liabilities;
+  //     positions: Map<string, UniswapPosition>;
+  //   }[]
+  // >([]);
+  //const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
+  //const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
   const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
@@ -207,110 +162,126 @@ export default function BorrowActionsPage() {
         marginAccountContract,
         marginAccountLensContract,
         provider,
-        marginAccountAddress
+        marginAccountAddress,
+        (uniswapPositionPriors || []) as UniswapPositionPrior[]
       );
       if (mounted) {
         setMarginAccount(fetchedMarginAccount);
+        setCumulativeState((prevState: MarginAccount | null) => {
+          if (!prevState) {
+            return fetchedMarginAccount;
+          }
+          return prevState;
+        });
       }
     }
     if (accountAddressParam) {
+      console.log('fetching margin account', accountAddressParam);
       fetch(accountAddressParam);
     }
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider]);
-
-  // MARK: fetch uniswap positions
-  useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionPriors)) return;
-
-      const fetchedUniswapPositions = await fetchUniswapPositions(
-        uniswapPositionPriors as UniswapPositionPrior[],
-        accountAddressParam,
-        uniswapV3PoolContract,
-        marginAccount.sqrtPriceX96,
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
-      );
-
-      if (mounted) {
-        setUniswapPositions(fetchedUniswapPositions);
-        // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
-        // this is because one is computed on-chain and cached, while the other is computed locally.
-        // if we've fetched both, prefer the uniswapPositions version (local & newer).
-        const i = { amount0: 0, amount1: 0 };
-        const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
-          return {
-            amount0: p.amount0 + (c.amount0 || 0),
-            amount1: p.amount1 + (c.amount1 || 0),
-          };
-        }, i);
-        setMarginAccount({
-          ...marginAccount,
-          assets: { ...marginAccount.assets, uni0: amount0, uni1: amount1 },
-        });
-      }
-    }
-    fetch();
-
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     accountAddressParam,
-    marginAccount?.sqrtPriceX96,
-    marginAccount?.token0,
-    marginAccount?.token1,
+    marginAccountContract,
+    marginAccountLensContract,
+    provider,
     uniswapPositionPriors,
     uniswapV3PoolContract,
   ]);
+
+  // MARK: fetch uniswap positions
+  // useEffect(() => {
+  //   let mounted = true;
+  //   async function fetch() {
+  //     if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionPriors)) return;
+
+  //     const fetchedUniswapPositions = await fetchUniswapPositions(
+  //       uniswapPositionPriors as UniswapPositionPrior[],
+  //       accountAddressParam,
+  //       uniswapV3PoolContract,
+  //       marginAccount.sqrtPriceX96,
+  //       marginAccount.token0.decimals,
+  //       marginAccount.token1.decimals
+  //     );
+
+  //     if (mounted) {
+  //       setUniswapPositions(fetchedUniswapPositions);
+  //       // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
+  //       // this is because one is computed on-chain and cached, while the other is computed locally.
+  //       // if we've fetched both, prefer the uniswapPositions version (local & newer).
+  //       const i = { amount0: 0, amount1: 0 };
+  //       const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
+  //         return {
+  //           amount0: p.amount0 + (c.amount0 || 0),
+  //           amount1: p.amount1 + (c.amount1 || 0),
+  //         };
+  //       }, i);
+  //       setMarginAccount({
+  //         ...marginAccount,
+  //         assets: { ...marginAccount.assets, uni0: amount0, uni1: amount1 },
+  //       });
+  //     }
+  //   }
+  //   fetch();
+
+  //   return () => {
+  //     mounted = false;
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [
+  //   accountAddressParam,
+  //   marginAccount?.sqrtPriceX96,
+  //   marginAccount?.token0,
+  //   marginAccount?.token1,
+  //   uniswapPositionPriors,
+  //   uniswapV3PoolContract,
+  // ]);
 
   // MARK: compute hypothetical states
   useEffect(() => {
     if (!marginAccount) return;
 
     // assets and liabilities after adding hypothetical actions
-    const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
+    // const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
 
     // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
-    const numValidActions = _hypotheticalStates.length - 1;
+    // const numValidActions = _hypotheticalStates.length - 1;
 
     // get the latest *valid* hypothetical state. this will be the one we display
-    const {
-      assets: assetsF,
-      liabilities: liabilitiesF,
-      positions: uniswapPositionsF,
-    } = _hypotheticalStates[numValidActions];
+    // const {
+    //   assets: assetsF,
+    //   liabilities: liabilitiesF,
+    //   positions: uniswapPositionsF,
+    // } = _hypotheticalStates[numValidActions];
 
     // tell React about our findings
-    const _marginAccount = { ...marginAccount };
-    if (isShowingHypothetical) {
-      const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
-      const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
-      // Apply the user's inputted swap fees to the displayed margin account's assets
-      _marginAccount.assets = {
-        ...assetsF,
-        token0Raw: assetsF.token0Raw + (isToken0Selected ? numericSwapFees : 0),
-        token1Raw: assetsF.token1Raw + (isToken0Selected ? 0 : numericSwapFees),
-      };
-      // Apply the user's inputted borrow interest to the displayed margin account's liabilities
-      _marginAccount.liabilities = {
-        ...liabilitiesF,
-        amount0: liabilitiesF.amount0 - (isToken0Selected ? numericBorrowInterest : 0),
-        amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
-      };
-    }
-    setHypotheticalStates(_hypotheticalStates);
-    setDisplayedMarginAccount(_marginAccount);
-    setDisplayedUniswapPositions(Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()));
+    // const _marginAccount = { ...marginAccount };
+    // if (isShowingHypothetical) {
+    //   const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
+    //   const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+    //   // Apply the user's inputted swap fees to the displayed margin account's assets
+    //   _marginAccount.assets = {
+    //     ...assetsF,
+    //     token0Raw: assetsF.token0Raw + (isToken0Selected ? numericSwapFees : 0),
+    //     token1Raw: assetsF.token1Raw + (isToken0Selected ? 0 : numericSwapFees),
+    //   };
+    //   // Apply the user's inputted borrow interest to the displayed margin account's liabilities
+    //   _marginAccount.liabilities = {
+    //     ...liabilitiesF,
+    //     amount0: liabilitiesF.amount0 - (isToken0Selected ? numericBorrowInterest : 0),
+    //     amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
+    //   };
+    // }
+    // setHypotheticalStates(_hypotheticalStates);
+    // setDisplayedMarginAccount(_marginAccount);
+    // setDisplayedUniswapPositions(
+    //  Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values())
+    // );
     console.log('Running 1');
   }, [
     marginAccount,
-    uniswapPositions,
     actionResults,
     isShowingHypothetical,
     isToken0Selected,
@@ -321,23 +292,18 @@ export default function BorrowActionsPage() {
   // compute liquidation thresholds for the currently-selected data (current or hypothetical)
   useDebouncedEffect(
     () => {
-      if (!displayedMarginAccount) return;
+      if (!cumulativeState) return;
       console.log('Running 2');
-      const lt: LiquidationThresholds = computeLiquidationThresholds(
-        displayedMarginAccount,
-        displayedUniswapPositions,
-        0.025,
-        120,
-        6
-      );
+      const lt: LiquidationThresholds = computeLiquidationThresholds(cumulativeState, 0.025, 120, 6);
       setLiquidationThresholds(lt);
     },
     GENERAL_DEBOUNCE_DELAY_MS,
-    [displayedMarginAccount, displayedUniswapPositions]
+    [cumulativeState]
   );
 
   // if no account data is found, don't render the page
-  if (!marginAccount || !displayedMarginAccount) {
+  if (!marginAccount || !cumulativeState) {
+    //console.log(marginAccount, displayedMarginAccount);
     return null;
   }
 
@@ -351,8 +317,8 @@ export default function BorrowActionsPage() {
   }
 
   // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
-  const numValidActions = Math.min(hypotheticalStates.length - 1);
-  const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
+  // const numValidActions = Math.min(hypotheticalStates.length - 1);
+  // const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
   // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
   const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
 
@@ -360,24 +326,28 @@ export default function BorrowActionsPage() {
   const token0 = marginAccount.token0;
   const token1 = marginAccount.token1;
   const [selectedToken, unselectedToken] = isToken0Selected ? [token0, token1] : [token1, token0];
-  const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
-  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
-  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
+  const [assetsSum0, assetsSum1] = sumAssetsPerToken(cumulativeState.assets);
+  const isActiveAssetsEmpty = Object.values(cumulativeState.assets).every((a) => a === 0);
+  const isActiveLiabilitiesEmpty = Object.values(cumulativeState.liabilities).every((l) => l === 0);
 
-  function updateActionResults(updatedActionResults: ActionCardState[]) {
+  function updateActionResults(updatedActionResults: ActionCardState[], cumulativeState: MarginAccount | null) {
     setActionResults(updatedActionResults);
+    setCumulativeState(cumulativeState);
   }
 
   function handleAddAction(action: Action) {
     if (actionResults.length === 0) setIsShowingHypothetical(true);
-    updateActionResults([
-      ...actionResults,
-      {
-        actionId: action.id,
-        aloeResult: null,
-        uniswapResult: null,
-      },
-    ]);
+    updateActionResults(
+      [
+        ...actionResults,
+        {
+          actionId: action.id,
+          aloeResult: null,
+          uniswapResult: null,
+        },
+      ],
+      cumulativeState
+    );
     setActiveActions([...activeActions, action]);
   }
 
@@ -398,12 +368,12 @@ export default function BorrowActionsPage() {
           uniswapResult: null,
         };
       });
-    updateActionResults([...actionResults, ...newActionResults]);
+    updateActionResults([...actionResults, ...newActionResults], cumulativeState);
     setActiveActions([...activeActions, ...actions]);
   }
 
   function clearActions() {
-    updateActionResults([]);
+    updateActionResults([], null);
     setActiveActions([]);
     setIsShowingHypothetical(false);
   }
@@ -423,8 +393,8 @@ export default function BorrowActionsPage() {
         <GridExpandingDiv>
           <ManageAccountWidget
             marginAccount={marginAccount}
-            hypotheticalStates={hypotheticalStates}
-            uniswapPositions={displayedUniswapPositions}
+            cumulativeState={cumulativeState}
+            //uniswapPositions={displayedUniswapPositions}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -438,7 +408,7 @@ export default function BorrowActionsPage() {
               let activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
-            problematicActionIdx={problematicActionIdx}
+            // problematicActionIdx={problematicActionIdx}
             transactionIsViable={transactionIsReady}
             clearActions={clearActions}
           />
@@ -473,12 +443,8 @@ export default function BorrowActionsPage() {
               />
               <AccountStatsCard
                 label='Liabilities'
-                valueLine1={`${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 5)} ${
-                  token0.ticker || ''
-                }`}
-                valueLine2={`${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 5)} ${
-                  token1.ticker || ''
-                }`}
+                valueLine1={`${formatTokenAmount(cumulativeState.liabilities.amount0, 5)} ${token0.ticker || ''}`}
+                valueLine2={`${formatTokenAmount(cumulativeState.liabilities.amount1, 5)} ${token1.ticker || ''}`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
@@ -511,8 +477,8 @@ export default function BorrowActionsPage() {
             </Display>
             {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
               <PnLGraph
-                marginAccount={displayedMarginAccount}
-                uniswapPositions={displayedUniswapPositions}
+                marginAccount={cumulativeState}
+                uniswapPositions={cumulativeState.uniswapPositions} // TODO: get this from cumulative state
                 inTermsOfToken0={isToken0Selected}
                 liquidationThresholds={displayedLiquidationThresholds}
                 isShowingHypothetical={isShowingHypothetical}
@@ -542,7 +508,7 @@ export default function BorrowActionsPage() {
               <TokenAllocationPieChartWidget
                 token0={token0}
                 token1={token1}
-                assets={displayedMarginAccount.assets}
+                assets={cumulativeState.assets}
                 sqrtPriceX96={marginAccount.sqrtPriceX96}
               />
             ) : (

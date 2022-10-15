@@ -98,29 +98,32 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       JSBI.BigInt(10000)
     );
 
-    onChange({
-      actionId: ActionID.REMOVE_LIQUIDITY,
-      actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
-      aloeResult: {
-        token0RawDelta: amount0ToRemove,
-        token1RawDelta: amount1ToRemove,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: updatedLiquidity,
-          amount0: -amount0ToRemove,
-          amount1: -amount1ToRemove,
-          lower,
-          upper,
+    onChange(
+      {
+        actionId: ActionID.REMOVE_LIQUIDITY,
+        actionArgs:
+          lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
+        aloeResult: {
+          token0RawDelta: amount0ToRemove,
+          token1RawDelta: amount1ToRemove,
+          selectedToken: null,
         },
-        slippageTolerance: 0,
-        removeLiquidityPercentage: parsedPercentage,
-        isAmount0LastUpdated: undefined,
-        isToken0Selected: undefined,
+        uniswapResult: {
+          uniswapPosition: {
+            liquidity: updatedLiquidity,
+            amount0: -amount0ToRemove,
+            amount1: -amount1ToRemove,
+            lower,
+            upper,
+          },
+          slippageTolerance: 0,
+          removeLiquidityPercentage: parsedPercentage,
+          isAmount0LastUpdated: undefined,
+          isToken0Selected: undefined,
+        },
       },
-    });
+      marginAccount
+    );
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {

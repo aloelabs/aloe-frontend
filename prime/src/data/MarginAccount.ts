@@ -1,16 +1,16 @@
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 import Big from 'big.js';
 import JSBI from 'jsbi';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { BIGQ96 } from './constants/Values';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
-import { UniswapPosition } from './Actions';
+import { UniswapPosition, UniswapPositionPrior } from './Actions';
 import { TickMath } from '@uniswap/v3-sdk';
-import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
+import { getAmountsForLiquidity, getValueOfLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export type Assets = {
   token0Raw: number;
@@ -32,6 +32,7 @@ export type Liabilities = {
 export type MarginAccount = {
   address: string;
   uniswapPool: string;
+  uniswapPositions: UniswapPosition[];
   token0: TokenData;
   token1: TokenData;
   feeTier: FeeTier;
@@ -55,7 +56,7 @@ export type LiquidationThresholds = {
  */
 export type MarginAccountPreview = Omit<
   MarginAccount,
-  'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts'
+  'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts' | 'uniswapPositions'
 >;
 
 export async function getMarginAccountsForUser(
@@ -165,11 +166,45 @@ export async function fetchMarginAccountPreviews(
   return Promise.all(marginAccounts);
 }
 
+async function fetchUniswapPositions(
+  priors: UniswapPositionPrior[],
+  marginAccountAddress: string,
+  uniswapV3PoolContract: Contract,
+  sqrtPriceX96: Big,
+  token0Decimals: number,
+  token1Decimals: number
+) {
+  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+  const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
+
+  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+  priors.forEach((prior, i) => {
+    const liquidity = JSBI.BigInt(results[i].liquidity.toString());
+    const amounts = getAmountsForLiquidity(
+      liquidity,
+      prior.lower!,
+      prior.upper!,
+      TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
+      token0Decimals,
+      token1Decimals
+    );
+    fetchedUniswapPositions.set(keys[i], {
+      ...prior,
+      liquidity: liquidity,
+      amount0: amounts[0],
+      amount1: amounts[1],
+    });
+  });
+
+  return fetchedUniswapPositions;
+}
+
 export async function fetchMarginAccount(
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  marginAccountAddress: string
+  marginAccountAddress: string,
+  uniswapPositionPriors: UniswapPositionPrior[]
 ): Promise<MarginAccount> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
@@ -222,17 +257,34 @@ export async function fetchMarginAccount(
       .div(10 ** token1.decimals)
       .toNumber(),
   };
+  const sqrtPriceX96 = toBig(slot0.sqrtPriceX96.toString());
+  const uniswapV3PoolContract = new Contract(uniswapPool, UniswapV3PoolABI, provider);
+  //  useContract({
+  //   addressOrName: marginAccount?.uniswapPool ?? '', // TODO better option resolution
+  //   contractInterface: UniswapV3PoolABI,
+  //   signerOrProvider: provider,
+  // });
+  const fetchedUniswapPositions = await fetchUniswapPositions(
+    uniswapPositionPriors,
+    marginAccountAddress,
+    uniswapV3PoolContract,
+    sqrtPriceX96,
+    token0.decimals,
+    token1.decimals
+  );
+  console.log(fetchedUniswapPositions);
   return {
     address: marginAccountAddress,
     uniswapPool: uniswapPool,
-    token0: token0,
-    token1: token1,
-    kitty0: kitty0,
-    kitty1: kitty1,
+    uniswapPositions: Array.from(fetchedUniswapPositions.values()),
+    token0,
+    token1,
+    kitty0,
+    kitty1,
     feeTier: NumericFeeTierToEnum(feeTier),
-    assets: assets,
-    liabilities: liabilities,
-    sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+    assets,
+    liabilities,
+    sqrtPriceX96,
     tickAtLastModify: packedSlot.tickAtLastModify,
     includeKittyReceipts: packedSlot.includeKittyReceipts,
   };
@@ -382,11 +434,11 @@ export function isSolvent(
 
 export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
-  uniswapPositions: UniswapPosition[],
   sigma: number,
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
+  const uniswapPositions = marginAccount.uniswapPositions;
   let result: LiquidationThresholds = {
     lower: 0,
     upper: 0,
@@ -460,4 +512,27 @@ export function computeLiquidationThresholds(
 
 export function sumAssetsPerToken(assets: Assets): [number, number] {
   return [assets.token0Raw + assets.token0Plus + assets.uni0, assets.token1Raw + assets.token1Plus + assets.uni1];
+}
+
+export function isMarginAccountSolvent(marginAccount: MarginAccount): boolean {
+  const { assets, liabilities } = marginAccount;
+  const includeKittyReceipts = assets.token0Plus > 0 || assets.token1Plus > 0;
+  const solvency = isSolvent(
+    {
+      ...marginAccount,
+      assets: assets,
+      liabilities: liabilities,
+      includeKittyReceipts,
+    },
+    // Array.from(uniswapPositions.values()),
+    [],
+    marginAccount.sqrtPriceX96,
+    0.025
+  );
+  if (!solvency.atA || !solvency.atB) {
+    console.log('Margin Account not solvent!');
+    console.log(solvency);
+    return false;
+  }
+  return true;
 }

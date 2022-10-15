@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
+import { Action, ActionCardState, ActionID, TokenType } from '../../data/Actions';
 import { TokenData } from '../../data/TokenData';
 import { FilledGradientButtonWithIcon } from '../common/Buttons';
 
@@ -17,7 +17,7 @@ import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_tria
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { UINT256_MAX } from '../../data/constants/Values';
-import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
+import { MarginAccount } from '../../data/MarginAccount';
 import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
@@ -262,18 +262,14 @@ const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
-  uniswapPositions: UniswapPosition[];
-  hypotheticalStates: {
-    assets: Assets;
-    liabilities: Liabilities;
-    positions: Map<string, UniswapPosition>;
-  }[];
+  cumulativeState: MarginAccount | null;
+  //uniswapPositions: UniswapPosition[];
   activeActions: Array<Action>;
   actionResults: Array<ActionCardState>;
-  updateActionResults: (actionResults: Array<ActionCardState>) => void;
+  updateActionResults: (actionResults: Array<ActionCardState>, cumulativeState: MarginAccount) => void;
   onAddAction: () => void;
   onRemoveAction: (index: number) => void;
-  problematicActionIdx: number;
+  // problematicActionIdx: number;
   transactionIsViable: boolean;
   clearActions: () => void;
 };
@@ -282,14 +278,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
   const {
     marginAccount,
-    hypotheticalStates,
-    uniswapPositions,
+    cumulativeState,
+    //uniswapPositions,
     activeActions,
     actionResults,
     updateActionResults,
     onAddAction,
     onRemoveAction,
-    problematicActionIdx,
+    // problematicActionIdx,
     transactionIsViable,
     clearActions,
   } = props;
@@ -383,8 +379,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     confirmButtonState = ConfirmButtonState.NO_ACTIONS;
   } else if (loadingApprovals.includes(true)) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!transactionIsViable || problematicActionIdx !== -1) {
-    console.info('Viable Transaction: ', transactionIsViable, 'Problematic Action: ', problematicActionIdx);
+  } else if (!transactionIsViable) {
+    // TODO: add insolvent state check
+    console.info('Viable Transaction: ', transactionIsViable, 'Problematic Action: ');
     confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
   } else if (insufficient[0]) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
@@ -434,20 +431,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
-                  marginAccount={{
-                    ...marginAccount,
-                    assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
-                    liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
-                  }}
+                  marginAccount={cumulativeState ?? marginAccount}
                   availableBalances={balancesAvailableForEachAction[index]}
-                  uniswapPositions={uniswapPositions}
+                  uniswapPositions={marginAccount.uniswapPositions} //TODO: get this from the cumulative state
                   previousActionCardState={actionResults[index]}
-                  isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
+                  // isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
+                  isCausingError={false}
                   onRemove={() => {
                     onRemoveAction(index);
                   }}
-                  onChange={(result: ActionCardState) => {
-                    updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
+                  onChange={(result: ActionCardState, cumulativeState: MarginAccount) => {
+                    updateActionResults(
+                      [...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)],
+                      cumulativeState
+                    );
                   }}
                 />
               </ActionCardWrapper>

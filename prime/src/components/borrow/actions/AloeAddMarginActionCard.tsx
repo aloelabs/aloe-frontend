@@ -12,11 +12,13 @@ import {
 import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import { TokenData } from '../../../data/TokenData';
 import { getBalanceFor } from '../../../data/UserBalances';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Assets, isMarginAccountSolvent, MarginAccount } from '../../../data/MarginAccount';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { marginAccount, availableBalances, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, availableBalances, previousActionCardState, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
+  const [isInsolvent, setIsInsolvent] = useState<boolean>(false);
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -52,20 +54,43 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.TRANSFER_IN,
-      actionArgs:
-        selectedToken && value !== '' ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
-        selectedToken: selectedToken,
+    const updatedAssets: Assets = {
+      ...marginAccount.assets,
+      token0Plus: marginAccount.assets.token0Plus + (selectedToken === TokenType.KITTY0 ? parsedValue : 0),
+      token1Plus: marginAccount.assets.token1Plus + (selectedToken === TokenType.KITTY1 ? parsedValue : 0),
+      token0Raw: marginAccount.assets.token0Raw + (selectedToken === TokenType.ASSET0 ? parsedValue : 0),
+      token1Raw: marginAccount.assets.token1Raw + (selectedToken === TokenType.ASSET1 ? parsedValue : 0),
+    };
+    const updatedCumulativeState: MarginAccount = {
+      ...marginAccount,
+      assets: updatedAssets,
+    };
+    if (!isMarginAccountSolvent(updatedCumulativeState)) {
+      console.log('Insolvent');
+      setIsInsolvent(true);
+    }
+    onChange(
+      {
+        actionId: ActionID.TRANSFER_IN,
+        actionArgs:
+          selectedToken && value !== ''
+            ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue)
+            : undefined,
+        textFields: [value],
+        aloeResult: {
+          token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
+          token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
+          token0PlusDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
+          token1PlusDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
+          selectedToken: selectedToken,
+        },
+        uniswapResult: null,
       },
-      uniswapResult: null,
-    });
+      {
+        ...marginAccount,
+        assets: updatedAssets,
+      }
+    );
   };
 
   const max = selectedToken ? getBalanceFor(selectedToken, availableBalances) : 0;
@@ -79,7 +104,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
     <BaseActionCard
       action={ActionID.TRANSFER_IN}
       actionProvider={ActionProviders.AloeII}
-      isCausingError={isCausingError}
+      isCausingError={isInsolvent}
       onRemove={onRemove}
       // tooltipContent={
       //   <Text>
@@ -95,13 +120,16 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.TRANSFER_IN,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
+              onChange(
+                {
+                  actionId: ActionID.TRANSFER_IN,
+                  aloeResult: {
+                    selectedToken: parseSelectedToken(option.value),
+                  },
+                  uniswapResult: null,
                 },
-                uniswapResult: null,
-              });
+                marginAccount
+              );
             }
           }}
         />
