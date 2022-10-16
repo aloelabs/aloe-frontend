@@ -1,11 +1,11 @@
 import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
-import { DropdownOption, DropdownWithPlaceholder } from '../../common/Dropdown';
+import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import { BaseActionCard } from '../BaseActionCard';
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';
 import styled from 'styled-components';
-import { SquareInputWithTrailingUnit } from '../../common/Input';
+import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { ChangeEvent, useState } from 'react';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';

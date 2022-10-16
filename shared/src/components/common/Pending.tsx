@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Display } from 'shared/lib/components/common/Typography';
+import { Display } from './Typography';
 
 export default function Pending() {
   const [periodCount, setPeriodCount] = useState(0);

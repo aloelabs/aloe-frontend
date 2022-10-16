@@ -6,7 +6,7 @@ import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
 import { TokenData } from '../../data/TokenData';
-import { FilledGradientButtonWithIcon } from '../common/Buttons';
+import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 
 import { Chain } from '@wagmi/core';
 import { ethers } from 'ethers';

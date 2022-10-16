@@ -117,7 +117,7 @@ export default function EditPositionModal(props: EditPositionModalProps) {
         <CloseableModal
           open={open}
           setOpen={setOpen}
-          onClose={() => {            
+          onClose={() => {
             if (state === EditPositionModalState.SUCCESS) {
               // If the transaction was successful, refresh the page to load updated data
               navigate(0);

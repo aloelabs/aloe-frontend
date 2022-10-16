@@ -1,4 +1,4 @@
-import { FilledStylizedButton } from '../../common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CloseableModal, MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
