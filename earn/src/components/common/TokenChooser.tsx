@@ -2,7 +2,7 @@ import { RadioGroup } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { TokenData } from '../../data/TokenData';
-import { StyledRadioButton } from './Buttons';
+import { StyledRadioButton } from 'shared/lib/components/common/Buttons';
 
 const RadioButtonsContainer = styled.div`
   ${tw`flex`}

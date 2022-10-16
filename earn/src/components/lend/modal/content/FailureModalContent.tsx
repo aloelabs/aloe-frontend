@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilledGreyButton } from '../../../common/Buttons';
+import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import ErrorIcon from '../../../../assets/svg/error.svg';

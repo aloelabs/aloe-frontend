@@ -4,7 +4,7 @@ import tw from 'twin.macro';
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import useClickOutside from '../../../data/hooks/UseClickOutside';
 import { formatNumberInput } from '../../../util/Numbers';
-import { SquareInputWithTrailingUnit } from '../../common/Input';
+import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import Tooltip from '../../common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 
