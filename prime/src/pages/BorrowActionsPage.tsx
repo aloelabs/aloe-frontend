@@ -426,7 +426,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
-            uniswapPositions={displayedUniswapPositions}
+            uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}

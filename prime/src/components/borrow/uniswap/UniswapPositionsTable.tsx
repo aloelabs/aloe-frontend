@@ -22,6 +22,8 @@ const SCROLLBAR_TRACK_COLOR = 'rgba(13, 23, 30, 0.75)';
 const SCROLLBAR_THUMB_COLOR = 'rgba(75, 105, 128, 0.75)';
 const SCROLLBAR_THUMB_HOVER_COLOR = 'rgba(75, 105, 128, 0.6)';
 const SCROLLBAR_THUMB_ACTIVE_COLOR = 'rgba(75, 105, 128, 0.5)';
+const IN_RANGE_COLOR = '#00C143';
+const OUT_OF_RANGE_COLOR = '#EB5757';
 
 const Placeholder = styled.div`
   display: flex;
@@ -278,20 +280,48 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     return <Placeholder />;
   }
 
-  const columns = ['Value', 'Fees Earned', 'Lower', 'Upper', 'Current'];
+  const columns = ['Value', 'Fees Earned', 'Lower', 'Upper', 'Status'];
 
   const selectedToken = isInTermsOfToken0 ? marginAccount.token0 : marginAccount.token1;
 
   const rows = uniswapPositionInfo.map((uniswapPositionInfo: UniswapPositionInfo) => {
     const fees = uniswapPositionEarnedFees[uniswapPositionInfo.positionKey];
     const selectedTokenTicker = selectedToken?.ticker ?? '';
-    const value = `${formatTokenAmount(uniswapPositionInfo.value)} ${selectedTokenTicker}`;
+    const valueText = (
+      <Text size='M' weight='medium'>
+        {formatTokenAmount(uniswapPositionInfo.value) + ' ' + selectedTokenTicker}
+      </Text>
+    );
     const token0FeesEarned = `${formatTokenAmount(fees?.token0FeesEarned || 0)} ${marginAccount.token0?.ticker || ''}`;
     const token1FeesEarned = `${formatTokenAmount(fees?.token1FeesEarned || 0)} ${marginAccount.token1?.ticker || ''}`;
-    const lower = `${formatTokenAmount(uniswapPositionInfo.lower)} ${selectedTokenTicker}`;
-    const upper = `${formatTokenAmount(uniswapPositionInfo.upper)} ${selectedTokenTicker}`;
-    const current = `${formatTokenAmount(uniswapPositionInfo.current)} ${selectedTokenTicker}`;
-    return [value, token0FeesEarned + ' + ' + token1FeesEarned, lower, upper, current];
+    const earnedFeesText = (
+      <Text size='M' weight='medium'>
+        {token0FeesEarned + ' ' + token1FeesEarned}
+      </Text>
+    );
+    const lowerText = (
+      <Text size='M' weight='medium'>
+        {formatTokenAmount(uniswapPositionInfo.lower) + ' ' + selectedTokenTicker}
+      </Text>
+    );
+    const upperText = (
+      <Text size='M' weight='medium'>
+        {formatTokenAmount(uniswapPositionInfo.upper) + ' ' + selectedTokenTicker}
+      </Text>
+    );
+    const isInRange =
+      uniswapPositionInfo.current >= uniswapPositionInfo.lower &&
+      uniswapPositionInfo.current < uniswapPositionInfo.upper;
+    const inRangeText = isInRange ? (
+      <Text size='M' weight='bold' color={IN_RANGE_COLOR}>
+        {'In-Range'}
+      </Text>
+    ) : (
+      <Text size='M' weight='bold' color={OUT_OF_RANGE_COLOR}>
+        {'Out-of-Range'}
+      </Text>
+    );
+    return [valueText, earnedFeesText, lowerText, upperText, inRangeText];
   });
 
   return (
@@ -317,11 +347,7 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
           {rows.map((row, index) => (
             <StyledTableRows key={index}>
               {row.map((rowItem, index) => (
-                <td key={index}>
-                  <Text size='M' weight='medium'>
-                    {rowItem}
-                  </Text>
-                </td>
+                <td key={index}>{rowItem}</td>
               ))}
             </StyledTableRows>
           ))}
