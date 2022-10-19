@@ -733,7 +733,7 @@ export const LinkButton = styled.button`
 
 export const WarningButton = styled.button`
   border-radius: 0.375rem;
-  color: #FF7A00;
+  color: #ff7a00;
   background-color: transparent;
   font-weight: 500;
   position: relative;
@@ -761,7 +761,7 @@ export const WarningButton = styled.button`
   }
 
   :disabled {
-    color: #6447B5;
+    color: #6447b5;
   }
 `;
 
