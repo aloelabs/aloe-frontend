@@ -14,6 +14,7 @@ import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import { UserBalances } from './UserBalances';
 import { uniswapPositionKey } from '../util/Uniswap';
 import { deepCopyMap } from '../util/Maps';
+import UnsiwapClaimFeesActionCard from '../components/borrow/actions/UniswapClaimFeesActionCard';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -24,6 +25,7 @@ export enum ActionID {
   REPAY,
   ADD_LIQUIDITY,
   REMOVE_LIQUIDITY,
+  CLAIM_FEES,
   SWAP,
 }
 
@@ -45,12 +47,12 @@ export function getNameOfAction(id: ActionID): string {
       return 'Add Liquidity';
     case ActionID.REMOVE_LIQUIDITY:
       return 'Remove Liquidity';
+    case ActionID.CLAIM_FEES:
+      return 'Claim Fees';
     default:
       return 'UNKNOWN';
   }
 }
-
-// export type ActionValue = number;
 
 export type UniswapPosition = {
   amount0?: number;
@@ -169,16 +171,22 @@ export const ADD_MARGIN: Action = {
   actionCard: AloeAddMarginActionCard,
 };
 
+export const ADD_LIQUIDITY: Action = {
+  id: ActionID.ADD_LIQUIDITY,
+  description: 'Create a new Uniswap Position or add liquidity to an existing one.',
+  actionCard: UniswapAddLiquidityActionCard,
+};
+
 export const REMOVE_LIQUIDITY: Action = {
   id: ActionID.REMOVE_LIQUIDITY,
   description: 'Remove liquidity from a Uniswap Position.',
   actionCard: UniswapRemoveLiquidityActionCard,
 };
 
-export const ADD_LIQUIDITY: Action = {
-  id: ActionID.ADD_LIQUIDITY,
-  description: 'Create a new Uniswap Position or add liquidity to an existing one.',
-  actionCard: UniswapAddLiquidityActionCard,
+export const CLAIM_FEES: Action = {
+  id: ActionID.CLAIM_FEES,
+  description: 'Claim earned fees from a Uniswap Position.',
+  actionCard: UnsiwapClaimFeesActionCard,
 };
 
 export const ActionProviders: { [key: string]: ActionProvider } = {
@@ -202,6 +210,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
     actions: {
       ADD_LIQUIDITY,
       REMOVE_LIQUIDITY,
+      CLAIM_FEES,
     },
   },
 };
