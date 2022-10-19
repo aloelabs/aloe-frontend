@@ -5,7 +5,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
-import { getProminentColor, rgb, rgba } from '../../util/Colors';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatTokenAmount } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
 import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
@@ -15,7 +15,7 @@ const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 const FEE_TIER_OUTLINE_COLOR = 'rgba(13, 23, 30, 1)';
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
-const CardWrapper = styled(NavLink).attrs((props: { border: string }) => props)`
+const CardWrapper = styled(NavLink).attrs((props: { border: string; shadow: string }) => props)`
   ${tw`flex flex-col items-start justify-evenly`}
   width: 400px;
   border-radius: 16px;
@@ -25,6 +25,7 @@ const CardWrapper = styled(NavLink).attrs((props: { border: string }) => props)`
   border: 4px solid rgba(26, 41, 52, 1);
 
   &:hover {
+    box-shadow: 0px 8px 48px 0px ${(props) => props.shadow};
     border-color: transparent;
     overflow: visible;
     &:before {
@@ -138,9 +139,10 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
     0.25
   )} 100%)`;
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
+  const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);
 
   return (
-    <CardWrapper to={link} border={cardBorderGradient}>
+    <CardWrapper to={link} border={cardBorderGradient} shadow={cardShadowColor}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
           {token0.ticker}-{token1.ticker}
