@@ -5,7 +5,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from '../../data/FeeTier';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { NavLink } from 'react-router-dom';
-import { getProminentColor, rgba } from '../../util/Colors';
+import { getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatTokenAmount } from '../../util/Numbers';
 import { formatAddressStart } from '../../util/FormatAddress';
 import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
@@ -15,7 +15,7 @@ const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 const FEE_TIER_OUTLINE_COLOR = 'rgba(13, 23, 30, 1)';
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
-const CardWrapper = styled(NavLink)`
+const CardWrapper = styled(NavLink).attrs((props: { border: string }) => props)`
   ${tw`flex flex-col items-start justify-evenly`}
   width: 400px;
   border-radius: 16px;
@@ -23,6 +23,25 @@ const CardWrapper = styled(NavLink)`
   position: relative;
   background-color: rgba(13, 23, 30, 1);
   border: 4px solid rgba(26, 41, 52, 1);
+
+  &:hover {
+    border-color: transparent;
+    overflow: visible;
+    &:before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 16px;
+      margin: -4px;
+      padding: 4px;
+      z-index: 5;
+      background: ${(props) => props.border};
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+  }
 `;
 
 const CardTitleWrapper = styled.div.attrs((props: { gradient: string }) => props)`
@@ -118,9 +137,10 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
     token1Color,
     0.25
   )} 100%)`;
+  const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
 
   return (
-    <CardWrapper to={link}>
+    <CardWrapper to={link} border={cardBorderGradient}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
           {token0.ticker}-{token1.ticker}
