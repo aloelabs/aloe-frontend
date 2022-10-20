@@ -1,13 +1,13 @@
-import { BlendPoolMarkers, PrintFeeTier } from './BlendPoolMarkers';
-import { GetTokenData } from './TokenData';
-import { GetSiloData } from './SiloData';
-import { FormatAddressStart } from '../util/FormatAddress';
-import { UnknownTokenLogo } from '../assets/svg/tokens';
-import { ethers } from 'ethers';
 import Big from 'big.js';
+import { ethers } from 'ethers';
 
 import UniswapABI from '../assets/abis/UniswapV3Pool.json';
+import { UnknownTokenLogo } from '../assets/svg/tokens';
+import { FormatAddressStart } from '../util/FormatAddress';
 import { toBig } from '../util/Numbers';
+import { BlendPoolMarkers, PrintFeeTier } from './BlendPoolMarkers';
+import { GetSiloData } from './SiloData';
+import { GetTokenData } from './TokenData';
 
 export type BlendPoolDrawData = {
   token0Label: string;

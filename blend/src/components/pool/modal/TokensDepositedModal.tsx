@@ -1,4 +1,5 @@
 import React from 'react';
+
 import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
 import {

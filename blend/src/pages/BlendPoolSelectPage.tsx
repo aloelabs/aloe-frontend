@@ -1,7 +1,12 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+
 import styled from 'styled-components';
+import tw from 'twin.macro';
+
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { ReactComponent as PlusIcon } from '../assets/svg/white_plus.svg';
 import BrowseCard from '../components/browse/BrowseCard';
+import { BrowseCardPlaceholder } from '../components/browse/BrowseCardPlaceholder';
 import BrowsePoolsPerformance from '../components/browse/BrowsePoolsPerformance';
 import { OutlinedGradientRoundedButtonWithIcon } from '../components/common/Buttons';
 import {
@@ -27,13 +32,10 @@ import {
   RESPONSIVE_BREAKPOINTS,
 } from '../data/constants/Breakpoints';
 import { BlendTableContext } from '../data/context/BlendTableContext';
-import { GetTokenData } from '../data/TokenData';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import tw from 'twin.macro';
-import { BrowseCardPlaceholder } from '../components/browse/BrowseCardPlaceholder';
-import { IS_DEV } from '../util/Env';
 import { isHiddenPool } from '../data/HiddenBlendPools';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { GetTokenData } from '../data/TokenData';
+import { IS_DEV } from '../util/Env';
 import { isPoolDeprecated } from '../util/Pool';
 
 const BROWSE_CARD_GAP = '24px';

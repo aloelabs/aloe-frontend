@@ -1,8 +1,10 @@
 import React from 'react';
-import { Area, AreaChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import { differenceInDays, format, parseISO } from 'date-fns/esm';
+import { Area, AreaChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CurveType } from 'recharts/types/shape/Curve';
 import { AxisDomain } from 'recharts/types/util/types';
+
 import { getEvenlySpacedDates } from '../../util/Dates';
 
 export function getIdealStep(diffInDays: number, numUniqueYears: number): number {

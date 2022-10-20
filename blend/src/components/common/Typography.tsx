@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
 const DEFAULT_COLOR = 'rgba(255, 255, 255, 1)';
