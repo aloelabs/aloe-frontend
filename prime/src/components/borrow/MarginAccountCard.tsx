@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
-
-import { NavLink } from 'react-router-dom';
-import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from '../../data/FeeTier';
-import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import { formatAddressStart } from '../../util/FormatAddress';
-import { formatTokenAmount } from '../../util/Numbers';
 import TokenPairIcons from '../common/TokenPairIcons';
+import { NavLink } from 'react-router-dom';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { formatTokenAmount } from '../../util/Numbers';
+import { formatAddressStart } from '../../util/FormatAddress';
+import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -138,7 +136,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
-    0.25,
+    0.25
   )} 100%)`;
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
   const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);

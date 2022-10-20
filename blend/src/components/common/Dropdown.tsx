@@ -218,7 +218,7 @@ export function MultiDropdown(props: MultiDropdownProps) {
     () => {
       setIsOpen(false);
     },
-    isOpen,
+    isOpen
   );
 
   const toggleList = () => {

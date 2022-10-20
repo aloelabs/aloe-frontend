@@ -1,8 +1,6 @@
 import React from 'react';
-
-import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
-
 import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
+import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
 
 export type FeeTierProps = {
   feeTier: FeeTier;

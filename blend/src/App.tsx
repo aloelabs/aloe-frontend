@@ -45,7 +45,7 @@ function App() {
   const BLOCK_QUERY = gql`
   {
     blocks(first: 1, orderBy: timestamp, orderDirection: asc, where: {timestamp_gt: "${twentyFourHoursAgo.toFixed(
-      0,
+      0
     )}"}) {
       id
       number

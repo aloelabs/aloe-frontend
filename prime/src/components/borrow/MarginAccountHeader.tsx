@@ -1,14 +1,12 @@
 import React from 'react';
-
-import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
-import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { formatAddressStart } from '../../util/FormatAddress';
 import FeeTierContainer from '../common/FeeTierContainer';
+import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
+import { Display } from 'shared/lib/components/common/Typography';
 
 const MarginPairContainer = styled.div`
   ${tw`flex items-center`}

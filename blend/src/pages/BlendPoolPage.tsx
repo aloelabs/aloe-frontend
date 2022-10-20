@@ -174,7 +174,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
         setUniswapVolume(
           uniswapVolumeData['data']
             ? uniswapVolumeData['data']['curr'][0]['volumeUSD'] - uniswapVolumeData['data']['prev'][0]['volumeUSD']
-            : null,
+            : null
         );
       }
     };

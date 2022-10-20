@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';

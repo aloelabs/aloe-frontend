@@ -1,14 +1,13 @@
-import Big from 'big.js';
 import { ethers } from 'ethers';
-
-import ERC20ABI from '../assets/abis/ERC20.json';
-import KittyABI from '../assets/abis/Kitty.json';
-import KittyLensABI from '../assets/abis/KittyLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
+import KittyLensABI from '../assets/abis/KittyLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import ERC20ABI from '../assets/abis/ERC20.json';
+import KittyABI from '../assets/abis/Kitty.json';
+import Big from 'big.js';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -45,7 +44,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     true,
-    'api-goerli',
+    'api-goerli'
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
@@ -59,7 +58,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return Promise.all(
+  return await Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
@@ -110,14 +109,14 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
         },
         uniswapFeeTier: NumericFeeTierToEnum(result2),
       };
-    }),
+    })
   );
 }
 
 export async function getLendingPairBalances(
   lendingPair: LendingPair,
   userAddress: string,
-  provider: ethers.providers.Provider,
+  provider: ethers.providers.Provider
 ): Promise<LendingPairBalances> {
   const { token0, token1, kitty0, kitty1 } = lendingPair;
 

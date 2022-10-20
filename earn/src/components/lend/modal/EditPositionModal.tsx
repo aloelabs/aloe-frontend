@@ -1,20 +1,17 @@
-import { Fragment, useEffect, useState } from 'react';
-
 import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
-import { useNavigate } from 'react-router-dom';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Fragment, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
 import { TokenData } from '../../../data/TokenData';
 import { CloseableModal } from '../../common/Modal';
+import { Text } from 'shared/lib/components/common/Typography';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
 import SuccessModalContent from './content/SuccessModalContent';
 import WithdrawModalContent from './content/WithdrawModalContent';
 import PendingTxnModal from './PendingTxnModal';
-
+import { useNavigate } from 'react-router-dom';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',

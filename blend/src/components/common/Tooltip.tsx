@@ -42,7 +42,7 @@ const TooltipContainer = styled.div.attrs(
   (props: {
     position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     filled?: boolean;
-  }) => props,
+  }) => props
 )`
   ${tw`flex flex-col items-center justify-center absolute`}
   ${(props) => {

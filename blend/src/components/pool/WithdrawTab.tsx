@@ -122,8 +122,8 @@ export default function WithdrawTab(props: WithdrawTabProps) {
     if (offChainPoolStats) {
       setUsdEstimate(
         formatUSDCompact(
-          sharesBig.mul(offChainPoolStats.total_value_locked).div(poolStats.outstandingShares).toNumber(),
-        ),
+          sharesBig.mul(offChainPoolStats.total_value_locked).div(poolStats.outstandingShares).toNumber()
+        )
       );
     }
 

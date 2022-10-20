@@ -45,7 +45,7 @@ export const BaseButton = styled.button.attrs(
     color?: string;
     fillWidth?: boolean;
     linkTo?: string;
-  }) => props,
+  }) => props
 )`
   ${tw`flex flex-row justify-center items-center gap-3`}
   width: max-content;
@@ -461,7 +461,7 @@ const SVGWrapper = styled.div.attrs(
     color: string;
     disabledColor: string;
     activeColor?: string;
-  }) => props,
+  }) => props
 )`
   --default-color: ${(props) => props.color};
   --disabled-color: ${(props) => props.disabledColor};

@@ -1,8 +1,6 @@
 import React from 'react';
-
-import { Text } from 'shared/lib/components/common/Typography';
-
 import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+import { Text } from 'shared/lib/components/common/Typography';
 
 export default function FeedbackBlock() {
   return (

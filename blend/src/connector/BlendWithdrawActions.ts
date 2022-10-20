@@ -11,7 +11,7 @@ export async function withdraw(
   shares: Big,
   ratioChange: number,
   poolStats: BlendPoolStats,
-  completionCallback: (receipt?: ContractReceipt) => void,
+  completionCallback: (receipt?: ContractReceipt) => void
 ): Promise<void> {
   const tokenContract = new Contract(poolAddress, BlendPoolAbi, signer);
 
@@ -28,7 +28,7 @@ export async function withdraw(
       (await tokenContract.estimateGas.withdraw(
         shares.toFixed(0),
         amount0Min.toFixed(0),
-        amount1Min.toFixed(0),
+        amount1Min.toFixed(0)
       )) as BigNumber
     ).toNumber();
 
@@ -43,7 +43,7 @@ export async function withdraw(
       shares.toFixed(0),
       amount0Min.toFixed(0),
       amount1Min.toFixed(0),
-      transactionOptions,
+      transactionOptions
     );
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);

@@ -20,7 +20,7 @@ const StyledDialog = styled.div`
 `;
 
 const ModalWrapper = styled.div.attrs(
-  (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props,
+  (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props
 )`
   ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left
    overflow-hidden transition-all sm:my-4 sm:align-middle`}
@@ -150,7 +150,7 @@ function ModalBase(props: ModalBaseProps) {
           <div
             className={classNames(
               'flex items-end justify-center min-h-screen text-center sm:block sm:p-0',
-              props.fullHeight ? '' : 'pt-4 px-4 pb-20',
+              props.fullHeight ? '' : 'pt-4 px-4 pb-20'
             )}
           >
             <Transition.Child

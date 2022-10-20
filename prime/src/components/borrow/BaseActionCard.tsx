@@ -1,9 +1,7 @@
 import React from 'react';
-
-import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
 import { ActionID, ActionProvider, getNameOfAction } from '../../data/Actions';
 import Tooltip from '../common/Tooltip';

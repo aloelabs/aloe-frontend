@@ -1,15 +1,12 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-
-import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
-import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import useClickOutside from '../../../data/hooks/UseClickOutside';
 import { formatNumberInput } from '../../../util/Numbers';
+import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import Tooltip from '../../common/Tooltip';
-
+import { Text } from 'shared/lib/components/common/Typography';
 
 const SvgButtonWrapper = styled.button`
   ${tw`flex justify-center items-center`}

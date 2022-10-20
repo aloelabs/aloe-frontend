@@ -1,16 +1,13 @@
 import { useState } from 'react';
-
-import Big from 'big.js';
-import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { BIGQ96 } from '../../data/constants/Values';
-import { Assets } from '../../data/MarginAccount';
+import { Text } from 'shared/lib/components/common/Typography';
 import { TokenData } from '../../data/TokenData';
-
-
+import { Assets } from '../../data/MarginAccount';
+import Big from 'big.js';
+import { BIGQ96 } from '../../data/constants/Values';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 

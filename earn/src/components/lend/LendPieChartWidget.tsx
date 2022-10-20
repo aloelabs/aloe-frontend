@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-
-import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
+import { Text } from 'shared/lib/components/common/Typography';
 import { TokenData } from '../../data/TokenData';
-import { TokenBalance } from '../../pages/LendPage';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatTokenAmountCompact } from '../../util/Numbers';
+import { TokenBalance } from '../../pages/LendPage';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -118,7 +117,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
   // Sort token balances by their corresponding token
   const sortedTokenBalances = useMemo(() => {
     return tokenBalances.sort((a, b) =>
-      (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address),
+      (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address)
     );
   }, [tokenBalances]);
 
@@ -141,7 +140,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
               color: rgba(tokenColor.color, alpha),
               token: tokenColor.token,
             };
-          }),
+          })
         );
       }
     };

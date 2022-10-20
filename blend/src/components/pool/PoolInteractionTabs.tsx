@@ -12,7 +12,6 @@ import DepositTab from './DepositTab';
 import SwapTab from './SwapTab';
 import WithdrawTab from './WithdrawTab';
 
-
 export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
 
 const Wrapper = styled.div`

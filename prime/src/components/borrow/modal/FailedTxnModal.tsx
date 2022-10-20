@@ -1,9 +1,7 @@
 import React from 'react';
-
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
-import { Text } from 'shared/lib/components/common/Typography';
-
 import { CloseableModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
+import { Text } from 'shared/lib/components/common/Typography';
 import FeedbackBlock from './common/FeedbackBlock';
 
 const FAILED_BORDER_GRADIENT = 'rgba(235, 87, 87, 1)';

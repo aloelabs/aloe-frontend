@@ -176,7 +176,7 @@ export default function PortfolioCard(props: PortfolioCardProps) {
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
-    0.25,
+    0.25
   )} 100%)`;
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
   const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);

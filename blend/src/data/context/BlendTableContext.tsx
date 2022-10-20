@@ -34,7 +34,7 @@ export function BlendTableProvider(props: BlendTableContextProviderProps) {
         contextState.poolDataMap.set(address, poolData);
       });
     },
-    [provider, contextState],
+    [provider, contextState]
   );
 
   useEffect(() => {

@@ -1,37 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
-
-import axios, { AxiosResponse } from 'axios';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Divider } from 'shared/lib/components/common/Divider';
-import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
-import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
-import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
-import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-
-import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
-import Tooltip from '../components/common/Tooltip';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import BalanceSlider from '../components/lend/BalanceSlider';
+import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { Text } from 'shared/lib/components/common/Typography';
+import { formatUSD, roundPercentage } from '../util/Numbers';
+import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
+import { Divider } from 'shared/lib/components/common/Divider';
+import Tooltip from '../components/common/Tooltip';
 import LendPairCard from '../components/lend/LendPairCard';
-import LendPieChartWidget from '../components/lend/LendPieChartWidget';
-import WelcomeModal from '../components/lend/modal/WelcomeModal';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { API_PRICE_RELAY_URL } from '../data/constants/Values';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
+import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
+import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
+import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
+import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
 import {
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
+import LendPieChartWidget from '../components/lend/LendPieChartWidget';
+import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
-import { formatUSD, roundPercentage } from '../util/Numbers';
+import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import WelcomeModal from '../components/lend/modal/WelcomeModal';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
@@ -174,10 +172,10 @@ export default function LendPage() {
     }
     let combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address),
+        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
       );
       const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address),
+        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;

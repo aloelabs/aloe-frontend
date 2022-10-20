@@ -8,12 +8,12 @@ export function makeEtherscanRequest(
   subdomain = 'api',
   pageLength = 1000,
   page?: number,
-  toBlock?: number,
+  toBlock?: number
 ) {
   let query = `https://${subdomain}.etherscan.io/api?module=logs&action=getLogs`.concat(
     `&fromBlock=${fromBlock.toFixed(0)}`,
     toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '&toBlock=latest',
-    `&address=${address}`,
+    `&address=${address}`
   );
 
   for (let i = 0; i < topics.length; i += 1) {

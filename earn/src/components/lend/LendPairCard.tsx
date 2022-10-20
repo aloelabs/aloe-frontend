@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-
+import styled from 'styled-components';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import FeeTierContainer from '../common/FeeTierContainer';
+import TokenPairIcons from '../common/TokenPairIcons';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import { roundPercentage } from '../../util/Numbers';
+import LendTokenInfo from './LendTokenInfo';
 import {
   BodyDivider,
   BodySubContainer,
@@ -8,19 +14,11 @@ import {
   CardTitleWrapper,
   CardWrapper,
 } from 'shared/lib/components/common/Card';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import styled from 'styled-components';
 import tw from 'twin.macro';
-
-import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { LendingPair } from '../../data/LendingPair';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import { roundPercentage } from '../../util/Numbers';
-import FeeTierContainer from '../common/FeeTierContainer';
-import TokenPairIcons from '../common/TokenPairIcons';
-import LendTokenInfo from './LendTokenInfo';
+import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import EditPositionModal from './modal/EditPositionModal';
+import { LendingPair } from '../../data/LendingPair';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 
@@ -84,7 +82,7 @@ export default function LendPairCard(props: LendingPair & { hasDeposited0: boole
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
-    0.25,
+    0.25
   )} 100%)`;
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
   const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);

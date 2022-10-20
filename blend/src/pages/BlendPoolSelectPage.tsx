@@ -157,8 +157,8 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
         nonDeprecatedPoolData.flatMap((pool) => [
           pool.token0Address.toLowerCase(),
           pool.token1Address.toLocaleLowerCase(),
-        ]),
-      ),
+        ])
+      )
     );
     let tokenData = tokenAddresses.map((address) => GetTokenData(address));
     let tokenOptionData = tokenData.map(
@@ -167,7 +167,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           label: data.ticker,
           value: data.address,
           icon: data.iconPath,
-        } as MultiDropdownOption),
+        } as MultiDropdownOption)
     );
     if (isMounted.current) {
       setTokenOptions(tokenOptionData);
@@ -192,7 +192,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
                 return field.toLowerCase().includes(activeSearchText.toLowerCase());
               }) !== -1
             );
-          }),
+          })
         );
       }
     } else if (pools.length > 0) {
@@ -217,7 +217,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
                   return activeTokenOptions.map((option) => option.label.toLowerCase()).includes(field.toLowerCase());
                 }) !== -1
               );
-            }),
+            })
         );
         setActiveLoading(false);
       }
@@ -237,7 +237,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
             filteredPools.filter((pool) => {
               // Deprecated pools may not be active, but if the user is searching, we want to show them
               return activePools.includes(pool) || isPoolDeprecated(pool);
-            }),
+            })
           );
           setToDisplayLoading(false);
         }
@@ -246,7 +246,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           setPoolsToDisplay(
             activePools.filter((pool) => {
               return filteredPools.includes(pool);
-            }),
+            })
           );
         }
       }

@@ -1,8 +1,6 @@
 import React from 'react';
-
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
 import UnknownTokenIcon from '../../assets/svg/tokens/unknown_token.svg';
 
 const DEFAULT_TOKEN_BACKGROUND_COLOR = 'rgba(255, 255, 255, 1)';

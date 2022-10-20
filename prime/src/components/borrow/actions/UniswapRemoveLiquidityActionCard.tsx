@@ -1,18 +1,16 @@
-import { ChangeEvent, useState } from 'react';
-
-import JSBI from 'jsbi';
+import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
-import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import styled from 'styled-components';
-
+import { BaseActionCard } from '../BaseActionCard';
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';
-import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import styled from 'styled-components';
+import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
+import { ChangeEvent, useState } from 'react';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
-import { BaseActionCard } from '../BaseActionCard';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import JSBI from 'jsbi';
+import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 
 //TOOD: merge this with the existing UniswapPosition?
 export type UniswapV3LiquidityPosition = {
@@ -97,7 +95,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     const amount1ToRemove = ((liquidityPosition?.amount1 || 0) * parsedPercentage) / 100.0;
     const updatedLiquidity = JSBI.divide(
       JSBI.multiply(liquidity, JSBI.BigInt(((parsedPercentage * 10000) / 100).toFixed(0))),
-      JSBI.BigInt(10000),
+      JSBI.BigInt(10000)
     );
 
     onChange({

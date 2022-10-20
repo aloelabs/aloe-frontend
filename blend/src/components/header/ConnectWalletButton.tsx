@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-
 import { Connector, useConnect, useDisconnect } from 'wagmi';
 
 import { FormatAddress } from '../../util/FormatAddress';

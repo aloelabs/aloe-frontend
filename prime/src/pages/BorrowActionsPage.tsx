@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
-
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
-import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
-
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -22,7 +17,10 @@ import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggl
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import TokenChooser from '../components/common/TokenChooser';
+import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
@@ -119,7 +117,7 @@ async function fetchUniswapPositions(
   uniswapV3PoolContract: any,
   sqrtPriceX96: Big,
   token0Decimals: number,
-  token1Decimals: number,
+  token1Decimals: number
 ) {
   const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
   const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
@@ -133,7 +131,7 @@ async function fetchUniswapPositions(
       prior.upper!,
       TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
       token0Decimals,
-      token1Decimals,
+      token1Decimals
     );
     fetchedUniswapPositions.set(keys[i], {
       ...prior,
@@ -209,7 +207,7 @@ export default function BorrowActionsPage() {
         marginAccountContract,
         marginAccountLensContract,
         provider,
-        marginAccountAddress,
+        marginAccountAddress
       );
       if (mounted) {
         setMarginAccount(fetchedMarginAccount);
@@ -235,7 +233,7 @@ export default function BorrowActionsPage() {
         uniswapV3PoolContract,
         marginAccount.sqrtPriceX96,
         marginAccount.token0.decimals,
-        marginAccount.token1.decimals,
+        marginAccount.token1.decimals
       );
 
       if (mounted) {
@@ -330,12 +328,12 @@ export default function BorrowActionsPage() {
         displayedUniswapPositions,
         0.025,
         120,
-        6,
+        6
       );
       setLiquidationThresholds(lt);
     },
     GENERAL_DEBOUNCE_DELAY_MS,
-    [displayedMarginAccount, displayedUniswapPositions],
+    [displayedMarginAccount, displayedUniswapPositions]
   );
 
   // if no account data is found, don't render the page
@@ -387,7 +385,7 @@ export default function BorrowActionsPage() {
     if (actionResults.length === 0) setIsShowingHypothetical(true);
     if (defaultActionResults && actions.length !== defaultActionResults.length) {
       console.error(
-        'You must pass in the same number of action results as you do actions (or pass no action results in).',
+        'You must pass in the same number of action results as you do actions (or pass no action results in).'
       );
       return;
     }

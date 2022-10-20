@@ -8,7 +8,6 @@ import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from '../common/SiloBlob';
 import TokenPairLogos from '../common/TokenPairLogos';
 
-
 export type BlendPoolSelectTableRowProps = {
   poolData: BlendPoolMarkers;
 };

@@ -1,17 +1,16 @@
-import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
-import JSBI from 'jsbi';
-
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { areWithinNSigDigs, toBig } from '../util/Numbers';
-import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
-import { UniswapPosition } from './Actions';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
-import { BIGQ96 } from './constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { BigNumber, ethers } from 'ethers';
+import Big from 'big.js';
+import JSBI from 'jsbi';
+import { makeEtherscanRequest } from '../util/Etherscan';
+import { BIGQ96 } from './constants/Values';
+import { areWithinNSigDigs, toBig } from '../util/Numbers';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { UniswapPosition } from './Actions';
+import { TickMath } from '@uniswap/v3-sdk';
+import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 
 export type Assets = {
   token0Raw: number;
@@ -61,7 +60,7 @@ export type MarginAccountPreview = Omit<
 
 export async function getMarginAccountsForUser(
   userAddress: string,
-  provider: ethers.providers.Provider,
+  provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
     7569633,
@@ -73,7 +72,7 @@ export async function getMarginAccountsForUser(
       `0x000000000000000000000000${userAddress.slice(2)}`,
     ],
     true,
-    'api-goerli',
+    'api-goerli'
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
@@ -89,7 +88,7 @@ export async function getMarginAccountsForUser(
 
 export async function resolveUniswapPools(
   marginAccounts: { address: string; uniswapPool: string }[],
-  provider: ethers.providers.BaseProvider,
+  provider: ethers.providers.BaseProvider
 ) {
   const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
   // create an array to hold all the Promises we're about to create
@@ -111,7 +110,7 @@ export async function resolveUniswapPools(
 export async function fetchMarginAccountPreviews(
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  userAddress: string,
+  userAddress: string
 ): Promise<MarginAccountPreview[]> {
   const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
   const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
@@ -161,7 +160,7 @@ export async function fetchMarginAccountPreviews(
         assets,
         liabilities,
       };
-    },
+    }
   );
   return Promise.all(marginAccounts);
 }
@@ -170,7 +169,7 @@ export async function fetchMarginAccount(
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  marginAccountAddress: string,
+  marginAccountAddress: string
 ): Promise<MarginAccount> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
@@ -301,7 +300,7 @@ export function getAssets(marginAccount: MarginAccount, uniswapPositions: Uniswa
       upper,
       tickC,
       marginAccount.token0.decimals,
-      marginAccount.token1.decimals,
+      marginAccount.token1.decimals
     );
     fluid0C += temp[0];
     fluid1C += temp[1];
@@ -317,7 +316,7 @@ function _computeLiquidationIncentive(
   liabilities1: number,
   token0Decimals: number,
   token1Decimals: number,
-  sqrtPriceX96: Big,
+  sqrtPriceX96: Big
 ): number {
   const price = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
 
@@ -337,7 +336,7 @@ export function isSolvent(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
   sqrtPriceX96: Big,
-  sigma: number,
+  sigma: number
 ) {
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
@@ -357,7 +356,7 @@ export function isSolvent(
     liabilities1,
     token0Decimals,
     token1Decimals,
-    sqrtPriceX96,
+    sqrtPriceX96
   );
 
   liabilities0 = liabilities0 * 1.005;
@@ -386,7 +385,7 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sigma: number,
   iterations: number = 120,
-  precision: number = 7,
+  precision: number = 7
 ): LiquidationThresholds {
   let result: LiquidationThresholds = {
     lower: 0,

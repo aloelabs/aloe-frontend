@@ -1,7 +1,6 @@
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { Text } from 'shared/lib/components/common/Typography';
-
 import { CloseableModal, MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
+import { Text } from 'shared/lib/components/common/Typography';
 
 export type WelcomeModalProps = {
   open: boolean;

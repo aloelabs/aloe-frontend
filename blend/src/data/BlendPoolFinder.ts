@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
 
-
 import AloeBlendABI from '../assets/abis/AloeBlend.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BlendPoolMarkers, FeeTier } from './BlendPoolMarkers';
@@ -9,7 +8,7 @@ import { API_URL } from './constants/Values';
 
 export async function fetchBlendPoolData(
   address: string,
-  provider: ethers.providers.BaseProvider,
+  provider: ethers.providers.BaseProvider
 ): Promise<BlendPoolMarkers> {
   const blend = new ethers.Contract(address, AloeBlendABI, provider);
 
@@ -22,7 +21,7 @@ export async function fetchBlendPoolData(
     blend.UNI_POOL().then((poolAddress: string) => {
       const pair = new ethers.Contract(poolAddress, UniswapV3PoolABI, provider);
       return pair.fee();
-    }),
+    })
   );
 
   const results = await Promise.all(promises);
@@ -59,7 +58,7 @@ export default async function findPools(provider: ethers.providers.BaseProvider)
   const data = response.data;
   const poolAddresses = data.map((pool: any) => pool['pool_address']);
   const promises: Promise<BlendPoolMarkers>[] = poolAddresses.map((address: string) =>
-    fetchBlendPoolData(address, provider),
+    fetchBlendPoolData(address, provider)
   );
   const BlendPoolMarkers = await Promise.all(promises);
 

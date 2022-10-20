@@ -181,7 +181,7 @@ export default function BlendAllocationGraph(props: BlendAllocationGraphProps) {
                 setGraphLoading(false);
               }
             }
-          }),
+          })
         )
         .catch((e) => {
           console.log(e);

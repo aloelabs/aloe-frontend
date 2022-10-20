@@ -8,7 +8,6 @@ import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from './SiloBlob';
 import TokenPairLogos from './TokenPairLogos';
 
-
 export type BlendStampProps = {
   poolData: BlendPoolMarkers;
 };

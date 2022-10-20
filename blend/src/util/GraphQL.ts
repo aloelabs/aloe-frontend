@@ -15,7 +15,7 @@ export function getUniswapVolumeQuery(
   blockNumber: string | null,
   token0Address: string,
   token1Address: string,
-  feeTier: FeeTier,
+  feeTier: FeeTier
 ): DocumentNode {
   return gql`
   {

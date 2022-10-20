@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
-
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
-
-import { getRepayActionArgs } from '../../../connector/MarginAccountActions';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import { BaseActionCard } from '../BaseActionCard';
 import {
   ActionCardProps,
   ActionID,
@@ -11,8 +9,8 @@ import {
   parseSelectedToken,
   TokenType,
 } from '../../../data/Actions';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import { BaseActionCard } from '../BaseActionCard';
+import { getRepayActionArgs } from '../../../connector/MarginAccountActions';
+import { useEffect } from 'react';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;

@@ -45,7 +45,7 @@ if (IS_DEV) {
       title: 'Vote',
       name: 'governance',
       url: '/governance',
-    },
+    }
   );
 }
 

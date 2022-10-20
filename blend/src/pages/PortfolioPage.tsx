@@ -27,7 +27,6 @@ import { GetSiloData } from '../data/SiloData';
 import { GetTokenData } from '../data/TokenData';
 import { UniswapPairValueQuery } from '../util/GraphQL';
 
-
 const http = rateLimit(axios.create(), {
   maxRequests: 2,
   perMilliseconds: 1000,
@@ -115,14 +114,14 @@ export default function PortfolioPage() {
     }
     try {
       const shareBalancesResponse = await http.get(
-        `${API_URL}/share_balances/${address}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`,
+        `${API_URL}/share_balances/${address}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
       );
       const positionRequests = Object.entries(shareBalancesResponse.data).map(async (entry: any) => {
         return {
           pool: poolDataMap.get(entry[0]) as BlendPoolMarkers,
           balance: entry[1][entry[1].length - 1].balance,
           poolReturns: await axios.get(
-            `${API_URL}/pool_returns/${entry[0]}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`,
+            `${API_URL}/pool_returns/${entry[0]}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
           ),
           poolStats: await axios.get(`${API_URL}/pool_stats/${entry[0]}/1`),
         };
@@ -171,7 +170,7 @@ export default function PortfolioPage() {
                   error: responseJSON.message !== '1',
                 } as EtherscanBalanceResponse;
               },
-            },
+            }
           )) as AxiosResponse<EtherscanBalanceResponse, any>,
           uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,

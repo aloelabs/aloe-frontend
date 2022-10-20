@@ -72,12 +72,12 @@ function makeEtherscanRequest(
   shouldMatchAll: boolean,
   pageLength = 1000,
   page?: number,
-  toBlock?: number,
+  toBlock?: number
 ) {
   let query = `https://api.etherscan.io/api?module=logs&action=getLogs`.concat(
     `&fromBlock=${fromBlock.toFixed(0)}`,
     toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '',
-    `&address=${address}`,
+    `&address=${address}`
   );
 
   for (let i = 0; i < topics.length; i += 1) {
@@ -127,7 +127,7 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
       offChainPoolStats: OffChainPoolStats,
       poolStats: BlendPoolStats,
       accountShareBalance: any,
-      accountData: any,
+      accountData: any
     ) {
       const tvl = new Big(offChainPoolStats.total_value_locked);
       const accountValue = tvl.mul(toBig(accountShareBalance.value)).div(poolStats.outstandingShares);
@@ -141,7 +141,7 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
           `0x000000000000000000000000${accountAddress}`, // to this user
           `0x000000000000000000000000${accountAddress}`, // from this user
         ],
-        false, // `or` between topics, not `and`
+        false // `or` between topics, not `and`
       );
 
       const endTime = (Date.now() / 1000).toFixed(0);
@@ -161,7 +161,7 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
             const events = eventData.data.result;
             if (!Array.isArray(events)) return;
             const transfers = events.filter(
-              (ev: any) => ev.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+              (ev: any) => ev.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
             );
 
             let poolReturns = (poolReturnsData.data as PoolReturns).concat(...(poolReturnsData3M.data as PoolReturns));
@@ -227,8 +227,8 @@ export default function PoolPositionWidget(props: PoolPositionWidgetProps) {
                 totalReturn: accountValue.toNumber() - cashBasis,
               });
             }
-          },
-        ),
+          }
+        )
       );
     }
     if (walletIsConnected && offChainPoolStats && poolStats && accountShareBalance && accountAddress && !accountStats) {

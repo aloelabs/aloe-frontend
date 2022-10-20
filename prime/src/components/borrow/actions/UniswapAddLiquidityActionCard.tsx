@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-
-import { TickMath } from '@uniswap/v3-sdk';
-import JSBI from 'jsbi';
-import { useProvider } from 'wagmi';
-
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
+import { BaseActionCard } from '../BaseActionCard';
 import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import SteppedInput from '../uniswap/SteppedInput';
+import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import TokenChooser from '../../common/TokenChooser';
+import Settings from '../uniswap/Settings';
 import {
   calculateAmount0FromAmount1,
   calculateAmount1FromAmount0,
@@ -23,13 +21,13 @@ import {
   tickToPrice,
   UniswapV3PoolBasics,
 } from '../../../util/Uniswap';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import TokenChooser from '../../common/TokenChooser';
-import { BaseActionCard } from '../BaseActionCard';
-import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
+import { useProvider } from 'wagmi';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
-import Settings from '../uniswap/Settings';
-import SteppedInput from '../uniswap/SteppedInput';
+import { TickMath } from '@uniswap/v3-sdk';
+import JSBI from 'jsbi';
+import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
@@ -218,7 +216,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           upper.tick,
           uniswapPoolBasics.slot0.tick,
           token0.decimals,
-          token1.decimals,
+          token1.decimals
         );
         setLocalToken1Amount(amount1);
         setLocalLiquidityJSBI(liquidity);
@@ -248,7 +246,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           upper.tick,
           uniswapPoolBasics.slot0.tick,
           token0.decimals,
-          token1.decimals,
+          token1.decimals
         );
         setLocalToken0Amount(amount0);
         setLocalLiquidityJSBI(liquidity);
@@ -315,7 +313,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           upperTick,
           currentTick,
           token0.decimals,
-          token1.decimals,
+          token1.decimals
         );
         setLocalToken1Amount(amount1);
         setLocalLiquidityJSBI(liquidity);
@@ -327,7 +325,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           upperTick,
           currentTick,
           token0.decimals,
-          token1.decimals,
+          token1.decimals
         );
         setLocalToken0Amount(amount0);
         setLocalLiquidityJSBI(liquidity);
@@ -439,7 +437,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
             const nearestTick = roundUpToNearestN(
               priceToTick(numericValue, token0.decimals, token1.decimals),
-              tickInfo.tickSpacing,
+              tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
             if (parseFloat(nearestPrice) < parseFloat(upper.price) && nearestTick >= MIN_TICK) {
@@ -509,7 +507,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
             const nearestTick = roundUpToNearestN(
               priceToTick(numericValue, token0.decimals, token1.decimals),
-              tickInfo.tickSpacing,
+              tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
             if (parseFloat(nearestPrice) > parseFloat(lower.price) && nearestTick <= MAX_TICK) {

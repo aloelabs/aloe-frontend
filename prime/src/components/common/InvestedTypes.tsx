@@ -1,11 +1,9 @@
 import React from 'react';
-
-import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
 import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
+import { Text } from 'shared/lib/components/common/Typography';
 
 const DASHED_DIVIDER_BORDER_COLOR = 'rgba(255, 255, 255, 0.6)';
 const SILO_TEXT_COLOR = 'rgba(228, 237, 246, 1)';
