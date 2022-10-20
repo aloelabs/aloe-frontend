@@ -1,9 +1,11 @@
 import React from 'react';
+
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
+
 import SuccessIcon from '../../../../assets/svg/success.svg';
+import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
 import { ConfirmationType, getConfirmationTypeValue } from '../EditPositionModal';
 
 export type SuccessModalContentProps = {

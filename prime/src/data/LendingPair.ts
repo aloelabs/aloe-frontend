@@ -1,11 +1,12 @@
+import Big from 'big.js';
 import { ethers } from 'ethers';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
-import { GetTokenData, TokenData } from './TokenData';
+
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import Big from 'big.js';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { GetTokenData, TokenData } from './TokenData';
 
 export type LendingPair = {
   token0: TokenData;
@@ -27,7 +28,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     true,
-    'api-goerli'
+    'api-goerli',
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
@@ -41,7 +42,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return await Promise.all(
+  return Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
@@ -86,6 +87,6 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
         token1Utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber(),
         uniswapFeeTier: NumericFeeTierToEnum(result2),
       };
-    })
+    }),
   );
 }

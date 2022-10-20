@@ -1,17 +1,17 @@
+import { ApolloQueryResult } from '@apollo/react-hooks';
+import { MaxUint256 } from '@uniswap/sdk-core';
+import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ethers } from 'ethers';
-
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
-import { MaxUint256 } from '@uniswap/sdk-core';
-import { TokenData } from '../data/TokenData';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
 import { theGraphUniswapV3Client } from '../App';
-import { UniswapTicksQuery } from './GraphQL';
-import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { UniswapPosition } from '../data/Actions';
+import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { TokenData } from '../data/TokenData';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
+import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;
 export const Q48 = ethers.BigNumber.from('0x1000000000000');
@@ -80,17 +80,17 @@ export function calculateTickInfo(
   poolBasics: UniswapV3PoolBasics,
   token0: TokenData,
   token1: TokenData,
-  isToken0Selected: boolean
+  isToken0Selected: boolean,
 ): TickInfo {
   const tickSpacing = poolBasics.tickSpacing;
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
   const minPrice = parseFloat(
-    tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected)
+    tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected),
   );
   const maxPrice = parseFloat(
-    tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected)
+    tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected),
   );
   return {
     minTick,
@@ -207,7 +207,7 @@ export async function calculateTickData(poolAddress: string, poolBasics: Uniswap
  */
 export async function getUniswapPoolBasics(
   uniswapPoolAddress: string,
-  provider: ethers.providers.BaseProvider
+  provider: ethers.providers.BaseProvider,
 ): Promise<UniswapV3PoolBasics> {
   const pool = new ethers.Contract(uniswapPoolAddress, UniswapV3PoolABI, provider);
 
@@ -231,7 +231,7 @@ export function tickToPrice(
   tick: number,
   token0Decimals: number,
   token1Decimals: number,
-  isInTermsOfToken0 = true
+  isInTermsOfToken0 = true,
 ): string {
   const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
   const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
@@ -278,7 +278,7 @@ export function calculateAmount1FromAmount0(
   upperTick: number,
   currentTick: number,
   token0Decimals: number,
-  token1Decimals: number
+  token1Decimals: number,
 ): {
   amount1: string;
   liquidity: JSBI;
@@ -325,7 +325,7 @@ export function calculateAmount0FromAmount1(
   upperTick: number,
   currentTick: number,
   token0Decimals: number,
-  token1Decimals: number
+  token1Decimals: number,
 ): {
   amount0: string;
   liquidity: JSBI;
@@ -422,7 +422,7 @@ export function getAmountsForLiquidity(
   upperTick: number,
   currentTick: number,
   token0Decimals: number,
-  token1Decimals: number
+  token1Decimals: number,
 ): [number, number] {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
@@ -456,7 +456,7 @@ export function getValueOfLiquidity(
   lowerTick: number,
   upperTick: number,
   currentTick: number,
-  token1Decimals: number
+  token1Decimals: number,
 ): number {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 

@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { classNames } from '../../util/ClassNames';
+
 import LeftChevron from '../../assets/svg/left_chevron.svg';
+import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
@@ -43,7 +45,7 @@ export const BaseButton = styled.button.attrs(
     color?: string;
     fillWidth?: boolean;
     linkTo?: string;
-  }) => props
+  }) => props,
 )`
   ${tw`flex flex-row justify-center items-center gap-3`}
   width: max-content;
@@ -459,7 +461,7 @@ const SVGWrapper = styled.div.attrs(
     color: string;
     disabledColor: string;
     activeColor?: string;
-  }) => props
+  }) => props,
 )`
   --default-color: ${(props) => props.color};
   --disabled-color: ${(props) => props.disabledColor};

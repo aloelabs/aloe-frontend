@@ -1,19 +1,20 @@
+import JSBI from 'jsbi';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+
 import { ReactComponent as AloeLogo } from '../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../assets/svg/uniswap_logo.svg';
+import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
 import { AloeBorrowActionCard } from '../components/borrow/actions/AloeBorrowActionCard';
+import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import { AloeMintTokenPlusActionCard } from '../components/borrow/actions/AloeMintTokenPlusActionCard';
 import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
-import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
-import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
-import { DropdownOption } from 'shared/lib/components/common/Dropdown';
-import JSBI from 'jsbi';
+import { deepCopyMap } from '../util/Maps';
+import { uniswapPositionKey } from '../util/Uniswap';
 import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import { UserBalances } from './UserBalances';
-import { uniswapPositionKey } from '../util/Uniswap';
-import { deepCopyMap } from '../util/Maps';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -291,7 +292,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
 
 export function getDropdownOptionFromSelectedToken(
   selectedToken: TokenType | null,
-  options: DropdownOption[]
+  options: DropdownOption[],
 ): DropdownOption {
   if (options.length === 0) {
     throw new Error();
@@ -307,7 +308,7 @@ export function parseSelectedToken(value: string | undefined): TokenType | null 
 export function calculateHypotheticalStates(
   marginAccount: MarginAccount,
   uniswapPositions: Map<string, UniswapPosition>,
-  actionResults: ActionCardState[]
+  actionResults: ActionCardState[],
 ): {
   assets: Assets;
   liabilities: Liabilities;
@@ -406,7 +407,7 @@ export function calculateHypotheticalStates(
       },
       Array.from(positionsTemp.values()),
       marginAccount.sqrtPriceX96,
-      0.025
+      0.025,
     );
     if (!solvency.atA || !solvency.atB) {
       console.log('Margin Account not solvent!');

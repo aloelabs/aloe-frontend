@@ -1,7 +1,12 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+
 import styled from 'styled-components';
+import tw from 'twin.macro';
+
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { ReactComponent as PlusIcon } from '../assets/svg/white_plus.svg';
 import BrowseCard from '../components/browse/BrowseCard';
+import { BrowseCardPlaceholder } from '../components/browse/BrowseCardPlaceholder';
 import BrowsePoolsPerformance from '../components/browse/BrowsePoolsPerformance';
 import { OutlinedGradientRoundedButtonWithIcon } from '../components/common/Buttons';
 import {
@@ -27,13 +32,10 @@ import {
   RESPONSIVE_BREAKPOINTS,
 } from '../data/constants/Breakpoints';
 import { BlendTableContext } from '../data/context/BlendTableContext';
-import { GetTokenData } from '../data/TokenData';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import tw from 'twin.macro';
-import { BrowseCardPlaceholder } from '../components/browse/BrowseCardPlaceholder';
-import { IS_DEV } from '../util/Env';
 import { isHiddenPool } from '../data/HiddenBlendPools';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { GetTokenData } from '../data/TokenData';
+import { IS_DEV } from '../util/Env';
 import { isPoolDeprecated } from '../util/Pool';
 
 const BROWSE_CARD_GAP = '24px';
@@ -155,8 +157,8 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
         nonDeprecatedPoolData.flatMap((pool) => [
           pool.token0Address.toLowerCase(),
           pool.token1Address.toLocaleLowerCase(),
-        ])
-      )
+        ]),
+      ),
     );
     let tokenData = tokenAddresses.map((address) => GetTokenData(address));
     let tokenOptionData = tokenData.map(
@@ -165,7 +167,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           label: data.ticker,
           value: data.address,
           icon: data.iconPath,
-        } as MultiDropdownOption)
+        } as MultiDropdownOption),
     );
     if (isMounted.current) {
       setTokenOptions(tokenOptionData);
@@ -190,7 +192,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
                 return field.toLowerCase().includes(activeSearchText.toLowerCase());
               }) !== -1
             );
-          })
+          }),
         );
       }
     } else if (pools.length > 0) {
@@ -215,7 +217,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
                   return activeTokenOptions.map((option) => option.label.toLowerCase()).includes(field.toLowerCase());
                 }) !== -1
               );
-            })
+            }),
         );
         setActiveLoading(false);
       }
@@ -235,7 +237,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
             filteredPools.filter((pool) => {
               // Deprecated pools may not be active, but if the user is searching, we want to show them
               return activePools.includes(pool) || isPoolDeprecated(pool);
-            })
+            }),
           );
           setToDisplayLoading(false);
         }
@@ -244,7 +246,7 @@ export default function BlendPoolSelectPage(props: BlendPoolSelectPageProps) {
           setPoolsToDisplay(
             activePools.filter((pool) => {
               return filteredPools.includes(pool);
-            })
+            }),
           );
         }
       }

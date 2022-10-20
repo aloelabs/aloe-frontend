@@ -1,29 +1,32 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import AppPage from '../components/common/AppPage';
-import styled from 'styled-components';
-import tw from 'twin.macro';
-import PortfolioCard from '../components/portfolio/PortfolioCard';
-import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
-import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
-import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
-import { GetTokenData } from '../data/TokenData';
-import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
-import { GetSiloData } from '../data/SiloData';
-import { Text } from '../components/common/Typography';
-import PortfolioGraph from '../components/graph/PortfolioGraph';
-import Tooltip from '../components/common/Tooltip';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+
+import { ApolloQueryResult } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import rateLimit from 'axios-rate-limit';
-import { BlendTableContext } from '../data/context/BlendTableContext';
-import { theGraphUniswapV2Client } from '../App';
-import { UniswapPairValueQuery } from '../util/GraphQL';
-import { API_URL } from '../data/constants/Values';
-import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
-import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import styled from 'styled-components';
+import tw from 'twin.macro';
 import { useAccount } from 'wagmi';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
+import { theGraphUniswapV2Client } from '../App';
+import AppPage from '../components/common/AppPage';
+import Tooltip from '../components/common/Tooltip';
+import { Text } from '../components/common/Typography';
+import PortfolioGraph from '../components/graph/PortfolioGraph';
+import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
+import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
+import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
+import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import PortfolioCard from '../components/portfolio/PortfolioCard';
+import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
+import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
+import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+import { API_URL } from '../data/constants/Values';
+import { BlendTableContext } from '../data/context/BlendTableContext';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { GetSiloData } from '../data/SiloData';
+import { GetTokenData } from '../data/TokenData';
+import { UniswapPairValueQuery } from '../util/GraphQL';
+
 
 const http = rateLimit(axios.create(), {
   maxRequests: 2,
@@ -112,14 +115,14 @@ export default function PortfolioPage() {
     }
     try {
       const shareBalancesResponse = await http.get(
-        `${API_URL}/share_balances/${address}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
+        `${API_URL}/share_balances/${address}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`,
       );
       const positionRequests = Object.entries(shareBalancesResponse.data).map(async (entry: any) => {
         return {
           pool: poolDataMap.get(entry[0]) as BlendPoolMarkers,
           balance: entry[1][entry[1].length - 1].balance,
           poolReturns: await axios.get(
-            `${API_URL}/pool_returns/${entry[0]}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
+            `${API_URL}/pool_returns/${entry[0]}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`,
           ),
           poolStats: await axios.get(`${API_URL}/pool_stats/${entry[0]}/1`),
         };
@@ -168,7 +171,7 @@ export default function PortfolioPage() {
                   error: responseJSON.message !== '1',
                 } as EtherscanBalanceResponse;
               },
-            }
+            },
           )) as AxiosResponse<EtherscanBalanceResponse, any>,
           uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,

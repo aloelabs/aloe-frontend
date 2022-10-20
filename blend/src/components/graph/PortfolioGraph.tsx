@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from 'react';
+
 import axios from 'axios';
 import {
   addDays,
@@ -10,8 +12,8 @@ import {
   subWeeks,
   subYears,
 } from 'date-fns/esm';
-import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+
 import { API_URL } from '../../data/constants/Values';
 import { CombinedPercentChange } from '../common/PercentChange';
 import { Display, Text } from '../common/Typography';
@@ -240,22 +242,22 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
       const getShareBalances = makeRequest(
         `${API_URL}/share_balances/${accountAddress}/1/${buttonIdxToText(activeButton).toLowerCase()}/${(
           subMinutes(toDate, 2).getTime() / 1000
-        ).toFixed(0)}`
+        ).toFixed(0)}`,
       );
       const getPool = makeRequest(
         `${API_URL}/pool_returns/0xE801c4175A0341e65dFef8F3B79e1889047AfEbb/1/${buttonIdxToText(
-          activeButton
-        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`
+          activeButton,
+        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`,
       );
       const getWbtc = makeRequest(
         `${API_URL}/token_returns/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599/1/${buttonIdxToText(
-          activeButton
-        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`
+          activeButton,
+        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`,
       );
       const getWeth = makeRequest(
         `${API_URL}/token_returns/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/1/${buttonIdxToText(
-          activeButton
-        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`
+          activeButton,
+        ).toLowerCase()}/${(toDate.getTime() / 1000).toFixed(0)}`,
       );
       axios
         .all([getShareBalances, getPool, getWbtc, getWeth])
@@ -291,7 +293,7 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
                 const date = new Date(timestamp);
                 const closestDate = closestTo(
                   date,
-                  dates.map((d) => new Date(d))
+                  dates.map((d) => new Date(d)),
                 );
                 if (closestDate) {
                   const obj = totalSupplyData[closestDate.toISOString()];
@@ -313,7 +315,7 @@ export default function PortfolioGraph(props: PortfolioGraphProps) {
               setGraphError(false);
               setGraphLoading(false);
             }
-          })
+          }),
         )
         .catch(() => {
           if (mounted) {

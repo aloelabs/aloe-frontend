@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
+
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import { BaseActionCard } from '../BaseActionCard';
+
+import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import {
   ActionCardProps,
   ActionID,
@@ -9,10 +11,10 @@ import {
   parseSelectedToken,
   TokenType,
 } from '../../../data/Actions';
-import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
 import { TokenData } from '../../../data/TokenData';
 import { getBalanceFor } from '../../../data/UserBalances';
-import { useEffect } from 'react';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { marginAccount, availableBalances, previousActionCardState, isCausingError, onRemove, onChange } = prop;

@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
+
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import { BaseActionCard } from '../BaseActionCard';
+
+import { getBurnActionArgs } from '../../../connector/MarginAccountActions';
 import {
   ActionCardProps,
   ActionID,
@@ -9,8 +11,8 @@ import {
   parseSelectedToken,
   TokenType,
 } from '../../../data/Actions';
-import { getBurnActionArgs } from '../../../connector/MarginAccountActions';
-import { useEffect } from 'react';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -43,7 +45,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
           : getBurnActionArgs(
               selectedToken === TokenType.KITTY0 ? token0 : token1,
               selectedToken === TokenType.KITTY0 ? kitty0 : kitty1,
-              parsedValue
+              parsedValue,
             ),
       textFields: [value],
       aloeResult: {

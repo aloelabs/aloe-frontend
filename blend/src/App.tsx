@@ -1,22 +1,22 @@
 import React, { Suspense, useEffect } from 'react';
+
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
 
-import WagmiProvider from './connector/WagmiProvider';
-import Header from './components/header/Header';
-import Footer from './components/common/Footer';
-import BlendPoolSelectPage from './pages/BlendPoolSelectPage';
-import BlendPoolPage from './pages/BlendPoolPage';
-import PortfolioPage from './pages/PortfolioPage';
-import GovernancePage from './pages/GovernancePage';
-
 import AppBody from './components/common/AppBody';
-import { RedirectPartialPath } from './util/RedirectPartialPath';
+import Footer from './components/common/Footer';
+import Header from './components/header/Header';
+import WagmiProvider from './connector/WagmiProvider';
 import { BlendTableProvider } from './data/context/BlendTableContext';
-import ScrollToTop from './util/ScrollToTop';
-import { IS_DEV } from './util/Env';
+import BlendPoolPage from './pages/BlendPoolPage';
+import BlendPoolSelectPage from './pages/BlendPoolSelectPage';
 import ButtonExamplesPage from './pages/ButtonExamplesPage';
+import GovernancePage from './pages/GovernancePage';
 import InputExamplesPage from './pages/InputExamplesPage';
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
+import PortfolioPage from './pages/PortfolioPage';
+import { IS_DEV } from './util/Env';
+import { RedirectPartialPath } from './util/RedirectPartialPath';
+import ScrollToTop from './util/ScrollToTop';
 
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({
@@ -45,7 +45,7 @@ function App() {
   const BLOCK_QUERY = gql`
   {
     blocks(first: 1, orderBy: timestamp, orderDirection: asc, where: {timestamp_gt: "${twentyFourHoursAgo.toFixed(
-      0
+      0,
     )}"}) {
       id
       number

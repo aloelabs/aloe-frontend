@@ -33,7 +33,7 @@ function nearestPriceInGraphOrNull(
   price: number,
   minPrice: number,
   maxPrice: number,
-  data: ChartEntry[]
+  data: ChartEntry[],
 ): number | null {
   if (price < minPrice || price > maxPrice) return null;
   return data.reduce((prev: ChartEntry, curr: ChartEntry) => {

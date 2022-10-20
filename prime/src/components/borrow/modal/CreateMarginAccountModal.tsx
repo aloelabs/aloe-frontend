@@ -1,8 +1,10 @@
 import { useState } from 'react';
+
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
-import { CloseableModal, LABEL_TEXT_COLOR } from '../../common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+
+import { CloseableModal, LABEL_TEXT_COLOR } from '../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type CreateMarginAccountModalProps = {
@@ -17,7 +19,7 @@ export type CreateMarginAccountModalProps = {
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
   const { open, isTxnPending, availablePools, setOpen, onConfirm, onCancel } = props;
   const [selectedPool, setSelectedPool] = useState<DropdownOption | null>(
-    availablePools.length > 0 ? availablePools[0] : null
+    availablePools.length > 0 ? availablePools[0] : null,
   );
   if (selectedPool == null) {
     return null;

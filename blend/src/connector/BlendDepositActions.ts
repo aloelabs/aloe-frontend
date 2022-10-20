@@ -1,18 +1,18 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
+import Big from 'big.js';
 import { BigNumber, Contract, ContractReceipt, ethers, Signer } from 'ethers';
 
-import WethAbi from '../assets/abis/Weth9.json';
-import Erc20Abi from '../assets/abis/ERC20.json';
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
-import Big from 'big.js';
+import Erc20Abi from '../assets/abis/ERC20.json';
+import WethAbi from '../assets/abis/Weth9.json';
 import { WETH_9_MAINNET_ADDRESS } from '../data/constants/Addresses';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
 
 export async function approve(
   signer: Signer,
   tokenAddress: string,
   poolAddress: string,
   completionCallback: (receipt?: ContractReceipt) => void,
-  amount: string = UINT256_MAX
+  amount: string = UINT256_MAX,
 ): Promise<void> {
   const tokenContract = new Contract(tokenAddress, Erc20Abi, signer);
 
@@ -30,7 +30,7 @@ export async function approve(
 export async function mintWeth(
   signer: Signer,
   amount: Big,
-  completionCallback: (receipt?: ContractReceipt) => void
+  completionCallback: (receipt?: ContractReceipt) => void,
 ): Promise<void> {
   const wethContract = new Contract(WETH_9_MAINNET_ADDRESS, WethAbi, signer);
 
@@ -53,7 +53,7 @@ export async function deposit(
   amount0Max: Big,
   amount1Max: Big,
   ratioChange: number,
-  completionCallback: (receipt?: ContractReceipt) => void
+  completionCallback: (receipt?: ContractReceipt) => void,
 ): Promise<void> {
   const blendContract = new Contract(poolAddress, BlendPoolAbi, signer);
   const amount0Min = amount0Max.mul(1 - ratioChange / 100);
@@ -66,7 +66,7 @@ export async function deposit(
         amount0Max.toFixed(0),
         amount1Max.toFixed(0),
         amount0Min.toFixed(0),
-        amount1Min.toFixed(0)
+        amount1Min.toFixed(0),
       )) as BigNumber
     ).toNumber();
 
@@ -82,7 +82,7 @@ export async function deposit(
       amount1Max.toFixed(0),
       amount0Min.toFixed(0),
       amount1Min.toFixed(0),
-      transactionOptions
+      transactionOptions,
     );
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);

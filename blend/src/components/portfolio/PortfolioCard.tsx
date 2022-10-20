@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { FeeTier } from '../../data/BlendPoolMarkers';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { formatUSDAuto } from '../../util/Numbers';
 import FeeTierContainer from '../common/FeeTierContainer';
 import InvestedTypes from '../common/InvestedTypes';
-import TokenPairIcons from '../common/TokenPairIcons';
 import { PercentChange } from '../common/PercentChange';
+import TokenPairIcons from '../common/TokenPairIcons';
 import { Display, Text } from '../common/Typography';
-import { formatUSDAuto } from '../../util/Numbers';
 
 const CARD_BODY_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const TOKEN_PAIR_FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
@@ -174,7 +176,7 @@ export default function PortfolioCard(props: PortfolioCardProps) {
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
-    0.25
+    0.25,
   )} 100%)`;
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
   const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);

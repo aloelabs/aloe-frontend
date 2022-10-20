@@ -1,11 +1,13 @@
 import React, { Fragment, useRef } from 'react';
+
 import { Dialog, Transition } from '@headlessui/react';
-import CloseIcon from '../../assets/svg/close_modal.svg';
-import LoadingIcon from '../../assets/svg/loading.svg';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Display } from './Typography';
+
+import CloseIcon from '../../assets/svg/close_modal.svg';
+import LoadingIcon from '../../assets/svg/loading.svg';
 import { classNames } from '../../util/ClassNames';
+import { Display } from './Typography';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
 const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';
@@ -18,7 +20,7 @@ const StyledDialog = styled.div`
 `;
 
 const ModalWrapper = styled.div.attrs(
-  (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props
+  (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props,
 )`
   ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left
    overflow-hidden transition-all sm:my-4 sm:align-middle`}
@@ -148,7 +150,7 @@ function ModalBase(props: ModalBaseProps) {
           <div
             className={classNames(
               'flex items-end justify-center min-h-screen text-center sm:block sm:p-0',
-              props.fullHeight ? '' : 'pt-4 px-4 pb-20'
+              props.fullHeight ? '' : 'pt-4 px-4 pb-20',
             )}
           >
             <Transition.Child

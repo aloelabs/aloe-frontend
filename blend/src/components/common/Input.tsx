@@ -1,6 +1,8 @@
 import React, { ReactElement } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { classNames } from '../../util/ClassNames';
 
 const INPUT_BG_COLOR = 'rgba(13, 23, 30, 1)';
@@ -143,7 +145,7 @@ const SquareInputWrapper = styled.div`
 `;
 
 const SvgWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean }) => props
+  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean }) => props,
 )`
   ${tw`absolute`}
 

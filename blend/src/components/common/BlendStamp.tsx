@@ -1,8 +1,9 @@
 import React from 'react';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import TokenPairLogos from './TokenPairLogos';
+
 import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from './SiloBlob';
+import TokenPairLogos from './TokenPairLogos';
 
 export type BlendStampProps = {
   poolData: BlendPoolMarkers;

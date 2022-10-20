@@ -1,25 +1,27 @@
-import Big from 'big.js';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+
+import Big from 'big.js';
 import styled from 'styled-components';
 import { useAccount, useBalance, useSigner } from 'wagmi';
+
 import { withdraw } from '../../connector/BlendWithdrawActions';
 import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { DEFAULT_RATIO_CHANGE, RATIO_CHANGE_CUTOFF } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
+import { OffChainPoolStats } from '../../data/PoolStats';
 import { formatUSDCompact, prettyFormatBalance, String1E, toBig } from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
 import Pending from '../common/Pending';
 import TokenAmountInput from '../common/TokenAmountInput';
+import TokenBreakdown from '../common/TokenBreakdown';
+import { Display, Text } from '../common/Typography';
 import { TabWrapper } from './DepositTab';
 import MaxSlippageInput from './MaxSlippageInput';
 import ConfirmWithdrawalModal from './modal/ConfirmWithdrawalModal';
 import SharesWithdrawnModal from './modal/SharesWithdrawnModal';
 import SubmittingOrderModal from './modal/SubmittingOrderModal';
 import TransactionFailedModal from './modal/TransactionFailedModal';
-import TokenBreakdown from '../common/TokenBreakdown';
-import { Display, Text } from '../common/Typography';
-import { OffChainPoolStats } from '../../data/PoolStats';
 
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -120,8 +122,8 @@ export default function WithdrawTab(props: WithdrawTabProps) {
     if (offChainPoolStats) {
       setUsdEstimate(
         formatUSDCompact(
-          sharesBig.mul(offChainPoolStats.total_value_locked).div(poolStats.outstandingShares).toNumber()
-        )
+          sharesBig.mul(offChainPoolStats.total_value_locked).div(poolStats.outstandingShares).toNumber(),
+        ),
       );
     }
 

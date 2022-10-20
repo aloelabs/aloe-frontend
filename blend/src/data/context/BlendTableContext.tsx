@@ -1,5 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
+
 import { useProvider } from 'wagmi';
+
 import findPools, { fetchBlendPoolData } from '../BlendPoolFinder';
 import { BlendPoolMarkers } from '../BlendPoolMarkers';
 
@@ -32,7 +34,7 @@ export function BlendTableProvider(props: BlendTableContextProviderProps) {
         contextState.poolDataMap.set(address, poolData);
       });
     },
-    [provider, contextState]
+    [provider, contextState],
   );
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
+
 import { FeeTier, GetNumericFeeTier } from '../data/BlendPoolMarkers';
 
 /**
@@ -14,7 +15,7 @@ export function getUniswapVolumeQuery(
   blockNumber: string | null,
   token0Address: string,
   token1Address: string,
-  feeTier: FeeTier
+  feeTier: FeeTier,
 ): DocumentNode {
   return gql`
   {

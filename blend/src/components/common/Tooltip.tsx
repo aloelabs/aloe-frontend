@@ -1,7 +1,9 @@
 import React from 'react';
-import InfoIcon from '../../assets/svg/info.svg';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import InfoIcon from '../../assets/svg/info.svg';
 import useClickOutside from '../../data/hooks/UseClickOutside';
 import { Text } from './Typography';
 
@@ -40,7 +42,7 @@ const TooltipContainer = styled.div.attrs(
   (props: {
     position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     filled?: boolean;
-  }) => props
+  }) => props,
 )`
   ${tw`flex flex-col items-center justify-center absolute`}
   ${(props) => {

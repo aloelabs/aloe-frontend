@@ -1,14 +1,15 @@
 import React, { useContext, useState } from 'react';
-import WidgetHeading from '../common/WidgetHeading';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 
+import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
+import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import Tooltip from '../common/Tooltip';
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { Text } from '../common/Typography';
+import WidgetHeading from '../common/WidgetHeading';
 
 export type PoolStatsWidgetProps = {
   poolData: BlendPoolMarkers;
@@ -307,7 +308,7 @@ export default function PoolPieChartWidget(props: PoolStatsWidgetProps) {
       ? ` and ${drawData.silo0Label}`
       : `, ${drawData.silo0Label}, and ${drawData.silo1Label}`;
   const combinedSiloLabelB = drawData.silo0Label.concat(
-    drawData.silo0Label === drawData.silo1Label ? '' : ` and ${drawData.silo1Label}`
+    drawData.silo0Label === drawData.silo1Label ? '' : ` and ${drawData.silo1Label}`,
   );
 
   const firstHalfOfSlices = slices.slice(0, slices.length / 2).reverse();
