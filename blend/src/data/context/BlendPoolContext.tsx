@@ -1,6 +1,7 @@
-import { BlendPoolMarkers } from '../BlendPoolMarkers';
 import React, { createContext } from 'react';
+
 import { BlendPoolStats } from '../BlendPoolDataResolver';
+import { BlendPoolMarkers } from '../BlendPoolMarkers';
 import { useBlendStats } from '../hooks/UseBlendStats';
 
 export interface IBlendPoolContext {

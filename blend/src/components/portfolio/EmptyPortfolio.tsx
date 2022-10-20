@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { ReactComponent as BrowsePoolsIcon } from '../../assets/svg/small_right_arrow.svg';
 import { OutlinedWhiteButtonWithIcon } from '../common/Buttons';
 

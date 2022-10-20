@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { LoadingModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 import { Text } from '../../common/Typography';
 

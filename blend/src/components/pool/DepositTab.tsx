@@ -1,8 +1,10 @@
-import Big from 'big.js';
 import React, { useContext, useEffect, useState } from 'react';
+
+import Big from 'big.js';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useSigner } from 'wagmi';
+
 import { approve, deposit, mintWeth } from '../../connector/BlendDepositActions';
 import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
@@ -10,6 +12,7 @@ import { WETH_9_MAINNET_ADDRESS } from '../../data/constants/Addresses';
 import { DEFAULT_RATIO_CHANGE, RATIO_CHANGE_CUTOFF } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { useDeposit } from '../../data/hooks/UseDeposit';
+import { OffChainPoolStats } from '../../data/PoolStats';
 import { formatUSDCompact, String1E } from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
 import Pending from '../common/Pending';
@@ -19,7 +22,6 @@ import ConfirmDepositModal from './modal/ConfirmDepositModal';
 import SubmittingOrderModal from './modal/SubmittingOrderModal';
 import TokensDepositedModal from './modal/TokensDepositedModal';
 import TransactionFailedModal from './modal/TransactionFailedModal';
-import { OffChainPoolStats } from '../../data/PoolStats';
 
 enum ButtonState {
   DEPRECATED,

@@ -1,13 +1,15 @@
 import React, { useContext } from 'react';
+
+import { formatDistance } from 'date-fns';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { formatDistance } from 'date-fns';
+
+import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { OffChainPoolStats } from '../../data/PoolStats';
 import { formatUSDAuto, roundPercentage } from '../../util/Numbers';
 import { Display, Text } from '../common/Typography';
 import WidgetHeading from '../common/WidgetHeading';
-import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const ROUNDING_PRECISION = 2;
 const POOL_STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';

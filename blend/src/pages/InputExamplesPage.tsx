@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import {
   RoundedInput,
   RoundedInputWithIcon,
@@ -6,7 +8,6 @@ import {
   SquareInputWithIcon,
   SquareInputWithMax,
 } from '../components/common/Input';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 
 export default function InputExamplesPage() {
   const [largeRoundedInputValue, setLargeRoundedInputValue] = React.useState('');

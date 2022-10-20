@@ -1,9 +1,9 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
+import Big from 'big.js';
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
 
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
-import Big from 'big.js';
 import { BlendPoolStats } from '../data/BlendPoolDataResolver';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 
 export async function withdraw(
   signer: Signer,
