@@ -1,0 +1,9 @@
+import { SVGProps } from '.';
+
+export default function PositiveChangeIcon(props: SVGProps) {
+  return (
+    <svg width='14' height='15' viewBox='0 0 14 15' fill='none' xmlns='http://www.w3.org/2000/svg' {...props}>
+      <path d='M7 5.16667L10.5 8.66667H3.5L7 5.16667Z' fill='#00C143' />
+    </svg>
+  );
+}
