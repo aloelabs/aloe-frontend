@@ -78,9 +78,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.MINT,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }

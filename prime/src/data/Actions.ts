@@ -215,33 +215,25 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       {
         actionId: ADD_MARGIN.id,
         textFields: ['100'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET0,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
       },
       {
         actionId: MINT_TOKEN_PLUS.id,
         textFields: ['100'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET0,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
       },
       {
         actionId: BORROW.id,
         textFields: ['0.044'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET1,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
       },
       {
         actionId: WITHDRAW.id,
         textFields: ['0.044'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET1,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
       },
     ],

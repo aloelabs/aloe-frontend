@@ -99,7 +99,14 @@ export async function resolveUniswapPools(
       const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
       const [token0, token1, feeTier] = await Promise.all([contract.token0(), contract.token1(), contract.fee()]);
       //     |key|  |          value           |
-      return [pool, { token0, token1, feeTier }];
+      return [
+        pool,
+        {
+          token0,
+          token1,
+          feeTier,
+        },
+      ];
     }
     uniswapPoolData.push(getUniswapPoolData());
   });

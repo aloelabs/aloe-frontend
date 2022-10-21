@@ -80,9 +80,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.REPAY,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }

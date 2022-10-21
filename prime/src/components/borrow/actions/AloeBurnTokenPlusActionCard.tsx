@@ -79,9 +79,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.BURN,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }

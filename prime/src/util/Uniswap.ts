@@ -84,8 +84,18 @@ export function calculateTickInfo(
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
-  const minPrice = tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected);
-  const maxPrice = tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected);
+  const minPrice = tickToPrice(
+    isToken0Selected ? minTick : maxTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
+  );
+  const maxPrice = tickToPrice(
+    isToken0Selected ? maxTick : minTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
+  );
   return {
     minTick,
     maxTick,

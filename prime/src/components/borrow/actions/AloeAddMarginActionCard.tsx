@@ -97,9 +97,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.TRANSFER_IN,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }
