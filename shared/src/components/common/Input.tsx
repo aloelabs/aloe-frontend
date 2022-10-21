@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 import { classNames } from '../../util/ClassNames';
 
 const INPUT_BG_COLOR = 'rgba(13, 23, 30, 1)';
@@ -68,7 +67,9 @@ const MAX_BUTTON_HEIGHT = {
 };
 
 const InputBase = styled.input.attrs((props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean }) => props)`
-  ${tw`relative text-left flex-grow`}
+  postion: relative;
+  text-align: left;
+  flex-grow: 1;
   background-color: ${INPUT_BG_COLOR};
   color: ${INPUT_TEXT_COLOR};
   box-sizing: border-box;
@@ -128,7 +129,11 @@ const InputBase = styled.input.attrs((props: { inputSize: 'S' | 'M' | 'L'; fullW
 `;
 
 const RoundedInputWrapper = styled.div`
-  ${tw`flex flex-col items-center justify-center relative`}
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   border-radius: 100px;
   input {
     border-radius: 100px;
@@ -136,7 +141,11 @@ const RoundedInputWrapper = styled.div`
 `;
 
 const SquareInputWrapper = styled.div`
-  ${tw`flex flex-col items-center justify-center relative`}
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   border-radius: 8px;
   input {
     border-radius: 8px;
@@ -146,7 +155,7 @@ const SquareInputWrapper = styled.div`
 const SvgWrapper = styled.div.attrs(
   (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean }) => props
 )`
-  ${tw`absolute`}
+  position: absolute;
 
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: ${(props) => (props.isClickable ? 'auto' : 'none')};
@@ -168,7 +177,7 @@ const SvgWrapper = styled.div.attrs(
 `;
 
 const TrailingUnit = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
-  ${tw`absolute`}
+  position: absolute;
   right: ${(props) => ICON_SPACING[props.size]}px;
   pointer-events: none;
   font-size: ${(props) => INPUT_FONT_SIZE[props.size]}px;
@@ -176,7 +185,8 @@ const TrailingUnit = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => prop
 `;
 
 const MaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
-  ${tw`ml-3 p-0`}
+  margin-left: 0.75rem;
+  padding: 0px;
   color: rgba(0, 193, 67, 1);
   position: absolute;
   top: calc(50% - 9.45px);

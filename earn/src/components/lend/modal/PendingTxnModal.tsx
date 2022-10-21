@@ -1,6 +1,8 @@
 import React from 'react';
-import { LoadingModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
+
 import { Text } from 'shared/lib/components/common/Typography';
+
+import { LoadingModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 
 export type PendingTxnModalProps = {
   open: boolean;

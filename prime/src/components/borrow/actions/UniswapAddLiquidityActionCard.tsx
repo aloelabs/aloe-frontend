@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { BaseActionCard } from '../BaseActionCard';
+
+import { TickMath } from '@uniswap/v3-sdk';
+import JSBI from 'jsbi';
+import { useProvider } from 'wagmi';
+
+import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
-import SteppedInput from '../uniswap/SteppedInput';
-import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import TokenChooser from '../../common/TokenChooser';
-import Settings from '../uniswap/Settings';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {
   calculateAmount0FromAmount1,
   calculateAmount1FromAmount0,
@@ -21,19 +23,19 @@ import {
   tickToPrice,
   UniswapV3PoolBasics,
 } from '../../../util/Uniswap';
-import { useProvider } from 'wagmi';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import TokenChooser from '../../common/TokenChooser';
+import { BaseActionCard } from '../BaseActionCard';
+import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
-import { TickMath } from '@uniswap/v3-sdk';
-import JSBI from 'jsbi';
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
+import Settings from '../uniswap/Settings';
+import SteppedInput from '../uniswap/SteppedInput';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
 
 type TickPrice = {
-  price: string;
+  price: number;
   tick: number;
 };
 
@@ -423,7 +425,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       )}
       <div className='flex flex-row gap-2 mb-4'>
         <SteppedInput
-          value={lower?.price || ''}
+          value={lower?.price.toString(10) ?? ''}
           label='Min Price'
           token0={token0}
           token1={token1}
@@ -440,7 +442,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (parseFloat(nearestPrice) < parseFloat(upper.price) && nearestTick >= MIN_TICK) {
+            if (nearestPrice < upper.price && nearestTick >= MIN_TICK) {
               updateLower({
                 price: nearestPrice,
                 tick: nearestTick,
@@ -493,7 +495,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           disabled={poolAddress == null}
         />
         <SteppedInput
-          value={upper?.price || ''}
+          value={upper?.price.toString(10) ?? ''}
           label='Max Price'
           token0={token0}
           token1={token1}
@@ -510,7 +512,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (parseFloat(nearestPrice) > parseFloat(lower.price) && nearestTick <= MAX_TICK) {
+            if (nearestPrice > lower.price && nearestTick <= MAX_TICK) {
               updateUpper({
                 price: nearestPrice,
                 tick: nearestTick,

@@ -1,8 +1,10 @@
 import React from 'react';
-import { Area, AreaChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import { differenceInDays, format, parseISO } from 'date-fns/esm';
+import { Area, AreaChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CurveType } from 'recharts/types/shape/Curve';
 import { AxisDomain } from 'recharts/types/util/types';
+
 import { getEvenlySpacedDates } from '../../util/Dates';
 
 export function getIdealStep(diffInDays: number, numUniqueYears: number): number {
@@ -111,7 +113,12 @@ export default function Graph(props: GraphProps) {
       <AreaChart
         width={964}
         data={data}
-        margin={{ top: 0, left: 0, bottom: 0, right: 0 }}
+        margin={{
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+        }}
         // @ts-ignore
         baseValue={'dataMin'}
       >

@@ -1,11 +1,12 @@
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
-import { DropdownOption, DropdownWithPlaceholder } from '../../common/Dropdown';
-import { Text } from 'shared/lib/components/common/Typography';
-import { BaseActionCard } from '../BaseActionCard';
-import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
-import styled from 'styled-components';
 import JSBI from 'jsbi';
+import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
+import { Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
+
+import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
+import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
+import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
 export type UniswapV3LiquidityPosition = {
@@ -58,9 +59,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
       actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
       actionArgs:
         lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
-      aloeResult: {
-        selectedToken: null,
-      },
+      aloeResult: { selectedToken: null },
       uniswapResult: {
         uniswapPosition: {
           liquidity: updatedLiquidity,

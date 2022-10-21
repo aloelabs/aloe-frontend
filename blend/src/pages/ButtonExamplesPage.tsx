@@ -1,4 +1,6 @@
 import React from 'react';
+
+import { ReactComponent as MigrateIcon } from '../assets/svg/migrate.svg';
 import {
   FilledGradientButton,
   FilledGreyButton,
@@ -13,7 +15,6 @@ import {
   FilledStylizedButtonWithIcon,
   OutlinedGradientRoundedButtonWithIcon,
 } from '../components/common/Buttons';
-import { ReactComponent as MigrateIcon } from '../assets/svg/migrate.svg';
 
 export default function ButtonExamplesPage() {
   return (

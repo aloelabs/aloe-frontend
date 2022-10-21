@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import { Display } from './Typography';
 
 export default function Pending() {

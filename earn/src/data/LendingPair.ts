@@ -1,13 +1,14 @@
+import Big from 'big.js';
 import { ethers } from 'ethers';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
-import { GetTokenData, TokenData } from './TokenData';
-import KittyLensABI from '../assets/abis/KittyLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+
 import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
-import Big from 'big.js';
+import KittyLensABI from '../assets/abis/KittyLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { GetTokenData, TokenData } from './TokenData';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
