@@ -31,18 +31,14 @@
   {
     "inputs": [],
     "name": "KITTY0",
-    "outputs": [
-      { "internalType": "contract Kitty", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract Kitty", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "KITTY1",
-    "outputs": [
-      { "internalType": "contract Kitty", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract Kitty", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -70,18 +66,14 @@
   {
     "inputs": [],
     "name": "TOKEN0",
-    "outputs": [
-      { "internalType": "contract IERC20", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "TOKEN1",
-    "outputs": [
-      { "internalType": "contract IERC20", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },

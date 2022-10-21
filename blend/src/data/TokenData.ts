@@ -106,8 +106,5 @@ export function getTokens(): TokenData[] {
 export function GetTokenData(address: string): TokenData {
   if (TokenDataMap.has(address)) {
     return TokenDataMap.get(address)!;
-  } else
-    return {
-      address,
-    };
+  } else return { address };
 }

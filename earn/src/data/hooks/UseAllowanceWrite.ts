@@ -1,4 +1,5 @@
 import { Chain, erc20ABI, useContractWrite } from 'wagmi';
+
 import { UINT256_MAX } from '../../data/constants/Values';
 import { TokenData } from '../../data/TokenData';
 

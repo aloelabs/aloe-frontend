@@ -1,9 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
-import { TokenData } from '../../data/TokenData';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import { roundPercentage } from '../../util/Numbers';
-import LendTokenInfo from './LendTokenInfo';
+
 import {
   BodyDivider,
   BodySubContainer,
@@ -13,8 +9,14 @@ import {
   CardWrapper,
   ValueText,
 } from 'shared/lib/components/common/Card';
-import YieldTokenIcons from './YieldTokenIcons';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { TokenData } from '../../data/TokenData';
+import { roundPercentage } from '../../util/Numbers';
+import LendTokenInfo from './LendTokenInfo';
+import YieldTokenIcons from './YieldTokenIcons';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 const YIELD_AGGREGATOR_LABEL_TEXT_COLOR = 'rgba(204, 223, 237, 1)';

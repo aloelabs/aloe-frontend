@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import UnknownTokenIcon from '../../assets/svg/tokens/unknown_token.svg';
 import { TokenData } from '../../data/TokenData';
 

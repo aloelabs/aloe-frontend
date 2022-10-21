@@ -58,9 +58,7 @@ const Container = styled.div`
 
 // TODO: move this to a separate file
 function makeRequest(reqUrl: string) {
-  return axios.get(reqUrl, {
-    timeout: 10000,
-  });
+  return axios.get(reqUrl, { timeout: 10000 });
 }
 
 export type BlendAllocationGraphProps = {

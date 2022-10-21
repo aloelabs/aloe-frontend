@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { TokenBalance } from '../../pages/LendPage';
 import { formatTokenAmount } from '../../util/Numbers';
 

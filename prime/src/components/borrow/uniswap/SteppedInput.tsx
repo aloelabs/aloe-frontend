@@ -1,10 +1,12 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TokenData } from '../../../data/TokenData';
-import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
-import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from 'shared/lib/components/common/Typography';
+
+import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
+import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+import { TokenData } from '../../../data/TokenData';
 import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
