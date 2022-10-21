@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+
+import { FilledStylizedButton, OutlinedGradientRoundedButton } from 'shared/lib/components/common/Buttons';
+import { Text } from 'shared/lib/components/common/Typography';
 import { chain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 
-import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
-import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
+import { CloseableModal } from '../common/Modal';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
-import { Text } from 'shared/lib/components/common/Typography';
 
 export type ConnectWalletButtonProps = {
   address?: string;

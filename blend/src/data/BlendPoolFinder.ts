@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
-import { BlendPoolMarkers, FeeTier } from './BlendPoolMarkers';
 
 import AloeBlendABI from '../assets/abis/AloeBlend.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { BlendPoolMarkers, FeeTier } from './BlendPoolMarkers';
 import { API_URL } from './constants/Values';
 import { Address } from 'wagmi';
 

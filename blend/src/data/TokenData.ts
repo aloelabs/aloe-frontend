@@ -1,4 +1,5 @@
 import { Address } from 'wagmi';
+
 import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo, OSqthLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
@@ -110,8 +111,7 @@ export function GetTokenData(address: Address | string): TokenData {
   }
   if (TokenDataMap.has(address)) {
     return TokenDataMap.get(address)!;
-  } else
-    return {
-      address: address as Address,
-    };
+  } else {
+    return { address: address };
+  }
 }

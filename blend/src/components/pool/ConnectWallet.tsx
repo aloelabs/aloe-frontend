@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import { useAccount, useEnsName } from 'wagmi';
+
 import DepositIllustration from '../../assets/svg/deposit_illustration.svg';
 import { Display, Text } from '../common/Typography';
 import ConnectWalletButton from '../header/ConnectWalletButton';

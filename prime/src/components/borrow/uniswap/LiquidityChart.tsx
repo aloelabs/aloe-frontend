@@ -45,24 +45,23 @@ function nearestPriceInGraphOrNull(
 
 export type LiquidityChartProps = {
   data: ChartEntry[];
-  rangeStart: string;
-  rangeEnd: string;
-  currentPrice: string;
+  rangeStart: number;
+  rangeEnd: number;
+  currentPrice: number;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { data, rangeStart, rangeEnd, currentPrice } = props;
   const minPrice = data.length > 0 ? data[0].price : 0;
   const maxPrice = data.length > 0 ? data[data.length - 1].price : 0;
-  const updatedRangeStart = nearestPriceInGraphOrNull(parseFloat(rangeStart), minPrice, maxPrice, data);
-  const updatedRangeEnd = nearestPriceInGraphOrNull(parseFloat(rangeEnd), minPrice, maxPrice, data);
-  const updatedCurrentPrice = nearestPriceInGraphOrNull(parseFloat(currentPrice), minPrice, maxPrice, data);
+  const updatedRangeStart = nearestPriceInGraphOrNull(rangeStart, minPrice, maxPrice, data);
+  const updatedRangeEnd = nearestPriceInGraphOrNull(rangeEnd, minPrice, maxPrice, data);
+  const updatedCurrentPrice = nearestPriceInGraphOrNull(currentPrice, minPrice, maxPrice, data);
   const ticks = [
     data[Math.floor(Math.floor(data.length / 2) / 2)].price,
     data[Math.floor(data.length / 2)].price,
     data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price,
   ];
-  // console.log(data);
   return (
     <Wrapper>
       <ResponsiveContainer width='100%' height='100%'>

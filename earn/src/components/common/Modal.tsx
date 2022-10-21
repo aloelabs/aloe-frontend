@@ -1,10 +1,12 @@
 import React, { Fragment, useRef } from 'react';
+
 import { Dialog, Transition } from '@headlessui/react';
-import CloseIcon from '../../assets/svg/close_modal.svg';
-import LoadingIcon from '../../assets/svg/loading.svg';
+import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Display } from 'shared/lib/components/common/Typography';
+
+import CloseIcon from '../../assets/svg/close_modal.svg';
+import LoadingIcon from '../../assets/svg/loading.svg';
 import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';

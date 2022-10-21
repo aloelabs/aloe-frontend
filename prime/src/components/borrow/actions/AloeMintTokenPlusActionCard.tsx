@@ -1,6 +1,8 @@
-import { Dropdown, DropdownOption } from '../../common/Dropdown';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import { BaseActionCard } from '../BaseActionCard';
+import { useEffect } from 'react';
+
+import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+
+import { getMintActionArgs } from '../../../connector/MarginAccountActions';
 import {
   ActionCardProps,
   ActionID,
@@ -9,8 +11,8 @@ import {
   parseSelectedToken,
   TokenType,
 } from '../../../data/Actions';
-import { getMintActionArgs } from '../../../connector/MarginAccountActions';
-import { useEffect } from 'react';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -78,9 +80,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.MINT,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }

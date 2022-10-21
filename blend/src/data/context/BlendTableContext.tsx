@@ -1,5 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
+
 import { Address, useProvider } from 'wagmi';
+
 import findPools, { fetchBlendPoolData } from '../BlendPoolFinder';
 import { BlendPoolMarkers } from '../BlendPoolMarkers';
 

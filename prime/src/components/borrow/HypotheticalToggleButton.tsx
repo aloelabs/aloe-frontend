@@ -1,9 +1,10 @@
 import ToggleButton from 'shared/lib/components/common/ToggleButton';
-import { ReactComponent as EyeIcon } from '../../assets/svg/eye.svg';
-import { ReactComponent as EyeOffIcon } from '../../assets/svg/eye-off.svg';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from 'shared/lib/components/common/Typography';
+
+import { ReactComponent as EyeOffIcon } from '../../assets/svg/eye-off.svg';
+import { ReactComponent as EyeIcon } from '../../assets/svg/eye.svg';
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const StyledHypotheticalToggleButtonContent = styled.div.attrs((props: { isActive: boolean }) => props)`

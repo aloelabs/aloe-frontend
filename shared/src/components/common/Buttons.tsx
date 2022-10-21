@@ -1,9 +1,8 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 import { classNames } from '../../util/ClassNames';
-import LeftChevron from '../../assets/svg/left_chevron.svg';
-import { Text } from 'shared/lib/components/common/Typography';
+import LeftChevron from '../../assets/svg/LeftChevron';
+import { Text } from './Typography';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
@@ -46,7 +45,11 @@ export const BaseButton = styled.button.attrs(
     linkTo?: string;
   }) => props
 )`
-  ${tw`flex flex-row justify-center items-center gap-3`}
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
   width: max-content;
   /* font-family: 'Satoshi-Variable'; */
   font-weight: 700;
@@ -187,7 +190,7 @@ export const FilledGreyButton = styled(BaseButton)`
 `;
 
 export const OutlinedGradientButton = styled(BaseButton)`
-  ${tw`relative`}
+  position: relative;
   overflow: hidden;
 
   ${(props) => {
@@ -252,7 +255,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
 `;
 
 export const OutlinedWhiteButton = styled(BaseButton)`
-  ${tw`relative`}
+  position: relative;
 
   ${(props) => {
     if (props.backgroundColor) {
@@ -304,7 +307,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
 `;
 
 export const FilledStylizedButton = styled(BaseButton)`
-  ${tw`relative`}
+  position: relative;
   font-family: 'ClashDisplay-Variable';
   background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
   color: rgba(0, 0, 0, 1);
@@ -338,7 +341,7 @@ export const FilledStylizedButton = styled(BaseButton)`
 `;
 
 export const OutlinedGradientRoundedButton = styled(BaseButton)`
-  ${tw`relative`}
+  position: relative;
   border-radius: 100px;
 
   ${(props) => {
@@ -401,7 +404,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
 `;
 
 const ButtonWithIconWrapper = styled.div.attrs((props: { svgColorType?: 'fill' | 'stroke' }) => props)`
-  ${tw`relative`}
+  position: relative;
   width: max-content;
 
   button:not(:disabled) ~ div {
@@ -465,7 +468,7 @@ const SVGWrapper = styled.div.attrs(
   --default-color: ${(props) => props.color};
   --disabled-color: ${(props) => props.disabledColor};
   --active-color: ${(props) => (props.activeColor ? `url(${props.activeColor})` : props.color)};
-  ${tw`absolute`}
+  position: absolute;
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: none;
   ${(props) => {
@@ -693,7 +696,11 @@ export function OutlinedGradientRoundedButtonWithIcon(props: ButtonWithIconProps
 }
 
 export const LinkButton = styled.button`
-  ${tw`rounded-md text-purple-500 bg-transparent font-medium disabled:text-[#6447B5]`}
+  border-radius: 0.375rem;
+  color: rgba(139, 92, 246, 1);
+  background-color: transparent;
+  font-weight: 500;
+  border-radius: 0.375rem;
 
   position: relative;
 
@@ -704,23 +711,31 @@ export const LinkButton = styled.button`
     content: attr(name);
     overflow: hidden;
     visibility: hidden;
-    ${tw`font-semibold`}
+    font-weight: 600;
   }
 
   :hover:enabled:not(:focus) {
-    ${tw`font-semibold text-purple-600`}
+    font-weight: 600;
+    color: rgba(124, 58, 237, 1);
   }
 
   :focus {
-    ${tw`font-semibold text-purple-600`}
+    font-weight: 600;
+    color: rgba(124, 58, 237, 1);
     box-shadow: none;
     //outline: none;
+  }
+
+  :disabled {
+    color: #6447b5;
   }
 `;
 
 export const WarningButton = styled.button`
-  ${tw`rounded-md text-caution bg-transparent font-medium disabled:text-[#6447B5]`}
-
+  border-radius: 0.375rem;
+  color: #ff7a00;
+  background-color: transparent;
+  font-weight: 500;
   position: relative;
 
   // Pseudo-element trick to keep width constant despite font weight changes
@@ -730,24 +745,31 @@ export const WarningButton = styled.button`
     content: attr(name);
     overflow: hidden;
     visibility: hidden;
-    ${tw`font-semibold`}
+    font-weight: 600;
   }
 
   :hover:enabled:not(:focus) {
-    ${tw`font-semibold`}
+    font-weight: 600;
     color: #ff912e;
   }
 
   :focus {
-    ${tw`font-semibold`}
+    font-weight: 600;
     box-shadow: none;
     color: #ff912e;
     //outline: none;
   }
+
+  :disabled {
+    color: #6447b5;
+  }
 `;
 
 const ButtonWithIconWrapperOld = styled.div`
-  ${tw`flex flex-row items-center justify-start`}
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
   position: relative;
   cursor: pointer;
 `;
@@ -793,16 +815,13 @@ export function WarningButtonWithIcon(props: ButtonWithIconWrapperOldProps) {
 }
 
 const PreviousPageButtonWrapper = styled.button`
-  ${tw`flex items-center justify-center`}
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 35px;
   height: 35px;
   border-radius: 8px;
   background-color: rgba(26, 41, 52, 1);
-`;
-
-const PreviousPageIcon = styled.img`
-  width: 19px;
-  height: 19px;
 `;
 
 export type PreviousPageButtonProps = {
@@ -813,13 +832,15 @@ export function PreviousPageButton(props: PreviousPageButtonProps) {
   const { onClick } = props;
   return (
     <PreviousPageButtonWrapper onClick={onClick}>
-      <PreviousPageIcon src={LeftChevron} alt='Previous Page' />
+      <LeftChevron width={19} height={19} />
     </PreviousPageButtonWrapper>
   );
 }
 
 const StyledRadioButtonWrapper = styled.div.attrs((props: { checked: boolean; disabled: boolean }) => props)`
-  ${tw`flex items-center justify-center`}
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 6px 16px;
   border-radius: 8px;
   background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent')};
