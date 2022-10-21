@@ -1,9 +1,11 @@
+import { Address } from 'wagmi';
+
 export type BlendPoolMarkers = {
-  poolAddress: string;
-  token0Address: string;
-  token1Address: string;
-  silo0Address: string;
-  silo1Address: string;
+  poolAddress: Address;
+  token0Address: Address;
+  token1Address: Address;
+  silo0Address: Address;
+  silo1Address: Address;
   feeTier: FeeTier;
 };
 

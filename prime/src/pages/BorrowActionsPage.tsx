@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
+import { Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -178,23 +179,23 @@ export default function BorrowActionsPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const marginAccountContract = useContract({
-    addressOrName: accountAddressParam ?? '', // TODO better optional resolution
-    contractInterface: MarginAccountABI,
+    address: accountAddressParam ?? '0x', // TODO better optional resolution
+    abi: MarginAccountABI,
     signerOrProvider: provider,
   });
   const marginAccountLensContract = useContract({
-    addressOrName: ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS,
-    contractInterface: MarginAccountLensABI,
+    address: ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS,
+    abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
   const { data: uniswapPositionPriors } = useContractRead({
-    addressOrName: accountAddressParam ?? '', // TODO better optional resolution
-    contractInterface: MarginAccountABI,
+    address: accountAddressParam ?? '0x', // TODO better optional resolution
+    abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
   });
   const uniswapV3PoolContract = useContract({
-    addressOrName: marginAccount?.uniswapPool ?? '', // TODO better option resolution
-    contractInterface: UniswapV3PoolABI,
+    address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
+    abi: UniswapV3PoolABI,
     signerOrProvider: provider,
   });
 
@@ -206,7 +207,12 @@ export default function BorrowActionsPage() {
   // MARK: fetch margin account
   useEffect(() => {
     let mounted = true;
-    async function fetch(marginAccountAddress: string) {
+    // Ensure we have non-null values
+    async function fetch(
+      marginAccountAddress: string,
+      marginAccountContract: Contract,
+      marginAccountLensContract: Contract
+    ) {
       const fetchedMarginAccount = await fetchMarginAccount(
         marginAccountContract,
         marginAccountLensContract,
@@ -217,8 +223,8 @@ export default function BorrowActionsPage() {
         setMarginAccount(fetchedMarginAccount);
       }
     }
-    if (accountAddressParam) {
-      fetch(accountAddressParam);
+    if (accountAddressParam && marginAccountContract && marginAccountLensContract) {
+      fetch(accountAddressParam, marginAccountContract, marginAccountLensContract);
     }
     return () => {
       mounted = false;

@@ -176,7 +176,7 @@ function calculateUniswapPositionInfo(
 export type UniswapPositionsTableProps = {
   accountAddress: string;
   marginAccount: MarginAccount;
-  marginAccountLensContract: Contract;
+  marginAccountLensContract: Contract | null;
   provider: Provider;
   uniswapPositions: UniswapPosition[];
   isInTermsOfToken0: boolean;
@@ -213,7 +213,7 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
 
   useEffectOnce(() => {
     let mounted = true;
-    async function fetch() {
+    async function fetch(marginAccountLensContract: Contract) {
       const earnedFees: [string[], BigNumber[]] = await marginAccountLensContract.getUniswapPositions(
         marginAccount.address
       );
@@ -232,7 +232,9 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
         setUniswapPositionEarnedFees(earnedFeesMap);
       }
     }
-    fetch();
+    if (marginAccountLensContract) {
+      fetch(marginAccountLensContract);
+    }
 
     return () => {
       mounted = false;

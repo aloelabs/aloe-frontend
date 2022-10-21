@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount } from 'wagmi';
+import { Address, useAccount } from 'wagmi';
 
 import { theGraphUniswapV3Client } from '../App';
 import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
@@ -39,7 +39,8 @@ import { getUniswapVolumeQuery } from '../util/GraphQL';
 const ABOUT_MESSAGE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 type PoolParams = {
-  pooladdress: string;
+  // Addresses must start with 0x
+  pooladdress: Address;
 };
 
 const LoaderWrapper = styled.div`

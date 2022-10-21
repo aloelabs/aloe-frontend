@@ -10,10 +10,10 @@ import { TokenData } from '../TokenData';
 export function useAmountToShares(token: TokenData, kitty: TokenData, withdrawAmount: string) {
   const [state, setState] = useState<string | null>(null);
   const { data: amountOfShares } = useContractRead({
-    addressOrName: ALOE_II_KITTY_LENS_ADDRESS,
-    contractInterface: KittyLensABI,
+    address: ALOE_II_KITTY_LENS_ADDRESS,
+    abi: KittyLensABI,
     functionName: 'amountToShares',
-    args: [kitty.address, new Big(withdrawAmount || '0').mul(10 ** token.decimals).toFixed(0)],
+    args: [kitty.address, new Big(withdrawAmount || '0').mul(10 ** token.decimals).toFixed(0)] as const,
     watch: true,
   });
   useEffect(() => {
