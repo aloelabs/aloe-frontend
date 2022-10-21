@@ -42,6 +42,8 @@ import {
 } from '../data/MarginAccount';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
+import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -53,7 +55,7 @@ const BodyWrapper = styled.div`
   gap: 32px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
 `;
 
@@ -179,7 +181,7 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
   const marginAccountLensContract = useContract({
-    addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
+    addressOrName: ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS,
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
@@ -428,7 +430,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
-            uniswapPositions={displayedUniswapPositions}
+            uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -537,6 +539,20 @@ export default function BorrowActionsPage() {
                 </EmptyStateContainer>
               </EmptyStateWrapper>
             )}
+          </div>
+          <div className='w-full flex flex-col gap-4 mb-8'>
+            <Display size='M' weight='medium'>
+              Uniswap Positions
+            </Display>
+            <UniswapPositionTable
+              accountAddress={accountAddressParam || ''}
+              marginAccount={marginAccount}
+              marginAccountLensContract={marginAccountLensContract}
+              provider={provider}
+              uniswapPositions={displayedUniswapPositions}
+              isInTermsOfToken0={isToken0Selected}
+              showAsterisk={isShowingHypothetical}
+            />
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>
