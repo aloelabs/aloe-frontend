@@ -180,7 +180,7 @@ export const ADD_LIQUIDITY: Action = {
 
 export const REMOVE_LIQUIDITY: Action = {
   id: ActionID.REMOVE_LIQUIDITY,
-  description: 'Remove liquidity from a Uniswap Position.',
+  description: 'Remove liquidity and claim earned fees from a Uniswap Position.',
   actionCard: UniswapRemoveLiquidityActionCard,
 };
 

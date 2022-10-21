@@ -368,57 +368,6 @@ export function calculateAmount0FromAmount1(
   };
 }
 
-export function calculateAmountFromAmount(
-  amount: number,
-  lowerTick: number,
-  upperTick: number,
-  currentTick: number,
-  token0Decimals: number,
-  token1Decimals: number,
-  fromToken0: boolean
-): {
-  amount: string;
-  liquidity: JSBI;
-} {
-  if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
-
-  //lower price
-  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(lowerTick);
-  //upper price
-  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(upperTick);
-  //current price
-  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(currentTick);
-
-  const fromTokenDecimals = fromToken0 ? token0Decimals : token1Decimals;
-  const toTokenDecimals = fromToken0 ? token1Decimals : token0Decimals;
-
-  const bigAmount = JSBI.BigInt(new Big(amount).mul(10 ** fromTokenDecimals).toFixed(0));
-  const liquidity = maxLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, MaxUint256, bigAmount, true);
-
-  let toAmount = JSBI.BigInt(0);
-  const toAmountDeltaFunc = fromToken0 ? SqrtPriceMath.getAmount1Delta : SqrtPriceMath.getAmount0Delta;
-  if (currentTick <= lowerTick) {
-    //current price < lower price
-    //everything to the right of currentTick is token0. so we look between lowerTick and upperTick
-    toAmount = toAmountDeltaFunc(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
-  } else if (currentTick < upperTick) {
-    //lower price < current price < upper price
-    //only stuff to the right of currentTick is token0. so we look between currentTick and upperTick
-    toAmount = toAmountDeltaFunc(sqrtRatioX96, sqrtRatioBX96, liquidity, false);
-  } else {
-    //current price >= upper price
-    //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
-    return {
-      amount: '0',
-      liquidity,
-    };
-  }
-  return {
-    amount: new Big(toAmount.toString()).div(10 ** toTokenDecimals).toFixed(6),
-    liquidity,
-  };
-}
-
 export function getMinTick(tickSpacing: number) {
   return nearestUsableTick(TickMath.MIN_TICK, tickSpacing);
 }
