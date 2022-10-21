@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/LendPage';
 import { getProminentColor, rgba } from '../../util/Colors';
@@ -14,10 +14,41 @@ import { formatTokenAmountCompact } from '../../util/Numbers';
 
 const PIE_CHART_HOVER_GROWTH = 1.05;
 
+const Container = styled.div`
+  ${tw`w-full flex flex-col items-start justify-start self-baseline`}
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    display: none;
+  }
+`;
+
 const PieChartWrapper = styled.div`
   position: relative;
   width: 240px;
   height: 240px;
+`;
+
+const PieChartPlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #0d171e;
+  background-image: linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%);
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  display: inline-block;
+  animation: lendPieChartShimmer 0.75s forwards linear infinite;
+  overflow: hidden;
+  position: relative;
+
+  @keyframes lendPieChartShimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
 `;
 
 const PieChartContainer = styled.div`
@@ -105,7 +136,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
   const { tokenBalances, totalBalanceUSD } = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [tokenColors, setTokenColors] = useState<TokenColor[]>([]);
-  const [slices, setSlices] = useState<LendPieChartSlice[]>([]);
+  const cumulativePercent = useRef(0);
 
   const onMouseEnter = (index: number, percent: string) => {
     setActiveIndex(index);
@@ -145,17 +176,19 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
         );
       }
     };
-    calculateProminentColors();
+    if (sortedTokenBalances.length > 0) {
+      calculateProminentColors();
+    }
     return () => {
       mounted = false;
     };
   }, [sortedTokenBalances, totalBalanceUSD]);
 
-  useEffect(() => {
+  const slices: LendPieChartSlice[] = useMemo(() => {
     if (sortedTokenBalances.length === 0 || totalBalanceUSD === 0) {
-      return;
+      return [];
     }
-    const sliceData = sortedTokenBalances.map((tokenBalance, index) => {
+    return sortedTokenBalances.map((tokenBalance, index) => {
       const tokenColor = tokenColors.find((tc) => tc.token.address === tokenBalance.token.address)?.color;
       return {
         index: index,
@@ -165,74 +198,84 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
         pairName: tokenBalance.pairName,
       };
     });
-    setSlices(sliceData);
   }, [sortedTokenBalances, tokenColors, totalBalanceUSD]);
 
-  let cumulativePercent = 0;
-  const paths: PieChartSlicePath[] = slices.map((slice) => {
-    // destructuring assignment sets the two variables at once
-    const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
-    // each slice starts where the last slice ended, so keep a cumulative percent
-    cumulativePercent += slice.percent;
-    const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
-    // if the slice is more than 50%, take the large arc (the long way around)
-    const largeArcFlag = slice.percent > 0.5 ? 1 : 0;
+  // let cumulativePercent = 0;
+  const paths: PieChartSlicePath[] = useMemo(() => {
+    return slices.map((slice) => {
+      // destructuring assignment sets the two variables at once
+      const [startX, startY] = getCoordinatesForPercent(cumulativePercent.current);
+      // each slice starts where the last slice ended, so keep a cumulative percent
+      cumulativePercent.current += slice.percent;
+      const [endX, endY] = getCoordinatesForPercent(cumulativePercent.current);
+      // if the slice is more than 50%, take the large arc (the long way around)
+      const largeArcFlag = slice.percent > 0.5 ? 1 : 0;
 
-    // create an array and join it just for code readability
-    const pathData = [
-      `M ${startX} ${startY}`, // Move
-      `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`, // Arc
-      `L 0 0`, // Line
-    ].join(' ');
-    return {
-      data: pathData,
-      color: slice.color,
-      percent: slice.percent,
-    };
-  });
+      // create an array and join it just for code readability
+      const pathData = [
+        `M ${startX} ${startY}`, // Move
+        `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`, // Arc
+        `L 0 0`, // Line
+      ].join(' ');
+      return {
+        data: pathData,
+        color: slice.color,
+        percent: slice.percent,
+      };
+    });
+  }, [slices]);
 
   const activeSlice = activeIndex !== -1 ? slices.find((slice) => slice.index === activeIndex) : undefined;
   const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
-
+  const isLoading = sortedTokenBalances.length === 0 || tokenColors.length === 0 || totalBalanceUSD === 0;
   return (
-    <div className='w-full flex flex-col items-start justify-start self-baseline'>
+    <Container>
       <TokenAllocationWrapper>
         <PieChartWrapper>
-          <PieChartContainer>
-            <svg viewBox='-1 -1 2 2' overflow='visible'>
-              {paths.map((path, index) => {
-                return (
-                  <ExpandingPath
-                    key={index}
-                    d={path.data}
-                    fill={path.color}
-                    onMouseEnter={() => onMouseEnter(index, path.percent.toString())}
-                    onMouseLeave={() => onMouseLeave()}
-                  ></ExpandingPath>
-                );
-              })}
-            </svg>
-          </PieChartContainer>
+          {isLoading ? (
+            <>
+              <PieChartPlaceholder />
+              <PieChartLabel />
+            </>
+          ) : (
+            <>
+              <PieChartContainer>
+                <svg viewBox='-1 -1 2 2' overflow='visible'>
+                  {paths.map((path, index) => {
+                    return (
+                      <ExpandingPath
+                        key={index}
+                        d={path.data}
+                        fill={path.color}
+                        onMouseEnter={() => onMouseEnter(index, path.percent.toString())}
+                        onMouseLeave={() => onMouseLeave()}
+                      ></ExpandingPath>
+                    );
+                  })}
+                </svg>
+              </PieChartContainer>
 
-          <PieChartLabel>
-            {activeSlice && (
-              <div className='flex flex-col justify-center items-center gap-1'>
-                <Text size='M' weight='bold' color={activeSlice.color}>
-                  {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
-                  {activeSlice.tokenBalance.token.ticker || ''}
-                </Text>
-                {activeSlice.tokenBalance.isKitty && (
-                  <Text size='XS' color='rgba(255, 255, 255, 0.5)'>
-                    {activeSlice.pairName}
-                  </Text>
+              <PieChartLabel>
+                {activeSlice && (
+                  <div className='flex flex-col justify-center items-center gap-1'>
+                    <Text size='M' weight='bold' color={activeSlice.color}>
+                      {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
+                      {activeSlice.tokenBalance.token.ticker || ''}
+                    </Text>
+                    {activeSlice.tokenBalance.isKitty && (
+                      <Text size='XS' color='rgba(255, 255, 255, 0.5)'>
+                        {activeSlice.pairName}
+                      </Text>
+                    )}
+                    <Text size='L'>{currentPercent}</Text>
+                  </div>
                 )}
-                <Text size='L'>{currentPercent}</Text>
-              </div>
-            )}
-            {!activeSlice && <Text size='L'>Your Assets</Text>}
-          </PieChartLabel>
+                {!activeSlice && <Text size='L'>Your Assets</Text>}
+              </PieChartLabel>
+            </>
+          )}
         </PieChartWrapper>
       </TokenAllocationWrapper>
-    </div>
+    </Container>
   );
 }
