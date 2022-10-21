@@ -33,7 +33,7 @@ const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
 
 type TickPrice = {
-  price: string;
+  price: number;
   tick: number;
 };
 
@@ -423,7 +423,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       )}
       <div className='flex flex-row gap-2 mb-4'>
         <SteppedInput
-          value={lower?.price || ''}
+          value={lower?.price.toString(10) ?? ''}
           label='Min Price'
           token0={token0}
           token1={token1}
@@ -440,7 +440,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (parseFloat(nearestPrice) < parseFloat(upper.price) && nearestTick >= MIN_TICK) {
+            if (nearestPrice < upper.price && nearestTick >= MIN_TICK) {
               updateLower({
                 price: nearestPrice,
                 tick: nearestTick,
@@ -493,7 +493,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           disabled={poolAddress == null}
         />
         <SteppedInput
-          value={upper?.price || ''}
+          value={upper?.price.toString(10) ?? ''}
           label='Max Price'
           token0={token0}
           token1={token1}
@@ -510,7 +510,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
               tickInfo.tickSpacing
             );
             const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (parseFloat(nearestPrice) > parseFloat(lower.price) && nearestTick <= MAX_TICK) {
+            if (nearestPrice > lower.price && nearestTick <= MAX_TICK) {
               updateUpper({
                 price: nearestPrice,
                 tick: nearestTick,
