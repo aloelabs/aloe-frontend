@@ -442,7 +442,7 @@ export default function BorrowActionsPage() {
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
-            onAddAction={() => {
+            openAddActionModal={() => {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {

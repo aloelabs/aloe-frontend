@@ -272,7 +272,7 @@ export type ManageAccountWidgetProps = {
   activeActions: Array<Action>;
   actionResults: Array<ActionCardState>;
   updateActionResults: (actionResults: Array<ActionCardState>) => void;
-  onAddAction: () => void;
+  openAddActionModal: () => void;
   onRemoveAction: (index: number) => void;
   problematicActionIdx: number;
   transactionIsViable: boolean;
@@ -288,7 +288,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     activeActions,
     actionResults,
     updateActionResults,
-    onAddAction,
+    openAddActionModal,
     onRemoveAction,
     problematicActionIdx,
     transactionIsViable,
@@ -435,14 +435,16 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
-                  marginAccount={{
-                    ...marginAccount,
-                    assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
-                    liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
+                  operand={{
+                    marginAccount: {
+                      ...marginAccount,
+                      assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
+                      liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
+                    },
+                    uniswapPositions: uniswapPositions,
+                    availableBalances: balancesAvailableForEachAction[index],
                   }}
-                  availableBalances={balancesAvailableForEachAction[index]}
-                  uniswapPositions={uniswapPositions}
-                  previousActionCardState={actionResults[index]}
+                  fields={actionResults[index]}
                   isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                   onRemove={() => {
                     onRemoveAction(index);
@@ -467,7 +469,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 size='S'
                 svgColorType='stroke'
                 onClick={() => {
-                  onAddAction();
+                  openAddActionModal();
                 }}
               >
                 Add Action

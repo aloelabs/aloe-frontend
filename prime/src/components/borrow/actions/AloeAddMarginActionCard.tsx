@@ -16,8 +16,9 @@ import { getBalanceFor } from '../../../data/UserBalances';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
-export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { marginAccount, availableBalances, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+export function AloeAddMarginActionCard(prop: ActionCardProps<any>) {
+  const { operand, fields, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, availableBalances } = operand;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -42,7 +43,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const previouslySelectedToken = fields?.aloeResult?.selectedToken || null;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
@@ -54,6 +55,14 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
+
+    /*
+    TODO
+    const {output, isCausingError} = runWithChecks(operator, operand)
+    setIsCausingError(isCausingError) // highlight card in red
+    onChange(output);
+    */
+
     onChange({
       actionId: ActionID.TRANSFER_IN,
       actionArgs:
@@ -72,9 +81,9 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   const max = selectedToken ? getBalanceFor(selectedToken, availableBalances) : 0;
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
+  const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
+    if (!fields?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

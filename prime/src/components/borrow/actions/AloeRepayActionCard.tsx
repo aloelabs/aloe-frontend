@@ -14,8 +14,9 @@ import {
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
-export function AloeRepayActionCard(prop: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+export function AloeRepayActionCard(prop: ActionCardProps<any>) {
+  const { operand, fields, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount } = operand;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -30,7 +31,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const previouslySelectedToken = fields?.aloeResult?.selectedToken || null;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
@@ -62,9 +63,9 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   const assetMax = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
   const liabilityMax = marginAccount.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
   const maxString = Math.max(0, Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
+  const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
+    if (!fields?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

@@ -98,16 +98,15 @@ export type ActionCardState = {
   uniswapResult: UniswapResult | null;
 };
 
-export type CumulativeActionCardResult = {
-  aloeResult: AloeResult | null;
-  uniswapPositions: UniswapPosition[];
-};
-
-export type ActionCardProps = {
+interface ActionCardOperand {
   marginAccount: MarginAccount;
+  uniswapPositions: UniswapPosition[]; //Map<string, UniswapPosition>;
   availableBalances: UserBalances;
-  uniswapPositions: UniswapPosition[];
-  previousActionCardState: ActionCardState | null;
+}
+
+export type ActionCardProps<T> = {
+  operand: ActionCardOperand;
+  fields: T;
   isCausingError: boolean;
   onRemove: () => void;
   onChange: (result: ActionCardState) => void;
@@ -116,7 +115,7 @@ export type ActionCardProps = {
 export type Action = {
   id: ActionID;
   description: string;
-  actionCard: React.FC<ActionCardProps>;
+  actionCard: React.FC<ActionCardProps<any>>;
 };
 
 export type ActionProvider = {

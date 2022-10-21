@@ -14,8 +14,9 @@ import {
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
-export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+export function AloeBorrowActionCard(prop: ActionCardProps<any>) {
+  const { operand, fields, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount } = operand;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -30,7 +31,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
+  const previouslySelectedToken = fields?.aloeResult?.selectedToken || null;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
@@ -59,9 +60,9 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
     });
   };
 
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
+  const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
+    if (!fields?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
 
   return (

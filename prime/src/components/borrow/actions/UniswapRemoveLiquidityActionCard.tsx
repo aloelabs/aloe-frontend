@@ -35,8 +35,9 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
-export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps<any>) {
+  const { operand, fields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, uniswapPositions } = operand;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
@@ -50,7 +51,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
   useEffectOnce(() => {
-    const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
+    const previousRemoveLiquidityPercentage = fields?.uniswapResult?.removeLiquidityPercentage;
     if (previousRemoveLiquidityPercentage) {
       setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(2));
     }
@@ -60,7 +61,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
-  const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
+  const uniswapPosition = fields?.uniswapResult?.uniswapPosition;
   if (uniswapPosition) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
       return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
