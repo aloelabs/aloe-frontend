@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import ErrorIcon from '../../assets/svg/interaction_error.svg';
 import { SquareInputWithMax } from './Input';
 import { Text } from './Typography';

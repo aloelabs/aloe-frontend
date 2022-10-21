@@ -1,9 +1,11 @@
 import React from 'react';
-import BlendGraphTooltip from './tooltips/BlendGraphTooltip';
+
 import styled from 'styled-components';
+
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { Text } from '../common/Typography';
 import Graph from './Graph';
-import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import BlendGraphTooltip from './tooltips/BlendGraphTooltip';
 
 const TEXT_COLOR = '#82a0b6';
 // const GREEN_GRADIENT_COLOR = '#59d67c';

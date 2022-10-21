@@ -62,7 +62,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     data[Math.floor(data.length / 2)].price,
     data[Math.floor(data.length / 2) + Math.floor(Math.floor(data.length / 2) / 2)].price,
   ];
-  // console.log(data);
   return (
     <Wrapper>
       <ResponsiveContainer width='100%' height='100%'>

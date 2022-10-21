@@ -1,8 +1,11 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
+
+import axios from 'axios';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { theGraphUniswapV3Client } from '../../App';
 import { BlendPoolMarkers, PrintFeeTier } from '../../data/BlendPoolMarkers';
 import {
   BROWSE_CARD_WIDTH_LG,
@@ -17,12 +20,11 @@ import { OffChainPoolStats } from '../../data/PoolStats';
 import { GetSiloData } from '../../data/SiloData';
 import { GetTokenData } from '../../data/TokenData';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { getUniswapVolumeQuery } from '../../util/GraphQL';
+import { formatUSDAuto, roundPercentage } from '../../util/Numbers';
 import InvestedTypes from '../common/InvestedTypes';
 import TokenPairIcons from '../common/TokenPairIcons';
-import { formatUSDAuto, roundPercentage } from '../../util/Numbers';
 import { Display, Text } from '../common/Typography';
-import { theGraphUniswapV3Client } from '../../App';
-import { getUniswapVolumeQuery } from '../../util/GraphQL';
 
 const CARD_BODY_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';

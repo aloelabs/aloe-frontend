@@ -24,6 +24,7 @@ const StyledInput = styled.input`
   color: rgba(204, 223, 237, 1);
   box-sizing: border-box;
   font-family: 'ClashDisplay-Variable';
+  font-weight: 400;
   font-size: 20px;
   border: none;
   outline: none;
@@ -31,7 +32,6 @@ const StyledInput = styled.input`
   text-overflow: ellipsis;
   text-align: center;
   padding: 12px;
-  /* border-bottom: 1px solid rgba(204, 223, 237, 1); */
 `;
 
 const SvgButtonWrapper = styled.button`

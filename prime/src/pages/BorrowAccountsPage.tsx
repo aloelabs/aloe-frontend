@@ -9,7 +9,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGradientButtonWithIcon } from '../components/common/Buttons';
+import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display } from 'shared/lib/components/common/Typography';
 import { createMarginAccount } from '../connector/FactoryActions';
 import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
@@ -18,7 +18,7 @@ import { ContractReceipt } from 'ethers';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { DropdownOption } from '../components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';

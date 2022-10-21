@@ -18,7 +18,7 @@ import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { PreviousPageButton } from '../components/common/Buttons';
+import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import TokenChooser from '../components/common/TokenChooser';
 import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
@@ -368,6 +368,10 @@ export default function BorrowActionsPage() {
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
+    // If we have no actions results left, we are no longer showing hypothetical
+    if (updatedActionResults.length === 0) {
+      setIsShowingHypothetical(false);
+    }
   }
 
   function handleAddAction(action: Action) {
@@ -434,10 +438,10 @@ export default function BorrowActionsPage() {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {
-              let actionResultsCopy = [...actionResults];
+              const actionResultsCopy = [...actionResults];
               const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
-              setActionResults(updatedActionResults);
-              let activeActionsCopy = [...activeActions];
+              updateActionResults(updatedActionResults);
+              const activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
             problematicActionIdx={problematicActionIdx}

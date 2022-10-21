@@ -1,11 +1,11 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
+import Big from 'big.js';
 import { BigNumber, Contract, ContractReceipt, ethers, Signer } from 'ethers';
 
-import WethAbi from '../assets/abis/Weth9.json';
-import Erc20Abi from '../assets/abis/ERC20.json';
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
-import Big from 'big.js';
+import Erc20Abi from '../assets/abis/ERC20.json';
+import WethAbi from '../assets/abis/Weth9.json';
 import { WETH_9_MAINNET_ADDRESS } from '../data/constants/Addresses';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
 
 export async function approve(
   signer: Signer,

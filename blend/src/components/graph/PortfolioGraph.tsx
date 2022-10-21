@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from 'react';
+
 import axios from 'axios';
 import {
   addDays,
@@ -10,8 +12,8 @@ import {
   subWeeks,
   subYears,
 } from 'date-fns/esm';
-import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+
 import { API_URL } from '../../data/constants/Values';
 import { CombinedPercentChange } from '../common/PercentChange';
 import { Display, Text } from '../common/Typography';

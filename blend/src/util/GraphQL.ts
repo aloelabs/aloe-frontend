@@ -1,5 +1,6 @@
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
+
 import { FeeTier, GetNumericFeeTier } from '../data/BlendPoolMarkers';
 
 /**

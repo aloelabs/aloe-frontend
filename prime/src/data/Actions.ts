@@ -8,7 +8,7 @@ import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMar
 import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
-import { DropdownOption } from '../components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import JSBI from 'jsbi';
 import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import { UserBalances } from './UserBalances';

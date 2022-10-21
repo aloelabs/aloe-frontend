@@ -1,4 +1,4 @@
-import { Dropdown, DropdownOption } from '../../common/Dropdown';
+import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import {
