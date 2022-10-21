@@ -12,8 +12,7 @@ import {
   UniswapV3PoolBasics,
   tickToPrice,
   uniswapPositionKey,
-  calculateAmountFromAmount,
-  getAmountsForLiquidity,
+  getValueOfLiquidity,
 } from '../../../util/Uniswap';
 
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -144,37 +143,26 @@ function calculateUniswapPositionInfo(
   const currentTick = uniswapPoolBasics.slot0.tick;
   // Since lower doesn't always equate to the smaller value, we need to check which is the smaller value
   const priceBounds = [
-    parseFloat(tickToPrice(uniswapPosition.lower, token0Decimals, token1Decimals, !isInTermsOfToken0)),
-    parseFloat(tickToPrice(uniswapPosition.upper, token0Decimals, token1Decimals, !isInTermsOfToken0)),
+    tickToPrice(uniswapPosition.lower, token0Decimals, token1Decimals, !isInTermsOfToken0),
+    tickToPrice(uniswapPosition.upper, token0Decimals, token1Decimals, !isInTermsOfToken0),
   ];
   const lowerPrice = Math.min(...priceBounds);
   const upperPrice = Math.max(...priceBounds);
-  const currentPrice = parseFloat(tickToPrice(currentTick, token0Decimals, token1Decimals, !isInTermsOfToken0));
-  // Calculating the token amounts of the position from the liquidity
-  const [amount0, amount1] = getAmountsForLiquidity(
+  const currentPrice = tickToPrice(currentTick, token0Decimals, token1Decimals, !isInTermsOfToken0);
+
+  // Getting the overall value of the position (includes both amount0 and amount1)
+  const valueInTermsOfToken1 = getValueOfLiquidity(
     uniswapPosition.liquidity,
-    uniswapPosition.lower ?? 0,
-    uniswapPosition.upper ?? 0,
-    currentTick,
-    token0Decimals,
-    token1Decimals
-  );
-  const activeAmount = isInTermsOfToken0 ? amount0 : amount1;
-  const otherAmount = isInTermsOfToken0 ? amount1 : amount0;
-  const otherAmountInTermsOfActive = calculateAmountFromAmount(
-    otherAmount,
     uniswapPosition.lower,
     uniswapPosition.upper,
     currentTick,
-    token0Decimals,
-    token1Decimals,
-    !isInTermsOfToken0
-  ).amount;
-  const value = activeAmount + parseFloat(otherAmountInTermsOfActive);
+    token1Decimals
+  );
+
   const tickBounds = [uniswapPosition.lower, uniswapPosition.upper];
   const positionKey = uniswapPositionKey(accountAddress, Math.min(...tickBounds), Math.max(...tickBounds));
   return {
-    value,
+    value: isInTermsOfToken0 ? valueInTermsOfToken1 * currentPrice : valueInTermsOfToken1,
     feesEarned: 0,
     lower: lowerPrice,
     upper: upperPrice,
