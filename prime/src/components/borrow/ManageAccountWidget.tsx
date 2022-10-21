@@ -114,7 +114,7 @@ function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
     chainId: onChain.id,
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
-    args: [spender, BigNumber.from(UINT256_MAX)],
+    args: [spender, ethers.constants.MaxUint256],
   });
 }
 

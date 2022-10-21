@@ -130,7 +130,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         contract
           .writeAsync?.({
             recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from((600000).toFixed(0)) },
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           })
           .then((txnResult) => {
             setPendingTxnResult(txnResult);

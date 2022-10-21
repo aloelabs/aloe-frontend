@@ -179,7 +179,7 @@ export default function BorrowActionsPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const marginAccountContract = useContract({
-    address: accountAddressParam ?? '', // TODO better optional resolution
+    address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
     signerOrProvider: provider,
   });
@@ -189,12 +189,12 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
   const { data: uniswapPositionPriors } = useContractRead({
-    address: accountAddressParam ?? '', // TODO better optional resolution
+    address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
   });
   const uniswapV3PoolContract = useContract({
-    address: marginAccount?.uniswapPool ?? '', // TODO better option resolution
+    address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
     abi: UniswapV3PoolABI,
     signerOrProvider: provider,
   });

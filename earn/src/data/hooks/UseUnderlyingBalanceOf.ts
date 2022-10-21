@@ -15,7 +15,6 @@ export function useBalanceOfUnderlying(token: TokenData, kitty: TokenData, accou
     args: [accountAddress] as const,
     watch: true,
   });
-  console.log('balanceOfUnderlying', balanceOfUnderlying);
   useEffect(() => {
     if (balanceOfUnderlying) {
       setState(new Big(balanceOfUnderlying.toString()).div(10 ** token.decimals).toString());

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import { Contract } from 'ethers';
 import { useContract, useProvider, useBlockNumber } from 'wagmi';
 
 import AloeBlendABI from '../../assets/abis/AloeBlend.json';
@@ -41,26 +40,13 @@ export function useBlendStats(poolData: BlendPoolMarkers) {
   });
 
   useEffect(() => {
-    const collectStats = async (
-      blendContract: Contract,
-      silo0Contract: Contract,
-      silo1Contract: Contract,
-      token0Contract: Contract,
-      token1Contract: Contract
-    ) => {
-      const stats = await ResolveBlendStats(
-        blendContract,
-        silo0Contract,
-        silo1Contract,
-        token0Contract,
-        token1Contract
-      );
+    const collectStats = async () => {
+      if (!(blend && silo0 && silo1 && token0 && token1)) return;
+      const stats = await ResolveBlendStats(blend, silo0, silo1, token0, token1);
       setBlendStats(stats);
     };
 
-    if (blend && silo0 && silo1 && token0 && token1) {
-      collectStats(blend, silo0, silo1, token0, token1);
-    }
+    collectStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolData, blockNumberData]);
 

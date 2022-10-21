@@ -1,7 +1,6 @@
-import { BigNumber } from 'ethers';
+import { ethers } from 'ethers';
 import { Chain, erc20ABI, useContractWrite, Address } from 'wagmi';
 
-import { UINT256_MAX } from '../../data/constants/Values';
 import { TokenData } from '../../data/TokenData';
 
 export default function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
@@ -11,6 +10,6 @@ export default function useAllowanceWrite(onChain: Chain, token: TokenData, spen
     chainId: onChain.id,
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
-    args: [spender, BigNumber.from(UINT256_MAX)] as const,
+    args: [spender, ethers.constants.MaxUint256] as const,
   });
 }
