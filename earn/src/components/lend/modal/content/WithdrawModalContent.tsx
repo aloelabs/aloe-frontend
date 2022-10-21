@@ -94,7 +94,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         contract
           .writeAsync?.({
             recklesslySetUnpreparedArgs: [sharesToWithdraw],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from((600000).toFixed(0)) },
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           })
           .then((txnResult) => {
             setPendingTxnResult(txnResult);

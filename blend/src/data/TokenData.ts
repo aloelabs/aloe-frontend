@@ -112,6 +112,6 @@ export function GetTokenData(address: Address | string): TokenData {
   if (TokenDataMap.has(address)) {
     return TokenDataMap.get(address)!;
   } else {
-    return { address: address };
+    return { address: address as Address };
   }
 }
