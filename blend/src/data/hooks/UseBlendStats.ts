@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { Contract } from 'ethers';
 import { useContract, useProvider, useBlockNumber } from 'wagmi';
 
 import AloeBlendABI from '../../assets/abis/AloeBlend.json';
@@ -7,7 +8,6 @@ import ERC20ABI from '../../assets/abis/ERC20.json';
 import SiloABI from '../../assets/abis/Silo.json';
 import { BlendPoolStats, ResolveBlendStats } from '../BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../BlendPoolMarkers';
-import { Contract } from 'ethers';
 
 export function useBlendStats(poolData: BlendPoolMarkers) {
   const [blendStats, setBlendStats] = useState<BlendPoolStats | null>(null);

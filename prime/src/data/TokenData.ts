@@ -1,4 +1,5 @@
 import { Address } from 'wagmi';
+
 import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
