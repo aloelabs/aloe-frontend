@@ -166,9 +166,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
     let mounted = true;
     const fetchData = async (token0Address: string, token1Address: string, feeTier: FeeTier) => {
       const uniswapVolumeQuery = getUniswapVolumeQuery(blockNumber, token0Address, token1Address, feeTier);
-      const uniswapVolumeData = await theGraphUniswapV3Client.query({
-        query: uniswapVolumeQuery,
-      });
+      const uniswapVolumeData = await theGraphUniswapV3Client.query({ query: uniswapVolumeQuery });
 
       if (mounted) {
         setUniswapVolume(

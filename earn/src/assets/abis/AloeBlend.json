@@ -279,18 +279,14 @@
   {
     "inputs": [],
     "name": "TOKEN0",
-    "outputs": [
-      { "internalType": "contract IERC20", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "TOKEN1",
-    "outputs": [
-      { "internalType": "contract IERC20", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -377,9 +373,7 @@
   {
     "inputs": [],
     "name": "getRebalanceUrgency",
-    "outputs": [
-      { "internalType": "uint32", "name": "urgency", "type": "uint32" }
-    ],
+    "outputs": [{ "internalType": "uint32", "name": "urgency", "type": "uint32" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -451,9 +445,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "rewardToken", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "rewardToken", "type": "address" }],
     "name": "rebalance",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -462,9 +454,7 @@
   {
     "inputs": [],
     "name": "silo0",
-    "outputs": [
-      { "internalType": "contract ISilo", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract ISilo", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -478,9 +468,7 @@
   {
     "inputs": [],
     "name": "silo1",
-    "outputs": [
-      { "internalType": "contract ISilo", "name": "", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "contract ISilo", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },

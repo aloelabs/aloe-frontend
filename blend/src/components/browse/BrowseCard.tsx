@@ -157,9 +157,7 @@ export default function BrowseCard(props: BrowseCardProps) {
         token1.address,
         blendPoolMarkers.feeTier
       );
-      const uniswapVolumeData = await theGraphUniswapV3Client.query({
-        query: uniswapVolumeQuery,
-      });
+      const uniswapVolumeData = await theGraphUniswapV3Client.query({ query: uniswapVolumeQuery });
 
       if (mounted) {
         setUniswapVolume(

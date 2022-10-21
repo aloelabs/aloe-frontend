@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { BaseActionCard } from '../BaseActionCard';
+
+import { TickMath } from '@uniswap/v3-sdk';
+import JSBI from 'jsbi';
+import { useProvider } from 'wagmi';
+
+import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
 import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
-import SteppedInput from '../uniswap/SteppedInput';
-import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import TokenChooser from '../../common/TokenChooser';
-import Settings from '../uniswap/Settings';
+import useEffectOnce from '../../../data/hooks/UseEffectOnce';
+import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {
   calculateAmount0FromAmount1,
   calculateAmount1FromAmount0,
@@ -21,13 +23,13 @@ import {
   tickToPrice,
   UniswapV3PoolBasics,
 } from '../../../util/Uniswap';
-import { useProvider } from 'wagmi';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import TokenChooser from '../../common/TokenChooser';
+import { BaseActionCard } from '../BaseActionCard';
+import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
-import { TickMath } from '@uniswap/v3-sdk';
-import JSBI from 'jsbi';
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
+import Settings from '../uniswap/Settings';
+import SteppedInput from '../uniswap/SteppedInput';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;

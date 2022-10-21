@@ -1,17 +1,17 @@
+import { ApolloQueryResult } from '@apollo/react-hooks';
+import { MaxUint256 } from '@uniswap/sdk-core';
+import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ethers } from 'ethers';
-
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
-import { MaxUint256 } from '@uniswap/sdk-core';
-import { TokenData } from '../data/TokenData';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
 import { theGraphUniswapV3Client } from '../App';
-import { UniswapTicksQuery } from './GraphQL';
-import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
+import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { TokenData } from '../data/TokenData';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
+import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;
 const ONE = new Big('1.0');
@@ -84,8 +84,18 @@ export function calculateTickInfo(
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
-  const minPrice = tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected);
-  const maxPrice = tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected);
+  const minPrice = tickToPrice(
+    isToken0Selected ? minTick : maxTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
+  );
+  const maxPrice = tickToPrice(
+    isToken0Selected ? maxTick : minTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
+  );
   return {
     minTick,
     maxTick,

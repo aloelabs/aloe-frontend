@@ -1,11 +1,12 @@
+import Big from 'big.js';
 import { ethers } from 'ethers';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
-import { GetTokenData, TokenData } from './TokenData';
+
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import Big from 'big.js';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { GetTokenData, TokenData } from './TokenData';
 
 export type LendingPair = {
   token0: TokenData;

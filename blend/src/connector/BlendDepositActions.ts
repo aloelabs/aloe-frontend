@@ -35,9 +35,7 @@ export async function mintWeth(
   const wethContract = new Contract(WETH_9_MAINNET_ADDRESS, WethAbi, signer);
 
   try {
-    const transactionResponse = await wethContract.deposit({
-      value: ethers.BigNumber.from(amount.toFixed(0)),
-    });
+    const transactionResponse = await wethContract.deposit({ value: ethers.BigNumber.from(amount.toFixed(0)) });
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);
   } catch (e) {

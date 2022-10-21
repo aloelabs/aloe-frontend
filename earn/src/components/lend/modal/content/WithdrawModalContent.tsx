@@ -1,6 +1,10 @@
-import { SendTransactionResult } from '@wagmi/core';
 import { ReactElement, useState } from 'react';
+
+import { SendTransactionResult } from '@wagmi/core';
+import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractWrite } from 'wagmi';
+
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
@@ -8,10 +12,8 @@ import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses
 import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenData } from '../../../../data/TokenData';
-import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
-import { Text } from 'shared/lib/components/common/Typography';
 
 enum ConfirmButtonState {
   INSUFFICIENT_KITTY,
@@ -91,9 +93,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         contract
           .writeAsync({
             recklesslySetUnpreparedArgs: [sharesToWithdraw],
-            recklesslySetUnpreparedOverrides: {
-              gasLimit: (600000).toFixed(0),
-            },
+            recklesslySetUnpreparedOverrides: { gasLimit: (600000).toFixed(0) },
           })
           .then((txnResult) => {
             setPendingTxnResult(txnResult);

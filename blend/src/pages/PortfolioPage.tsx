@@ -174,9 +174,7 @@ export default function PortfolioPage() {
           )) as AxiosResponse<EtherscanBalanceResponse, any>,
           uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,
-            variables: {
-              pairAddress: pairAddress,
-            },
+            variables: { pairAddress: pairAddress },
           })) as ApolloQueryResult<UniswapV2PositionResponse>,
         };
       });

@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react';
+
 import { Provider } from '@wagmi/core';
 import { BigNumber, Contract } from 'ethers';
-import { useMemo, useState } from 'react';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+
 import { UniswapPosition } from '../../../data/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { MarginAccount } from '../../../data/MarginAccount';
