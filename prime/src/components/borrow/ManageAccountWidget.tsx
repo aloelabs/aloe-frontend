@@ -1,7 +1,7 @@
 import { ReactElement, useState } from 'react';
 
-import { Chain } from '@wagmi/core';
-import { ethers } from 'ethers';
+import { Chain, Address } from '@wagmi/core';
+import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -96,10 +96,10 @@ const ActionCardWrapper = styled.div`
   }
 `;
 
-function useAllowance(token: TokenData, owner: string, spender: string) {
+function useAllowance(token: TokenData, owner: Address, spender: Address) {
   return useContractRead({
-    addressOrName: token.address,
-    contractInterface: erc20ABI,
+    address: token.address,
+    abi: erc20ABI,
     functionName: 'allowance',
     args: [owner, spender],
     cacheOnBlock: true,
@@ -107,14 +107,14 @@ function useAllowance(token: TokenData, owner: string, spender: string) {
   });
 }
 
-function useAllowanceWrite(onChain: Chain, token: TokenData, spender: string) {
+function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
   return useContractWrite({
-    addressOrName: token.address,
+    address: token.address,
+    abi: erc20ABI,
     chainId: onChain.id,
-    contractInterface: erc20ABI,
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
-    args: [spender, UINT256_MAX],
+    args: [spender, ethers.constants.MaxUint256],
   });
 }
 
@@ -305,8 +305,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   // MARK: wagmi hooks
   const contract = useContractWrite({
-    addressOrName: accountAddress,
-    contractInterface: MarginAccountAbi,
+    address: accountAddress,
+    abi: MarginAccountAbi,
     mode: 'recklesslyUnprepared',
     functionName: 'modify',
     onSuccess: () => {
@@ -334,10 +334,10 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     token: kitty1.address,
     watch: true,
   });
-  const { data: userAllowance0Asset } = useAllowance(token0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Asset } = useAllowance(token1, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance0Kitty } = useAllowance(kitty0, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Kitty } = useAllowance(kitty1, userAddress ?? '', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Asset } = useAllowance(token0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Asset } = useAllowance(token1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Kitty } = useAllowance(kitty0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Kitty } = useAllowance(kitty1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
   const writeAsset0Allowance = useAllowanceWrite(chain.goerli, token0, MARGIN_ACCOUNT_CALLEE);
   const writeAsset1Allowance = useAllowanceWrite(chain.goerli, token1, MARGIN_ACCOUNT_CALLEE);
   const writeKitty0Allowance = useAllowanceWrite(chain.goerli, kitty0, MARGIN_ACCOUNT_CALLEE);
@@ -493,20 +493,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
               switch (confirmButtonState) {
                 case ConfirmButtonState.APPROVE_ASSET0:
-                  writeAsset0Allowance.write();
+                  writeAsset0Allowance.write?.();
                   break;
                 case ConfirmButtonState.APPROVE_ASSET1:
-                  writeAsset1Allowance.write();
+                  writeAsset1Allowance.write?.();
                   break;
                 case ConfirmButtonState.APPROVE_KITTY0:
-                  writeKitty0Allowance.write();
+                  writeKitty0Allowance.write?.();
                   break;
                 case ConfirmButtonState.APPROVE_KITTY1:
-                  writeKitty1Allowance.write();
+                  writeKitty1Allowance.write?.();
                   break;
                 case ConfirmButtonState.READY:
                   contract
-                    .writeAsync({
+                    .writeAsync?.({
                       recklesslySetUnpreparedArgs: [
                         MARGIN_ACCOUNT_CALLEE,
                         calldata,
@@ -516,7 +516,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                         // TODO gas estimation was occassionally causing errors. To fix this,
                         // we should probably work with the underlying ethers.Contract, but for now
                         // we just provide hard-coded overrides.
-                        gasLimit: (600000 + 200000 * actionIds.length).toFixed(0),
+                        gasLimit: BigNumber.from((600000 + 200000 * actionIds.length).toFixed(0)),
                       },
                     })
                     .then((txnResult) => {

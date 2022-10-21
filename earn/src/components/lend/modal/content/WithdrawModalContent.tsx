@@ -1,6 +1,7 @@
 import { ReactElement, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { BigNumber } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractWrite } from 'wagmi';
@@ -60,8 +61,8 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   const { address: accountAddress } = useAccount();
 
   const contract = useContractWrite({
-    addressOrName: kitty.address,
-    contractInterface: KittyABI,
+    address: kitty.address,
+    abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'withdraw',
   });
@@ -91,9 +92,9 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
       case ConfirmButtonState.READY:
         setIsPending(true);
         contract
-          .writeAsync({
+          .writeAsync?.({
             recklesslySetUnpreparedArgs: [sharesToWithdraw],
-            recklesslySetUnpreparedOverrides: { gasLimit: (600000).toFixed(0) },
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           })
           .then((txnResult) => {
             setPendingTxnResult(txnResult);

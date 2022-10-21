@@ -59,7 +59,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return await Promise.all(
+  return Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
