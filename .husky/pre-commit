@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+
 cd ./blend && yarn lint && cd ../earn && yarn lint && cd ../prime && yarn lint && cd ../shared && yarn lint && cd ..
 yarn prettier
+
+exec >/dev/tty 2>&1
+
 npx lint-staged
