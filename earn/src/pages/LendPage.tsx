@@ -262,8 +262,6 @@ export default function LendPage() {
     );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
-  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
-
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -314,12 +312,10 @@ export default function LendPage() {
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
           </LendHeader>
-          {isGTMediumScreen && (
-            <LendPieChartWidget
-              tokenBalances={[...kittyBalances, ...tokenBalances]}
-              totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
-            />
-          )}
+          <LendPieChartWidget
+            tokenBalances={[...kittyBalances, ...tokenBalances]}
+            totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+          />
         </LendHeaderContainer>
         <Divider />
         <div>
