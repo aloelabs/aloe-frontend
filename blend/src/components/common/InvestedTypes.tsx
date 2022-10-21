@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
 import { Text } from './Typography';

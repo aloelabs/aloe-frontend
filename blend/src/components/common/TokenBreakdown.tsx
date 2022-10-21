@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { Text } from './Typography';
 
 const LABEL_TEXT_COLOR = 'rgba(75, 105, 128, 1)';

@@ -1,14 +1,16 @@
-import { MenuIcon } from '@heroicons/react/solid';
 import React, { useState } from 'react';
+
+import { MenuIcon } from '@heroicons/react/solid';
 import { NavLink } from 'react-router-dom';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { chain, useAccount, useEnsName } from 'wagmi';
+
 import AloeLogo from '../../assets/svg/aloe_capital_nav_logo.svg';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
-import { Text } from 'shared/lib/components/common/Typography';
 import ConnectWalletButton from './ConnectWalletButton';
-import { chain, useAccount, useEnsName } from 'wagmi';
 
 type MenuItem = {
   title: string;

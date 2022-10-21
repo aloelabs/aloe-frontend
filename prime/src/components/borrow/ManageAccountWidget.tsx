@@ -1,23 +1,24 @@
 import { ReactElement, useState } from 'react';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import styled from 'styled-components';
-import tw from 'twin.macro';
-import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
-import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
-import { TokenData } from '../../data/TokenData';
-import { FilledGradientButtonWithIcon } from '../common/Buttons';
 
 import { Chain } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
+import tw from 'twin.macro';
 import { chain, erc20ABI, useAccount, useBalance, useContractRead, useContractWrite } from 'wagmi';
+
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
+import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
+import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
+import { TokenData } from '../../data/TokenData';
 import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';

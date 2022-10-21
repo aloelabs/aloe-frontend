@@ -1,12 +1,12 @@
 import React from 'react';
+
 import { chain, configureChains, createClient, WagmiConfig } from 'wagmi';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
-
-import { infuraProvider } from 'wagmi/providers/infura';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
+import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
 
 const infuraId = process.env.REACT_APP_INFURA_ID;
@@ -25,15 +25,11 @@ const client = createClient({
     new MetaMaskConnector({ chains }),
     new CoinbaseWalletConnector({
       chains,
-      options: {
-        appName: 'Aloe',
-      },
+      options: { appName: 'Aloe' },
     }),
     new WalletConnectConnector({
       chains,
-      options: {
-        qrcode: true,
-      },
+      options: { qrcode: true },
     }),
     new InjectedConnector({
       chains,

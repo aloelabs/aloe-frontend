@@ -1,9 +1,10 @@
+import { SwapWidget, Theme } from '@uniswap/widgets';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useSigner } from 'wagmi';
+
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 
-import { SwapWidget, Theme } from '@uniswap/widgets';
 import '@uniswap/widgets/fonts.css';
 
 export type DepositTabProps = {

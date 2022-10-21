@@ -1,5 +1,6 @@
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+
 import SuccessIcon from '../../../assets/svg/success.svg';
-import { FilledStylizedButton } from '../../common/Buttons';
 import { CloseableModal, HorizontalDivider } from '../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 

@@ -1,14 +1,16 @@
 import React, { Fragment } from 'react';
+
 import { Tab } from '@headlessui/react';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import DepositTab from './DepositTab';
-import WithdrawTab from './WithdrawTab';
-import tw from 'twin.macro';
 import styled from 'styled-components';
-import ConnectWallet from './ConnectWallet';
+import tw from 'twin.macro';
+
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { OffChainPoolStats } from '../../data/PoolStats';
-import SwapTab from './SwapTab';
 import { isPoolDeprecated } from '../../util/Pool';
+import ConnectWallet from './ConnectWallet';
+import DepositTab from './DepositTab';
+import SwapTab from './SwapTab';
+import WithdrawTab from './WithdrawTab';
 
 export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
 

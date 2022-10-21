@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+
+import { CheckIcon } from '@heroicons/react/solid';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import DropdownArrowDown from '../../assets/svg/dropdown_arrow_down.svg';
 import DropdownArrowUp from '../../assets/svg/dropdown_arrow_up.svg';
-import { CheckIcon } from '@heroicons/react/solid';
 import useClickOutside from '../../data/hooks/UseClickOutside';
 import { Text } from './Typography';
 

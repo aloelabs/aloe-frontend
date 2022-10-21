@@ -1,29 +1,31 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import AppPage from '../components/common/AppPage';
-import styled from 'styled-components';
-import tw from 'twin.macro';
-import PortfolioCard from '../components/portfolio/PortfolioCard';
-import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
-import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
-import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
-import { GetTokenData } from '../data/TokenData';
-import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
-import { GetSiloData } from '../data/SiloData';
-import { Text } from '../components/common/Typography';
-import PortfolioGraph from '../components/graph/PortfolioGraph';
-import Tooltip from '../components/common/Tooltip';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+
+import { ApolloQueryResult } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import rateLimit from 'axios-rate-limit';
-import { BlendTableContext } from '../data/context/BlendTableContext';
-import { theGraphUniswapV2Client } from '../App';
-import { UniswapPairValueQuery } from '../util/GraphQL';
-import { API_URL } from '../data/constants/Values';
-import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
-import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import styled from 'styled-components';
+import tw from 'twin.macro';
 import { useAccount } from 'wagmi';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
+import { theGraphUniswapV2Client } from '../App';
+import AppPage from '../components/common/AppPage';
+import Tooltip from '../components/common/Tooltip';
+import { Text } from '../components/common/Typography';
+import PortfolioGraph from '../components/graph/PortfolioGraph';
+import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
+import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
+import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
+import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import PortfolioCard from '../components/portfolio/PortfolioCard';
+import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
+import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
+import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+import { API_URL } from '../data/constants/Values';
+import { BlendTableContext } from '../data/context/BlendTableContext';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { GetSiloData } from '../data/SiloData';
+import { GetTokenData } from '../data/TokenData';
+import { UniswapPairValueQuery } from '../util/GraphQL';
 
 const http = rateLimit(axios.create(), {
   maxRequests: 2,
@@ -172,9 +174,7 @@ export default function PortfolioPage() {
           )) as AxiosResponse<EtherscanBalanceResponse, any>,
           uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,
-            variables: {
-              pairAddress: pairAddress,
-            },
+            variables: { pairAddress: pairAddress },
           })) as ApolloQueryResult<UniswapV2PositionResponse>,
         };
       });

@@ -1,10 +1,12 @@
-import { Tab } from '@headlessui/react';
 import React, { Fragment } from 'react';
+
+import { Tab } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from '../common/Typography';
-import Tooltip from '../common/Tooltip';
+
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import Tooltip from '../common/Tooltip';
+import { Text } from '../common/Typography';
 
 const MESSAGE_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 

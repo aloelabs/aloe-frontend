@@ -1,11 +1,16 @@
+import { useEffect, useState } from 'react';
+
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
-import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
+import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
+
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -17,10 +22,8 @@ import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggl
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { PreviousPageButton } from '../components/common/Buttons';
+import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
 import TokenChooser from '../components/common/TokenChooser';
-import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
@@ -29,6 +32,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
+import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
@@ -53,7 +57,7 @@ const BodyWrapper = styled.div`
   gap: 32px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
   }
 `;
 
@@ -179,7 +183,7 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
   const marginAccountLensContract = useContract({
-    addressOrName: '0xFc9A50F2dD9348B5a9b00A21B09D9988bd9726F7',
+    addressOrName: ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS,
     contractInterface: MarginAccountLensABI,
     signerOrProvider: provider,
   });
@@ -366,6 +370,10 @@ export default function BorrowActionsPage() {
 
   function updateActionResults(updatedActionResults: ActionCardState[]) {
     setActionResults(updatedActionResults);
+    // If we have no actions results left, we are no longer showing hypothetical
+    if (updatedActionResults.length === 0) {
+      setIsShowingHypothetical(false);
+    }
   }
 
   function handleAddAction(action: Action) {
@@ -424,7 +432,7 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             hypotheticalStates={hypotheticalStates}
-            uniswapPositions={displayedUniswapPositions}
+            uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
             actionResults={actionResults}
             updateActionResults={updateActionResults}
@@ -432,10 +440,10 @@ export default function BorrowActionsPage() {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {
-              let actionResultsCopy = [...actionResults];
+              const actionResultsCopy = [...actionResults];
               const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
-              setActionResults(updatedActionResults);
-              let activeActionsCopy = [...activeActions];
+              updateActionResults(updatedActionResults);
+              const activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
             problematicActionIdx={problematicActionIdx}
@@ -533,6 +541,20 @@ export default function BorrowActionsPage() {
                 </EmptyStateContainer>
               </EmptyStateWrapper>
             )}
+          </div>
+          <div className='w-full flex flex-col gap-4 mb-8'>
+            <Display size='M' weight='medium'>
+              Uniswap Positions
+            </Display>
+            <UniswapPositionTable
+              accountAddress={accountAddressParam || ''}
+              marginAccount={marginAccount}
+              marginAccountLensContract={marginAccountLensContract}
+              provider={provider}
+              uniswapPositions={displayedUniswapPositions}
+              isInTermsOfToken0={isToken0Selected}
+              showAsterisk={isShowingHypothetical}
+            />
           </div>
           <div className='w-full flex flex-col gap-4'>
             <Display size='M' weight='medium'>

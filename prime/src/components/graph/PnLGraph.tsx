@@ -1,5 +1,6 @@
-import { Popover } from '@headlessui/react';
 import { useState } from 'react';
+
+import { Popover } from '@headlessui/react';
 import {
   Area,
   AreaChart,
@@ -10,7 +11,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { SquareInput } from 'shared/lib/components/common/Input';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/Actions';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
@@ -23,10 +28,7 @@ import {
 } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
-import { SquareInput } from '../common/Input';
-import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
-import { Text } from 'shared/lib/components/common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 

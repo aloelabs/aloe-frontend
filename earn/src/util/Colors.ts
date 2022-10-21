@@ -43,9 +43,7 @@ function rgb_to_hsv(rgb: number[]): number[] {
  * @returns The dominant color of the image
  */
 export async function getProminentColor(path: string): Promise<string> {
-  const colorsRGB: number[][] = (await prominent(path, {
-    amount: 3,
-  })) as number[][];
+  const colorsRGB: number[][] = (await prominent(path, { amount: 3 })) as number[][];
   const colors = colorsRGB.map((colorRGB) => {
     return {
       rgb: colorRGB,

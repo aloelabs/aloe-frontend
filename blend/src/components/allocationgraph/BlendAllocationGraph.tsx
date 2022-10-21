@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import BlendGraph from '../graph/BlendGraph';
+
+import axios from 'axios';
 import { subDays, subMonths, subWeeks, subYears } from 'date-fns/esm';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import GraphButtons, { buttonIdxToText } from '../graph/GraphButtons';
-import axios from 'axios';
-import { calculateReturns, PoolReturns, TokenReturns } from '../../util/ReturnsCalculations';
+
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import { GetTokenData } from '../../data/TokenData';
-import { Text } from '../common/Typography';
-import { fixTimestamp } from '../../util/Dates';
-import { API_URL } from '../../data/constants/Values';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import { API_URL } from '../../data/constants/Values';
+import { GetTokenData } from '../../data/TokenData';
+import { fixTimestamp } from '../../util/Dates';
+import { calculateReturns, PoolReturns, TokenReturns } from '../../util/ReturnsCalculations';
+import { Text } from '../common/Typography';
+import BlendGraph from '../graph/BlendGraph';
 import { BlendGraphPlaceholder } from '../graph/BlendGraphPlaceholder';
+import GraphButtons, { buttonIdxToText } from '../graph/GraphButtons';
 
 const GraphButtonsWrapper = styled.div`
   ${tw`w-max`}
@@ -56,9 +58,7 @@ const Container = styled.div`
 
 // TODO: move this to a separate file
 function makeRequest(reqUrl: string) {
-  return axios.get(reqUrl, {
-    timeout: 10000,
-  });
+  return axios.get(reqUrl, { timeout: 10000 });
 }
 
 export type BlendAllocationGraphProps = {

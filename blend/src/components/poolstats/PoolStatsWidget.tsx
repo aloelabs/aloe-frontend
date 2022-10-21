@@ -1,13 +1,15 @@
 import React, { useContext } from 'react';
+
+import { formatDistance } from 'date-fns';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { formatDistance } from 'date-fns';
+
+import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { OffChainPoolStats } from '../../data/PoolStats';
 import { formatUSDAuto, roundPercentage } from '../../util/Numbers';
 import { Display, Text } from '../common/Typography';
 import WidgetHeading from '../common/WidgetHeading';
-import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const ROUNDING_PRECISION = 2;
 const POOL_STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -123,11 +125,7 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
             Last Rebalance
           </Text>
           <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
-            {poolStats
-              ? formatDistance(poolStats.recenterTimestamp * 1000, Date.now(), {
-                  addSuffix: true,
-                })
-              : '--'}
+            {poolStats ? formatDistance(poolStats.recenterTimestamp * 1000, Date.now(), { addSuffix: true }) : '--'}
           </Display>
         </PoolStat>
       </PoolStatsWidgetGrid>

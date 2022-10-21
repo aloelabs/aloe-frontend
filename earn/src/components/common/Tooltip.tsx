@@ -1,9 +1,11 @@
 import React from 'react';
-import InfoIcon from '../../assets/svg/info.svg';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import InfoIcon from '../../assets/svg/info.svg';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from 'shared/lib/components/common/Typography';
 
 const ICON_SIZES = {
   S: 16,

@@ -1,7 +1,9 @@
 import React from 'react';
+
+import { format, parseISO } from 'date-fns';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { format, parseISO } from 'date-fns';
+
 import { Text } from '../../common/Typography';
 
 const TOOLTIP_BG_COLOR = 'rgba(0, 0, 0, 0.4)';
