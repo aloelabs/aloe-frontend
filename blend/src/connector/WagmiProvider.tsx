@@ -25,15 +25,11 @@ const client = createClient({
     new MetaMaskConnector({ chains }),
     new CoinbaseWalletConnector({
       chains,
-      options: {
-        appName: 'Aloe',
-      },
+      options: { appName: 'Aloe' },
     }),
     new WalletConnectConnector({
       chains,
-      options: {
-        qrcode: true,
-      },
+      options: { qrcode: true },
     }),
     new InjectedConnector({
       chains,

@@ -1,8 +1,8 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
 
 import FactoryABI from '../assets/abis/Factory.json';
 import { ALOE_II_FACTORY_ADDRESS_BUILT_IN_FAUCET_GOERLI } from '../data/constants/Addresses';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 
 /**
  *

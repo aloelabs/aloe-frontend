@@ -125,11 +125,7 @@ export default function PoolStatsWidget(props: PoolStatsWidgetProps) {
             Last Rebalance
           </Text>
           <Display size='S' weight='semibold' color={POOL_STAT_VALUE_TEXT_COLOR}>
-            {poolStats
-              ? formatDistance(poolStats.recenterTimestamp * 1000, Date.now(), {
-                  addSuffix: true,
-                })
-              : '--'}
+            {poolStats ? formatDistance(poolStats.recenterTimestamp * 1000, Date.now(), { addSuffix: true }) : '--'}
           </Display>
         </PoolStat>
       </PoolStatsWidgetGrid>

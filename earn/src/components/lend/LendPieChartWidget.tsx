@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { Text } from 'shared/lib/components/common/Typography';
 import { TokenData } from '../../data/TokenData';
+import { TokenBalance } from '../../pages/LendPage';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatTokenAmountCompact } from '../../util/Numbers';
-import { TokenBalance } from '../../pages/LendPage';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 

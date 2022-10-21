@@ -148,9 +148,7 @@ function NetReturnsDot(props: any) {
 }
 
 function makeRequest(reqUrl: string) {
-  return axios.get(reqUrl, {
-    timeout: 10000,
-  });
+  return axios.get(reqUrl, { timeout: 10000 });
 }
 
 function calculateNextDate(currentDate: Date, activeButton: number): Date {

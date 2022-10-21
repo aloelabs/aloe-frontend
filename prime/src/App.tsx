@@ -1,15 +1,15 @@
 import React, { Suspense, useEffect } from 'react';
+
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
 
-import WagmiProvider from './connector/WagmiProvider';
-import Header from './components/header/Header';
-import Footer from './components/common/Footer';
-
 import AppBody from './components/common/AppBody';
-import ScrollToTop from './util/ScrollToTop';
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import BorrowActionsPage from './pages/BorrowActionsPage';
+import Footer from './components/common/Footer';
+import Header from './components/header/Header';
+import WagmiProvider from './connector/WagmiProvider';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
+import BorrowActionsPage from './pages/BorrowActionsPage';
+import ScrollToTop from './util/ScrollToTop';
 
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),

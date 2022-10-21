@@ -1,11 +1,16 @@
+import { useEffect, useState } from 'react';
+
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
-import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
+import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
+
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -17,10 +22,8 @@ import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggl
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
+import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
 import TokenChooser from '../components/common/TokenChooser';
-import { Display } from 'shared/lib/components/common/Typography';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
@@ -29,6 +32,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Actions';
+import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
@@ -42,8 +46,6 @@ import {
 } from '../data/MarginAccount';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
-import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
-import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';

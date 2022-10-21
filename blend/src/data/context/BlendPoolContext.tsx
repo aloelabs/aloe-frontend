@@ -8,9 +8,7 @@ export interface IBlendPoolContext {
   poolStats: BlendPoolStats | null;
 }
 
-const defaultState: IBlendPoolContext = {
-  poolStats: null,
-};
+const defaultState: IBlendPoolContext = { poolStats: null };
 
 export const BlendPoolContext = createContext<IBlendPoolContext>(defaultState);
 
@@ -22,13 +20,5 @@ export type BlendPoolContextProviderProps = {
 export function BlendPoolProvider(props: BlendPoolContextProviderProps) {
   const blendStats = useBlendStats(props.poolData);
 
-  return (
-    <BlendPoolContext.Provider
-      value={{
-        poolStats: blendStats,
-      }}
-    >
-      {props.children}
-    </BlendPoolContext.Provider>
-  );
+  return <BlendPoolContext.Provider value={{ poolStats: blendStats }}>{props.children}</BlendPoolContext.Provider>;
 }

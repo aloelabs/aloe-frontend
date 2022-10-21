@@ -1,16 +1,17 @@
+import { TickMath } from '@uniswap/v3-sdk';
+import Big from 'big.js';
+import { BigNumber, ethers } from 'ethers';
+import JSBI from 'jsbi';
+
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { makeEtherscanRequest } from '../util/Etherscan';
+import { areWithinNSigDigs, toBig } from '../util/Numbers';
+import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
+import { UniswapPosition } from './Actions';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { BIGQ96 } from './constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { BigNumber, ethers } from 'ethers';
-import Big from 'big.js';
-import JSBI from 'jsbi';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { BIGQ96 } from './constants/Values';
-import { areWithinNSigDigs, toBig } from '../util/Numbers';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
-import { UniswapPosition } from './Actions';
-import { TickMath } from '@uniswap/v3-sdk';
-import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 
 export type Assets = {
   token0Raw: number;
@@ -313,7 +314,14 @@ export function getAssets(marginAccount: MarginAccount, uniswapPositions: Uniswa
     fluid1C += temp[1];
   }
 
-  return { fixed0, fixed1, fluid1A, fluid1B, fluid0C, fluid1C };
+  return {
+    fixed0,
+    fixed1,
+    fluid1A,
+    fluid1B,
+    fluid0C,
+    fluid1C,
+  };
 }
 
 function _computeLiquidationIncentive(

@@ -19,23 +19,17 @@ import { RedirectPartialPath } from './util/RedirectPartialPath';
 import ScrollToTop from './util/ScrollToTop';
 
 export const theGraphUniswapV2Client = new ApolloClient({
-  link: new HttpLink({
-    uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
-  }),
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
   cache: new InMemoryCache(),
 });
 
 export const theGraphUniswapV3Client = new ApolloClient({
-  link: new HttpLink({
-    uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
-  }),
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
   cache: new InMemoryCache(),
 });
 
 export const theGraphEthereumBlocksClient = new ApolloClient({
-  link: new HttpLink({
-    uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
-  }),
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
   cache: new InMemoryCache(),
 });
 
@@ -58,9 +52,7 @@ function App() {
     let mounted = true;
 
     const queryBlocks = async () => {
-      const response = await theGraphEthereumBlocksClient.query({
-        query: BLOCK_QUERY,
-      });
+      const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
       if (mounted) {
         setBlockNumber(response.data.blocks[0].number);
       }

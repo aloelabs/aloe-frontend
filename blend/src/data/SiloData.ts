@@ -114,8 +114,5 @@ const SiloDataMap = new Map<string, SiloData>([
 export function GetSiloData(address: string): SiloData {
   if (SiloDataMap.has(address)) {
     return SiloDataMap.get(address)!;
-  } else
-    return {
-      address,
-    };
+  } else return { address };
 }
