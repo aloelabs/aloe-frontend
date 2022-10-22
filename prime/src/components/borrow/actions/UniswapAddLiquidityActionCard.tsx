@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { useProvider } from 'wagmi';
+import { Address, useProvider } from 'wagmi';
 
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
+import { getAddLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { addLiquidityOperator } from '../../../data/actions/ActionOperators';
+import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
+import { runWithChecks } from '../../../data/actions/Utils';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {
@@ -40,9 +43,10 @@ type TickPrice = {
 };
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = props;
-  const { marginAccount } = operand;
+  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = props;
   const { token0, token1, feeTier } = marginAccount;
+
+  const [isCausingError, setIsCausingError] = useState(false);
 
   const isToken0Selected = fields?.uniswapResult?.isToken0Selected || false;
 
@@ -185,23 +189,28 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
     const prevTextFields = fields?.textFields ?? ['', '', '', '', ''];
     prevTextFields[4] = updatedSlippage;
 
-    onChange({
-      actionId: ActionID.ADD_LIQUIDITY,
-      textFields: prevTextFields,
-      aloeResult: null,
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: prevUniswapPosition?.liquidity || JSBI.BigInt(0),
-          amount0: prevUniswapPosition?.amount0 || 0,
-          amount1: prevUniswapPosition?.amount1 || 0,
-          lower: prevUniswapPosition?.lower || null,
-          upper: prevUniswapPosition?.upper || null,
-        },
-        slippageTolerance: parseFloat(updatedSlippage) || undefined,
-        isAmount0LastUpdated: fields?.uniswapResult?.isAmount0LastUpdated,
-        isToken0Selected: fields?.uniswapResult?.isToken0Selected,
-      },
+    if (!operand) return;
+
+    const updatedOperand = runWithChecks(
+      marginAccount,
+      addLiquidityOperator,
+      operand,
+      marginAccount.address as Address,
+      prevUniswapPosition?.liquidity || JSBI.BigInt(0),
+      prevUniswapPosition?.lower || 0,
+      prevUniswapPosition?.upper || 0,
+      currentTick || 0,
+      token0.decimals,
+      token1.decimals
+    );
+
+    onChange2({
+      updatedOperand,
+      fields: prevTextFields,
+      actionArgs: undefined,
     });
+
+    setIsCausingError(updatedOperand === undefined);
   }
 
   function handleLocalToken0AmountInput(value: string, forceUpdate?: boolean) {
@@ -265,37 +274,34 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
   }
 
   function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
-    onChange({
-      actionId: ActionID.ADD_LIQUIDITY,
-      actionArgs:
-        lowerTick !== null && upperTick !== null
-          ? getAddLiquidityActionArgs(lowerTick, upperTick, localLiquidityJSBI)
-          : undefined,
-      textFields: [
+    if (!operand) return;
+
+    const updatedOperand = runWithChecks(
+      marginAccount,
+      addLiquidityOperator,
+      operand,
+      marginAccount.address as Address,
+      localLiquidityJSBI,
+      lowerTick || 0,
+      upperTick || 0,
+      currentTick || 0,
+      token0.decimals,
+      token1.decimals
+    );
+
+    onChange2({
+      updatedOperand,
+      fields: [
         amount0,
         amount1,
         lowerTick?.toFixed(0) ?? '',
         upperTick?.toFixed(0) ?? '',
         fields?.textFields?.[4] ?? '',
       ],
-      aloeResult: {
-        token0RawDelta: -parseFloat(amount0) || undefined,
-        token1RawDelta: -parseFloat(amount1) || undefined,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: localLiquidityJSBI,
-          amount0: parseFloat(amount0) || 0,
-          amount1: parseFloat(amount1) || 0,
-          lower: lowerTick,
-          upper: upperTick,
-        },
-        slippageTolerance: fields?.uniswapResult?.slippageTolerance,
-        isAmount0LastUpdated: localIsAmount0LastUpdated,
-        isToken0Selected: isToken0Selected,
-      },
+      actionArgs: getAddLiquidityActionArgs(lowerTick ?? 0, upperTick ?? 0, localLiquidityJSBI),
     });
+
+    setIsCausingError(updatedOperand === undefined);
   }
 
   function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
@@ -372,8 +378,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
     updateRange(localToken0Amount, localToken1Amount, lower?.tick ?? null, upper?.tick ?? null);
   }
 
-  const max0 = marginAccount.assets.token0Raw;
-  const max1 = marginAccount.assets.token1Raw;
+  const max0 = operand?.assets.token0Raw ?? 0;
+  const max1 = operand?.assets.token1Raw ?? 0;
   const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
   const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
 
@@ -398,10 +404,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
                 uniswapResult: {
                   uniswapPosition: {
                     liquidity: JSBI.BigInt(0),
-                    amount0: 0,
-                    amount1: 0,
-                    lower: null,
-                    upper: null,
+                    lower: 0,
+                    upper: 0,
                   },
                   slippageTolerance: fields?.uniswapResult?.slippageTolerance,
                   isToken0Selected: updatedValue,

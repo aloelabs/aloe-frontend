@@ -1,23 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getBorrowActionArgs } from '../../../connector/MarginAccountActions';
+import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { borrowOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
   parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
+import { runWithChecks } from '../../../data/actions/Utils';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeBorrowActionCard(prop: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = prop;
-  const { marginAccount } = operand;
+  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
   const { token0, token1 } = marginAccount;
+
+  const [isCausingError, setIsCausingError] = useState(false);
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -36,29 +39,28 @@ export function AloeBorrowActionCard(prop: ActionCardProps<any>) {
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const callbackWithFullResult = (value: string) => {
+    if (!(selectedToken && operand)) return;
+
     const parsedValue = parseFloat(value) || 0;
     let amount0 = 0;
     let amount1 = 0;
-    if (selectedToken === TokenType.ASSET0) {
-      amount0 = parsedValue;
-    } else {
-      amount1 = parsedValue;
-    }
+    if (selectedToken === TokenType.ASSET0) amount0 = parsedValue;
+    else amount1 = parsedValue;
 
-    onChange({
-      actionId: ActionID.BORROW,
-      actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        token0DebtDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1DebtDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        selectedToken: selectedToken,
-      },
-      uniswapResult: null,
+    const updatedOperand = runWithChecks(marginAccount, borrowOperator, operand, selectedToken, parsedValue);
+
+    onChange2({
+      updatedOperand,
+      fields: [value],
+      actionArgs: getBorrowActionArgs(token0, amount0, token1, amount1),
     });
+
+    setIsCausingError(updatedOperand === undefined);
   };
+
+  useEffect(() => {
+    setIsCausingError(operand === undefined);
+  }, [operand]);
 
   const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {

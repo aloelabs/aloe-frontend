@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
-import { ActionID, ActionProvider, getNameOfAction } from '../../data/Actions';
+import { ActionID, getNameOfAction } from '../../data/actions/ActionID';
+import { ActionProvider } from '../../data/actions/Actions';
 import Tooltip from '../common/Tooltip';
 
 const ActionCardContainer = styled.div.attrs((props: { isCausingError: boolean }) => props)`

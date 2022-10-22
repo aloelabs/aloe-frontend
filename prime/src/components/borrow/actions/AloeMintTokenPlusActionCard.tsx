@@ -1,23 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getMintActionArgs } from '../../../connector/MarginAccountActions';
+import { getMintActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { mintOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
   parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
+import { runWithChecks } from '../../../data/actions/Utils';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = prop;
-  const { marginAccount } = operand;
+  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
+
+  const [isCausingError, setIsCausingError] = useState(false);
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -36,30 +39,25 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const callbackWithFullResult = (value: string) => {
+    if (!(selectedToken && operand)) return;
+
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.MINT,
-      actionArgs:
-        value === ''
-          ? undefined
-          : getMintActionArgs(
-              selectedToken === TokenType.ASSET0 ? token0 : token1,
-              selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
-              parsedValue
-            ),
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        selectedToken: selectedToken,
-      },
-      uniswapResult: null,
+    const updatedOperand = runWithChecks(marginAccount, mintOperator, operand, selectedToken, parsedValue);
+
+    onChange2({
+      updatedOperand,
+      fields: [value],
+      actionArgs: getMintActionArgs(
+        selectedToken === TokenType.ASSET0 ? token0 : token1,
+        selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
+        parsedValue
+      ),
     });
+
+    setIsCausingError(updatedOperand === undefined);
   };
 
-  const max = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
+  const max = operand?.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'] ?? 0;
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
   const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {

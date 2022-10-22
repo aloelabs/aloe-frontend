@@ -7,24 +7,24 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
-import { UniswapPosition } from './Actions';
+import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { BIGQ96 } from './constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 
 export type Assets = {
-  token0Raw: number;
-  token1Raw: number;
-  token0Plus: number;
-  token1Plus: number;
-  uni0: number;
-  uni1: number;
+  readonly token0Raw: number;
+  readonly token1Raw: number;
+  readonly token0Plus: number;
+  readonly token1Plus: number;
+  readonly uni0: number;
+  readonly uni1: number;
 };
 
 export type Liabilities = {
-  amount0: number;
-  amount1: number;
+  readonly amount0: number;
+  readonly amount1: number;
 };
 
 /**
@@ -275,7 +275,13 @@ function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   return [a, b];
 }
 
-export function getAssets(marginAccount: MarginAccount, uniswapPositions: UniswapPosition[], a: Big, b: Big, c: Big) {
+export function getAssets(
+  marginAccount: MarginAccount,
+  uniswapPositions: readonly UniswapPosition[],
+  a: Big,
+  b: Big,
+  c: Big
+) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
   const tickC = TickMath.getTickAtSqrtRatio(JSBI.BigInt(c.toFixed(0)));
@@ -349,7 +355,7 @@ function _computeLiquidationIncentive(
 
 export function isSolvent(
   marginAccount: MarginAccount,
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   sigma: number
 ) {

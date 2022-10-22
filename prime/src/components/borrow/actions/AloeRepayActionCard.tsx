@@ -1,23 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getRepayActionArgs } from '../../../connector/MarginAccountActions';
+import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { repayOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
   parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
+import { runWithChecks } from '../../../data/actions/Utils';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeRepayActionCard(prop: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = prop;
-  const { marginAccount } = operand;
+  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
   const { token0, token1 } = marginAccount;
+
+  const [isCausingError, setIsCausingError] = useState(false);
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -36,32 +39,27 @@ export function AloeRepayActionCard(prop: ActionCardProps<any>) {
   const selectedToken = parseSelectedToken(selectedTokenOption.value);
 
   const callbackWithFullResult = (value: string) => {
+    if (!(selectedToken && operand)) return;
+
     const parsedValue = parseFloat(value) || 0;
     let amount0 = 0;
     let amount1 = 0;
-    if (selectedToken === TokenType.ASSET0) {
-      amount0 = parsedValue;
-    } else {
-      amount1 = parsedValue;
-    }
+    if (selectedToken === TokenType.ASSET0) amount0 = parsedValue;
+    else amount1 = parsedValue;
 
-    onChange({
-      actionId: ActionID.REPAY,
-      actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0DebtDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1DebtDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
-      },
-      uniswapResult: null,
+    const updatedOperand = runWithChecks(marginAccount, repayOperator, operand, selectedToken, parsedValue);
+
+    onChange2({
+      updatedOperand,
+      fields: [value],
+      actionArgs: getRepayActionArgs(token0, amount0, token1, amount1),
     });
+
+    setIsCausingError(updatedOperand === undefined);
   };
 
-  const assetMax = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
-  const liabilityMax = marginAccount.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
+  const assetMax = operand?.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'] ?? 0;
+  const liabilityMax = operand?.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'] ?? 0;
   const maxString = Math.max(0, Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
   const tokenAmount = fields?.textFields?.at(0) ?? '';
   useEffect(() => {

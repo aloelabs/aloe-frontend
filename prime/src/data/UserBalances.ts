@@ -1,10 +1,10 @@
-import { TokenType } from './Actions';
+import { TokenType } from './actions/Actions';
 
 export interface UserBalances {
-  amount0Asset: number;
-  amount1Asset: number;
-  amount0Kitty: number;
-  amount1Kitty: number;
+  readonly amount0Asset: number;
+  readonly amount1Asset: number;
+  readonly amount0Kitty: number;
+  readonly amount1Kitty: number;
 }
 
 export function getBalanceFor(tokenType: TokenType, userBalances: UserBalances): number {

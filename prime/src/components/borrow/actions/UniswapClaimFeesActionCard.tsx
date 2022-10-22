@@ -4,8 +4,9 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
-import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
+import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -28,8 +29,8 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = props;
-  const { uniswapPositions } = operand;
+  const { operand, fields, onRemove, onChange } = props;
+  const uniswapPositions = operand?.uniswapPositions.concat() ?? [];
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
@@ -64,8 +65,8 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps<any>) 
       uniswapResult: {
         uniswapPosition: {
           liquidity: updatedLiquidity,
-          lower,
-          upper,
+          lower: lower ?? 0,
+          upper: upper ?? 0,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: 0,
@@ -84,7 +85,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps<any>) 
     <BaseActionCard
       action={ActionID.CLAIM_FEES}
       actionProvider={ActionProviders.UniswapV3}
-      isCausingError={isCausingError}
+      isCausingError={false}
       onRemove={onRemove}
     >
       <div>

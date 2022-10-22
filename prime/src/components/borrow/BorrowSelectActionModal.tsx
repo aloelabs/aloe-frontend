@@ -5,8 +5,9 @@ import tw from 'twin.macro';
 
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
-import { ActionProvider, ActionProviders, ActionTemplates, getNameOfAction } from '../../data/Actions';
-import { Action, ActionCardState } from '../../data/Actions';
+import { getNameOfAction } from '../../data/actions/ActionID';
+import { ActionProvider, ActionProviders, ActionTemplates } from '../../data/actions/Actions';
+import { Action, ActionCardState } from '../../data/actions/Actions';
 import { FullscreenModal } from '../common/Modal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';

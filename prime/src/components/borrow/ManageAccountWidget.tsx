@@ -14,7 +14,15 @@ import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_tria
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { Action, ActionCardState, ActionID, TokenType, UniswapPosition } from '../../data/Actions';
+import { ActionID } from '../../data/actions/ActionID';
+import {
+  Action,
+  ActionCardOperand,
+  ActionCardOutput,
+  ActionCardState,
+  TokenType,
+  UniswapPosition,
+} from '../../data/actions/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
@@ -118,64 +126,6 @@ function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
   });
 }
 
-function computeBalancesAvailableForEachAction(
-  balances: UserBalances,
-  actionResults: ActionCardState[]
-): UserBalances[] {
-  balances = { ...balances };
-  const balancesList: UserBalances[] = [{ ...balances }];
-
-  for (const actionResult of actionResults) {
-    switch (actionResult.actionId) {
-      case ActionID.TRANSFER_IN:
-        balances.amount0Asset -= actionResult.aloeResult?.token0RawDelta || 0;
-        balances.amount1Asset -= actionResult.aloeResult?.token1RawDelta || 0;
-        balances.amount0Kitty -= actionResult.aloeResult?.token0PlusDelta || 0;
-        balances.amount1Kitty -= actionResult.aloeResult?.token1PlusDelta || 0;
-        break;
-      case ActionID.TRANSFER_OUT:
-        // values inside actionResult are negative, so we still subtract in this case.
-        // this makes sense, because what happens to userBalances is *opposite* of
-        // what happens to the margin account. so we always want to subtract!
-        balances.amount0Asset -= actionResult.aloeResult?.token0RawDelta || 0;
-        balances.amount1Asset -= actionResult.aloeResult?.token1RawDelta || 0;
-        balances.amount0Kitty -= actionResult.aloeResult?.token0PlusDelta || 0;
-        balances.amount1Kitty -= actionResult.aloeResult?.token1PlusDelta || 0;
-        break;
-      default:
-        break;
-    }
-
-    balancesList.push({ ...balances });
-  }
-  return balancesList;
-}
-
-function determineAmountsBeingTransferredIn(actionResults: ActionCardState[]): number[] {
-  const result = [0, 0, 0, 0];
-  for (const actionResult of actionResults) {
-    if (actionResult.actionId !== ActionID.TRANSFER_IN) continue;
-
-    switch (actionResult.aloeResult?.selectedToken) {
-      case TokenType.ASSET0:
-        result[0] += actionResult.aloeResult.token0RawDelta || 0;
-        break;
-      case TokenType.ASSET1:
-        result[1] += actionResult.aloeResult.token1RawDelta || 0;
-        break;
-      case TokenType.KITTY0:
-        result[2] += actionResult.aloeResult.token0PlusDelta || 0;
-        break;
-      case TokenType.KITTY1:
-        result[3] += actionResult.aloeResult.token1PlusDelta || 0;
-        break;
-      default:
-        break;
-    }
-  }
-  return result;
-}
-
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET0,
   INSUFFICIENT_ASSET1,
@@ -264,18 +214,10 @@ const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
   uniswapPositions: UniswapPosition[];
-  hypotheticalStates: {
-    assets: Assets;
-    liabilities: Liabilities;
-    positions: Map<string, UniswapPosition>;
-  }[];
   activeActions: Array<Action>;
-  actionResults: Array<ActionCardState>;
-  updateActionResults: (actionResults: Array<ActionCardState>) => void;
+  setHypotheticalState: (state: ActionCardOutput<any> | undefined) => void;
   openAddActionModal: () => void;
   onRemoveAction: (index: number) => void;
-  problematicActionIdx: number;
-  transactionIsViable: boolean;
   clearActions: () => void;
 };
 
@@ -283,15 +225,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
   const {
     marginAccount,
-    hypotheticalStates,
     uniswapPositions,
     activeActions,
-    actionResults,
-    updateActionResults,
+    setHypotheticalState,
     openAddActionModal,
     onRemoveAction,
-    problematicActionIdx,
-    transactionIsViable,
     clearActions,
   } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
@@ -300,6 +238,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
+
+  const [actionCardOutputs, setActionCardOutputs] = useState<ActionCardOutput<any>[]>([]);
 
   const navigate = useNavigate();
 
@@ -350,10 +290,17 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
     amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
   };
-  const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(userBalances, actionResults);
+
+  const finalOutput = actionCardOutputs.at(actionCardOutputs.length - 1);
 
   // MARK: logic to determine what approvals are needed
-  const requiredBalances = determineAmountsBeingTransferredIn(actionResults);
+  const requiredAllowances = finalOutput?.updatedOperand?.requiredAllowances;
+  const requiredBalances = [
+    requiredAllowances?.amount0Asset ?? 0,
+    requiredAllowances?.amount1Asset ?? 0,
+    requiredAllowances?.amount0Kitty ?? 0,
+    requiredAllowances?.amount1Kitty ?? 0,
+  ];
   const insufficient = [
     requiredBalances[0] > userBalances.amount0Asset,
     requiredBalances[1] > userBalances.amount1Asset,
@@ -384,8 +331,9 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     confirmButtonState = ConfirmButtonState.NO_ACTIONS;
   } else if (loadingApprovals.includes(true)) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!transactionIsViable || problematicActionIdx !== -1) {
-    console.info('Viable Transaction: ', transactionIsViable, 'Problematic Action: ', problematicActionIdx);
+  } else if (finalOutput?.updatedOperand === undefined) {
+    console.warn('Transaction is not viable!');
+    console.info(actionCardOutputs);
     confirmButtonState = ConfirmButtonState.ERRORING_ACTIONS;
   } else if (insufficient[0]) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
@@ -435,23 +383,50 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
-                  operand={{
-                    marginAccount: {
-                      ...marginAccount,
-                      assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
-                      liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
-                    },
-                    uniswapPositions: uniswapPositions,
-                    availableBalances: balancesAvailableForEachAction[index],
+                  marginAccount={marginAccount}
+                  operand={
+                    index > 0
+                      ? actionCardOutputs.at(index - 1)?.updatedOperand
+                      : {
+                          assets: marginAccount.assets,
+                          liabilities: marginAccount.liabilities,
+                          uniswapPositions: uniswapPositions,
+                          availableBalances: userBalances,
+                          requiredAllowances: {
+                            amount0Asset: 0,
+                            amount0Kitty: 0,
+                            amount1Asset: 0,
+                            amount1Kitty: 0,
+                          },
+                        }
+                  }
+                  fields={actionCardOutputs.at(index)?.fields}
+                  onChange2={(output: ActionCardOutput<any>) => {
+                    let newActionCardOutputs = actionCardOutputs.concat();
+
+                    if (index < actionCardOutputs.length) {
+                      newActionCardOutputs = [
+                        ...actionCardOutputs.slice(0, index),
+                        output,
+                        ...actionCardOutputs.slice(index + 1),
+                      ];
+                    } else if (index === actionCardOutputs.length) {
+                      newActionCardOutputs.push(output);
+                    } else {
+                      console.log('HERE');
+                    }
+
+                    setActionCardOutputs(newActionCardOutputs);
+                    setHypotheticalState(newActionCardOutputs.at(newActionCardOutputs.length - 1));
                   }}
-                  fields={actionResults[index]}
-                  isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
                   onRemove={() => {
+                    let newActionCardOutputs = actionCardOutputs.concat();
+                    newActionCardOutputs.splice(index, 1);
+
+                    setActionCardOutputs(newActionCardOutputs);
                     onRemoveAction(index);
                   }}
-                  onChange={(result: ActionCardState) => {
-                    updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
-                  }}
+                  onChange={(result: ActionCardState) => {}}
                 />
               </ActionCardWrapper>
             </ActionItem>
@@ -484,13 +459,12 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             size='M'
             svgColorType='stroke'
             onClick={() => {
-              if (!transactionIsViable) {
-                console.error("Oops! The transaction couldn't be formatted correctly. Please refresh and try again.");
-                return;
-              }
-
-              const actionIds = actionResults.map((result) => result.actionId);
-              const actionArgs = actionResults.map((result) => result.actionArgs!);
+              // if (!transactionIsViable) {
+              //   console.error("Oops! The transaction couldn't be formatted correctly. Please refresh and try again.");
+              //   return;
+              // }
+              const actionIds = activeActions.map((action) => action.id);
+              const actionArgs = actionCardOutputs.map((output) => output.actionArgs!);
               const calldata = ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]'], [actionIds, actionArgs]);
 
               switch (confirmButtonState) {

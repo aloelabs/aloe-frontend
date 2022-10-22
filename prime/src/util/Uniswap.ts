@@ -267,6 +267,11 @@ export function priceToTick(price0In1: number, token0Decimals: number, token1Dec
   return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
 }
 
+export function sqrtRatioToTick(sqrtRatioX96: Big): number {
+  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+  return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
+}
+
 export function shouldAmount0InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
   return currentTick >= Math.max(lowerTick, upperTick);
 }

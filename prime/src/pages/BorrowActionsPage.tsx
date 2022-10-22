@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
 import { Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -28,19 +27,17 @@ import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import {
   Action,
+  ActionCardOutput,
   ActionCardState,
-  calculateHypotheticalStates,
   UniswapPosition,
   UniswapPositionPrior,
-} from '../data/Actions';
+} from '../data/actions/Actions';
 import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
-  Assets,
   computeLiquidationThresholds,
   fetchMarginAccount,
-  Liabilities,
   LiquidationThresholds,
   MarginAccount,
   sumAssetsPerToken,
@@ -119,10 +116,7 @@ type AccountParams = {
 async function fetchUniswapPositions(
   priors: UniswapPositionPrior[],
   marginAccountAddress: string,
-  uniswapV3PoolContract: any,
-  sqrtPriceX96: Big,
-  token0Decimals: number,
-  token1Decimals: number
+  uniswapV3PoolContract: any
 ) {
   const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
   const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
@@ -130,20 +124,7 @@ async function fetchUniswapPositions(
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
   priors.forEach((prior, i) => {
     const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    const amounts = getAmountsForLiquidity(
-      liquidity,
-      prior.lower!,
-      prior.upper!,
-      TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
-      token0Decimals,
-      token1Decimals
-    );
-    fetchedUniswapPositions.set(keys[i], {
-      ...prior,
-      liquidity: liquidity,
-      amount0: amounts[0],
-      amount1: amounts[1],
-    });
+    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
   });
 
   return fetchedUniswapPositions;
@@ -158,18 +139,11 @@ export default function BorrowActionsPage() {
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   const [uniswapPositions, setUniswapPositions] = useState(new Map<string, UniswapPosition>());
-  const [actionResults, setActionResults] = useState<ActionCardState[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
+  const [hypotheticalState, setHypotheticalState] = useState<ActionCardOutput<any> | undefined>(undefined);
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
-  const [hypotheticalStates, setHypotheticalStates] = useState<
-    {
-      assets: Assets;
-      liabilities: Liabilities;
-      positions: Map<string, UniswapPosition>;
-    }[]
-  >([]);
   const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
   const [displayedUniswapPositions, setDisplayedUniswapPositions] = useState<UniswapPosition[]>([]);
   const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
@@ -240,10 +214,7 @@ export default function BorrowActionsPage() {
       const fetchedUniswapPositions = await fetchUniswapPositions(
         uniswapPositionPriors as UniswapPositionPrior[],
         accountAddressParam,
-        uniswapV3PoolContract,
-        marginAccount.sqrtPriceX96,
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
+        uniswapV3PoolContract
       );
 
       if (mounted) {
@@ -253,9 +224,17 @@ export default function BorrowActionsPage() {
         // if we've fetched both, prefer the uniswapPositions version (local & newer).
         const i = { amount0: 0, amount1: 0 };
         const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
+          const [amount0, amount1] = getAmountsForLiquidity(
+            c.liquidity,
+            c.lower,
+            c.upper,
+            TickMath.getTickAtSqrtRatio(JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0))),
+            marginAccount.token0.decimals,
+            marginAccount.token1.decimals
+          );
           return {
-            amount0: p.amount0 + (c.amount0 || 0),
-            amount1: p.amount1 + (c.amount1 || 0),
+            amount0: p.amount0 + amount0,
+            amount1: p.amount1 + amount1,
           };
         }, i);
         setMarginAccount({
@@ -283,18 +262,11 @@ export default function BorrowActionsPage() {
   useEffect(() => {
     if (!marginAccount) return;
 
-    // assets and liabilities after adding hypothetical actions
-    const _hypotheticalStates = calculateHypotheticalStates(marginAccount, uniswapPositions, actionResults);
-
-    // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
-    const numValidActions = _hypotheticalStates.length - 1;
-
     // get the latest *valid* hypothetical state. this will be the one we display
-    const {
-      assets: assetsF,
-      liabilities: liabilitiesF,
-      positions: uniswapPositionsF,
-    } = _hypotheticalStates[numValidActions];
+    const assetsF = hypotheticalState?.updatedOperand?.assets ?? marginAccount.assets;
+    const liabilitiesF = hypotheticalState?.updatedOperand?.liabilities ?? marginAccount.liabilities;
+    const uniswapPositionsF =
+      hypotheticalState?.updatedOperand?.uniswapPositions ?? Array.from(uniswapPositions.values());
 
     // tell React about our findings
     const _marginAccount = { ...marginAccount };
@@ -314,14 +286,15 @@ export default function BorrowActionsPage() {
         amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
       };
     }
-    setHypotheticalStates(_hypotheticalStates);
     setDisplayedMarginAccount(_marginAccount);
-    setDisplayedUniswapPositions(Array.from((isShowingHypothetical ? uniswapPositionsF : uniswapPositions).values()));
+    setDisplayedUniswapPositions(
+      isShowingHypothetical ? uniswapPositionsF.concat() : Array.from(uniswapPositions.values())
+    );
     console.log('Running 1');
   }, [
     marginAccount,
     uniswapPositions,
-    actionResults,
+    hypotheticalState,
     isShowingHypothetical,
     isToken0Selected,
     borrowInterestInputValue,
@@ -360,12 +333,6 @@ export default function BorrowActionsPage() {
     };
   }
 
-  // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
-  const numValidActions = Math.min(hypotheticalStates.length - 1);
-  const problematicActionIdx = numValidActions < actionResults.length ? numValidActions : -1;
-  // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
-  const transactionIsReady = actionResults.findIndex((result) => result.actionArgs === undefined) === -1;
-
   // pre-compute some values to cut down on logic in the HTML
   const token0 = marginAccount.token0;
   const token1 = marginAccount.token1;
@@ -374,29 +341,13 @@ export default function BorrowActionsPage() {
   const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
   const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
 
-  function updateActionResults(updatedActionResults: ActionCardState[]) {
-    setActionResults(updatedActionResults);
-    // If we have no actions results left, we are no longer showing hypothetical
-    if (updatedActionResults.length === 0) {
-      setIsShowingHypothetical(false);
-    }
-  }
-
   function handleAddAction(action: Action) {
-    if (actionResults.length === 0) setIsShowingHypothetical(true);
-    updateActionResults([
-      ...actionResults,
-      {
-        actionId: action.id,
-        aloeResult: null,
-        uniswapResult: null,
-      },
-    ]);
+    if (activeActions.length === 0) setIsShowingHypothetical(true);
     setActiveActions([...activeActions, action]);
   }
 
   function handleAddActions(actions: Action[], defaultActionResults?: ActionCardState[]) {
-    if (actionResults.length === 0) setIsShowingHypothetical(true);
+    if (activeActions.length === 0) setIsShowingHypothetical(true);
     if (defaultActionResults && actions.length !== defaultActionResults.length) {
       console.error(
         'You must pass in the same number of action results as you do actions (or pass no action results in).'
@@ -412,12 +363,10 @@ export default function BorrowActionsPage() {
           uniswapResult: null,
         };
       });
-    updateActionResults([...actionResults, ...newActionResults]);
     setActiveActions([...activeActions, ...actions]);
   }
 
   function clearActions() {
-    updateActionResults([]);
     setActiveActions([]);
     setIsShowingHypothetical(false);
   }
@@ -437,23 +386,19 @@ export default function BorrowActionsPage() {
         <GridExpandingDiv>
           <ManageAccountWidget
             marginAccount={marginAccount}
-            hypotheticalStates={hypotheticalStates}
             uniswapPositions={Array.from(uniswapPositions.values())}
             activeActions={activeActions}
-            actionResults={actionResults}
-            updateActionResults={updateActionResults}
+            setHypotheticalState={setHypotheticalState}
             openAddActionModal={() => {
               setActionModalOpen(true);
             }}
             onRemoveAction={(index: number) => {
-              const actionResultsCopy = [...actionResults];
-              const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
-              updateActionResults(updatedActionResults);
+              // const actionResultsCopy = [...actionResults];
+              // const updatedActionResults = actionResultsCopy.filter((_, i) => i !== index);
+              // updateActionResults(updatedActionResults);
               const activeActionsCopy = [...activeActions];
               setActiveActions(activeActionsCopy.filter((_, i) => i !== index));
             }}
-            problematicActionIdx={problematicActionIdx}
-            transactionIsViable={transactionIsReady}
             clearActions={clearActions}
           />
         </GridExpandingDiv>
@@ -470,7 +415,7 @@ export default function BorrowActionsPage() {
                 setIsToken0Selected={setIsToken0Selected}
               />
               <div className='ml-auto'>
-                {actionResults.length > 0 && (
+                {activeActions.length > 0 && (
                   <HypotheticalToggleButton
                     showHypothetical={isShowingHypothetical}
                     setShowHypothetical={setIsShowingHypothetical}

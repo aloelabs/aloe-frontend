@@ -1,24 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getTransferOutActionArgs } from '../../../connector/MarginAccountActions';
+import { getTransferOutActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { transferOutOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
   parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
+import { runWithChecks } from '../../../data/actions/Utils';
 import { TokenData } from '../../../data/TokenData';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
-  const { operand, fields, isCausingError, onRemove, onChange } = prop;
-  const { marginAccount } = operand;
+  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
+
+  const [isCausingError, setIsCausingError] = useState(false);
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -53,21 +56,18 @@ export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
   tokenMap.set(TokenType.KITTY1, kitty1);
 
   const callbackWithFullResult = (value: string) => {
+    if (!(selectedToken && operand)) return;
+
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.TRANSFER_OUT,
-      actionArgs:
-        selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
-      },
-      uniswapResult: null,
+    const updatedOperand = runWithChecks(marginAccount, transferOutOperator, operand, selectedToken, parsedValue);
+
+    onChange2({
+      updatedOperand,
+      fields: [value],
+      actionArgs: getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue),
     });
+
+    setIsCausingError(updatedOperand === undefined);
   };
 
   const tokenAmount = fields?.textFields?.at(0) ?? '';
