@@ -13,6 +13,7 @@
     "@babel/eslint-parser": "^7.17.0",
     "autoprefixer": "^10.4.2",
     "babel-plugin-macros": "^3.1.0",
+    "eslint-plugin-import": "^2.25.2",
     "husky": "^8.0.0",
     "lint-staged": "^13.0.3",
     "postcss": "^8.4.6",
@@ -20,8 +21,8 @@
     "twin.macro": "^2.8.2"
   },
   "scripts": {
-    "prettier": "prettier --write */src/**/*.{ts,tsx}",
-    "prettier:check": "prettier --check 'src/**/*.{ts,tsx}'",
+    "prettier": "prettier --write */src/**/*.{ts,tsx,json}",
+    "prettier:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
     "prepare": "husky install"
   },
   "husky": {

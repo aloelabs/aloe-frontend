@@ -1,13 +1,15 @@
-import { erc20ABI, useContractRead } from 'wagmi';
+import { BigNumber } from 'ethers';
+import { Address, erc20ABI, useContractRead } from 'wagmi';
+
 import { TokenData } from '../../data/TokenData';
 
-export default function useAllowance(token: TokenData, owner: string, spender: string) {
+export default function useAllowance(token: TokenData, owner: Address, spender: Address) {
   return useContractRead({
-    addressOrName: token.address,
-    contractInterface: erc20ABI,
+    address: token.address,
+    abi: erc20ABI,
     functionName: 'allowance',
-    args: [owner, spender],
+    args: [owner, spender] as const,
     cacheOnBlock: true,
     watch: true,
-  });
+  }) as { data: BigNumber | null };
 }

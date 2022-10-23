@@ -1,10 +1,12 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TokenData } from '../../../data/TokenData';
-import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
-import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from 'shared/lib/components/common/Typography';
+
+import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
+import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+import { TokenData } from '../../../data/TokenData';
 import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
@@ -24,6 +26,7 @@ const StyledInput = styled.input`
   color: rgba(204, 223, 237, 1);
   box-sizing: border-box;
   font-family: 'ClashDisplay-Variable';
+  font-weight: 400;
   font-size: 20px;
   border: none;
   outline: none;
@@ -31,7 +34,6 @@ const StyledInput = styled.input`
   text-overflow: ellipsis;
   text-align: center;
   padding: 12px;
-  /* border-bottom: 1px solid rgba(204, 223, 237, 1); */
 `;
 
 const SvgButtonWrapper = styled.button`

@@ -1,5 +1,5 @@
-import { ethers } from 'ethers';
 import Big from 'big.js';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
 import { TokenData } from '../data/TokenData';

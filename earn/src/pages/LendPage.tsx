@@ -1,35 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-import tw from 'twin.macro';
+
+import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import BalanceSlider from '../components/lend/BalanceSlider';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
-import { Text } from 'shared/lib/components/common/Typography';
-import { formatUSD, roundPercentage } from '../util/Numbers';
-import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { Divider } from 'shared/lib/components/common/Divider';
-import Tooltip from '../components/common/Tooltip';
-import LendPairCard from '../components/lend/LendPairCard';
-import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
+import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
+import { Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
+import tw from 'twin.macro';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
+
+import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
+import Tooltip from '../components/common/Tooltip';
+import BalanceSlider from '../components/lend/BalanceSlider';
+import LendPairCard from '../components/lend/LendPairCard';
+import LendPieChartWidget from '../components/lend/LendPieChartWidget';
+import WelcomeModal from '../components/lend/modal/WelcomeModal';
+import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import LendPieChartWidget from '../components/lend/LendPieChartWidget';
-import axios, { AxiosResponse } from 'axios';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
-import { API_PRICE_RELAY_URL } from '../data/constants/Values';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
-import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import WelcomeModal from '../components/lend/modal/WelcomeModal';
+import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { formatUSD, roundPercentage } from '../util/Numbers';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
@@ -260,8 +261,6 @@ export default function LendPage() {
     );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
-  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
-
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -312,12 +311,10 @@ export default function LendPage() {
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
           </LendHeader>
-          {isGTMediumScreen && (
-            <LendPieChartWidget
-              tokenBalances={[...kittyBalances, ...tokenBalances]}
-              totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
-            />
-          )}
+          <LendPieChartWidget
+            tokenBalances={[...kittyBalances, ...tokenBalances]}
+            totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+          />
         </LendHeaderContainer>
         <Divider />
         <div>

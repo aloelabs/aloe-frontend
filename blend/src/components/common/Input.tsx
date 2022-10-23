@@ -1,6 +1,8 @@
 import React, { ReactElement } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { classNames } from '../../util/ClassNames';
 
 const INPUT_BG_COLOR = 'rgba(13, 23, 30, 1)';

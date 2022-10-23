@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
+
+import { ContractReceipt } from 'ethers';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
+
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Display } from 'shared/lib/components/common/Typography';
-import { createMarginAccount } from '../connector/FactoryActions';
-import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
-import { ContractReceipt } from 'ethers';
-
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
+import { createMarginAccount } from '../connector/FactoryActions';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
@@ -60,8 +61,8 @@ export default function BorrowAccountsPage() {
     watch: true,
   });
   const marginAccountLensContract = useContract({
-    addressOrName: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
-    contractInterface: MarginAccountLensABI,
+    address: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
+    abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
 
@@ -69,6 +70,10 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch(userAddress: string) {
+      // Guard clause: if the margin account lens contract is null, don't fetch
+      if (!marginAccountLensContract) {
+        return;
+      }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);

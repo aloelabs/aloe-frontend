@@ -1,11 +1,13 @@
 import React from 'react';
-import { roundPercentage } from '../../util/Numbers';
-import PositiveChangeIcon from '../../assets/svg/PositiveChangeIcon';
-import NegativeChangeIcon from '../../assets/svg/NegativeChangeIcon';
-import styled from 'styled-components';
+
 import { Text } from './Typography';
-import UpArrow from '../../assets/svg/UpArrow';
+import styled from 'styled-components';
+
 import DownArrow from '../../assets/svg/DownArrow';
+import NegativeChangeIcon from '../../assets/svg/NegativeChangeIcon';
+import PositiveChangeIcon from '../../assets/svg/PositiveChangeIcon';
+import UpArrow from '../../assets/svg/UpArrow';
+import { roundPercentage } from '../../util/Numbers';
 
 const POSITIVE_PERCENT_BG_COLOR = 'rgba(0, 193, 67, 0.1)';
 const POSITIVE_PERCENT_TEXT_COLOR = 'rgb(0, 193, 67)';

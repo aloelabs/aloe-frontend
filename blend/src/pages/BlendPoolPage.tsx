@@ -1,10 +1,17 @@
-import axios from 'axios';
 import React, { useContext, useEffect } from 'react';
+
+import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import tw from 'twin.macro';
+import { Address, useAccount } from 'wagmi';
+
+import { theGraphUniswapV3Client } from '../App';
+import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
 import BlendAllocationGraph from '../components/allocationgraph/BlendAllocationGraph';
 import { PreviousPageButton } from '../components/common/Buttons';
 import RiskCard from '../components/common/RiskCard';
+import { IOSStyleSpinner } from '../components/common/Spinner';
 import { Text } from '../components/common/Typography';
 import WidgetHeading from '../components/common/WidgetHeading';
 import PoolInteractionTabs from '../components/pool/PoolInteractionTabs';
@@ -12,6 +19,7 @@ import TokenPairHeader from '../components/pool/TokenPairHeader';
 import PoolPieChartWidget from '../components/poolstats/PoolPieChartWidget';
 import PoolPositionWidget from '../components/poolstats/PoolPositionWidget';
 import PoolStatsWidget from '../components/poolstats/PoolStatsWidget';
+import { FeeTier } from '../data/BlendPoolMarkers';
 import {
   RESPONSIVE_BREAKPOINTS,
   RESPONSIVE_BREAKPOINT_LG,
@@ -22,22 +30,17 @@ import {
 import { API_URL } from '../data/constants/Values';
 import { BlendPoolProvider } from '../data/context/BlendPoolContext';
 import { BlendTableContext } from '../data/context/BlendTableContext';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
 import { OffChainPoolStats } from '../data/PoolStats';
 import { GetSiloData } from '../data/SiloData';
 import { GetTokenData } from '../data/TokenData';
-import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
-import tw from 'twin.macro';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { useAccount } from 'wagmi';
-import { FeeTier } from '../data/BlendPoolMarkers';
-import { theGraphUniswapV3Client } from '../App';
 import { getUniswapVolumeQuery } from '../util/GraphQL';
-import { IOSStyleSpinner } from '../components/common/Spinner';
 
 const ABOUT_MESSAGE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 type PoolParams = {
-  pooladdress: string;
+  // Addresses must start with 0x
+  pooladdress: Address;
 };
 
 const LoaderWrapper = styled.div`
@@ -164,9 +167,7 @@ export default function BlendPoolPage(props: BlendPoolPageProps) {
     let mounted = true;
     const fetchData = async (token0Address: string, token1Address: string, feeTier: FeeTier) => {
       const uniswapVolumeQuery = getUniswapVolumeQuery(blockNumber, token0Address, token1Address, feeTier);
-      const uniswapVolumeData = await theGraphUniswapV3Client.query({
-        query: uniswapVolumeQuery,
-      });
+      const uniswapVolumeData = await theGraphUniswapV3Client.query({ query: uniswapVolumeQuery });
 
       if (mounted) {
         setUniswapVolume(

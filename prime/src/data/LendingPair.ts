@@ -1,11 +1,12 @@
+import Big from 'big.js';
 import { ethers } from 'ethers';
-import { makeEtherscanRequest } from '../util/Etherscan';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { GetTokenData, TokenData } from './TokenData';
+
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import Big from 'big.js';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { GetTokenData, TokenData } from './TokenData';
 
 export type LendingPair = {
   token0: TokenData;
@@ -41,7 +42,7 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return await Promise.all(
+  return Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 

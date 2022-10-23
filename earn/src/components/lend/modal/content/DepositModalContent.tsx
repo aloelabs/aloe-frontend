@@ -1,7 +1,11 @@
-import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
 import { ReactElement, useState } from 'react';
+
+import { SendTransactionResult } from '@wagmi/core';
+import { BigNumber, ethers } from 'ethers';
+import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
@@ -11,10 +15,8 @@ import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
 import { TokenData } from '../../../../data/TokenData';
 import { toBig } from '../../../../util/Numbers';
-import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
-import { Text } from 'shared/lib/components/common/Typography';
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -73,13 +75,13 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     watch: true,
   });
 
-  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '0x', kitty.address);
 
   const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, kitty.address);
 
   const contract = useContractWrite({
-    addressOrName: kitty.address,
-    contractInterface: KittyABI,
+    address: kitty.address,
+    abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'deposit',
   });
@@ -113,7 +115,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
       case ConfirmButtonState.APPROVE_ASSET:
         setIsPending(true);
         writeAllowanceToken
-          .writeAsync()
+          .writeAsync?.()
           .then((txnResult) => {
             txnResult.wait(1).then(() => {
               setIsPending(false);
@@ -126,11 +128,9 @@ export default function DepositModalContent(props: DepositModalContentProps) {
       case ConfirmButtonState.READY:
         setIsPending(true);
         contract
-          .writeAsync({
+          .writeAsync?.({
             recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: {
-              gasLimit: (600000).toFixed(0),
-            },
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           })
           .then((txnResult) => {
             setPendingTxnResult(txnResult);

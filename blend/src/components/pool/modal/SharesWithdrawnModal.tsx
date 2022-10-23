@@ -1,4 +1,6 @@
 import React from 'react';
+
+import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
 import {
   CloseableModal,
@@ -9,7 +11,6 @@ import {
   VALUE_TEXT_COLOR,
 } from '../../common/Modal';
 import TokenBreakdown from '../../common/TokenBreakdown';
-import SuccessIcon from '../../../assets/svg/success.svg';
 import { Text } from '../../common/Typography';
 import { MODAL_BLACK_TEXT_COLOR } from '../PoolInteractionTabs';
 

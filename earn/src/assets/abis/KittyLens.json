@@ -5,16 +5,12 @@
       { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
     "name": "amountToShares",
-    "outputs": [
-      { "internalType": "uint256", "name": "shares", "type": "uint256" }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "shares", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "contract Kitty", "name": "kitty", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "contract Kitty", "name": "kitty", "type": "address" }],
     "name": "readBasics",
     "outputs": [
       { "internalType": "contract ERC20", "name": "asset", "type": "address" },

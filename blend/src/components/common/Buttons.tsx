@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { classNames } from '../../util/ClassNames';
+
 import LeftChevron from '../../assets/svg/left_chevron.svg';
+import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';

@@ -1,8 +1,10 @@
-import { BlendPoolMarkers } from '../BlendPoolMarkers';
-import { erc20ABI, useAccount, useBalance, useContractRead } from 'wagmi';
-import Big from 'big.js';
 import { useEffect, useState } from 'react';
+
+import Big from 'big.js';
+import { erc20ABI, useAccount, useBalance, useContractRead } from 'wagmi';
+
 import { toBig } from '../../util/Numbers';
+import { BlendPoolMarkers } from '../BlendPoolMarkers';
 import { WETH_9_MAINNET_ADDRESS } from '../constants/Addresses';
 import { WETH_GAS_RESERVE } from '../constants/Values';
 
@@ -43,18 +45,18 @@ export function useDeposit(poolData: BlendPoolMarkers) {
     watch: true,
   });
   const { data: token0Allowance } = useContractRead({
-    addressOrName: poolData.token0Address,
-    contractInterface: erc20ABI,
+    address: poolData.token0Address,
+    abi: erc20ABI,
     functionName: 'allowance',
-    args: [address, poolData.poolAddress],
+    args: [address || '0x', poolData.poolAddress],
     cacheOnBlock: true,
     watch: true,
   });
   const { data: token1Allowance } = useContractRead({
-    addressOrName: poolData.token1Address,
-    contractInterface: erc20ABI,
+    address: poolData.token1Address,
+    abi: erc20ABI,
     functionName: 'allowance',
-    args: [address, poolData.poolAddress],
+    args: [address || '0x', poolData.poolAddress],
     cacheOnBlock: true,
     watch: true,
   });

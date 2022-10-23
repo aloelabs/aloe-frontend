@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { EMPTY_PORTFOLIO_SUB_TEXT_COLOR } from './EmptyPortfolio';
 import ExternalPortfolioCardSkeleton from './ExternalPortfolioCardSkeleton';
 

@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
+
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import { BaseActionCard } from '../BaseActionCard';
+
+import { getTransferOutActionArgs } from '../../../connector/MarginAccountActions';
 import {
   ActionCardProps,
   ActionID,
@@ -10,8 +12,8 @@ import {
   TokenType,
 } from '../../../data/Actions';
 import { TokenData } from '../../../data/TokenData';
-import { getTransferOutActionArgs } from '../../../connector/MarginAccountActions';
-import { useEffect } from 'react';
+import TokenAmountInput from '../../common/TokenAmountInput';
+import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
@@ -87,9 +89,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.TRANSFER_OUT,
-                aloeResult: {
-                  selectedToken: parseSelectedToken(option.value),
-                },
+                aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
               });
             }

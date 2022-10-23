@@ -1,6 +1,8 @@
 import React from 'react';
-import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+
 import { Text } from 'shared/lib/components/common/Typography';
+
+import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 
 export type PendingTxnModalContentProps = {
   txnHash?: string;

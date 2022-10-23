@@ -1,10 +1,12 @@
 import React from 'react';
+
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+
+import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from '../common/SiloBlob';
-import styled from 'styled-components';
-import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import TokenPairLogos from '../common/TokenPairLogos';
-import { useNavigate } from 'react-router-dom';
 
 export type BlendPoolSelectTableRowProps = {
   poolData: BlendPoolMarkers;

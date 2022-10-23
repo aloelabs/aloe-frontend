@@ -1,19 +1,21 @@
+import JSBI from 'jsbi';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+
 import { ReactComponent as AloeLogo } from '../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../assets/svg/uniswap_logo.svg';
+import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
 import { AloeBorrowActionCard } from '../components/borrow/actions/AloeBorrowActionCard';
+import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import { AloeMintTokenPlusActionCard } from '../components/borrow/actions/AloeMintTokenPlusActionCard';
 import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActionCard';
 import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
-import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
-import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
 import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
+import UnsiwapClaimFeesActionCard from '../components/borrow/actions/UniswapClaimFeesActionCard';
 import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
-import { DropdownOption } from 'shared/lib/components/common/Dropdown';
-import JSBI from 'jsbi';
+import { deepCopyMap } from '../util/Maps';
+import { uniswapPositionKey } from '../util/Uniswap';
 import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
 import { UserBalances } from './UserBalances';
-import { uniswapPositionKey } from '../util/Uniswap';
-import { deepCopyMap } from '../util/Maps';
 
 export enum ActionID {
   TRANSFER_IN,
@@ -24,6 +26,7 @@ export enum ActionID {
   REPAY,
   ADD_LIQUIDITY,
   REMOVE_LIQUIDITY,
+  CLAIM_FEES,
   SWAP,
 }
 
@@ -45,12 +48,12 @@ export function getNameOfAction(id: ActionID): string {
       return 'Add Liquidity';
     case ActionID.REMOVE_LIQUIDITY:
       return 'Remove Liquidity';
+    case ActionID.CLAIM_FEES:
+      return 'Claim Fees';
     default:
       return 'UNKNOWN';
   }
 }
-
-// export type ActionValue = number;
 
 export type UniswapPosition = {
   amount0?: number;
@@ -169,16 +172,22 @@ export const ADD_MARGIN: Action = {
   actionCard: AloeAddMarginActionCard,
 };
 
-export const REMOVE_LIQUIDITY: Action = {
-  id: ActionID.REMOVE_LIQUIDITY,
-  description: 'Remove liquidity from a Uniswap Position.',
-  actionCard: UniswapRemoveLiquidityActionCard,
-};
-
 export const ADD_LIQUIDITY: Action = {
   id: ActionID.ADD_LIQUIDITY,
   description: 'Create a new Uniswap Position or add liquidity to an existing one.',
   actionCard: UniswapAddLiquidityActionCard,
+};
+
+export const REMOVE_LIQUIDITY: Action = {
+  id: ActionID.REMOVE_LIQUIDITY,
+  description: 'Remove liquidity and claim earned fees from a Uniswap Position.',
+  actionCard: UniswapRemoveLiquidityActionCard,
+};
+
+export const CLAIM_FEES: Action = {
+  id: ActionID.CLAIM_FEES,
+  description: 'Claim earned fees from a Uniswap Position.',
+  actionCard: UnsiwapClaimFeesActionCard,
 };
 
 export const ActionProviders: { [key: string]: ActionProvider } = {
@@ -202,6 +211,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
     actions: {
       ADD_LIQUIDITY,
       REMOVE_LIQUIDITY,
+      CLAIM_FEES,
     },
   },
 };
@@ -215,33 +225,25 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       {
         actionId: ADD_MARGIN.id,
         textFields: ['100'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET0,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
       },
       {
         actionId: MINT_TOKEN_PLUS.id,
         textFields: ['100'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET0,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
       },
       {
         actionId: BORROW.id,
         textFields: ['0.044'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET1,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
       },
       {
         actionId: WITHDRAW.id,
         textFields: ['0.044'],
-        aloeResult: {
-          selectedToken: TokenType.ASSET1,
-        },
+        aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
       },
     ],

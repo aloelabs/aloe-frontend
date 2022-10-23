@@ -1,7 +1,9 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
+
+import axios from 'axios';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { API_URL } from '../../data/constants/Values';

@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
-import styled from 'styled-components';
-import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
+
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
+import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { Dropdown } from './Dropdown';
 
 const MAX_DISPLAYED_COUNT = 6;

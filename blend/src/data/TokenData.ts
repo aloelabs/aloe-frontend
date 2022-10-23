@@ -1,7 +1,9 @@
+import { Address } from 'wagmi';
+
 import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo, OSqthLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string;
+  address: Address;
   ticker?: string;
   name?: string;
   iconPath?: string;
@@ -103,11 +105,13 @@ export function getTokens(): TokenData[] {
   return Array.from(TokenDataMap.values());
 }
 
-export function GetTokenData(address: string): TokenData {
+export function GetTokenData(address: Address | string): TokenData {
+  if (!address.startsWith('0x')) {
+    throw new Error('Invalid address');
+  }
   if (TokenDataMap.has(address)) {
     return TokenDataMap.get(address)!;
-  } else
-    return {
-      address,
-    };
+  } else {
+    return { address: address as Address };
+  }
 }

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import tw from 'twin.macro';
+
+import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
-import TokenPairIcons from '../common/TokenPairIcons';
-import { NavLink } from 'react-router-dom';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import { formatTokenAmount } from '../../util/Numbers';
-import { formatAddressStart } from '../../util/FormatAddress';
+import styled from 'styled-components';
+import tw from 'twin.macro';
+
 import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { formatAddressStart } from '../../util/FormatAddress';
+import { formatTokenAmount } from '../../util/Numbers';
+import TokenPairIcons from '../common/TokenPairIcons';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';

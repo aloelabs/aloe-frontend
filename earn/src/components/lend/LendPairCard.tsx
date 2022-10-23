@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
-import TokenPairIcons from '../common/TokenPairIcons';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import { roundPercentage } from '../../util/Numbers';
-import LendTokenInfo from './LendTokenInfo';
+
 import {
   BodyDivider,
   BodySubContainer,
@@ -14,11 +8,19 @@ import {
   CardTitleWrapper,
   CardWrapper,
 } from 'shared/lib/components/common/Card';
+import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
-import EditPositionModal from './modal/EditPositionModal';
+import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { LendingPair } from '../../data/LendingPair';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { roundPercentage } from '../../util/Numbers';
+import TokenPairIcons from '../common/TokenPairIcons';
+import LendTokenInfo from './LendTokenInfo';
+import EditPositionModal from './modal/EditPositionModal';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 

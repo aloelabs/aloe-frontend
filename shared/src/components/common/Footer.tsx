@@ -1,9 +1,11 @@
 import React from 'react';
+
+import { Text } from './Typography';
 import styled from 'styled-components';
+
 import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
 import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
-import { Text } from './Typography';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
