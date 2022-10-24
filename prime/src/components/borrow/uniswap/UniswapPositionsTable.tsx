@@ -5,7 +5,7 @@ import { BigNumber, Contract } from 'ethers';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { UniswapPosition } from '../../../data/Actions';
+import { UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { MarginAccount } from '../../../data/MarginAccount';
 import { formatTokenAmount, toBig } from '../../../util/Numbers';

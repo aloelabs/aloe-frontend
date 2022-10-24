@@ -17,7 +17,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
-import { UniswapPosition } from '../../data/Actions';
+import { UniswapPosition } from '../../data/actions/Actions';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import {
   getAssets,
