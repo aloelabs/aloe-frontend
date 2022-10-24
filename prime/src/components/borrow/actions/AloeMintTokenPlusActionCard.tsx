@@ -9,7 +9,6 @@ import {
   ActionCardProps,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
-  parseSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
 import { runWithChecks } from '../../../data/actions/Utils';
@@ -17,7 +16,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
-  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
+  const { marginAccount, operand, fields, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const [isCausingError, setIsCausingError] = useState(false);
@@ -34,23 +33,20 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
       icon: token1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = fields?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
-  const selectedToken = parseSelectedToken(selectedTokenOption.value);
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(fields?.at(0) ?? null, dropdownOptions);
+  const selectedToken = selectedTokenOption.value as TokenType;
 
-  const callbackWithFullResult = (value: string) => {
-    if (!(selectedToken && operand)) return;
+  const callbackWithFullResult = (token: TokenType, amountStr: string) => {
+    const amount = parseFloat(amountStr) || 0;
+    const updatedOperand = runWithChecks(marginAccount, mintOperator, operand, token, amount);
 
-    const parsedValue = parseFloat(value) || 0;
-    const updatedOperand = runWithChecks(marginAccount, mintOperator, operand, selectedToken, parsedValue);
-
-    onChange2({
+    onChange({
       updatedOperand,
-      fields: [value],
+      fields: [token, amountStr],
       actionArgs: getMintActionArgs(
-        selectedToken === TokenType.ASSET0 ? token0 : token1,
-        selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
-        parsedValue
+        token === TokenType.ASSET0 ? token0 : token1,
+        token === TokenType.ASSET0 ? kitty0 : kitty1,
+        amount
       ),
     });
 
@@ -59,14 +55,11 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
 
   const max = operand?.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'] ?? 0;
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = fields?.textFields?.at(0) ?? '';
-  useEffect(() => {
-    if (!fields?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
-  });
+  const amountStr = fields?.at(1) ?? '';
 
   return (
     <BaseActionCard
-      action={ActionID.MINT}
+      id={ActionID.MINT}
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
@@ -77,20 +70,16 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps<any>) {
           selectedOption={selectedTokenOption}
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.MINT,
-                aloeResult: { selectedToken: parseSelectedToken(option.value) },
-                uniswapResult: null,
-              });
+              callbackWithFullResult(option.value as TokenType, amountStr);
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label || ''}
-          value={tokenAmount}
-          onChange={callbackWithFullResult}
+          value={amountStr}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
-          maxed={tokenAmount === maxString}
+          maxed={amountStr === maxString}
         />
       </div>
     </BaseActionCard>

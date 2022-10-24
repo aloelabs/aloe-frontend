@@ -77,10 +77,8 @@ export type ActionCardProps<T> = {
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>;
   operand?: ActionCardOperand;
   fields: T;
-  onChange2: (output: ActionCardOutput<T>) => void;
-
+  onChange: (output: ActionCardOutput<T>) => void;
   onRemove: () => void;
-  onChange: (result: ActionCardState) => void;
 };
 
 export type Action = {
@@ -194,7 +192,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
-        textFields: ['100'],
+        textFields: [TokenType.ASSET0, '100'],
         aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
       },
@@ -269,8 +267,4 @@ export function getDropdownOptionFromSelectedToken(
     throw new Error();
   }
   return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
-}
-
-export function parseSelectedToken(value: string): TokenType {
-  return value as TokenType;
 }

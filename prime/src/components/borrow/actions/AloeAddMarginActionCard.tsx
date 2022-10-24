@@ -18,7 +18,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps<any>) {
-  const { marginAccount, operand, fields, onRemove, onChange2 } = prop;
+  const { marginAccount, operand, fields, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const [isCausingError, setIsCausingError] = useState(false);
@@ -58,7 +58,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps<any>) {
     const amount = parseFloat(amountStr) || 0;
     const updatedOperand = runWithChecks(marginAccount, transferInOperator, operand, token, amount);
 
-    onChange2({
+    onChange({
       updatedOperand,
       fields: [token, amountStr],
       actionArgs: getTransferInActionArgs(tokenMap.get(token)!, amount),
@@ -73,7 +73,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps<any>) {
 
   return (
     <BaseActionCard
-      action={ActionID.TRANSFER_IN}
+      id={ActionID.TRANSFER_IN}
       actionProvider={ActionProviders.AloeII}
       isCausingError={operand === undefined || isCausingError}
       onRemove={onRemove}

@@ -57,23 +57,23 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps<any>) 
     const updatedLiquidity = JSBI.BigInt(0);
 
     // Note: Claiming fees is equivalent to removing 0% of liquidity
-    onChange({
-      actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
-      actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
-      aloeResult: { selectedToken: null },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: updatedLiquidity,
-          lower: lower ?? 0,
-          upper: upper ?? 0,
-        },
-        slippageTolerance: 0,
-        removeLiquidityPercentage: 0,
-        isAmount0LastUpdated: undefined,
-        isToken0Selected: undefined,
-      },
-    });
+    // onChange({
+    //   actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
+    //   actionArgs:
+    //     lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
+    //   aloeResult: { selectedToken: null },
+    //   uniswapResult: {
+    //     uniswapPosition: {
+    //       liquidity: updatedLiquidity,
+    //       lower: lower ?? 0,
+    //       upper: upper ?? 0,
+    //     },
+    //     slippageTolerance: 0,
+    //     removeLiquidityPercentage: 0,
+    //     isAmount0LastUpdated: undefined,
+    //     isToken0Selected: undefined,
+    //   },
+    // });
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {
@@ -83,7 +83,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps<any>) 
 
   return (
     <BaseActionCard
-      action={ActionID.CLAIM_FEES}
+      id={ActionID.CLAIM_FEES}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={false}
       onRemove={onRemove}

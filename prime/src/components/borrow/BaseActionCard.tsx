@@ -40,7 +40,7 @@ const SvgWrapper = styled.div`
 
 export type BaseActionCardProps = {
   actionProvider: ActionProvider;
-  action: ActionID;
+  id: ActionID;
   isCausingError: boolean;
   children: React.ReactNode;
   onRemove: () => void;
@@ -48,13 +48,13 @@ export type BaseActionCardProps = {
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, isCausingError, children, onRemove, tooltipContent } = props;
+  const { actionProvider, id, isCausingError, children, onRemove, tooltipContent } = props;
   return (
     <ActionCardContainer isCausingError={isCausingError}>
       <div className='w-full flex justify-start items-center gap-4 mb-4'>
         <ActionBadge backgroundColor={actionProvider.color}>
           <Text size='S' weight='medium'>
-            {getNameOfAction(action)}
+            {getNameOfAction(id)}
           </Text>
         </ActionBadge>
         <div className='flex items-center'>

@@ -9,7 +9,6 @@ import {
   ActionCardProps,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
-  parseSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
 import { runWithChecks } from '../../../data/actions/Utils';
@@ -18,7 +17,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
-  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = prop;
+  const { marginAccount, operand, fields, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const [isCausingError, setIsCausingError] = useState(false);
@@ -45,9 +44,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = fields?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
-  const selectedToken = parseSelectedToken(selectedTokenOption.value);
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(fields?.at(0) ?? null, dropdownOptions);
+  const selectedToken = selectedTokenOption.value as TokenType;
 
   const tokenMap = new Map<TokenType, TokenData>();
   tokenMap.set(TokenType.ASSET0, token0);
@@ -55,29 +53,24 @@ export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
   tokenMap.set(TokenType.KITTY0, kitty0);
   tokenMap.set(TokenType.KITTY1, kitty1);
 
-  const callbackWithFullResult = (value: string) => {
-    if (!(selectedToken && operand)) return;
+  const callbackWithFullResult = (token: TokenType, amountStr: string) => {
+    const amount = parseFloat(amountStr) || 0;
+    const updatedOperand = runWithChecks(marginAccount, transferOutOperator, operand, token, amount);
 
-    const parsedValue = parseFloat(value) || 0;
-    const updatedOperand = runWithChecks(marginAccount, transferOutOperator, operand, selectedToken, parsedValue);
-
-    onChange2({
+    onChange({
       updatedOperand,
-      fields: [value],
-      actionArgs: getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue),
+      fields: [token, amountStr],
+      actionArgs: getTransferOutActionArgs(tokenMap.get(token)!, amount),
     });
 
     setIsCausingError(updatedOperand === undefined);
   };
 
-  const tokenAmount = fields?.textFields?.at(0) ?? '';
-  useEffect(() => {
-    if (!fields?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
-  });
+  const amountStr = fields?.at(1) ?? '';
 
   return (
     <BaseActionCard
-      action={ActionID.TRANSFER_OUT}
+      id={ActionID.TRANSFER_OUT}
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
@@ -88,18 +81,14 @@ export function AloeWithdrawActionCard(prop: ActionCardProps<any>) {
           selectedOption={selectedTokenOption}
           onSelect={(option) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.TRANSFER_OUT,
-                aloeResult: { selectedToken: parseSelectedToken(option.value) },
-                uniswapResult: null,
-              });
+              callbackWithFullResult(option.value as TokenType, amountStr);
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label}
-          value={tokenAmount}
-          onChange={callbackWithFullResult}
+          value={amountStr}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
         />
       </div>
     </BaseActionCard>

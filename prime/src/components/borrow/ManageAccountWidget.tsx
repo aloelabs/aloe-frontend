@@ -401,7 +401,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                         }
                   }
                   fields={actionCardOutputs.at(index)?.fields}
-                  onChange2={(output: ActionCardOutput<any>) => {
+                  onChange={(output: ActionCardOutput<any>) => {
                     let newActionCardOutputs = actionCardOutputs.concat();
 
                     if (index < actionCardOutputs.length) {
@@ -426,7 +426,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                     setActionCardOutputs(newActionCardOutputs);
                     onRemoveAction(index);
                   }}
-                  onChange={(result: ActionCardState) => {}}
                 />
               </ActionCardWrapper>
             </ActionItem>

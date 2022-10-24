@@ -8,12 +8,10 @@ import styled from 'styled-components';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';
-import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
-import { getAmountsForLiquidity } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -139,7 +137,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps<
 
   return (
     <BaseActionCard
-      action={ActionID.REMOVE_LIQUIDITY}
+      id={ActionID.REMOVE_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={false}
       onRemove={onRemove}

@@ -43,7 +43,7 @@ type TickPrice = {
 };
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any>) {
-  const { marginAccount, operand, fields, onRemove, onChange, onChange2 } = props;
+  const { marginAccount, operand, fields, onRemove, onChange } = props;
   const { token0, token1, feeTier } = marginAccount;
 
   const [isCausingError, setIsCausingError] = useState(false);
@@ -204,7 +204,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
       token1.decimals
     );
 
-    onChange2({
+    onChange({
       updatedOperand,
       fields: prevTextFields,
       actionArgs: undefined,
@@ -289,7 +289,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
       token1.decimals
     );
 
-    onChange2({
+    onChange({
       updatedOperand,
       fields: [
         amount0,
@@ -385,7 +385,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
 
   return (
     <BaseActionCard
-      action={ActionID.ADD_LIQUIDITY}
+      id={ActionID.ADD_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
       onRemove={onRemove}
@@ -397,21 +397,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps<any
             token1={token1}
             isToken0Selected={isToken0Selected}
             setIsToken0Selected={(updatedValue: boolean) => {
-              onChange({
-                actionId: ActionID.ADD_LIQUIDITY,
-                aloeResult: null,
-                textFields: ['', ''],
-                uniswapResult: {
-                  uniswapPosition: {
-                    liquidity: JSBI.BigInt(0),
-                    lower: 0,
-                    upper: 0,
-                  },
-                  slippageTolerance: fields?.uniswapResult?.slippageTolerance,
-                  isToken0Selected: updatedValue,
-                  isAmount0LastUpdated: false,
-                },
-              });
+              // onChange({
+              //   actionId: ActionID.ADD_LIQUIDITY,
+              //   aloeResult: null,
+              //   textFields: ['', ''],
+              //   uniswapResult: {
+              //     uniswapPosition: {
+              //       liquidity: JSBI.BigInt(0),
+              //       lower: 0,
+              //       upper: 0,
+              //     },
+              //     slippageTolerance: fields?.uniswapResult?.slippageTolerance,
+              //     isToken0Selected: updatedValue,
+              //     isAmount0LastUpdated: false,
+              //   },
+              // });
             }}
           />
         )}
