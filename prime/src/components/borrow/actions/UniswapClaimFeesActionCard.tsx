@@ -64,8 +64,8 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
       uniswapResult: {
         uniswapPosition: {
           liquidity: updatedLiquidity,
-          lower,
-          upper,
+          lower: lower ?? 0,
+          upper: upper ?? 0,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: 0,

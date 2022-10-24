@@ -119,10 +119,7 @@ type AccountParams = {
 async function fetchUniswapPositions(
   priors: UniswapPositionPrior[],
   marginAccountAddress: string,
-  uniswapV3PoolContract: any,
-  sqrtPriceX96: Big,
-  token0Decimals: number,
-  token1Decimals: number
+  uniswapV3PoolContract: any
 ) {
   const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
   const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
@@ -130,20 +127,7 @@ async function fetchUniswapPositions(
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
   priors.forEach((prior, i) => {
     const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    const amounts = getAmountsForLiquidity(
-      liquidity,
-      prior.lower!,
-      prior.upper!,
-      TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96.toFixed(0))),
-      token0Decimals,
-      token1Decimals
-    );
-    fetchedUniswapPositions.set(keys[i], {
-      ...prior,
-      liquidity: liquidity,
-      amount0: amounts[0],
-      amount1: amounts[1],
-    });
+    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
   });
 
   return fetchedUniswapPositions;
@@ -240,10 +224,7 @@ export default function BorrowActionsPage() {
       const fetchedUniswapPositions = await fetchUniswapPositions(
         uniswapPositionPriors as UniswapPositionPrior[],
         accountAddressParam,
-        uniswapV3PoolContract,
-        marginAccount.sqrtPriceX96,
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
+        uniswapV3PoolContract
       );
 
       if (mounted) {
@@ -253,9 +234,17 @@ export default function BorrowActionsPage() {
         // if we've fetched both, prefer the uniswapPositions version (local & newer).
         const i = { amount0: 0, amount1: 0 };
         const { amount0, amount1 } = Array.from(fetchedUniswapPositions.values()).reduce((p, c) => {
+          const [amount0, amount1] = getAmountsForLiquidity(
+            c.liquidity,
+            c.lower,
+            c.upper,
+            TickMath.getTickAtSqrtRatio(JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0))),
+            marginAccount.token0.decimals,
+            marginAccount.token1.decimals
+          );
           return {
-            amount0: p.amount0 + (c.amount0 || 0),
-            amount1: p.amount1 + (c.amount1 || 0),
+            amount0: p.amount0 + amount0,
+            amount1: p.amount1 + amount1,
           };
         }, i);
         setMarginAccount({
