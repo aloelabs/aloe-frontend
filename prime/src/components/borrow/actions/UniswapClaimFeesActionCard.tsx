@@ -4,8 +4,9 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
-import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
+import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?

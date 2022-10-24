@@ -1,59 +1,22 @@
 import JSBI from 'jsbi';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { ReactComponent as AloeLogo } from '../assets/svg/aloe_capital_logo.svg';
-import { ReactComponent as UniswapLogo } from '../assets/svg/uniswap_logo.svg';
-import { AloeAddMarginActionCard } from '../components/borrow/actions/AloeAddMarginActionCard';
-import { AloeBorrowActionCard } from '../components/borrow/actions/AloeBorrowActionCard';
-import { AloeBurnTokenPlusActionCard } from '../components/borrow/actions/AloeBurnTokenPlusActionCard';
-import { AloeMintTokenPlusActionCard } from '../components/borrow/actions/AloeMintTokenPlusActionCard';
-import { AloeRepayActionCard } from '../components/borrow/actions/AloeRepayActionCard';
-import { AloeWithdrawActionCard } from '../components/borrow/actions/AloeWithdrawActionCard';
-import UniswapAddLiquidityActionCard from '../components/borrow/actions/UniswapAddLiquidityActionCard';
-import UnsiwapClaimFeesActionCard from '../components/borrow/actions/UniswapClaimFeesActionCard';
-import UniswapRemoveLiquidityActionCard from '../components/borrow/actions/UniswapRemoveLiquidityActionCard';
-import { deepCopyMap } from '../util/Maps';
-import { uniswapPositionKey } from '../util/Uniswap';
-import { Assets, isSolvent, Liabilities, MarginAccount } from './MarginAccount';
-import { UserBalances } from './UserBalances';
-
-export enum ActionID {
-  TRANSFER_IN,
-  TRANSFER_OUT,
-  MINT,
-  BURN,
-  BORROW,
-  REPAY,
-  ADD_LIQUIDITY,
-  REMOVE_LIQUIDITY,
-  CLAIM_FEES,
-  SWAP,
-}
-
-export function getNameOfAction(id: ActionID): string {
-  switch (id) {
-    case ActionID.TRANSFER_IN:
-      return 'Add Margin';
-    case ActionID.TRANSFER_OUT:
-      return 'Withdraw';
-    case ActionID.MINT:
-      return 'Mint Token+';
-    case ActionID.BURN:
-      return 'Burn Token+';
-    case ActionID.BORROW:
-      return 'Borrow';
-    case ActionID.REPAY:
-      return 'Repay';
-    case ActionID.ADD_LIQUIDITY:
-      return 'Add Liquidity';
-    case ActionID.REMOVE_LIQUIDITY:
-      return 'Remove Liquidity';
-    case ActionID.CLAIM_FEES:
-      return 'Claim Fees';
-    default:
-      return 'UNKNOWN';
-  }
-}
+import { ReactComponent as AloeLogo } from '../../assets/svg/aloe_capital_logo.svg';
+import { ReactComponent as UniswapLogo } from '../../assets/svg/uniswap_logo.svg';
+import { AloeAddMarginActionCard } from '../../components/borrow/actions/AloeAddMarginActionCard';
+import { AloeBorrowActionCard } from '../../components/borrow/actions/AloeBorrowActionCard';
+import { AloeBurnTokenPlusActionCard } from '../../components/borrow/actions/AloeBurnTokenPlusActionCard';
+import { AloeMintTokenPlusActionCard } from '../../components/borrow/actions/AloeMintTokenPlusActionCard';
+import { AloeRepayActionCard } from '../../components/borrow/actions/AloeRepayActionCard';
+import { AloeWithdrawActionCard } from '../../components/borrow/actions/AloeWithdrawActionCard';
+import UniswapAddLiquidityActionCard from '../../components/borrow/actions/UniswapAddLiquidityActionCard';
+import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapClaimFeesActionCard';
+import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
+import { deepCopyMap } from '../../util/Maps';
+import { uniswapPositionKey } from '../../util/Uniswap';
+import { Assets, isSolvent, Liabilities, MarginAccount } from '../MarginAccount';
+import { UserBalances } from '../UserBalances';
+import { ActionID } from './ActionID';
 
 export type UniswapPosition = {
   amount0?: number;
