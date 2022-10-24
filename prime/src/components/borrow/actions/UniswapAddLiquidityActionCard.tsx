@@ -192,10 +192,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       uniswapResult: {
         uniswapPosition: {
           liquidity: prevUniswapPosition?.liquidity || JSBI.BigInt(0),
-          amount0: prevUniswapPosition?.amount0 || 0,
-          amount1: prevUniswapPosition?.amount1 || 0,
-          lower: prevUniswapPosition?.lower || null,
-          upper: prevUniswapPosition?.upper || null,
+          lower: prevUniswapPosition?.lower ?? 0,
+          upper: prevUniswapPosition?.upper ?? 0,
         },
         slippageTolerance: parseFloat(updatedSlippage) || undefined,
         isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
@@ -286,10 +284,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       uniswapResult: {
         uniswapPosition: {
           liquidity: localLiquidityJSBI,
-          amount0: parseFloat(amount0) || 0,
-          amount1: parseFloat(amount1) || 0,
-          lower: lowerTick,
-          upper: upperTick,
+          lower: lowerTick ?? 0,
+          upper: upperTick ?? 0,
         },
         slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
         isAmount0LastUpdated: localIsAmount0LastUpdated,
@@ -398,10 +394,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
                 uniswapResult: {
                   uniswapPosition: {
                     liquidity: JSBI.BigInt(0),
-                    amount0: 0,
-                    amount1: 0,
-                    lower: null,
-                    upper: null,
+                    lower: 0,
+                    upper: 0,
                   },
                   slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
                   isToken0Selected: updatedValue,

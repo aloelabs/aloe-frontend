@@ -13,6 +13,7 @@ import { ActionID } from '../../../data/actions/ActionID';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
+import { getAmountsForLiquidity, sqrtRatioToTick } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -71,11 +72,15 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       selectedPosition = uniswapPositions[selectedIndex];
     }
 
-    const previousAmount0 = uniswapPosition.amount0;
-    const previousAmount1 = uniswapPosition.amount1;
-    if (previousAmount0 !== 0 && previousAmount1 !== 0) {
-      amount0 = previousAmount0;
-      amount1 = previousAmount1;
+    if (selectedPosition) {
+      [amount0, amount1] = getAmountsForLiquidity(
+        selectedPosition.liquidity,
+        selectedPosition.lower,
+        selectedPosition.upper,
+        sqrtRatioToTick(marginAccount.sqrtPriceX96),
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
+      );
     }
   }
 
@@ -94,29 +99,38 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     const upper = liquidityPosition ? liquidityPosition.upper : null;
     const liquidity = liquidityPosition?.liquidity ?? JSBI.BigInt(0);
 
-    const amount0ToRemove = ((liquidityPosition?.amount0 || 0) * parsedPercentage) / 100.0;
-    const amount1ToRemove = ((liquidityPosition?.amount1 || 0) * parsedPercentage) / 100.0;
-    const updatedLiquidity = JSBI.divide(
+    const liquidityToRemove = JSBI.divide(
       JSBI.multiply(liquidity, JSBI.BigInt(((parsedPercentage * 10000) / 100).toFixed(0))),
       JSBI.BigInt(10000)
     );
 
+    let amount0 = 0;
+    let amount1 = 0;
+    if (liquidityPosition) {
+      [amount0, amount1] = getAmountsForLiquidity(
+        liquidityToRemove,
+        liquidityPosition.lower,
+        liquidityPosition.upper,
+        sqrtRatioToTick(marginAccount.sqrtPriceX96),
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
+      );
+    }
+
     onChange({
       actionId: ActionID.REMOVE_LIQUIDITY,
       actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
+        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
       aloeResult: {
-        token0RawDelta: amount0ToRemove,
-        token1RawDelta: amount1ToRemove,
+        token0RawDelta: amount0,
+        token1RawDelta: amount1,
         selectedToken: null,
       },
       uniswapResult: {
         uniswapPosition: {
-          liquidity: updatedLiquidity,
-          amount0: -amount0ToRemove,
-          amount1: -amount1ToRemove,
-          lower,
-          upper,
+          liquidity: liquidityToRemove,
+          lower: lower ?? 0,
+          upper: upper ?? 0,
         },
         slippageTolerance: 0,
         removeLiquidityPercentage: parsedPercentage,
@@ -179,10 +193,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(selectedPosition?.amount0 || 0)} {token0?.ticker}
+                      {formatTokenAmount(amount0 || 0)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(selectedPosition?.amount1 || 0)} {token1?.ticker}
+                      {formatTokenAmount(amount1 || 0)} {token1?.ticker}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -193,15 +207,11 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Updated Balance
                     </Text>
                     <Text size='M'>
-                      {amount0
-                        ? formatTokenAmount((selectedPosition?.amount0 || 0) + amount0)
-                        : formatTokenAmount(selectedPosition?.amount0 || 0)}{' '}
+                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount0 ?? 0))}{' '}
                       {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {amount1
-                        ? formatTokenAmount((selectedPosition?.amount1 || 0) + amount1)
-                        : formatTokenAmount(selectedPosition?.amount1 || 0)}{' '}
+                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount1 ?? 0))}{' '}
                       {token1?.ticker}
                     </Text>
                   </div>
