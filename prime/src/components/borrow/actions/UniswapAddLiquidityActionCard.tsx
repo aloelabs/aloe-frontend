@@ -4,8 +4,9 @@ import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { useProvider } from 'wagmi';
 
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
+import { getAddLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {

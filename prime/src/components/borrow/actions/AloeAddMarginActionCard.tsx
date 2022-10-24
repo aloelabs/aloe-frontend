@@ -2,15 +2,15 @@ import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
+import { getTransferInActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
   parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
 import { TokenData } from '../../../data/TokenData';
 import { getBalanceFor } from '../../../data/UserBalances';
 import TokenAmountInput from '../../common/TokenAmountInput';

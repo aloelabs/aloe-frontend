@@ -1,4 +1,4 @@
-import { TokenType } from './Actions';
+import { TokenType } from './actions/Actions';
 
 export interface UserBalances {
   amount0Asset: number;

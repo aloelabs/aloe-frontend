@@ -2,7 +2,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
-import { TokenData } from '../data/TokenData';
+import { TokenData } from '../TokenData';
 
 export function getTransferInActionArgs(token: TokenData, amount: number): string {
   const address = token.address;

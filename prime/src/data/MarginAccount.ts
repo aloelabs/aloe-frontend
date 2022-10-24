@@ -7,7 +7,7 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
-import { UniswapPosition } from './Actions';
+import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { BIGQ96 } from './constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';

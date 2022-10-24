@@ -8,8 +8,9 @@ import styled from 'styled-components';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';
-import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
+import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
 import { BaseActionCard } from '../BaseActionCard';
