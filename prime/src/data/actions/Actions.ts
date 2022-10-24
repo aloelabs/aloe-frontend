@@ -13,16 +13,14 @@ import UniswapAddLiquidityActionCard from '../../components/borrow/actions/Unisw
 import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapClaimFeesActionCard';
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import { deepCopyMap } from '../../util/Maps';
-import { uniswapPositionKey } from '../../util/Uniswap';
+import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../util/Uniswap';
 import { Assets, isSolvent, Liabilities, MarginAccount } from '../MarginAccount';
 import { UserBalances } from '../UserBalances';
 import { ActionID } from './ActionID';
 
 export type UniswapPosition = {
-  amount0?: number;
-  amount1?: number;
-  lower: number | null;
-  upper: number | null;
+  lower: number;
+  upper: number;
   liquidity: JSBI;
 };
 
@@ -302,8 +300,19 @@ export function calculateHypotheticalStates(
     assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;
     assetsTemp.token0Plus += actionResult.aloeResult?.token0PlusDelta ?? 0;
     assetsTemp.token1Plus += actionResult.aloeResult?.token1PlusDelta ?? 0;
-    assetsTemp.uni0 += actionResult.uniswapResult?.uniswapPosition.amount0 ?? 0;
-    assetsTemp.uni1 += actionResult.uniswapResult?.uniswapPosition.amount1 ?? 0;
+
+    if (actionResult.uniswapResult?.uniswapPosition) {
+      const [amount0, amount1] = getAmountsForLiquidity(
+        actionResult.uniswapResult?.uniswapPosition.liquidity,
+        actionResult.uniswapResult?.uniswapPosition.lower,
+        actionResult.uniswapResult?.uniswapPosition.upper,
+        sqrtRatioToTick(marginAccount.sqrtPriceX96),
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
+      );
+      assetsTemp.uni0 += amount0;
+      assetsTemp.uni1 += amount1;
+    }
 
     // update liabilities
     liabilitiesTemp.amount0 += actionResult.aloeResult?.token0DebtDelta ?? 0;
