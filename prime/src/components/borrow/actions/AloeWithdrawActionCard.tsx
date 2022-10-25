@@ -9,7 +9,6 @@ import {
   ActionCardProps,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
-  parseSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
 import { TokenData } from '../../../data/TokenData';
@@ -19,6 +18,7 @@ import { BaseActionCard } from '../BaseActionCard';
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
+  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -42,9 +42,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
-  const selectedToken = parseSelectedToken(selectedTokenOption.value);
+  const selectedToken = (fields?.at(0) ?? TokenType.ASSET0) as TokenType;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const tokenMap = new Map<TokenType, TokenData>();
   tokenMap.set(TokenType.ASSET0, token0);
@@ -58,7 +57,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       actionId: ActionID.TRANSFER_OUT,
       actionArgs:
         selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [value],
+      textFields: [selectedToken, value],
       aloeResult: {
         token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
         token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
@@ -74,7 +73,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
     });
   };
 
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
+  const tokenAmount = previousActionCardState?.textFields?.at(1) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
@@ -94,8 +93,9 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.TRANSFER_OUT,
-                aloeResult: { selectedToken: parseSelectedToken(option.value) },
+                aloeResult: null,
                 uniswapResult: null,
+                textFields: [option.value as TokenType, tokenAmount],
                 operator(_) {
                   return null;
                 },
