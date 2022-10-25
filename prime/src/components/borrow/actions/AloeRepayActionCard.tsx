@@ -4,6 +4,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 
 import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { repayOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
   ActionProviders,
@@ -56,6 +57,10 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
+      operator(operand) {
+        if (!operand || selectedToken == null) return null;
+        return repayOperator(operand, selectedToken, Math.max(amount0, amount1));
+      },
     });
   };
 
@@ -78,12 +83,15 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.REPAY,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
+                operator(operand) {
+                  return null;
+                },
               });
             }
           }}

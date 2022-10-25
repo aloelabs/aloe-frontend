@@ -5,11 +5,13 @@ import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/c
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+import { Address } from 'wagmi';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';
 import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
@@ -136,6 +138,19 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
         removeLiquidityPercentage: parsedPercentage,
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
+      },
+      operator(operand) {
+        if (!operand || lower == null || upper == null) return null;
+        return removeLiquidityOperator(
+          operand,
+          marginAccount.address as Address,
+          liquidityToRemove,
+          lower,
+          upper,
+          sqrtRatioToTick(marginAccount.sqrtPriceX96),
+          token0.decimals,
+          token1.decimals
+        );
       },
     });
   }

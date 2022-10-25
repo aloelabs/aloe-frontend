@@ -4,6 +4,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 
 import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { borrowOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
   ActionProviders,
@@ -56,6 +57,10 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
+      operator(operand) {
+        if (!operand || selectedToken == null) return null;
+        return borrowOperator(operand, selectedToken, Math.max(amount0, amount1));
+      },
     });
   };
 
@@ -75,12 +80,15 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.BORROW,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
+                operator(operand) {
+                  return null;
+                },
               });
             }
           }}
