@@ -4,6 +4,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 
 import { getMintActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { mintOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
   ActionProviders,
@@ -55,6 +56,10 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
+      operator(operand) {
+        if (!operand || selectedToken == null) return null;
+        return mintOperator(operand, selectedToken, parsedValue);
+      },
     });
   };
 
@@ -76,12 +81,15 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.MINT,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
+                operator(operand) {
+                  return null;
+                },
               });
             }
           }}

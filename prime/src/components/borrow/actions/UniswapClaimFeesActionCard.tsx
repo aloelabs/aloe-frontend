@@ -2,11 +2,14 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+import { Address } from 'wagmi';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
+import { sqrtRatioToTick } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -29,7 +32,8 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { token0, token1 } = marginAccount;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
@@ -71,6 +75,19 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
         removeLiquidityPercentage: 0,
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
+      },
+      operator(operand) {
+        if (!operand || lower == null || upper == null) return null;
+        return removeLiquidityOperator(
+          operand,
+          marginAccount.address as Address,
+          updatedLiquidity,
+          lower,
+          upper,
+          sqrtRatioToTick(marginAccount.sqrtPriceX96),
+          token0.decimals,
+          token1.decimals
+        );
       },
     });
   }

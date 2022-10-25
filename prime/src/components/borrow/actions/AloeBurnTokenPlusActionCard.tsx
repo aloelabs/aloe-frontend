@@ -4,6 +4,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 
 import { getBurnActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { burnOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
   ActionProviders,
@@ -56,6 +57,10 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
+      operator(operand) {
+        if (!operand || selectedToken == null) return null;
+        return burnOperator(operand, selectedToken, parsedValue);
+      },
     });
   };
 
@@ -77,12 +82,15 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.BURN,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
+                operator(operand) {
+                  return null;
+                },
               });
             }
           }}

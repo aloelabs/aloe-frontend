@@ -51,10 +51,19 @@ export type UniswapResult = {
   isAmount0LastUpdated?: boolean;
 };
 
+export interface ActionCardOperand {
+  readonly assets: Assets;
+  readonly liabilities: Liabilities;
+  readonly uniswapPositions: readonly UniswapPosition[];
+  readonly availableBalances: UserBalances;
+  readonly requiredAllowances: UserBalances;
+}
+
 export type ActionCardState = {
   actionId: ActionID;
   actionArgs?: string;
   textFields?: string[];
+  operator: (operand: ActionCardOperand | null) => ActionCardOperand | null;
   aloeResult: AloeResult | null;
   uniswapResult: UniswapResult | null;
 };
@@ -188,24 +197,36 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['100'],
         aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: MINT_TOKEN_PLUS.id,
         textFields: ['100'],
         aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: BORROW.id,
         textFields: ['0.044'],
         aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: WITHDRAW.id,
         textFields: ['0.044'],
         aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
     ],
   },
@@ -222,6 +243,9 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: BORROW.id,
@@ -232,6 +256,9 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: BORROW.id,
@@ -242,11 +269,17 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET1,
         },
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
       {
         actionId: ADD_LIQUIDITY.id,
         aloeResult: null,
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
     ],
   },
