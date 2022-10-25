@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { useProvider } from 'wagmi';
+import { Address, useProvider } from 'wagmi';
 
 import { getAddLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { addLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
@@ -256,6 +257,19 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         },
         isAmount0LastUpdated: localIsAmount0UserDefined,
         isToken0Selected: isToken0Selected,
+      },
+      operator(operand) {
+        if (!operand || lowerTick == null || upperTick == null || currentTick == null) return null;
+        return addLiquidityOperator(
+          operand,
+          marginAccount.address as Address,
+          liquidity,
+          lowerTick,
+          upperTick,
+          currentTick,
+          token0.decimals,
+          token1.decimals
+        );
       },
     });
   }
