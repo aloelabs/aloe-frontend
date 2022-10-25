@@ -288,7 +288,7 @@ export function calculateAmount1FromAmount0(
   token0Decimals: number,
   token1Decimals: number
 ): {
-  amount1: string;
+  amount: string;
   liquidity: JSBI;
 } {
   // If lowerTick > upperTick, flip them so that the var names match reality
@@ -309,7 +309,7 @@ export function calculateAmount1FromAmount0(
     //current price < lower price
     //everything to the right of currentTick is token0. thus there's no token1 (amount1 = 0)
     return {
-      amount1: '0',
+      amount: '0',
       liquidity,
     };
   } else if (currentTick < upperTick) {
@@ -322,7 +322,7 @@ export function calculateAmount1FromAmount0(
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return {
-    amount1: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
+    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
     liquidity,
   };
 }
@@ -335,7 +335,7 @@ export function calculateAmount0FromAmount1(
   token0Decimals: number,
   token1Decimals: number
 ): {
-  amount0: string;
+  amount: string;
   liquidity: JSBI;
 } {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
@@ -363,12 +363,12 @@ export function calculateAmount0FromAmount1(
     //current price >= upper price
     //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
     return {
-      amount0: '0',
+      amount: '0',
       liquidity,
     };
   }
   return {
-    amount0: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
+    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
     liquidity,
   };
 }
@@ -387,7 +387,7 @@ export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
   return numericFeeTier as FeeAmount;
 }
 
-export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string | null {
+export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string {
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
   // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
