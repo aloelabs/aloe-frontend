@@ -4,6 +4,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 
 import { getTransferInActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
+import { transferInOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
   ActionProviders,
@@ -67,6 +68,10 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
         selectedToken: selectedToken,
       },
       uniswapResult: null,
+      operator(operand) {
+        if (!operand || selectedToken == null) return null;
+        return transferInOperator(operand, selectedToken, parsedValue);
+      },
     });
   };
 
@@ -95,12 +100,15 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.TRANSFER_IN,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
+                operator(operand) {
+                  return null;
+                },
               });
             }
           }}

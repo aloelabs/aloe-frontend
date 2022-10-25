@@ -379,6 +379,9 @@ export default function BorrowActionsPage() {
         actionId: action.id,
         aloeResult: null,
         uniswapResult: null,
+        operator(operand) {
+          return null;
+        },
       },
     ]);
     setActiveActions([...activeActions, action]);
@@ -399,6 +402,9 @@ export default function BorrowActionsPage() {
           actionId: x.id,
           aloeResult: null,
           uniswapResult: null,
+          operator(operand) {
+            return null;
+          },
         };
       });
     updateActionResults([...actionResults, ...newActionResults]);
