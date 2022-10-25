@@ -9,7 +9,7 @@ import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
-import { sqrtRatioToTick } from '../../../util/Uniswap';
+import { sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -34,6 +34,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
   const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
+  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
@@ -44,10 +45,11 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
   });
 
   let selectedOption: DropdownOption | undefined = undefined;
-  const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-  if (uniswapPosition) {
+
+  const previousPositionKey = fields?.at(0) ?? '';
+  if (previousPositionKey) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
-      return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
+      return previousPositionKey === uniswapPositionKey(marginAccount.address, lp.lower, lp.upper);
     });
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption = dropdownOptions[selectedIndex];
@@ -76,6 +78,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       },
+      textFields: [lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : ''],
       operator(operand) {
         if (!operand || lower == null || upper == null) return null;
         return removeLiquidityOperator(

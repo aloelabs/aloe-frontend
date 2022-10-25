@@ -194,8 +194,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
-        textFields: ['100'],
-        aloeResult: { selectedToken: TokenType.ASSET0 },
+        textFields: [TokenType.ASSET0, '100'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -203,8 +203,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
       {
         actionId: MINT_TOKEN_PLUS.id,
-        textFields: ['100'],
-        aloeResult: { selectedToken: TokenType.ASSET0 },
+        textFields: [TokenType.ASSET0, '100'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -212,8 +212,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
       {
         actionId: BORROW.id,
-        textFields: ['0.044'],
-        aloeResult: { selectedToken: TokenType.ASSET1 },
+        textFields: [TokenType.ASSET1, '0.044'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -221,8 +221,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
       {
         actionId: WITHDRAW.id,
-        textFields: ['0.044'],
-        aloeResult: { selectedToken: TokenType.ASSET1 },
+        textFields: [TokenType.ASSET1, '0.044'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -237,11 +237,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
     defaultActionStates: [
       {
         actionId: ADD_MARGIN.id,
-        textFields: ['10'],
-        aloeResult: {
-          token0RawDelta: 10,
-          selectedToken: TokenType.ASSET0,
-        },
+        textFields: [TokenType.ASSET0, '10'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -249,12 +246,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
       {
         actionId: BORROW.id,
-        textFields: ['90'],
-        aloeResult: {
-          token0RawDelta: 90,
-          token0DebtDelta: 90,
-          selectedToken: TokenType.ASSET0,
-        },
+        textFields: [TokenType.ASSET0, '90'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;
@@ -262,12 +255,8 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
       },
       {
         actionId: BORROW.id,
-        textFields: ['0.0625'],
-        aloeResult: {
-          token1RawDelta: 0.0625,
-          token1DebtDelta: 0.0625,
-          selectedToken: TokenType.ASSET1,
-        },
+        textFields: [TokenType.ASSET1, '0.0625'],
+        aloeResult: null,
         uniswapResult: null,
         operator(operand) {
           return null;

@@ -18,6 +18,7 @@ import { BaseActionCard } from '../BaseActionCard';
 export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
   const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
+  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -31,10 +32,8 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
-  const selectedToken = parseSelectedToken(selectedTokenOption.value);
+  const selectedToken = (fields?.at(0) ?? TokenType.KITTY0) as TokenType;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
@@ -48,7 +47,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
               selectedToken === TokenType.KITTY0 ? kitty0 : kitty1,
               parsedValue
             ),
-      textFields: [value],
+      textFields: [selectedToken, value],
       aloeResult: {
         token0RawDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
         token1RawDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
@@ -66,7 +65,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
 
   const max = marginAccount.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'];
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
+  const tokenAmount = previousActionCardState?.textFields?.at(1) ?? '';
   useEffect(() => {
     if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
   });
@@ -86,8 +85,9 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
             if (option.value !== selectedTokenOption.value) {
               onChange({
                 actionId: ActionID.BURN,
-                aloeResult: { selectedToken: parseSelectedToken(option.value) },
+                aloeResult: null,
                 uniswapResult: null,
+                textFields: [option.value as TokenType, tokenAmount],
                 operator(operand) {
                   return null;
                 },
