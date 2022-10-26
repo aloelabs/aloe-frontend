@@ -273,7 +273,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     prices = [
       tickToPrice(previousLower!, token0.decimals, token1.decimals, isToken0Selected),
       tickToPrice(previousUpper!, token0.decimals, token1.decimals, isToken0Selected),
-      tickToPrice(currentTick, token0.decimals, token1.decimals, isToken0Selected),
     ].sort();
   }
 
@@ -287,7 +286,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           ? ''
           : tickToPrice(previousLower, token0.decimals, token1.decimals, isToken0Selected).toString(10)
       }
-      label='Min Price'
+      label={isToken0Selected ? 'Min Price' : 'Max Price'}
       token0={token0}
       token1={token1}
       isToken0Selected={isToken0Selected}
@@ -334,7 +333,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           ? ''
           : tickToPrice(previousUpper, token0.decimals, token1.decimals, isToken0Selected).toString(10)
       }
-      label='Max Price'
+      label={isToken0Selected ? 'Max Price' : 'Min Price'}
       token0={token0}
       token1={token1}
       isToken0Selected={isToken0Selected}
@@ -396,7 +395,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       {chartData.length === 0 || !ticksAreDefined ? (
         <LiquidityChartPlaceholder />
       ) : (
-        <LiquidityChart data={chartData} rangeStart={prices![0]} rangeEnd={prices![2]} currentPrice={prices![1]} />
+        <LiquidityChart
+          data={chartData}
+          rangeStart={prices![0]}
+          rangeEnd={prices![1]}
+          currentPrice={tickToPrice(currentTick, token0.decimals, token1.decimals, isToken0Selected)}
+        />
       )}
       <div className='flex flex-row gap-2 mb-4'>
         {isToken0Selected ? lowerSteppedInput : upperSteppedInput}
