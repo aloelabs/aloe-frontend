@@ -277,6 +277,17 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
         }}
       />
+      <BorrowSelectActionModal
+        isOpen={showAddActionModal}
+        setIsOpen={setShowAddActionModal}
+        handleAddAction={(action: Action) => {
+          setActiveActions([...activeActions, action]);
+        }}
+        handleAddActions={(actions, templatedInputFields) => {
+          setActiveActions([...activeActions, ...actions]);
+          if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
+        }}
+      />
     </Wrapper>
   );
 }
