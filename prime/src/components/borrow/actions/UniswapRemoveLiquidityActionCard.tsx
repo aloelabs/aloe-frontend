@@ -30,7 +30,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 

@@ -129,6 +129,7 @@ export function removeLiquidityOperator(
 ): AccountState | null {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
+  const claimedFeeUniswapKeys = operand.claimedFeeUniswapKeys.concat();
 
   const [amount0, amount1] = getAmountsForLiquidity(
     liquidity,
@@ -159,6 +160,8 @@ export function removeLiquidityOperator(
   }
   oldPosition.liquidity = JSBI.subtract(oldPosition.liquidity, liquidity);
   uniswapPositions[idx] = oldPosition;
+  claimedFeeUniswapKeys.push(key);
 
-  return { ...operand, assets, uniswapPositions };
+  // eslint-disable-next-line object-curly-newline
+  return { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys };
 }
