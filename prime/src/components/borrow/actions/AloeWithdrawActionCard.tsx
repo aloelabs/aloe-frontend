@@ -9,7 +9,6 @@ import {
   ActionCardProps,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
-  parseSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
 import { TokenData } from '../../../data/TokenData';
@@ -17,9 +16,8 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, userInputFields, isCausingError, isOutputStale, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
-  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -43,7 +41,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const selectedToken = (fields?.at(0) ?? TokenType.ASSET0) as TokenType;
+  const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const tokenMap = new Map<TokenType, TokenData>();
@@ -54,30 +52,26 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.TRANSFER_OUT,
-      actionArgs:
-        selectedToken && value !== '' ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [selectedToken, value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.KITTY0 ? -parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.KITTY1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
+    onChange(
+      {
+        actionId: ActionID.TRANSFER_OUT,
+        actionArgs:
+          selectedToken && value !== ''
+            ? getTransferOutActionArgs(tokenMap.get(selectedToken)!, parsedValue)
+            : undefined,
+        operator(operand) {
+          if (selectedToken == null) return null;
+          return transferOutOperator(operand, selectedToken, parsedValue);
+        },
       },
-      uniswapResult: null,
-      operator(operand) {
-        if (!operand || selectedToken == null) return null;
-        return transferOutOperator(operand, selectedToken, parsedValue);
-      },
-    });
+      [selectedToken, value]
+    );
   };
 
-  const tokenAmount = previousActionCardState?.textFields?.at(1) ?? '';
+  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
-  });
+    if (isOutputStale) callbackWithFullResult(tokenAmount);
+  }, [isOutputStale]);
 
   return (
     <BaseActionCard
@@ -92,15 +86,15 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.TRANSFER_OUT,
-                aloeResult: null,
-                uniswapResult: null,
-                textFields: [option.value as TokenType, tokenAmount],
-                operator(operand) {
-                  return null;
+              onChange(
+                {
+                  actionId: ActionID.TRANSFER_OUT,
+                  operator(operand) {
+                    return null;
+                  },
                 },
-              });
+                [option.value as TokenType, tokenAmount]
+              );
             }
           }}
         />

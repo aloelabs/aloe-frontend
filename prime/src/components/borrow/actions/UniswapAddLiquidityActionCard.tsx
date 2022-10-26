@@ -53,7 +53,7 @@ function fromFields(fields: string[] | undefined): PreviousState {
 }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
 
   // MARK: state for user inputs
@@ -76,7 +76,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     amount1Str: previousAmount1Str,
     lowerStr: previousLowerStr,
     upperStr: previousUpperStr,
-  } = fromFields(previousActionCardState?.textFields);
+  } = fromFields(userInputFields);
   // --> if uniswapPoolBasics exists, do some extra math upfront (helps us later)
   const tickInfo =
     (uniswapPoolBasics && calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected)) ?? null;
@@ -100,6 +100,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     isInput0Disabled = shouldAmount0InputBeDisabled(previousLower, previousUpper, currentTick);
     isInput1Disabled = shouldAmount1InputBeDisabled(previousLower, previousUpper, currentTick);
   }
+
+  // TODO is this necessary IN ADDITION to the localTokenAmounts update hook?
+  // if (isOutputStale) callbackWithFullResults()
 
   // If localTokenAmounts aren't up-to-date, overwrite with previousAmountsStr
   useEffect(() => {
@@ -238,51 +241,33 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     upperTick: number | null,
     liquidity = JSBI.BigInt('0')
   ) {
-    onChange({
-      actionId: ActionID.ADD_LIQUIDITY,
-      actionArgs:
-        lowerTick !== null && upperTick !== null
-          ? getAddLiquidityActionArgs(lowerTick, upperTick, liquidity)
-          : undefined,
-      textFields: [
-        amount0Str,
-        amount1Str,
-        lowerTick?.toFixed(0) ?? '',
-        upperTick?.toFixed(0) ?? '',
-        String(isToken0Selected),
-      ],
-      aloeResult: {
-        token0RawDelta: -parseFloat(amount0Str) || undefined,
-        token1RawDelta: -parseFloat(amount1Str) || undefined,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: liquidity,
-          lower: lowerTick ?? 0,
-          upper: upperTick ?? 0,
+    onChange(
+      {
+        actionId: ActionID.ADD_LIQUIDITY,
+        actionArgs:
+          lowerTick !== null && upperTick !== null
+            ? getAddLiquidityActionArgs(lowerTick, upperTick, liquidity)
+            : undefined,
+        operator(operand) {
+          if (lowerTick == null || upperTick == null || currentTick == null) return null;
+          return addLiquidityOperator(
+            operand,
+            marginAccount.address as Address,
+            liquidity,
+            lowerTick,
+            upperTick,
+            currentTick,
+            token0.decimals,
+            token1.decimals
+          );
         },
-        isAmount0LastUpdated: localIsAmount0UserDefined,
-        isToken0Selected: isToken0Selected,
       },
-      operator(operand) {
-        if (!operand || lowerTick == null || upperTick == null || currentTick == null) return null;
-        return addLiquidityOperator(
-          operand,
-          marginAccount.address as Address,
-          liquidity,
-          lowerTick,
-          upperTick,
-          currentTick,
-          token0.decimals,
-          token1.decimals
-        );
-      },
-    });
+      [amount0Str, amount1Str, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', String(isToken0Selected)]
+    );
   }
 
-  const max0 = marginAccount.assets.token0Raw;
-  const max1 = marginAccount.assets.token1Raw;
+  const max0 = accountState.assets.token0Raw;
+  const max1 = accountState.assets.token1Raw;
   const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
   const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
 

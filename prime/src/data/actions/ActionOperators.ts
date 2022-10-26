@@ -2,9 +2,9 @@ import JSBI from 'jsbi';
 import { Address } from 'wagmi';
 
 import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
-import { ActionCardOperand, TokenType } from './Actions';
+import { AccountState, TokenType } from './Actions';
 
-export function transferInOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function transferInOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   const assets = { ...operand.assets };
   const availableBalances = { ...operand.availableBalances };
   const requiredAllowances = { ...operand.requiredAllowances };
@@ -35,11 +35,11 @@ export function transferInOperator(operand: ActionCardOperand, token: TokenType,
   return { ...operand, assets, availableBalances };
 }
 
-export function transferOutOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function transferOutOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   return transferInOperator(operand, token, -amount);
 }
 
-export function mintOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function mintOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   const assets = { ...operand.assets };
 
   if (token === TokenType.ASSET0) {
@@ -53,11 +53,11 @@ export function mintOperator(operand: ActionCardOperand, token: TokenType, amoun
   return { ...operand, assets };
 }
 
-export function burnOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function burnOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   return mintOperator(operand, token, -amount);
 }
 
-export function borrowOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function borrowOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   const assets = { ...operand.assets };
   const liabilities = { ...operand.liabilities };
 
@@ -72,12 +72,12 @@ export function borrowOperator(operand: ActionCardOperand, token: TokenType, amo
   return { ...operand, assets, liabilities };
 }
 
-export function repayOperator(operand: ActionCardOperand, token: TokenType, amount: number): ActionCardOperand {
+export function repayOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   return borrowOperator(operand, token, -amount);
 }
 
 export function addLiquidityOperator(
-  operand: ActionCardOperand,
+  operand: AccountState,
   owner: Address,
   liquidity: JSBI,
   lowerTick: number,
@@ -85,7 +85,7 @@ export function addLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): ActionCardOperand {
+): AccountState {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
 
@@ -118,7 +118,7 @@ export function addLiquidityOperator(
 }
 
 export function removeLiquidityOperator(
-  operand: ActionCardOperand,
+  operand: AccountState,
   owner: Address,
   liquidity: JSBI,
   lowerTick: number,
@@ -126,7 +126,7 @@ export function removeLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): ActionCardOperand | null {
+): AccountState | null {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
 

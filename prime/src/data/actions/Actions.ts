@@ -12,11 +12,10 @@ import { AloeWithdrawActionCard } from '../../components/borrow/actions/AloeWith
 import UniswapAddLiquidityActionCard from '../../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapClaimFeesActionCard';
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
-import { deepCopyMap } from '../../util/Maps';
-import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../util/Uniswap';
-import { Assets, isSolvent, Liabilities, MarginAccount } from '../MarginAccount';
+import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
 import { UserBalances } from '../UserBalances';
 import { ActionID } from './ActionID';
+import { runWithChecks } from './Utils';
 
 export type UniswapPosition = {
   lower: number;
@@ -33,25 +32,7 @@ export enum TokenType {
   KITTY1 = 'KITTY1',
 }
 
-export type AloeResult = {
-  token0RawDelta?: number;
-  token1RawDelta?: number;
-  token0DebtDelta?: number;
-  token1DebtDelta?: number;
-  token0PlusDelta?: number;
-  token1PlusDelta?: number;
-  selectedToken: TokenType | null;
-};
-
-export type UniswapResult = {
-  uniswapPosition: UniswapPosition;
-  slippageTolerance?: number;
-  removeLiquidityPercentage?: number;
-  isToken0Selected?: boolean;
-  isAmount0LastUpdated?: boolean;
-};
-
-export interface ActionCardOperand {
+export interface AccountState {
   readonly assets: Assets;
   readonly liabilities: Liabilities;
   readonly uniswapPositions: readonly UniswapPosition[];
@@ -59,28 +40,32 @@ export interface ActionCardOperand {
   readonly requiredAllowances: UserBalances;
 }
 
-export type ActionCardState = {
+type Operator = (state: AccountState) => AccountState | null;
+
+export type ActionCardOutput = {
   actionId: ActionID;
   actionArgs?: string;
-  textFields?: string[];
-  operator: (operand: ActionCardOperand | null) => ActionCardOperand | null;
-  aloeResult: AloeResult | null;
-  uniswapResult: UniswapResult | null;
-};
-
-export type CumulativeActionCardResult = {
-  aloeResult: AloeResult | null;
-  uniswapPositions: UniswapPosition[];
+  operator: Operator;
 };
 
 export type ActionCardProps = {
-  marginAccount: MarginAccount;
-  availableBalances: UserBalances;
-  uniswapPositions: UniswapPosition[];
-  previousActionCardState: ActionCardState | null;
+  /** holds values that don't change across actions, like account address and token data */
+  marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>;
+  /** holds values that do change across actions, like assets and liabilities */
+  accountState: AccountState;
+  /**
+   * fields that are used to (a) create ActionCards from templates and (b) restore
+   * ActionCards when another is deleted (indices change and React loses track of state)
+   */
+  userInputFields?: string[];
+  /** whether the action is causing an error and should be given a red border */
   isCausingError: boolean;
+  /** should be set to true if ActionCard is being created from a template */
+  isOutputStale: boolean;
+  /** called whenever the ActionCard's output changes */
+  onChange: (output: ActionCardOutput, userInputFields: string[]) => void;
+  /** removes the ActionCard */
   onRemove: () => void;
-  onChange: (result: ActionCardState) => void;
 };
 
 export type Action = {
@@ -102,7 +87,7 @@ export type ActionTemplate = {
   name: string;
   description: string;
   actions: Array<Action>;
-  defaultActionStates?: Array<ActionCardState>;
+  userInputFields?: (string[] | undefined)[];
 };
 
 export const MINT_TOKEN_PLUS: Action = {
@@ -191,86 +176,18 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
     name: 'Classic Borrow',
     description: 'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
     actions: [ADD_MARGIN, MINT_TOKEN_PLUS, BORROW, WITHDRAW],
-    defaultActionStates: [
-      {
-        actionId: ADD_MARGIN.id,
-        textFields: [TokenType.ASSET0, '100'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: MINT_TOKEN_PLUS.id,
-        textFields: [TokenType.ASSET0, '100'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: BORROW.id,
-        textFields: [TokenType.ASSET1, '0.044'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: WITHDRAW.id,
-        textFields: [TokenType.ASSET1, '0.044'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
+    userInputFields: [
+      [TokenType.ASSET0, '100'],
+      [TokenType.ASSET0, '100'],
+      [TokenType.ASSET1, '0.044'],
+      [TokenType.ASSET1, '0.044'],
     ],
   },
   MARKET_MAKING: {
     name: 'Market-Making',
     description: 'Create an in-range Uniswap Position at 20x leverage.',
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
-    defaultActionStates: [
-      {
-        actionId: ADD_MARGIN.id,
-        textFields: [TokenType.ASSET0, '10'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: BORROW.id,
-        textFields: [TokenType.ASSET0, '90'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: BORROW.id,
-        textFields: [TokenType.ASSET1, '0.0625'],
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-      {
-        actionId: ADD_LIQUIDITY.id,
-        aloeResult: null,
-        uniswapResult: null,
-        operator(operand) {
-          return null;
-        },
-      },
-    ],
+    userInputFields: [[TokenType.ASSET0, '10'], [TokenType.ASSET0, '90'], [TokenType.ASSET1, '0.0625'], undefined],
   },
 };
 
@@ -284,138 +201,19 @@ export function getDropdownOptionFromSelectedToken(
   return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
 }
 
-export function parseSelectedToken(value: string | undefined): TokenType | null {
-  if (!value) return null;
-  return value as TokenType;
-}
-
 export function calculateHypotheticalStates(
-  marginAccount: MarginAccount,
-  uniswapPositions: Map<string, UniswapPosition>,
-  actionResults: ActionCardState[]
-): {
-  assets: Assets;
-  liabilities: Liabilities;
-  positions: Map<string, UniswapPosition>;
-}[] {
-  const hypotheticalStates: {
-    assets: Assets;
-    liabilities: Liabilities;
-    positions: Map<string, UniswapPosition>;
-  }[] = [
-    {
-      assets: marginAccount.assets,
-      liabilities: marginAccount.liabilities,
-      positions: deepCopyMap(uniswapPositions),
-    },
-  ];
+  marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>,
+  initialState: AccountState,
+  operators: Operator[]
+): AccountState[] {
+  const states: AccountState[] = [initialState];
 
-  for (let i = 0; i < actionResults.length; i += 1) {
-    const actionResult = actionResults[i];
+  for (let i = 0; i < operators.length; i += 1) {
+    const state = runWithChecks(operators[i], states[i], marginAccount);
+    if (state == null) break;
 
-    const assetsTemp = { ...hypotheticalStates[i].assets };
-    const liabilitiesTemp = { ...hypotheticalStates[i].liabilities };
-    const positionsTemp = deepCopyMap(hypotheticalStates[i].positions);
-
-    // update assets
-    assetsTemp.token0Raw += actionResult.aloeResult?.token0RawDelta ?? 0;
-    assetsTemp.token1Raw += actionResult.aloeResult?.token1RawDelta ?? 0;
-    assetsTemp.token0Plus += actionResult.aloeResult?.token0PlusDelta ?? 0;
-    assetsTemp.token1Plus += actionResult.aloeResult?.token1PlusDelta ?? 0;
-
-    if (actionResult.uniswapResult?.uniswapPosition) {
-      const [amount0, amount1] = getAmountsForLiquidity(
-        actionResult.uniswapResult?.uniswapPosition.liquidity,
-        actionResult.uniswapResult?.uniswapPosition.lower,
-        actionResult.uniswapResult?.uniswapPosition.upper,
-        sqrtRatioToTick(marginAccount.sqrtPriceX96),
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
-      );
-      assetsTemp.uni0 += amount0;
-      assetsTemp.uni1 += amount1;
-    }
-
-    // update liabilities
-    liabilitiesTemp.amount0 += actionResult.aloeResult?.token0DebtDelta ?? 0;
-    liabilitiesTemp.amount1 += actionResult.aloeResult?.token1DebtDelta ?? 0;
-
-    // update positions
-    if (actionResult.actionId === ActionID.ADD_LIQUIDITY) {
-      const position = actionResult.uniswapResult?.uniswapPosition;
-      if (position && position.lower && position.upper) {
-        const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
-
-        if (positionsTemp.has(key)) {
-          const posOldCopy = { ...positionsTemp.get(key)! };
-          posOldCopy.liquidity = JSBI.add(posOldCopy.liquidity, position.liquidity);
-          positionsTemp.set(key, posOldCopy);
-        } else {
-          positionsTemp.set(key, { ...position });
-        }
-      }
-    } else if (actionResult.actionId === ActionID.REMOVE_LIQUIDITY) {
-      const position = actionResult.uniswapResult?.uniswapPosition;
-      if (position && position.lower && position.upper) {
-        const key = uniswapPositionKey(marginAccount.address, position.lower, position.upper);
-
-        if (positionsTemp.has(key)) {
-          const posOldCopy = { ...positionsTemp.get(key)! };
-
-          if (JSBI.lessThan(posOldCopy.liquidity, position.liquidity)) {
-            console.error('Attempted to remove more than 100% of liquidity from a position');
-            break;
-          }
-
-          posOldCopy.liquidity = JSBI.subtract(posOldCopy.liquidity, position.liquidity);
-          positionsTemp.set(key, posOldCopy);
-        } else {
-          console.error("Attempted to remove liquidity from a position that doens't exist");
-          break;
-        }
-      }
-    }
-
-    // if any assets or liabilities are < 0, we have an issue!
-    if (Object.values(assetsTemp).find((x) => x < 0) || Object.values(liabilitiesTemp).find((x) => x < 0)) {
-      console.log('Margin Account balance dropped below 0!');
-      console.log(hypotheticalStates[i]);
-      console.log(actionResult);
-      break;
-    }
-
-    // if the action would cause insolvency, we have an issue!
-    // note: Technically (in the contracts) solvency is only checked at the end of a series of actions,
-    //       not after each individual one. We tried following that pattern here, but it made the UX
-    //       confusing in some cases. For example, with one set of inputs, an entire set of actions would
-    //       be highlighted red to show a solvency error. But upon entering a massive value for one of those
-    //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
-    //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
-    // TLDR: It's simpler to check solvency inside this for loop
-    const includeKittyReceipts = assetsTemp.token0Plus > 0 || assetsTemp.token1Plus > 0;
-    const solvency = isSolvent(
-      {
-        ...marginAccount,
-        assets: assetsTemp,
-        liabilities: liabilitiesTemp,
-        includeKittyReceipts,
-      },
-      Array.from(positionsTemp.values()),
-      marginAccount.sqrtPriceX96,
-      0.025
-    );
-    if (!solvency.atA || !solvency.atB) {
-      console.log('Margin Account not solvent!');
-      console.log(solvency);
-      break;
-    }
-
-    // otherwise continue accumulating
-    hypotheticalStates.push({
-      assets: assetsTemp,
-      liabilities: liabilitiesTemp,
-      positions: positionsTemp,
-    });
+    states.push(state);
   }
-  return hypotheticalStates;
+
+  return states;
 }
