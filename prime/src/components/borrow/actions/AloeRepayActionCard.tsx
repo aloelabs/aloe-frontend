@@ -89,7 +89,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
                 actionId: ActionID.REPAY,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
-                operator(operand) {
+                operator(_) {
                   return null;
                 },
               });

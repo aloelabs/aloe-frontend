@@ -96,7 +96,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
                 actionId: ActionID.TRANSFER_OUT,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
-                operator(operand) {
+                operator(_) {
                   return null;
                 },
               });

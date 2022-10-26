@@ -86,7 +86,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
                 actionId: ActionID.BORROW,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
-                operator(operand) {
+                operator(_) {
                   return null;
                 },
               });

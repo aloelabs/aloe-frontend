@@ -197,7 +197,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['100'],
         aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -206,7 +206,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['100'],
         aloeResult: { selectedToken: TokenType.ASSET0 },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -215,7 +215,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['0.044'],
         aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -224,7 +224,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         textFields: ['0.044'],
         aloeResult: { selectedToken: TokenType.ASSET1 },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -243,7 +243,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -256,7 +256,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET0,
         },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -269,7 +269,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
           selectedToken: TokenType.ASSET1,
         },
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -277,7 +277,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
         actionId: ADD_LIQUIDITY.id,
         aloeResult: null,
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
