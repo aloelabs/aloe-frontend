@@ -350,7 +350,10 @@ export default function BorrowActionsPage() {
           <ManageAccountWidget
             marginAccount={marginAccount}
             uniswapPositions={uniswapPositions}
-            setHypotheticalState={setHypotheticalState}
+            setHypotheticalState={(state) => {
+              if (hypotheticalState == null) setIsShowingHypothetical(true);
+              setHypotheticalState(state);
+            }}
           />
         </GridExpandingDiv>
         <div className='w-full flex flex-col justify-between'>
