@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 
 import { Chain, Address } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
@@ -14,14 +14,21 @@ import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_tria
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { ActionID } from '../../data/actions/ActionID';
-import { Action, ActionCardState, TokenType, UniswapPosition } from '../../data/actions/Actions';
+import {
+  AccountState,
+  Action,
+  ActionCardOutput,
+  calculateHypotheticalStates,
+  TokenType,
+  UniswapPosition,
+} from '../../data/actions/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { UINT256_MAX } from '../../data/constants/Values';
-import { Assets, Liabilities, MarginAccount } from '../../data/MarginAccount';
+import { MarginAccount } from '../../data/MarginAccount';
 import { TokenData } from '../../data/TokenData';
 import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
+import BorrowSelectActionModal from './BorrowSelectActionModal';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
@@ -119,64 +126,6 @@ function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
   });
 }
 
-function computeBalancesAvailableForEachAction(
-  balances: UserBalances,
-  actionResults: ActionCardState[]
-): UserBalances[] {
-  balances = { ...balances };
-  const balancesList: UserBalances[] = [{ ...balances }];
-
-  for (const actionResult of actionResults) {
-    switch (actionResult.actionId) {
-      case ActionID.TRANSFER_IN:
-        balances.amount0Asset -= actionResult.aloeResult?.token0RawDelta || 0;
-        balances.amount1Asset -= actionResult.aloeResult?.token1RawDelta || 0;
-        balances.amount0Kitty -= actionResult.aloeResult?.token0PlusDelta || 0;
-        balances.amount1Kitty -= actionResult.aloeResult?.token1PlusDelta || 0;
-        break;
-      case ActionID.TRANSFER_OUT:
-        // values inside actionResult are negative, so we still subtract in this case.
-        // this makes sense, because what happens to userBalances is *opposite* of
-        // what happens to the margin account. so we always want to subtract!
-        balances.amount0Asset -= actionResult.aloeResult?.token0RawDelta || 0;
-        balances.amount1Asset -= actionResult.aloeResult?.token1RawDelta || 0;
-        balances.amount0Kitty -= actionResult.aloeResult?.token0PlusDelta || 0;
-        balances.amount1Kitty -= actionResult.aloeResult?.token1PlusDelta || 0;
-        break;
-      default:
-        break;
-    }
-
-    balancesList.push({ ...balances });
-  }
-  return balancesList;
-}
-
-function determineAmountsBeingTransferredIn(actionResults: ActionCardState[]): number[] {
-  const result = [0, 0, 0, 0];
-  for (const actionResult of actionResults) {
-    if (actionResult.actionId !== ActionID.TRANSFER_IN) continue;
-
-    switch (actionResult.aloeResult?.selectedToken) {
-      case TokenType.ASSET0:
-        result[0] += actionResult.aloeResult.token0RawDelta || 0;
-        break;
-      case TokenType.ASSET1:
-        result[1] += actionResult.aloeResult.token1RawDelta || 0;
-        break;
-      case TokenType.KITTY0:
-        result[2] += actionResult.aloeResult.token0PlusDelta || 0;
-        break;
-      case TokenType.KITTY1:
-        result[3] += actionResult.aloeResult.token1PlusDelta || 0;
-        break;
-      default:
-        break;
-    }
-  }
-  return result;
-}
-
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET0,
   INSUFFICIENT_ASSET1,
@@ -264,42 +213,26 @@ const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
 
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
-  uniswapPositions: UniswapPosition[];
-  hypotheticalStates: {
-    assets: Assets;
-    liabilities: Liabilities;
-    positions: Map<string, UniswapPosition>;
-  }[];
-  activeActions: Array<Action>;
-  actionResults: Array<ActionCardState>;
-  updateActionResults: (actionResults: Array<ActionCardState>) => void;
-  onAddAction: () => void;
-  onRemoveAction: (index: number) => void;
-  problematicActionIdx: number;
-  transactionIsViable: boolean;
-  clearActions: () => void;
+  uniswapPositions: readonly UniswapPosition[];
+  setHypotheticalState: (state: AccountState | null) => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const {
-    marginAccount,
-    hypotheticalStates,
-    uniswapPositions,
-    activeActions,
-    actionResults,
-    updateActionResults,
-    onAddAction,
-    onRemoveAction,
-    problematicActionIdx,
-    transactionIsViable,
-    clearActions,
-  } = props;
+  const { marginAccount, uniswapPositions, setHypotheticalState } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
 
+  // actions
+  const [userInputFields, setUserInputFields] = useState<(string[] | undefined)[]>([]);
+  const [actionOutputs, setActionOutputs] = useState<ActionCardOutput[]>([]);
+  const [activeActions, setActiveActions] = useState<Action[]>([]);
+  const [hypotheticalStates, setHypotheticalStates] = useState<AccountState[]>([]);
+  // modals
+  const [showAddActionModal, setShowAddActionModal] = useState(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  // transaction state
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   const navigate = useNavigate();
@@ -351,10 +284,51 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
     amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
   };
-  const balancesAvailableForEachAction = computeBalancesAvailableForEachAction(userBalances, actionResults);
+
+  const initialState: AccountState = {
+    assets: marginAccount.assets,
+    liabilities: marginAccount.liabilities,
+    uniswapPositions: uniswapPositions,
+    availableBalances: userBalances,
+    requiredAllowances: {
+      amount0Asset: 0,
+      amount1Asset: 0,
+      amount0Kitty: 0,
+      amount1Kitty: 0,
+    },
+  };
+
+  useEffect(() => {
+    console.log('Updating hypothetical states');
+
+    const operators = actionOutputs.map((o) => o.operator);
+    const states = calculateHypotheticalStates(marginAccount, initialState, operators);
+    setHypotheticalStates(states);
+    setHypotheticalState(states.length > 1 ? states[states.length - 1] : null);
+  }, [
+    marginAccount,
+    uniswapPositions,
+    userBalance0Asset,
+    userBalance1Asset,
+    userBalance0Kitty,
+    userBalance1Kitty,
+    actionOutputs,
+  ]);
+
+  const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
+  // check whether actions seem valid on the frontend (estimating whether transaction will succeed/fail)
+  const numValidActions = hypotheticalStates.length - 1;
+  const problematicActionIdx = numValidActions < actionOutputs.length ? numValidActions : -1;
+  // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
+  const transactionIsViable = actionOutputs.findIndex((o) => o.actionArgs === undefined) === -1;
 
   // MARK: logic to determine what approvals are needed
-  const requiredBalances = determineAmountsBeingTransferredIn(actionResults);
+  const requiredBalances = [
+    finalState.requiredAllowances.amount0Asset,
+    finalState.requiredAllowances.amount1Asset,
+    finalState.requiredAllowances.amount0Kitty,
+    finalState.requiredAllowances.amount1Kitty,
+  ];
   const insufficient = [
     requiredBalances[0] > userBalances.amount0Asset,
     requiredBalances[1] > userBalances.amount1Asset,
@@ -436,20 +410,30 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
-                  marginAccount={{
-                    ...marginAccount,
-                    assets: (hypotheticalStates.at(index) ?? marginAccount).assets,
-                    liabilities: (hypotheticalStates.at(index) ?? marginAccount).liabilities,
-                  }}
-                  availableBalances={balancesAvailableForEachAction[index]}
-                  uniswapPositions={uniswapPositions}
-                  previousActionCardState={actionResults[index]}
+                  marginAccount={marginAccount}
+                  accountState={hypotheticalStates.at(index) ?? finalState}
+                  userInputFields={userInputFields[index]}
                   isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
-                  onRemove={() => {
-                    onRemoveAction(index);
+                  isOutputStale={userInputFields[index] !== undefined && actionOutputs[index].actionArgs === undefined}
+                  onChange={(output: ActionCardOutput, userInputs: string[]) => {
+                    console.log(output, userInputs);
+                    setActionOutputs([...actionOutputs.slice(0, index), output, ...actionOutputs.slice(index + 1)]);
+                    setUserInputFields([
+                      ...userInputFields.slice(0, index),
+                      userInputs,
+                      ...userInputFields.slice(index + 1),
+                    ]);
                   }}
-                  onChange={(result: ActionCardState) => {
-                    updateActionResults([...actionResults.slice(0, index), result, ...actionResults.slice(index + 1)]);
+                  onRemove={() => {
+                    const newActionOutputs = [...actionOutputs];
+                    newActionOutputs.splice(index, 1);
+                    setActionOutputs(newActionOutputs);
+                    const newUserInputFields = [...userInputFields];
+                    newUserInputFields.splice(index, 1);
+                    setUserInputFields(newUserInputFields);
+                    const newActiveActions = [...activeActions];
+                    newActiveActions.splice(index, 1);
+                    setActiveActions(newActiveActions);
                   }}
                 />
               </ActionCardWrapper>
@@ -468,7 +452,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 size='S'
                 svgColorType='stroke'
                 onClick={() => {
-                  onAddAction();
+                  setShowAddActionModal(true);
                 }}
               >
                 Add Action
@@ -488,8 +472,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 return;
               }
 
-              const actionIds = actionResults.map((result) => result.actionId);
-              const actionArgs = actionResults.map((result) => result.actionArgs!);
+              const actionIds = actionOutputs.map((o) => o.actionId);
+              const actionArgs = actionOutputs.map((o) => o.actionArgs!);
               const calldata = ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]'], [actionIds, actionArgs]);
 
               switch (confirmButtonState) {
@@ -533,7 +517,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                         setPendingTxnHash(undefined);
                         if (txnReceipt.status === 1) {
                           // TODO in addition to clearing actions here, we should refresh the page to get updated data
-                          clearActions();
+                          setActiveActions([]);
+                          setUserInputFields([]);
                         }
 
                         console.log(txnReceipt);
@@ -563,6 +548,17 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         setOpen={setShowSuccessModal}
         onConfirm={() => {
           setTimeout(() => navigate(0), 100);
+        }}
+      />
+      <BorrowSelectActionModal
+        isOpen={showAddActionModal}
+        setIsOpen={setShowAddActionModal}
+        handleAddAction={(action: Action) => {
+          setActiveActions([...activeActions, action]);
+        }}
+        handleAddActions={(actions, templatedInputFields) => {
+          setActiveActions([...activeActions, ...actions]);
+          if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
         }}
       />
     </Wrapper>
