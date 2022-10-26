@@ -1,8 +1,10 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { GetTokenData } from '../../data/TokenData';
-import PortfolioPieChartWidget from './PortfolioPieChartWidget';
+import { GetTokenData, TokenData } from '../../data/TokenData';
+import { TokenBalance, TokenQuote } from '../../pages/PortfolioPage';
+import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
+import PortfolioPieChartWidget, { TokenPercentage } from './PortfolioPieChartWidget';
 import PortfolioPriceChartWidget from './PriceChart';
 
 const STATUS_GREEN = 'rgba(0, 196, 140, 1)';
@@ -137,29 +139,52 @@ const PRICE_DATA = [
   },
 ];
 
-export default function PortfolioGrid() {
+const old = [
+  {
+    token: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
+    otherToken: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
+    percent: 0.3333,
+  },
+  {
+    token: GetTokenData('0x8fd637b40a6ba572d1dc48fe853d9d06e6ab1ec6'),
+    otherToken: GetTokenData('0x6950d4431fc13b465f9c93532823614fc8586598'),
+    percent: 0.3333,
+  },
+  {
+    token: GetTokenData('0xea1e4f047caaa24cf855ceeeda77cd353af81aec'),
+    otherToken: GetTokenData('0xad5efe0d12c1b3fe87a171c83ce4cca4d85d381a'),
+    percent: 0.3333,
+  },
+];
+
+export type PortfolioGridProps = {
+  balances: TokenBalance[];
+  activeAsset: TokenData | null;
+  tokenQuotes: TokenQuote[];
+};
+
+export default function PortfolioGrid(props: PortfolioGridProps) {
+  const { balances, activeAsset, tokenQuotes } = props;
+  const activeBalances = balances.filter(
+    (balance) => activeAsset && balance.token.referenceAddress === activeAsset.referenceAddress
+  );
+  const totalBalanceUSD = activeBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
+  const totalBalance = activeBalances.reduce((acc, balance) => acc + balance.balance, 0);
+  const apySum = activeBalances.reduce((acc, balance) => acc + balance.apy, 0);
+  const apy = apySum / activeBalances.length;
+  const activeSlices: TokenPercentage[] = activeBalances.map((balance) => ({
+    token: balance.token,
+    otherToken: balance.otherToken,
+    percent: balance.balanceUSD / totalBalanceUSD,
+    isKitty: balance.isKitty,
+  }));
+  const currentTokenQuote = tokenQuotes.find(
+    (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
+  );
   return (
     <Grid>
       <PieChartContainer>
-        <PortfolioPieChartWidget
-          tokenPercentages={[
-            {
-              token: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-              otherToken: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-              percent: 0.3333,
-            },
-            {
-              token: GetTokenData('0x8fd637b40a6ba572d1dc48fe853d9d06e6ab1ec6'),
-              otherToken: GetTokenData('0x6950d4431fc13b465f9c93532823614fc8586598'),
-              percent: 0.3333,
-            },
-            {
-              token: GetTokenData('0xea1e4f047caaa24cf855ceeeda77cd353af81aec'),
-              otherToken: GetTokenData('0xad5efe0d12c1b3fe87a171c83ce4cca4d85d381a'),
-              percent: 0.3333,
-            },
-          ]}
-        />
+        <PortfolioPieChartWidget tokenPercentages={activeSlices} token={activeAsset} />
       </PieChartContainer>
       <BalanceContainer>
         <Text size='L' color='rgba(130, 160, 182, 1)'>
@@ -167,10 +192,10 @@ export default function PortfolioGrid() {
         </Text>
         <div>
           <Display size='L' className='inline-block mr-0.5'>
-            0.00
+            {formatTokenAmount(totalBalance)}
           </Display>
           <Display size='S' className='inline-block ml-0.5'>
-            ETH
+            {activeAsset?.ticker || ''}
           </Display>
         </div>
       </BalanceContainer>
@@ -178,11 +203,12 @@ export default function PortfolioGrid() {
         <Text size='L' color='rgba(130, 160, 182, 1)'>
           APY
         </Text>
-        <Display size='L'>5.02%</Display>
+        <Display size='L'>{roundPercentage(apy, 3)}%</Display>
       </APYContainer>
       <PriceContainer>
         <PortfolioPriceChartWidget
-          token={GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6')}
+          token={activeAsset}
+          currentPrice={currentTokenQuote?.price || 0}
           prices={PRICE_DATA}
         />
       </PriceContainer>

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
@@ -7,6 +8,7 @@ import { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
@@ -17,8 +19,18 @@ import AssetBar from '../components/portfolio/AssetBar';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { LendingPair, LendingPairBalances } from '../data/LendingPair';
+import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
+import {
+  getAvailableLendingPairs,
+  getLendingPairBalances,
+  LendingPair,
+  LendingPairBalances,
+} from '../data/LendingPair';
+import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { getProminentColor } from '../util/Colors';
+import { formatUSD } from '../util/Numbers';
 
 const FAKE_DATA = [
   {
@@ -86,6 +98,12 @@ export type TokenBalance = {
   isKitty: boolean;
   apy: number;
   pairName: string;
+  otherToken: TokenData;
+};
+
+type TokenColor = {
+  token: TokenData;
+  color: string;
 };
 
 const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
@@ -101,12 +119,223 @@ export default function PortfolioPage() {
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
+  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
+  const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
+  // MARK: wagmi hooks
+  const provider = useProvider({ chainId: chain.goerli.id });
+  const { address } = useAccount();
+  const { data: ensName } = useEnsName({
+    address: address,
+    chainId: chain.mainnet.id,
+  });
+
+  useEffect(() => {
+    async function fetchTokenColors() {
+      const tokenColorMap: Map<string, string> = new Map();
+      lendingPairs.forEach(async (pair) => {
+        if (!tokenColorMap.has(pair.token0.address)) {
+          tokenColorMap.set(pair.token0.address, await getProminentColor(pair.token0.iconPath || ''));
+        }
+        if (!tokenColorMap.has(pair.token1.address)) {
+          tokenColorMap.set(pair.token1.address, await getProminentColor(pair.token1.iconPath || ''));
+        }
+      });
+      setTokenColors(tokenColorMap);
+    }
+    fetchTokenColors();
+  }, [lendingPairs]);
+
+  console.log('tokenColors', tokenColors);
+
+  useEffectOnce(() => {
+    let mounted = true;
+    async function fetch() {
+      // fetch token quotes
+      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
+      const prResponse: PriceRelayResponse = quoteDataResponse.data;
+      if (!prResponse || !prResponse.data) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
+        return {
+          token: GetTokenData(pr?.platform?.token_address || ''),
+          price: pr?.quote['USD']?.price || 0,
+        };
+      });
+      if (mounted) {
+        setTokenQuotes(tokenQuoteData);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const results = await getAvailableLendingPairs(provider);
+      if (mounted) {
+        setLendingPairs(results);
+        setIsLoading(false);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [provider, address]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      if (!address) return;
+      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
+      if (mounted) {
+        setLendingPairBalances(results);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [provider, address, lendingPairs]);
+
+  const combinedBalances: TokenBalance[] = useMemo(() => {
+    if (tokenQuotes.length === 0) {
+      return [];
+    }
+    let combined = lendingPairs.flatMap((pair, i) => {
+      const token0Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+      );
+      const token1Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+      );
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
+      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      return [
+        {
+          token: pair.token0,
+          balance: lendingPairBalances?.[i]?.token0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+          otherToken: pair.token1,
+        },
+        {
+          token: pair.token1,
+          balance: lendingPairBalances?.[i]?.token1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+          otherToken: pair.token0,
+        },
+        {
+          token: pair.kitty0,
+          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
+          apy: pair.kitty0Info.apy,
+          isKitty: true,
+          pairName,
+          otherToken: pair.token1,
+        },
+        {
+          token: pair.kitty1,
+          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
+          apy: pair.kitty1Info.apy,
+          isKitty: true,
+          pairName,
+          otherToken: pair.token0,
+        },
+      ];
+    });
+    let distinct: TokenBalance[] = [];
+    // We don't want to show duplicate tokens
+    combined.forEach((balance) => {
+      const existing = distinct.find((d) => d.token.referenceAddress === balance.token.referenceAddress);
+      if (!existing) {
+        distinct.push(balance);
+      }
+    });
+    return distinct;
+  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
+
+  const combinedBalances2: TokenBalance[] = useMemo(() => {
+    if (tokenQuotes.length === 0) {
+      return [];
+    }
+    let combined = lendingPairs.flatMap((pair, i) => {
+      const token0Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+      );
+      const token1Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+      );
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
+      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      return [
+        {
+          token: pair.token0,
+          balance: lendingPairBalances?.[i]?.token0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+          otherToken: pair.token1,
+        },
+        {
+          token: pair.token1,
+          balance: lendingPairBalances?.[i]?.token1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+          otherToken: pair.token0,
+        },
+        {
+          token: pair.kitty0,
+          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
+          apy: pair.kitty0Info.apy,
+          isKitty: true,
+          pairName,
+          otherToken: pair.token1,
+        },
+        {
+          token: pair.kitty1,
+          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
+          apy: pair.kitty1Info.apy,
+          isKitty: true,
+          pairName,
+          otherToken: pair.token0,
+        },
+      ];
+    });
+    let distinct: TokenBalance[] = [];
+    // We don't want to show duplicate tokens
+    combined.forEach((balance) => {
+      const existing = distinct.find((d) => d.token.address === balance.token.address);
+      if (!existing) {
+        distinct.push(balance);
+      }
+    });
+    return distinct;
+  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
+
+  const totalBalance = useMemo(() => {
+    return combinedBalances2.reduce((acc, balance) => acc + balance.balanceUSD, 0);
+  }, [combinedBalances2]);
   return (
     <AppPage>
       <Container>
@@ -116,10 +345,15 @@ export default function PortfolioPage() {
               YOUR PORTFOLIO
             </Text>
             <Display size='L' weight='semibold'>
-              $1000.01
+              {formatUSD(totalBalance)}
             </Display>
           </div>
-          <AssetBar items={FAKE_DATA} />
+          <AssetBar
+            items={FAKE_DATA}
+            combinedBalances={combinedBalances}
+            tokenColors={tokenColors}
+            setActiveAsset={setActiveAsset}
+          />
           <div className='flex justify-between gap-4'>
             <OutlinedWhiteButtonWithIcon size='M' Icon={<DollarIcon />} svgColorType='stroke' position='leading'>
               Buy Crypto
@@ -134,7 +368,7 @@ export default function PortfolioPage() {
               Withdraw
             </OutlinedWhiteButtonWithIcon>
           </div>
-          <PortfolioGrid />
+          <PortfolioGrid balances={combinedBalances2} activeAsset={activeAsset} tokenQuotes={tokenQuotes} />
           <LendingPairPeerCard />
         </div>
       </Container>

@@ -132,14 +132,16 @@ export type TokenPercentage = {
   token: TokenData;
   otherToken: TokenData;
   percent: number;
+  isKitty: boolean;
 };
 
 export type PortfolioPieChartWidgetProps = {
   tokenPercentages: TokenPercentage[];
+  token: TokenData | null;
 };
 
 export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetProps) {
-  const { tokenPercentages } = props;
+  const { tokenPercentages, token } = props;
   const [activeIndex, setActiveIndex] = useState(-1);
   const [tokenColors, setTokenColors] = useState<TokenColor[]>([]);
   const cumulativePercent = useRef(0);
@@ -188,11 +190,12 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
     }
     return tokenPercentages.map((tokenPercentage, index) => {
       const tokenColor = tokenColors.find((tc) => tc.token.address === tokenPercentage.token.address)?.color;
+      const tokenToShow = tokenPercentage.isKitty ? tokenPercentage.otherToken : tokenPercentage.token;
       return {
         index: index,
         percent: tokenPercentage.percent,
         color: tokenColor || 'transparent',
-        token: GetTokenData(tokenPercentage.otherToken.referenceAddress || tokenPercentage.otherToken.address),
+        token: tokenToShow,
       };
     });
   }, [tokenPercentages, tokenColors]);
@@ -225,7 +228,11 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
   const activeSlice = activeIndex !== -1 ? slices.find((slice) => slice.index === activeIndex) : undefined;
   const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
   const currentTicker = activeSlice ? activeSlice.token.ticker : '';
+  console.log(currentTicker, activeSlice);
   const isLoading = tokenPercentages.length === 0 || tokenColors.length === 0;
+  if (!token) {
+    return null;
+  }
   return (
     <Container>
       <TokenAllocationWrapper>
@@ -262,7 +269,7 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
                 )}
                 {!activeSlice && (
                   <div className='flex flex-col justify-center items-center'>
-                    <Text size='M'>WETH</Text>
+                    <Text size='M'>{token.ticker}</Text>
                     <Text size='L'>Assets</Text>
                   </div>
                 )}

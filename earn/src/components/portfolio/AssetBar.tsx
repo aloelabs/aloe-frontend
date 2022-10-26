@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
+import useEffectOnce from '../../data/hooks/UseEffectOnce';
+import { LendingPairBalances } from '../../data/LendingPair';
 import { GetTokenData, TokenData } from '../../data/TokenData';
+import { TokenBalance } from '../../pages/PortfolioPage';
+import { rgb } from '../../util/Colors';
 
 export type AssetBarItem = {
   token: TokenData;
@@ -75,24 +79,61 @@ function AssetChunk(props: AssetChunkProps) {
 
 export type AssetBarProps = {
   items: AssetBarItem[];
+  combinedBalances: TokenBalance[];
+  tokenColors: Map<string, string>;
+  setActiveAsset: (token: TokenData) => void;
 };
 
 export default function AssetBar(props: AssetBarProps) {
-  const { items } = props;
+  const { combinedBalances, tokenColors, setActiveAsset } = props;
+  const [chunks, setChunks] = React.useState<AssetChunkProps[]>([]);
   const [activeIndex, setActiveIndex] = React.useState<number>(0);
+  const [isPaused, setIsPaused] = React.useState<boolean>(false);
+
+  useEffect(() => {
+    let currentIntervalId = setInterval(() => {
+      if (!isPaused) {
+        const updatedIndex = (activeIndex + 1) % chunks.length;
+        setActiveIndex(updatedIndex);
+        setActiveAsset(chunks[updatedIndex].token);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(currentIntervalId);
+    };
+  }, [activeIndex, chunks, chunks.length, isPaused, setActiveAsset]);
+
+  useMemo(() => {
+    const totalBalance = combinedBalances.reduce((acc, cur) => acc + cur.balanceUSD, 0);
+    const filteredChunks = combinedBalances.filter((chunk) => chunk.balanceUSD >= totalBalance * 0.1);
+    const newTotalBalance = filteredChunks.reduce((acc, cur) => acc + cur.balanceUSD, 0);
+    const newChunks = filteredChunks.map((chunk, idx) => {
+      const currentColor = tokenColors.get(chunk.token.address);
+      return {
+        token: chunk.token,
+        percentage: chunk.balanceUSD / newTotalBalance,
+        active: idx === activeIndex,
+        onHover: () => {
+          setActiveIndex(idx);
+          setActiveAsset(chunk.token);
+          setIsPaused(true);
+        },
+        onLeave: () => {
+          setActiveIndex(0);
+          setActiveAsset(filteredChunks[0].token);
+          setIsPaused(false);
+        },
+        color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
+      };
+    });
+    setChunks(newChunks);
+  }, [combinedBalances, tokenColors, activeIndex, setActiveAsset]);
 
   return (
     <Container>
-      {items.map((data, index) => (
-        <AssetChunk
-          key={data.token.address}
-          token={data.token}
-          percentage={data.percentage}
-          color={data.color}
-          active={index === activeIndex}
-          onHover={() => setActiveIndex(index)}
-          onLeave={() => setActiveIndex(0)}
-        />
+      {chunks.map((chunk, index) => (
+        <AssetChunk key={index} {...chunk} />
       ))}
     </Container>
   );
