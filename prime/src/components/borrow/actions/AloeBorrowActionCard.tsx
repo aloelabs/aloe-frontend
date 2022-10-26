@@ -15,7 +15,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { marginAccount, userInputFields, isCausingError, isOutputStale, onRemove, onChange } = prop;
+  const { marginAccount, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -58,8 +58,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
 
   const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (isOutputStale) callbackWithFullResult(tokenAmount);
-  }, [isOutputStale]);
+    if (forceOutput) callbackWithFullResult(tokenAmount);
+  }, [forceOutput]);
 
   return (
     <BaseActionCard
