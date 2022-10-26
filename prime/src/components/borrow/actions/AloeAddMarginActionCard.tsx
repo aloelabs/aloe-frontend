@@ -17,7 +17,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -73,8 +73,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
   const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (isOutputStale) callbackWithFullResult(tokenAmount);
-  }, [isOutputStale]);
+    if (forceOutput) callbackWithFullResult(tokenAmount);
+  }, [forceOutput]);
 
   return (
     <BaseActionCard

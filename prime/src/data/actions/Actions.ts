@@ -61,7 +61,7 @@ export type ActionCardProps = {
   /** whether the action is causing an error and should be given a red border */
   isCausingError: boolean;
   /** should be set to true if ActionCard is being created from a template */
-  isOutputStale: boolean;
+  forceOutput: boolean;
   /** called whenever the ActionCard's output changes */
   onChange: (output: ActionCardOutput, userInputFields: string[]) => void;
   /** removes the ActionCard */
