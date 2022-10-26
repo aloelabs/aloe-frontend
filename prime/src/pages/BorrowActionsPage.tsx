@@ -351,8 +351,12 @@ export default function BorrowActionsPage() {
             marginAccount={marginAccount}
             uniswapPositions={uniswapPositions}
             setHypotheticalState={(state) => {
-              if (hypotheticalState == null) setIsShowingHypothetical(true);
               setHypotheticalState(state);
+
+              // If state is null, there aren't any hypotheticals to show
+              if (state == null) setIsShowingHypothetical(false);
+              // If state is non-null, but was previously null, we want to show hypotheticals by default
+              else if (hypotheticalState == null) setIsShowingHypothetical(true);
             }}
           />
         </GridExpandingDiv>
