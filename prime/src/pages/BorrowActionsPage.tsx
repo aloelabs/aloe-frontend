@@ -379,7 +379,7 @@ export default function BorrowActionsPage() {
         actionId: action.id,
         aloeResult: null,
         uniswapResult: null,
-        operator(operand) {
+        operator(_) {
           return null;
         },
       },
@@ -402,7 +402,7 @@ export default function BorrowActionsPage() {
           actionId: x.id,
           aloeResult: null,
           uniswapResult: null,
-          operator(operand) {
+          operator(_) {
             return null;
           },
         };

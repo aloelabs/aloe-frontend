@@ -106,7 +106,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
                 actionId: ActionID.TRANSFER_IN,
                 aloeResult: { selectedToken: parseSelectedToken(option.value) },
                 uniswapResult: null,
-                operator(operand) {
+                operator(_) {
                   return null;
                 },
               });
