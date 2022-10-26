@@ -17,15 +17,6 @@ import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
 import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
-//TOOD: merge this with the existing UniswapPosition?
-export type UniswapV3LiquidityPosition = {
-  amount0: number;
-  amount1: number;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: JSBI;
-};
-
 const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number }) => props)`
   width: ${(props) => props.width}px;
   height: ${(props) => props.height}px;
@@ -39,8 +30,9 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
+  const { uniswapPositions } = accountState;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
@@ -53,18 +45,18 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
   useEffect(() => {
-    const previousRemoveLiquidityPercentage = previousActionCardState?.textFields?.at(1);
+    const previousRemoveLiquidityPercentage = userInputFields?.at(1);
     if (previousRemoveLiquidityPercentage && previousRemoveLiquidityPercentage !== localRemoveLiquidityPercentage) {
       setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage);
     }
-  }, [previousActionCardState]);
+  }, [accountState]);
 
   let selectedOption: DropdownOption | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
 
-  const previousPositionKey = previousActionCardState?.textFields?.at(0) ?? '';
+  const previousPositionKey = userInputFields?.at(0) ?? '';
   if (previousPositionKey) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
       return previousPositionKey === uniswapPositionKey(marginAccount.address, lp.lower, lp.upper);
@@ -119,44 +111,27 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       );
     }
 
-    onChange({
-      actionId: ActionID.REMOVE_LIQUIDITY,
-      actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
-      aloeResult: {
-        token0RawDelta: amount0,
-        token1RawDelta: amount1,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: liquidityToRemove,
-          lower: lower ?? 0,
-          upper: upper ?? 0,
+    onChange(
+      {
+        actionId: ActionID.REMOVE_LIQUIDITY,
+        actionArgs:
+          lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
+        operator(operand) {
+          if (lower == null || upper == null) return null;
+          return removeLiquidityOperator(
+            operand,
+            marginAccount.address as Address,
+            liquidityToRemove,
+            lower,
+            upper,
+            sqrtRatioToTick(marginAccount.sqrtPriceX96),
+            token0.decimals,
+            token1.decimals
+          );
         },
-        slippageTolerance: 0,
-        removeLiquidityPercentage: parsedPercentage,
-        isAmount0LastUpdated: undefined,
-        isToken0Selected: undefined,
       },
-      textFields: [
-        lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : '',
-        percentage,
-      ],
-      operator(operand) {
-        if (!operand || lower == null || upper == null) return null;
-        return removeLiquidityOperator(
-          operand,
-          marginAccount.address as Address,
-          liquidityToRemove,
-          lower,
-          upper,
-          sqrtRatioToTick(marginAccount.sqrtPriceX96),
-          token0.decimals,
-          token1.decimals
-        );
-      },
-    });
+      [lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : '', percentage]
+    );
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {

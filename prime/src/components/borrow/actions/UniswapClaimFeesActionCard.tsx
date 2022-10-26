@@ -12,15 +12,6 @@ import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data
 import { sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
-//TOOD: merge this with the existing UniswapPosition?
-export type UniswapV3LiquidityPosition = {
-  amount0: number;
-  amount1: number;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: JSBI;
-};
-
 const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number }) => props)`
   width: ${(props) => props.width}px;
   height: ${(props) => props.height}px;
@@ -32,9 +23,9 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { marginAccount, uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
-  const fields = previousActionCardState?.textFields;
+  const { uniswapPositions } = accountState;
 
   const dropdownOptions = uniswapPositions.map((lp, index) => {
     return {
@@ -46,7 +37,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
 
   let selectedOption: DropdownOption | undefined = undefined;
 
-  const previousPositionKey = fields?.at(0) ?? '';
+  const previousPositionKey = userInputFields?.at(0) ?? '';
   if (previousPositionKey) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
       return previousPositionKey === uniswapPositionKey(marginAccount.address, lp.lower, lp.upper);
@@ -62,37 +53,27 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
     const updatedLiquidity = JSBI.BigInt(0);
 
     // Note: Claiming fees is equivalent to removing 0% of liquidity
-    onChange({
-      actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
-      actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
-      aloeResult: { selectedToken: null },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: updatedLiquidity,
-          lower: lower ?? 0,
-          upper: upper ?? 0,
+    onChange(
+      {
+        actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
+        actionArgs:
+          lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
+        operator(operand) {
+          if (lower == null || upper == null) return null;
+          return removeLiquidityOperator(
+            operand,
+            marginAccount.address as Address,
+            updatedLiquidity,
+            lower,
+            upper,
+            sqrtRatioToTick(marginAccount.sqrtPriceX96),
+            token0.decimals,
+            token1.decimals
+          );
         },
-        slippageTolerance: 0,
-        removeLiquidityPercentage: 0,
-        isAmount0LastUpdated: undefined,
-        isToken0Selected: undefined,
       },
-      textFields: [lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : ''],
-      operator(operand) {
-        if (!operand || lower == null || upper == null) return null;
-        return removeLiquidityOperator(
-          operand,
-          marginAccount.address as Address,
-          updatedLiquidity,
-          lower,
-          upper,
-          sqrtRatioToTick(marginAccount.sqrtPriceX96),
-          token0.decimals,
-          token1.decimals
-        );
-      },
-    });
+      [lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : '']
+    );
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {

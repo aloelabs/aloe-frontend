@@ -15,9 +15,8 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
-  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -31,43 +30,37 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  const selectedToken = (fields?.at(0) ?? TokenType.ASSET0) as TokenType;
+  const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const callbackWithFullResult = (value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.MINT,
-      actionArgs:
-        value === ''
-          ? undefined
-          : getMintActionArgs(
-              selectedToken === TokenType.ASSET0 ? token0 : token1,
-              selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
-              parsedValue
-            ),
-      textFields: [selectedToken, value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        selectedToken: selectedToken,
+    onChange(
+      {
+        actionId: ActionID.MINT,
+        actionArgs:
+          value === ''
+            ? undefined
+            : getMintActionArgs(
+                selectedToken === TokenType.ASSET0 ? token0 : token1,
+                selectedToken === TokenType.ASSET0 ? kitty0 : kitty1,
+                parsedValue
+              ),
+        operator(operand) {
+          if (selectedToken == null) return null;
+          return mintOperator(operand, selectedToken, parsedValue);
+        },
       },
-      uniswapResult: null,
-      operator(operand) {
-        if (!operand || selectedToken == null) return null;
-        return mintOperator(operand, selectedToken, parsedValue);
-      },
-    });
+      [selectedToken, value]
+    );
   };
 
-  const max = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
+  const max = accountState.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(1) ?? '';
+  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
-  });
+    if (isOutputStale) callbackWithFullResult(tokenAmount);
+  }, [isOutputStale]);
 
   return (
     <BaseActionCard
@@ -82,15 +75,15 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.MINT,
-                aloeResult: null,
-                uniswapResult: null,
-                textFields: [option.value as TokenType, ''],
-                operator(_) {
-                  return null;
+              onChange(
+                {
+                  actionId: ActionID.MINT,
+                  operator(_) {
+                    return null;
+                  },
                 },
-              });
+                [option.value as TokenType, '']
+              );
             }
           }}
         />

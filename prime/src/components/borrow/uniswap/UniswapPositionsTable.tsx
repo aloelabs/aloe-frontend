@@ -178,7 +178,7 @@ export type UniswapPositionsTableProps = {
   marginAccount: MarginAccount;
   marginAccountLensContract: Contract | null;
   provider: Provider;
-  uniswapPositions: UniswapPosition[];
+  uniswapPositions: readonly UniswapPosition[];
   isInTermsOfToken0: boolean;
   showAsterisk: boolean;
 };
