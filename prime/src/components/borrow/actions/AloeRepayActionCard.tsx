@@ -15,9 +15,8 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
-  const fields = previousActionCardState?.textFields;
 
   const dropdownOptions: DropdownOption[] = [
     {
@@ -31,7 +30,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
-  const selectedToken = (fields?.at(0) ?? TokenType.ASSET0) as TokenType;
+  const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const callbackWithFullResult = (value: string) => {
@@ -44,32 +43,26 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
       amount1 = parsedValue;
     }
 
-    onChange({
-      actionId: ActionID.REPAY,
-      actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
-      textFields: [selectedToken, value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        token0DebtDelta: selectedToken === TokenType.ASSET0 ? -parsedValue : undefined,
-        token1DebtDelta: selectedToken === TokenType.ASSET1 ? -parsedValue : undefined,
-        selectedToken: selectedToken,
+    onChange(
+      {
+        actionId: ActionID.REPAY,
+        actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
+        operator(operand) {
+          if (selectedToken == null) return null;
+          return repayOperator(operand, selectedToken, Math.max(amount0, amount1));
+        },
       },
-      uniswapResult: null,
-      operator(operand) {
-        if (!operand || selectedToken == null) return null;
-        return repayOperator(operand, selectedToken, Math.max(amount0, amount1));
-      },
-    });
+      [selectedToken, value]
+    );
   };
 
-  const assetMax = marginAccount.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
-  const liabilityMax = marginAccount.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
+  const assetMax = accountState.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
+  const liabilityMax = accountState.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
   const maxString = Math.max(0, Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(1) ?? '';
+  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
-  });
+    if (isOutputStale) callbackWithFullResult(tokenAmount);
+  }, [isOutputStale]);
 
   return (
     <BaseActionCard
@@ -84,15 +77,15 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.REPAY,
-                aloeResult: null,
-                uniswapResult: null,
-                textFields: [option.value as TokenType, ''],
-                operator(_) {
-                  return null;
+              onChange(
+                {
+                  actionId: ActionID.REPAY,
+                  operator(_) {
+                    return null;
+                  },
                 },
-              });
+                [option.value as TokenType, '']
+              );
             }
           }}
         />
