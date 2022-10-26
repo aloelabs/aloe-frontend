@@ -168,7 +168,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     }
 
     const userDefinedAmount = localTokenAmounts[localIsAmount0UserDefined ? 0 : 1];
-    updateAmount(userDefinedAmount, localIsAmount0UserDefined, lower, upper, true);
+    updateAmount(userDefinedAmount, localIsAmount0UserDefined, lower, upper);
   }
 
   /**
@@ -183,13 +183,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
    *
    * @dev `currentTick`, `token0`, `token1`, and `isToken0Selected` must be properly defined **before** this function.
    */
-  function updateAmount(
-    amountXStr: string,
-    isToken0: boolean,
-    lower: number | null,
-    upper: number | null,
-    shouldCallback?: boolean
-  ) {
+  function updateAmount(amountXStr: string, isToken0: boolean, lower: number | null, upper: number | null) {
     const amountX = parseFloat(amountXStr);
 
     // If any of these ticks are null, we don't have enough information
@@ -217,9 +211,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     setLocalTokenAmounts([amount0Str, amount1Str]);
     setLocalIsAmount0UserDefined(isToken0);
 
-    if (shouldCallback) {
-      callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
-    }
+    callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
   }
 
   function callbackWithFullResults(
@@ -410,25 +402,25 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           tokenLabel={token0?.ticker || ''}
           value={isInput0Disabled ? '' : localTokenAmounts[0]}
-          onChange={(value) => updateAmount(value, true, previousLower, previousUpper, true)}
+          onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
           disabled={isInput0Disabled}
           max={maxString0}
           maxed={localTokenAmounts[0] === maxString0}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            updateAmount(maxValue, true, previousLower, previousUpper, true);
+            updateAmount(maxValue, true, previousLower, previousUpper);
           }}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
           value={isInput1Disabled ? '' : localTokenAmounts[1]}
-          onChange={(value) => updateAmount(value, false, previousLower, previousUpper, true)}
+          onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
           disabled={isInput1Disabled}
           max={maxString1}
           maxed={localTokenAmounts[1] === maxString1}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            updateAmount(maxValue, false, previousLower, previousUpper, true);
+            updateAmount(maxValue, false, previousLower, previousUpper);
           }}
         />
       </div>
