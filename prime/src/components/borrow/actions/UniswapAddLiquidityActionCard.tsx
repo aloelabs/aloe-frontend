@@ -53,7 +53,7 @@ function fromFields(fields: string[] | undefined): PreviousState {
 }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
 
   // MARK: state for user inputs

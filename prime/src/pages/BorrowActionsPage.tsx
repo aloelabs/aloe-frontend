@@ -283,7 +283,7 @@ export default function BorrowActionsPage() {
     }
     setDisplayedMarginAccount(_marginAccount);
     setDisplayedUniswapPositions(isShowingHypothetical ? uniswapPositionsF : uniswapPositions);
-    console.log('Updating displayed MarginAccount and UniswapPositions');
+    console.log('Running 1');
   }, [
     marginAccount,
     uniswapPositions,
@@ -298,7 +298,6 @@ export default function BorrowActionsPage() {
   useDebouncedEffect(
     () => {
       if (!displayedMarginAccount) return;
-      console.log('Running 2');
       const lt: LiquidationThresholds = computeLiquidationThresholds(
         displayedMarginAccount,
         displayedUniswapPositions.concat(),
@@ -307,6 +306,7 @@ export default function BorrowActionsPage() {
         6
       );
       setLiquidationThresholds(lt);
+      console.log('Running 2');
     },
     GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]

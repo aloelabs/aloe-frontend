@@ -23,7 +23,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, isOutputStale, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 
