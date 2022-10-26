@@ -152,6 +152,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       amount0Kitty: 0,
       amount1Kitty: 0,
     },
+    claimedFeeUniswapKeys: [],
   };
 
   useEffect(() => {

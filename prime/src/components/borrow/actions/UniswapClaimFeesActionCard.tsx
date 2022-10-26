@@ -23,17 +23,19 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
-  const { uniswapPositions } = accountState;
+  const { uniswapPositions, claimedFeeUniswapKeys } = accountState;
 
-  const dropdownOptions = uniswapPositions.map((lp, index) => {
-    return {
-      label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
-      value: index.toString(),
-      isDefault: index === 0,
-    } as DropdownOption;
-  });
+  const dropdownOptions = uniswapPositions
+    .filter((lp) => !claimedFeeUniswapKeys.includes(uniswapPositionKey(marginAccount.address, lp.lower, lp.upper)))
+    .map((lp, index) => {
+      return {
+        label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
+        value: index.toString(),
+        isDefault: index === 0,
+      } as DropdownOption;
+    });
 
   let selectedOption: DropdownOption | undefined = undefined;
 

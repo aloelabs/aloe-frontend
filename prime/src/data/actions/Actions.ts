@@ -38,6 +38,7 @@ export interface AccountState {
   readonly uniswapPositions: readonly UniswapPosition[];
   readonly availableBalances: UserBalances;
   readonly requiredAllowances: UserBalances;
+  readonly claimedFeeUniswapKeys: readonly string[];
 }
 
 type Operator = (state: AccountState) => AccountState | null;
