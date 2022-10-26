@@ -19,7 +19,6 @@ import {
   Action,
   ActionCardOutput,
   calculateHypotheticalStates,
-  TokenType,
   UniswapPosition,
 } from '../../data/actions/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
@@ -412,17 +411,17 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 <action.actionCard
                   marginAccount={marginAccount}
                   accountState={hypotheticalStates.at(index) ?? finalState}
-                  userInputFields={userInputFields[index]}
+                  userInputFields={userInputFields.at(index)}
                   isCausingError={problematicActionIdx !== -1 && index >= problematicActionIdx}
-                  isOutputStale={userInputFields[index] !== undefined && actionOutputs[index].actionArgs === undefined}
+                  forceOutput={userInputFields.at(index) !== undefined && actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
-                    console.log(output, userInputs);
-                    setActionOutputs([...actionOutputs.slice(0, index), output, ...actionOutputs.slice(index + 1)]);
+                    console.log('OUTPUT', index, output, userInputs);
                     setUserInputFields([
                       ...userInputFields.slice(0, index),
                       userInputs,
                       ...userInputFields.slice(index + 1),
                     ]);
+                    setActionOutputs([...actionOutputs.slice(0, index), output, ...actionOutputs.slice(index + 1)]);
                   }}
                   onRemove={() => {
                     const newActionOutputs = [...actionOutputs];
