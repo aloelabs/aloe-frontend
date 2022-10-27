@@ -88,7 +88,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
                 actionId: ActionID.REPAY,
                 aloeResult: null,
                 uniswapResult: null,
-                textFields: [option.value as TokenType, tokenAmount],
+                textFields: [option.value as TokenType, ''],
                 operator(_) {
                   return null;
                 },

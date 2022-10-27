@@ -106,7 +106,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     if (localTokenAmounts[0] !== previousAmount0Str || localTokenAmounts[1] !== previousAmount1Str) {
       setLocalTokenAmounts([previousAmount0Str, previousAmount1Str]);
     }
-  }, [previousAmount0Str, previousAmount1Str]);
+  }, [previousAmount0Str, previousAmount1Str, localTokenAmounts]);
 
   // Fetch (a) uniswapPoolBasics from ethers and (b) liquidityData from TheGraph
   useEffectOnce(() => {

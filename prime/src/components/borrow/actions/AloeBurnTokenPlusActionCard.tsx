@@ -86,7 +86,7 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
                 actionId: ActionID.BURN,
                 aloeResult: null,
                 uniswapResult: null,
-                textFields: [option.value as TokenType, tokenAmount],
+                textFields: [option.value as TokenType, ''],
                 operator(_) {
                   return null;
                 },

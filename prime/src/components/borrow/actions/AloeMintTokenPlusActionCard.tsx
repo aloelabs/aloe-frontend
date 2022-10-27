@@ -86,7 +86,7 @@ export function AloeMintTokenPlusActionCard(prop: ActionCardProps) {
                 actionId: ActionID.MINT,
                 aloeResult: null,
                 uniswapResult: null,
-                textFields: [option.value as TokenType, tokenAmount],
+                textFields: [option.value as TokenType, ''],
                 operator(_) {
                   return null;
                 },
