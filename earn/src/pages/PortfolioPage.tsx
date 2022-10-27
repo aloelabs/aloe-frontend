@@ -4,11 +4,11 @@ import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
-import { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
+import { couldStartTrivia } from 'typescript';
+import { chain, useAccount, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
@@ -32,24 +32,6 @@ import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
-const FAKE_DATA = [
-  {
-    token: GetTokenData('0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'),
-    percentage: 0.5,
-    color: 'rgb(140,140,140)',
-  },
-  {
-    token: GetTokenData('0xad5efe0d12c1b3fe87a171c83ce4cca4d85d381a'),
-    percentage: 0.4,
-    color: 'rgb(40, 120, 200)',
-  },
-  {
-    token: GetTokenData('0x886055958cdf2635ff47a2071264a3413d26f959'),
-    percentage: 0.1,
-    color: 'rgb(239, 147, 0)',
-  },
-];
-
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 
@@ -58,32 +40,6 @@ const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const Container = styled.div`
   max-width: 900px;
   margin: 0 auto;
-`;
-
-const LendHeaderContainer = styled.div`
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  height: 300px;
-`;
-
-const LendHeader = styled.div`
-  ${tw`flex flex-col justify-between`}
-`;
-
-const LowerLendHeader = styled.div`
-  display: flex;
-  align-items: center;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
-    flex-direction: column-reverse;
-    align-items: flex-start;
-  }
-`;
-
-const LendCards = styled.div`
-  ${tw`flex flex-col`}
-  row-gap: 24px;
-  margin-top: 24px;
 `;
 
 export type TokenQuote = {
@@ -95,24 +51,15 @@ export type TokenBalance = {
   token: TokenData;
   balance: number;
   balanceUSD: number;
-  isKitty: boolean;
   apy: number;
+  isKitty: boolean;
   pairName: string;
-  otherToken: TokenData;
 };
 
 type TokenColor = {
   token: TokenData;
   color: string;
 };
-
-const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
-  return {
-    value: token.address,
-    label: token.ticker,
-    icon: token.iconPath,
-  } as MultiDropdownOption;
-});
 
 export default function PortfolioPage() {
   // MARK: component state
@@ -127,14 +74,11 @@ export default function PortfolioPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const { address } = useAccount();
-  const { data: ensName } = useEnsName({
-    address: address,
-    chainId: chain.mainnet.id,
-  });
 
   useEffect(() => {
     async function fetchTokenColors() {
       const tokenColorMap: Map<string, string> = new Map();
+
       lendingPairs.forEach(async (pair) => {
         if (!tokenColorMap.has(pair.token0.address)) {
           tokenColorMap.set(pair.token0.address, await getProminentColor(pair.token0.iconPath || ''));
@@ -147,8 +91,6 @@ export default function PortfolioPage() {
     }
     fetchTokenColors();
   }, [lendingPairs]);
-
-  console.log('tokenColors', tokenColors);
 
   useEffectOnce(() => {
     let mounted = true;
@@ -178,6 +120,9 @@ export default function PortfolioPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
+      if (!provider) {
+        return;
+      }
       const results = await getAvailableLendingPairs(provider);
       if (mounted) {
         setLendingPairs(results);
@@ -188,12 +133,13 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address]);
+  }, [provider]);
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (!address) return;
+      // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
+      if (!address || isLoading) return;
       const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
       if (mounted) {
         setLendingPairBalances(results);
@@ -203,13 +149,10 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address, lendingPairs]);
+  }, [provider, address, lendingPairs, isLoading]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
-    if (tokenQuotes.length === 0) {
-      return [];
-    }
-    let combined = lendingPairs.flatMap((pair, i) => {
+    const combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find(
         (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
       );
@@ -218,7 +161,7 @@ export default function PortfolioPage() {
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
-      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
       return [
         {
           token: pair.token0,
@@ -259,71 +202,6 @@ export default function PortfolioPage() {
       ];
     });
     let distinct: TokenBalance[] = [];
-    // We don't want to show duplicate tokens
-    combined.forEach((balance) => {
-      const existing = distinct.find((d) => d.token.referenceAddress === balance.token.referenceAddress);
-      if (!existing) {
-        distinct.push(balance);
-      }
-    });
-    return distinct;
-  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
-
-  const combinedBalances2: TokenBalance[] = useMemo(() => {
-    if (tokenQuotes.length === 0) {
-      return [];
-    }
-    let combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
-      );
-      const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
-      );
-      const token0Price = token0Quote?.price || 0;
-      const token1Price = token1Quote?.price || 0;
-      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
-      return [
-        {
-          token: pair.token0,
-          balance: lendingPairBalances?.[i]?.token0Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
-          apy: 0,
-          isKitty: false,
-          pairName,
-          otherToken: pair.token1,
-        },
-        {
-          token: pair.token1,
-          balance: lendingPairBalances?.[i]?.token1Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
-          apy: 0,
-          isKitty: false,
-          pairName,
-          otherToken: pair.token0,
-        },
-        {
-          token: pair.kitty0,
-          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
-          apy: pair.kitty0Info.apy,
-          isKitty: true,
-          pairName,
-          otherToken: pair.token1,
-        },
-        {
-          token: pair.kitty1,
-          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
-          apy: pair.kitty1Info.apy,
-          isKitty: true,
-          pairName,
-          otherToken: pair.token0,
-        },
-      ];
-    });
-    let distinct: TokenBalance[] = [];
-    // We don't want to show duplicate tokens
     combined.forEach((balance) => {
       const existing = distinct.find((d) => d.token.address === balance.token.address);
       if (!existing) {
@@ -331,11 +209,11 @@ export default function PortfolioPage() {
       }
     });
     return distinct;
-  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
+  }, [lendingPairs, lendingPairBalances, tokenQuotes]);
 
   const totalBalance = useMemo(() => {
-    return combinedBalances2.reduce((acc, balance) => acc + balance.balanceUSD, 0);
-  }, [combinedBalances2]);
+    return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
+  }, [combinedBalances]);
   return (
     <AppPage>
       <Container>
@@ -348,12 +226,7 @@ export default function PortfolioPage() {
               {formatUSD(totalBalance)}
             </Display>
           </div>
-          <AssetBar
-            items={FAKE_DATA}
-            combinedBalances={combinedBalances}
-            tokenColors={tokenColors}
-            setActiveAsset={setActiveAsset}
-          />
+          <AssetBar combinedBalances={combinedBalances} tokenColors={tokenColors} setActiveAsset={setActiveAsset} />
           <div className='flex justify-between gap-4'>
             <OutlinedWhiteButtonWithIcon size='M' Icon={<DollarIcon />} svgColorType='stroke' position='leading'>
               Buy Crypto
@@ -368,7 +241,7 @@ export default function PortfolioPage() {
               Withdraw
             </OutlinedWhiteButtonWithIcon>
           </div>
-          <PortfolioGrid balances={combinedBalances2} activeAsset={activeAsset} tokenQuotes={tokenQuotes} />
+          <PortfolioGrid balances={combinedBalances} activeAsset={activeAsset} tokenQuotes={tokenQuotes} />
           <LendingPairPeerCard />
         </div>
       </Container>

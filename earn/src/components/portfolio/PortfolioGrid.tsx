@@ -174,9 +174,9 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   const apy = apySum / activeBalances.length;
   const activeSlices: TokenPercentage[] = activeBalances.map((balance) => ({
     token: balance.token,
-    otherToken: balance.otherToken,
-    percent: balance.balanceUSD / totalBalanceUSD,
+    percent: balance.balanceUSD / totalBalanceUSD || 0,
     isKitty: balance.isKitty,
+    pairName: balance.pairName,
   }));
   const currentTokenQuote = tokenQuotes.find(
     (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)

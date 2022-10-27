@@ -55,21 +55,23 @@ type AssetChunkProps = {
   token: TokenData;
   percentage: number;
   active: boolean;
+  color: string;
+  onClick: () => void;
   onHover: () => void;
   onLeave: () => void;
-  color?: string;
 };
 
 function AssetChunk(props: AssetChunkProps) {
-  const { token, percentage, active, onHover, onLeave, color } = props;
+  const { token, percentage, active, onClick, onHover, onLeave, color } = props;
   const containerRef = React.useRef<HTMLDivElement>(null);
   useHover(containerRef, onHover, onLeave);
 
   return (
     <AssetChunkContainer
       percentage={percentage}
-      color={color || 'transparent'}
+      color={color}
       className={active ? 'active' : ''}
+      onClick={onClick}
       ref={containerRef}
     >
       <AssetIcon src={token.iconPath || ''} alt={token.ticker} width={40} height={40} />
@@ -78,7 +80,6 @@ function AssetChunk(props: AssetChunkProps) {
 }
 
 export type AssetBarProps = {
-  items: AssetBarItem[];
   combinedBalances: TokenBalance[];
   tokenColors: Map<string, string>;
   setActiveAsset: (token: TokenData) => void;
@@ -87,48 +88,60 @@ export type AssetBarProps = {
 export default function AssetBar(props: AssetBarProps) {
   const { combinedBalances, tokenColors, setActiveAsset } = props;
   const [chunks, setChunks] = React.useState<AssetChunkProps[]>([]);
+  const [defaultIndex, setDefaultIndex] = React.useState<number>(0);
   const [activeIndex, setActiveIndex] = React.useState<number>(0);
-  const [isPaused, setIsPaused] = React.useState<boolean>(false);
+  const [isHovering, setIsHovering] = React.useState<boolean>(false);
+
+  const combinedTokenBalances = useMemo(() => {
+    const balances: Map<string, TokenBalance> = new Map();
+    combinedBalances.forEach((balance) => {
+      const tokenAddress = balance.token.referenceAddress || balance.token.address;
+      const existingBalance = balances.get(tokenAddress);
+      if (balances.has(tokenAddress)) {
+        existingBalance!.balanceUSD += balance.balanceUSD;
+      } else {
+        balances.set(balance.token.referenceAddress || balance.token.address, balance);
+      }
+    });
+    return Array.from(balances.values());
+  }, [combinedBalances]);
 
   useEffect(() => {
-    let currentIntervalId = setInterval(() => {
-      if (!isPaused) {
-        const updatedIndex = (activeIndex + 1) % chunks.length;
-        setActiveIndex(updatedIndex);
-        setActiveAsset(chunks[updatedIndex].token);
-      }
-    }, 3000);
-
-    return () => {
-      clearInterval(currentIntervalId);
-    };
-  }, [activeIndex, chunks, chunks.length, isPaused, setActiveAsset]);
+    if (chunks.length > 0 && !isHovering) {
+      setActiveIndex(defaultIndex);
+      setActiveAsset(chunks[defaultIndex].token);
+    }
+  }, [chunks, chunks.length, defaultIndex, isHovering, setActiveAsset]);
 
   useMemo(() => {
-    const totalBalance = combinedBalances.reduce((acc, cur) => acc + cur.balanceUSD, 0);
-    const filteredChunks = combinedBalances.filter((chunk) => chunk.balanceUSD >= totalBalance * 0.1);
+    const totalBalance = combinedTokenBalances.reduce((acc, cur) => acc + cur.balanceUSD, 0);
+    const filteredChunks = combinedTokenBalances.filter((chunk) => chunk.balanceUSD >= totalBalance * 0.1);
     const newTotalBalance = filteredChunks.reduce((acc, cur) => acc + cur.balanceUSD, 0);
+
     const newChunks = filteredChunks.map((chunk, idx) => {
       const currentColor = tokenColors.get(chunk.token.address);
       return {
         token: chunk.token,
-        percentage: chunk.balanceUSD / newTotalBalance,
+        percentage: chunk.balanceUSD / newTotalBalance || 0,
         active: idx === activeIndex,
+        color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
+        onClick: () => {
+          setDefaultIndex(idx);
+        },
         onHover: () => {
+          setIsHovering(true);
           setActiveIndex(idx);
           setActiveAsset(chunk.token);
-          setIsPaused(true);
         },
         onLeave: () => {
-          setActiveIndex(0);
-          setActiveAsset(filteredChunks[0].token);
-          setIsPaused(false);
+          setActiveIndex(defaultIndex);
+          setActiveAsset(filteredChunks[defaultIndex].token);
+          setIsHovering(false);
         },
-        color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
       };
     });
     setChunks(newChunks);
-  }, [combinedBalances, tokenColors, activeIndex, setActiveAsset]);
+  }, [combinedTokenBalances, tokenColors, activeIndex, setActiveAsset, defaultIndex]);
 
   return (
     <Container>

@@ -92,6 +92,8 @@ type PieChartSlice = {
 
 type PortfolioPieChartSlice = PieChartSlice & {
   token: TokenData;
+  pairName: string;
+  isKitty: boolean;
 };
 
 type PieChartSlicePath = {
@@ -130,9 +132,9 @@ const ExpandingPath = styled.path`
 
 export type TokenPercentage = {
   token: TokenData;
-  otherToken: TokenData;
   percent: number;
   isKitty: boolean;
+  pairName: string;
 };
 
 export type PortfolioPieChartWidgetProps = {
@@ -190,12 +192,13 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
     }
     return tokenPercentages.map((tokenPercentage, index) => {
       const tokenColor = tokenColors.find((tc) => tc.token.address === tokenPercentage.token.address)?.color;
-      const tokenToShow = tokenPercentage.isKitty ? tokenPercentage.otherToken : tokenPercentage.token;
       return {
         index: index,
         percent: tokenPercentage.percent,
         color: tokenColor || 'transparent',
-        token: tokenToShow,
+        token: tokenPercentage.token,
+        pairName: tokenPercentage.pairName,
+        isKitty: tokenPercentage.isKitty,
       };
     });
   }, [tokenPercentages, tokenColors]);
@@ -228,7 +231,6 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
   const activeSlice = activeIndex !== -1 ? slices.find((slice) => slice.index === activeIndex) : undefined;
   const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
   const currentTicker = activeSlice ? activeSlice.token.ticker : '';
-  console.log(currentTicker, activeSlice);
   const isLoading = tokenPercentages.length === 0 || tokenColors.length === 0;
   if (!token) {
     return null;
@@ -261,12 +263,19 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
               </PieChartContainer>
 
               <PieChartLabel>
-                {activeSlice && (
-                  <div className='flex flex-col justify-center items-center gap-1'>
-                    <Text size='M' weight='bold' color={activeSlice.color}></Text>
-                    <Text size='L'>{currentTicker}</Text>
-                  </div>
-                )}
+                {activeSlice &&
+                  (activeSlice.isKitty ? (
+                    <div className='flex flex-col justify-center items-center gap-1'>
+                      <Text size='M' weight='bold' color={activeSlice.color}>
+                        {activeSlice.pairName}
+                      </Text>
+                      <Text size='L'>{activeSlice.token.ticker}</Text>
+                    </div>
+                  ) : (
+                    <div className='flex flex-col justify-center items-center gap-1'>
+                      <Text size='L'>{activeSlice.token.ticker}</Text>
+                    </div>
+                  ))}
                 {!activeSlice && (
                   <div className='flex flex-col justify-center items-center'>
                     <Text size='M'>{token.ticker}</Text>
