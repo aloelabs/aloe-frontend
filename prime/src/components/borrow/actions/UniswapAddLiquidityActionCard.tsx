@@ -101,6 +101,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     isInput1Disabled = shouldAmount1InputBeDisabled(previousLower, previousUpper, currentTick);
   }
 
+  // If localTokenAmounts aren't up-to-date, overwrite with previousAmountsStr
+  useEffect(() => {
+    if (localTokenAmounts[0] !== previousAmount0Str || localTokenAmounts[1] !== previousAmount1Str) {
+      setLocalTokenAmounts([previousAmount0Str, previousAmount1Str]);
+    }
+  }, [previousAmount0Str, previousAmount1Str, localTokenAmounts]);
+
   // Fetch (a) uniswapPoolBasics from ethers and (b) liquidityData from TheGraph
   useEffectOnce(() => {
     let mounted = true;
@@ -281,9 +288,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       tickToPrice(previousUpper!, token0.decimals, token1.decimals, isToken0Selected),
     ].sort();
   }
-
-  console.log(prices);
-  console.log(chartData);
 
   const lowerSteppedInput = (
     <SteppedInput

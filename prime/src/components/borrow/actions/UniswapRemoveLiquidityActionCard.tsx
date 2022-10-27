@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
 import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
@@ -13,9 +13,8 @@ import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
-import { getAmountsForLiquidity, sqrtRatioToTick } from '../../../util/Uniswap';
+import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 
 //TOOD: merge this with the existing UniswapPosition?
@@ -53,21 +52,22 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
-  useEffectOnce(() => {
-    const previousRemoveLiquidityPercentage = previousActionCardState?.uniswapResult?.removeLiquidityPercentage;
-    if (previousRemoveLiquidityPercentage) {
-      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage.toFixed(2));
+  useEffect(() => {
+    const previousRemoveLiquidityPercentage = previousActionCardState?.textFields?.at(1);
+    if (previousRemoveLiquidityPercentage && previousRemoveLiquidityPercentage !== localRemoveLiquidityPercentage) {
+      setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage);
     }
-  });
+  }, [previousActionCardState]);
 
   let selectedOption: DropdownOption | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
-  const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-  if (uniswapPosition) {
+
+  const previousPositionKey = previousActionCardState?.textFields?.at(0) ?? '';
+  if (previousPositionKey) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
-      return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
+      return previousPositionKey === uniswapPositionKey(marginAccount.address, lp.lower, lp.upper);
     });
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption = dropdownOptions[selectedIndex];
@@ -94,8 +94,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     return percentage !== 0 ? percentage.toFixed(2) : '';
   }
 
-  function updateResult(liquidityPosition: UniswapPosition | undefined) {
-    const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
+  function updateResult(liquidityPosition: UniswapPosition | undefined, percentage: string) {
+    const parsedPercentage = parsePercentage(percentage);
 
     const lower = liquidityPosition ? liquidityPosition.lower : null;
     const upper = liquidityPosition ? liquidityPosition.upper : null;
@@ -139,6 +139,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
         isAmount0LastUpdated: undefined,
         isToken0Selected: undefined,
       },
+      textFields: [
+        lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : '',
+        percentage,
+      ],
       operator(operand) {
         if (!operand || lower == null || upper == null) return null;
         return removeLiquidityOperator(
@@ -157,7 +161,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   function handleSelectOption(updatedOption: DropdownOption) {
     const updatedPosition = uniswapPositions[parseInt(updatedOption.value)];
-    updateResult(updatedPosition);
+    updateResult(updatedPosition, localRemoveLiquidityPercentage);
   }
 
   return (
@@ -194,8 +198,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                   onBlur={() => {
                     const parsedPercentage = parsePercentage(localRemoveLiquidityPercentage);
                     const formattedPercentage = formatPercentage(parsedPercentage);
-                    updateResult(selectedPosition);
-                    setLocalRemoveLiquidityPercentage(formattedPercentage);
+                    updateResult(selectedPosition, formattedPercentage);
                   }}
                 />
               </label>
