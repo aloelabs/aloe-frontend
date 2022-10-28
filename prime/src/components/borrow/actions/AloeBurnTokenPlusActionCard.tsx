@@ -30,10 +30,14 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
+  const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.KITTY0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
-  const callbackWithFullResult = (value: string) => {
+  const max = accountState.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'];
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
+
+  const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
     onChange(
       {
@@ -42,25 +46,21 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
           value === ''
             ? undefined
             : getBurnActionArgs(
-                selectedToken === TokenType.KITTY0 ? token0 : token1,
-                selectedToken === TokenType.KITTY0 ? kitty0 : kitty1,
+                token === TokenType.KITTY0 ? token0 : token1,
+                token === TokenType.KITTY0 ? kitty0 : kitty1,
                 parsedValue
               ),
         operator(operand) {
-          if (selectedToken == null) return null;
-          return burnOperator(operand, selectedToken, parsedValue);
+          return burnOperator(operand, token, parsedValue);
         },
       },
-      [selectedToken, value]
+      [token, value]
     );
   };
 
-  const max = accountState.assets[selectedToken === TokenType.KITTY0 ? 'token0Plus' : 'token1Plus'];
-  const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (forceOutput) callbackWithFullResult(tokenAmount);
-  }, [forceOutput]);
+    if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
+  });
 
   return (
     <BaseActionCard
@@ -75,22 +75,14 @@ export function AloeBurnTokenPlusActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange(
-                {
-                  actionId: ActionID.BURN,
-                  operator(_) {
-                    return null;
-                  },
-                },
-                [option.value as TokenType, '']
-              );
+              callbackWithFullResult(option.value as TokenType, '');
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
-          onChange={callbackWithFullResult}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
           maxed={tokenAmount === maxString}
         />
