@@ -6,7 +6,7 @@ import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
-import { Display } from 'shared/lib/components/common/Typography';
+import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
@@ -26,7 +26,11 @@ import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
 import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINT_LG,
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   computeLiquidationThresholds,
@@ -40,6 +44,8 @@ import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const GREEN_COLOR = 'hsl(140deg 100% 37% / 0.75)';
+const RED_COLOR = 'hsl(0deg 78% 63% / 0.75)';
 
 const BodyWrapper = styled.div`
   display: grid;
@@ -94,10 +100,11 @@ const EmptyStateSvgWrapper = styled.div`
 
 const AccountStatsGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, calc(50% - 8px));
   gap: 16px;
+  max-width: 100%;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     grid-template-columns: 1fr;
   }
 `;
@@ -337,7 +344,7 @@ export default function BorrowActionsPage() {
   return (
     <AppPage>
       <BodyWrapper>
-        <div className='flex gap-8 items-center mb-4'>
+        <div className='flex gap-8 items-center mb-10'>
           <PreviousPageButton onClick={() => navigate('../borrow')} />
           <MarginAccountHeader
             token0={token0}
@@ -363,9 +370,9 @@ export default function BorrowActionsPage() {
         <div className='w-full flex flex-col justify-between'>
           <div className='w-full flex flex-col gap-4 mb-8'>
             <div className='flex gap-4 items-center'>
-              <Display size='M' weight='medium'>
+              <Text size='L' weight='medium'>
                 Summary
-              </Display>
+              </Text>
               <TokenChooser
                 token0={token0}
                 token1={token1}
@@ -384,48 +391,59 @@ export default function BorrowActionsPage() {
             <AccountStatsGrid>
               <AccountStatsCard
                 label='Assets'
-                valueLine1={`${formatTokenAmount(assetsSum0, 5)} ${token0.ticker || ''}`}
-                valueLine2={`${formatTokenAmount(assetsSum1, 5)} ${token1.ticker || ''}`}
+                valueLine1={formatTokenAmount(assetsSum0, 4)}
+                denomination={token0.ticker ?? ''}
+                denominationColor={GREEN_COLOR}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                label='Assets'
+                valueLine1={formatTokenAmount(assetsSum1, 4)}
+                denomination={token1.ticker ?? ''}
+                denominationColor={GREEN_COLOR}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Liabilities'
-                valueLine1={`${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 5)} ${
-                  token0.ticker || ''
-                }`}
-                valueLine2={`${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 5)} ${
-                  token1.ticker || ''
-                }`}
+                valueLine1={formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}
+                denomination={token0.ticker ?? ''}
+                denominationColor={RED_COLOR}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                label='Liabilities'
+                valueLine1={formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}
+                denomination={token1.ticker ?? ''}
+                denominationColor={RED_COLOR}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Lower Liquidation Threshold'
                 valueLine1={
+                  displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
+                }
+                denomination={
                   displayedLiquidationThresholds
-                    ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 5)} ${selectedToken?.ticker || ''}/${
-                        unselectedToken?.ticker || ''
-                      }`
-                    : '-'
+                    ? `${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`
+                    : undefined
                 }
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 label='Upper Liquidation Threshold'
                 valueLine1={
+                  displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
+                }
+                denomination={
                   displayedLiquidationThresholds
-                    ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 5)} ${selectedToken?.ticker || ''}/${
-                        unselectedToken?.ticker || ''
-                      }`
-                    : '-'
+                    ? `${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`
+                    : undefined
                 }
                 showAsterisk={isShowingHypothetical}
               />
             </AccountStatsGrid>
           </div>
-          <div className='w-full flex flex-col gap-4 mb-8'>
-            <Display size='M' weight='medium'>
-              P&L
-            </Display>
+          <div className='w-full mb-8'>
             {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
               <PnLGraph
                 marginAccount={displayedMarginAccount}
@@ -439,22 +457,27 @@ export default function BorrowActionsPage() {
                 setSwapFeesInputValue={setSwapFeesInputValue}
               />
             ) : (
-              <EmptyStateWrapper>
-                <EmptyStateContainer>
-                  <EmptyStateSvgWrapper>
-                    <TrendingUpIcon />
-                  </EmptyStateSvgWrapper>
-                  <Display size='XS' color={SECONDARY_COLOR}>
-                    A P&L graph of your open positions will appear here.
-                  </Display>
-                </EmptyStateContainer>
-              </EmptyStateWrapper>
+              <div className='w-full flex flex-col gap-4'>
+                <Text size='L' weight='medium'>
+                  P&L
+                </Text>
+                <EmptyStateWrapper>
+                  <EmptyStateContainer>
+                    <EmptyStateSvgWrapper>
+                      <TrendingUpIcon />
+                    </EmptyStateSvgWrapper>
+                    <Display size='XS' color={SECONDARY_COLOR}>
+                      A P&L graph of your open positions will appear here.
+                    </Display>
+                  </EmptyStateContainer>
+                </EmptyStateWrapper>
+              </div>
             )}
           </div>
           <div className='w-full flex flex-col gap-4 mb-8'>
-            <Display size='M' weight='medium'>
+            <Text size='L' weight='medium'>
               Uniswap Positions
-            </Display>
+            </Text>
             <UniswapPositionTable
               accountAddress={accountAddressParam || ''}
               marginAccount={marginAccount}
@@ -466,9 +489,9 @@ export default function BorrowActionsPage() {
             />
           </div>
           <div className='w-full flex flex-col gap-4'>
-            <Display size='M' weight='medium'>
+            <Text size='L' weight='medium'>
               Token Allocation
-            </Display>
+            </Text>
             {!isActiveAssetsEmpty ? (
               <TokenAllocationPieChartWidget
                 token0={token0}

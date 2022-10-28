@@ -15,9 +15,11 @@ import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+import tw from 'twin.macro';
 
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import {
   getAssets,
@@ -47,6 +49,9 @@ const Container = styled.div`
   top: 0;
   width: 100%;
   height: 100%;
+
+  ${tw`lg:left-[-64px] lg:w-[calc(100% + 64px)]`}// border-radius: 8px;
+  // border: 1px solid rgba(26, 32, 44, 1);
 `;
 
 const StyledSettingsContainer = styled.div`
@@ -291,12 +296,19 @@ export default function PnLGraph(props: PnLGraphProps) {
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
-  const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
+  // const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
+  // const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
 
-  const ticks = [price];
-  if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
-  if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
+  // const ticks = [price];
+  // if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
+  // if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
+
+  const numTicks = 4;
+  const tickSpacing = (priceB - priceA) / numTicks;
+  const ticks = [priceA + tickSpacing / 2];
+  for (let i = 1; i < numTicks; i += 1) {
+    ticks.push(ticks[i - 1] + tickSpacing);
+  }
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
@@ -314,13 +326,11 @@ export default function PnLGraph(props: PnLGraphProps) {
   }
 
   return (
-    <div className='w-full'>
-      <Text size='S' weight='medium' color={SECONDARY_COLOR}>
-        This graph estimates profit and losses arising solely from the structure of your positions. To include
-        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
-        and enter your desired values.
-      </Text>
-      <div className='flex flex-col items-end'>
+    <div className='w-full flex flex-col gap-4'>
+      <div className='flex justify-between items-center'>
+        <Text size='L' weight='medium'>
+          P&L
+        </Text>
         <PnLGraphSettings
           borrowInterestInputValue={borrowInterestInputValue}
           setBorrowInterestInputValue={setBorrowInterestInputValue}
@@ -331,7 +341,7 @@ export default function PnLGraph(props: PnLGraphProps) {
       </div>
       <Wrapper>
         <Container>
-          <ResponsiveContainer width='99%' height={300}>
+          <ResponsiveContainer width='100%' height={300}>
             <AreaChart
               data={data}
               margin={{
@@ -398,6 +408,11 @@ export default function PnLGraph(props: PnLGraphProps) {
           </ResponsiveContainer>
         </Container>
       </Wrapper>
+      <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+        This graph estimates profit and losses arising solely from the structure of your positions. To include
+        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
+        and enter your desired values.
+      </Text>
     </div>
   );
 }

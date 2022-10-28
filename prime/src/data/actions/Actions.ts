@@ -161,7 +161,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
     },
   },
   UniswapV3: {
-    name: 'Uniswap V3',
+    name: 'Uni V3',
     Icon: UniswapLogo,
     color: '#f31677',
     actions: {
