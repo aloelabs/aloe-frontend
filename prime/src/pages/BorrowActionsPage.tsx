@@ -181,6 +181,15 @@ export default function BorrowActionsPage() {
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
+  const updateHypotheticalState = (updatedState: AccountState | null) => {
+    setHypotheticalState(updatedState);
+
+    // If state is null, there aren't any hypotheticals to show
+    if (updatedState == null) setIsShowingHypothetical(false);
+    // If state is non-null, but was previously null, we want to show hypotheticals by default
+    else if (hypotheticalState == null) setIsShowingHypothetical(true);
+  };
+
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const marginAccountContract = useContract({
@@ -323,7 +332,6 @@ export default function BorrowActionsPage() {
     }
     setDisplayedMarginAccount(_marginAccount);
     setDisplayedUniswapPositions(isShowingHypothetical ? uniswapPositionsF : uniswapPositions);
-    console.log('Running 1');
   }, [
     marginAccount,
     uniswapPositions,
@@ -346,7 +354,6 @@ export default function BorrowActionsPage() {
         6
       );
       setLiquidationThresholds(lt);
-      console.log('Running 2');
     },
     GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
@@ -391,14 +398,7 @@ export default function BorrowActionsPage() {
         <ManageAccountWidget
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
-          setHypotheticalState={(state) => {
-            setHypotheticalState(state);
-
-            // If state is null, there aren't any hypotheticals to show
-            if (state == null) setIsShowingHypothetical(false);
-            // If state is non-null, but was previously null, we want to show hypotheticals by default
-            else if (hypotheticalState == null) setIsShowingHypothetical(true);
-          }}
+          updateHypotheticalState={updateHypotheticalState}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>

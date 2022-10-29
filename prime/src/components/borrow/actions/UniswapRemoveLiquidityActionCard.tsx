@@ -34,6 +34,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 
+  const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
+
   const dropdownOptions = uniswapPositions
     .filter((lp) => JSBI.greaterThan(lp.liquidity, JSBI.BigInt('0')))
     .map((lp, index) => {
@@ -44,13 +46,14 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       } as DropdownOption;
     });
 
-  const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
-
   useEffect(() => {
+    console.log('useEffect called ', accountState);
     const previousRemoveLiquidityPercentage = userInputFields?.at(1);
     if (previousRemoveLiquidityPercentage && previousRemoveLiquidityPercentage !== localRemoveLiquidityPercentage) {
       setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage);
     }
+    // TODO: refactor this to have exhaustive dependency list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountState]);
 
   let selectedOption: DropdownOption | undefined = undefined;

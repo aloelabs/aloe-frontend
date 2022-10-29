@@ -71,6 +71,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   useEffect(() => {
     if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
+    // TODO: refactor this useEffect to have exhaustive deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forceOutput]);
 
   return (
