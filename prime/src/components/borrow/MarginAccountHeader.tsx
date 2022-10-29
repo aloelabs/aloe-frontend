@@ -29,7 +29,7 @@ const MarginPairContainer = styled.div`
 const TokenIconsWrapper = styled.div`
   ${tw`flex flex-row items-center justify-start -space-x-4`}
   width: 66.66px;
-  height: 48px;
+  height: 40px;
 `;
 
 const TokenIcon = styled.img`
@@ -47,9 +47,6 @@ const Dash = styled.div`
 
 const MarginAccountBadges = styled.div`
   ${tw`flex gap-4`}
-  // position: absolute;
-  // top: 60px;
-  // left: 0px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column;

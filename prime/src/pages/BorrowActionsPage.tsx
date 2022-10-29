@@ -423,35 +423,35 @@ export default function BorrowActionsPage() {
           <AccountStatsGrid>
             <AccountStatsCard
               label='Assets'
-              valueLine1={formatTokenAmount(assetsSum0, 4)}
+              value={formatTokenAmount(assetsSum0, 4)}
               denomination={token0.ticker ?? ''}
               denominationColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
-              valueLine1={formatTokenAmount(assetsSum1, 4)}
+              value={formatTokenAmount(assetsSum1, 4)}
               denomination={token1.ticker ?? ''}
               denominationColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              valueLine1={formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}
+              value={formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}
               denomination={token0.ticker ?? ''}
               denominationColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              valueLine1={formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}
+              value={formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}
               denomination={token1.ticker ?? ''}
               denominationColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Lower Liquidation Threshold'
-              valueLine1={
+              value={
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
@@ -463,7 +463,7 @@ export default function BorrowActionsPage() {
             />
             <AccountStatsCard
               label='Upper Liquidation Threshold'
-              valueLine1={
+              value={
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={

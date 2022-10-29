@@ -19,7 +19,6 @@ import tw from 'twin.macro';
 
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import {
   getAssets,
@@ -36,6 +35,7 @@ import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const INPUT_DEBOUNCE_DELAY_MS = 25;
+const NUM_TICKS = 4;
 
 const Wrapper = styled.div`
   position: relative;
@@ -44,14 +44,12 @@ const Wrapper = styled.div`
 `;
 
 const Container = styled.div`
+  ${tw`lg:left-[-64px] lg:w-[calc(100% + 64px)]`}
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-
-  ${tw`lg:left-[-64px] lg:w-[calc(100% + 64px)]`}// border-radius: 8px;
-  // border: 1px solid rgba(26, 32, 44, 1);
 `;
 
 const StyledSettingsContainer = styled.div`
@@ -296,17 +294,9 @@ export default function PnLGraph(props: PnLGraphProps) {
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  // const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
-  // const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
-
-  // const ticks = [price];
-  // if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
-  // if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
-
-  const numTicks = 4;
-  const tickSpacing = (priceB - priceA) / numTicks;
+  const tickSpacing = (priceB - priceA) / NUM_TICKS;
   const ticks = [priceA + tickSpacing / 2];
-  for (let i = 1; i < numTicks; i += 1) {
+  for (let i = 1; i < NUM_TICKS; i += 1) {
     ticks.push(ticks[i - 1] + tickSpacing);
   }
 

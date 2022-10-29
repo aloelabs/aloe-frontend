@@ -26,7 +26,7 @@ const TextWrapper = styled.div`
 
 export type AccountStatsCardProps = {
   label: string;
-  valueLine1: string;
+  value: string;
   denomination?: string;
   denominationColor?: string;
   showAsterisk: boolean;
@@ -34,7 +34,7 @@ export type AccountStatsCardProps = {
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, valueLine1, denomination, denominationColor, showAsterisk, className } = props;
+  const { label, value, denomination, denominationColor, showAsterisk, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
       <div className='flex'>
@@ -49,7 +49,7 @@ export function AccountStatsCard(props: AccountStatsCardProps) {
       </div>
       <TextWrapper>
         <Display size='L' weight='semibold'>
-          {valueLine1}
+          {value}
         </Display>
         {denomination !== undefined && (
           <Display size='M' weight='medium' color={denominationColor ?? SECONDARY_COLOR}>
