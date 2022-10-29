@@ -43,8 +43,8 @@ import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
-const GREEN_COLOR = 'hsl(140deg 100% 37% / 0.75)';
-const RED_COLOR = 'hsl(0deg 78% 63% / 0.75)';
+const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
+const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
 
 const BodyWrapper = styled.div`
   display: grid;
@@ -373,6 +373,8 @@ export default function BorrowActionsPage() {
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
   const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
   const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
+  const selectedTokenTicker = selectedToken?.ticker || '';
+  const unselectedTokenTicker = unselectedToken?.ticker || '';
 
   return (
     <BodyWrapper>
@@ -424,29 +426,29 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum0, 4)}
+              valueColor={GREEN_COLOR}
               denomination={token0.ticker ?? ''}
-              denominationColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum1, 4)}
+              valueColor={GREEN_COLOR}
               denomination={token1.ticker ?? ''}
-              denominationColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
+              valueColor={RED_COLOR}
               denomination={token0.ticker ?? ''}
-              denominationColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
+              valueColor={RED_COLOR}
               denomination={token1.ticker ?? ''}
-              denominationColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
@@ -455,9 +457,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds
-                  ? `${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`
-                  : undefined
+                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />
@@ -467,9 +467,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds
-                  ? `${selectedToken?.ticker || ''}/${unselectedToken?.ticker || ''}`
-                  : undefined
+                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />

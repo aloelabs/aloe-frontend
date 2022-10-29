@@ -4,9 +4,11 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 
+const PRIMARY_COLOR = '#ffffff';
 const SECONDARY_COLOR = '#82a0b6';
+const TERTIARY_COLOR = '#ccdfed';
 
 const AccountStatsCardWrapper = styled.div`
   ${tw`flex flex-col justify-center`}
@@ -16,25 +18,36 @@ const AccountStatsCardWrapper = styled.div`
 `;
 
 const TextWrapper = styled.div`
-  ${tw`flex items-baseline max-w-full gap-2 overflow-hidden`}
+  ${tw`flex items-baseline max-w-full overflow-hidden`}
+  gap: 6px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
     flex-direction: column;
     gap: 0;
+
+    div:last-child {
+      // tweak spacing between value and denomination
+      margin-top: -4px;
+    }
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    flex-direction: row;
+    gap: 6px;
   }
 `;
 
 export type AccountStatsCardProps = {
   label: string;
   value: string;
+  valueColor?: string;
   denomination?: string;
-  denominationColor?: string;
   showAsterisk: boolean;
   className?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, denomination, denominationColor, showAsterisk, className } = props;
+  const { label, value, valueColor, denomination, showAsterisk, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
       <div className='flex'>
@@ -48,11 +61,11 @@ export function AccountStatsCard(props: AccountStatsCardProps) {
         )}
       </div>
       <TextWrapper>
-        <Display size='L' weight='semibold'>
+        <Display size='L' weight='semibold' color={valueColor ?? PRIMARY_COLOR}>
           {value}
         </Display>
         {denomination !== undefined && (
-          <Display size='M' weight='medium' color={denominationColor ?? SECONDARY_COLOR}>
+          <Display size='M' weight='medium' color={TERTIARY_COLOR}>
             {denomination}
           </Display>
         )}
