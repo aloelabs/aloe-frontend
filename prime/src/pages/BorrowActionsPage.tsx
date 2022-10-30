@@ -4,9 +4,8 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
-import AppPage from 'shared/lib/components/common/AppPage';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
-import { Display } from 'shared/lib/components/common/Typography';
+import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useContract, useContractRead, useProvider } from 'wagmi';
@@ -26,7 +25,11 @@ import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
 import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_SM,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   computeLiquidationThresholds,
@@ -40,15 +43,48 @@ import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
+const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
 
 const BodyWrapper = styled.div`
   display: grid;
   width: 100%;
   grid-template-columns: calc(100% - 582px) 550px;
   gap: 32px;
+  padding-left: 64px;
+  padding-right: 64px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     grid-template-columns: 100%;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    // TODO: standardize this across all pages that use this padding
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+`;
+
+const HeaderBarContainer = styled.div`
+  ${tw`flex items-center mb-10`}
+  padding-top: 64px;
+  gap: 32px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    display: grid;
+    grid-template-columns: fit-content(35px) fit-content(400px) fit-content(24px);
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    padding-top: 48px;
   }
 `;
 
@@ -56,11 +92,14 @@ const GridExpandingDiv = styled.div`
   grid-row: 1 / 4;
   grid-column: 2 / span 1;
   justify-self: center;
+  margin-top: 96px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     justify-self: start;
     grid-row: 2 / span 1;
     grid-column: 1 / span 1;
+    margin-top: 0px;
+    margin-bottom: 0px;
   }
 `;
 
@@ -94,10 +133,11 @@ const EmptyStateSvgWrapper = styled.div`
 
 const AccountStatsGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, calc(50% - 8px));
   gap: 16px;
+  max-width: 100%;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     grid-template-columns: 1fr;
   }
 `;
@@ -333,112 +373,124 @@ export default function BorrowActionsPage() {
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
   const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
   const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
+  const selectedTokenTicker = selectedToken?.ticker || '';
+  const unselectedTokenTicker = unselectedToken?.ticker || '';
 
   return (
-    <AppPage>
-      <BodyWrapper>
-        <div className='flex gap-8 items-center mb-4'>
-          <PreviousPageButton onClick={() => navigate('../borrow')} />
-          <MarginAccountHeader
-            token0={token0}
-            token1={token1}
-            feeTier={marginAccount.feeTier}
-            id={accountAddressParam || ''}
-          />
-        </div>
-        <GridExpandingDiv>
-          <ManageAccountWidget
-            marginAccount={marginAccount}
-            uniswapPositions={uniswapPositions}
-            setHypotheticalState={(state) => {
-              setHypotheticalState(state);
+    <BodyWrapper>
+      <HeaderBarContainer>
+        <PreviousPageButton onClick={() => navigate('../borrow')} />
+        <MarginAccountHeader
+          token0={token0}
+          token1={token1}
+          feeTier={marginAccount.feeTier}
+          id={accountAddressParam || ''}
+        />
+      </HeaderBarContainer>
+      <GridExpandingDiv>
+        <ManageAccountWidget
+          marginAccount={marginAccount}
+          uniswapPositions={uniswapPositions}
+          setHypotheticalState={(state) => {
+            setHypotheticalState(state);
 
-              // If state is null, there aren't any hypotheticals to show
-              if (state == null) setIsShowingHypothetical(false);
-              // If state is non-null, but was previously null, we want to show hypotheticals by default
-              else if (hypotheticalState == null) setIsShowingHypothetical(true);
-            }}
-          />
-        </GridExpandingDiv>
-        <div className='w-full flex flex-col justify-between'>
-          <div className='w-full flex flex-col gap-4 mb-8'>
-            <div className='flex gap-4 items-center'>
-              <Display size='M' weight='medium'>
-                Summary
-              </Display>
-              <TokenChooser
-                token0={token0}
-                token1={token1}
-                isToken0Selected={isToken0Selected}
-                setIsToken0Selected={setIsToken0Selected}
-              />
-              <div className='ml-auto'>
-                {hypotheticalState && (
-                  <HypotheticalToggleButton
-                    showHypothetical={isShowingHypothetical}
-                    setShowHypothetical={setIsShowingHypothetical}
-                  />
-                )}
-              </div>
+            // If state is null, there aren't any hypotheticals to show
+            if (state == null) setIsShowingHypothetical(false);
+            // If state is non-null, but was previously null, we want to show hypotheticals by default
+            else if (hypotheticalState == null) setIsShowingHypothetical(true);
+          }}
+        />
+      </GridExpandingDiv>
+      <div className='w-full flex flex-col justify-between'>
+        <div className='w-full flex flex-col gap-4 mb-8'>
+          <div className='flex gap-4 items-center'>
+            <Text size='L' weight='medium'>
+              Summary
+            </Text>
+            <TokenChooser
+              token0={token0}
+              token1={token1}
+              isToken0Selected={isToken0Selected}
+              setIsToken0Selected={setIsToken0Selected}
+            />
+            <div className='ml-auto'>
+              {hypotheticalState && (
+                <HypotheticalToggleButton
+                  showHypothetical={isShowingHypothetical}
+                  setShowHypothetical={setIsShowingHypothetical}
+                />
+              )}
             </div>
-            <AccountStatsGrid>
-              <AccountStatsCard
-                label='Assets'
-                valueLine1={`${formatTokenAmount(assetsSum0, 5)} ${token0.ticker || ''}`}
-                valueLine2={`${formatTokenAmount(assetsSum1, 5)} ${token1.ticker || ''}`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                label='Liabilities'
-                valueLine1={`${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 5)} ${
-                  token0.ticker || ''
-                }`}
-                valueLine2={`${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 5)} ${
-                  token1.ticker || ''
-                }`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                label='Lower Liquidation Threshold'
-                valueLine1={
-                  displayedLiquidationThresholds
-                    ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 5)} ${selectedToken?.ticker || ''}/${
-                        unselectedToken?.ticker || ''
-                      }`
-                    : '-'
-                }
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                label='Upper Liquidation Threshold'
-                valueLine1={
-                  displayedLiquidationThresholds
-                    ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 5)} ${selectedToken?.ticker || ''}/${
-                        unselectedToken?.ticker || ''
-                      }`
-                    : '-'
-                }
-                showAsterisk={isShowingHypothetical}
-              />
-            </AccountStatsGrid>
           </div>
-          <div className='w-full flex flex-col gap-4 mb-8'>
-            <Display size='M' weight='medium'>
-              P&L
-            </Display>
-            {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
-              <PnLGraph
-                marginAccount={displayedMarginAccount}
-                uniswapPositions={displayedUniswapPositions.concat()}
-                inTermsOfToken0={isToken0Selected}
-                liquidationThresholds={displayedLiquidationThresholds}
-                isShowingHypothetical={isShowingHypothetical}
-                borrowInterestInputValue={borrowInterestInputValue}
-                swapFeesInputValue={swapFeesInputValue}
-                setBorrowInterestInputValue={setBorrowInterestInputValue}
-                setSwapFeesInputValue={setSwapFeesInputValue}
-              />
-            ) : (
+          <AccountStatsGrid>
+            <AccountStatsCard
+              label='Assets'
+              value={formatTokenAmount(assetsSum0, 4)}
+              valueColor={GREEN_COLOR}
+              denomination={token0.ticker ?? ''}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label='Assets'
+              value={formatTokenAmount(assetsSum1, 4)}
+              valueColor={GREEN_COLOR}
+              denomination={token1.ticker ?? ''}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label='Liabilities'
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
+              valueColor={RED_COLOR}
+              denomination={token0.ticker ?? ''}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label='Liabilities'
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
+              valueColor={RED_COLOR}
+              denomination={token1.ticker ?? ''}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label='Lower Liquidation Threshold'
+              value={
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
+              }
+              denomination={
+                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+              }
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label='Upper Liquidation Threshold'
+              value={
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
+              }
+              denomination={
+                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+              }
+              showAsterisk={isShowingHypothetical}
+            />
+          </AccountStatsGrid>
+        </div>
+        <div className='w-full mb-8'>
+          {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
+            <PnLGraph
+              marginAccount={displayedMarginAccount}
+              uniswapPositions={displayedUniswapPositions.concat()}
+              inTermsOfToken0={isToken0Selected}
+              liquidationThresholds={displayedLiquidationThresholds}
+              isShowingHypothetical={isShowingHypothetical}
+              borrowInterestInputValue={borrowInterestInputValue}
+              swapFeesInputValue={swapFeesInputValue}
+              setBorrowInterestInputValue={setBorrowInterestInputValue}
+              setSwapFeesInputValue={setSwapFeesInputValue}
+            />
+          ) : (
+            <div className='w-full flex flex-col gap-4'>
+              <Text size='L' weight='medium'>
+                P&L
+              </Text>
               <EmptyStateWrapper>
                 <EmptyStateContainer>
                   <EmptyStateSvgWrapper>
@@ -449,48 +501,48 @@ export default function BorrowActionsPage() {
                   </Display>
                 </EmptyStateContainer>
               </EmptyStateWrapper>
-            )}
-          </div>
-          <div className='w-full flex flex-col gap-4 mb-8'>
-            <Display size='M' weight='medium'>
-              Uniswap Positions
-            </Display>
-            <UniswapPositionTable
-              accountAddress={accountAddressParam || ''}
-              marginAccount={marginAccount}
-              marginAccountLensContract={marginAccountLensContract}
-              provider={provider}
-              uniswapPositions={displayedUniswapPositions}
-              isInTermsOfToken0={isToken0Selected}
-              showAsterisk={isShowingHypothetical}
-            />
-          </div>
-          <div className='w-full flex flex-col gap-4'>
-            <Display size='M' weight='medium'>
-              Token Allocation
-            </Display>
-            {!isActiveAssetsEmpty ? (
-              <TokenAllocationPieChartWidget
-                token0={token0}
-                token1={token1}
-                assets={displayedMarginAccount.assets}
-                sqrtPriceX96={marginAccount.sqrtPriceX96}
-              />
-            ) : (
-              <EmptyStateWrapper>
-                <EmptyStateContainer>
-                  <EmptyStateSvgWrapper>
-                    <PieChartIcon />
-                  </EmptyStateSvgWrapper>
-                  <Display size='XS' color={SECONDARY_COLOR}>
-                    A breakdown of your token allocation will appear here.
-                  </Display>
-                </EmptyStateContainer>
-              </EmptyStateWrapper>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </BodyWrapper>
-    </AppPage>
+        <div className='w-full flex flex-col gap-4 mb-8'>
+          <Text size='L' weight='medium'>
+            Uniswap Positions
+          </Text>
+          <UniswapPositionTable
+            accountAddress={accountAddressParam || ''}
+            marginAccount={marginAccount}
+            marginAccountLensContract={marginAccountLensContract}
+            provider={provider}
+            uniswapPositions={displayedUniswapPositions}
+            isInTermsOfToken0={isToken0Selected}
+            showAsterisk={isShowingHypothetical}
+          />
+        </div>
+        <div className='w-full flex flex-col gap-4'>
+          <Text size='L' weight='medium'>
+            Token Allocation
+          </Text>
+          {!isActiveAssetsEmpty ? (
+            <TokenAllocationPieChartWidget
+              token0={token0}
+              token1={token1}
+              assets={displayedMarginAccount.assets}
+              sqrtPriceX96={marginAccount.sqrtPriceX96}
+            />
+          ) : (
+            <EmptyStateWrapper>
+              <EmptyStateContainer>
+                <EmptyStateSvgWrapper>
+                  <PieChartIcon />
+                </EmptyStateSvgWrapper>
+                <Display size='XS' color={SECONDARY_COLOR}>
+                  A breakdown of your token allocation will appear here.
+                </Display>
+              </EmptyStateContainer>
+            </EmptyStateWrapper>
+          )}
+        </div>
+      </div>
+    </BodyWrapper>
   );
 }

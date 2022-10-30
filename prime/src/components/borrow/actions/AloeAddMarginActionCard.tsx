@@ -42,8 +42,12 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
+  const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+
+  const max = selectedToken ? getBalanceFor(selectedToken, accountState.availableBalances) : 0;
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
 
   const tokenMap = new Map<TokenType, TokenData>();
   tokenMap.set(TokenType.ASSET0, token0);
@@ -51,29 +55,22 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   tokenMap.set(TokenType.KITTY0, kitty0);
   tokenMap.set(TokenType.KITTY1, kitty1);
 
-  const callbackWithFullResult = (value: string) => {
+  const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
     onChange(
       {
         actionId: ActionID.TRANSFER_IN,
-        actionArgs:
-          selectedToken && value !== ''
-            ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue)
-            : undefined,
+        actionArgs: token && value !== '' ? getTransferInActionArgs(tokenMap.get(token)!, parsedValue) : undefined,
         operator(operand) {
-          if (selectedToken == null) return null;
-          return transferInOperator(operand, selectedToken, parsedValue);
+          return transferInOperator(operand, token, parsedValue);
         },
       },
-      [selectedToken, value]
+      [token, value]
     );
   };
 
-  const max = selectedToken ? getBalanceFor(selectedToken, accountState.availableBalances) : 0;
-  const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (forceOutput) callbackWithFullResult(tokenAmount);
+    if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
   }, [forceOutput]);
 
   return (
@@ -96,22 +93,14 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange(
-                {
-                  actionId: ActionID.TRANSFER_IN,
-                  operator(_) {
-                    return null;
-                  },
-                },
-                [option.value as TokenType, '']
-              );
+              callbackWithFullResult(option.value as TokenType, '');
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
-          onChange={callbackWithFullResult}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
           maxed={tokenAmount === maxString}
         />
