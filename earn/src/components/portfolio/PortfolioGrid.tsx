@@ -2,7 +2,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { GetTokenData, TokenData } from '../../data/TokenData';
-import { TokenBalance, TokenQuote } from '../../pages/PortfolioPage';
+import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 import PortfolioPieChartWidget, { TokenPercentage } from './PortfolioPieChartWidget';
 import PortfolioPriceChartWidget from './PriceChart';
@@ -161,6 +161,7 @@ export type PortfolioGridProps = {
   balances: TokenBalance[];
   activeAsset: TokenData | null;
   tokenQuotes: TokenQuote[];
+  tokenPriceData: TokenPriceData[];
 };
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
@@ -170,8 +171,9 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   );
   const totalBalanceUSD = activeBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   const totalBalance = activeBalances.reduce((acc, balance) => acc + balance.balance, 0);
-  const apySum = activeBalances.reduce((acc, balance) => acc + balance.apy, 0);
-  const apy = apySum / activeBalances.length;
+  console.log(activeBalances);
+  const apySum = activeBalances.reduce((acc, balance) => acc + balance.apy * balance.balance, 0);
+  const apy = apySum / activeBalances.length / totalBalance;
   const activeSlices: TokenPercentage[] = activeBalances.map((balance) => ({
     token: balance.token,
     percent: balance.balanceUSD / totalBalanceUSD || 0,
@@ -180,6 +182,9 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   }));
   const currentTokenQuote = tokenQuotes.find(
     (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
+  );
+  const currentTokenPriceData = props.tokenPriceData.find(
+    (data) => activeAsset && data.token.address === activeAsset.address
   );
   return (
     <Grid>
@@ -209,7 +214,7 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
         <PortfolioPriceChartWidget
           token={activeAsset}
           currentPrice={currentTokenQuote?.price || 0}
-          prices={PRICE_DATA}
+          prices={currentTokenPriceData?.prices || []}
         />
       </PriceContainer>
       <UptimeContainer>

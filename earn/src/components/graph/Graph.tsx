@@ -148,6 +148,7 @@ export default function Graph(props: GraphProps) {
           position={tooltipPosition}
           offset={tooltipOffset}
           cursor={tooltipCursor}
+          wrapperStyle={{ outline: 'none' }}
         />
         {charts.map((chart, index) => (
           <Area

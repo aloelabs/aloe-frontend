@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
+import rateLimit from 'axios-rate-limit';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
@@ -32,6 +33,12 @@ import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
+const http = rateLimit(axios.create(), {
+  maxRequests: 2,
+  perMilliseconds: 500,
+  maxRPS: 4,
+});
+
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 
@@ -45,6 +52,11 @@ const Container = styled.div`
 export type TokenQuote = {
   token: TokenData;
   price: number;
+};
+
+export type TokenPriceData = {
+  token: TokenData;
+  prices: number[][]; // [timestamp, price]
 };
 
 export type TokenBalance = {
@@ -70,6 +82,7 @@ export default function PortfolioPage() {
   const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
@@ -150,6 +163,40 @@ export default function PortfolioPage() {
       mounted = false;
     };
   }, [provider, address, lendingPairs, isLoading]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const tokens = lendingPairs.flatMap((p) => [p.token0, p.token1]);
+      const requests = lendingPairs.flatMap((pair) => [
+        http.get(
+          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${
+            pair.token0.referenceAddress || pair.token0.address
+          }/market_chart?vs_currency=usd&days=7`
+        ),
+        http.get(
+          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${
+            pair.token1.referenceAddress || pair.token1.address
+          }/market_chart?vs_currency=usd&days=7`
+        ),
+      ]);
+      const response = await Promise.all(requests);
+      if (mounted) {
+        const responseData: TokenPriceData[] = response.map((r, i) => {
+          const data = r.data;
+          return {
+            token: tokens[i],
+            prices: data?.prices || [],
+          };
+        });
+        setTokenPriceData(responseData);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [lendingPairs]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
@@ -241,7 +288,12 @@ export default function PortfolioPage() {
               Withdraw
             </OutlinedWhiteButtonWithIcon>
           </div>
-          <PortfolioGrid balances={combinedBalances} activeAsset={activeAsset} tokenQuotes={tokenQuotes} />
+          <PortfolioGrid
+            balances={combinedBalances}
+            activeAsset={activeAsset}
+            tokenQuotes={tokenQuotes}
+            tokenPriceData={tokenPriceData}
+          />
           <LendingPairPeerCard />
         </div>
       </Container>

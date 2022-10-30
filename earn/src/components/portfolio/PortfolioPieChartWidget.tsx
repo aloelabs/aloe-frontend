@@ -15,11 +15,9 @@ import { formatTokenAmountCompact } from '../../util/Numbers';
 const PIE_CHART_HOVER_GROWTH = 1.05;
 
 const Container = styled.div`
-  ${tw`w-full flex flex-col items-start justify-center self-baseline`}
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  ${tw`w-full flex flex-col items-start justify-center self-baseline`}/* @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     display: none;
-  }
+  } */
 `;
 
 const PieChartWrapper = styled.div`
@@ -108,6 +106,7 @@ type TokenColor = {
 };
 
 function getCoordinatesForPercent(percent: number) {
+  console.log('getCoordinatesForPercent', percent);
   const x = Math.cos(2 * Math.PI * percent);
   const y = Math.sin(2 * Math.PI * percent);
   return [x, y];
@@ -203,8 +202,9 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
     });
   }, [tokenPercentages, tokenColors]);
 
-  // let cumulativePercent = 0;
   const paths: PieChartSlicePath[] = useMemo(() => {
+    // reset cumulative percent
+    cumulativePercent.current = 0;
     return slices.map((slice) => {
       // destructuring assignment sets the two variables at once
       const [startX, startY] = getCoordinatesForPercent(cumulativePercent.current);

@@ -6,6 +6,7 @@ import { TokenData } from '../../data/TokenData';
 import { fixTimestamp } from '../../util/Dates';
 import { formatUSD } from '../../util/Numbers';
 import Graph from '../graph/Graph';
+import PriceChartTooltip from './PriceChartTooltip';
 
 const GRAY_STROKE_COLOR = '#C2D1DD';
 const GRAY_GRADIENT_COLOR = '#A7BDCE';
@@ -18,7 +19,7 @@ export type PriceEntry = {
 export type PortfolioPriceChartWidgetProps = {
   token: TokenData | null;
   currentPrice: number;
-  prices: PriceEntry[];
+  prices: number[][];
 };
 
 export default function PortfolioPriceChartWidget(props: PortfolioPriceChartWidgetProps) {
@@ -28,8 +29,8 @@ export default function PortfolioPriceChartWidget(props: PortfolioPriceChartWidg
     let updatedData: any[] = [];
     prices.forEach((price) => {
       let currentObj = {} as any;
-      currentObj['x'] = new Date(fixTimestamp(price.timestamp)).toISOString();
-      currentObj['price'] = price.price;
+      currentObj['x'] = new Date(fixTimestamp(price[0])).toISOString();
+      currentObj['price'] = price[1];
       updatedData.push(currentObj);
     });
     return updatedData;
@@ -63,7 +64,9 @@ export default function PortfolioPriceChartWidget(props: PortfolioPriceChartWidg
           ]}
           data={data}
           containerHeight={134}
+          CustomTooltip={<PriceChartTooltip />}
           tickTextColor={GRAY_STROKE_COLOR}
+          yAxisDomain={[(dataMin: number) => dataMin / 1.1, 'dataMax']}
           hideTicks={true}
         />
       </div>
