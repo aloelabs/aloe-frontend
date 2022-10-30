@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
@@ -181,15 +181,6 @@ export default function BorrowActionsPage() {
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
-  const updateHypotheticalState = (updatedState: AccountState | null) => {
-    setHypotheticalState(updatedState);
-
-    // If state is null, there aren't any hypotheticals to show
-    if (updatedState == null) setIsShowingHypothetical(false);
-    // If state is non-null, but was previously null, we want to show hypotheticals by default
-    else if (hypotheticalState == null) setIsShowingHypothetical(true);
-  };
-
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const marginAccountContract = useContract({
@@ -359,6 +350,12 @@ export default function BorrowActionsPage() {
     [displayedMarginAccount, displayedUniswapPositions]
   );
 
+  const updateHypotheticalState = useCallback((state: AccountState | null) => {
+    setHypotheticalState(state);
+    // If state is null, there aren't any hypotheticals to show
+    if (state == null) setIsShowingHypothetical(false);
+  }, []);
+
   // if no account data is found, don't render the page
   if (!marginAccount || !displayedMarginAccount) {
     return null;
@@ -399,6 +396,7 @@ export default function BorrowActionsPage() {
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
+          onAddFirstAction={() => setIsShowingHypothetical(true)}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>

@@ -110,11 +110,12 @@ export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
+  onAddFirstAction: () => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marginAccount, uniswapPositions, updateHypotheticalState } = props;
+  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
 
   // actions
@@ -181,17 +182,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     const states = calculateHypotheticalStates(marginAccount, initialState, operators);
     setHypotheticalStates(states);
     updateHypotheticalState(states.length > 1 ? states[states.length - 1] : null);
-    // TODO: clean up the dependency list (it is quite hacky right now)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    marginAccount,
-    uniswapPositions,
-    userBalance0Asset,
-    userBalance1Asset,
-    userBalance0Kitty,
-    userBalance1Kitty,
-    actionOutputs,
-  ]);
+  }, [actionOutputs, marginAccount, initialState, updateHypotheticalState]);
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
@@ -291,9 +282,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         isOpen={showAddActionModal}
         setIsOpen={setShowAddActionModal}
         handleAddAction={(action: Action) => {
+          if (activeActions.length === 0) onAddFirstAction();
           setActiveActions([...activeActions, action]);
         }}
         handleAddActions={(actions, templatedInputFields) => {
+          if (activeActions.length === 0) onAddFirstAction();
           setActiveActions([...activeActions, ...actions]);
           if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
         }}
