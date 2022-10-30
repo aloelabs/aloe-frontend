@@ -30,14 +30,15 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
       icon: token1?.iconPath || '',
     },
   ];
+  const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
-  const callbackWithFullResult = (value: string) => {
+  const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
     let amount0 = 0;
     let amount1 = 0;
-    if (selectedToken === TokenType.ASSET0) {
+    if (token === TokenType.ASSET0) {
       amount0 = parsedValue;
     } else {
       amount1 = parsedValue;
@@ -48,18 +49,16 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         actionId: ActionID.BORROW,
         actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          if (selectedToken == null) return null;
-          return borrowOperator(operand, selectedToken, Math.max(amount0, amount1));
+          return borrowOperator(operand, token, Math.max(amount0, amount1));
         },
       },
-      [selectedToken, value]
+      [token, value]
     );
   };
 
-  const tokenAmount = userInputFields?.at(1) ?? '';
   useEffect(() => {
-    if (forceOutput) callbackWithFullResult(tokenAmount);
-  }, [forceOutput]);
+    if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
+  });
 
   return (
     <BaseActionCard
@@ -74,22 +73,14 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           selectedOption={selectedTokenOption}
           onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange(
-                {
-                  actionId: ActionID.BORROW,
-                  operator(_) {
-                    return null;
-                  },
-                },
-                [option.value as TokenType, '']
-              );
+              callbackWithFullResult(option.value as TokenType, '');
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
-          onChange={callbackWithFullResult}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
         />
       </div>
     </BaseActionCard>

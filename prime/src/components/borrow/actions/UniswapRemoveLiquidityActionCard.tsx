@@ -34,13 +34,15 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 
-  const dropdownOptions = uniswapPositions.map((lp, index) => {
-    return {
-      label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
-      value: index.toString(),
-      isDefault: index === 0,
-    } as DropdownOption;
-  });
+  const dropdownOptions = uniswapPositions
+    .filter((lp) => JSBI.greaterThan(lp.liquidity, JSBI.BigInt('0')))
+    .map((lp, index) => {
+      return {
+        label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
+        value: index.toString(),
+        isDefault: index === 0,
+      } as DropdownOption;
+    });
 
   const [localRemoveLiquidityPercentage, setLocalRemoveLiquidityPercentage] = useState('');
 
@@ -97,19 +99,6 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       JSBI.multiply(liquidity, JSBI.BigInt(((parsedPercentage * 10000) / 100).toFixed(0))),
       JSBI.BigInt(10000)
     );
-
-    let amount0 = 0;
-    let amount1 = 0;
-    if (liquidityPosition) {
-      [amount0, amount1] = getAmountsForLiquidity(
-        liquidityToRemove,
-        liquidityPosition.lower,
-        liquidityPosition.upper,
-        sqrtRatioToTick(marginAccount.sqrtPriceX96),
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
-      );
-    }
 
     onChange(
       {

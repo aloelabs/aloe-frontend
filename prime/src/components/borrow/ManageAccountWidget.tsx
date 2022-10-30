@@ -22,12 +22,27 @@ import { ManageAccountTransactionButton } from './ManageAccountTransactionButton
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-center`}
-  background: rgba(13, 24, 33, 1);
+  background: rgba(13, 23, 30, 1);
   padding: 24px;
   border-radius: 8px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     width: 100%;
+  }
+
+  position: relative;
+  &:before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 8px;
+    padding: 1.5px 1.5px 1.5px 1.5px;
+    background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 `;
 
@@ -67,7 +82,7 @@ const ActionItemCount = styled.span`
   position: relative;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 1);
-  border: 2px solid rgba(13, 24, 33, 1);
+  border: 2px solid rgba(13, 23, 30, 1);
   width: 32px;
   height: 32px;
   margin-right: 32px;
@@ -191,7 +206,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           {activeActions.map((action, index) => (
             <ActionItem key={index}>
               <ActionItemCount>
-                <Text size='M' weight='bold' color='rgba(13, 24, 33, 1)'>
+                <Text size='M' weight='bold' color='rgba(13, 23, 30, 1)'>
                   {index + 1}
                 </Text>
               </ActionItemCount>
@@ -201,7 +216,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}
                   isCausingError={index >= numValidActions && userInputFields.at(index) !== undefined}
-                  forceOutput={userInputFields.at(index) !== undefined && actionOutputs.length === index}
+                  forceOutput={actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
                     console.log('OUTPUT', index, output, userInputs);
                     setUserInputFields([
@@ -228,7 +243,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           ))}
           <ActionItem>
             <ActionItemCount>
-              <Text size='M' weight='bold' color='rgba(13, 24, 33, 1)'>
+              <Text size='M' weight='bold' color='rgba(13, 23, 30, 1)'>
                 {activeActions.length + 1}
               </Text>
             </ActionItemCount>
@@ -267,17 +282,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           />
         </div>
       </div>
-      <BorrowSelectActionModal
-        isOpen={showAddActionModal}
-        setIsOpen={setShowAddActionModal}
-        handleAddAction={(action: Action) => {
-          setActiveActions([...activeActions, action]);
-        }}
-        handleAddActions={(actions, templatedInputFields) => {
-          setActiveActions([...activeActions, ...actions]);
-          if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
-        }}
-      />
       <BorrowSelectActionModal
         isOpen={showAddActionModal}
         setIsOpen={setShowAddActionModal}
