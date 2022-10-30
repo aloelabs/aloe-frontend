@@ -18,6 +18,7 @@ const AccountStatsCardWrapper = styled.div`
 
 const TextWrapper = styled.div`
   ${tw`flex items-baseline max-w-full overflow-hidden`}
+  flex-direction: row;
   gap: 8px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
@@ -27,7 +28,7 @@ const TextWrapper = styled.div`
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     flex-direction: row;
-    gap: 6px;
+    gap: 8px;
   }
 `;
 
