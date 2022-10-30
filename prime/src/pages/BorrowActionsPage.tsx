@@ -426,29 +426,29 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum0, 4)}
-              valueColor={GREEN_COLOR}
               denomination={token0.ticker ?? ''}
+              boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum1, 4)}
-              valueColor={GREEN_COLOR}
               denomination={token1.ticker ?? ''}
+              boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
-              valueColor={RED_COLOR}
               denomination={token0.ticker ?? ''}
+              boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
-              valueColor={RED_COLOR}
               denomination={token1.ticker ?? ''}
+              boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
