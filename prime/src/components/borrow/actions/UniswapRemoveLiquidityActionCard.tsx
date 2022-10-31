@@ -47,7 +47,6 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     });
 
   useEffect(() => {
-    console.log('useEffect called ', accountState);
     const previousRemoveLiquidityPercentage = userInputFields?.at(1);
     if (previousRemoveLiquidityPercentage && previousRemoveLiquidityPercentage !== localRemoveLiquidityPercentage) {
       setLocalRemoveLiquidityPercentage(previousRemoveLiquidityPercentage);
