@@ -71,7 +71,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   useEffect(() => {
     if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
-  }, [forceOutput]);
+  });
 
   return (
     <BaseActionCard
@@ -79,13 +79,6 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
-      // tooltipContent={
-      //   <Text>
-      //     Lorem ipsum dolor sit amet, consectetur adipisicing elit. Modi omnis quos facere provident, sapiente vero
-      //     voluptas reiciendis esse eos iusto et accusamus molestias dolorem! Qui dignissimos in provident ullam
-      //     voluptas?
-      //   </Text>
-      // } TODO
     >
       <div className='w-full flex flex-col gap-4 items-center'>
         <Dropdown

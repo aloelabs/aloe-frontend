@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
@@ -323,7 +323,6 @@ export default function BorrowActionsPage() {
     }
     setDisplayedMarginAccount(_marginAccount);
     setDisplayedUniswapPositions(isShowingHypothetical ? uniswapPositionsF : uniswapPositions);
-    console.log('Running 1');
   }, [
     marginAccount,
     uniswapPositions,
@@ -346,11 +345,16 @@ export default function BorrowActionsPage() {
         6
       );
       setLiquidationThresholds(lt);
-      console.log('Running 2');
     },
     GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
   );
+
+  const updateHypotheticalState = useCallback((state: AccountState | null) => {
+    setHypotheticalState(state);
+    // If state is null, there aren't any hypotheticals to show
+    if (state == null) setIsShowingHypothetical(false);
+  }, []);
 
   // if no account data is found, don't render the page
   if (!marginAccount || !displayedMarginAccount) {
@@ -391,14 +395,8 @@ export default function BorrowActionsPage() {
         <ManageAccountWidget
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
-          setHypotheticalState={(state) => {
-            setHypotheticalState(state);
-
-            // If state is null, there aren't any hypotheticals to show
-            if (state == null) setIsShowingHypothetical(false);
-            // If state is non-null, but was previously null, we want to show hypotheticals by default
-            else if (hypotheticalState == null) setIsShowingHypothetical(true);
-          }}
+          updateHypotheticalState={updateHypotheticalState}
+          onAddFirstAction={() => setIsShowingHypothetical(true)}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>
@@ -426,29 +424,29 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum0, 4)}
-              valueColor={GREEN_COLOR}
               denomination={token0.ticker ?? ''}
+              boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum1, 4)}
-              valueColor={GREEN_COLOR}
               denomination={token1.ticker ?? ''}
+              boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
-              valueColor={RED_COLOR}
               denomination={token0.ticker ?? ''}
+              boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
-              valueColor={RED_COLOR}
               denomination={token1.ticker ?? ''}
+              boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard

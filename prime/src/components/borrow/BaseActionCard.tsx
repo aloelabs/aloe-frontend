@@ -21,7 +21,7 @@ const ActionCardContainer = styled.div.attrs((props: { isCausingError: boolean }
 
 const ActionBadge = styled.div.attrs((props: { backgroundColor: string }) => props)`
   ${tw`flex items-center justify-center`}
-  width: fit-content;
+  width: max-content;
   padding: 8px 8px;
   border-radius: 8px;
   background-color: ${(props) => props.backgroundColor};
