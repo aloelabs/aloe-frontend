@@ -9,7 +9,6 @@ import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
-import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { TokenData } from '../../data/TokenData';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -109,12 +109,13 @@ const ActionCardWrapper = styled.div`
 export type ManageAccountWidgetProps = {
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
-  setHypotheticalState: (state: AccountState | null) => void;
+  updateHypotheticalState: (state: AccountState | null) => void;
+  onAddFirstAction: () => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marginAccount, uniswapPositions, setHypotheticalState } = props;
+  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
 
   // actions
@@ -149,43 +150,39 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
-  const userBalances: UserBalances = {
-    amount0Asset: Number(userBalance0Asset?.formatted ?? 0) || 0,
-    amount1Asset: Number(userBalance1Asset?.formatted ?? 0) || 0,
-    amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
-    amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
-  };
+  const userBalances: UserBalances = useMemo(
+    () => ({
+      amount0Asset: Number(userBalance0Asset?.formatted ?? 0) || 0,
+      amount1Asset: Number(userBalance1Asset?.formatted ?? 0) || 0,
+      amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
+      amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
+    }),
+    [userBalance0Asset, userBalance1Asset, userBalance0Kitty, userBalance1Kitty]
+  );
 
-  const initialState: AccountState = {
-    assets: marginAccount.assets,
-    liabilities: marginAccount.liabilities,
-    uniswapPositions: uniswapPositions,
-    availableBalances: userBalances,
-    requiredAllowances: {
-      amount0Asset: 0,
-      amount1Asset: 0,
-      amount0Kitty: 0,
-      amount1Kitty: 0,
-    },
-    claimedFeeUniswapKeys: [],
-  };
+  const initialState: AccountState = useMemo(
+    () => ({
+      assets: marginAccount.assets,
+      liabilities: marginAccount.liabilities,
+      uniswapPositions: uniswapPositions,
+      availableBalances: userBalances,
+      requiredAllowances: {
+        amount0Asset: 0,
+        amount1Asset: 0,
+        amount0Kitty: 0,
+        amount1Kitty: 0,
+      },
+      claimedFeeUniswapKeys: [],
+    }),
+    [marginAccount, uniswapPositions, userBalances]
+  );
 
   useEffect(() => {
-    console.log('Updating hypothetical states');
-
     const operators = actionOutputs.map((o) => o.operator);
     const states = calculateHypotheticalStates(marginAccount, initialState, operators);
     setHypotheticalStates(states);
-    setHypotheticalState(states.length > 1 ? states[states.length - 1] : null);
-  }, [
-    marginAccount,
-    uniswapPositions,
-    userBalance0Asset,
-    userBalance1Asset,
-    userBalance0Kitty,
-    userBalance1Kitty,
-    actionOutputs,
-  ]);
+    updateHypotheticalState(states.length > 1 ? states[states.length - 1] : null);
+  }, [actionOutputs, marginAccount, initialState, updateHypotheticalState]);
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
@@ -286,9 +283,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         isOpen={showAddActionModal}
         setIsOpen={setShowAddActionModal}
         handleAddAction={(action: Action) => {
+          if (activeActions.length === 0) onAddFirstAction();
           setActiveActions([...activeActions, action]);
         }}
         handleAddActions={(actions, templatedInputFields) => {
+          if (activeActions.length === 0) onAddFirstAction();
           setActiveActions([...activeActions, ...actions]);
           if (templatedInputFields) setUserInputFields([...userInputFields, ...templatedInputFields]);
         }}

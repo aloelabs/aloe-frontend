@@ -8,7 +8,6 @@ import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD } from '../../data/c
 
 const PRIMARY_COLOR = '#ffffff';
 const SECONDARY_COLOR = '#82a0b6';
-const TERTIARY_COLOR = '#ccdfed';
 
 const AccountStatsCardWrapper = styled.div`
   ${tw`flex flex-col justify-center`}
@@ -19,35 +18,38 @@ const AccountStatsCardWrapper = styled.div`
 
 const TextWrapper = styled.div`
   ${tw`flex items-baseline max-w-full overflow-hidden`}
-  gap: 6px;
+  flex-direction: row;
+  gap: 8px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
     flex-direction: column;
     gap: 0;
-
-    div:last-child {
-      // tweak spacing between value and denomination
-      margin-top: -4px;
-    }
   }
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     flex-direction: row;
-    gap: 6px;
+    gap: 8px;
   }
+`;
+
+const Box = styled.div.attrs((props: { color: string }) => props)`
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background-color: ${(props) => props.color};
 `;
 
 export type AccountStatsCardProps = {
   label: string;
   value: string;
-  valueColor?: string;
   denomination?: string;
+  boxColor?: string;
   showAsterisk: boolean;
   className?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, valueColor, denomination, showAsterisk, className } = props;
+  const { label, value, denomination, boxColor, showAsterisk, className } = props;
   return (
     <AccountStatsCardWrapper className={className}>
       <div className='flex'>
@@ -61,14 +63,21 @@ export function AccountStatsCard(props: AccountStatsCardProps) {
         )}
       </div>
       <TextWrapper>
-        <Display size='L' weight='semibold' color={valueColor ?? PRIMARY_COLOR}>
+        <Display size='L' weight='semibold' color={PRIMARY_COLOR}>
           {value}
         </Display>
-        {denomination !== undefined && (
-          <Display size='M' weight='medium' color={TERTIARY_COLOR}>
-            {denomination}
-          </Display>
-        )}
+        <div className='flex gap-2'>
+          {denomination !== undefined && (
+            <Display size='M' weight='medium' color={SECONDARY_COLOR}>
+              {denomination}
+            </Display>
+          )}
+          {boxColor !== undefined && (
+            <div className='flex justify-center items-center'>
+              <Box color={boxColor} />
+            </div>
+          )}
+        </div>
       </TextWrapper>
     </AccountStatsCardWrapper>
   );
