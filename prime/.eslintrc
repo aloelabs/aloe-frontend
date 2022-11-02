@@ -12,6 +12,7 @@
     "no-var": "warn",
     "max-len": ["warn", { "code": 120 }],
     "no-eval": "error",
+    "no-implied-eval": "error",
     "object-property-newline": ["warn", { "allowAllPropertiesOnSameLine": true }],
     "object-curly-newline": [
       "error",
@@ -51,6 +52,10 @@
           "caseInsensitive": true
         }
       }
-    ]
+    ],
+    "no-alert": "error",
+    "no-extra-semi": "error",
+    "no-shadow-restricted-names": "error",
+    "no-warning-comments": ["warn", { "terms": ["todo", "fixme", "xxx"], "location": "start" }]
   }
 }
