@@ -2,20 +2,15 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+import { Address } from 'wagmi';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
-import { getRemoveLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders, UniswapPosition } from '../../../data/Actions';
+import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
+import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
+import { sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
-
-//TOOD: merge this with the existing UniswapPosition?
-export type UniswapV3LiquidityPosition = {
-  amount0: number;
-  amount1: number;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: JSBI;
-};
 
 const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number }) => props)`
   width: ${(props) => props.width}px;
@@ -28,21 +23,26 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { uniswapPositions, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { token0, token1 } = marginAccount;
+  const { uniswapPositions, claimedFeeUniswapKeys } = accountState;
 
-  const dropdownOptions = uniswapPositions.map((lp, index) => {
-    return {
-      label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
-      value: index.toString(),
-      isDefault: index === 0,
-    } as DropdownOption;
-  });
+  const dropdownOptions = uniswapPositions
+    .filter((lp) => !claimedFeeUniswapKeys.includes(uniswapPositionKey(marginAccount.address, lp.lower, lp.upper)))
+    .map((lp, index) => {
+      return {
+        label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
+        value: index.toString(),
+        isDefault: index === 0,
+      } as DropdownOption;
+    });
 
   let selectedOption: DropdownOption | undefined = undefined;
-  const uniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-  if (uniswapPosition) {
+
+  const previousPositionKey = userInputFields?.at(0) ?? '';
+  if (previousPositionKey) {
     const selectedIndex = uniswapPositions.findIndex((lp) => {
-      return lp.lower === uniswapPosition.lower && lp.upper === uniswapPosition.upper;
+      return previousPositionKey === uniswapPositionKey(marginAccount.address, lp.lower, lp.upper);
     });
     if (selectedIndex > -1 && selectedIndex < dropdownOptions.length) {
       selectedOption = dropdownOptions[selectedIndex];
@@ -55,23 +55,27 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
     const updatedLiquidity = JSBI.BigInt(0);
 
     // Note: Claiming fees is equivalent to removing 0% of liquidity
-    onChange({
-      actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
-      actionArgs:
-        lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
-      aloeResult: { selectedToken: null },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: updatedLiquidity,
-          lower,
-          upper,
+    onChange(
+      {
+        actionId: ActionID.REMOVE_LIQUIDITY, // This action is a wrapper around REMOVE_LIQUIDITY hence the actionId used
+        actionArgs:
+          lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
+        operator(operand) {
+          if (lower == null || upper == null) return null;
+          return removeLiquidityOperator(
+            operand,
+            marginAccount.address as Address,
+            updatedLiquidity,
+            lower,
+            upper,
+            sqrtRatioToTick(marginAccount.sqrtPriceX96),
+            token0.decimals,
+            token1.decimals
+          );
         },
-        slippageTolerance: 0,
-        removeLiquidityPercentage: 0,
-        isAmount0LastUpdated: undefined,
-        isToken0Selected: undefined,
       },
-    });
+      [lower != null && upper != null ? uniswapPositionKey(marginAccount.address, lower, upper) : '']
+    );
   }
 
   function handleSelectOption(updatedOption: DropdownOption) {

@@ -2,22 +2,22 @@ import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 
-import { getTransferInActionArgs } from '../../../connector/MarginAccountActions';
+import { getTransferInActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { transferInOperator } from '../../../data/actions/ActionOperators';
 import {
   ActionCardProps,
-  ActionID,
   ActionProviders,
   getDropdownOptionFromSelectedToken,
-  parseSelectedToken,
   TokenType,
-} from '../../../data/Actions';
+} from '../../../data/actions/Actions';
 import { TokenData } from '../../../data/TokenData';
 import { getBalanceFor } from '../../../data/UserBalances';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
-  const { marginAccount, availableBalances, previousActionCardState, isCausingError, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
   const dropdownOptions: DropdownOption[] = [
@@ -42,9 +42,12 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       icon: kitty1?.iconPath || '',
     },
   ];
-  const previouslySelectedToken = previousActionCardState?.aloeResult?.selectedToken || null;
-  const selectedTokenOption = getDropdownOptionFromSelectedToken(previouslySelectedToken, dropdownOptions);
-  const selectedToken = parseSelectedToken(selectedTokenOption.value);
+  const tokenAmount = userInputFields?.at(1) ?? '';
+  const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
+  const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+
+  const max = selectedToken ? getBalanceFor(selectedToken, accountState.availableBalances) : 0;
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
 
   const tokenMap = new Map<TokenType, TokenData>();
   tokenMap.set(TokenType.ASSET0, token0);
@@ -52,29 +55,22 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   tokenMap.set(TokenType.KITTY0, kitty0);
   tokenMap.set(TokenType.KITTY1, kitty1);
 
-  const callbackWithFullResult = (value: string) => {
+  const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
-    onChange({
-      actionId: ActionID.TRANSFER_IN,
-      actionArgs:
-        selectedToken && value !== '' ? getTransferInActionArgs(tokenMap.get(selectedToken)!, parsedValue) : undefined,
-      textFields: [value],
-      aloeResult: {
-        token0RawDelta: selectedToken === TokenType.ASSET0 ? parsedValue : undefined,
-        token1RawDelta: selectedToken === TokenType.ASSET1 ? parsedValue : undefined,
-        token0PlusDelta: selectedToken === TokenType.KITTY0 ? parsedValue : undefined,
-        token1PlusDelta: selectedToken === TokenType.KITTY1 ? parsedValue : undefined,
-        selectedToken: selectedToken,
+    onChange(
+      {
+        actionId: ActionID.TRANSFER_IN,
+        actionArgs: token && value !== '' ? getTransferInActionArgs(tokenMap.get(token)!, parsedValue) : undefined,
+        operator(operand) {
+          return transferInOperator(operand, token, parsedValue);
+        },
       },
-      uniswapResult: null,
-    });
+      [token, value]
+    );
   };
 
-  const max = selectedToken ? getBalanceFor(selectedToken, availableBalances) : 0;
-  const maxString = Math.max(0, max - 1e-6).toFixed(6);
-  const tokenAmount = previousActionCardState?.textFields?.at(0) ?? '';
   useEffect(() => {
-    if (!previousActionCardState?.actionArgs && tokenAmount !== '') callbackWithFullResult(tokenAmount);
+    if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
   });
 
   return (
@@ -83,32 +79,21 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
       onRemove={onRemove}
-      // tooltipContent={
-      //   <Text>
-      //     Lorem ipsum dolor sit amet, consectetur adipisicing elit. Modi omnis quos facere provident, sapiente vero
-      //     voluptas reiciendis esse eos iusto et accusamus molestias dolorem! Qui dignissimos in provident ullam
-      //     voluptas?
-      //   </Text>
-      // } TODO
     >
       <div className='w-full flex flex-col gap-4 items-center'>
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option) => {
+          onSelect={(option: DropdownOption) => {
             if (option.value !== selectedTokenOption.value) {
-              onChange({
-                actionId: ActionID.TRANSFER_IN,
-                aloeResult: { selectedToken: parseSelectedToken(option.value) },
-                uniswapResult: null,
-              });
+              callbackWithFullResult(option.value as TokenType, '');
             }
           }}
         />
         <TokenAmountInput
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
-          onChange={callbackWithFullResult}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
           maxed={tokenAmount === maxString}
         />

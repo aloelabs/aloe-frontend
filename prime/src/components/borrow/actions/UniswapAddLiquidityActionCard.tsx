@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { useProvider } from 'wagmi';
+import { Address, useProvider } from 'wagmi';
 
-import { getAddLiquidityActionArgs } from '../../../connector/MarginAccountActions';
-import { ActionCardProps, ActionID, ActionProviders } from '../../../data/Actions';
+import { getAddLiquidityActionArgs } from '../../../data/actions/ActionArgs';
+import { ActionID } from '../../../data/actions/ActionID';
+import { addLiquidityOperator } from '../../../data/actions/ActionOperators';
+import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { formatNumberInput, roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
+import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {
   calculateAmount0FromAmount1,
   calculateAmount1FromAmount0,
@@ -19,7 +21,6 @@ import {
   shouldAmount0InputBeDisabled,
   shouldAmount1InputBeDisabled,
   TickData,
-  TickInfo,
   tickToPrice,
   UniswapV3PoolBasics,
 } from '../../../util/Uniswap';
@@ -28,40 +29,91 @@ import TokenChooser from '../../common/TokenChooser';
 import { BaseActionCard } from '../BaseActionCard';
 import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
-import Settings from '../uniswap/Settings';
 import SteppedInput from '../uniswap/SteppedInput';
 
 const MIN_TICK = TickMath.MIN_TICK;
 const MAX_TICK = TickMath.MAX_TICK;
 
-type TickPrice = {
-  price: number;
-  tick: number;
+type PreviousState = {
+  amount0Str: string;
+  amount1Str: string;
+  lowerStr: string;
+  upperStr: string;
+  isToken0Selected: boolean;
 };
 
+function fromFields(fields: string[] | undefined): PreviousState {
+  return {
+    amount0Str: fields?.at(0) ?? '',
+    amount1Str: fields?.at(1) ?? '',
+    lowerStr: fields?.at(2) ?? '',
+    upperStr: fields?.at(3) ?? '',
+    isToken0Selected: fields?.at(4) === 'true',
+  };
+}
+
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, previousActionCardState, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
 
-  const isToken0Selected = previousActionCardState?.uniswapResult?.isToken0Selected || false;
+  // MARK: state for user inputs
+  const [localIsAmount0UserDefined, setLocalIsAmount0UserDefined] = useState(false);
+  const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
 
-  const [localIsAmount0LastUpdated, setLocalIsAmount0LastUpdated] = useState(false);
-  const [localToken0Amount, setLocalToken0Amount] = useState('');
-  const [localToken1Amount, setLocalToken1Amount] = useState('');
-  const [localLiquidityJSBI, setLocalLiquidityJSBI] = useState(JSBI.BigInt(0));
-  const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
-  const [tickInfo, setTickInfo] = useState<TickInfo | null>(null);
-  const [isLiquidityDataLoading, setIsLiquidityDataLoading] = useState(true);
-  const [liquidityData, setLiquidityData] = useState<TickData[]>([]);
-  const [chartData, setChartData] = useState<ChartEntry[]>([]);
-
+  // MARK: wagmi hooks
   const provider = useProvider();
 
-  const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier);
+  // MARK: chart data and other fetched state
+  const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
+  const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
+  const [chartData, setChartData] = useState<ChartEntry[]>([]);
 
+  // MARK: pre-compute some useful stuff
+  const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier);
+  const {
+    isToken0Selected,
+    amount0Str: previousAmount0Str,
+    amount1Str: previousAmount1Str,
+    lowerStr: previousLowerStr,
+    upperStr: previousUpperStr,
+  } = fromFields(userInputFields);
+  // --> if uniswapPoolBasics exists, do some extra math upfront (helps us later)
+  const tickInfo =
+    (uniswapPoolBasics && calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected)) ?? null;
+  // --> ticks
+  const currentTick = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) ?? null;
+  let previousLower: number | null = null;
+  let previousUpper: number | null = null;
+  if (previousLowerStr !== '' && previousUpperStr !== '') {
+    previousLower = parseFloat(previousLowerStr);
+    previousUpper = parseFloat(previousUpperStr);
+  } else if (tickInfo != null && currentTick != null) {
+    // If user hasn't entered their own lower and upper bounds, initialize them with a reasonable default.
+    // Note that we can't do this until we've fetched tick info.
+    previousLower = roundDownToNearestN(currentTick - 100, tickInfo.tickSpacing);
+    previousUpper = roundUpToNearestN(currentTick + 100, tickInfo.tickSpacing);
+  }
+  // --> disabled status
+  let isInput0Disabled = true;
+  let isInput1Disabled = true;
+  if (previousLower != null && previousUpper != null && currentTick != null) {
+    isInput0Disabled = shouldAmount0InputBeDisabled(previousLower, previousUpper, currentTick);
+    isInput1Disabled = shouldAmount1InputBeDisabled(previousLower, previousUpper, currentTick);
+  }
+
+  // TODO is this necessary IN ADDITION to the localTokenAmounts update hook?
+  // if (isOutputStale) callbackWithFullResults()
+
+  // If localTokenAmounts aren't up-to-date, overwrite with previousAmountsStr
+  useEffect(() => {
+    if (localTokenAmounts[0] !== previousAmount0Str || localTokenAmounts[1] !== previousAmount1Str) {
+      setLocalTokenAmounts([previousAmount0Str, previousAmount1Str]);
+    }
+  }, [previousAmount0Str, previousAmount1Str, localTokenAmounts]);
+
+  // Fetch (a) uniswapPoolBasics from ethers and (b) liquidityData from TheGraph
   useEffectOnce(() => {
     let mounted = true;
-    if (poolAddress == null) return;
     async function fetch(poolAddress: string) {
       const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
       if (mounted) {
@@ -71,7 +123,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       const tickData = await calculateTickData('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', poolBasics);
       if (mounted) {
         setLiquidityData(tickData);
-        setIsLiquidityDataLoading(false);
       }
     }
     fetch(poolAddress);
@@ -80,301 +131,242 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     };
   });
 
-  useEffectOnce(() => {
-    if (!previousActionCardState?.uniswapResult) return;
-    if (previousActionCardState.uniswapResult.isToken0Selected) {
-      //only update if we need to
-      setLocalIsAmount0LastUpdated(true);
-    }
-  });
-
+  // Once liquidityData has been fetched, arrange/format it to be workable chartData
   useEffect(() => {
-    if (isLiquidityDataLoading) return;
-    let updatedChartData: ChartEntry[] = [];
-    if (isToken0Selected) {
-      updatedChartData = liquidityData.map((td: TickData) => {
-        return {
-          price: td.price0In1,
-          liquidityDensity: td.totalValueIn0,
-        };
-      });
-    } else {
-      const reversedLiquidityData = [...liquidityData].reverse();
-      updatedChartData = reversedLiquidityData.map((td: TickData) => {
-        return {
-          price: td.price1In0,
-          liquidityDensity: td.totalValueIn0,
-        };
-      });
-    }
-    setChartData(updatedChartData);
-  }, [isLiquidityDataLoading, isToken0Selected, liquidityData]);
+    if (liquidityData == null) return;
 
-  useEffectOnce(() => {
-    let mounted = true;
-    if (poolAddress == null) return;
-    async function fetch(poolAddress: string) {
-      const poolBasics = await getUniswapPoolBasics(poolAddress, provider);
-      if (mounted) {
-        setUniswapPoolBasics(poolBasics);
-      }
-    }
-    fetch(poolAddress);
-    return () => {
-      mounted = false;
-    };
-  });
+    const _liquidityData = liquidityData.concat();
+    if (!isToken0Selected) _liquidityData.reverse();
 
-  useEffect(() => {
-    if (!uniswapPoolBasics) return;
-    const updatedTickInfo = calculateTickInfo(uniswapPoolBasics, token0, token1, isToken0Selected);
-    setTickInfo(updatedTickInfo);
-  }, [isToken0Selected, token0, token1, uniswapPoolBasics]);
-
-  useEffect(() => {
-    //Handles the initial render and whenever the selected token changes
-    if (previousActionCardState?.textFields) {
-      setLocalToken0Amount(previousActionCardState.textFields[0]);
-      setLocalToken1Amount(previousActionCardState.textFields[1]);
-    }
-  }, [isToken0Selected, previousActionCardState?.textFields]);
-
-  let lower: TickPrice | null = null;
-  let upper: TickPrice | null = null;
-  let currentTick: number | null = (uniswapPoolBasics && uniswapPoolBasics.slot0.tick) || null;
-  const lowerBound = previousActionCardState?.uniswapResult?.uniswapPosition.lower;
-  const upperBound = previousActionCardState?.uniswapResult?.uniswapPosition.upper;
-  let slippagePercentage = previousActionCardState?.textFields?.[4] ?? '';
-
-  if (tickInfo != null && lowerBound && upperBound) {
-    lower = {
-      price: tickToPrice(lowerBound, token0.decimals, token1.decimals, isToken0Selected),
-      tick: lowerBound,
-    };
-    upper = {
-      price: tickToPrice(upperBound, token0.decimals, token1.decimals, isToken0Selected),
-      tick: upperBound,
-    };
-  } else if (tickInfo != null && uniswapPoolBasics != null) {
-    const lowerTick = roundDownToNearestN(uniswapPoolBasics.slot0.tick - 100, tickInfo.tickSpacing);
-    const upperTick = roundUpToNearestN(uniswapPoolBasics.slot0.tick + 100, tickInfo.tickSpacing);
-    const lowerPrice = tickToPrice(lowerTick, token0.decimals, token1.decimals, isToken0Selected);
-    const upperPrice = tickToPrice(upperTick, token0.decimals, token1.decimals, isToken0Selected);
-
-    lower = {
-      price: isToken0Selected ? lowerPrice : upperPrice,
-      tick: isToken0Selected ? lowerTick : upperTick,
-    };
-    upper = {
-      price: isToken0Selected ? upperPrice : lowerPrice,
-      tick: isToken0Selected ? upperTick : lowerTick,
-    };
-  }
-
-  let isAmount0InputDisabled = true;
-  let isAmount1InputDisabled = true;
-
-  if (lower != null && upper != null && currentTick != null) {
-    isAmount0InputDisabled = shouldAmount0InputBeDisabled(lower.tick, upper.tick, currentTick);
-    isAmount1InputDisabled = shouldAmount1InputBeDisabled(lower.tick, upper.tick, currentTick);
-  }
-
-  function handleUpdateSlippagePercentage(updatedSlippage: string) {
-    const prevUniswapPosition = previousActionCardState?.uniswapResult?.uniswapPosition;
-    const prevTextFields = previousActionCardState?.textFields ?? ['', '', '', '', ''];
-    prevTextFields[4] = updatedSlippage;
-
-    onChange({
-      actionId: ActionID.ADD_LIQUIDITY,
-      textFields: prevTextFields,
-      aloeResult: null,
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: prevUniswapPosition?.liquidity || JSBI.BigInt(0),
-          amount0: prevUniswapPosition?.amount0 || 0,
-          amount1: prevUniswapPosition?.amount1 || 0,
-          lower: prevUniswapPosition?.lower || null,
-          upper: prevUniswapPosition?.upper || null,
-        },
-        slippageTolerance: parseFloat(updatedSlippage) || undefined,
-        isAmount0LastUpdated: previousActionCardState?.uniswapResult?.isAmount0LastUpdated,
-        isToken0Selected: previousActionCardState?.uniswapResult?.isToken0Selected,
-      },
+    const _chartData = _liquidityData.map((td: TickData) => {
+      return { price: isToken0Selected ? td.price0In1 : td.price1In0, liquidityDensity: td.totalValueIn0 };
     });
-  }
+    setChartData(_chartData);
+  }, [liquidityData, isToken0Selected]);
 
-  function handleLocalToken0AmountInput(value: string, forceUpdate?: boolean) {
-    if (uniswapPoolBasics == null || lower == null || upper == null) return;
-    const output = formatNumberInput(value);
-    if (output != null) {
-      const floatOutput = parseFloat(output);
-      setLocalToken0Amount(output);
-      setLocalIsAmount0LastUpdated(true);
-      let updatedAmount1 = '';
-      if (!isNaN(floatOutput)) {
-        const { amount1, liquidity } = calculateAmount1FromAmount0(
-          floatOutput,
-          lower.tick,
-          upper.tick,
-          uniswapPoolBasics.slot0.tick,
-          token0.decimals,
-          token1.decimals
-        );
-        setLocalToken1Amount(amount1);
-        setLocalLiquidityJSBI(liquidity);
-        updatedAmount1 = amount1;
-      } else {
-        setLocalToken1Amount('');
-        setLocalLiquidityJSBI(JSBI.BigInt(0));
+  /**
+   * Applies Uniswap V3 math to update one of the token amounts whenever the user changes position bounds.
+   * Whichever amount the user last touched will be held constant, *unless* doing so would result in inf
+   * in the other value.
+   *
+   * @param value The new position bound (should be an integer with %tickSpacing === 0)
+   * @param isLower Whether `value` should be assigned to the lower or upper bound
+   */
+  function updateTick(value: number, isLower: boolean) {
+    if (isLower && previousUpper != null && value >= previousUpper) {
+      console.error('Attempted to place lower bound above upper bound');
+      return;
+    }
+    if (!isLower && previousLower != null && value <= previousLower) {
+      console.error('Attempted to place upper bound below lower bound');
+      return;
+    }
+
+    const lower = isLower ? value : previousLower;
+    const upper = isLower ? previousUpper : value;
+
+    if (lower != null && upper != null && currentTick != null) {
+      if (shouldAmount0InputBeDisabled(lower, upper, currentTick)) {
+        callbackWithFullResults(isToken0Selected, '', localTokenAmounts[1], lower, upper);
+        setLocalIsAmount0UserDefined(false);
+        return;
       }
-      if (forceUpdate) {
-        updateRange(output, updatedAmount1, lower.tick, upper.tick);
+      if (shouldAmount1InputBeDisabled(lower, upper, currentTick)) {
+        callbackWithFullResults(isToken0Selected, localTokenAmounts[0], '', lower, upper);
+        setLocalIsAmount0UserDefined(true);
+        return;
       }
     }
+
+    const userDefinedAmount = localTokenAmounts[localIsAmount0UserDefined ? 0 : 1];
+    updateAmount(userDefinedAmount, localIsAmount0UserDefined, lower, upper);
   }
 
-  function handleLocalToken1AmountInput(value: string, forceUpdate?: boolean) {
-    if (uniswapPoolBasics == null || lower == null || upper == null) return;
-    const output = formatNumberInput(value);
-    if (output != null) {
-      const floatOutput = parseFloat(output);
-      setLocalToken1Amount(output);
-      setLocalIsAmount0LastUpdated(false);
-      let updatedAmount0 = '';
-      if (!isNaN(floatOutput)) {
-        const { amount0, liquidity } = calculateAmount0FromAmount1(
-          floatOutput,
-          lower.tick,
-          upper.tick,
-          uniswapPoolBasics.slot0.tick,
-          token0.decimals,
-          token1.decimals
-        );
-        setLocalToken0Amount(amount0);
-        setLocalLiquidityJSBI(liquidity);
-        updatedAmount0 = amount0;
-      } else {
-        setLocalToken0Amount('');
-        setLocalLiquidityJSBI(JSBI.BigInt(0));
-      }
-      if (forceUpdate) {
-        updateRange(updatedAmount0, output, lower.tick, upper.tick);
-      }
+  /**
+   * Applies Uniswap V3 math to update both token amounts whenever the user changes one of them. Optionally reports
+   * results to the parent context, depending on `shouldCallback`.
+   *
+   * @param amountXStr The given amount (the one most recently edited by the user)
+   * @param isToken0 Whether the given amount is an amount of token0 or token1
+   * @param lower The lower bound of the Uniswap Position we're trying to create
+   * @param upper The upper bound of the Uniswap Position we're trying to create
+   * @param shouldCallback Whether to report results to the parent context
+   *
+   * @dev `currentTick`, `token0`, `token1`, and `isToken0Selected` must be properly defined **before** this function.
+   */
+  function updateAmount(amountXStr: string, isToken0: boolean, lower: number | null, upper: number | null) {
+    const amountX = parseFloat(amountXStr);
+
+    // If any of these ticks are null, we don't have enough information
+    // to compute amountY from amountX. We can return early.
+    if (lower == null || upper == null || currentTick == null) return;
+
+    let amountYStr = isToken0 ? previousAmount1Str : previousAmount0Str;
+    let liquidity = JSBI.BigInt('0');
+    // If possible, compute amountY from amountX
+    if (!isNaN(amountX)) {
+      const res = (isToken0 ? calculateAmount1FromAmount0 : calculateAmount0FromAmount1)(
+        amountX,
+        lower,
+        upper,
+        currentTick,
+        token0.decimals,
+        token1.decimals
+      );
+      amountYStr = res.amount;
+      liquidity = res.liquidity;
     }
+
+    const [amount0Str, amount1Str] = isToken0 ? [amountXStr, amountYStr] : [amountYStr, amountXStr];
+
+    setLocalTokenAmounts([amount0Str, amount1Str]);
+    setLocalIsAmount0UserDefined(isToken0);
+
+    callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
   }
 
-  function updateRange(amount0: string, amount1: string, lowerTick: number | null, upperTick: number | null) {
-    onChange({
-      actionId: ActionID.ADD_LIQUIDITY,
-      actionArgs:
-        lowerTick !== null && upperTick !== null
-          ? getAddLiquidityActionArgs(lowerTick, upperTick, localLiquidityJSBI)
-          : undefined,
-      textFields: [
-        amount0,
-        amount1,
-        lowerTick?.toFixed(0) ?? '',
-        upperTick?.toFixed(0) ?? '',
-        previousActionCardState?.textFields?.[4] ?? '',
-      ],
-      aloeResult: {
-        token0RawDelta: -parseFloat(amount0) || undefined,
-        token1RawDelta: -parseFloat(amount1) || undefined,
-        selectedToken: null,
-      },
-      uniswapResult: {
-        uniswapPosition: {
-          liquidity: localLiquidityJSBI,
-          amount0: parseFloat(amount0) || 0,
-          amount1: parseFloat(amount1) || 0,
-          lower: lowerTick,
-          upper: upperTick,
+  function callbackWithFullResults(
+    isToken0Selected: boolean,
+    amount0Str: string,
+    amount1Str: string,
+    lowerTick: number | null,
+    upperTick: number | null,
+    liquidity = JSBI.BigInt('0')
+  ) {
+    onChange(
+      {
+        actionId: ActionID.ADD_LIQUIDITY,
+        actionArgs:
+          lowerTick !== null && upperTick !== null
+            ? getAddLiquidityActionArgs(lowerTick, upperTick, liquidity)
+            : undefined,
+        operator(operand) {
+          if (lowerTick == null || upperTick == null || currentTick == null) return null;
+          return addLiquidityOperator(
+            operand,
+            marginAccount.address as Address,
+            liquidity,
+            lowerTick,
+            upperTick,
+            currentTick,
+            token0.decimals,
+            token1.decimals
+          );
         },
-        slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
-        isAmount0LastUpdated: localIsAmount0LastUpdated,
-        isToken0Selected: isToken0Selected,
       },
-    });
+      [amount0Str, amount1Str, lowerTick?.toFixed(0) ?? '', upperTick?.toFixed(0) ?? '', String(isToken0Selected)]
+    );
   }
 
-  function calculateUpdatedAmounts(lowerTick: number | null, upperTick: number | null) {
-    const numericAmount0 = parseFloat(localToken0Amount);
-    const numericAmount1 = parseFloat(localToken1Amount);
-
-    if (
-      !isNaN(numericAmount0) &&
-      !isNaN(numericAmount1) &&
-      lowerTick != null &&
-      upperTick != null &&
-      currentTick != null
-    ) {
-      if (localIsAmount0LastUpdated) {
-        const { amount1, liquidity } = calculateAmount1FromAmount0(
-          numericAmount0,
-          lowerTick,
-          upperTick,
-          currentTick,
-          token0.decimals,
-          token1.decimals
-        );
-        setLocalToken1Amount(amount1);
-        setLocalLiquidityJSBI(liquidity);
-        return [localToken0Amount, amount1];
-      } else {
-        const { amount0, liquidity } = calculateAmount0FromAmount1(
-          numericAmount1,
-          lowerTick,
-          upperTick,
-          currentTick,
-          token0.decimals,
-          token1.decimals
-        );
-        setLocalToken0Amount(amount0);
-        setLocalLiquidityJSBI(liquidity);
-        return [amount0, localToken1Amount];
-      }
-    }
-    return [localToken0Amount, localToken1Amount];
-  }
-
-  function updateLower(updatedLower: TickPrice) {
-    let shouldResetAmounts = false;
-    if (upper != null && currentTick != null) {
-      const willAmount0BeDisabled = shouldAmount0InputBeDisabled(updatedLower.tick, upper.tick, currentTick);
-      shouldResetAmounts = willAmount0BeDisabled && localIsAmount0LastUpdated;
-    }
-    const updatedAmounts = shouldResetAmounts
-      ? ['', localToken1Amount]
-      : calculateUpdatedAmounts(updatedLower.tick, upper?.tick || null);
-    updateRange(updatedAmounts[0], updatedAmounts[1], updatedLower.tick, upper?.tick || null);
-    if (shouldResetAmounts) {
-      setLocalIsAmount0LastUpdated(false);
-    }
-  }
-
-  function updateUpper(updatedUpper: TickPrice) {
-    let shouldResetAmounts = false;
-    if (lower != null && currentTick != null) {
-      const willAmount1BeDisabled = shouldAmount1InputBeDisabled(lower.tick, updatedUpper.tick, currentTick);
-      shouldResetAmounts = willAmount1BeDisabled && !localIsAmount0LastUpdated;
-    }
-    const updatedAmounts = shouldResetAmounts
-      ? [localToken0Amount, '']
-      : calculateUpdatedAmounts(lower?.tick || null, updatedUpper.tick);
-    updateRange(updatedAmounts[0], updatedAmounts[1], lower?.tick || null, updatedUpper.tick);
-    if (shouldResetAmounts) {
-      setLocalIsAmount0LastUpdated(true);
-    }
-  }
-
-  function updateTokenAmountInput() {
-    updateRange(localToken0Amount, localToken1Amount, lower?.tick ?? null, upper?.tick ?? null);
-  }
-
-  const max0 = marginAccount.assets.token0Raw;
-  const max1 = marginAccount.assets.token1Raw;
+  const max0 = accountState.assets.token0Raw;
+  const max1 = accountState.assets.token1Raw;
   const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
   const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
+
+  const ticksAreDefined = previousLower != null && previousUpper != null && currentTick != null;
+  const tickIncrement = (tickInfo && (isToken0Selected ? tickInfo.tickSpacing : -tickInfo.tickSpacing)) ?? null;
+
+  let prices: number[] | null = null;
+  if (ticksAreDefined) {
+    prices = [
+      tickToPrice(previousLower!, token0.decimals, token1.decimals, isToken0Selected),
+      tickToPrice(previousUpper!, token0.decimals, token1.decimals, isToken0Selected),
+    ].sort();
+  }
+
+  const lowerSteppedInput = (
+    <SteppedInput
+      value={
+        previousLower == null
+          ? ''
+          : tickToPrice(previousLower, token0.decimals, token1.decimals, isToken0Selected).toString(10)
+      }
+      label={isToken0Selected ? 'Min Price' : 'Max Price'}
+      token0={token0}
+      token1={token1}
+      isToken0Selected={isToken0Selected}
+      onChange={(value) => {
+        let price = parseFloat(value);
+        if (isNaN(price) || price === 0 || tickInfo == null || previousUpper == null) return;
+
+        if (!isToken0Selected) price = 1.0 / price;
+        const nearestTick = roundDownToNearestN(
+          priceToTick(price, token0.decimals, token1.decimals),
+          tickInfo.tickSpacing
+        );
+
+        if (nearestTick < previousUpper && nearestTick >= MIN_TICK) {
+          updateTick(nearestTick, true);
+        }
+      }}
+      onDecrement={() => {
+        if (tickIncrement && previousLower != null) updateTick(previousLower - tickIncrement, true);
+      }}
+      onIncrement={() => {
+        if (tickIncrement && previousLower != null) updateTick(previousLower + tickIncrement, true);
+      }}
+      decrementDisabled={
+        !tickIncrement ||
+        !ticksAreDefined ||
+        previousLower! - tickIncrement >= previousUpper! ||
+        previousLower! - tickIncrement < MIN_TICK
+      }
+      incrementDisabled={
+        !tickIncrement ||
+        !ticksAreDefined ||
+        previousLower! + tickIncrement >= previousUpper! ||
+        previousLower! + tickIncrement < MIN_TICK
+      }
+      disabled={poolAddress == null}
+    />
+  );
+
+  const upperSteppedInput = (
+    <SteppedInput
+      value={
+        previousUpper == null
+          ? ''
+          : tickToPrice(previousUpper, token0.decimals, token1.decimals, isToken0Selected).toString(10)
+      }
+      label={isToken0Selected ? 'Max Price' : 'Min Price'}
+      token0={token0}
+      token1={token1}
+      isToken0Selected={isToken0Selected}
+      onChange={(value) => {
+        let price = parseFloat(value);
+        if (isNaN(price) || price === 0 || tickInfo == null || previousLower == null) return;
+
+        if (!isToken0Selected) price = 1.0 / price;
+        const nearestTick = roundUpToNearestN(
+          priceToTick(price, token0.decimals, token1.decimals),
+          tickInfo.tickSpacing
+        );
+
+        if (nearestTick > previousLower && nearestTick <= MAX_TICK) {
+          updateTick(nearestTick, false);
+        }
+      }}
+      onDecrement={() => {
+        if (tickIncrement && previousUpper != null) updateTick(previousUpper - tickIncrement, false);
+      }}
+      onIncrement={() => {
+        if (tickIncrement && previousUpper != null) updateTick(previousUpper + tickIncrement, false);
+      }}
+      decrementDisabled={
+        !tickIncrement ||
+        !ticksAreDefined ||
+        previousUpper! - tickIncrement <= previousLower! ||
+        previousUpper! - tickIncrement > MAX_TICK
+      }
+      incrementDisabled={
+        !tickIncrement ||
+        !ticksAreDefined ||
+        previousUpper! + tickIncrement <= previousLower! ||
+        previousUpper! + tickIncrement > MAX_TICK
+      }
+      disabled={poolAddress == null}
+    />
+  );
 
   return (
     <BaseActionCard
@@ -389,209 +381,49 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             token0={token0}
             token1={token1}
             isToken0Selected={isToken0Selected}
-            setIsToken0Selected={(updatedValue: boolean) => {
-              onChange({
-                actionId: ActionID.ADD_LIQUIDITY,
-                aloeResult: null,
-                textFields: ['', ''],
-                uniswapResult: {
-                  uniswapPosition: {
-                    liquidity: JSBI.BigInt(0),
-                    amount0: 0,
-                    amount1: 0,
-                    lower: null,
-                    upper: null,
-                  },
-                  slippageTolerance: previousActionCardState?.uniswapResult?.slippageTolerance,
-                  isToken0Selected: updatedValue,
-                  isAmount0LastUpdated: false,
-                },
-              });
+            setIsToken0Selected={(value: boolean) => {
+              callbackWithFullResults(value, previousAmount0Str, previousAmount1Str, previousLower, previousUpper);
             }}
           />
         )}
-        <Settings slippagePercentage={slippagePercentage} updateSlippagePercentage={handleUpdateSlippagePercentage} />
       </div>
-      {chartData.length > 0 && uniswapPoolBasics != null && lower != null && upper != null && (
+      {chartData.length === 0 || !ticksAreDefined ? (
+        <LiquidityChartPlaceholder />
+      ) : (
         <LiquidityChart
           data={chartData}
-          rangeStart={lower.price}
-          rangeEnd={upper.price}
-          currentPrice={tickToPrice(uniswapPoolBasics?.slot0.tick, token0.decimals, token1.decimals, isToken0Selected)}
+          rangeStart={prices![0]}
+          rangeEnd={prices![1]}
+          currentPrice={tickToPrice(currentTick, token0.decimals, token1.decimals, isToken0Selected)}
         />
-      )}
-      {(chartData.length === 0 || uniswapPoolBasics == null || lower == null || upper == null) && (
-        <LiquidityChartPlaceholder />
       )}
       <div className='flex flex-row gap-2 mb-4'>
-        <SteppedInput
-          value={lower?.price.toString(10) ?? ''}
-          label='Min Price'
-          token0={token0}
-          token1={token1}
-          isToken0Selected={isToken0Selected}
-          onChange={(value) => {
-            const valueAsFloat = parseFloat(value);
-            if (isNaN(valueAsFloat) || valueAsFloat === 0 || tickInfo == null || lower == null || upper == null) {
-              return;
-            }
-            //Always in terms of token0
-            const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
-            const nearestTick = roundUpToNearestN(
-              priceToTick(numericValue, token0.decimals, token1.decimals),
-              tickInfo.tickSpacing
-            );
-            const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (nearestPrice < upper.price && nearestTick >= MIN_TICK) {
-              updateLower({
-                price: nearestPrice,
-                tick: nearestTick,
-              });
-            }
-          }}
-          onDecrement={() => {
-            if (!tickInfo || !lower || !upper) {
-              return;
-            }
-            //If token1 is selected, we want to increment the lower tick as ticks are in reverse order
-            const updatedTick = isToken0Selected
-              ? lower.tick - tickInfo.tickSpacing
-              : lower.tick + tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
-            if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
-              updateLower({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
-                tick: updatedTick,
-              });
-            }
-          }}
-          onIncrement={() => {
-            if (!tickInfo || !lower || !upper) {
-              return;
-            }
-            //If token1 is selected, we want to decrement the lower tick as ticks are in reverse order
-            const updatedTick = isToken0Selected
-              ? lower.tick + tickInfo.tickSpacing
-              : lower.tick - tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickLessThanUpper = isToken0Selected ? updatedTick < upper.tick : updatedTick > upper.tick;
-            if (isUpdatedTickWithinBounds && isUpdatedTickLessThanUpper) {
-              updateLower({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
-                tick: updatedTick,
-              });
-            }
-          }}
-          decrementDisabled={tickInfo == null || lower == null}
-          incrementDisabled={
-            tickInfo == null ||
-            lower == null ||
-            upper == null ||
-            !(isToken0Selected
-              ? (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) < upper.tick
-              : (isToken0Selected ? lower.tick + tickInfo.tickSpacing : lower.tick - tickInfo.tickSpacing) > upper.tick)
-          }
-          disabled={poolAddress == null}
-        />
-        <SteppedInput
-          value={upper?.price.toString(10) ?? ''}
-          label='Max Price'
-          token0={token0}
-          token1={token1}
-          isToken0Selected={isToken0Selected}
-          onChange={(value) => {
-            const valueAsFloat = parseFloat(value);
-            if (isNaN(valueAsFloat) || valueAsFloat === 0 || tickInfo == null || lower == null || upper == null) {
-              return;
-            }
-            //Always in terms of token0
-            const numericValue = isToken0Selected ? valueAsFloat : 1.0 / valueAsFloat;
-            const nearestTick = roundUpToNearestN(
-              priceToTick(numericValue, token0.decimals, token1.decimals),
-              tickInfo.tickSpacing
-            );
-            const nearestPrice = tickToPrice(nearestTick, token0.decimals, token1.decimals, isToken0Selected);
-            if (nearestPrice > lower.price && nearestTick <= MAX_TICK) {
-              updateUpper({
-                price: nearestPrice,
-                tick: nearestTick,
-              });
-            }
-          }}
-          onDecrement={() => {
-            if (!tickInfo || !lower || !upper) {
-              return;
-            }
-            const updatedTick = isToken0Selected
-              ? upper.tick - tickInfo.tickSpacing
-              : upper.tick + tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickGreaterThanLower = isToken0Selected
-              ? updatedTick > lower.tick
-              : updatedTick < lower.tick;
-            if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
-              updateUpper({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
-                tick: updatedTick,
-              });
-            }
-          }}
-          onIncrement={() => {
-            if (!tickInfo || !lower || !upper) {
-              return;
-            }
-            const updatedTick = isToken0Selected
-              ? upper.tick + tickInfo.tickSpacing
-              : upper.tick - tickInfo.tickSpacing;
-            const isUpdatedTickWithinBounds = MIN_TICK <= updatedTick && updatedTick <= MAX_TICK;
-            const isUpdatedTickGreaterThanLower = isToken0Selected
-              ? updatedTick > lower.tick
-              : updatedTick < lower.tick;
-            if (isUpdatedTickWithinBounds && isUpdatedTickGreaterThanLower) {
-              updateUpper({
-                price: tickToPrice(updatedTick, token0.decimals, token1.decimals, isToken0Selected),
-                tick: updatedTick,
-              });
-            }
-          }}
-          decrementDisabled={
-            tickInfo == null ||
-            lower == null ||
-            upper == null ||
-            !(isToken0Selected
-              ? (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) > lower.tick
-              : (isToken0Selected ? upper.tick - tickInfo.tickSpacing : upper.tick + tickInfo.tickSpacing) < lower.tick)
-          }
-          incrementDisabled={tickInfo == null || upper == null}
-          disabled={poolAddress == null}
-        />
+        {isToken0Selected ? lowerSteppedInput : upperSteppedInput}
+        {isToken0Selected ? upperSteppedInput : lowerSteppedInput}
       </div>
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
           tokenLabel={token0?.ticker || ''}
-          value={isAmount0InputDisabled ? '' : localToken0Amount}
-          onChange={handleLocalToken0AmountInput}
-          onBlur={updateTokenAmountInput}
-          disabled={isAmount0InputDisabled}
+          value={isInput0Disabled ? '' : localTokenAmounts[0]}
+          onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
+          disabled={isInput0Disabled}
           max={maxString0}
-          maxed={localToken0Amount === maxString0}
+          maxed={localTokenAmounts[0] === maxString0}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            handleLocalToken0AmountInput(maxValue, true);
+            updateAmount(maxValue, true, previousLower, previousUpper);
           }}
         />
         <TokenAmountInput
           tokenLabel={token1?.ticker || ''}
-          value={isAmount1InputDisabled ? '' : localToken1Amount}
-          onChange={handleLocalToken1AmountInput}
-          onBlur={updateTokenAmountInput}
-          disabled={isAmount1InputDisabled}
+          value={isInput1Disabled ? '' : localTokenAmounts[1]}
+          onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
+          disabled={isInput1Disabled}
           max={maxString1}
-          maxed={localToken1Amount === maxString1}
+          maxed={localTokenAmounts[1] === maxString1}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            handleLocalToken1AmountInput(maxValue, true);
+            updateAmount(maxValue, false, previousLower, previousUpper);
           }}
         />
       </div>
