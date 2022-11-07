@@ -1,11 +1,11 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
+import Big from 'big.js';
 import { BigNumber, Contract, ContractReceipt, ethers, Signer } from 'ethers';
 
-import WethAbi from '../assets/abis/Weth9.json';
-import Erc20Abi from '../assets/abis/ERC20.json';
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
-import Big from 'big.js';
+import Erc20Abi from '../assets/abis/ERC20.json';
+import WethAbi from '../assets/abis/Weth9.json';
 import { WETH_9_MAINNET_ADDRESS } from '../data/constants/Addresses';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING, UINT256_MAX } from '../data/constants/Values';
 
 export async function approve(
   signer: Signer,
@@ -17,10 +17,7 @@ export async function approve(
   const tokenContract = new Contract(tokenAddress, Erc20Abi, signer);
 
   try {
-    const transactionResponse = await tokenContract.approve(
-      poolAddress,
-      amount
-    );
+    const transactionResponse = await tokenContract.approve(poolAddress, amount);
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);
   } catch (e) {
@@ -38,9 +35,7 @@ export async function mintWeth(
   const wethContract = new Contract(WETH_9_MAINNET_ADDRESS, WethAbi, signer);
 
   try {
-    const transactionResponse = await wethContract.deposit({
-      value: ethers.BigNumber.from(amount.toFixed(0)),
-    });
+    const transactionResponse = await wethContract.deposit({ value: ethers.BigNumber.from(amount.toFixed(0)) });
     const receipt = await transactionResponse.wait(BLOCKS_TO_WAIT);
     completionCallback(receipt);
   } catch (e) {

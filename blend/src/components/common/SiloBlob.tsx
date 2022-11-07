@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { classNames } from '../../util/ClassNames';
 
 type SiloBlobProps = {
@@ -73,12 +75,7 @@ export default function SiloBlob(props: SiloBlobProps) {
 
   return (
     <div className={props.className}>
-      <div
-        className={classNames(
-          'flex flex-row items-center justify-start',
-          expand ? 'grow' : ''
-        )}
-      >
+      <div className={classNames('flex flex-row items-center justify-start', expand ? 'grow' : '')}>
         <Diamond color={color} />
         <Line color={color} width={props.width || '15px;'} expand={expand} />
         <SiloNameBubble color={color}>{props.children}</SiloNameBubble>

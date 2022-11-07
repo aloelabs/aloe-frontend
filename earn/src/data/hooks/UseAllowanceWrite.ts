@@ -1,14 +1,15 @@
-import { Chain, erc20ABI, useContractWrite } from 'wagmi';
-import { UINT256_MAX } from '../../data/constants/Values';
+import { ethers } from 'ethers';
+import { Chain, erc20ABI, useContractWrite, Address } from 'wagmi';
+
 import { TokenData } from '../../data/TokenData';
 
-export default function useAllowanceWrite(onChain: Chain, token: TokenData, spender: string) {
+export default function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
   return useContractWrite({
-    addressOrName: token.address,
+    address: token.address,
+    abi: erc20ABI,
     chainId: onChain.id,
-    contractInterface: erc20ABI,
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
-    args: [spender, UINT256_MAX],
+    args: [spender, ethers.constants.MaxUint256] as const,
   });
 }

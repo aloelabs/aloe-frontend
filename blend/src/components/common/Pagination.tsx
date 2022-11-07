@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
-import styled from 'styled-components';
-import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
+
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
+import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { Dropdown } from './Dropdown';
 
 const MAX_DISPLAYED_COUNT = 6;
@@ -76,8 +78,8 @@ const ItemsPerPageToOption = (itemsPerPage: ItemsPerPage) => {
   return {
     label: `${itemsPerPage.toString()} Results`,
     value: itemsPerPage.toString(),
-  }
-}
+  };
+};
 
 export type PaginationProps = {
   totalItems: number;
@@ -89,14 +91,7 @@ export type PaginationProps = {
 };
 
 export default function Pagination(props: PaginationProps) {
-  const {
-    totalItems,
-    itemsPerPage,
-    currentPage,
-    loading,
-    onPageChange,
-    onItemsPerPageChange,
-  } = props;
+  const { totalItems, itemsPerPage, currentPage, loading, onPageChange, onItemsPerPageChange } = props;
   const itemsPerPageValues: ItemsPerPage[] = [10, 20, 50, 100];
   const itemsPerPageOptions = itemsPerPageValues.map((value) => ({
     label: `${value.toString()} Results`,
@@ -138,9 +133,7 @@ export default function Pagination(props: PaginationProps) {
         <Dropdown
           options={itemsPerPageOptions}
           selectedOption={itemsPerPageOption}
-          onSelect={(updatedOption) =>
-            onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)
-          }
+          onSelect={(updatedOption) => onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)}
           placeAbove={true}
           small={true}
         />
@@ -157,11 +150,7 @@ export default function Pagination(props: PaginationProps) {
             return <EllipsisWrapper key={index}>&#8230;</EllipsisWrapper>;
           }
           return (
-            <PageButton
-              key={index}
-              className={page === currentPage ? 'active' : ''}
-              onClick={() => onPageChange(page)}
-            >
+            <PageButton key={index} className={page === currentPage ? 'active' : ''} onClick={() => onPageChange(page)}>
               {page}
             </PageButton>
           );

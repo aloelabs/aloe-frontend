@@ -1,34 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
+
+import axios, { AxiosResponse } from 'axios';
+import AppPage from 'shared/lib/components/common/AppPage';
+import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { Divider } from 'shared/lib/components/common/Divider';
+import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
+import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
+import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGreyButtonWithIcon } from '../components/common/Buttons';
-import BalanceSlider from '../components/lend/BalanceSlider';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
-import { Text } from 'shared/lib/components/common/Typography';
-import { formatUSD, roundPercentage } from '../util/Numbers';
-import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
-import { Divider } from 'shared/lib/components/common/Divider';
-import Tooltip from '../components/common/Tooltip';
-import LendPairCard from '../components/lend/LendPairCard';
-import Pagination, { ItemsPerPage } from '../components/common/Pagination';
-import { MultiDropdownButton, MultiDropdownOption } from '../components/common/Dropdown';
-import { SquareInputWithIcon } from '../components/common/Input';
-import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
-import { getAvailableLendingPairs, LendingPair } from '../data/LendingPair';
+
+import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
+import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
+import Tooltip from '../components/common/Tooltip';
+import BalanceSlider from '../components/lend/BalanceSlider';
+import LendPairCard from '../components/lend/LendPairCard';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
-import axios, { AxiosResponse } from 'axios';
-import { PriceRelayResponse } from '../data/PriceRelayResponse';
+import WelcomeModal from '../components/lend/modal/WelcomeModal';
+import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import ERC20ABI from '../assets/abis/ERC20.json';
-import KittyABI from '../assets/abis/Kitty.json';
-import { ethers } from 'ethers';
-import Big from 'big.js';
-import WelcomeModal from '../components/lend/modal/WelcomeModal';
+import {
+  getAvailableLendingPairs,
+  getLendingPairBalances,
+  LendingPair,
+  LendingPairBalances,
+} from '../data/LendingPair';
+import { PriceRelayResponse } from '../data/PriceRelayResponse';
+import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { formatUSD, roundPercentage } from '../util/Numbers';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
@@ -43,7 +45,6 @@ const LendHeaderContainer = styled.div`
 
 const LendHeader = styled.div`
   ${tw`flex flex-col justify-between`}
-  overflow: hidden;
 `;
 
 const LowerLendHeader = styled.div`
@@ -84,36 +85,11 @@ const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
   } as MultiDropdownOption;
 });
 
-async function getLendingPairBalances(lendingPair: LendingPair, userAddress: string, provider: ethers.providers.Provider) {
-  const {token0, token1, kitty0, kitty1} = lendingPair;
-
-  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
-    token0Contract.balanceOf(userAddress),
-    token1Contract.balanceOf(userAddress),
-    kitty0Contract.balanceOfUnderlying(userAddress),
-    kitty1Contract.balanceOfUnderlying(userAddress),
-  ]);
-  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  return {
-    token0: token0Balance,
-    token1: token1Balance,
-    kitty0: kitty0Balance,
-    kitty1: kitty1Balance,
-  };
-}
-
 export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<{token0: number, token1: number, kitty0: number, kitty1: number}[] | undefined>(undefined);
+  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -121,7 +97,8 @@ export default function LendPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffectOnce(() => {
-    const shouldShowWelcomeModal = localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
+    const shouldShowWelcomeModal =
+      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
     if (shouldShowWelcomeModal) {
       setShowWelcomeModal(true);
     }
@@ -129,7 +106,7 @@ export default function LendPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
-  const { address, connector } = useAccount();
+  const { address } = useAccount();
   const { data: ensName } = useEnsName({
     address: address,
     chainId: chain.mainnet.id,
@@ -163,7 +140,7 @@ export default function LendPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider, address || '');
+      const results = await getAvailableLendingPairs(provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -173,13 +150,13 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, connector, address]);
+  }, [provider, address]);
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
       if (!address) return;
-      const results = await Promise.all(lendingPairs.map(p => getLendingPairBalances(p, address, provider)));
+      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
       if (mounted) {
         setLendingPairBalances(results);
       }
@@ -187,49 +164,52 @@ export default function LendPage() {
     fetch();
     return () => {
       mounted = false;
-    }
+    };
   }, [provider, address, lendingPairs]);
-
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
       return [];
     }
     let combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address));
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address));
+      const token0Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+      );
+      const token1Quote = tokenQuotes.find(
+        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+      );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
       return [
         {
           token: pair.token0,
-          balance: lendingPairBalances?.[i]?.token0 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token0 || 0) * token0Price,
+          balance: lendingPairBalances?.[i]?.token0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
           apy: 0,
           isKitty: false,
           pairName,
         },
         {
           token: pair.token1,
-          balance: lendingPairBalances?.[i]?.token1 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token1 || 0) * token1Price,
+          balance: lendingPairBalances?.[i]?.token1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
           apy: 0,
           isKitty: false,
           pairName,
         },
         {
           token: pair.kitty0,
-          balance: lendingPairBalances?.[i]?.kitty0 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty0 || 0) * token0Price,
+          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
           apy: pair.kitty0Info.apy,
           isKitty: true,
           pairName,
         },
         {
           token: pair.kitty1,
-          balance: lendingPairBalances?.[i]?.kitty1 || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty1 || 0) * token1Price,
+          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
           apy: pair.kitty1Info.apy,
           isKitty: true,
           pairName,
@@ -274,12 +254,12 @@ export default function LendPage() {
     if (kittyBalances.length === 0 || totalKittyBalanceUSD === 0) {
       return 0;
     }
-    return kittyBalances.reduce((acc, tokenAPY) => {
-      return acc + tokenAPY.apy * tokenAPY.balanceUSD;
-    }, 0) / totalKittyBalanceUSD;
+    return (
+      kittyBalances.reduce((acc, tokenAPY) => {
+        return acc + tokenAPY.apy * tokenAPY.balanceUSD;
+      }, 0) / totalKittyBalanceUSD
+    );
   }, [kittyBalances, totalKittyBalanceUSD]);
-
-  const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
 
   return (
     <AppPage>
@@ -331,9 +311,10 @@ export default function LendPage() {
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
           </LendHeader>
-          {isGTMediumScreen && (
-            <LendPieChartWidget tokenBalances={[...kittyBalances, ...tokenBalances]} totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD} />
-          )}
+          <LendPieChartWidget
+            tokenBalances={[...kittyBalances, ...tokenBalances]}
+            totalBalanceUSD={totalKittyBalanceUSD + totalTokenBalanceUSD}
+          />
         </LendHeaderContainer>
         <Divider />
         <div>
@@ -341,15 +322,27 @@ export default function LendPage() {
             <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
               Lending Pairs
             </Text>
-            <Tooltip buttonSize='M' buttonText='' content='With lending pairs, you can pick which assets borrowers can post as collateral. For example, when you deposit to the USDC/WETH lending pair, borrowers can only use your funds if they post USDC or WETH as collateral. Never deposit to a pair that includes unknown/untrustworthy token(s).' position='top-center' filled={true} />
+            <Tooltip
+              buttonSize='M'
+              buttonText=''
+              content={`With lending pairs, you can pick which assets borrowers can post as collateral.${' '}
+              For example, when you deposit to the USDC/WETH lending pair,${' '}
+              borrowers can only use your funds if they post USDC or WETH as collateral.${' '}
+              Never deposit to a pair that includes unknown/untrustworthy token(s).`}
+              position='top-center'
+              filled={true}
+            />
           </div>
           <LendCards>
             {lendingPairs.map((lendPair, i) => (
-              <LendPairCard key={lendPair.token0.address} {...{
-                ...lendPair,
-                hasDeposited0: (lendingPairBalances?.[i]?.kitty0 || 0) > 0,
-                hasDeposited1: (lendingPairBalances?.[i]?.kitty1 || 0) > 0
-              }} />
+              <LendPairCard
+                key={lendPair.token0.address}
+                {...{
+                  ...lendPair,
+                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0Balance || 0) > 0,
+                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1Balance || 0) > 0,
+                }}
+              />
             ))}
           </LendCards>
           <Pagination

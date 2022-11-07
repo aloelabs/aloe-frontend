@@ -1,9 +1,9 @@
-import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
+import Big from 'big.js';
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
 
 import BlendPoolAbi from '../assets/abis/AloeBlend.json';
-import Big from 'big.js';
 import { BlendPoolStats } from '../data/BlendPoolDataResolver';
+import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 
 export async function withdraw(
   signer: Signer,
@@ -15,12 +15,8 @@ export async function withdraw(
 ): Promise<void> {
   const tokenContract = new Contract(poolAddress, BlendPoolAbi, signer);
 
-  const estimated0 = poolStats.inventory0.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
-  const estimated1 = poolStats.inventory1.total
-    .mul(shares)
-    .div(poolStats.outstandingShares);
+  const estimated0 = poolStats.inventory0.total.mul(shares).div(poolStats.outstandingShares);
+  const estimated1 = poolStats.inventory1.total.mul(shares).div(poolStats.outstandingShares);
 
   const amount0Min = estimated0.mul(1 - ratioChange / 100);
   const amount1Min = estimated1.mul(1 - ratioChange / 100);

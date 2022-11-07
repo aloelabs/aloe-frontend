@@ -1,19 +1,17 @@
 import React from 'react';
-import { FilledGreyButton } from '../../../common/Buttons';
-import {
-  MESSAGE_TEXT_COLOR,
-} from '../../../common/Modal';
+
+import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+
 import ErrorIcon from '../../../../assets/svg/error.svg';
+import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 
 export type FailureModalContentProps = {
   onConfirm: () => void;
 };
 
 export default function FailureModalContent(props: FailureModalContentProps) {
-  const {
-    onConfirm,
-  } = props;
+  const { onConfirm } = props;
 
   return (
     <div>
@@ -25,11 +23,7 @@ export default function FailureModalContent(props: FailureModalContentProps) {
           Oops! Something went wrong with your transaction, please try again later.
         </Text>
       </div>
-      <FilledGreyButton
-        size='M'
-        fillWidth={true}
-        onClick={onConfirm}
-      >
+      <FilledGreyButton size='M' fillWidth={true} onClick={onConfirm}>
         Dismiss
       </FilledGreyButton>
     </div>

@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { ReactComponent as BrowsePoolsIcon } from '../../assets/svg/small_right_arrow.svg';
 import { OutlinedWhiteButtonWithIcon } from '../common/Buttons';
 
@@ -22,8 +24,7 @@ const Container = styled.div`
     border-radius: 8px;
     padding: 1.5px;
     background: ${CONTAINER_BORDER_GRADIENT};
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -50,12 +51,8 @@ export default function EmptyPortfolio() {
   return (
     <Container>
       <div className='flex flex-col items-center'>
-        <EmptyPortfolioText>
-          Looks like your Aloe portfolio is empty.
-        </EmptyPortfolioText>
-        <EmptyPortfolioSubText>
-          Browse our pools or migrate your external positions.
-        </EmptyPortfolioSubText>
+        <EmptyPortfolioText>Looks like your Aloe portfolio is empty.</EmptyPortfolioText>
+        <EmptyPortfolioSubText>Browse our pools or migrate your external positions.</EmptyPortfolioSubText>
       </div>
       <div className='flex flex-col items-center'>
         <OutlinedWhiteButtonWithIcon

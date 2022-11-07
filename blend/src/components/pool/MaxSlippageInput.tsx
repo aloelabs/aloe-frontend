@@ -1,17 +1,19 @@
-import { Tab } from '@headlessui/react';
 import React, { Fragment } from 'react';
+
+import { Tab } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from '../common/Typography';
-import Tooltip from '../common/Tooltip';
+
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import Tooltip from '../common/Tooltip';
+import { Text } from '../common/Typography';
 
 const MESSAGE_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 
 const PREDEFINED_MAX_SLIPPAGE_OPTIONS = [
-  {label: 'Low (5%)', value: '5.0'},
-  {label: 'Mid (10%)', value: '10.0'},
-]
+  { label: 'Low (5%)', value: '5.0' },
+  { label: 'Mid (10%)', value: '10.0' },
+];
 
 const SlippageTabsWrapper = styled.div`
   ${tw`w-full flex`}
@@ -122,13 +124,10 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
             {PREDEFINED_MAX_SLIPPAGE_OPTIONS.map(({ label, value }) => (
               <Tab as={Fragment} key={value}>
                 {({ selected }) => (
-                  <SlippageButton
-                    className={selected ? 'selected' : ''}
-                    onClick={() => updateMaxSlippage(value)}
-                  >
+                  <SlippageButton className={selected ? 'selected' : ''} onClick={() => updateMaxSlippage(value)}>
                     <span>{label}</span>
-                  </SlippageButton>)
-                }
+                  </SlippageButton>
+                )}
               </Tab>
             ))}
             <Tab as={Fragment} key='Custom'>
@@ -139,9 +138,8 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                       <CustomSlippageInputWrapper>
                         <CustomSlippageInput
                           onChange={(e) => {
-                            let newValue =
-                              e.target.value !== '' ? e.target.value : '0';
-                              updateMaxSlippage(newValue);
+                            let newValue = e.target.value !== '' ? e.target.value : '0';
+                            updateMaxSlippage(newValue);
                           }}
                           type='text'
                           className={selected ? 'selected' : ''}
@@ -154,9 +152,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                   );
                 } else {
                   return (
-                    <SlippageButton
-                      onClick={() => updateMaxSlippage('0')}
-                    >
+                    <SlippageButton onClick={() => updateMaxSlippage('0')}>
                       <span>Custom</span>
                     </SlippageButton>
                   );
@@ -168,17 +164,26 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
         <Tab.Panels as={Fragment}>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>Low slippage</Text> is recommended.
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
+                Low slippage
+              </Text>{' '}
+              is recommended.
             </Text>
           </Tab.Panel>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>Medium slippage</Text> is a compromise between transaction execution and precision.
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
+                Medium slippage
+              </Text>{' '}
+              is a compromise between transaction execution and precision.
             </Text>
           </Tab.Panel>
           <Tab.Panel>
             <Text size='XS' weight='regular' color={MESSAGE_TEXT_COLOR}>
-              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>Set a custom slippage</Text> if you really know what you're doing.
+              <Text size='XS' weight='bold' color={MESSAGE_TEXT_COLOR} className='inline'>
+                Set a custom slippage
+              </Text>{' '}
+              if you really know what you're doing.
             </Text>
           </Tab.Panel>
         </Tab.Panels>

@@ -1,12 +1,14 @@
-import { FullscreenModal } from '../common/Modal';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
+import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { ActionProvider, ActionProviders, ActionTemplates, getNameOfAction } from '../../data/Actions';
-import { Text, Display } from 'shared/lib/components/common/Typography';
+
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
-import { Action, ActionCardState } from '../../data/Actions';
-import { SvgWrapper } from '../common/SvgWrapper';
+import { getNameOfAction } from '../../data/actions/ActionID';
+import { ActionProvider, ActionProviders, ActionTemplates } from '../../data/actions/Actions';
+import { Action } from '../../data/actions/Actions';
+import { FullscreenModal } from '../common/Modal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TEMPLATE_COLOR = '#4b6980';
@@ -110,7 +112,7 @@ export type BorrowSelectActionModalProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   handleAddAction: (action: Action) => void;
-  handleAddActions: (actions: Action[], defaultActionResults?: ActionCardState[]) => void;
+  handleAddActions: (actions: Action[], userInputFields?: (string[] | undefined)[]) => void;
 };
 
 export default function BorrowSelectActionModal(props: BorrowSelectActionModalProps) {
@@ -147,7 +149,7 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
                   key={index}
                   borderColor='#4B6980'
                   onClick={() => {
-                    handleAddActions(template.actions, template.defaultActionStates);
+                    handleAddActions(template.actions, template.userInputFields);
                     setIsOpen(false);
                   }}
                 >

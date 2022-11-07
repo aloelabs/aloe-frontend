@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import ErrorIcon from '../../assets/svg/interaction_error.svg';
 import { SquareInputWithMax } from './Input';
 import { Text } from './Typography';
@@ -80,9 +82,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
       {props.error && (
         <ErrorMessageWrapper>
           <img src={ErrorIcon} width={16} height={16} alt='error' />
-          <ErrorMessageText>
-            {props.errorMessage ? props.errorMessage : 'Invalid input'}
-          </ErrorMessageText>
+          <ErrorMessageText>{props.errorMessage ? props.errorMessage : 'Invalid input'}</ErrorMessageText>
         </ErrorMessageWrapper>
       )}
     </div>

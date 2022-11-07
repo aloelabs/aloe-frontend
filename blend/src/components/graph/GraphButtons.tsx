@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { Text } from '../common/Typography';
 
 const WHITE = '#FFFFFF';
@@ -24,12 +26,7 @@ export function buttonIdxToText(idx: number): string {
   }
 }
 
-
-
-
-const StyledGraphButton = styled.button.attrs(
-  (props: { buttonWidth: number }) => props
-)`
+const StyledGraphButton = styled.button.attrs((props: { buttonWidth: number }) => props)`
   ${tw`rounded-md p-1 bg-transparent disabled:text-grey-500`}
   width: ${(props) => props.buttonWidth}px;
   height: 36px;
@@ -57,7 +54,7 @@ const StyledGraphButton = styled.button.attrs(
 const GraphButtonsContainer = styled.div`
   ${tw`flex gap-3`}
   padding: 4px 8px;
-`
+`;
 
 export type GraphButtonProps = {
   idx: number;

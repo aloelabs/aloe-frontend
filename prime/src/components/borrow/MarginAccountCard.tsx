@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from 'react';
+
+import { NavLink } from 'react-router-dom';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import { TokenData } from '../../data/TokenData';
-import { FeeTier, PrintFeeTier } from '../../data/FeeTier';
-import TokenPairIcons from '../common/TokenPairIcons';
-import { NavLink } from 'react-router-dom';
-import { getProminentColor, rgba } from '../../util/Colors';
-import { formatTokenAmount, formatUSDAuto } from '../../util/Numbers';
+
+import { PrintFeeTier } from '../../data/FeeTier';
+import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
+import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
-import { MarginAccount, MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
+import { formatTokenAmount } from '../../util/Numbers';
+import TokenPairIcons from '../common/TokenPairIcons';
 
 const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 const FEE_TIER_OUTLINE_COLOR = 'rgba(13, 23, 30, 1)';
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
-const CardWrapper = styled(NavLink)`
+const CardWrapper = styled(NavLink).attrs((props: { border: string; shadow: string }) => props)`
   ${tw`flex flex-col items-start justify-evenly`}
   width: 400px;
   border-radius: 16px;
@@ -24,11 +25,29 @@ const CardWrapper = styled(NavLink)`
   position: relative;
   background-color: rgba(13, 23, 30, 1);
   border: 4px solid rgba(26, 41, 52, 1);
+
+  &:hover {
+    box-shadow: 0px 8px 48px 0px ${(props) => props.shadow};
+    border-color: transparent;
+    overflow: visible;
+    &:before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 16px;
+      margin: -4px;
+      padding: 4px;
+      z-index: 5;
+      background: ${(props) => props.border};
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+  }
 `;
 
-const CardTitleWrapper = styled.div.attrs(
-  (props: { gradient: string }) => props
-)`
+const CardTitleWrapper = styled.div.attrs((props: { gradient: string }) => props)`
   ${tw`flex flex-col items-start justify-start`}
   padding: 32px 32px 40px 32px;
   position: relative;
@@ -117,13 +136,15 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   }, [token0, token1]);
 
   // Create the variables for the gradients.
-  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(
-    token0Color,
+  const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
+    token1Color,
     0.25
-  )} 0%, ${rgba(token1Color, 0.25)} 100%)`;
+  )} 100%)`;
+  const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
+  const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);
 
   return (
-    <CardWrapper to={link}>
+    <CardWrapper to={link} border={cardBorderGradient} shadow={cardShadowColor}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
           {token0.ticker}-{token1.ticker}
@@ -146,7 +167,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
         <div className='w-full flex flex-row justify-between'>
           <MetricContainer
             label={token0.ticker ?? 'Token0'}
-            value={formatTokenAmount(assets0 - liabilities.amount0, 3)} />
+            value={formatTokenAmount(assets0 - liabilities.amount0, 3)}
+          />
           <MetricContainer
             label={token1.ticker ?? 'Token1'}
             value={formatTokenAmount(assets1 - liabilities.amount1, 3)}

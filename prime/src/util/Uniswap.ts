@@ -1,30 +1,19 @@
+import { ApolloQueryResult } from '@apollo/react-hooks';
+import { MaxUint256 } from '@uniswap/sdk-core';
+import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ethers } from 'ethers';
-
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import JSBI from 'jsbi';
-import {
-  TickMath,
-  tickToPrice as uniswapTickToPrice,
-  maxLiquidityForAmounts,
-  Position,
-  Pool,
-  SqrtPriceMath,
-  nearestUsableTick,
-  FeeAmount,
-} from '@uniswap/v3-sdk';
-import { BigintIsh, MaxUint256, Token } from '@uniswap/sdk-core';
-import { TokenData } from '../data/TokenData';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
 import { theGraphUniswapV3Client } from '../App';
-import { UniswapTicksQuery } from './GraphQL';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
 import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
-import { UniswapPosition } from '../data/Actions';
+import { TokenData } from '../data/TokenData';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
+import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;
-export const Q48 = ethers.BigNumber.from('0x1000000000000');
-export const Q96 = ethers.BigNumber.from('0x1000000000000000000000000');
 const ONE = new Big('1.0');
 
 export interface UniswapV3PoolSlot0 {
@@ -82,7 +71,7 @@ export type UniswapV3GraphQLTicksQueryResponse = {
 
 export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
   const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
-  return toBig(priceX96).div(toBig(Q96));
+  return toBig(priceX96).div(BIGQ96);
 }
 
 export function calculateTickInfo(
@@ -95,11 +84,17 @@ export function calculateTickInfo(
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
-  const minPrice = parseFloat(
-    tickToPrice(isToken0Selected ? minTick : maxTick, token0.decimals, token1.decimals, isToken0Selected)
+  const minPrice = tickToPrice(
+    isToken0Selected ? minTick : maxTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
   );
-  const maxPrice = parseFloat(
-    tickToPrice(isToken0Selected ? maxTick : minTick, token0.decimals, token1.decimals, isToken0Selected)
+  const maxPrice = tickToPrice(
+    isToken0Selected ? maxTick : minTick,
+    token0.decimals,
+    token1.decimals,
+    isToken0Selected
   );
   return {
     minTick,
@@ -241,7 +236,7 @@ export function tickToPrice(
   token0Decimals: number,
   token1Decimals: number,
   isInTermsOfToken0 = true
-): string {
+): number {
   const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
   const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
   const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
@@ -251,11 +246,10 @@ export function tickToPrice(
   const decimalDiff = token0Decimals - token1Decimals;
   const price0In1 = priceX96Big
     .mul(10 ** decimalDiff)
-    .div(Q96.toString())
+    .div(BIGQ96)
     .toNumber();
   const price1In0 = 1.0 / price0In1;
-  // console.log(tick, price0In1, price1In0);
-  return isInTermsOfToken0 ? price0In1.toString() : price1In0.toString();
+  return isInTermsOfToken0 ? price0In1 : price1In0;
 }
 
 // export function tickToPrice2(token0: TokenData | null, token1: TokenData | null, tick: number) {
@@ -266,11 +260,16 @@ export function tickToPrice(
 
 export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
   const decimalDiff = token0Decimals - token1Decimals;
-  const priceX96 = new Big(price0In1).mul(Q96.toString()).div(10 ** decimalDiff);
+  const priceX96 = new Big(price0In1).mul(BIGQ96).div(10 ** decimalDiff);
 
   const sqrtPriceX48 = priceX96.sqrt();
   const sqrtPriceX96JSBI = JSBI.BigInt(sqrtPriceX48.mul(Q48.toString()).toFixed(0));
   return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
+}
+
+export function sqrtRatioToTick(sqrtRatioX96: Big): number {
+  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+  return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
 }
 
 export function shouldAmount0InputBeDisabled(lowerTick: number, upperTick: number, currentTick: number): boolean {
@@ -289,7 +288,7 @@ export function calculateAmount1FromAmount0(
   token0Decimals: number,
   token1Decimals: number
 ): {
-  amount1: string;
+  amount: string;
   liquidity: JSBI;
 } {
   // If lowerTick > upperTick, flip them so that the var names match reality
@@ -310,7 +309,7 @@ export function calculateAmount1FromAmount0(
     //current price < lower price
     //everything to the right of currentTick is token0. thus there's no token1 (amount1 = 0)
     return {
-      amount1: '0',
+      amount: '0',
       liquidity,
     };
   } else if (currentTick < upperTick) {
@@ -323,7 +322,7 @@ export function calculateAmount1FromAmount0(
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return {
-    amount1: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
+    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
     liquidity,
   };
 }
@@ -336,7 +335,7 @@ export function calculateAmount0FromAmount1(
   token0Decimals: number,
   token1Decimals: number
 ): {
-  amount0: string;
+  amount: string;
   liquidity: JSBI;
 } {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
@@ -364,12 +363,12 @@ export function calculateAmount0FromAmount1(
     //current price >= upper price
     //everything to the right of currentTick is token1. thus there's no token0 (amount0 = 0)
     return {
-      amount0: '0',
+      amount: '0',
       liquidity,
     };
   }
   return {
-    amount0: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
+    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
     liquidity,
   };
 }
@@ -388,7 +387,7 @@ export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
   return numericFeeTier as FeeAmount;
 }
 
-export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string | null {
+export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string {
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
   // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
@@ -396,39 +395,21 @@ export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, f
   // const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
   // if (uniswapFeeAmount == null) return null;
   // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
-  return '0xfbe57c73a82171a773d3328f1b563296151be515';
-}
-
-export function sumOfAssetsUsedForUniswapPositions(uniPos: UniswapPosition[]): [number, number] {
-  let token0Amount = 0;
-  let token1Amount = 0;
-  for (let pos of uniPos) {
-    token0Amount += pos.amount0 || 0;
-    token1Amount += pos.amount1 || 0;
-  }
-  return [token0Amount, token1Amount];
+  return '0xfbe57c73a82171a773d3328f1b563296151be515'; // TODO once we're working with mainnet uncomment the other stuff
 }
 
 export function uniswapPositionKey(owner: string, lower: number, upper: number): string {
   return ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, lower, upper]);
 }
 
-function getAmount0ForLiquidity(
-  sqrtRatioAX96: JSBI,
-  sqrtRatioBX96: JSBI,
-  liquidity: JSBI
-): JSBI {
+function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
   const numerator = JSBI.multiply(JSBI.leftShift(liquidity, res), JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
   const denominator = JSBI.multiply(sqrtRatioBX96, sqrtRatioAX96);
   return JSBI.divide(numerator, denominator);
 }
 
-function getAmount1ForLiquidity(
-  sqrtRatioAX96: JSBI,
-  sqrtRatioBX96: JSBI,
-  liquidity: JSBI
-): JSBI {
+function getAmount1ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const numerator = JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
   return JSBI.divide(numerator, JSBI.BigInt(Q96.toString()));
 }

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { BlendPoolStats, ResolveBlendStats } from '../BlendPoolDataResolver';
+
 import { useContract, useProvider, useBlockNumber } from 'wagmi';
+
 import AloeBlendABI from '../../assets/abis/AloeBlend.json';
-import SiloABI from '../../assets/abis/Silo.json';
 import ERC20ABI from '../../assets/abis/ERC20.json';
+import SiloABI from '../../assets/abis/Silo.json';
+import { BlendPoolStats, ResolveBlendStats } from '../BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../BlendPoolMarkers';
 
 export function useBlendStats(poolData: BlendPoolMarkers) {
@@ -12,40 +14,35 @@ export function useBlendStats(poolData: BlendPoolMarkers) {
 
   const provider = useProvider();
   const blend = useContract({
-    addressOrName: poolData.poolAddress,
-    contractInterface: AloeBlendABI,
+    address: poolData.poolAddress,
+    abi: AloeBlendABI,
     signerOrProvider: provider,
   });
   const silo0 = useContract({
-    addressOrName: poolData.silo0Address,
-    contractInterface: SiloABI,
+    address: poolData.silo0Address,
+    abi: SiloABI,
     signerOrProvider: provider,
   });
   const silo1 = useContract({
-    addressOrName: poolData.silo1Address,
-    contractInterface: SiloABI,
+    address: poolData.silo1Address,
+    abi: SiloABI,
     signerOrProvider: provider,
   });
   const token0 = useContract({
-    addressOrName: poolData.token0Address,
-    contractInterface: ERC20ABI,
+    address: poolData.token0Address,
+    abi: ERC20ABI,
     signerOrProvider: provider,
   });
   const token1 = useContract({
-    addressOrName: poolData.token1Address,
-    contractInterface: ERC20ABI,
+    address: poolData.token1Address,
+    abi: ERC20ABI,
     signerOrProvider: provider,
   });
 
   useEffect(() => {
     const collectStats = async () => {
-      const stats = await ResolveBlendStats(
-        blend,
-        silo0,
-        silo1,
-        token0,
-        token1
-      );
+      if (!(blend && silo0 && silo1 && token0 && token1)) return;
+      const stats = await ResolveBlendStats(blend, silo0, silo1, token0, token1);
       setBlendStats(stats);
     };
 

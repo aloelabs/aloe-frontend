@@ -1,9 +1,11 @@
 import React from 'react';
+
+import { SquareInputWithMax } from 'shared/lib/components/common/Input';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import ErrorIcon from '../../assets/svg/interaction_error.svg';
-import { SquareInputWithMax } from './Input';
-import { Text } from 'shared/lib/components/common/Typography';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
@@ -39,7 +41,6 @@ const ErrorMessageText = styled.div`
   line-height: 20px;
 `;
 
-
 export type TokenAmountInputProps = {
   value: string;
   tokenLabel: string;
@@ -61,11 +62,11 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         <Text size='M' weight='medium' color={INPUT_LABEL_TEXT_COLOR}>
           {props.tokenLabel}
         </Text>
-        {props.max !== undefined &&
+        {props.max !== undefined && (
           <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
             Balance: {props.max}
           </Text>
-        }
+        )}
       </div>
       <SquareInputWithMax
         size='L'
@@ -92,9 +93,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
       {props.error && (
         <ErrorMessageWrapper>
           <img src={ErrorIcon} width={16} height={16} alt='error' />
-          <ErrorMessageText>
-            {props.errorMessage ? props.errorMessage : 'Invalid input'}
-          </ErrorMessageText>
+          <ErrorMessageText>{props.errorMessage ? props.errorMessage : 'Invalid input'}</ErrorMessageText>
         </ErrorMessageWrapper>
       )}
     </div>

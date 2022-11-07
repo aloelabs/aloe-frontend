@@ -1,10 +1,12 @@
 import React from 'react';
+
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+
+import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from '../common/SiloBlob';
-import styled from 'styled-components';
-import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import TokenPairLogos from '../common/TokenPairLogos';
-import { useNavigate } from 'react-router-dom';
 
 export type BlendPoolSelectTableRowProps = {
   poolData: BlendPoolMarkers;
@@ -27,14 +29,11 @@ const AnimatedTr = styled.tr`
   }
 `;
 
-export default function BlendPoolSelectTableRow(
-  props: BlendPoolSelectTableRowProps
-) {
+export default function BlendPoolSelectTableRow(props: BlendPoolSelectTableRowProps) {
   const navigate = useNavigate();
   const drawData = ResolveBlendPoolDrawData(props.poolData);
 
-  const { token0Label, token1Label, silo0Label, silo1Label, feeTierText } =
-    drawData;
+  const { token0Label, token1Label, silo0Label, silo1Label, feeTierText } = drawData;
 
   return (
     <AnimatedTr

@@ -1,5 +1,6 @@
-import { ReactChild } from "react";
-import styled from "styled-components";
+import { ReactChild } from 'react';
+
+import styled from 'styled-components';
 
 const LabelWrapper = styled.label`
   user-select: none;
@@ -22,7 +23,12 @@ export default function ToggleButton(props: ToggleButtonProps) {
   return (
     <LabelWrapper>
       {children}
-      <HiddenInput type='checkbox' title={desc || 'toggle'} checked={isActive} onChange={() => setIsActive(!isActive)} />
+      <HiddenInput
+        type='checkbox'
+        title={desc || 'toggle'}
+        checked={isActive}
+        onChange={() => setIsActive(!isActive)}
+      />
     </LabelWrapper>
-  )
+  );
 }

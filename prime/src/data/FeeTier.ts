@@ -44,10 +44,15 @@ export function GetNumericFeeTier(ft: FeeTier | undefined): number {
 
 export function NumericFeeTierToEnum(ft: number): FeeTier {
   switch (ft) {
-    case 100: return FeeTier.ZERO_ZERO_ONE;
-    case 500: return FeeTier.ZERO_ZERO_FIVE;
-    case 3000: return FeeTier.ZERO_THREE;
-    case 10000: return FeeTier.ONE;
-    default: return FeeTier.UNKNOWN;
+    case 100:
+      return FeeTier.ZERO_ZERO_ONE;
+    case 500:
+      return FeeTier.ZERO_ZERO_FIVE;
+    case 3000:
+      return FeeTier.ZERO_THREE;
+    case 10000:
+      return FeeTier.ONE;
+    default:
+      return FeeTier.UNKNOWN;
   }
 }

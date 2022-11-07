@@ -1,7 +1,9 @@
 import React from 'react';
+
+import { format, parseISO } from 'date-fns';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { format, parseISO } from 'date-fns';
+
 import { Text } from '../../common/Typography';
 
 const TOOLTIP_BG_COLOR = 'rgba(0, 0, 0, 0.4)';
@@ -34,8 +36,12 @@ export default function BlendGraphTooltip(data: any, active = false) {
     const tooltipValues = payload.map((item: any, index: number) => {
       return (
         <div className='flex flex-col' key={index}>
-          <Text size='XS' weight='medium' color={item.color}>{item.name}</Text>
-          <Text size='S' weight='medium' color={item.color}>{prettify(item.value)}</Text>
+          <Text size='XS' weight='medium' color={item.color}>
+            {item.name}
+          </Text>
+          <Text size='S' weight='medium' color={item.color}>
+            {prettify(item.value)}
+          </Text>
         </div>
       );
     });
@@ -43,12 +49,14 @@ export default function BlendGraphTooltip(data: any, active = false) {
     return (
       <TooltipContainer>
         <TooltipTitleContainer>
-          <Text size='XS' weight='medium' color={TOOLTIP_TEXT_COLOR}>{labelTop}</Text>
-          <Text size='XS' weight='medium' color={TOOLTIP_TEXT_COLOR}>{labelBottom}</Text>
+          <Text size='XS' weight='medium' color={TOOLTIP_TEXT_COLOR}>
+            {labelTop}
+          </Text>
+          <Text size='XS' weight='medium' color={TOOLTIP_TEXT_COLOR}>
+            {labelBottom}
+          </Text>
         </TooltipTitleContainer>
-        <div className='flex flex-col justify-between gap-2 mt-1 pl-3 pr-3 pb-3'>
-          {tooltipValues}
-        </div>
+        <div className='flex flex-col justify-between gap-2 mt-1 pl-3 pr-3 pb-3'>{tooltipValues}</div>
       </TooltipContainer>
     );
   }

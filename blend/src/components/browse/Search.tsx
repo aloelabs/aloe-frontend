@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import SearchIcon from '../../assets/svg/search.svg';
 
 /**
@@ -14,13 +16,11 @@ const SEARCH_TEXT_COLOR_FOCUS = 'rgba(204, 223, 237, 1)';
 const SEARCH_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
 const SEARCH_BORDER_COLOR_FOCUS = 'rgba(134, 94, 242, 1)';
 
-const SearchWrapper = styled.div.attrs(
-  (props: { disabled: boolean}) => (props)
-)`
+const SearchWrapper = styled.div.attrs((props: { disabled: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center`}
   box-sizing: border-box;
   position: relative;
-  
+
   ${(props) => props.disabled && `opacity: 0.4;`}
 `;
 
@@ -42,7 +42,7 @@ const SearchInput = styled.input`
   &:focus {
     outline: none;
     /* TODO: Not sure which to use */
-    box-shadow: 0px 0px 0px 2px ${SEARCH_BORDER_COLOR_FOCUS};//rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px ${SEARCH_BORDER_COLOR_FOCUS}; //rgba(255, 255, 255, 0.2);
     color: ${SEARCH_TEXT_COLOR_FOCUS};
     &::placeholder {
       color: ${SEARCH_TEXT_COLOR_FOCUS};
@@ -74,12 +74,17 @@ export type SearchProps = {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
-}
+};
 
 export default function Search(props: SearchProps) {
   return (
     <SearchWrapper disabled={props.disabled}>
-      <SearchInput placeholder='Search by name, symbol or address' value={props.value} onChange={props.onChange} disabled={props.disabled} />
+      <SearchInput
+        placeholder='Search by name, symbol or address'
+        value={props.value}
+        onChange={props.onChange}
+        disabled={props.disabled}
+      />
       <SearchIconWrapper src={SearchIcon} alt='Search Icon' />
     </SearchWrapper>
   );

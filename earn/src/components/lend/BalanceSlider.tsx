@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { TokenBalance } from '../../pages/LendPage';
 import { formatTokenAmount } from '../../util/Numbers';
 
@@ -32,13 +34,11 @@ const Wrapper = styled.div`
   }
 `;
 
-const Slider = styled.div.attrs(
-  (props: { duration: number, shouldAnimate: boolean }) => props
-)`
+const Slider = styled.div.attrs((props: { duration: number; shouldAnimate: boolean }) => props)`
   ${tw`flex`}
   width: max-content;
-  animation-name: ${(props) => props.shouldAnimate ? 'slide' : 'none'};
-  animation-duration: ${props => props.duration ?? 0}s;
+  animation-name: ${(props) => (props.shouldAnimate ? 'slide' : 'none')};
+  animation-duration: ${(props) => props.duration ?? 0}s;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 
@@ -69,7 +69,7 @@ const TokenIcon = styled.img`
 
 export type BalanceSliderProps = {
   tokenBalances: TokenBalance[];
-}
+};
 
 export default function BalanceSlider(props: BalanceSliderProps) {
   const { tokenBalances } = props;
@@ -89,7 +89,7 @@ export default function BalanceSlider(props: BalanceSliderProps) {
       }
     }
   }, [tokenBalances, shouldAnimate]);
-  
+
   return (
     <Wrapper ref={wrapperRef}>
       <Slider ref={sliderRef} duration={tokenBalances.length * 2} shouldAnimate={shouldAnimate}>
@@ -99,24 +99,21 @@ export default function BalanceSlider(props: BalanceSliderProps) {
               <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
               {tokenBalance.token.name}
               {' - '}
-              {formatTokenAmount(tokenBalance.balance)}
-              {' '}
-              {tokenBalance.token.ticker}
+              {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.ticker}
             </SliderItem>
           );
         })}
-        {shouldAnimate && tokenBalances.map((tokenBalance, index) => {
-          return (
-            <SliderItem key={index}>
-              <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
-              {tokenBalance.token.name}
-              {' - '}
-              {formatTokenAmount(tokenBalance.balance)}
-              {' '}
-              {tokenBalance.token.ticker}
-            </SliderItem>
-          );
-        })}
+        {shouldAnimate &&
+          tokenBalances.map((tokenBalance, index) => {
+            return (
+              <SliderItem key={index}>
+                <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
+                {tokenBalance.token.name}
+                {' - '}
+                {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.ticker}
+              </SliderItem>
+            );
+          })}
       </Slider>
     </Wrapper>
   );

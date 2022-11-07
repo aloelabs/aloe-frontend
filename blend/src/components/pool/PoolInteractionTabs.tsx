@@ -1,14 +1,16 @@
 import React, { Fragment } from 'react';
+
 import { Tab } from '@headlessui/react';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import DepositTab from './DepositTab';
-import WithdrawTab from './WithdrawTab';
-import tw from 'twin.macro';
 import styled from 'styled-components';
-import ConnectWallet from './ConnectWallet';
+import tw from 'twin.macro';
+
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { OffChainPoolStats } from '../../data/PoolStats';
-import SwapTab from './SwapTab';
 import { isPoolDeprecated } from '../../util/Pool';
+import ConnectWallet from './ConnectWallet';
+import DepositTab from './DepositTab';
+import SwapTab from './SwapTab';
+import WithdrawTab from './WithdrawTab';
 
 export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
 
@@ -39,8 +41,7 @@ const TabButton = styled.button`
       border-top-right-radius: 8px;
       padding: 1.5px 1.5px 0px 1.5px;
       background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -75,8 +76,7 @@ const PanelsWrapper = styled.div`
     border-bottom-right-radius: 8px;
     padding: 0px 1.5px 1.5px 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -91,8 +91,7 @@ const PanelsWrapper = styled.div`
     border-bottom-right-radius: 8px;
     padding: 1.5px 0px 0px 0px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -115,11 +114,7 @@ export default function PoolInteractionTabs(props: PoolInteractionTabsProps) {
           <Tab.List className='flex rounded-md'>
             {['Deposit', 'Withdraw', 'Swap'].map((tabName) => (
               <Tab key={tabName} as={Fragment}>
-                {({ selected }) => (
-                  <TabButton className={selected ? 'selected' : ''}>
-                    {tabName}
-                  </TabButton>
-                )}
+                {({ selected }) => <TabButton className={selected ? 'selected' : ''}>{tabName}</TabButton>}
               </Tab>
             ))}
           </Tab.List>

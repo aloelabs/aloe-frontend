@@ -1,8 +1,7 @@
 import React from 'react';
+
 import { FilledGreyButton } from '../../common/Buttons';
-import {
-  CloseableModal, MESSAGE_TEXT_COLOR,
-} from '../../common/Modal';
+import { CloseableModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 import { Text } from '../../common/Typography';
 
 const FAILED_BORDER_GRADIENT = 'rgba(235, 87, 87, 1)';
@@ -23,7 +22,9 @@ export default function TransactionFailedModal(props: TransactionFailedModalProp
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
         Oops! Something went wrong with your transaction, please try again later.
       </Text>
-      <FilledGreyButton size='M' fillWidth={true} className='mt-8'>Dismiss</FilledGreyButton>
+      <FilledGreyButton size='M' fillWidth={true} className='mt-8'>
+        Dismiss
+      </FilledGreyButton>
     </CloseableModal>
   );
 }

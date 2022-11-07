@@ -1,8 +1,9 @@
 import { RadioGroup } from '@headlessui/react';
+import { StyledRadioButton } from 'shared/lib/components/common/Buttons';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { TokenData } from '../../data/TokenData';
-import { StyledRadioButton } from './Buttons';
 
 const RadioButtonsContainer = styled.div`
   ${tw`flex`}
@@ -34,20 +35,10 @@ export default function TokenChooser(props: TokenChooserProps) {
     >
       <RadioButtonsContainer>
         <RadioGroup.Option value={token0.address}>
-          {({ checked }) => (
-            <StyledRadioButton
-              checked={checked}
-              label={token0?.ticker || ''}
-            />
-          )}
+          {({ checked }) => <StyledRadioButton checked={checked} label={token0?.ticker || ''} />}
         </RadioGroup.Option>
         <RadioGroup.Option value={token1.address}>
-          {({ checked }) => (
-            <StyledRadioButton
-              checked={checked}
-              label={token1?.ticker || ''}
-            />
-          )}
+          {({ checked }) => <StyledRadioButton checked={checked} label={token1?.ticker || ''} />}
         </RadioGroup.Option>
       </RadioButtonsContainer>
     </RadioGroup>

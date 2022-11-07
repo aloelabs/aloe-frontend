@@ -1,22 +1,21 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TokenData } from '../../../data/TokenData';
-import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
-import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Text } from 'shared/lib/components/common/Typography';
+
+import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
+import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
+import { TokenData } from '../../../data/TokenData';
 import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
 const ACTIVE_BORDER_COLOR = 'rgba(82, 182, 154, 1)';
 
-const SteppedInputWrapper = styled.div.attrs(
-  (props: { active: boolean }) => props
-)`
+const SteppedInputWrapper = styled.div.attrs((props: { active: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center`}
   background-color: transparent;
-  border: 1px solid
-    ${(props) => (props.active ? ACTIVE_BORDER_COLOR : REGULAR_BORDER_COLOR)};
+  border: 1px solid ${(props) => (props.active ? ACTIVE_BORDER_COLOR : REGULAR_BORDER_COLOR)};
   border-radius: 8px;
   padding: 8px;
 `;
@@ -27,6 +26,7 @@ const StyledInput = styled.input`
   color: rgba(204, 223, 237, 1);
   box-sizing: border-box;
   font-family: 'ClashDisplay-Variable';
+  font-weight: 400;
   font-size: 20px;
   border: none;
   outline: none;
@@ -34,7 +34,6 @@ const StyledInput = styled.input`
   text-overflow: ellipsis;
   text-align: center;
   padding: 12px;
-  /* border-bottom: 1px solid rgba(204, 223, 237, 1); */
 `;
 
 const SvgButtonWrapper = styled.button`
@@ -141,8 +140,7 @@ export default function SteppedInput(props: SteppedInputProps) {
         </SvgButtonWrapper>
       </div>
       <Text>
-        {isToken0Selected ? token1Ticker : token0Ticker} per{' '}
-        {isToken0Selected ? token0Ticker : token1Ticker}
+        {isToken0Selected ? token1Ticker : token0Ticker} per {isToken0Selected ? token0Ticker : token1Ticker}
       </Text>
     </SteppedInputWrapper>
   );

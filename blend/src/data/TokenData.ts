@@ -1,16 +1,9 @@
-import {
-  FeiLogo,
-  UsdcLogo,
-  WbtcLogo,
-  WethLogo,
-  TribeLogo,
-  RaiLogo,
-  LooksLogo,
-  OSqthLogo,
-} from '../assets/svg/tokens';
+import { Address } from 'wagmi';
+
+import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo, OSqthLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string;
+  address: Address;
   ticker?: string;
   name?: string;
   iconPath?: string;
@@ -95,28 +88,30 @@ const TokenDataMap = new Map<string, TokenData>([
       decimals: 18,
     },
   ],
-    // oSQTH
-    [
-      '0xf1b99e3e573a1a9c5e6b2ce818b617f0e664e86b',
-      {
-        address: '0xf1b99e3e573a1a9c5e6b2ce818b617f0e664e86b',
-        name: 'Opyn Squeeth',
-        ticker: 'oSQTH',
-        iconPath: OSqthLogo,
-        decimals: 18,
-      },
-    ],
+  // oSQTH
+  [
+    '0xf1b99e3e573a1a9c5e6b2ce818b617f0e664e86b',
+    {
+      address: '0xf1b99e3e573a1a9c5e6b2ce818b617f0e664e86b',
+      name: 'Opyn Squeeth',
+      ticker: 'oSQTH',
+      iconPath: OSqthLogo,
+      decimals: 18,
+    },
+  ],
 ]);
 
 export function getTokens(): TokenData[] {
   return Array.from(TokenDataMap.values());
 }
 
-export function GetTokenData(address: string): TokenData {
+export function GetTokenData(address: Address | string): TokenData {
+  if (!address.startsWith('0x')) {
+    throw new Error('Invalid address');
+  }
   if (TokenDataMap.has(address)) {
     return TokenDataMap.get(address)!;
-  } else
-    return {
-      address,
-    };
+  } else {
+    return { address: address as Address };
+  }
 }

@@ -1,16 +1,17 @@
+import { TickMath } from '@uniswap/v3-sdk';
+import Big from 'big.js';
+import { BigNumber, ethers } from 'ethers';
+import JSBI from 'jsbi';
+
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { makeEtherscanRequest } from '../util/Etherscan';
+import { areWithinNSigDigs, toBig } from '../util/Numbers';
+import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
+import { UniswapPosition } from './actions/Actions';
+import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { BIGQ96 } from './constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { BigNumber, ethers } from 'ethers';
-import Big from 'big.js';
-import JSBI from 'jsbi';
-import { makeEtherscanRequest } from '../util/Etherscan';
-import { BIGQ96 } from './constants/Values';
-import { areWithinNSigDigs, toBig } from '../util/Numbers';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
-import { UniswapPosition } from './Actions';
-import { TickMath } from '@uniswap/v3-sdk';
-import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 
 export type Assets = {
   token0Raw: number;
@@ -53,7 +54,10 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
- export type MarginAccountPreview = Omit<MarginAccount, 'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts'>;
+export type MarginAccountPreview = Omit<
+  MarginAccount,
+  'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts'
+>;
 
 export async function getMarginAccountsForUser(
   userAddress: string,
@@ -62,7 +66,12 @@ export async function getMarginAccountsForUser(
   const etherscanResult = await makeEtherscanRequest(
     7569633,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
-    ['0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78', null, null, `0x000000000000000000000000${userAddress.slice(2)}`],
+    [
+      '0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78',
+      null,
+      null,
+      `0x000000000000000000000000${userAddress.slice(2)}`,
+    ],
     true,
     'api-goerli'
   );
@@ -78,7 +87,10 @@ export async function getMarginAccountsForUser(
   return accounts;
 }
 
-export async function resolveUniswapPools(marginAccounts: { address: string; uniswapPool: string }[], provider: ethers.providers.BaseProvider) {
+export async function resolveUniswapPools(
+  marginAccounts: { address: string; uniswapPool: string }[],
+  provider: ethers.providers.BaseProvider
+) {
   const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
   // create an array to hold all the Promises we're about to create
   const uniswapPoolData: Promise<[string, { token0: string; token1: string; feeTier: number }]>[] = [];
@@ -88,7 +100,14 @@ export async function resolveUniswapPools(marginAccounts: { address: string; uni
       const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
       const [token0, token1, feeTier] = await Promise.all([contract.token0(), contract.token1(), contract.fee()]);
       //     |key|  |          value           |
-      return [pool, { token0, token1, feeTier }];
+      return [
+        pool,
+        {
+          token0,
+          token1,
+          feeTier,
+        },
+      ];
     }
     uniswapPoolData.push(getUniswapPoolData());
   });
@@ -99,7 +118,7 @@ export async function resolveUniswapPools(marginAccounts: { address: string; uni
 export async function fetchMarginAccountPreviews(
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  userAddress: string,
+  userAddress: string
 ): Promise<MarginAccountPreview[]> {
   const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
   const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
@@ -140,7 +159,15 @@ export async function fetchMarginAccountPreviews(
           .div(10 ** token1.decimals)
           .toNumber(),
       };
-      return { address: accountAddress, uniswapPool, token0, token1, feeTier, assets, liabilities };
+      return {
+        address: accountAddress,
+        uniswapPool,
+        token0,
+        token1,
+        feeTier,
+        assets,
+        liabilities,
+      };
     }
   );
   return Promise.all(marginAccounts);
@@ -173,7 +200,7 @@ export async function fetchMarginAccount(
   const kitty1 = GetTokenData(results[3] as string);
   const assetsData = results[5] as BigNumber[];
   const liabilitiesData = results[6] as BigNumber[];
-  const packedSlot = results[7]
+  const packedSlot = results[7];
 
   const assets: Assets = {
     token0Raw: toBig(assetsData[0])
@@ -229,17 +256,17 @@ export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, toke
 }
 
 export function priceToSqrtRatio(price: number, token0Decimals: number, token1Decimals: number): Big {
-  return new Big(price).mul(10 ** (token1Decimals - token0Decimals)).sqrt().mul(BIGQ96);
+  return new Big(price)
+    .mul(10 ** (token1Decimals - token0Decimals))
+    .sqrt()
+    .mul(BIGQ96);
 }
 
 const MIN_SIGMA = 0.02;
 const MAX_SIGMA = 0.15;
 const SIGMA_B = 2;
 
-function _computeProbePrices(
-  sqrtMeanPriceX96: Big,
-  sigma: number
-): [Big, Big] {
+function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   sigma = Math.min(Math.max(MIN_SIGMA, sigma), MAX_SIGMA);
   sigma *= SIGMA_B;
 
@@ -250,10 +277,10 @@ function _computeProbePrices(
 
 export function getAssets(
   marginAccount: MarginAccount,
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: readonly UniswapPosition[],
   a: Big,
   b: Big,
-  c: Big,
+  c: Big
 ) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
@@ -272,7 +299,7 @@ export function getAssets(
   let fluid1C = 0;
 
   for (const position of uniswapPositions) {
-    const {liquidity, lower, upper} = position;
+    const { liquidity, lower, upper } = position;
     if (lower === null || upper === null) {
       console.error('Attempted to compute liquidation thresholds for account with malformed Uniswap Position');
       console.error(position);
@@ -281,12 +308,26 @@ export function getAssets(
 
     fluid1A += getValueOfLiquidity(liquidity, lower, upper, tickA, marginAccount.token1.decimals);
     fluid1B += getValueOfLiquidity(liquidity, lower, upper, tickB, marginAccount.token1.decimals);
-    const temp = getAmountsForLiquidity(liquidity, lower, upper, tickC, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    const temp = getAmountsForLiquidity(
+      liquidity,
+      lower,
+      upper,
+      tickC,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals
+    );
     fluid0C += temp[0];
     fluid1C += temp[1];
   }
 
-  return { fixed0, fixed1, fluid1A, fluid1B, fluid0C, fluid1C }
+  return {
+    fixed0,
+    fixed1,
+    fluid1A,
+    fluid1B,
+    fluid0C,
+    fluid1C,
+  };
 }
 
 function _computeLiquidationIncentive(
@@ -314,17 +355,14 @@ function _computeLiquidationIncentive(
 
 export function isSolvent(
   marginAccount: MarginAccount,
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   sigma: number
 ) {
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
 
-  const [a, b] = _computeProbePrices(
-    sqrtPriceX96,
-    marginAccount.includeKittyReceipts ? sigma * Math.sqrt(24) : sigma
-  );
+  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.includeKittyReceipts ? sigma * Math.sqrt(24) : sigma);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
@@ -345,17 +383,17 @@ export function isSolvent(
   liabilities0 = liabilities0 * 1.005;
   liabilities1 = liabilities1 * 1.005 + liquidationIncentive;
 
-  const liabilitiesA = liabilities1 + (liabilities0 * priceA);
-  const assetsA = mem.fluid1A + mem.fixed1 + (mem.fixed0 * priceA);
-  
-  const liabilitiesB = liabilities1 + (liabilities0 * priceB);
-  const assetsB = mem.fluid1B + mem.fixed1 + (mem.fixed0 * priceB);
+  const liabilitiesA = liabilities1 + liabilities0 * priceA;
+  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+
+  const liabilitiesB = liabilities1 + liabilities0 * priceB;
+  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
 
   return {
     priceA,
     priceB,
     assetsA,
-    assetsB, 
+    assetsB,
     liabilitiesA,
     liabilitiesB,
     atA: assetsA >= liabilitiesA,
@@ -368,20 +406,20 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sigma: number,
   iterations: number = 120,
-  precision: number = 7,
+  precision: number = 7
 ): LiquidationThresholds {
-
   let result: LiquidationThresholds = {
     lower: 0,
     upper: 0,
-  }
+  };
 
   const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Find lower liquidation threshold
   const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
-  if (isSolventAtMin.atA && isSolventAtMin.atB) { // if solvent at beginning, short-circuit
+  if (isSolventAtMin.atA && isSolventAtMin.atB) {
+    // if solvent at beginning, short-circuit
     result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
@@ -397,9 +435,11 @@ export function computeLiquidationThresholds(
       }
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
-      if (isLiquidatableAtSearchPrice) { // liquidation threshold is lower
+      if (isLiquidatableAtSearchPrice) {
+        // liquidation threshold is lower
         lowerBoundSqrtPrice = searchPrice;
-      } else { // liquidation threshold is higher
+      } else {
+        // liquidation threshold is higher
         upperBoundSqrtPrice = searchPrice;
       }
     }
@@ -408,7 +448,8 @@ export function computeLiquidationThresholds(
 
   // Find upper liquidation threshold
   const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
-  if (isSolventAtMax.atA && isSolventAtMax.atB) { // if solvent at end, short-circuit
+  if (isSolventAtMax.atA && isSolventAtMax.atB) {
+    // if solvent at end, short-circuit
     result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
   } else {
     // Start binary search
@@ -424,9 +465,11 @@ export function computeLiquidationThresholds(
       }
       const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
-      if (isLiquidatableAtSearchPrice) { // liquidation threshold is higher
+      if (isLiquidatableAtSearchPrice) {
+        // liquidation threshold is higher
         upperBoundSqrtPrice = searchPrice;
-      } else { // liquidation threshold is lower
+      } else {
+        // liquidation threshold is lower
         lowerBoundSqrtPrice = searchPrice;
       }
     }

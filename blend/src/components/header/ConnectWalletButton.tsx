@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { CloseableModal } from '../common/Modal';
 
 import { Connector, useConnect, useDisconnect } from 'wagmi';
+
 import { FormatAddress } from '../../util/FormatAddress';
-import {
-  FilledStylizedButton,
-  OutlinedGradientRoundedButton,
-} from '../common/Buttons';
-import { mapConnectorNameToIcon } from './ConnectorIconMap';
+import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
+import { CloseableModal } from '../common/Modal';
 import { Text } from '../common/Typography';
+import { mapConnectorNameToIcon } from './ConnectorIconMap';
 
 export type ConnectWalletButtonProps = {
   address: string | undefined;
@@ -21,28 +19,24 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const { address, ensName, activeConnector } = props;
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-  const {error: connectError, connect, connectors } = useConnect({
+  const {
+    error: connectError,
+    connect,
+    connectors,
+  } = useConnect({
     onSuccess(data) {
       setModalOpen(false);
-    }
-  })
-  const { disconnect } = useDisconnect()
+    },
+  });
+  const { disconnect } = useDisconnect();
 
   const formattedAddr = address ? FormatAddress(address) : '';
-  const buttonText = address
-    ? ensName
-      ? ensName
-      : formattedAddr
-    : 'Connect Wallet';
+  const buttonText = address ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 
   return (
     <div>
       {!props.buttonStyle && (
-        <OutlinedGradientRoundedButton
-          name={buttonText}
-          size='S'
-          onClick={() => setModalOpen(true)}
-        >
+        <OutlinedGradientRoundedButton name={buttonText} size='S' onClick={() => setModalOpen(true)}>
           {buttonText}
         </OutlinedGradientRoundedButton>
       )}
@@ -69,33 +63,20 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           {buttonText}
         </FilledStylizedButton>
       )}
-      <CloseableModal
-        open={modalOpen}
-        setOpen={setModalOpen}
-        title={'Connect Wallet'}
-      >
+      <CloseableModal open={modalOpen} setOpen={setModalOpen} title={'Connect Wallet'}>
         <div className='w-full'>
-          {(activeConnector && address) ? (
+          {activeConnector && address ? (
             // We have an account connected
-            <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
+            <div
+              className='flex flex-col gap-y-2 items-center justify-between
+             p-2 rounded-md border-2 border-grey-200 bg-grey-100'
+            >
               {/*<img src={accountData.ens?.avatar || undefined} alt="ENS Avatar" />*/}
               <div className='flex flex-col items-start justify-start w-full oveflow-hidden'>
-                <Text
-                  size='M'
-                  className='w-full overflow-hidden text-ellipsis'
-                  title={address}
-                >
-                  {ensName
-                    ? `${ensName} (${FormatAddress(
-                        address
-                      )})`
-                    : address}
+                <Text size='M' className='w-full overflow-hidden text-ellipsis' title={address}>
+                  {ensName ? `${ensName} (${FormatAddress(address)})` : address}
                 </Text>
-                <Text
-                  size='S'
-                  color='rgb(194, 209, 221)'
-                  className='w-full overflow-hidden text-ellipsis'
-                >
+                <Text size='S' color='rgb(194, 209, 221)' className='w-full overflow-hidden text-ellipsis'>
                   Connected to {activeConnector.name}
                 </Text>
               </div>
@@ -135,15 +116,8 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                 .
               </Text>
               {connectors.map((connector) => (
-                <div
-                  key={connector.id}
-                  className=' py-2 w-full flex flex-row items-center justify-between'
-                >
-                  <img
-                    src={mapConnectorNameToIcon(connector.name)}
-                    alt=''
-                    className='w-10 h-10 mr-4'
-                  />
+                <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
+                  <img src={mapConnectorNameToIcon(connector.name)} alt='' className='w-10 h-10 mr-4' />
                   <FilledStylizedButton
                     name='Disconnect'
                     size='M'

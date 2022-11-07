@@ -1,20 +1,14 @@
-import {
-  FeiLogo,
-  UsdcLogo,
-  WbtcLogo,
-  WethLogo,
-  TribeLogo,
-  RaiLogo,
-  LooksLogo,
-} from '../assets/svg/tokens';
+import { Address } from 'wagmi';
+
+import { FeiLogo, UsdcLogo, WbtcLogo, WethLogo, TribeLogo, RaiLogo, LooksLogo } from '../assets/svg/tokens';
 
 export type TokenData = {
-  address: string; // Address of the token
+  address: Address; // Address of the token
   decimals: number; // Number of decimals for the token
   ticker?: string; // Ticker of the token
   name?: string; // Name of the token
   iconPath?: string; // Path to the icon for the token
-  referenceAddress?: string;// Address of the token that is used to get the price of the token
+  referenceAddress?: string; // Address of the token that is used to get the price of the token
 };
 
 const TokenDataMap = new Map<string, TokenData>([
@@ -27,7 +21,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC',
       iconPath: UsdcLogo,
       decimals: 6,
-      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // Mainnet USDC
     },
   ],
   // WETH (Goerli)
@@ -39,7 +33,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH',
       iconPath: WethLogo,
       decimals: 18,
-      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // Mainnet WETH
     },
   ],
   // USDC
@@ -62,7 +56,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'USDC+',
       iconPath: UsdcLogo,
       decimals: 18,
-      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',// Mainnet USDC
+      referenceAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // Mainnet USDC
     },
   ],
   // WETH
@@ -85,7 +79,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
-      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // Mainnet WETH
     },
   ],
   // WETH+ (Goerli) - WBTC
@@ -97,7 +91,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WETH+',
       iconPath: WethLogo,
       decimals: 18,
-      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',// Mainnet WETH
+      referenceAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // Mainnet WETH
     },
   ],
   // WBTC (Goerli)
@@ -109,7 +103,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WBTC',
       iconPath: WbtcLogo,
       decimals: 8,
-      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',// Mainnet WBTC
+      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', // Mainnet WBTC
     },
   ],
   // WBTC+ (Goerli)
@@ -121,7 +115,7 @@ const TokenDataMap = new Map<string, TokenData>([
       ticker: 'WBTC+',
       iconPath: WbtcLogo,
       decimals: 18,
-      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',// Mainnet WBTC
+      referenceAddress: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', // Mainnet WBTC
     },
   ],
   // WBTC
@@ -185,12 +179,15 @@ export function getTokens(): TokenData[] {
   return Array.from(TokenDataMap.values());
 }
 
-export function GetTokenData(address: string): TokenData {
+export function GetTokenData(address: Address | string): TokenData {
+  if (!address.startsWith('0x')) {
+    throw new Error('Invalid address');
+  }
   if (TokenDataMap.has(address.toLowerCase())) {
     return TokenDataMap.get(address.toLowerCase())!;
   } else
     return {
-      address: address,
+      address: address as Address,
       decimals: 0,
     };
 }

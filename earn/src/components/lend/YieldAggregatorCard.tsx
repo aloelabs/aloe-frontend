@@ -1,9 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
-import { TokenData } from '../../data/TokenData';
-import { Display, Text } from 'shared/lib/components/common/Typography';
-import { roundPercentage } from '../../util/Numbers';
-import LendTokenInfo from './LendTokenInfo';
+
 import {
   BodyDivider,
   BodySubContainer,
@@ -12,9 +8,15 @@ import {
   CardTitleWrapper,
   CardWrapper,
   ValueText,
-} from '../common/Card';
-import YieldTokenIcons from './YieldTokenIcons';
+} from 'shared/lib/components/common/Card';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { TokenData } from '../../data/TokenData';
+import { roundPercentage } from '../../util/Numbers';
+import LendTokenInfo from './LendTokenInfo';
+import YieldTokenIcons from './YieldTokenIcons';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
 const YIELD_AGGREGATOR_LABEL_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
@@ -46,18 +48,13 @@ export type YieldAggregatorCardProps = {
 export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
   const { tokens, totalAPY, totalSupply, totalUtilization } = props;
   return (
-    <CardWrapper
-      borderGradient={BORDER_GRADIENT}
-      shadowColor={SHADOW_COLOR}
-    >
+    <CardWrapper borderGradient={BORDER_GRADIENT} shadowColor={SHADOW_COLOR}>
       <CardTitleWrapper backgroundGradient={BACKGROUND_GRADIENT}>
         <Display size='M' weight='semibold'>
           WETH
         </Display>
         <CardSubTitleWrapper>
-          <YieldTokenIcons
-            tokens={tokens}
-          />
+          <YieldTokenIcons tokens={tokens} />
           <YieldAggregatorLabelWrapper>
             <Text size='S' weight='medium' color={YIELD_AGGREGATOR_LABEL_TEXT_COLOR}>
               Yield Aggregator
@@ -77,10 +74,7 @@ export default function YieldAggregatorCard(props: YieldAggregatorCardProps) {
               </Text>
             </TokenAPYWrapper>
           </div>
-          <LendTokenInfo
-            totalSupply={totalSupply}
-            utilization={totalUtilization} 
-          />
+          <LendTokenInfo totalSupply={totalSupply} utilization={totalUtilization} />
         </BodySubContainer>
         <BodyDivider />
         <BodySubContainer>

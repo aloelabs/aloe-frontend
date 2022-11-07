@@ -1,29 +1,31 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import AppPage from '../components/common/AppPage';
-import styled from 'styled-components';
-import tw from 'twin.macro';
-import PortfolioCard from '../components/portfolio/PortfolioCard';
-import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
-import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
-import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
-import { GetTokenData } from '../data/TokenData';
-import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
-import { GetSiloData } from '../data/SiloData';
-import { Text } from '../components/common/Typography';
-import PortfolioGraph from '../components/graph/PortfolioGraph';
-import Tooltip from '../components/common/Tooltip';
-import useMediaQuery from '../data/hooks/UseMediaQuery';
-import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+
+import { ApolloQueryResult } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import rateLimit from 'axios-rate-limit';
-import { BlendTableContext } from '../data/context/BlendTableContext';
-import { theGraphUniswapV2Client } from '../App';
-import { UniswapPairValueQuery } from '../util/GraphQL';
-import { API_URL } from '../data/constants/Values';
-import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
-import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import styled from 'styled-components';
+import tw from 'twin.macro';
 import { useAccount } from 'wagmi';
-import { ApolloQueryResult } from '@apollo/react-hooks';
+
+import { theGraphUniswapV2Client } from '../App';
+import AppPage from '../components/common/AppPage';
+import Tooltip from '../components/common/Tooltip';
+import { Text } from '../components/common/Typography';
+import PortfolioGraph from '../components/graph/PortfolioGraph';
+import EmptyExternalPortfolio from '../components/portfolio/EmptyExternalPortfolio';
+import EmptyPortfolio from '../components/portfolio/EmptyPortfolio';
+import ExternalPortfolioCard from '../components/portfolio/ExternalPortfolioCard';
+import { ExternalPortfolioCardPlaceholder } from '../components/portfolio/ExternalPortfolioCardPlaceholder';
+import PortfolioCard from '../components/portfolio/PortfolioCard';
+import { PortfolioCardPlaceholder } from '../components/portfolio/PortfolioCardPlaceholder';
+import { BlendPoolMarkers } from '../data/BlendPoolMarkers';
+import { RESPONSIVE_BREAKPOINTS } from '../data/constants/Breakpoints';
+import { API_URL } from '../data/constants/Values';
+import { BlendTableContext } from '../data/context/BlendTableContext';
+import useMediaQuery from '../data/hooks/UseMediaQuery';
+import { GetSiloData } from '../data/SiloData';
+import { GetTokenData } from '../data/TokenData';
+import { UniswapPairValueQuery } from '../util/GraphQL';
 
 const http = rateLimit(axios.create(), {
   maxRequests: 2,
@@ -41,7 +43,7 @@ type UniswapV2PositionResponse = {
     reserveUSD: string;
     totalSupply: string;
     __typename: string;
-  }
+  };
 };
 
 const PORTFOLIO_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -85,13 +87,11 @@ function poolToUniswapV2Pair(address: string): string {
 
 // const aloeAddress = '0x2b6dbde60278f19c742bd6861aa39e0a565f5aa3'//'0xcf2b7c6bc98bfe0d6138a25a3b6162b51f75e05d';
 // const externalAddress = '0xfae511813cc7a823f95bbc8bfd9aa3c31e6cc52a';
-export type PortfolioPageProps = {
-}; 
+export type PortfolioPageProps = {};
 export default function PortfolioPage() {
-  const {address} = useAccount();
+  const { address } = useAccount();
   const [positionsLoading, setPositionsLoading] = useState(true);
-  const [externalPositionsLoading, setExternalPositionsLoading] =
-    useState(true);
+  const [externalPositionsLoading, setExternalPositionsLoading] = useState(true);
   const [positions, setPositions] = useState<Position[]>([]);
   const [externalPositions, setExternalPositions] = useState<ExternalPosition[]>([]);
   const isGTMediumScreen = useMediaQuery(RESPONSIVE_BREAKPOINTS.MD);
@@ -104,7 +104,7 @@ export default function PortfolioPage() {
     mounted.current = true;
     return () => {
       mounted.current = false;
-    }
+    };
   }, []);
 
   const loadData = useCallback(async () => {
@@ -114,31 +114,24 @@ export default function PortfolioPage() {
     }
     try {
       const shareBalancesResponse = await http.get(
-        `${API_URL}/share_balances/${address}/1/1d/${(
-          new Date().getTime() / 1000
-        ).toFixed(0)}`
+        `${API_URL}/share_balances/${address}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
       );
-      const positionRequests = Object.entries(shareBalancesResponse.data).map(
-        async (entry: any) => {
-          return {
-            pool: poolDataMap.get(entry[0]) as BlendPoolMarkers,
-            balance: entry[1][entry[1].length - 1].balance,
-            poolReturns: await axios.get(
-              `${API_URL}/pool_returns/${entry[0]}/1/1d/${(
-                new Date().getTime() / 1000
-              ).toFixed(0)}`
-            ),
-            poolStats: await axios.get(`${API_URL}/pool_stats/${entry[0]}/1`),
-          };
-        }
-      );
+      const positionRequests = Object.entries(shareBalancesResponse.data).map(async (entry: any) => {
+        return {
+          pool: poolDataMap.get(entry[0]) as BlendPoolMarkers,
+          balance: entry[1][entry[1].length - 1].balance,
+          poolReturns: await axios.get(
+            `${API_URL}/pool_returns/${entry[0]}/1/1d/${(new Date().getTime() / 1000).toFixed(0)}`
+          ),
+          poolStats: await axios.get(`${API_URL}/pool_stats/${entry[0]}/1`),
+        };
+      });
       const positionResponses = await Promise.all(positionRequests);
       const positionsData = positionResponses.map((positionResponse) => {
         const pool = positionResponse.pool;
         const balance = positionResponse.balance;
         const totalSupply =
-          positionResponse.poolReturns.data[positionResponse.poolReturns.data.length - 1]
-            .total_supply;
+          positionResponse.poolReturns.data[positionResponse.poolReturns.data.length - 1].total_supply;
         const totalValueLocked = positionResponse.poolStats.data[0].total_value_locked;
         const estimatedValue = (balance / totalSupply) * totalValueLocked;
         return {
@@ -162,8 +155,13 @@ export default function PortfolioPage() {
         const pairAddress = poolToUniswapV2Pair(pool.poolAddress);
         return {
           pool: pool,
-          etherscanData: await http.get(
-            `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${pairAddress}&address=${address}&tag=latest&apikey=F7XAB91MQBBZ1HSCUEI343VVP7CTASW4N1`,
+          etherscanData: (await http.get(
+            `https://api.etherscan.io/api?module=account
+            &action=tokenbalance
+            &contractaddress=${pairAddress}
+            &address=${address}
+            &tag=latest
+            &apikey=F7XAB91MQBBZ1HSCUEI343VVP7CTASW4N1`,
             {
               transformResponse: (response) => {
                 const responseJSON = JSON.parse(response);
@@ -171,15 +169,13 @@ export default function PortfolioPage() {
                   balance: isNaN(responseJSON.result) ? 0 : parseInt(responseJSON.result),
                   error: responseJSON.message !== '1',
                 } as EtherscanBalanceResponse;
-              }
-            },
-          ) as AxiosResponse<EtherscanBalanceResponse, any>,
-          uniswapData: await theGraphUniswapV2Client.query({
+              },
+            }
+          )) as AxiosResponse<EtherscanBalanceResponse, any>,
+          uniswapData: (await theGraphUniswapV2Client.query({
             query: UniswapPairValueQuery,
-            variables: {
-              pairAddress: pairAddress,
-            },
-          }) as ApolloQueryResult<UniswapV2PositionResponse>,
+            variables: { pairAddress: pairAddress },
+          })) as ApolloQueryResult<UniswapV2PositionResponse>,
         };
       });
       const uniswapPositionResponse = await Promise.all(uniswapPositionRequests);
@@ -230,25 +226,17 @@ export default function PortfolioPage() {
                   return (
                     <PortfolioCard
                       key={index}
-                      token0={GetTokenData(
-                        position.pool.token0Address.toLowerCase()
-                      )}
-                      token1={GetTokenData(
-                        position.pool.token1Address.toLowerCase()
-                      )}
-                      silo0={GetSiloData(
-                        position.pool.silo0Address.toLowerCase()
-                      )}
-                      silo1={GetSiloData(
-                        position.pool.silo1Address.toLowerCase()
-                      )}
+                      token0={GetTokenData(position.pool.token0Address.toLowerCase())}
+                      token1={GetTokenData(position.pool.token1Address.toLowerCase())}
+                      silo0={GetSiloData(position.pool.silo0Address.toLowerCase())}
+                      silo1={GetSiloData(position.pool.silo1Address.toLowerCase())}
                       uniswapFeeTier={position.pool.feeTier}
                       estimatedValue={position.estimatedValue}
                       percentageChange={0}
                     />
                   );
                 })}
-              {positionsLoading && <PortfolioCardPlaceholder /> }
+              {positionsLoading && <PortfolioCardPlaceholder />}
             </PortfolioCards>
           )}
           {!positionsLoading && positions.length === 0 && (
@@ -259,11 +247,7 @@ export default function PortfolioPage() {
         </div>
         <div className='w-full max-w-[1280px]'>
           <div className='flex justify-between items-center'>
-            <Text
-              size='XL'
-              weight='medium'
-              color={PORTFOLIO_TITLE_TEXT_COLOR}
-            >
+            <Text size='XL' weight='medium' color={PORTFOLIO_TITLE_TEXT_COLOR}>
               Your External Positions
             </Text>
             <Tooltip
@@ -281,12 +265,8 @@ export default function PortfolioPage() {
                 externalPositions.map((position, index) => (
                   <ExternalPortfolioCard
                     key={index}
-                    token0={GetTokenData(
-                      position.pool.token0Address.toLowerCase()
-                    )}
-                    token1={GetTokenData(
-                      position.pool.token1Address.toLowerCase()
-                    )}
+                    token0={GetTokenData(position.pool.token0Address.toLowerCase())}
+                    token1={GetTokenData(position.pool.token1Address.toLowerCase())}
                     externalPositionName={position.externalPositionName}
                     estimatedValue={position.estimatedValue}
                     percentageChange={0}

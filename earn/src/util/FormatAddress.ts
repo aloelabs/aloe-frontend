@@ -4,9 +4,7 @@ export function formatAddress(address: string, characters: number = 4) {
     return address;
   }
 
-  return `${address.substring(0, characters + 2)}...${address.substring(
-    42 - characters
-  )}`;
+  return `${address.substring(0, characters + 2)}...${address.substring(42 - characters)}`;
 }
 
 export function formatAddressStart(address: string, characters: number = 4) {

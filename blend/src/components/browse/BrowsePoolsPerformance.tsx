@@ -1,7 +1,9 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
+
+import axios from 'axios';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { API_URL } from '../../data/constants/Values';
@@ -32,8 +34,7 @@ const Wrapper = styled.div`
     /* 1.25px instead of 1px since it avoids tbe buggy appearance */
     padding: 1.25px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -54,9 +55,7 @@ export type BrowsePoolsPerformanceProps = {
   poolData: BlendPoolMarkers[];
 };
 
-export default function BrowsePoolsPerformance(
-  props: BrowsePoolsPerformanceProps
-) {
+export default function BrowsePoolsPerformance(props: BrowsePoolsPerformanceProps) {
   const [globalStats, setGlobalStats] = useState<GlobalStats>();
 
   useEffect(() => {

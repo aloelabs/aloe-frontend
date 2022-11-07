@@ -1,8 +1,9 @@
 import React from 'react';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
-import TokenPairLogos from './TokenPairLogos';
+
 import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from './SiloBlob';
+import TokenPairLogos from './TokenPairLogos';
 
 export type BlendStampProps = {
   poolData: BlendPoolMarkers;
@@ -12,7 +13,10 @@ export default function BlendStamp(props: BlendStampProps) {
   const drawData = ResolveBlendPoolDrawData(props.poolData);
 
   return (
-    <div className='flex flex-row items-center justify-evenly w-full h-36 bg-grey-75 border-2 rounded-lg border-grey-200'>
+    <div
+      className='flex flex-row items-center justify-evenly w-full h-36
+     bg-grey-75 border-2 rounded-lg border-grey-200'
+    >
       <div className='basis-3/16 flex flex-col items-center justify-evenly flex-initial mx-4'>
         <TokenPairLogos drawData={drawData} excludeNames={true} />
         <div className='border-2 border-grey-200 bg-grey-100 text-md text-grey-1000 rounded-md px-2 py-1 mt-4'>

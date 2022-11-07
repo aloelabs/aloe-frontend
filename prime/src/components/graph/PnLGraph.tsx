@@ -1,5 +1,6 @@
-import { Popover } from '@headlessui/react';
 import { useState } from 'react';
+
+import { Popover } from '@headlessui/react';
 import {
   Area,
   AreaChart,
@@ -10,9 +11,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { SquareInput } from 'shared/lib/components/common/Input';
+import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+import tw from 'twin.macro';
+
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
-import { UniswapPosition } from '../../data/Actions';
+import { UniswapPosition } from '../../data/actions/Actions';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import {
   getAssets,
@@ -23,15 +29,13 @@ import {
 } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
-import { SquareInput } from '../common/Input';
-import { SvgWrapper } from '../common/SvgWrapper';
 import Tooltip from '../common/Tooltip';
-import { Text } from 'shared/lib/components/common/Typography';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const INPUT_DEBOUNCE_DELAY_MS = 25;
+const NUM_TICKS = 4;
 
 const Wrapper = styled.div`
   position: relative;
@@ -40,6 +44,7 @@ const Wrapper = styled.div`
 `;
 
 const Container = styled.div`
+  ${tw`lg:left-[-64px] lg:w-[calc(100% + 64px)]`}
   position: absolute;
   left: 0;
   top: 0;
@@ -114,12 +119,12 @@ type PnLGraphSettingsProps = {
   borrowInterestInputValue: string;
   setBorrowInterestInputValue: (value: string) => void;
   swapFeeInputValue: string;
-  setSwapFeeInputValue: (value: string) => void;
+  setSwapFeesInputValue: (value: string) => void;
   disabled: boolean;
 };
 
 function PnLGraphSettings(props: PnLGraphSettingsProps) {
-  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeeInputValue, disabled } =
+  const { borrowInterestInputValue, setBorrowInterestInputValue, swapFeeInputValue, setSwapFeesInputValue, disabled } =
     props;
   return (
     <Popover className='relative'>
@@ -149,8 +154,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you take out any loans, your liabilities will increase over time due to interest accrual. This has a negative impact on your P&L
-                    (thus the negative sign).
+                    If you take out any loans, your liabilities will increase over time due to interest accrual. This
+                    has a negative impact on your P&L (thus the negative sign).
                   </Text>
                 }
                 filled={true}
@@ -183,7 +188,8 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
                 position='top-center'
                 content={
                   <Text size='S' weight='medium'>
-                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive impact on your P&L.
+                    If you hold any in-range Uniswap Positions, they'll earn swap fees over time. This has a positive
+                    impact on your P&L.
                   </Text>
                 }
                 filled={true}
@@ -193,7 +199,7 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
               value={swapFeeInputValue}
               onChange={(e) => {
                 const output = formatNumberInput(e.target.value);
-                if (output !== null) setSwapFeeInputValue(output);
+                if (output !== null) setSwapFeesInputValue(output);
               }}
               size='S'
               disabled={disabled}
@@ -215,16 +221,28 @@ export type PnLGraphProps = {
   inTermsOfToken0: boolean;
   liquidationThresholds: LiquidationThresholds | null;
   isShowingHypothetical: boolean;
+  borrowInterestInputValue: string;
+  swapFeesInputValue: string;
+  setBorrowInterestInputValue: (value: string) => void;
+  setSwapFeesInputValue: (value: string) => void;
 };
 
 const PLOT_X_SCALE = 1.2;
 
 export default function PnLGraph(props: PnLGraphProps) {
-  const { marginAccount, uniswapPositions, inTermsOfToken0, liquidationThresholds, isShowingHypothetical } = props;
+  const {
+    marginAccount,
+    uniswapPositions,
+    inTermsOfToken0,
+    liquidationThresholds,
+    isShowingHypothetical,
+    borrowInterestInputValue,
+    swapFeesInputValue,
+    setBorrowInterestInputValue,
+    setSwapFeesInputValue,
+  } = props;
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
-  const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
-  const [swapFeeInputValue, setSwapFeeInputValue] = useState<string>('');
 
   let price = sqrtRatioToPrice(
     marginAccount.sqrtPriceX96,
@@ -236,20 +254,18 @@ export default function PnLGraph(props: PnLGraphProps) {
   const priceB = price * PLOT_X_SCALE;
 
   const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
-  const initialValue = calculatePnL(marginAccount, uniswapPositions, price);
+  const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
+  const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+  // Offset the initial value by the borrowInterest and swapFees
+  const initialValue = calculatePnL(marginAccount, uniswapPositions, price) - numericBorrowInterest - numericSwapFees;
 
   function calculateGraphData(): Array<PnLEntry> {
     let P = priceA;
     let updatedData = [];
-    const borrowInterestNumericValue = parseFloat(borrowInterestInputValue) || 0;
-    const swapFeeNumericValue = parseFloat(swapFeeInputValue) || 0;
     while (P < priceB) {
       updatedData.push({
         x: P,
-        y:
-          calculatePnL(marginAccount, uniswapPositions, P, initialValue) +
-          borrowInterestNumericValue +
-          swapFeeNumericValue,
+        y: calculatePnL(marginAccount, uniswapPositions, P, initialValue),
       });
       P *= 1.001;
     }
@@ -272,18 +288,17 @@ export default function PnLGraph(props: PnLGraphProps) {
       setData(updatedData);
     },
     INPUT_DEBOUNCE_DELAY_MS,
-    [borrowInterestInputValue, swapFeeInputValue]
+    [borrowInterestInputValue, swapFeesInputValue]
   );
 
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  const closestLowerTickToShow = data[Math.floor((data.length - 1) / 2 - (data.length - 1) / 10)]?.x;
-  const closestUpperTickToShow = data[Math.ceil((data.length - 1) / 2 + (data.length - 1) / 10)]?.x;
-
-  const ticks = [price];
-  if (liquidationLower > priceA && liquidationLower < closestLowerTickToShow) ticks.push(liquidationLower);
-  if (liquidationUpper < priceB && liquidationUpper > closestUpperTickToShow) ticks.push(liquidationUpper);
+  const tickSpacing = (priceB - priceA) / NUM_TICKS;
+  const ticks = [priceA + tickSpacing / 2];
+  for (let i = 1; i < NUM_TICKS; i += 1) {
+    ticks.push(ticks[i - 1] + tickSpacing);
+  }
 
   const gradientOffset = () => {
     const dataMax = Math.max(...data.map((i) => i.y));
@@ -301,24 +316,22 @@ export default function PnLGraph(props: PnLGraphProps) {
   }
 
   return (
-    <div className='w-full'>
-      <Text size='S' weight='medium' color={SECONDARY_COLOR}>
-        This graph estimates profit and losses arising solely from the structure of your positions. To include
-        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
-        and enter your desired values.
-      </Text>
-      <div className='flex flex-col items-end'>
+    <div className='w-full flex flex-col gap-4'>
+      <div className='flex justify-between items-center'>
+        <Text size='L' weight='medium'>
+          P&L
+        </Text>
         <PnLGraphSettings
           borrowInterestInputValue={borrowInterestInputValue}
           setBorrowInterestInputValue={setBorrowInterestInputValue}
-          swapFeeInputValue={swapFeeInputValue}
-          setSwapFeeInputValue={setSwapFeeInputValue}
+          swapFeeInputValue={swapFeesInputValue}
+          setSwapFeesInputValue={setSwapFeesInputValue}
           disabled={data.length === 0}
         />
       </div>
       <Wrapper>
         <Container>
-          <ResponsiveContainer width='99%' height={300}>
+          <ResponsiveContainer width='100%' height={300}>
             <AreaChart
               data={data}
               margin={{
@@ -385,6 +398,11 @@ export default function PnLGraph(props: PnLGraphProps) {
           </ResponsiveContainer>
         </Container>
       </Wrapper>
+      <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+        This graph estimates profit and losses arising solely from the structure of your positions. To include
+        time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the graph
+        and enter your desired values.
+      </Text>
     </div>
   );
 }

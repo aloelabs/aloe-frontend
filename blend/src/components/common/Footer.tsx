@@ -1,11 +1,13 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import DiscordFooterIcon from '../../assets/svg/discord_footer.svg';
-import TwitterFooterIcon from '../../assets/svg/twitter_footer.svg';
 import MediumFooterIcon from '../../assets/svg/medium_footer.svg';
-import { Text } from './Typography';
+import TwitterFooterIcon from '../../assets/svg/twitter_footer.svg';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { Text } from './Typography';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 

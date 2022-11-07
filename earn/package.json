@@ -39,14 +39,15 @@
     "shared": "^0.1.0",
     "styled-components": "^5.3.3",
     "typescript": "^4.5.5",
-    "wagmi": "^0.6.4",
+    "wagmi": "^0.7.3",
     "walletconnect": "^1.7.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "cd ../shared && yarn build && cd ../earn && craco start",
     "build": "cd ../shared && yarn build && cd ../earn && craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "lint": "eslint --fix --ext .tsx,.ts ."
   },
   "eslintConfig": {
     "extends": [

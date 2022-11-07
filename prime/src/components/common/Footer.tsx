@@ -1,10 +1,12 @@
 import React from 'react';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import DiscordFooterIcon from '../../assets/svg/discord_footer.svg';
-import TwitterFooterIcon from '../../assets/svg/twitter_footer.svg';
 import MediumFooterIcon from '../../assets/svg/medium_footer.svg';
-import { Text } from 'shared/lib/components/common/Typography';
+import TwitterFooterIcon from '../../assets/svg/twitter_footer.svg';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
@@ -77,7 +79,7 @@ export default function Footer() {
         >
           Terms
         </FooterLink>
-        < VerticalDivider />
+        <VerticalDivider />
         <FooterLink
           as='a'
           size='S'
@@ -85,8 +87,9 @@ export default function Footer() {
           color={FOOTER_LINK_TEXT_COLOR}
           href={'https://coda.io/form/Aloe-II-Web-App-Feedback-Form_dtlDhQRDThF'}
           target='_blank'
-          rel='noopener noreferrer'>
-            Feedback
+          rel='noopener noreferrer'
+        >
+          Feedback
         </FooterLink>
       </div>
       <div className='flex flex-row items-center gap-x-6'>

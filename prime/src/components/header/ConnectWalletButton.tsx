@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
+
+import { FilledStylizedButton, OutlinedGradientRoundedButton } from 'shared/lib/components/common/Buttons';
+import { Text } from 'shared/lib/components/common/Typography';
 import { chain, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 
-import { CloseableModal } from '../common/Modal';
 import { formatAddress } from '../../util/FormatAddress';
-import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
+import { CloseableModal } from '../common/Modal';
 import { mapConnectorNameToIcon } from './ConnectorIconMap';
-import { Text } from 'shared/lib/components/common/Typography';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 export type ConnectWalletButtonProps = {
   address?: string;
@@ -16,7 +16,7 @@ export type ConnectWalletButtonProps = {
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { address, ensName, buttonStyle } = props;
+  const { address, ensName } = props;
   const formattedAddr = address ? formatAddress(address) : '';
   const buttonText = address ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 
@@ -43,7 +43,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
     }
   }, [shouldAttemptToSwitchNetwork, currentChain, isLoading, switchNetwork]);
   const { disconnect } = useDisconnect();
-  
+
   return (
     <div>
       {!props.buttonStyle && (
@@ -81,7 +81,10 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         <div className='w-full'>
           {address ? (
             // We have an account connected
-            <div className='flex flex-col gap-y-2 items-center justify-between p-2 rounded-md border-2 border-grey-200 bg-grey-100'>
+            <div
+              className='flex flex-col gap-y-2 items-center justify-between
+             p-2 rounded-md border-2 border-grey-200 bg-grey-100'
+            >
               <div className='flex flex-col items-start justify-start w-full oveflow-hidden'>
                 <Text size='M' className='w-full overflow-hidden text-ellipsis' title={address}>
                   {ensName ? `${ensName} (${formattedAddr})` : address}

@@ -1,13 +1,12 @@
 import React from 'react';
-import { FilledStylizedButton } from '../../../common/Buttons';
-import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
+
 import SuccessIcon from '../../../../assets/svg/success.svg';
-import {
-  ConfirmationType,
-  getConfirmationTypeValue,
-} from '../EditPositionModal';
+import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
+import { ConfirmationType, getConfirmationTypeValue } from '../EditPositionModal';
 
 export type SuccessModalContentProps = {
   confirmationType: ConfirmationType;
@@ -39,12 +38,7 @@ export default function SuccessModalContent(props: SuccessModalContentProps) {
           </a>
         </Text>
       </div>
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        onClick={onConfirm}
-      >
+      <FilledStylizedButton size='M' fillWidth={true} color={MODAL_BLACK_TEXT_COLOR} onClick={onConfirm}>
         Okay
       </FilledStylizedButton>
     </div>

@@ -1,37 +1,35 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { useProvider } from 'wagmi';
+
+import { Address, useProvider } from 'wagmi';
+
 import findPools, { fetchBlendPoolData } from '../BlendPoolFinder';
 import { BlendPoolMarkers } from '../BlendPoolMarkers';
 
 export interface IBlendTableContext {
   poolAddresses: string[];
   poolDataMap: Map<string, BlendPoolMarkers>;
-  fetchPoolData: (address: string) => void;
+  fetchPoolData: (address: Address) => void;
 }
 
 const defaultState: IBlendTableContext = {
   poolAddresses: [],
   poolDataMap: new Map<string, BlendPoolMarkers>(),
-  fetchPoolData: (address: string) => {},
+  fetchPoolData: (address: Address) => {},
 };
 
-export const BlendTableContext =
-  createContext<IBlendTableContext>(defaultState);
+export const BlendTableContext = createContext<IBlendTableContext>(defaultState);
 
 export type BlendTableContextProviderProps = {
   children?: React.ReactNode;
 };
 
 export function BlendTableProvider(props: BlendTableContextProviderProps) {
-  const [contextState, setContextState] =
-    useState<IBlendTableContext>(defaultState);
+  const [contextState, setContextState] = useState<IBlendTableContext>(defaultState);
   const [loading, setLoading] = useState<boolean>(false);
   const provider = useProvider();
 
-  const fetchBlendPoolDataCallback = React.useCallback<
-    (address: string) => void
-  >(
-    (address: string) => {
+  const fetchBlendPoolDataCallback = React.useCallback<(address: Address) => void>(
+    (address: Address) => {
       fetchBlendPoolData(address, provider).then((poolData) => {
         contextState.poolDataMap.set(address, poolData);
       });
@@ -72,9 +70,5 @@ export function BlendTableProvider(props: BlendTableContextProviderProps) {
     }
   }, [fetchBlendPoolDataCallback, loading, provider]);
 
-  return (
-    <BlendTableContext.Provider value={contextState}>
-      {props.children}
-    </BlendTableContext.Provider>
-  );
+  return <BlendTableContext.Provider value={contextState}>{props.children}</BlendTableContext.Provider>;
 }

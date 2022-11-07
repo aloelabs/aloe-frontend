@@ -1,6 +1,8 @@
 import React from 'react';
+
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { SiloData } from '../../data/SiloData';
 import { TokenData } from '../../data/TokenData';
@@ -70,13 +72,21 @@ export default function TokenPairHeader(props: TokenPairHeaderProps) {
         </TokenIconsWrapper>
         <div className='flex justify-center items-center gap-4'>
           <div className='flex flex-col'>
-            <Display size='L' weight='semibold'>{props.token0.ticker}</Display>
-            <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>via {props.silo0.shortName}</Text>
+            <Display size='L' weight='semibold'>
+              {props.token0.ticker}
+            </Display>
+            <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+              via {props.silo0.shortName}
+            </Text>
           </div>
           <Dash />
           <div className='flex flex-col'>
-            <Display size='L' weight='semibold'>{props.token1.ticker}</Display>
-            <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>via {props.silo1.shortName}</Text>
+            <Display size='L' weight='semibold'>
+              {props.token1.ticker}
+            </Display>
+            <Text size='S' weight='medium' color={SILO_TEXT_COLOR}>
+              via {props.silo1.shortName}
+            </Text>
           </div>
         </div>
         <AbsoluteFeeTierContainer feeTier={props.feeTier} />

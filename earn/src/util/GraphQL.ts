@@ -1,5 +1,6 @@
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
+
 import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
 
 /**
@@ -55,17 +56,17 @@ export const UniswapTicksQuery = gql`
     pools(where: { id: $poolAddress }) {
       token0 {
         decimals
-      },
+      }
       token1 {
         decimals
-      },
-      liquidity,
-      tick,
+      }
+      liquidity
+      tick
       ticks(first: 1000, orderBy: tickIdx, where: { tickIdx_gt: $minTick, tickIdx_lt: $maxTick }) {
-        tickIdx,
-        liquidityNet,
-        price0,
-        price1,
+        tickIdx
+        liquidityNet
+        price0
+        price1
       }
     }
   }

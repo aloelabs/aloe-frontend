@@ -1,28 +1,25 @@
 import React from 'react';
-import InfoIcon from '../../assets/svg/info.svg';
+
+import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import InfoIcon from '../../assets/svg/info.svg';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from 'shared/lib/components/common/Typography';
 
 const ICON_SIZES = {
   S: 16,
   M: 20,
   L: 24,
-}
+};
 
 const ICON_GAPS = {
   S: 8,
   M: 10,
   L: 10,
-}
+};
 
-const InfoButton = styled.button.attrs(
-  (props: { 
-    icon: string,
-    iconSize: 'S' | 'M' | 'L',
-  }) => props
-)`
+const InfoButton = styled.button.attrs((props: { icon: string; iconSize: 'S' | 'M' | 'L' }) => props)`
   ${tw`flex justify-center items-center`}
   gap: ${(props) => ICON_GAPS[props.iconSize]}px;
   color: rgba(130, 160, 182, 1);
@@ -43,13 +40,7 @@ const InfoButton = styled.button.attrs(
 
 const TooltipContainer = styled.div.attrs(
   (props: {
-    position:
-      | 'top-left'
-      | 'top-center'
-      | 'top-right'
-      | 'bottom-left'
-      | 'bottom-center'
-      | 'bottom-right';
+    position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     filled?: boolean;
   }) => props
 )`
@@ -74,13 +65,8 @@ const TooltipContainer = styled.div.attrs(
   z-index: 30;
   border-radius: 8px;
   width: 240px;
-  background-color: ${(props) =>
-    props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);'
-  };
-  border: ${(props) =>
-    props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'
-  };
-
+  background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
+  border: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
 
   &:before {
     content: '';
@@ -106,28 +92,16 @@ const TooltipContainer = styled.div.attrs(
     height: 16px;
     transform: rotate(-45deg);
     border-radius: 0 4px 0 0;
-    background-color: ${(props) =>
-      props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);'
-    };
-    border-left: ${(props) =>
-      props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'
-    };
-    border-bottom: ${(props) =>
-      props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);'
-    };
+    background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
+    border-left: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
+    border-bottom: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
   }
 `;
 
 export type TooltipProps = {
   buttonSize: 'S' | 'M' | 'L';
   content: string | React.ReactNode;
-  position:
-    | 'top-left'
-    | 'top-center'
-    | 'top-right'
-    | 'bottom-left'
-    | 'bottom-center'
-    | 'bottom-right';
+  position: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
   buttonClassName?: string;
   buttonText?: string;
   title?: string;

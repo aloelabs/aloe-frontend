@@ -1,25 +1,18 @@
-import Big from 'big.js';
 import React, { useContext, useEffect, useState } from 'react';
+
+import Big from 'big.js';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useSigner } from 'wagmi';
-import {
-  approve,
-  deposit,
-  mintWeth,
-} from '../../connector/BlendDepositActions';
-import {
-  BlendPoolDrawData,
-  ResolveBlendPoolDrawData,
-} from '../../data/BlendPoolDataResolver';
+
+import { approve, deposit, mintWeth } from '../../connector/BlendDepositActions';
+import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { WETH_9_MAINNET_ADDRESS } from '../../data/constants/Addresses';
-import {
-  DEFAULT_RATIO_CHANGE,
-  RATIO_CHANGE_CUTOFF,
-} from '../../data/constants/Values';
+import { DEFAULT_RATIO_CHANGE, RATIO_CHANGE_CUTOFF } from '../../data/constants/Values';
 import { BlendPoolContext } from '../../data/context/BlendPoolContext';
 import { useDeposit } from '../../data/hooks/UseDeposit';
+import { OffChainPoolStats } from '../../data/PoolStats';
 import { formatUSDCompact, String1E } from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
 import Pending from '../common/Pending';
@@ -29,7 +22,6 @@ import ConfirmDepositModal from './modal/ConfirmDepositModal';
 import SubmittingOrderModal from './modal/SubmittingOrderModal';
 import TokensDepositedModal from './modal/TokensDepositedModal';
 import TransactionFailedModal from './modal/TransactionFailedModal';
-import { OffChainPoolStats } from '../../data/PoolStats';
 
 enum ButtonState {
   DEPRECATED,
@@ -44,10 +36,7 @@ enum ButtonState {
   PENDING_TRANSACTION,
 }
 
-function printButtonState(
-  buttonState: ButtonState,
-  drawData: BlendPoolDrawData
-) {
+function printButtonState(buttonState: ButtonState, drawData: BlendPoolDrawData) {
   switch (buttonState) {
     case ButtonState.DEPRECATED:
       return 'Deprecated';
@@ -75,8 +64,10 @@ export const TabWrapper = styled.div`
   padding: 24px;
 `;
 
-const TOOLTIP_CONTENT_DEPOSIT =
-  'Deposit amounts are based on current prices. If prices shift while your transaction is pending, some funds may be returned to you instead of being deposited to Blend. Slippage is the threshold between returning funds and canceling the transaction altogether (to save gas).';
+const TOOLTIP_CONTENT_DEPOSIT = `Deposit amounts are based on current prices.${' '}
+  If prices shift while your transaction is pending,${' '}
+  some funds may be returned to you instead of being deposited to Blend.${' '}
+  Slippage is the threshold between returning funds and canceling the transaction altogether (to save gas).`;
 
 export type DepositTabProps = {
   poolData: BlendPoolMarkers;
@@ -104,33 +95,24 @@ export default function DepositTab(props: DepositTabProps) {
 
   const [maxSlippage, setMaxSlippage] = useState(DEFAULT_RATIO_CHANGE);
 
-  const [buttonState, setButtonState] = useState<ButtonState>(
-    ButtonState.NO_WALLET
-  );
+  const [buttonState, setButtonState] = useState<ButtonState>(ButtonState.NO_WALLET);
 
-  const [isTransactionPending, setIsTransactionPending] =
-    useState<boolean>(false);
+  const [isTransactionPending, setIsTransactionPending] = useState<boolean>(false);
 
   // Cancel out weird on-chain decimal stuff
   const maxToken0String = depositData
-    ? depositData.maxToken0
-        .div(String1E(depositData.token0Decimals))
-        .toFixed(depositData.token0Decimals)
+    ? depositData.maxToken0.div(String1E(depositData.token0Decimals)).toFixed(depositData.token0Decimals)
     : undefined;
   const maxToken1String = depositData
-    ? depositData.maxToken1
-        ?.div(String1E(depositData.token1Decimals))
-        .toFixed(depositData.token1Decimals)
+    ? depositData.maxToken1?.div(String1E(depositData.token1Decimals)).toFixed(depositData.token1Decimals)
     : undefined;
 
   // Determine button state
   useEffect(() => {
     let mounted = true;
 
-    const token0IsWETH =
-      props.poolData.token0Address === WETH_9_MAINNET_ADDRESS;
-    const token1IsWETH =
-      props.poolData.token1Address === WETH_9_MAINNET_ADDRESS;
+    const token0IsWETH = props.poolData.token0Address === WETH_9_MAINNET_ADDRESS;
+    const token1IsWETH = props.poolData.token1Address === WETH_9_MAINNET_ADDRESS;
 
     // Input fields as Big
     const amount0 =
@@ -149,19 +131,8 @@ export default function DepositTab(props: DepositTabProps) {
 
       // Compute USD estimate
       if (mounted) {
-        setSharesEstimate(
-          depositProportionToPool
-            .mul(poolStats.outstandingShares)
-            .div(String1E(18))
-            .toExponential(2)
-        );
-        setUsdEstimate(
-          formatUSDCompact(
-            depositProportionToPool
-              .mul(offChainPoolStats.total_value_locked)
-              .toNumber()
-          )
-        );
+        setSharesEstimate(depositProportionToPool.mul(poolStats.outstandingShares).div(String1E(18)).toExponential(2));
+        setUsdEstimate(formatUSDCompact(depositProportionToPool.mul(offChainPoolStats.total_value_locked).toNumber()));
       }
     } else {
       if (mounted) {
@@ -215,37 +186,29 @@ export default function DepositTab(props: DepositTabProps) {
     signer,
     offChainPoolStats,
     poolStats,
+    props.deprecated,
   ]);
 
   const buttonLabel = printButtonState(buttonState, drawData);
 
   // Resolve button action
 
-  const constructButtonAction: (buttonState: ButtonState) => () => void = (
-    buttonState
-  ) => {
+  const constructButtonAction: (buttonState: ButtonState) => () => void = (buttonState) => {
     if (!signer) return () => {};
 
     switch (buttonState) {
       case ButtonState.MINT_WETH:
         return () => {
           if (!depositData) {
-            console.log(
-              'No deposit data in mint call, something bad happened...'
-            );
+            console.log('No deposit data in mint call, something bad happened...');
             return;
           }
           setIsTransactionPending(true);
           // should mint amount entered - weth balance
 
-          const token0IsWeth =
-            props.poolData.token0Address === WETH_9_MAINNET_ADDRESS;
-          const wethDesired = new Big(
-            token0IsWeth ? token0Amount : token1Amount
-          ).mul(String1E(18));
-          const wethToMint = wethDesired.minus(
-            token0IsWeth ? depositData.token0Balance : depositData.token1Balance
-          );
+          const token0IsWeth = props.poolData.token0Address === WETH_9_MAINNET_ADDRESS;
+          const wethDesired = new Big(token0IsWeth ? token0Amount : token1Amount).mul(String1E(18));
+          const wethToMint = wethDesired.minus(token0IsWeth ? depositData.token0Balance : depositData.token1Balance);
 
           // logBig(wethDesired);
           // logBig(wethToMint);
@@ -260,36 +223,24 @@ export default function DepositTab(props: DepositTabProps) {
         return () => {
           setIsTransactionPending(true);
           // Approve max
-          approve(
-            signer,
-            props.poolData.token0Address,
-            props.poolData.poolAddress,
-            (receipt) => {
-              setIsTransactionPending(false);
-              console.log(receipt);
-            }
-          );
+          approve(signer, props.poolData.token0Address, props.poolData.poolAddress, (receipt) => {
+            setIsTransactionPending(false);
+            console.log(receipt);
+          });
         };
       case ButtonState.APPROVE_1:
         return () => {
           setIsTransactionPending(true);
           // Approve max
-          approve(
-            signer,
-            props.poolData.token1Address,
-            props.poolData.poolAddress,
-            (receipt) => {
-              setIsTransactionPending(false);
-              console.log(receipt);
-            }
-          );
+          approve(signer, props.poolData.token1Address, props.poolData.poolAddress, (receipt) => {
+            setIsTransactionPending(false);
+            console.log(receipt);
+          });
         };
       case ButtonState.READY:
         return () => {
           if (!depositData) {
-            console.log(
-              'No deposit data in deposit handler, something bad happened...'
-            );
+            console.log('No deposit data in deposit handler, something bad happened...');
             return;
           }
           setIsTransactionPending(true);
@@ -336,11 +287,7 @@ export default function DepositTab(props: DepositTabProps) {
               const mantissa1 = String1E(poolStats.token1Decimals);
 
               setToken1Amount(
-                amount0
-                  .mul(mantissa0)
-                  .mul(poolStats.token1OverToken0)
-                  .div(mantissa1)
-                  .toFixed(poolStats.token1Decimals)
+                amount0.mul(mantissa0).mul(poolStats.token1OverToken0).div(mantissa1).toFixed(poolStats.token1Decimals)
               );
             }
             setToken0Amount(newValue);
@@ -375,11 +322,7 @@ export default function DepositTab(props: DepositTabProps) {
               const mantissa0 = String1E(poolStats.token0Decimals);
               const mantissa1 = String1E(poolStats.token1Decimals);
               setToken0Amount(
-                amount1
-                  .mul(mantissa1)
-                  .div(poolStats.token1OverToken0)
-                  .div(mantissa0)
-                  .toFixed(poolStats.token0Decimals)
+                amount1.mul(mantissa1).div(poolStats.token1OverToken0).div(mantissa0).toFixed(poolStats.token0Decimals)
               );
             }
 
@@ -391,9 +334,7 @@ export default function DepositTab(props: DepositTabProps) {
       </div>
       <MaxSlippageInput
         tooltipContent={TOOLTIP_CONTENT_DEPOSIT}
-        updateMaxSlippage={(updatedMaxSlippage) =>
-          setMaxSlippage(updatedMaxSlippage)
-        }
+        updateMaxSlippage={(updatedMaxSlippage) => setMaxSlippage(updatedMaxSlippage)}
       />
       <div className='w-full mt-8'>
         <FilledStylizedButton
@@ -413,11 +354,7 @@ export default function DepositTab(props: DepositTabProps) {
           ].includes(buttonState)}
         >
           <div className='flex flex-row items-center justify-center'>
-            {buttonState === ButtonState.PENDING_TRANSACTION ? (
-              <Pending />
-            ) : (
-              <span>{buttonLabel}</span>
-            )}
+            {buttonState === ButtonState.PENDING_TRANSACTION ? <Pending /> : <span>{buttonLabel}</span>}
           </div>
         </FilledStylizedButton>
       </div>
@@ -431,29 +368,18 @@ export default function DepositTab(props: DepositTabProps) {
             setIsTransactionPending(false);
             return;
           }
-          const amount0Max = new Big(token0Amount).mul(
-            String1E(depositData.token0Decimals)
-          );
-          const amount1Max = new Big(token1Amount).mul(
-            String1E(depositData.token1Decimals)
-          );
-          deposit(
-            signer,
-            props.poolData.poolAddress,
-            amount0Max,
-            amount1Max,
-            Number(maxSlippage),
-            (receipt) => {
-              setShowSubmittingModal(false);
-              if (receipt?.status === 1) {
-                setShowSuccessModal(true);
-              } else {
-                setShowFailedModal(true);
-              }
-              setIsTransactionPending(false);
-              console.log(receipt);
+          const amount0Max = new Big(token0Amount).mul(String1E(depositData.token0Decimals));
+          const amount1Max = new Big(token1Amount).mul(String1E(depositData.token1Decimals));
+          deposit(signer, props.poolData.poolAddress, amount0Max, amount1Max, Number(maxSlippage), (receipt) => {
+            setShowSubmittingModal(false);
+            if (receipt?.status === 1) {
+              setShowSuccessModal(true);
+            } else {
+              setShowFailedModal(true);
             }
-          );
+            setIsTransactionPending(false);
+            console.log(receipt);
+          });
         }}
         onCancel={() => {
           setIsTransactionPending(false);
@@ -476,14 +402,8 @@ export default function DepositTab(props: DepositTabProps) {
         token0Estimate={token0Amount}
         token1Estimate={token1Amount}
       />
-      <TransactionFailedModal
-        open={showFailedModal}
-        setOpen={setShowFailedModal}
-      />
-      <SubmittingOrderModal
-        open={showSubmittingModal}
-        setOpen={setShowSubmittingModal}
-      />
+      <TransactionFailedModal open={showFailedModal} setOpen={setShowFailedModal} />
+      <SubmittingOrderModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
     </TabWrapper>
   );
 }

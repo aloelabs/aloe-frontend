@@ -1,5 +1,5 @@
-import { ethers } from 'ethers';
 import Big from 'big.js';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
 import { TokenData } from '../data/TokenData';
@@ -55,4 +55,3 @@ export function getRemoveLiquidityActionArgs(lower: number, upper: number, liqui
   if (lower > upper) [lower, upper] = [upper, lower];
   return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
 }
-

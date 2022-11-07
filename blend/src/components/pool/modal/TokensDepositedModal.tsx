@@ -1,4 +1,5 @@
 import React from 'react';
+
 import SuccessIcon from '../../../assets/svg/success.svg';
 import { FilledStylizedButton } from '../../common/Buttons';
 import {
@@ -24,15 +25,7 @@ export type TokensDepositedModalProps = {
 };
 
 export default function TokensDepositedModal(props: TokensDepositedModalProps) {
-  const {
-    open,
-    setOpen,
-    totalEstimatedValue,
-    token0Ticker,
-    token1Ticker,
-    token0Estimate,
-    token1Estimate,
-  } = props;
+  const { open, setOpen, totalEstimatedValue, token0Ticker, token1Ticker, token0Estimate, token1Estimate } = props;
   return (
     <CloseableModal open={open} setOpen={setOpen} title='Tokens Deposited'>
       <div className='flex justify-center items-center'>
@@ -40,7 +33,9 @@ export default function TokensDepositedModal(props: TokensDepositedModalProps) {
       </div>
       <HorizontalDivider />
       <div className='flex flex-col gap-y-4 mb-4'>
-        <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>Deposit Summary:</Text>
+        <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
+          Deposit Summary:
+        </Text>
         <div className='flex justify-between items-center'>
           <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
             Pool Selected
