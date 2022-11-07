@@ -104,7 +104,7 @@ export default function Footer() {
           <TwitterFooterIcon width={15} height={11} />
         </a>
         <a
-          href={'https://aloelabs.medium.com/'}
+          href={'https://aloelabs.medium.com'}
           target='_blank'
           rel='noopener noreferrer'
           title='Connect with us on Medium'
