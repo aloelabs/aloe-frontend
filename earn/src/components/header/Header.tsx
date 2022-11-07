@@ -21,15 +21,15 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   {
-    title: 'Earn',
-    name: 'earn',
-    url: '/earn',
+    title: 'Portfolio',
+    name: 'portfolio',
+    url: '/portfolio',
   },
-  // {
-  //   title: 'Borrow',
-  //   name: 'borrow',
-  //   url: '/borrow',
-  // }
+  {
+    title: 'Markets',
+    name: 'markets',
+    url: '/markets',
+  },
 ];
 
 const StyledNavLink = styled(Text)`

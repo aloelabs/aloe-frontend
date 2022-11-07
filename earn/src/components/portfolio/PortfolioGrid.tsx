@@ -1,9 +1,13 @@
+import { useState } from 'react';
+
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { GetTokenData, TokenData } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
+import { rgb } from '../../util/Colors';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
+import PortfolioAssetDataContainer from './PortfolioAssetDataContainer';
 import PortfolioPieChartWidget, { TokenPercentage } from './PortfolioPieChartWidget';
 import PortfolioPriceChartWidget from './PriceChart';
 
@@ -34,16 +38,40 @@ const BaseGridItem = styled.div`
   border-radius: 8px;
 `;
 
-const PieChartContainer = styled(BaseGridItem)`
+export const PieChartContainer = styled(BaseGridItem)`
   grid-area: pie;
 `;
 
-const BalanceContainer = styled(BaseGridItem)`
+export const BalanceContainer = styled(BaseGridItem)`
   grid-area: balance;
+  position: relative;
+
+  &.active::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: calc(50% - 5px);
+    left: -25px;
+    width: 25px;
+    height: 10px;
+    background-color: rgba(130, 160, 182, 1);
+  }
 `;
 
-const APYContainer = styled(BaseGridItem)`
+export const APYContainer = styled(BaseGridItem)`
   grid-area: apy;
+  position: relative;
+
+  &.active::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: calc(50% - 5px);
+    left: -25px;
+    width: 25px;
+    height: 10px;
+    background-color: rgba(130, 160, 182, 1);
+  }
 `;
 
 const PriceContainer = styled(BaseGridItem)`
@@ -160,59 +188,27 @@ const old = [
 export type PortfolioGridProps = {
   balances: TokenBalance[];
   activeAsset: TokenData | null;
+  tokenColors: Map<string, string>;
   tokenQuotes: TokenQuote[];
   tokenPriceData: TokenPriceData[];
 };
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
-  const { balances, activeAsset, tokenQuotes } = props;
-  const activeBalances = balances.filter(
-    (balance) => activeAsset && balance.token.referenceAddress === activeAsset.referenceAddress
-  );
-  const totalBalanceUSD = activeBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
-  const totalBalance = activeBalances.reduce((acc, balance) => acc + balance.balance, 0);
-  console.log(activeBalances);
-  const apySum = activeBalances.reduce((acc, balance) => acc + balance.apy * balance.balance, 0);
-  const apy = apySum / activeBalances.length / totalBalance;
-  const activeSlices: TokenPercentage[] = activeBalances.map((balance) => ({
-    token: balance.token,
-    percent: balance.balanceUSD / totalBalanceUSD || 0,
-    isKitty: balance.isKitty,
-    pairName: balance.pairName,
-  }));
+  const { balances, activeAsset, tokenColors, tokenQuotes } = props;
   const currentTokenQuote = tokenQuotes.find(
     (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
   );
   const currentTokenPriceData = props.tokenPriceData.find(
     (data) => activeAsset && data.token.address === activeAsset.address
   );
+  const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
     <Grid>
-      <PieChartContainer>
-        <PortfolioPieChartWidget tokenPercentages={activeSlices} token={activeAsset} />
-      </PieChartContainer>
-      <BalanceContainer>
-        <Text size='L' color='rgba(130, 160, 182, 1)'>
-          Balance
-        </Text>
-        <div>
-          <Display size='L' className='inline-block mr-0.5'>
-            {formatTokenAmount(totalBalance)}
-          </Display>
-          <Display size='S' className='inline-block ml-0.5'>
-            {activeAsset?.ticker || ''}
-          </Display>
-        </div>
-      </BalanceContainer>
-      <APYContainer>
-        <Text size='L' color='rgba(130, 160, 182, 1)'>
-          APY
-        </Text>
-        <Display size='L'>{roundPercentage(apy, 3)}%</Display>
-      </APYContainer>
+      <PortfolioAssetDataContainer balances={balances} activeAsset={activeAsset} activeColor={activeColor} />
       <PriceContainer>
         <PortfolioPriceChartWidget
           token={activeAsset}
+          color={activeColor !== undefined ? rgb(activeColor) : 'transparent'}
           currentPrice={currentTokenQuote?.price || 0}
           prices={currentTokenPriceData?.prices || []}
         />

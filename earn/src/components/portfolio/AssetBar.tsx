@@ -6,9 +6,10 @@ import styled from 'styled-components';
 
 import useEffectOnce from '../../data/hooks/UseEffectOnce';
 import { LendingPairBalances } from '../../data/LendingPair';
-import { GetTokenData, TokenData } from '../../data/TokenData';
+import { getReferenceAddress, GetTokenData, TokenData } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
+import IndependentTooltip from './LeftFacingIndendentTooltip';
 
 export type AssetBarItem = {
   token: TokenData;
@@ -17,6 +18,7 @@ export type AssetBarItem = {
 };
 
 const Container = styled.div`
+  position: relative;
   width: 100%;
   height: 64px;
 `;
@@ -47,14 +49,17 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
 `;
 
 const AssetIcon = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 50%;
 `;
 
 type AssetChunkProps = {
   token: TokenData;
   percentage: number;
   active: boolean;
+  selected: boolean;
   color: string;
   onClick: () => void;
   onHover: () => void;
@@ -62,7 +67,7 @@ type AssetChunkProps = {
 };
 
 function AssetChunk(props: AssetChunkProps) {
-  const { token, percentage, active, onClick, onHover, onLeave, color } = props;
+  const { token, percentage, active, selected, onClick, onHover, onLeave, color } = props;
   const containerRef = React.useRef<HTMLDivElement>(null);
   useHover(containerRef, onHover, onLeave);
 
@@ -74,7 +79,13 @@ function AssetChunk(props: AssetChunkProps) {
       onClick={onClick}
       ref={containerRef}
     >
-      <AssetIcon src={token.iconPath || ''} alt={token.ticker} width={40} height={40} />
+      <AssetIcon
+        src={token.iconPath || ''}
+        alt={token.ticker}
+        className={selected ? 'selected' : ''}
+        width={32}
+        height={32}
+      />
     </AssetChunkContainer>
   );
 }
@@ -95,12 +106,12 @@ export default function AssetBar(props: AssetBarProps) {
   const combinedTokenBalances = useMemo(() => {
     const balances: Map<string, TokenBalance> = new Map();
     combinedBalances.forEach((balance) => {
-      const tokenAddress = balance.token.referenceAddress || balance.token.address;
+      const tokenAddress = getReferenceAddress(balance.token);
       const existingBalance = balances.get(tokenAddress);
       if (balances.has(tokenAddress)) {
         existingBalance!.balanceUSD += balance.balanceUSD;
       } else {
-        balances.set(balance.token.referenceAddress || balance.token.address, balance);
+        balances.set(tokenAddress, balance);
       }
     });
     return Array.from(balances.values());
@@ -124,6 +135,7 @@ export default function AssetBar(props: AssetBarProps) {
         token: chunk.token,
         percentage: chunk.balanceUSD / newTotalBalance || 0,
         active: idx === activeIndex,
+        selected: idx === defaultIndex,
         color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
         onClick: () => {
           setDefaultIndex(idx);

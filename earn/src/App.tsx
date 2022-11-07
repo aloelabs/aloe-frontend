@@ -67,9 +67,9 @@ function App() {
             <Header />
             <main className='flex-grow'>
               <Routes>
-                <Route path='/earn' element={<LendPage />} />
+                <Route path='/markets' element={<LendPage />} />
                 <Route path='/portfolio' element={<PortfolioPage />} />
-                <Route path='/' element={<Navigate replace to='/earn' />} />
+                <Route path='/' element={<Navigate replace to='/portfolio' />} />
                 <Route path='*' element={<Navigate to='/' />} />
               </Routes>
             </main>

@@ -4,11 +4,8 @@ import axios, { AxiosResponse } from 'axios';
 import rateLimit from 'axios-rate-limit';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import tw from 'twin.macro';
-import { couldStartTrivia } from 'typescript';
 import { chain, useAccount, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
@@ -18,8 +15,9 @@ import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg'
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import AssetBar from '../components/portfolio/AssetBar';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
+import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
-import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
+import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidget';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
@@ -29,7 +27,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { getReferenceAddress, GetTokenData, TokenData } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -45,7 +43,7 @@ const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const Container = styled.div`
-  max-width: 900px;
+  max-width: 813px;
   margin: 0 auto;
 `;
 
@@ -83,27 +81,36 @@ export default function PortfolioPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
+  const [isBuyCryptoModalOpen, setIsBuyCryptoModalOpen] = useState(false);
+  const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
+  const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: chain.goerli.id });
   const { address } = useAccount();
 
+  const uniqueTokens = useMemo(() => {
+    const tokens = new Set<TokenData>();
+    lendingPairs.forEach((pair) => {
+      tokens.add(pair.token0);
+      tokens.add(pair.token1);
+    });
+    return Array.from(tokens);
+  }, [lendingPairs]);
+
   useEffect(() => {
     async function fetchTokenColors() {
       const tokenColorMap: Map<string, string> = new Map();
-
-      lendingPairs.forEach(async (pair) => {
-        if (!tokenColorMap.has(pair.token0.address)) {
-          tokenColorMap.set(pair.token0.address, await getProminentColor(pair.token0.iconPath || ''));
-        }
-        if (!tokenColorMap.has(pair.token1.address)) {
-          tokenColorMap.set(pair.token1.address, await getProminentColor(pair.token1.iconPath || ''));
-        }
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.iconPath || ''));
+      const colors = await Promise.all(colorPromises);
+      uniqueTokens.forEach((token: TokenData, index: number) => {
+        tokenColorMap.set(token.address, colors[index]);
       });
       setTokenColors(tokenColorMap);
     }
     fetchTokenColors();
-  }, [lendingPairs]);
+  }, [lendingPairs, uniqueTokens]);
 
   useEffectOnce(() => {
     let mounted = true;
@@ -170,14 +177,14 @@ export default function PortfolioPage() {
       const tokens = lendingPairs.flatMap((p) => [p.token0, p.token1]);
       const requests = lendingPairs.flatMap((pair) => [
         http.get(
-          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${
-            pair.token0.referenceAddress || pair.token0.address
-          }/market_chart?vs_currency=usd&days=7`
+          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${getReferenceAddress(
+            pair.token0
+          )}/market_chart?vs_currency=usd&days=7`
         ),
         http.get(
-          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${
-            pair.token1.referenceAddress || pair.token1.address
-          }/market_chart?vs_currency=usd&days=7`
+          `https://api.coingecko.com/api/v3/coins/ethereum/contract/${getReferenceAddress(
+            pair.token1
+          )}/market_chart?vs_currency=usd&days=7`
         ),
       ]);
       const response = await Promise.all(requests);
@@ -200,12 +207,8 @@ export default function PortfolioPage() {
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
-      );
-      const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
-      );
+      const token0Quote = tokenQuotes.find((quote) => quote.token.address === getReferenceAddress(pair.token0));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.address === getReferenceAddress(pair.token1));
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
@@ -261,6 +264,19 @@ export default function PortfolioPage() {
   const totalBalance = useMemo(() => {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   }, [combinedBalances]);
+
+  const filteredLendingPairs = useMemo(() => {
+    if (activeAsset == null) {
+      return [];
+    }
+    const activeAddress = getReferenceAddress(activeAsset);
+    return lendingPairs.filter((pair) => {
+      const token0Address = getReferenceAddress(pair.token0);
+      const token1Address = getReferenceAddress(pair.token1);
+      return token0Address === activeAddress || token1Address === activeAddress;
+    });
+  }, [lendingPairs, activeAsset]);
+
   return (
     <AppPage>
       <Container>
@@ -273,28 +289,66 @@ export default function PortfolioPage() {
               {formatUSD(totalBalance)}
             </Display>
           </div>
-          <AssetBar combinedBalances={combinedBalances} tokenColors={tokenColors} setActiveAsset={setActiveAsset} />
+          <PortfolioPageWidgetWrapper tooltip='This bar shows the assets in your portfolio. Hover over a segment to see details.'>
+            <AssetBar combinedBalances={combinedBalances} tokenColors={tokenColors} setActiveAsset={setActiveAsset} />
+          </PortfolioPageWidgetWrapper>
+
           <div className='flex justify-between gap-4'>
-            <OutlinedWhiteButtonWithIcon size='M' Icon={<DollarIcon />} svgColorType='stroke' position='leading'>
+            <OutlinedWhiteButtonWithIcon
+              size='M'
+              Icon={<DollarIcon />}
+              svgColorType='stroke'
+              position='leading'
+              onClick={() => setIsBuyCryptoModalOpen(true)}
+            >
               Buy Crypto
             </OutlinedWhiteButtonWithIcon>
-            <OutlinedWhiteButtonWithIcon size='M' Icon={<SendIcon />} svgColorType='stroke' position='leading'>
+            <OutlinedWhiteButtonWithIcon
+              size='M'
+              Icon={<SendIcon />}
+              svgColorType='stroke'
+              position='leading'
+              onClick={() => setIsSendCryptoModalOpen(true)}
+            >
               Send Crypto
             </OutlinedWhiteButtonWithIcon>
-            <OutlinedWhiteButtonWithIcon size='M' Icon={<TrendingUpIcon />} svgColorType='stroke' position='leading'>
+            <OutlinedWhiteButtonWithIcon
+              size='M'
+              Icon={<TrendingUpIcon />}
+              svgColorType='stroke'
+              position='leading'
+              onClick={() => setIsEarnInterestModalOpen(true)}
+            >
               Earn Interest
             </OutlinedWhiteButtonWithIcon>
-            <OutlinedWhiteButtonWithIcon size='M' Icon={<ShareIcon />} svgColorType='stroke' position='leading'>
+            <OutlinedWhiteButtonWithIcon
+              size='M'
+              Icon={<ShareIcon />}
+              svgColorType='stroke'
+              position='leading'
+              onClick={() => setIsWithdrawModalOpen(true)}
+            >
               Withdraw
             </OutlinedWhiteButtonWithIcon>
           </div>
-          <PortfolioGrid
-            balances={combinedBalances}
-            activeAsset={activeAsset}
-            tokenQuotes={tokenQuotes}
-            tokenPriceData={tokenPriceData}
-          />
-          <LendingPairPeerCard />
+          <PortfolioPageWidgetWrapper tooltip='These widgets give you general information about an asset.'>
+            <PortfolioGrid
+              balances={combinedBalances}
+              activeAsset={activeAsset}
+              tokenColors={tokenColors}
+              tokenQuotes={tokenQuotes}
+              tokenPriceData={tokenPriceData}
+            />
+          </PortfolioPageWidgetWrapper>
+          {!isLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
+            <PortfolioPageWidgetWrapper
+              tooltip={`Before other users can borrow your funds, they must post collateral. 
+              When you deposit, you get to pick what type of collateral is allowed. 
+              That choice determines what pair you're lending to, and the pair has it's own stats.`}
+            >
+              <LendingPairPeerCard lendingPairs={filteredLendingPairs} activeAsset={activeAsset} />
+            </PortfolioPageWidgetWrapper>
+          )}
         </div>
       </Container>
       <WelcomeModal
@@ -303,6 +357,12 @@ export default function PortfolioPage() {
         onConfirm={() => {
           localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
         }}
+      />
+      <EarnInterestModal
+        isOpen={isEarnInterestModalOpen}
+        options={uniqueTokens}
+        lendingPairs={lendingPairs}
+        setIsOpen={setIsEarnInterestModalOpen}
       />
     </AppPage>
   );

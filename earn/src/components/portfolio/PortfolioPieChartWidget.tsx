@@ -88,7 +88,7 @@ type PieChartSlice = {
   color: string;
 };
 
-type PortfolioPieChartSlice = PieChartSlice & {
+export type PortfolioPieChartSlice = PieChartSlice & {
   token: TokenData;
   pairName: string;
   isKitty: boolean;
@@ -106,7 +106,6 @@ type TokenColor = {
 };
 
 function getCoordinatesForPercent(percent: number) {
-  console.log('getCoordinatesForPercent', percent);
   const x = Math.cos(2 * Math.PI * percent);
   const y = Math.sin(2 * Math.PI * percent);
   return [x, y];
@@ -132,19 +131,21 @@ const ExpandingPath = styled.path`
 export type TokenPercentage = {
   token: TokenData;
   percent: number;
+  color: string;
   isKitty: boolean;
   pairName: string;
 };
 
 export type PortfolioPieChartWidgetProps = {
-  tokenPercentages: TokenPercentage[];
+  slices: PortfolioPieChartSlice[];
   token: TokenData | null;
+  activeIndex: number;
+  setActiveIndex: (index: number) => void;
 };
 
 export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetProps) {
-  const { tokenPercentages, token } = props;
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [tokenColors, setTokenColors] = useState<TokenColor[]>([]);
+  const { slices, token, activeIndex, setActiveIndex } = props;
+  // const [tokenColors, setTokenColors] = useState<TokenColor[]>([]);
   const cumulativePercent = useRef(0);
 
   const onMouseEnter = (index: number, percent: string) => {
@@ -155,52 +156,35 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
     setActiveIndex(-1);
   };
 
-  useEffect(() => {
-    let mounted = true;
-    const calculateProminentColors = async () => {
-      const tokenColorPromises = tokenPercentages.map(async (tokenPercentage: TokenPercentage) => {
-        return {
-          color: await getProminentColor(tokenPercentage.token.iconPath || ''),
-          token: tokenPercentage.token,
-        };
-      });
-      const tokenColorData = await Promise.all(tokenColorPromises);
-      const sliceCount = tokenColorData.length;
-      if (mounted) {
-        setTokenColors(
-          tokenColorData.map((tokenColor, index) => {
-            return {
-              color: rgba(tokenColor.color, (index + 1) / sliceCount),
-              token: tokenColor.token,
-            };
-          })
-        );
-      }
-    };
-    if (tokenPercentages.length > 0) {
-      calculateProminentColors();
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [tokenPercentages]);
-
-  const slices: PortfolioPieChartSlice[] = useMemo(() => {
-    if (tokenPercentages.length === 0) {
-      return [];
-    }
-    return tokenPercentages.map((tokenPercentage, index) => {
-      const tokenColor = tokenColors.find((tc) => tc.token.address === tokenPercentage.token.address)?.color;
-      return {
-        index: index,
-        percent: tokenPercentage.percent,
-        color: tokenColor || 'transparent',
-        token: tokenPercentage.token,
-        pairName: tokenPercentage.pairName,
-        isKitty: tokenPercentage.isKitty,
-      };
-    });
-  }, [tokenPercentages, tokenColors]);
+  // useEffect(() => {
+  //   let mounted = true;
+  //   const calculateProminentColors = async () => {
+  //     const tokenColorPromises = tokenPercentages.map(async (tokenPercentage: TokenPercentage) => {
+  //       return {
+  //         color: await getProminentColor(tokenPercentage.token.iconPath || ''),
+  //         token: tokenPercentage.token,
+  //       };
+  //     });
+  //     const tokenColorData = await Promise.all(tokenColorPromises);
+  //     const sliceCount = tokenColorData.length;
+  //     if (mounted) {
+  //       setTokenColors(
+  //         tokenColorData.map((tokenColor, index) => {
+  //           return {
+  //             color: rgba(tokenColor.color, (index + 1) / sliceCount),
+  //             token: tokenColor.token,
+  //           };
+  //         })
+  //       );
+  //     }
+  //   };
+  //   if (tokenPercentages.length > 0) {
+  //     calculateProminentColors();
+  //   }
+  //   return () => {
+  //     mounted = false;
+  //   };
+  // }, [tokenPercentages]);
 
   const paths: PieChartSlicePath[] = useMemo(() => {
     // reset cumulative percent
@@ -231,7 +215,8 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
   const activeSlice = activeIndex !== -1 ? slices.find((slice) => slice.index === activeIndex) : undefined;
   const currentPercent = activeSlice ? `${(activeSlice.percent * 100).toFixed(2)}%` : '';
   const currentTicker = activeSlice ? activeSlice.token.ticker : '';
-  const isLoading = tokenPercentages.length === 0 || tokenColors.length === 0;
+  const isLoading = slices.length === 0;
+  // const isLoading = tokenPercentages.length === 0 || tokenColors.length === 0;
   if (!token) {
     return null;
   }

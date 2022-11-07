@@ -18,12 +18,13 @@ export type PriceEntry = {
 
 export type PortfolioPriceChartWidgetProps = {
   token: TokenData | null;
+  color: string;
   currentPrice: number;
   prices: number[][];
 };
 
 export default function PortfolioPriceChartWidget(props: PortfolioPriceChartWidgetProps) {
-  const { token, currentPrice, prices } = props;
+  const { token, color, currentPrice, prices } = props;
 
   const data = React.useMemo(() => {
     let updatedData: any[] = [];
@@ -51,15 +52,16 @@ export default function PortfolioPriceChartWidget(props: PortfolioPriceChartWidg
             {
               type: 'monotone',
               dataKey: 'price',
-              stroke: GRAY_STROKE_COLOR,
+              stroke: color,
               fill: 'url(#priceGradient)',
               fillOpacity: 1,
             },
           ]}
           linearGradients={[
             <linearGradient id='priceGradient' x1='0' y1='0' x2='0' y2='1'>
-              <stop offset='-29%' stopColor={GRAY_GRADIENT_COLOR} stopOpacity={0.25} />
-              <stop offset='75%' stopColor={GRAY_GRADIENT_COLOR} stopOpacity={0} />
+              <stop offset='-29%' stopColor={color} stopOpacity={0.4} />
+
+              <stop offset='100%' stopColor={color} stopOpacity={0} />
             </linearGradient>,
           ]}
           data={data}
