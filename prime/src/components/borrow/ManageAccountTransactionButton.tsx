@@ -3,7 +3,7 @@ import { ReactElement, useState } from 'react';
 import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Address, chain, Chain, erc20ABI, useContractRead, useContractWrite } from 'wagmi';
+import { Address, chain, Chain, erc20ABI, useContractRead, useContractWrite, useNetwork } from 'wagmi';
 
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
@@ -101,7 +101,7 @@ function getConfirmButton(
   }
 }
 
-function useAllowance(token: TokenData, owner: Address, spender: Address) {
+function useAllowance(onChain: Chain, token: TokenData, owner: Address, spender: Address) {
   return useContractRead({
     address: token.address,
     abi: erc20ABI,
@@ -109,6 +109,8 @@ function useAllowance(token: TokenData, owner: Address, spender: Address) {
     args: [owner, spender],
     cacheOnBlock: true,
     watch: true,
+    chainId: onChain.id,
+    enabled: owner !== '0x',
   });
 }
 
@@ -153,6 +155,8 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     transactionWillFail,
     onSuccessReceipt,
   } = props;
+  const network = useNetwork();
+  const activeChain = network.chain || chain.goerli;
 
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);
@@ -171,16 +175,17 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     onSuccess: () => {
       setShowPendingModal(true);
     },
+    chainId: activeChain.id,
   });
 
-  const { data: userAllowance0Asset } = useAllowance(token0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Asset } = useAllowance(token1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance0Kitty } = useAllowance(kitty0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Kitty } = useAllowance(kitty1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const writeAsset0Allowance = useAllowanceWrite(chain.goerli, token0, MARGIN_ACCOUNT_CALLEE);
-  const writeAsset1Allowance = useAllowanceWrite(chain.goerli, token1, MARGIN_ACCOUNT_CALLEE);
-  const writeKitty0Allowance = useAllowanceWrite(chain.goerli, kitty0, MARGIN_ACCOUNT_CALLEE);
-  const writeKitty1Allowance = useAllowanceWrite(chain.goerli, kitty1, MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Asset } = useAllowance(activeChain, token0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Asset } = useAllowance(activeChain, token1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Kitty } = useAllowance(activeChain, kitty0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance1Kitty } = useAllowance(activeChain, kitty1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
+  const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, MARGIN_ACCOUNT_CALLEE);
+  const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, MARGIN_ACCOUNT_CALLEE);
+  const writeKitty0Allowance = useAllowanceWrite(activeChain, kitty0, MARGIN_ACCOUNT_CALLEE);
+  const writeKitty1Allowance = useAllowanceWrite(activeChain, kitty1, MARGIN_ACCOUNT_CALLEE);
 
   const requiredBalances = [
     accountState.requiredAllowances.amount0Asset,
