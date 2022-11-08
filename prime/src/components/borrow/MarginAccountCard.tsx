@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { PrintFeeTier } from '../../data/FeeTier';
 import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';

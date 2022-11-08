@@ -1,18 +1,24 @@
 import React from 'react';
 
-import { Text } from 'shared/lib/components/common/Typography';
+import { Text } from './Typography';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
-import DiscordFooterIcon from '../../assets/svg/discord_footer.svg';
-import MediumFooterIcon from '../../assets/svg/medium_footer.svg';
-import TwitterFooterIcon from '../../assets/svg/twitter_footer.svg';
+import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
+import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
+import MediumFooterIcon from '../../assets/svg/MediumFooter';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
 const StyledFooter = styled.footer`
-  ${tw`fixed bottom-0 left-0 right-0 flex flex-row items-center justify-between`}
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   min-height: 60px;
   background-color: rgba(6, 11, 15, 1);
   border-top: 1px solid rgba(18, 29, 37, 1);
@@ -87,23 +93,23 @@ export default function Footer() {
           rel='noopener noreferrer'
           title='Join our Discord'
         >
-          <img src={DiscordFooterIcon} alt='Discord Icon' width={14} height={11} />
+          <DiscordFooterIcon width={14} height={11} />
         </a>
         <a
-          href={'https://discord.com/invite/gpt4sUv6sw'}
+          href={'https://twitter.com/aloecapital'}
           target='_blank'
           rel='noopener noreferrer'
           title='Follow us on Twitter'
         >
-          <img src={TwitterFooterIcon} alt='Twitter Icon' width={15} height={11} />
+          <TwitterFooterIcon width={15} height={11} />
         </a>
         <a
-          href={'https://discord.com/invite/gpt4sUv6sw'}
+          href={'https://aloelabs.medium.com'}
           target='_blank'
           rel='noopener noreferrer'
           title='Connect with us on Medium'
         >
-          <img src={MediumFooterIcon} alt='Medium Icon' width={21} height={11} />
+          <MediumFooterIcon width={21} height={11} />
         </a>
       </div>
     </StyledFooter>

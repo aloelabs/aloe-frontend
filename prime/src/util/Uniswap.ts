@@ -4,11 +4,11 @@ import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, Fee
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 
 import { theGraphUniswapV3Client } from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
-import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
 import { TokenData } from '../data/TokenData';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import { UniswapTicksQuery } from './GraphQL';

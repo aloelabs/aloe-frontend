@@ -2,6 +2,7 @@ import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
@@ -10,7 +11,6 @@ import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { BIGQ96 } from './constants/Values';
-import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GetTokenData, TokenData } from './TokenData';
 
 export type Assets = {

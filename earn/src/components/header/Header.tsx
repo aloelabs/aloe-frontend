@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { MenuIcon } from '@heroicons/react/solid';
 import { NavLink } from 'react-router-dom';
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINTS } from 'shared/lib/data/constants/Breakpoints';
+import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { chain, useAccount, useEnsName } from 'wagmi';
 
 import AloeLogo from '../../assets/svg/aloe_capital_nav_logo.svg';
-import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
-import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import ConnectWalletButton from './ConnectWalletButton';
 
 type MenuItem = {
