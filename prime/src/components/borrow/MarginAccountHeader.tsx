@@ -1,5 +1,6 @@
 import React from 'react';
 
+import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
 import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
@@ -12,7 +13,6 @@ import {
 } from '../../data/constants/Breakpoints';
 import { TokenData } from '../../data/TokenData';
 import { formatAddressStart } from '../../util/FormatAddress';
-import FeeTierContainer from '../common/FeeTierContainer';
 
 const MarginPairContainer = styled.div`
   ${tw`flex items-center`}

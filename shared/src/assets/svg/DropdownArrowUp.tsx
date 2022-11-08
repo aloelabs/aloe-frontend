@@ -6,9 +6,9 @@ export default function DropdownArrowUp(props: SVGProps) {
       <path
         d='M5 7.5L10 12.5L15 7.5'
         stroke='white'
-        strokeWidth='1.66667'
-        strokeLinecap='round'
-        strokeLinejoin='round'
+        stroke-width='1.66667'
+        stroke-linecap='round'
+        stroke-linejoin='round'
         transform='scale(1,-1)'
         transform-origin='center'
       />
