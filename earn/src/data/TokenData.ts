@@ -8,7 +8,7 @@ export type TokenData = {
   ticker?: string; // Ticker of the token
   name?: string; // Name of the token
   iconPath?: string; // Path to the icon for the token
-  referenceAddress?: string; // Address of the token that is used to get the price of the token
+  referenceAddress?: Address; // Address of the token that is used to get the price of the token
 };
 
 const TokenDataMap = new Map<string, TokenData>([
@@ -190,4 +190,8 @@ export function GetTokenData(address: Address | string): TokenData {
       address: address as Address,
       decimals: 0,
     };
+}
+
+export function getReferenceAddress(token: TokenData): Address {
+  return token.referenceAddress || token.address;
 }
