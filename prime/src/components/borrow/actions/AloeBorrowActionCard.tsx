@@ -18,7 +18,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const { marginAccount, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
 
-  const dropdownOptions: DropdownOption[] = [
+  const dropdownOptions: DropdownOption<TokenType>[] = [
     {
       label: token0?.ticker || '',
       value: TokenType.ASSET0,
@@ -71,7 +71,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option: DropdownOption) => {
+          onSelect={(option: DropdownOption<TokenType>) => {
             if (option.value !== selectedTokenOption.value) {
               callbackWithFullResult(option.value as TokenType, '');
             }

@@ -24,7 +24,7 @@ import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/Margin
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
 const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 
-const MARGIN_ACCOUNT_OPTIONS: DropdownOption[] = [
+const MARGIN_ACCOUNT_OPTIONS: DropdownOption<string>[] = [
   {
     label: 'USDC/WETH 0.05%',
     value: '0xfBe57C73A82171A773D3328F1b563296151be515',
