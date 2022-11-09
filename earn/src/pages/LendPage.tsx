@@ -54,7 +54,7 @@ const LowerLendHeader = styled.div`
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column-reverse;
     align-items: flex-start;
-  }
+  } ;
 `;
 
 const LendCards = styled.div`
