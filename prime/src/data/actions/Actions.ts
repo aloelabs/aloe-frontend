@@ -194,12 +194,12 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
 
 export function getDropdownOptionFromSelectedToken(
   selectedToken: TokenType | null,
-  options: DropdownOption[]
-): DropdownOption {
+  options: DropdownOption<TokenType>[]
+): DropdownOption<TokenType> {
   if (options.length === 0) {
     throw new Error();
   }
-  return options.find((option: DropdownOption) => option.value === selectedToken) || options[0];
+  return options.find((option: DropdownOption<TokenType>) => option.value === selectedToken) || options[0];
 }
 
 export function calculateHypotheticalStates(

@@ -54,7 +54,7 @@ const LowerLendHeader = styled.div`
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column-reverse;
     align-items: flex-start;
-  }
+  } ;
 `;
 
 const LendCards = styled.div`
@@ -77,12 +77,12 @@ export type TokenBalance = {
   pairName: string;
 };
 
-const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
+const filterOptions: MultiDropdownOption<TokenData>[] = getTokens().map((token) => {
   return {
-    value: token.address,
-    label: token.ticker,
+    value: token,
+    label: token.ticker || '',
     icon: token.iconPath,
-  } as MultiDropdownOption;
+  };
 });
 
 export default function LendPage() {
@@ -91,7 +91,7 @@ export default function LendPage() {
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
+  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<TokenData>[]>(filterOptions);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -276,7 +276,7 @@ export default function LendPage() {
               <MultiDropdownButton
                 options={filterOptions}
                 activeOptions={selectedOptions}
-                handleChange={(updatedOptions: MultiDropdownOption[]) => {
+                handleChange={(updatedOptions: MultiDropdownOption<TokenData>[]) => {
                   setSelectedOptions(updatedOptions);
                 }}
                 DropdownButton={(props: { onClick: () => void }) => {
@@ -297,7 +297,7 @@ export default function LendPage() {
                     <SquareInputWithIcon
                       placeholder='Search'
                       value={props.searchTerm}
-                      onChange={(e) => {
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         props.onSearch(e.target.value);
                       }}
                       Icon={<SearchIcon />}

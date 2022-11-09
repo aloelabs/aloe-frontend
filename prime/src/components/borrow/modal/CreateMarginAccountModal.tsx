@@ -10,7 +10,7 @@ import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 export type CreateMarginAccountModalProps = {
   open: boolean;
   isTxnPending: boolean;
-  availablePools: DropdownOption[];
+  availablePools: DropdownOption<string>[];
   setOpen: (open: boolean) => void;
   onConfirm: (selectedPool: string | null) => void;
   onCancel: () => void;
@@ -18,7 +18,7 @@ export type CreateMarginAccountModalProps = {
 
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
   const { open, isTxnPending, availablePools, setOpen, onConfirm, onCancel } = props;
-  const [selectedPool, setSelectedPool] = useState<DropdownOption | null>(
+  const [selectedPool, setSelectedPool] = useState<DropdownOption<string> | null>(
     availablePools.length > 0 ? availablePools[0] : null
   );
   if (selectedPool == null) {

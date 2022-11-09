@@ -41,9 +41,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     .map((lp, index) => {
       return {
         label: `Lower: ${lp.lower} Upper: ${lp.upper}`,
-        value: index.toString(),
+        value: index,
         isDefault: index === 0,
-      } as DropdownOption;
+      } as DropdownOption<number>;
     });
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountState]);
 
-  let selectedOption: DropdownOption | undefined = undefined;
+  let selectedOption: DropdownOption<number> | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
   let amount0: number | undefined = undefined;
   let amount1: number | undefined = undefined;
@@ -125,8 +125,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     );
   }
 
-  function handleSelectOption(updatedOption: DropdownOption) {
-    const updatedPosition = uniswapPositions[parseInt(updatedOption.value)];
+  function handleSelectOption(updatedOption: DropdownOption<number>) {
+    const updatedPosition = uniswapPositions[updatedOption.value];
     updateResult(updatedPosition, localRemoveLiquidityPercentage);
   }
 
