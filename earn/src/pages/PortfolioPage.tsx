@@ -200,6 +200,10 @@ export default function PortfolioPage() {
     return distinct;
   }, [lendingPairs, lendingPairBalances, tokenQuotes]);
 
+  const totalBalanceUSD = useMemo(() => {
+    return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
+  }, [combinedBalances]);
+
   return (
     <AppPage>
       <Container>
@@ -208,7 +212,7 @@ export default function PortfolioPage() {
             YOUR PORTFOLIO
           </Text>
           <Display size='L' weight='semibold'>
-            {formatUSD(1000.01)}
+            {formatUSD(totalBalanceUSD)}
           </Display>
         </div>
         <div>

@@ -99,6 +99,7 @@ export function SearchBar(props: SearchBarProps) {
           options={searchInputOptions}
           onOptionSelected={(option) => {
             setActiveSearchAsset(option.value);
+            setActiveAsset(option.value);
           }}
         />
       )}
