@@ -42,6 +42,12 @@ const INPUT_PADDING = {
   L: '16px 76px 16px 24px',
 };
 
+const INPUT_PADDING_FLIPPED = {
+  S: '8px 16px 8px 52px',
+  M: '12px 20px 12px 64px',
+  L: '16px 24px 16px 76px',
+};
+
 const INPUT_FONT_SIZE = {
   S: 14,
   M: 16,
@@ -67,7 +73,8 @@ const MAX_BUTTON_HEIGHT = {
 };
 
 export const InputBase = styled.input.attrs(
-  (props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean; paddingRightOverride?: string }) => props
+  (props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean; paddingRightOverride?: string; flipped?: boolean }) =>
+    props
 )`
   position: relative;
   text-align: left;
@@ -75,7 +82,7 @@ export const InputBase = styled.input.attrs(
   background-color: ${INPUT_BG_COLOR};
   color: ${INPUT_TEXT_COLOR};
   box-sizing: border-box;
-  padding: ${(props) => INPUT_PADDING[props.inputSize]};
+  padding: ${(props) => (props.flipped ? INPUT_PADDING_FLIPPED[props.inputSize] : INPUT_PADDING[props.inputSize])};
   ${(props) => (props.paddingRightOverride ? `padding-right: ${props.paddingRightOverride};` : '')}
   font-family: 'Satoshi-Variable';
   font-size: ${(props) => INPUT_FONT_SIZE[props.inputSize]}px;
@@ -156,14 +163,16 @@ const SquareInputWrapper = styled.div`
 `;
 
 const SvgWrapper = styled.div.attrs(
-  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean }) => props
+  (props: { size: 'S' | 'M' | 'L'; svgColorType: 'fill' | 'stroke'; isClickable: boolean; leadingIcon: boolean }) =>
+    props
 )`
   position: absolute;
 
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: ${(props) => (props.isClickable ? 'auto' : 'none')};
   cursor: ${(props) => (props.isClickable ? 'pointer' : 'default')};
-  right: ${(props) => `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
+  ${(props) => (props.leadingIcon ? 'left' : 'right')}: ${(props) =>
+    `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
   svg {
     width: ${(props) => ICON_SIZES[props.size]}px;
     height: ${(props) => ICON_SIZES[props.size]}px;
@@ -397,6 +406,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
 export type InputWithIconProps = InputProps & {
   Icon: ReactElement;
   svgColorType: 'fill' | 'stroke';
+  leadingIcon?: boolean;
   onIconClick?: React.MouseEventHandler<HTMLDivElement>;
 };
 
@@ -411,6 +421,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     Icon,
     placeholder,
     disabled,
+    leadingIcon,
     onIconClick,
     onEnter,
     onBlur,
@@ -426,6 +437,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         placeholder={placeholder}
         disabled={disabled}
         fullWidth={fullWidth}
+        flipped={leadingIcon}
         className={inputClassName}
         onKeyPress={(e) => {
           if (e.key === 'Enter' && onEnter) {
@@ -438,6 +450,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
       />
       <SvgWrapper
         size={size}
+        leadingIcon={leadingIcon}
         className={disabled ? 'disabled' : ''}
         onClick={onIconClick}
         isClickable={onIconClick !== undefined}
@@ -459,6 +472,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     inputClassName,
     placeholder,
     disabled,
+    leadingIcon,
     onIconClick,
     onEnter,
     onBlur,
@@ -474,6 +488,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         placeholder={placeholder}
         disabled={disabled}
         fullWidth={fullWidth}
+        flipped={leadingIcon}
         className={inputClassName}
         onKeyPress={(e) => {
           if (e.key === 'Enter' && onEnter) {
@@ -486,6 +501,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
       />
       <SvgWrapper
         size={size}
+        leadingIcon={leadingIcon}
         className={disabled ? 'disabled' : ''}
         onClick={onIconClick}
         isClickable={onIconClick !== undefined}

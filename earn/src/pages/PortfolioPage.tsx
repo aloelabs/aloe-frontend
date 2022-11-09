@@ -9,6 +9,7 @@ import styled from 'styled-components';
 import { chain, useAccount, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
+import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
@@ -100,6 +101,7 @@ export default function PortfolioPage() {
   }, [lendingPairs]);
 
   useEffect(() => {
+    let mounted = true;
     async function fetchTokenColors() {
       const tokenColorMap: Map<string, string> = new Map();
       const colorPromises = uniqueTokens.map((token) => getProminentColor(token.iconPath || ''));
@@ -107,9 +109,14 @@ export default function PortfolioPage() {
       uniqueTokens.forEach((token: TokenData, index: number) => {
         tokenColorMap.set(token.address, colors[index]);
       });
-      setTokenColors(tokenColorMap);
+      if (mounted) {
+        setTokenColors(tokenColorMap);
+      }
     }
     fetchTokenColors();
+    return () => {
+      mounted = false;
+    };
   }, [lendingPairs, uniqueTokens]);
 
   useEffectOnce(() => {
@@ -289,7 +296,10 @@ export default function PortfolioPage() {
               {formatUSD(totalBalance)}
             </Display>
           </div>
-          <PortfolioPageWidgetWrapper tooltip='This bar shows the assets in your portfolio. Hover over a segment to see details.'>
+          <PortfolioPageWidgetWrapper
+            tooltip='This bar shows the assets in your portfolio. Hover over a segment to see details.'
+            tooltipId='assetBar'
+          >
             <AssetBar combinedBalances={combinedBalances} tokenColors={tokenColors} setActiveAsset={setActiveAsset} />
           </PortfolioPageWidgetWrapper>
 
@@ -331,7 +341,10 @@ export default function PortfolioPage() {
               Withdraw
             </OutlinedWhiteButtonWithIcon>
           </div>
-          <PortfolioPageWidgetWrapper tooltip='These widgets give you general information about an asset.'>
+          <PortfolioPageWidgetWrapper
+            tooltip='These widgets give you general information about an asset.'
+            tooltipId='portfolioGrid'
+          >
             <PortfolioGrid
               balances={combinedBalances}
               activeAsset={activeAsset}
@@ -345,10 +358,17 @@ export default function PortfolioPage() {
               tooltip={`Before other users can borrow your funds, they must post collateral. 
               When you deposit, you get to pick what type of collateral is allowed. 
               That choice determines what pair you're lending to, and the pair has it's own stats.`}
+              tooltipId='lendingPairPeerCard'
             >
               <LendingPairPeerCard lendingPairs={filteredLendingPairs} activeAsset={activeAsset} />
             </PortfolioPageWidgetWrapper>
           )}
+        </div>
+        <div className='flex justify-center items-center gap-1 w-full mt-8'>
+          <InfoIcon width={16} height={16} />
+          <Text size='S' color={LEND_TITLE_TEXT_COLOR}>
+            Hint: Click the space bar at any time to acess search and shortcuts.
+          </Text>
         </div>
       </Container>
       <WelcomeModal

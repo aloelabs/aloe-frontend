@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo } from 'react';
 
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
+import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import useEffectOnce from '../../data/hooks/UseEffectOnce';
 import { LendingPairBalances } from '../../data/LendingPair';
 import { getReferenceAddress, GetTokenData, TokenData } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import IndependentTooltip from './LeftFacingIndendentTooltip';
+import SearchInput from './SearchInput';
 
 export type AssetBarItem = {
   token: TokenData;
@@ -40,6 +44,10 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
     border-radius: 0 8px 8px 0;
   }
 
+  &:only-child {
+    border-radius: 8px;
+  }
+
   &.active {
     z-index: 1;
     transform: scale(1.04);
@@ -53,6 +61,23 @@ const AssetIcon = styled.img`
   height: 32px;
   border: 2px solid transparent;
   border-radius: 50%;
+`;
+
+const BackButton = styled.button`
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  left: -10%;
+  top: 50%;
+  transform: translateY(-50%);
+
+  svg {
+    path {
+      stroke: rgb(255, 255, 255);
+    }
+  }
 `;
 
 type AssetChunkProps = {
@@ -90,6 +115,45 @@ function AssetChunk(props: AssetChunkProps) {
   );
 }
 
+type SearchBarProps = {
+  combinedBalances: TokenBalance[];
+  setActiveSearchAsset: (token: TokenData) => void;
+  setActiveAsset: (token: TokenData) => void;
+};
+
+function SearchBar(props: SearchBarProps) {
+  const { combinedBalances, setActiveSearchAsset, setActiveAsset } = props;
+  const options: DropdownOption[] = useMemo(() => {
+    return combinedBalances
+      .filter((balance) => {
+        return balance.balance > 0;
+      })
+      .map((balance) => {
+        return {
+          label: balance.token.ticker || '',
+          value: balance.token.address as string,
+        };
+      });
+  }, [combinedBalances]);
+  return (
+    <SearchInput
+      options={options}
+      onOptionSelected={(option) => {
+        setActiveSearchAsset(GetTokenData(option.value));
+        setActiveAsset(GetTokenData(option.value));
+      }}
+    />
+  );
+}
+
+function getColor(color: string, tokenColors: Map<string, string>) {
+  const tokenColor = tokenColors.get(color);
+  if (tokenColor !== undefined) {
+    return rgb(tokenColor);
+  }
+  return 'transparent';
+}
+
 export type AssetBarProps = {
   combinedBalances: TokenBalance[];
   tokenColors: Map<string, string>;
@@ -98,6 +162,8 @@ export type AssetBarProps = {
 
 export default function AssetBar(props: AssetBarProps) {
   const { combinedBalances, tokenColors, setActiveAsset } = props;
+  const [searchModeEnabled, setSearchModeEnabled] = React.useState(false);
+  const [activeSearchAsset, setActiveSearchAsset] = React.useState<TokenData | null>(null);
   const [chunks, setChunks] = React.useState<AssetChunkProps[]>([]);
   const [defaultIndex, setDefaultIndex] = React.useState<number>(0);
   const [activeIndex, setActiveIndex] = React.useState<number>(0);
@@ -123,6 +189,20 @@ export default function AssetBar(props: AssetBarProps) {
       setActiveAsset(chunks[defaultIndex].token);
     }
   }, [chunks, chunks.length, defaultIndex, isHovering, setActiveAsset]);
+
+  useEffect(() => {
+    const keyboardListener = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        event.stopPropagation();
+        setSearchModeEnabled(true);
+      }
+    };
+    window.addEventListener('keydown', keyboardListener);
+    return () => {
+      window.removeEventListener('keydown', keyboardListener);
+    };
+  });
 
   useMemo(() => {
     const totalBalance = combinedTokenBalances.reduce((acc, cur) => acc + cur.balanceUSD, 0);
@@ -157,9 +237,43 @@ export default function AssetBar(props: AssetBarProps) {
 
   return (
     <Container>
-      {chunks.map((chunk, index) => (
-        <AssetChunk key={index} {...chunk} />
-      ))}
+      {searchModeEnabled ? (
+        <div>
+          <BackButton
+            onClick={() => {
+              setActiveIndex(defaultIndex);
+              setActiveAsset(chunks[defaultIndex].token);
+              setActiveSearchAsset(null);
+              setSearchModeEnabled(false);
+            }}
+          >
+            <BackArrowIcon width={16} height={16} />
+            Back
+          </BackButton>
+          {activeSearchAsset ? (
+            <Container>
+              <AssetChunk
+                token={activeSearchAsset}
+                percentage={1}
+                active={true}
+                selected={true}
+                color={getColor(activeSearchAsset.address, tokenColors)}
+                onClick={() => {}}
+                onHover={() => {}}
+                onLeave={() => {}}
+              />
+            </Container>
+          ) : (
+            <SearchBar
+              combinedBalances={combinedTokenBalances}
+              setActiveSearchAsset={setActiveSearchAsset}
+              setActiveAsset={setActiveAsset}
+            />
+          )}
+        </div>
+      ) : (
+        chunks.map((chunk, index) => <AssetChunk key={index} {...chunk} />)
+      )}
     </Container>
   );
 }
