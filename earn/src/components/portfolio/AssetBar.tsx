@@ -116,11 +116,11 @@ export function AssetBar(props: AssetBarProps) {
   }, [balances]);
 
   useEffect(() => {
-    if (chunks.length > 0 && !isHovering) {
+    if (chunks.length > 0 && !isHovering && !searchModeEnabled) {
       setActiveIndex(defaultIndex);
       setActiveAsset(chunks[defaultIndex].token);
     }
-  }, [chunks, chunks.length, defaultIndex, isHovering, setActiveAsset]);
+  }, [chunks, chunks.length, defaultIndex, isHovering, searchModeEnabled, setActiveAsset]);
 
   useEffect(() => {
     const keyboardListener = (event: KeyboardEvent) => {
