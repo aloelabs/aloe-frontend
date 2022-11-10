@@ -260,7 +260,7 @@ export default function PortfolioPage() {
             {formatUSD(totalBalanceUSD)}
           </Display>
         </div>
-        <div>
+        <div className='h-16'>
           {!isDoneLoadingBalances && <AssetBarPlaceholder />}
           {isDoneLoadingBalances && totalBalanceUSD > 0 && (
             <AssetBar
