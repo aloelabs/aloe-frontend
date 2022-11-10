@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
 import { AssetBar } from '../components/portfolio/AssetBar';
+import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
@@ -23,6 +24,17 @@ import { formatUSD } from '../util/Numbers';
 const Container = styled.div`
   max-width: 813px;
   margin: 0 auto;
+`;
+
+const EmptyAssetBar = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 64px;
+  background-color: transparent;
+  border: 1px solid rgba(26, 41, 52, 1);
+  border-radius: 8px;
 `;
 
 export type TokenQuote = {
@@ -50,6 +62,7 @@ export default function PortfolioPage() {
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
 
   const network = useNetwork();
@@ -136,6 +149,7 @@ export default function PortfolioPage() {
       const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
       if (mounted) {
         setLendingPairBalances(results);
+        setIsLoadingBalances(false);
       }
     }
     fetch();
@@ -204,6 +218,8 @@ export default function PortfolioPage() {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   }, [combinedBalances]);
 
+  const isDoneLoadingBalances = (!isLoading && !address) || (!isLoadingBalances && combinedBalances.length > 0);
+
   return (
     <AppPage>
       <Container>
@@ -216,13 +232,23 @@ export default function PortfolioPage() {
           </Display>
         </div>
         <div>
-          <AssetBar
-            balances={combinedBalances}
-            tokenColors={tokenColors}
-            setActiveAsset={(updatedAsset: TokenData) => {
-              setActiveAsset(updatedAsset);
-            }}
-          />
+          {!isDoneLoadingBalances && <AssetBarPlaceholder />}
+          {isDoneLoadingBalances && totalBalanceUSD > 0 && (
+            <AssetBar
+              balances={combinedBalances}
+              tokenColors={tokenColors}
+              setActiveAsset={(updatedAsset: TokenData) => {
+                setActiveAsset(updatedAsset);
+              }}
+            />
+          )}
+          {isDoneLoadingBalances && totalBalanceUSD === 0 && (
+            <EmptyAssetBar>
+              <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                No assets found
+              </Text>
+            </EmptyAssetBar>
+          )}
         </div>
         <div className='flex justify-center items-center gap-2 mt-8'>
           <Text size='M'>Currently Active:</Text>
