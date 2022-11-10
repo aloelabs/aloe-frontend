@@ -8,6 +8,7 @@ import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import WagmiProvider from './connector/WagmiProvider';
 import LendPage from './pages/LendPage';
+import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
 
 export const theGraphUniswapV2Client = new ApolloClient({
@@ -66,8 +67,9 @@ function App() {
             <Header />
             <main className='flex-grow'>
               <Routes>
-                <Route path='/earn' element={<LendPage />} />
-                <Route path='/' element={<Navigate replace to='/earn' />} />
+                <Route path='/portfolio' element={<PortfolioPage />} />
+                <Route path='/markets' element={<LendPage />} />
+                <Route path='/' element={<Navigate replace to='/portfolio' />} />
                 <Route path='*' element={<Navigate to='/' />} />
               </Routes>
             </main>
