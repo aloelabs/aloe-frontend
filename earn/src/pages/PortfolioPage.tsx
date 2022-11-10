@@ -8,6 +8,7 @@ import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
+import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { API_PRICE_RELAY_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayResponse } from '../data/PriceRelayResponse';
 import { getReferenceAddress, GetTokenData, TokenData } from '../data/TokenData';
+import { getMarketData } from '../util/CoinGecko';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -61,6 +63,7 @@ export default function PortfolioPage() {
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
+  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
@@ -158,6 +161,32 @@ export default function PortfolioPage() {
     };
   }, [provider, address, lendingPairs, isLoading]);
 
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const tokens = lendingPairs.flatMap((p) => [p.token0, p.token1]);
+      const requests = lendingPairs.flatMap((pair) => [
+        getMarketData(getReferenceAddress(pair.token0)),
+        getMarketData(getReferenceAddress(pair.token1)),
+      ]);
+      const response = await Promise.all(requests);
+      if (mounted) {
+        const responseData: TokenPriceData[] = response.map((r, i) => {
+          const data = r.data;
+          return {
+            token: tokens[i],
+            prices: data?.prices || [],
+          };
+        });
+        setTokenPriceData(responseData);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [lendingPairs]);
+
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === getReferenceAddress(pair.token0));
@@ -250,9 +279,14 @@ export default function PortfolioPage() {
             </EmptyAssetBar>
           )}
         </div>
-        <div className='flex justify-center items-center gap-2 mt-8'>
-          <Text size='M'>Currently Active:</Text>
-          <Text size='L'>{activeAsset?.ticker}</Text>
+        <div className='mt-8'>
+          <PortfolioGrid
+            activeAsset={activeAsset}
+            balances={combinedBalances}
+            tokenColors={tokenColors}
+            tokenPriceData={tokenPriceData}
+            tokenQuotes={tokenQuotes}
+          />
         </div>
       </Container>
     </AppPage>
