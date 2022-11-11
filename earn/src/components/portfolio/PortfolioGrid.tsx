@@ -3,6 +3,8 @@ import styled from 'styled-components';
 
 import { TokenData } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
+import { rgb } from '../../util/Colors';
+import AssetPriceChartWidget from './AssetPriceChartWidget';
 import PortfolioAssetDataContainer from './PortfolioAssetDataContainer';
 
 const STATUS_GREEN = 'rgba(0, 196, 140, 1)';
@@ -126,12 +128,25 @@ export type PortfolioGridProps = {
 };
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
-  const { balances, activeAsset, tokenColors } = props;
+  const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData } = props;
+  const currentTokenQuote = tokenQuotes.find(
+    (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
+  );
+  const currentTokenPriceData = tokenPriceData.find(
+    (data) => activeAsset && data.token.address === activeAsset.address
+  );
   const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
     <Grid>
       <PortfolioAssetDataContainer balances={balances} activeAsset={activeAsset} activeColor={activeColor} />
-      <PriceContainer>{/* TODO */}</PriceContainer>
+      <PriceContainer>
+        <AssetPriceChartWidget
+          token={activeAsset}
+          color={activeColor !== undefined ? rgb(activeColor) : 'transparent'}
+          currentPrice={currentTokenQuote?.price || 0}
+          prices={currentTokenPriceData?.prices || []}
+        />
+      </PriceContainer>
       <UptimeContainer>
         <Text size='M' color='rgba(130, 160, 182, 1)'>
           Protocol Uptime

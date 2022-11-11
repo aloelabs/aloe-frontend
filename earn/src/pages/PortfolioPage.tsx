@@ -82,6 +82,34 @@ export default function PortfolioPage() {
     return Array.from(tokens);
   }, [lendingPairs]);
 
+  /**
+   * Get an initial esimate of the user's balances in USD
+   */
+  useEffectOnce(() => {
+    let mounted = true;
+    async function fetch() {
+      // fetch token quotes
+      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
+      const prResponse: PriceRelayResponse = quoteDataResponse.data;
+      if (!prResponse || !prResponse.data) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
+        return {
+          token: GetTokenData(pr?.platform?.token_address || ''),
+          price: pr?.quote['USD']?.price || 0,
+        };
+      });
+      if (mounted && tokenQuotes.length === 0) {
+        setTokenQuotes(tokenQuoteData);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  });
+
   useEffect(() => {
     let mounted = true;
     async function fetchTokenColors() {
@@ -100,31 +128,6 @@ export default function PortfolioPage() {
       mounted = false;
     };
   }, [lendingPairs, uniqueTokens]);
-
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch() {
-      // fetch token quotes
-      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
-      const prResponse: PriceRelayResponse = quoteDataResponse.data;
-      if (!prResponse || !prResponse.data) {
-        return;
-      }
-      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
-        return {
-          token: GetTokenData(pr?.platform?.token_address || ''),
-          price: pr?.quote['USD']?.price || 0,
-        };
-      });
-      if (mounted) {
-        setTokenQuotes(tokenQuoteData);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  });
 
   useEffect(() => {
     let mounted = true;
@@ -161,31 +164,41 @@ export default function PortfolioPage() {
     };
   }, [provider, address, lendingPairs, isLoading]);
 
+  /**
+   * Fetch token price data (for chart)
+   * Also fetches updated token quotes (for consistency with chart)
+   */
   useEffect(() => {
     let mounted = true;
     async function fetch() {
       const tokens = lendingPairs.flatMap((p) => [p.token0, p.token1]);
-      const requests = lendingPairs.flatMap((pair) => [
-        getMarketData(getReferenceAddress(pair.token0)),
-        getMarketData(getReferenceAddress(pair.token1)),
-      ]);
+      const requests = uniqueTokens.map((token) => getMarketData(getReferenceAddress(token)));
       const response = await Promise.all(requests);
       if (mounted) {
-        const responseData: TokenPriceData[] = response.map((r, i) => {
+        const tokenGraphPrices: TokenPriceData[] = response.map((r, i) => {
           const data = r.data;
           return {
             token: tokens[i],
             prices: data?.prices || [],
           };
         });
-        setTokenPriceData(responseData);
+        const tokenPrices: TokenQuote[] = tokenGraphPrices.map((t) => {
+          const prices = t.prices;
+          const lastPrice = prices[prices.length - 1];
+          return {
+            token: GetTokenData(t.token.referenceAddress || t.token.address),
+            price: lastPrice ? lastPrice[1] : 0,
+          };
+        });
+        setTokenPriceData(tokenGraphPrices);
+        setTokenQuotes(tokenPrices);
       }
     }
     fetch();
     return () => {
       mounted = false;
     };
-  }, [lendingPairs]);
+  }, [lendingPairs, uniqueTokens]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
