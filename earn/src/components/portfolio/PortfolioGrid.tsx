@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { TokenData } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
-import PortfolioAssetDataContainer from './PortfolioAssetDataContainer';
+import PortfolioAssetDataContainer from './PortfolioMetrics';
 
 const STATUS_GREEN = 'rgba(0, 196, 140, 1)';
 const STATUS_GREEN_LIGHT = 'rgba(0, 196, 140, 0.75)';

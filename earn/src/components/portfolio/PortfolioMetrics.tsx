@@ -5,13 +5,17 @@ import { TokenBalance } from '../../pages/PortfolioPage';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 import { APYContainer, BalanceContainer, PieChartContainer } from './PortfolioGrid';
 
-export type PortfolioAssetDataContainerProps = {
+export type PortfolioMetricsProps = {
   balances: TokenBalance[];
   activeAsset: TokenData | null;
   activeColor?: string;
 };
 
-export default function PortfolioAssetDataContainer(props: PortfolioAssetDataContainerProps) {
+/**
+ * A component that displays the portfolio metrics for the active asset.
+ * This includes a pie, balance, and APY.
+ */
+export default function PortfolioMetrics(props: PortfolioMetricsProps) {
   const { balances, activeAsset } = props;
 
   const activeBalances = balances.filter(
