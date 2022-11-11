@@ -5,7 +5,7 @@ import { TokenData } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import AssetPriceChartWidget from './AssetPriceChartWidget';
-import PortfolioAssetDataContainer from './PortfolioAssetDataContainer';
+import PortfolioMetrics from './PortfolioMetrics';
 
 const STATUS_GREEN = 'rgba(0, 196, 140, 1)';
 const STATUS_GREEN_LIGHT = 'rgba(0, 196, 140, 0.75)';
@@ -138,7 +138,7 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
     <Grid>
-      <PortfolioAssetDataContainer balances={balances} activeAsset={activeAsset} activeColor={activeColor} />
+      <PortfolioMetrics balances={balances} activeAsset={activeAsset} activeColor={activeColor} />
       <PriceContainer>
         <AssetPriceChartWidget
           token={activeAsset}
