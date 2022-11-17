@@ -125,15 +125,16 @@ export type PortfolioGridProps = {
   tokenColors: Map<string, string>;
   tokenQuotes: TokenQuote[];
   tokenPriceData: TokenPriceData[];
+  errorLoadingPrices: boolean;
 };
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
-  const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData } = props;
+  const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData, errorLoadingPrices } = props;
   const currentTokenQuote = tokenQuotes.find(
     (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
   );
   const currentTokenPriceData = tokenPriceData.find(
-    (data) => activeAsset && data.token.address === activeAsset.address
+    (data) => activeAsset && data.token.address === activeAsset.referenceAddress
   );
   const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
@@ -144,7 +145,8 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
           token={activeAsset}
           color={activeColor !== undefined ? rgb(activeColor) : 'transparent'}
           currentPrice={currentTokenQuote?.price || 0}
-          prices={currentTokenPriceData?.prices || []}
+          priceEntries={currentTokenPriceData?.priceEntries || []}
+          error={errorLoadingPrices}
         />
       </PriceContainer>
       <UptimeContainer>
