@@ -139,10 +139,10 @@ export function AssetBar(props: AssetBarProps) {
 
   useEffect(() => {
     const totalBalanceUSD = combinedTokenBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
-    // first filter out tokens with 0 balance, then filter out tokens with balance < 10% of total balance
-    const filteredChunks = combinedTokenBalances
-      .filter((balance) => balance.balance !== 0)
-      .filter((balance) => balance.balanceUSD >= totalBalanceUSD * 0.1);
+    // filter out tokens with a balance < 10% of total balance and a balance greater than 0
+    const filteredChunks = combinedTokenBalances.filter(
+      (balance) => balance.balance !== 0 && balance.balanceUSD >= totalBalanceUSD * 0.1
+    );
     const updatedTotalBalanceUSD = filteredChunks.reduce((acc, balance) => acc + balance.balanceUSD, 0);
 
     const newChunks = filteredChunks.map((chunk, index) => {
