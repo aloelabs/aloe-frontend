@@ -1,21 +1,19 @@
-export type PriceRelayResponse = {
-  data: {
-    [key: string]: {
-      id: number;
-      name: string;
-      symbol: string;
-      platform?: {
-        id: number;
-        name: string;
-        symbol: string;
-        slug: string;
-        token_address: string;
-      };
-      quote: {
-        [key: string]: {
-          price: number;
-        };
-      };
-    };
+export type PriceRelayLatestResponse = {
+  [key: string]: {
+    price: number;
   };
+};
+
+export type PriceRelayHistoricalResponse = {
+  [key: string]: {
+    prices: {
+      price: number;
+      timestamp: number;
+    }[];
+  };
+};
+
+export type PriceRelayConsolidatedResponse = {
+  latest: PriceRelayLatestResponse;
+  historical: PriceRelayHistoricalResponse;
 };

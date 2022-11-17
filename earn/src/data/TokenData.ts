@@ -192,6 +192,14 @@ export function GetTokenData(address: Address | string): TokenData {
     };
 }
 
+export function GetTokenDataByTicker(ticker: string): TokenData {
+  const tokenData = getTokens().find((token) => token.ticker === ticker && token.referenceAddress === undefined);
+  if (!tokenData) {
+    throw new Error('Invalid ticker');
+  }
+  return tokenData;
+}
+
 export function getReferenceAddress(token: TokenData): Address {
   return token.referenceAddress || token.address;
 }

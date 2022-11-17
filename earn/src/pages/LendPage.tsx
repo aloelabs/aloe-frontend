@@ -20,7 +20,7 @@ import LendPairCard from '../components/lend/LendPairCard';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
   getAvailableLendingPairs,
@@ -28,7 +28,7 @@ import {
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { PriceRelayResponse } from '../data/PriceRelayResponse';
+import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 
@@ -116,18 +116,18 @@ export default function LendPage() {
     let mounted = true;
     async function fetch() {
       // fetch token quotes
-      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
-      const prResponse: PriceRelayResponse = quoteDataResponse.data;
+      const quoteDataResponse: AxiosResponse<PriceRelayLatestResponse> = await axios.get(API_PRICE_RELAY_LATEST_URL);
+      const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
       if (!prResponse || !prResponse.data) {
         return;
       }
-      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
+      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse.data).map((entry: [string, number]) => {
         return {
-          token: GetTokenData(pr?.platform?.token_address || ''),
-          price: pr?.quote['USD']?.price || 0,
+          token: GetTokenData(entry[0]),
+          price: entry[1],
         };
       });
-      if (mounted) {
+      if (mounted && tokenQuotes.length === 0) {
         setTokenQuotes(tokenQuoteData);
       }
     }
