@@ -90,11 +90,12 @@ export function AssetChunk(props: AssetChunkProps) {
 export type AssetBarProps = {
   balances: TokenBalance[];
   tokenColors: Map<string, string>;
+  ignoreBalances: boolean;
   setActiveAsset: (asset: TokenData) => void;
 };
 
 export function AssetBar(props: AssetBarProps) {
-  const { balances, tokenColors, setActiveAsset } = props;
+  const { balances, tokenColors, ignoreBalances, setActiveAsset } = props;
   const [searchModeEnabled, setSearchModeEnabled] = useState(false);
   const [chunks, setChunks] = useState<AssetChunkProps[]>([]);
   const [defaultIndex, setDefaultIndex] = useState<number>(0);
@@ -138,14 +139,18 @@ export function AssetBar(props: AssetBarProps) {
 
   useEffect(() => {
     const totalBalanceUSD = combinedTokenBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
-    const filteredChunks = combinedTokenBalances.filter((balance) => balance.balanceUSD >= totalBalanceUSD * 0.1);
+    // first filter out tokens with 0 balance, then filter out tokens with balance < 10% of total balance
+    const filteredChunks = combinedTokenBalances
+      .filter((balance) => balance.balance !== 0)
+      .filter((balance) => balance.balanceUSD >= totalBalanceUSD * 0.1);
     const updatedTotalBalanceUSD = filteredChunks.reduce((acc, balance) => acc + balance.balanceUSD, 0);
 
     const newChunks = filteredChunks.map((chunk, index) => {
       const currentColor = tokenColors.get(chunk.token.address);
+      const percentage = ignoreBalances ? 1 / filteredChunks.length : chunk.balanceUSD / updatedTotalBalanceUSD || 0;
       return {
         token: chunk.token,
-        percentage: chunk.balanceUSD / updatedTotalBalanceUSD || 0,
+        percentage: percentage,
         active: index === activeIndex,
         selected: index === defaultIndex,
         color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
@@ -165,7 +170,7 @@ export function AssetBar(props: AssetBarProps) {
       };
     });
     setChunks(newChunks);
-  }, [combinedTokenBalances, tokenColors, activeIndex, defaultIndex, setActiveAsset]);
+  }, [combinedTokenBalances, tokenColors, activeIndex, defaultIndex, setActiveAsset, ignoreBalances]);
 
   return (
     <Container>

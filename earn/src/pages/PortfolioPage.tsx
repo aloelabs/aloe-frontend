@@ -9,17 +9,15 @@ import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
-import { API_PRICE_RELAY_URL } from '../data/constants/Values';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
+import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { PriceRelayResponse } from '../data/PriceRelayResponse';
-import { getReferenceAddress, GetTokenData, TokenData } from '../data/TokenData';
-import { getMarketData } from '../util/CoinGecko';
+import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
+import { getReferenceAddress, GetTokenDataByTicker, TokenData } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -39,6 +37,11 @@ const EmptyAssetBar = styled.div`
   border-radius: 8px;
 `;
 
+export type PriceEntry = {
+  price: number;
+  timestamp: number;
+};
+
 export type TokenQuote = {
   token: TokenData;
   price: number;
@@ -46,7 +49,7 @@ export type TokenQuote = {
 
 export type TokenPriceData = {
   token: TokenData;
-  prices: number[][]; // [timestamp, price]
+  priceEntries: PriceEntry[];
 };
 
 export type TokenBalance = {
@@ -65,13 +68,14 @@ export default function PortfolioPage() {
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
 
   const network = useNetwork();
   const activeChainId = network.chain?.id || chain.goerli.id;
   const provider = useProvider({ chainId: activeChainId });
-  const { address } = useAccount();
+  const { address, isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<TokenData>();
@@ -81,6 +85,59 @@ export default function PortfolioPage() {
     });
     return Array.from(tokens);
   }, [lendingPairs]);
+
+  /**
+   * Get the latest and historical prices for all tokens
+   */
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const symbols = uniqueTokens
+        .map((token) => token?.ticker)
+        .filter((ticker) => ticker !== undefined)
+        .join(',');
+      if (symbols.length === 0) {
+        return;
+      }
+      let priceRelayResponses: AxiosResponse<PriceRelayConsolidatedResponse> | null = null;
+      try {
+        priceRelayResponses = await axios.get(`${API_PRICE_RELAY_CONSOLIDATED_URL}?symbols=${symbols}`);
+      } catch (error) {
+        setErrorLoadingPrices(true);
+        setIsLoadingPrices(false);
+        return;
+      }
+      if (priceRelayResponses == null) {
+        return;
+      }
+      const latestPriceResponse = priceRelayResponses.data.latest;
+      const historicalPriceResponse = priceRelayResponses.data.historical;
+      if (!latestPriceResponse || !historicalPriceResponse) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
+        return {
+          token: GetTokenDataByTicker(ticker),
+          price: data.price,
+        };
+      });
+      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
+        return {
+          token: GetTokenDataByTicker(ticker),
+          priceEntries: data.prices,
+        };
+      });
+      if (mounted) {
+        setTokenQuotes(tokenQuoteData);
+        setTokenPriceData(tokenPriceData);
+        setIsLoadingPrices(false);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [uniqueTokens]);
 
   useEffect(() => {
     let mounted = true;
@@ -100,31 +157,6 @@ export default function PortfolioPage() {
       mounted = false;
     };
   }, [lendingPairs, uniqueTokens]);
-
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch() {
-      // fetch token quotes
-      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
-      const prResponse: PriceRelayResponse = quoteDataResponse.data;
-      if (!prResponse || !prResponse.data) {
-        return;
-      }
-      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
-        return {
-          token: GetTokenData(pr?.platform?.token_address || ''),
-          price: pr?.quote['USD']?.price || 0,
-        };
-      });
-      if (mounted) {
-        setTokenQuotes(tokenQuoteData);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  });
 
   useEffect(() => {
     let mounted = true;
@@ -152,7 +184,6 @@ export default function PortfolioPage() {
       const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
       if (mounted) {
         setLendingPairBalances(results);
-        setIsLoadingBalances(false);
       }
     }
     fetch();
@@ -160,32 +191,6 @@ export default function PortfolioPage() {
       mounted = false;
     };
   }, [provider, address, lendingPairs, isLoading]);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      const tokens = lendingPairs.flatMap((p) => [p.token0, p.token1]);
-      const requests = lendingPairs.flatMap((pair) => [
-        getMarketData(getReferenceAddress(pair.token0)),
-        getMarketData(getReferenceAddress(pair.token1)),
-      ]);
-      const response = await Promise.all(requests);
-      if (mounted) {
-        const responseData: TokenPriceData[] = response.map((r, i) => {
-          const data = r.data;
-          return {
-            token: tokens[i],
-            prices: data?.prices || [],
-          };
-        });
-        setTokenPriceData(responseData);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [lendingPairs]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
@@ -247,7 +252,8 @@ export default function PortfolioPage() {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   }, [combinedBalances]);
 
-  const isDoneLoadingBalances = (!isLoading && !address) || (!isLoadingBalances && combinedBalances.length > 0);
+  const noWallet = !isConnecting && !isConnected;
+  const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
 
   return (
     <AppPage>
@@ -257,21 +263,22 @@ export default function PortfolioPage() {
             YOUR PORTFOLIO
           </Text>
           <Display size='L' weight='semibold'>
-            {formatUSD(totalBalanceUSD)}
+            {errorLoadingPrices ? '$□□□' : formatUSD(totalBalanceUSD)}
           </Display>
         </div>
         <div className='h-16'>
-          {!isDoneLoadingBalances && <AssetBarPlaceholder />}
-          {isDoneLoadingBalances && totalBalanceUSD > 0 && (
+          {!isDoneLoading && <AssetBarPlaceholder />}
+          {isDoneLoading && (totalBalanceUSD > 0 || errorLoadingPrices) && (
             <AssetBar
               balances={combinedBalances}
               tokenColors={tokenColors}
+              ignoreBalances={errorLoadingPrices}
               setActiveAsset={(updatedAsset: TokenData) => {
                 setActiveAsset(updatedAsset);
               }}
             />
           )}
-          {isDoneLoadingBalances && totalBalanceUSD === 0 && (
+          {isDoneLoading && totalBalanceUSD === 0 && !errorLoadingPrices && (
             <EmptyAssetBar>
               <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
                 No assets found
@@ -286,6 +293,7 @@ export default function PortfolioPage() {
             tokenColors={tokenColors}
             tokenPriceData={tokenPriceData}
             tokenQuotes={tokenQuotes}
+            errorLoadingPrices={errorLoadingPrices}
           />
         </div>
       </Container>
