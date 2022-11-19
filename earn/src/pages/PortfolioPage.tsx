@@ -321,7 +321,7 @@ export default function PortfolioPage() {
           />
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
-          <div className='mt-8'>
+          <div className='mt-10'>
             <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
           </div>
         )}
