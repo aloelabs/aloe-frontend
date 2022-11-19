@@ -8,6 +8,7 @@ import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
+import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
@@ -252,6 +253,18 @@ export default function PortfolioPage() {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   }, [combinedBalances]);
 
+  const filteredLendingPairs = useMemo(() => {
+    if (activeAsset == null) {
+      return [];
+    }
+    const activeAddress = getReferenceAddress(activeAsset);
+    return lendingPairs.filter((pair) => {
+      const token0Address = getReferenceAddress(pair.token0);
+      const token1Address = getReferenceAddress(pair.token1);
+      return token0Address === activeAddress || token1Address === activeAddress;
+    });
+  }, [lendingPairs, activeAsset]);
+
   const noWallet = !isConnecting && !isConnected;
   const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
 
@@ -296,6 +309,11 @@ export default function PortfolioPage() {
             errorLoadingPrices={errorLoadingPrices}
           />
         </div>
+        {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
+          <div className='mt-8'>
+            <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+          </div>
+        )}
       </Container>
     </AppPage>
   );
