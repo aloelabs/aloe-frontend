@@ -6,9 +6,14 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
+import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
+import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
+import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
+import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
+import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
@@ -299,7 +304,13 @@ export default function PortfolioPage() {
             </EmptyAssetBar>
           )}
         </div>
-        <div className='mt-8'>
+        <div className='flex justify-between gap-4 mt-5'>
+          <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
+          <PortfolioActionButton label={'Send Crypto'} Icon={<SendIcon />} onClick={() => {}} />
+          <PortfolioActionButton label={'Earn Interest'} Icon={<TrendingUpIcon />} onClick={() => {}} />
+          <PortfolioActionButton label={'Withdraw'} Icon={<ShareIcon />} onClick={() => {}} />
+        </div>
+        <div className='mt-10'>
           <PortfolioGrid
             activeAsset={activeAsset}
             balances={combinedBalances}
@@ -310,7 +321,7 @@ export default function PortfolioPage() {
           />
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
-          <div className='mt-8'>
+          <div className='mt-10'>
             <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
           </div>
         )}
