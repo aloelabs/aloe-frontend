@@ -2,7 +2,8 @@ import { useState } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
 
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
+import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgba } from '../../util/Colors';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
@@ -11,7 +12,7 @@ import PortfolioPieChartWidget, { PortfolioPieChartSlice } from './PortfolioPieC
 
 export type PortfolioMetricsProps = {
   balances: TokenBalance[];
-  activeAsset: TokenData | null;
+  activeAsset: Token | null;
   activeColor?: string;
 };
 
@@ -24,9 +25,14 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
 
   const [activeIndex, setActiveIndex] = useState<number>(-1);
 
-  const activeBalances = balances.filter(
-    (balance) => activeAsset && balance.token.referenceAddress === activeAsset.referenceAddress
-  );
+  const activeBalances =
+    activeAsset != null
+      ? balances.filter((balance) => {
+          const balanceTokenAddress = getUnderlyingTokenAddress(balance.token);
+          const activeAssetAddress = getUnderlyingTokenAddress(activeAsset);
+          return balanceTokenAddress === activeAssetAddress;
+        })
+      : [];
   const totalTokenBalance = activeBalances.reduce((acc, balance) => acc + balance.balance, 0);
   const activeSlices: PortfolioPieChartSlice[] = activeBalances.map((balance: TokenBalance, i: number) => {
     return {

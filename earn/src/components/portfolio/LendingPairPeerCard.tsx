@@ -5,7 +5,8 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { LendingPair } from '../../data/LendingPair';
-import { getReferenceAddress, TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
+import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 
 const Container = styled.div`
@@ -100,10 +101,10 @@ const SmallCardBodyItem = styled.div`
  * @param selectedLendingPair The selected lending pair.
  * @returns The utilization and total supply.
  */
-function getActiveUtilizationAndTotalSupply(activeAsset: TokenData, selectedLendingPair: LendingPair): number[] {
-  const activeAssetAddress = getReferenceAddress(activeAsset);
-  const token0Address = getReferenceAddress(selectedLendingPair.token0);
-  const token1Address = getReferenceAddress(selectedLendingPair.token1);
+function getActiveUtilizationAndTotalSupply(activeAsset: Token, selectedLendingPair: LendingPair): number[] {
+  const activeAssetAddress = getUnderlyingTokenAddress(activeAsset);
+  const token0Address = selectedLendingPair.token0.address;
+  const token1Address = selectedLendingPair.token1.address;
   if (activeAssetAddress === token0Address) {
     return [selectedLendingPair.kitty0Info.utilization, selectedLendingPair.kitty0Info.inventory];
   } else if (activeAssetAddress === token1Address) {
@@ -115,7 +116,7 @@ function getActiveUtilizationAndTotalSupply(activeAsset: TokenData, selectedLend
 
 export type LendingPairPeerCardProps = {
   lendingPairs: LendingPair[];
-  activeAsset: TokenData;
+  activeAsset: Token;
 };
 
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {

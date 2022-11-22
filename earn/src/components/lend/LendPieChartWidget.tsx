@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
+import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/LendPage';
 import { getProminentColor, rgba } from '../../util/Colors';
 import { formatTokenAmountCompact } from '../../util/Numbers';
@@ -103,7 +104,7 @@ type PieChartSlicePath = {
 
 type TokenColor = {
   color: string;
-  token: TokenData;
+  token: Token;
 };
 
 function getCoordinatesForPercent(percent: number) {
@@ -148,9 +149,11 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
 
   // Sort token balances by their corresponding token
   const sortedTokenBalances = useMemo(() => {
-    return tokenBalances.sort((a, b) =>
-      (b.token?.referenceAddress || b.token.address).localeCompare(a.token?.referenceAddress || a.token.address)
-    );
+    return tokenBalances.sort((a, b) => {
+      const aAddress = getUnderlyingTokenAddress(a.token);
+      const bAddress = getUnderlyingTokenAddress(b.token);
+      return bAddress.localeCompare(aAddress);
+    });
   }, [tokenBalances]);
 
   useEffect(() => {

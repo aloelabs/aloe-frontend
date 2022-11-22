@@ -10,7 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
+import { chain, useAccount, useEnsName, useNetwork, useProvider } from 'wagmi';
 
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
@@ -29,7 +29,8 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { Token } from '../data/Token';
+import { getTokenByTicker, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
@@ -64,12 +65,12 @@ const LendCards = styled.div`
 `;
 
 export type TokenQuote = {
-  token: TokenData;
+  token: Token;
   price: number;
 };
 
 export type TokenBalance = {
-  token: TokenData;
+  token: Token;
   balance: number;
   balanceUSD: number;
   isKitty: boolean;
@@ -77,21 +78,14 @@ export type TokenBalance = {
   pairName: string;
 };
 
-const filterOptions: MultiDropdownOption<TokenData>[] = getTokens().map((token) => {
-  return {
-    value: token,
-    label: token.ticker || '',
-    icon: token.iconPath,
-  };
-});
-
 export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<TokenData>[]>(filterOptions);
+  const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -105,42 +99,69 @@ export default function LendPage() {
   });
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: chain.goerli.id });
+  const network = useNetwork();
+  const activeChainId = network.chain?.id || chain.goerli.id;
+  const provider = useProvider({ chainId: activeChainId });
   const { address } = useAccount();
   const { data: ensName } = useEnsName({
     address: address,
     chainId: chain.mainnet.id,
   });
 
-  useEffectOnce(() => {
+  useEffect(() => {
+    const options: MultiDropdownOption<Token>[] = getTokens(activeChainId).map((token) => {
+      return {
+        value: token,
+        label: token.ticker || '',
+        icon: token.iconPath,
+      };
+    });
+    setFilterOptions(options);
+    setSelectedOptions(options);
+  }, [activeChainId]);
+
+  const uniqueSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    lendingPairs.forEach((pair) => {
+      symbols.add(pair.token0.ticker);
+      symbols.add(pair.token1.ticker);
+    });
+    return Array.from(symbols.values()).join(',');
+  }, [lendingPairs]);
+
+  useEffect(() => {
     let mounted = true;
     async function fetch() {
       // fetch token quotes
-      const quoteDataResponse: AxiosResponse<PriceRelayLatestResponse> = await axios.get(API_PRICE_RELAY_LATEST_URL);
+      const quoteDataResponse: AxiosResponse<PriceRelayLatestResponse> = await axios.get(
+        `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols}`
+      );
       const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
-      if (!prResponse || !prResponse.data) {
+      if (!prResponse) {
         return;
       }
-      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse.data).map((entry: [string, number]) => {
+      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: GetTokenData(entry[0]),
-          price: entry[1],
+          token: getTokenByTicker(activeChainId, key),
+          price: value.price,
         };
       });
       if (mounted && tokenQuotes.length === 0) {
         setTokenQuotes(tokenQuoteData);
       }
     }
-    fetch();
+    if (uniqueSymbols.length > 0 && tokenQuotes.length === 0) {
+      fetch();
+    }
     return () => {
       mounted = false;
     };
-  });
+  }, [activeChainId, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider);
+      const results = await getAvailableLendingPairs(activeChainId, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -150,7 +171,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address]);
+  }, [provider, address, activeChainId]);
 
   useEffect(() => {
     let mounted = true;
@@ -173,10 +194,10 @@ export default function LendPage() {
     }
     let combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+        (quote) => quote.token.address === (pair.token0?.address || pair.token0.address)
       );
       const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+        (quote) => quote.token.address === (pair.token1?.address || pair.token1.address)
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
@@ -276,7 +297,7 @@ export default function LendPage() {
               <MultiDropdownButton
                 options={filterOptions}
                 activeOptions={selectedOptions}
-                handleChange={(updatedOptions: MultiDropdownOption<TokenData>[]) => {
+                handleChange={(updatedOptions: MultiDropdownOption<Token>[]) => {
                   setSelectedOptions(updatedOptions);
                 }}
                 DropdownButton={(props: { onClick: () => void }) => {

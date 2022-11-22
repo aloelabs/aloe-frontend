@@ -72,17 +72,18 @@ const MAX_BUTTON_HEIGHT = {
   L: 19,
 };
 
-const InputBase = styled.input.attrs(
+export const InputBase = styled.input.attrs(
   (props: { inputSize: 'S' | 'M' | 'L'; fullWidth?: boolean; paddingRightOverride?: string; flipped?: boolean }) =>
     props
 )`
-  postion: relative;
+  position: relative;
   text-align: left;
   flex-grow: 1;
   background-color: ${INPUT_BG_COLOR};
   color: ${INPUT_TEXT_COLOR};
   box-sizing: border-box;
   padding: ${(props) => (props.flipped ? INPUT_PADDING_FLIPPED[props.inputSize] : INPUT_PADDING[props.inputSize])};
+  ${(props) => (props.paddingRightOverride ? `padding-right: ${props.paddingRightOverride};` : '')}
   font-family: 'Satoshi-Variable';
   font-size: ${(props) => INPUT_FONT_SIZE[props.inputSize]}px;
   line-height: ${(props) => INPUT_LINE_HEIGHT[props.inputSize]}px;
@@ -195,23 +196,26 @@ const TrailingUnit = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => prop
   line-height: ${(props) => INPUT_LINE_HEIGHT[props.size]}px;
 `;
 
-const MaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
-  margin-left: 0.75rem;
-  padding: 0px;
+export const BaseMaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
+  width: ${({ size }) => MAX_BUTTON_WIDTH[size]}px;
+  height: ${({ size }) => MAX_BUTTON_HEIGHT[size]}px;
   color: rgba(0, 193, 67, 1);
-  position: absolute;
-  top: calc(50% - 9.45px);
   font-family: 'Satoshi-Variable';
   font-size: 14px;
   font-weight: 400;
   line-height: 18.9px;
-  right: 24px;
-  width: ${({ size }) => MAX_BUTTON_WIDTH[size]}px;
-  height: ${({ size }) => MAX_BUTTON_HEIGHT[size]}px;
+  padding: 0px;
 
   &:disabled {
     color: rgba(75, 105, 128, 1);
   }
+`;
+
+const MaxButton = styled(BaseMaxButton)`
+  margin-left: 0.75rem;
+  position: absolute;
+  top: calc(50% - 9.45px);
+  right: 24px;
 `;
 
 export type InputProps = {

@@ -5,9 +5,10 @@ import { useContractRead } from 'wagmi';
 
 import KittyLensABI from '../../assets/abis/KittyLens.json';
 import { ALOE_II_KITTY_LENS_ADDRESS } from '../constants/Addresses';
-import { TokenData } from '../TokenData';
+import { Kitty } from '../Kitty';
+import { Token } from '../Token';
 
-export function useAmountToShares(token: TokenData, kitty: TokenData, withdrawAmount: string) {
+export function useAmountToShares(token: Token, kitty: Kitty, withdrawAmount: string) {
   const [state, setState] = useState<string | null>(null);
   const { data: amountOfShares } = useContractRead({
     address: ALOE_II_KITTY_LENS_ADDRESS,

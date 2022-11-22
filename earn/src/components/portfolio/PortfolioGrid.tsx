@@ -1,7 +1,8 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
+import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import AssetPriceChartWidget from './AssetPriceChartWidget';
@@ -121,7 +122,7 @@ const StatusDot = styled.div.attrs((props: { active: boolean }) => props)`
 
 export type PortfolioGridProps = {
   balances: TokenBalance[];
-  activeAsset: TokenData | null;
+  activeAsset: Token | null;
   tokenColors: Map<string, string>;
   tokenQuotes: TokenQuote[];
   tokenPriceData: TokenPriceData[];
@@ -130,12 +131,11 @@ export type PortfolioGridProps = {
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
   const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData, errorLoadingPrices } = props;
-  const currentTokenQuote = tokenQuotes.find(
-    (quote) => activeAsset && quote.token.address === (activeAsset.referenceAddress || activeAsset.address)
-  );
-  const currentTokenPriceData = tokenPriceData.find(
-    (data) => activeAsset && data.token.address === activeAsset.referenceAddress
-  );
+  const activeAssetAddress = activeAsset != null ? getUnderlyingTokenAddress(activeAsset) : null;
+  const currentTokenQuote =
+    activeAssetAddress != null ? tokenQuotes.find((quote) => quote.token.address === activeAssetAddress) : undefined;
+  const currentTokenPriceData =
+    activeAsset != null ? tokenPriceData.find((data) => data.token.address === activeAsset.address) : undefined;
   const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
     <Grid>
