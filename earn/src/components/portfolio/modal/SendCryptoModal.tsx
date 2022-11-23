@@ -2,7 +2,7 @@ import { ReactElement, useEffect, useState } from 'react';
 
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { FilledGreyButton, FilledGradientButton, FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
