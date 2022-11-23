@@ -2,23 +2,20 @@ import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
-import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useContractWrite, useNetwork } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { DEFAULT_CHAIN } from '../../../data/constants/Values';
-import useAllowance from '../../../data/hooks/UseAllowance';
-import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, toBig } from '../../../util/Numbers';
+import { TokenBalance } from '../../../pages/PortfolioPage';
+import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenDropdown from '../../common/TokenDropdown';
-import TokenAmountSelectInput from '../TokenAmountSelectInput';
 import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -59,48 +56,34 @@ function getConfirmButton(
   }
 }
 
-type DepositButtonProps = {
-  depositAmount: string;
-  depositBalance: string;
+type WithdrawButtonProps = {
+  withdrawAmount: string;
+  withdrawBalance: string;
   token: Token;
   kitty: Kitty;
-  accountAddress: Address;
   activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
 };
 
-function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen } = props;
+function WithdrawButton(props: WithdrawButtonProps) {
+  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, setIsOpen } = props;
   const [isPending, setIsPending] = useState(false);
-
-  const { data: userAllowanceToken } = useAllowance(token, accountAddress, kitty.address);
-
-  const writeAllowanceToken = useAllowanceWrite(activeChain, token, kitty.address);
 
   const contract = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'deposit',
+    functionName: 'withdraw',
+    chainId: activeChain.id,
   });
 
-  const numericDepositBalance = Number(depositBalance) || 0;
-  const numericDepositAmount = Number(depositAmount) || 0;
-
-  const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
-  const needsApproval =
-    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
+  const numericDepositBalance = Number(withdrawBalance) || 0;
+  const numericDepositAmount = Number(withdrawAmount) || 0;
 
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (numericDepositAmount > numericDepositBalance) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (loadingApproval) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (needsApproval && isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (needsApproval) {
-    confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
@@ -109,46 +92,28 @@ function DepositButton(props: DepositButtonProps) {
 
   function handleClickConfirm() {
     // TODO: Do not use setStates in async functions outside of useEffect
-    switch (confirmButtonState) {
-      case ConfirmButtonState.APPROVE_ASSET:
-        setIsPending(true);
-        writeAllowanceToken
-          .writeAsync?.()
-          .then((txnResult) => {
-            txnResult.wait(1).then(() => {
-              setIsPending(false);
-            });
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
-        break;
-      case ConfirmButtonState.READY:
-        setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            // If the user accepts the transaction, close the modal and wait for the transaction to be verified
-            setIsOpen(false);
-            setIsPending(false);
-            // TODO: Add loading state
-          })
-          .catch((error) => {
-            // If the user rejects the transaction, we want to reset the pending state
-            setIsPending(false);
-          });
-        break;
-      default:
-        break;
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      setIsPending(true);
+      contract
+        .writeAsync?.({
+          recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(withdrawAmount, token.decimals).toString()],
+          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+        })
+        .then((txnResult) => {
+          // If the user accepts the transaction, close the modal and wait for the transaction to be verified
+          setIsOpen(false);
+          setIsPending(false);
+          // TODO: Add loading state
+        })
+        .catch((error) => {
+          // If the user rejects the transaction, we want to reset the pending state
+          setIsPending(false);
+        });
     }
   }
 
   const isDepositAmountValid = numericDepositAmount > 0;
-  const shouldConfirmButtonBeDisabled =
-    !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
+  const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
     <FilledGreyButton
@@ -162,21 +127,21 @@ function DepositButton(props: DepositButtonProps) {
   );
 }
 
-export type EarnInterestModalProps = {
+export type WithdrawModalProps = {
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
+  combinedBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
 };
 
-export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen } = props;
+export default function WithdrawModal(props: WithdrawModalProps) {
+  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activeCollatealOptions, setActiveCollateralOptions] = useState<Token[]>([]);
   const [selectedCollateralOption, setSelectedCollateralOption] = useState<Token | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
-  const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
 
@@ -194,13 +159,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
 
-  // Get the user's balance of the selected token
-  const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
-    token: selectedOption.address,
-    watch: true,
-  });
-
   // Get the active kitty that corresponds to the selected token and is in
   // the selected token / collateral token lending pair
   let activeKitty: Kitty | null = useMemo(() => {
@@ -214,40 +172,30 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     return null;
   }, [selectedCollateralOption, selectedOption, lendingPairs]);
 
+  const activeKittyBalance = combinedBalances.find(
+    (balance) => activeKitty && balance.token.address === activeKitty.address
+  )?.balance;
+
   if (selectedCollateralOption == null || activeKitty == null) {
     return null;
   }
 
   return (
-    <PortfolioModal isOpen={isOpen} title='Earn Interest' setIsOpen={setIsOpen}>
+    <PortfolioModal isOpen={isOpen} title='Withdraw' setIsOpen={setIsOpen}>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Deposit
+              Asset
             </Text>
-            <BaseMaxButton
-              size='L'
-              onClick={() => {
-                if (depositBalance != null) {
-                  setInputValue(depositBalance?.formatted);
-                }
-              }}
-            >
-              MAX
-            </BaseMaxButton>
           </div>
-          <TokenAmountSelectInput
-            inputValue={inputValue}
-            onChange={(value) => {
-              const output = formatNumberInput(value);
-              if (output != null) {
-                setInputValue(output);
-              }
-            }}
+          <TokenDropdown
             options={options}
-            onSelect={setSelectedOption}
             selectedOption={selectedOption}
+            onSelect={(option) => {
+              setSelectedOption(option);
+            }}
+            size='L'
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
@@ -262,6 +210,13 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             compact={false}
           />
         </div>
+        <TokenAmountInput
+          value={inputValue}
+          onChange={(value) => setInputValue(value)}
+          tokenLabel={selectedOption.ticker}
+          max={activeKittyBalance?.toString()}
+          maxed={activeKittyBalance?.toString() === inputValue}
+        />
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
             Summary
@@ -273,12 +228,11 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           </Text>
         </div>
         <div className='w-full'>
-          <DepositButton
-            depositAmount={inputValue}
-            depositBalance={depositBalance?.formatted ?? '0.00'}
+          <WithdrawButton
+            withdrawAmount={inputValue}
+            withdrawBalance={activeKittyBalance?.toString() ?? '0.00'}
             token={selectedOption}
             kitty={activeKitty}
-            accountAddress={account.address ?? '0x'}
             activeChain={activeChain}
             setIsOpen={setIsOpen}
           />

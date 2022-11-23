@@ -1,11 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import DropdownArrowDown from 'shared/lib/assets/svg/DropdownArrowDown';
 import DropdownArrowUp from 'shared/lib/assets/svg/DropdownArrowUp';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import useClickOutside from '../../data/hooks/UseClickOutside';
 import { Token } from '../../data/Token';
 
 const UNKNOWN_TOKEN_ICON = '../../assets/svg/tokens/unknown_token.svg';
@@ -109,7 +108,18 @@ export default function TokenDropdown(props: TokenDropdownProps) {
   const { options, selectedOption, onSelect, size, backgroundColor, backgroundColorHover, compact } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  useClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  });
 
   return (
     <DropdownWrapper ref={dropdownRef} compact={compact}>
