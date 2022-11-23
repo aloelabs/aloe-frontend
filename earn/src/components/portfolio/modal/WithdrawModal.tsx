@@ -222,9 +222,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're depositing {inputValue || '0.00'} {selectedOption.ticker} to the {selectedOption.ticker}/
-            {selectedCollateralOption.ticker} lending market. Other users will be able to borrow your{' '}
-            {selectedOption.ticker} by posting {selectedCollateralOption.ticker} as collateral.
+            You're withdrawing {inputValue || '0.00'} {selectedOption.ticker} from the {selectedOption.ticker}/
+            {selectedCollateralOption.ticker} lending market.
           </Text>
         </div>
         <div className='w-full'>
@@ -237,7 +236,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             setIsOpen={setIsOpen}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By depositing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that
+            By withdrawing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that
             you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is your duty to
             educate yourself and be aware of the risks.
           </Text>
