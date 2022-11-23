@@ -2,7 +2,7 @@ import { ReactElement, useEffect, useState } from 'react';
 
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledGreyButton, FilledGradientButton, FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
@@ -118,14 +118,14 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
-    <FilledGreyButton
+    <FilledStylizedButton
       size='M'
       onClick={() => handleClickConfirm()}
       fillWidth={true}
       disabled={shouldConfirmButtonBeDisabled}
     >
       {confirmButton.text}
-    </FilledGreyButton>
+    </FilledStylizedButton>
   );
 }
 
@@ -169,6 +169,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
           <SquareInput
             size='L'
             value={addressInputValue}
+            inputClassName={addressInputValue !== '' ? 'active' : ''}
             onChange={(e) => setAddressInputValue(e.target.value)}
             fullWidth={true}
             paddingRightOverride='24px'

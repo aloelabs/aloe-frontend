@@ -1,7 +1,7 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
-import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useContractWrite, useNetwork } from 'wagmi';
 
@@ -116,14 +116,14 @@ function WithdrawButton(props: WithdrawButtonProps) {
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
-    <FilledGreyButton
+    <FilledStylizedButton
       size='M'
       onClick={() => handleClickConfirm()}
       fillWidth={true}
       disabled={shouldConfirmButtonBeDisabled}
     >
       {confirmButton.text}
-    </FilledGreyButton>
+    </FilledStylizedButton>
   );
 }
 

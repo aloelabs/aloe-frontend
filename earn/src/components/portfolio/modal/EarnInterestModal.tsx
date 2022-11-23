@@ -1,7 +1,7 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
-import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
@@ -151,14 +151,14 @@ function DepositButton(props: DepositButtonProps) {
     !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
 
   return (
-    <FilledGreyButton
+    <FilledStylizedButton
       size='M'
       onClick={() => handleClickConfirm()}
       fillWidth={true}
       disabled={shouldConfirmButtonBeDisabled}
     >
       {confirmButton.text}
-    </FilledGreyButton>
+    </FilledStylizedButton>
   );
 }
 
