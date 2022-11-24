@@ -13,6 +13,7 @@ import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg'
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
+import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
@@ -23,7 +24,8 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
-import { getReferenceAddress, GetTokenDataByTicker, TokenData } from '../data/TokenData';
+import { Token } from '../data/Token';
+import { getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -49,17 +51,17 @@ export type PriceEntry = {
 };
 
 export type TokenQuote = {
-  token: TokenData;
+  token: Token;
   price: number;
 };
 
 export type TokenPriceData = {
-  token: TokenData;
+  token: Token;
   priceEntries: PriceEntry[];
 };
 
 export type TokenBalance = {
-  token: TokenData;
+  token: Token;
   balance: number;
   balanceUSD: number;
   apy: number;
@@ -76,7 +78,8 @@ export default function PortfolioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
-  const [activeAsset, setActiveAsset] = useState<TokenData | null>(null);
+  const [activeAsset, setActiveAsset] = useState<Token | null>(null);
+  const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
 
   const network = useNetwork();
   const activeChainId = network.chain?.id || chain.goerli.id;
@@ -84,7 +87,7 @@ export default function PortfolioPage() {
   const { address, isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
-    const tokens = new Set<TokenData>();
+    const tokens = new Set<Token>();
     lendingPairs.forEach((pair) => {
       tokens.add(pair.token0);
       tokens.add(pair.token1);
@@ -123,13 +126,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
         return {
-          token: GetTokenDataByTicker(ticker),
+          token: getTokenByTicker(activeChainId, ticker),
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
         return {
-          token: GetTokenDataByTicker(ticker),
+          token: getTokenByTicker(activeChainId, ticker),
           priceEntries: data.prices,
         };
       });
@@ -143,7 +146,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [uniqueTokens]);
+  }, [activeChainId, uniqueTokens]);
 
   useEffect(() => {
     let mounted = true;
@@ -151,7 +154,7 @@ export default function PortfolioPage() {
       const tokenColorMap: Map<string, string> = new Map();
       const colorPromises = uniqueTokens.map((token) => getProminentColor(token.iconPath || ''));
       const colors = await Promise.all(colorPromises);
-      uniqueTokens.forEach((token: TokenData, index: number) => {
+      uniqueTokens.forEach((token: Token, index: number) => {
         tokenColorMap.set(token.address, colors[index]);
       });
       if (mounted) {
@@ -170,7 +173,7 @@ export default function PortfolioPage() {
       if (!provider) {
         return;
       }
-      const results = await getAvailableLendingPairs(provider);
+      const results = await getAvailableLendingPairs(activeChainId, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -180,7 +183,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [provider]);
+  }, [activeChainId, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -200,8 +203,10 @@ export default function PortfolioPage() {
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === getReferenceAddress(pair.token0));
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === getReferenceAddress(pair.token1));
+      const token0Address = pair.token0.address;
+      const token1Address = pair.token1.address;
+      const token0Quote = tokenQuotes.find((quote) => quote.token.address === token0Address);
+      const token1Quote = tokenQuotes.find((quote) => quote.token.address === token1Address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
@@ -262,10 +267,10 @@ export default function PortfolioPage() {
     if (activeAsset == null) {
       return [];
     }
-    const activeAddress = getReferenceAddress(activeAsset);
+    const activeAddress = activeAsset.address;
     return lendingPairs.filter((pair) => {
-      const token0Address = getReferenceAddress(pair.token0);
-      const token1Address = getReferenceAddress(pair.token1);
+      const token0Address = pair.token0.address;
+      const token1Address = pair.token1.address;
       return token0Address === activeAddress || token1Address === activeAddress;
     });
   }, [lendingPairs, activeAsset]);
@@ -291,7 +296,7 @@ export default function PortfolioPage() {
               balances={combinedBalances}
               tokenColors={tokenColors}
               ignoreBalances={errorLoadingPrices}
-              setActiveAsset={(updatedAsset: TokenData) => {
+              setActiveAsset={(updatedAsset: Token) => {
                 setActiveAsset(updatedAsset);
               }}
             />
@@ -307,7 +312,11 @@ export default function PortfolioPage() {
         <div className='flex justify-between gap-4 mt-5'>
           <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
           <PortfolioActionButton label={'Send Crypto'} Icon={<SendIcon />} onClick={() => {}} />
-          <PortfolioActionButton label={'Earn Interest'} Icon={<TrendingUpIcon />} onClick={() => {}} />
+          <PortfolioActionButton
+            label={'Earn Interest'}
+            Icon={<TrendingUpIcon />}
+            onClick={() => setIsEarnInterestModalOpen(true)}
+          />
           <PortfolioActionButton label={'Withdraw'} Icon={<ShareIcon />} onClick={() => {}} />
         </div>
         <div className='mt-10'>
@@ -326,6 +335,15 @@ export default function PortfolioPage() {
           </div>
         )}
       </Container>
+      {activeAsset != null && (
+        <EarnInterestModal
+          options={uniqueTokens}
+          defaultOption={activeAsset}
+          lendingPairs={lendingPairs}
+          isOpen={isEarnInterestModalOpen}
+          setIsOpen={setIsEarnInterestModalOpen}
+        />
+      )}
     </AppPage>
   );
 }

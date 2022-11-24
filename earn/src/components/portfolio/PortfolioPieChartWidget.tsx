@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -83,7 +83,7 @@ type PieChartSlice = {
 };
 
 export type PortfolioPieChartSlice = PieChartSlice & {
-  token: TokenData;
+  token: Token;
   pairName: string;
   isKitty: boolean;
 };
@@ -118,7 +118,7 @@ const ExpandingPath = styled.path`
 `;
 
 export type TokenPercentage = {
-  token: TokenData;
+  token: Token;
   percent: number;
   color: string;
   isKitty: boolean;
@@ -127,7 +127,7 @@ export type TokenPercentage = {
 
 export type PortfolioPieChartWidgetProps = {
   slices: PortfolioPieChartSlice[];
-  token: TokenData | null;
+  token: Token | null;
   activeIndex: number;
   setActiveIndex: (index: number) => void;
 };

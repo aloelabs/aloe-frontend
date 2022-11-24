@@ -4,9 +4,10 @@ import Big from 'big.js';
 import { useContractRead } from 'wagmi';
 
 import KittyABI from '../../assets/abis/Kitty.json';
-import { TokenData } from '../TokenData';
+import { Kitty } from '../Kitty';
+import { Token } from '../Token';
 
-export function useBalanceOfUnderlying(token: TokenData, kitty: TokenData, accountAddress: string) {
+export function useBalanceOfUnderlying(token: Token, kitty: Kitty, accountAddress: string) {
   const [state, setState] = useState<string | null>(null);
   const { data: balanceOfUnderlying } = useContractRead({
     address: kitty.address,

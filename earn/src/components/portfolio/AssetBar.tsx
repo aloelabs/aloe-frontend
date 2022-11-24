@@ -3,13 +3,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
-import { getReferenceAddress, TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { SearchBar } from './SearchBar';
 
 export type AssetBarItem = {
-  token: TokenData;
+  token: Token;
   percentage: number;
   color?: string;
 };
@@ -53,7 +53,7 @@ const AssetIcon = styled.img`
 `;
 
 export type AssetChunkProps = {
-  token: TokenData;
+  token: Token;
   percentage: number;
   active: boolean;
   selected: boolean;
@@ -91,7 +91,7 @@ export type AssetBarProps = {
   balances: TokenBalance[];
   tokenColors: Map<string, string>;
   ignoreBalances: boolean;
-  setActiveAsset: (asset: TokenData) => void;
+  setActiveAsset: (asset: Token) => void;
 };
 
 export function AssetBar(props: AssetBarProps) {
@@ -105,7 +105,7 @@ export function AssetBar(props: AssetBarProps) {
   const combinedTokenBalances = useMemo(() => {
     const combinedBalances: Map<string, TokenBalance> = new Map();
     balances.forEach((balance) => {
-      const tokenAddress = getReferenceAddress(balance.token);
+      const tokenAddress = balance.token.underlying.address;
       const existingBalance = combinedBalances.get(tokenAddress);
       if (combinedBalances.has(tokenAddress)) {
         existingBalance!.balanceUSD += balance.balanceUSD;

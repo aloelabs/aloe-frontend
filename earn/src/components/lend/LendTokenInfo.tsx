@@ -1,12 +1,12 @@
 import InfoFigure from 'shared/lib/components/common/InfoFigure';
 
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 import { roundPercentage, formatTokenAmount, formatUSDAuto } from '../../util/Numbers';
 
 const FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
 
 export type LendTokenInfoProps = {
-  token?: TokenData;
+  token?: Token;
   totalSupply: number;
   utilization: number;
   shouldGrow?: boolean;

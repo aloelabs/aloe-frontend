@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import UnknownTokenIcon from '../../assets/svg/tokens/unknown_token.svg';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 const DEFAULT_TOKEN_BACKGROUND_COLOR = 'rgba(255, 255, 255, 1)';
 const OMIT_TOKEN_BACKGROUND_COLOR = 'transparent';
@@ -33,7 +33,7 @@ const TokenIcon = styled.img.attrs((props: { backgroundColor: string; borderColo
 `;
 
 export type YieldTokenIconsProps = {
-  tokens: Array<TokenData | undefined>;
+  tokens: Array<Token | undefined>;
   iconBorderColor?: string;
   omitBackground?: boolean;
 };

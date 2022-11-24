@@ -4,7 +4,7 @@ import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import styled from 'styled-components';
 
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { AssetBarItem, AssetChunk } from './AssetBar';
@@ -48,15 +48,15 @@ export type SearchBarProps = {
   chunks: AssetBarItem[];
   defaultIndex: number;
   setActiveIndex: (index: number) => void;
-  setActiveAsset: (asset: TokenData) => void;
+  setActiveAsset: (asset: Token) => void;
   setSearchModeEnabled: (enabled: boolean) => void;
 };
 
 export function SearchBar(props: SearchBarProps) {
   const { balances, tokenColors, chunks, defaultIndex, setActiveIndex, setActiveAsset, setSearchModeEnabled } = props;
-  const [activeSearchAsset, setActiveSearchAsset] = useState<TokenData | null>(null);
+  const [activeSearchAsset, setActiveSearchAsset] = useState<Token | null>(null);
 
-  const searchInputOptions: DropdownOption<TokenData>[] = useMemo(() => {
+  const searchInputOptions: DropdownOption<Token>[] = useMemo(() => {
     // Note: Filtering out any tokens that have a balance of 0
     return balances
       .filter((balance) => balance.balance > 0)

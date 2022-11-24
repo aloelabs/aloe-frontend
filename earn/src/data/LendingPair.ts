@@ -1,6 +1,7 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Address } from 'wagmi';
 
 import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
@@ -8,7 +9,9 @@ import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
-import { GetTokenData, TokenData } from './TokenData';
+import { Kitty } from './Kitty';
+import { Token } from './Token';
+import { getToken } from './TokenData';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -23,10 +26,10 @@ export interface KittyInfo {
 }
 
 export type LendingPair = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
+  token0: Token;
+  token1: Token;
+  kitty0: Kitty;
+  kitty1: Kitty;
   kitty0Info: KittyInfo;
   kitty1Info: KittyInfo;
   uniswapFeeTier: FeeTier;
@@ -39,7 +42,10 @@ export type LendingPairBalances = {
   kitty1Balance: number;
 };
 
-export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider): Promise<LendingPair[]> {
+export async function getAvailableLendingPairs(
+  chainId: number,
+  provider: ethers.providers.BaseProvider
+): Promise<LendingPair[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
@@ -69,10 +75,26 @@ export async function getAvailableLendingPairs(provider: ethers.providers.BasePr
         uniswapPool.fee(),
       ]);
 
-      const token0 = GetTokenData(result0.asset);
-      const token1 = GetTokenData(result1.asset);
-      const kitty0 = GetTokenData(market.kitty0);
-      const kitty1 = GetTokenData(market.kitty1);
+      const token0 = getToken(chainId, result0.asset);
+      const token1 = getToken(chainId, result1.asset);
+      const kitty0 = new Kitty(
+        chainId,
+        market.kitty0 as Address,
+        18,
+        `${token0.ticker}+`,
+        `Aloe II ${token0.name}`,
+        token0.iconPath,
+        token0
+      );
+      const kitty1 = new Kitty(
+        chainId,
+        market.kitty1 as Address,
+        18,
+        `${token1.ticker}+`,
+        `Aloe II ${token1.name}`,
+        token1.iconPath,
+        token1
+      );
 
       const interestRate0 = new Big(result0.interestRate.toString());
       const interestRate1 = new Big(result1.interestRate.toString());
