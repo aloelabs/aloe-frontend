@@ -2,7 +2,6 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { Token } from '../../data/Token';
-import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import AssetPriceChartWidget from './AssetPriceChartWidget';
@@ -131,7 +130,7 @@ export type PortfolioGridProps = {
 
 export default function PortfolioGrid(props: PortfolioGridProps) {
   const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData, errorLoadingPrices } = props;
-  const activeAssetAddress = activeAsset != null ? getUnderlyingTokenAddress(activeAsset) : null;
+  const activeAssetAddress = activeAsset != null ? activeAsset.address : null;
   const currentTokenQuote =
     activeAssetAddress != null ? tokenQuotes.find((quote) => quote.token.address === activeAssetAddress) : undefined;
   const currentTokenPriceData =

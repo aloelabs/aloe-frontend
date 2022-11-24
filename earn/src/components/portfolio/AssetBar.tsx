@@ -4,7 +4,6 @@ import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
 import { Token } from '../../data/Token';
-import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { SearchBar } from './SearchBar';
@@ -106,7 +105,7 @@ export function AssetBar(props: AssetBarProps) {
   const combinedTokenBalances = useMemo(() => {
     const combinedBalances: Map<string, TokenBalance> = new Map();
     balances.forEach((balance) => {
-      const tokenAddress = getUnderlyingTokenAddress(balance.token);
+      const tokenAddress = balance.token.underlying.address;
       const existingBalance = combinedBalances.get(tokenAddress);
       if (combinedBalances.has(tokenAddress)) {
         existingBalance!.balanceUSD += balance.balanceUSD;

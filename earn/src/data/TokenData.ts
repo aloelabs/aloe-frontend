@@ -1,7 +1,6 @@
 import { Address, chain } from 'wagmi';
 
 import { UsdcLogo, WbtcLogo, WethLogo } from '../assets/svg/tokens';
-import { Kitty } from './Kitty';
 import { Token } from './Token';
 
 const USDC_GOERLI = new Token(
@@ -70,18 +69,6 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WBTC_GOERLI.address]: WBTC_GOERLI,
   },
 };
-
-export function getUnderlyingToken(token: Token): Token {
-  return isKitty(token) ? token.underlyingToken : token;
-}
-
-export function getUnderlyingTokenAddress(token: Token): Address {
-  return getUnderlyingToken(token).address;
-}
-
-export function isKitty(token: Token): token is Kitty {
-  return (token as Kitty).underlyingToken !== undefined;
-}
 
 export function getTokens(chainId: number): Token[] {
   return Array.from(Object.values(TOKEN_DATA[chainId]));

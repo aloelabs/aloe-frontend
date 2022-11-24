@@ -17,4 +17,8 @@ export class Kitty extends Token {
     super(chainId, address, decimals, ticker, name, iconPath);
     this.underlyingToken = underlyingToken;
   }
+
+  get underlying(): Token {
+    return this.underlyingToken;
+  }
 }
