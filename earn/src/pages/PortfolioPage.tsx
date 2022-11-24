@@ -14,6 +14,8 @@ import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
+import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
+import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
@@ -79,7 +81,9 @@ export default function PortfolioPage() {
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
+  const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   const network = useNetwork();
   const activeChainId = network.chain?.id || chain.goerli.id;
@@ -311,13 +315,23 @@ export default function PortfolioPage() {
         </div>
         <div className='flex justify-between gap-4 mt-5'>
           <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
-          <PortfolioActionButton label={'Send Crypto'} Icon={<SendIcon />} onClick={() => {}} />
+          <PortfolioActionButton
+            label={'Send Crypto'}
+            Icon={<SendIcon />}
+            onClick={() => setIsSendCryptoModalOpen(true)}
+          />
           <PortfolioActionButton
             label={'Earn Interest'}
             Icon={<TrendingUpIcon />}
             onClick={() => setIsEarnInterestModalOpen(true)}
           />
-          <PortfolioActionButton label={'Withdraw'} Icon={<ShareIcon />} onClick={() => {}} />
+          <PortfolioActionButton
+            label={'Withdraw'}
+            Icon={<ShareIcon />}
+            onClick={() => {
+              setIsWithdrawModalOpen(true);
+            }}
+          />
         </div>
         <div className='mt-10'>
           <PortfolioGrid
@@ -336,13 +350,29 @@ export default function PortfolioPage() {
         )}
       </Container>
       {activeAsset != null && (
-        <EarnInterestModal
-          options={uniqueTokens}
-          defaultOption={activeAsset}
-          lendingPairs={lendingPairs}
-          isOpen={isEarnInterestModalOpen}
-          setIsOpen={setIsEarnInterestModalOpen}
-        />
+        <>
+          <SendCryptoModal
+            options={uniqueTokens}
+            defaultOption={activeAsset}
+            isOpen={isSendCryptoModalOpen}
+            setIsOpen={() => setIsSendCryptoModalOpen(false)}
+          />
+          <EarnInterestModal
+            options={uniqueTokens}
+            defaultOption={activeAsset}
+            lendingPairs={lendingPairs}
+            isOpen={isEarnInterestModalOpen}
+            setIsOpen={setIsEarnInterestModalOpen}
+          />
+          <WithdrawModal
+            options={uniqueTokens}
+            defaultOption={activeAsset}
+            lendingPairs={lendingPairs}
+            combinedBalances={combinedBalances}
+            isOpen={isWithdrawModalOpen}
+            setIsOpen={setIsWithdrawModalOpen}
+          />
+        </>
       )}
     </AppPage>
   );
