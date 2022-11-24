@@ -74,15 +74,22 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
 
   useEffect(() => {
-    async function getEnsAddress() {
+    let mounted = true;
+    async function resolveEns() {
       const resolved = await provider.resolveName(sendAddress);
-      setResolvedAddress(resolved);
+      if (mounted) {
+        setResolvedAddress(resolved);
+      }
     }
+    // If the address could be valid, resolve it, otherwise set it to null
     if (sendAddress.endsWith('.eth') || sendAddress.length === 42) {
-      getEnsAddress();
+      resolveEns();
     } else {
       setResolvedAddress(null);
     }
+    return () => {
+      mounted = false;
+    };
   }, [sendAddress, provider]);
 
   const contract = useContractWrite({
