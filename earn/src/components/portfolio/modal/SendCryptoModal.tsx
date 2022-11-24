@@ -5,7 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useBalance, useContractWrite, useNetwork, useProvider } from 'wagmi';
 
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -66,10 +66,24 @@ type SendCryptoConfirmButtonProps = {
 };
 
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
-  const { sendAddress, isValidAddress, sendAmount, sendBalance, token, activeChain, setIsOpen } = props;
+  const { sendAddress, sendAmount, sendBalance, token, activeChain, setIsOpen } = props;
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const provider = useProvider();
 
   const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
+
+  useEffect(() => {
+    async function getEnsAddress() {
+      const resolved = await provider.resolveName(sendAddress);
+      setResolvedAddress(resolved);
+    }
+    if (sendAddress.endsWith('.eth') || sendAddress.length === 42) {
+      getEnsAddress();
+    } else {
+      setResolvedAddress(null);
+    }
+  }, [sendAddress, provider]);
 
   const contract = useContractWrite({
     address: token.address,
@@ -84,7 +98,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (!isValidAddress) {
+  if (resolvedAddress == null) {
     confirmButtonState = ConfirmButtonState.INVALID_ADDRESS;
   } else if (numericSendAmount > numericSendBalance) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
@@ -100,7 +114,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
       setIsPending(true);
       contract
         .writeAsync?.({
-          recklesslySetUnpreparedArgs: [sendAddress, sendAmountBig.toFixed()],
+          recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
           recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
         })
         .then((txnResult) => {
@@ -156,7 +170,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     watch: true,
   });
 
-  const isValidAddress = ethers.utils.isAddress(addressInputValue);
+  const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
     <PortfolioModal isOpen={isOpen} title='Send Crypto' setIsOpen={setIsOpen} maxWidth='550px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
