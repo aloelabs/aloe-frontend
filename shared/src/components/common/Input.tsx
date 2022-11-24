@@ -231,6 +231,7 @@ export type InputProps = {
   onBlur?: () => void;
   id?: string;
   ref?: React.RefObject<HTMLInputElement>;
+  paddingRightOverride?: string;
 };
 
 export function RoundedInput(props: InputProps) {
@@ -247,6 +248,7 @@ export function RoundedInput(props: InputProps) {
     onBlur,
     id,
     ref,
+    paddingRightOverride,
   } = props;
   return (
     <RoundedInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
@@ -266,6 +268,7 @@ export function RoundedInput(props: InputProps) {
         onBlur={onBlur}
         id={id}
         ref={ref}
+        paddingRightOverride={paddingRightOverride}
       />
     </RoundedInputWrapper>
   );
@@ -285,6 +288,7 @@ export function SquareInput(props: InputProps) {
     onBlur,
     id,
     ref,
+    paddingRightOverride,
   } = props;
   return (
     <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
@@ -304,6 +308,7 @@ export function SquareInput(props: InputProps) {
         onBlur={onBlur}
         id={id}
         ref={ref}
+        paddingRightOverride={paddingRightOverride}
       />
     </SquareInputWrapper>
   );
