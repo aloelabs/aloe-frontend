@@ -13,7 +13,8 @@ import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses
 import { DEFAULT_CHAIN } from '../../../../data/constants/Values';
 import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
-import { TokenData } from '../../../../data/TokenData';
+import { Kitty } from '../../../../data/Kitty';
+import { Token } from '../../../../data/Token';
 import { toBig } from '../../../../util/Numbers';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
@@ -28,8 +29,8 @@ enum ConfirmButtonState {
 
 function getConfirmButton(
   state: ConfirmButtonState,
-  token: TokenData,
-  kitty: TokenData
+  token: Token,
+  kitty: Kitty
 ): { text: string; Icon: ReactElement; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
@@ -56,8 +57,8 @@ function getConfirmButton(
 }
 
 export type DepositModalContentProps = {
-  token: TokenData;
-  kitty: TokenData;
+  token: Token;
+  kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;
 };
 

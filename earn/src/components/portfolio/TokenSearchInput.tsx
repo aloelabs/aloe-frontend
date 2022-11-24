@@ -5,7 +5,7 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import styled from 'styled-components';
 
 import { ReactComponent as SearchIcon } from '../../assets/svg/search.svg';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 const SearchInputContainer = styled.div`
   position: relative;
@@ -37,14 +37,14 @@ const SearchInputDropdownOption = styled.div`
 `;
 
 export type TokenSearchInputProps = {
-  options: DropdownOption<TokenData>[];
-  onOptionSelected: (option: DropdownOption<TokenData>) => void;
+  options: DropdownOption<Token>[];
+  onOptionSelected: (option: DropdownOption<Token>) => void;
 };
 
 export default function TokenSearchInput(props: TokenSearchInputProps) {
   const { options, onOptionSelected } = props;
   const [searchText, setSearchText] = useState('');
-  const [matchingOptions, setMatchingOptions] = useState<DropdownOption<TokenData>[]>([]);
+  const [matchingOptions, setMatchingOptions] = useState<DropdownOption<Token>[]>([]);
 
   useEffect(() => {
     if (searchText.length > 0) {
