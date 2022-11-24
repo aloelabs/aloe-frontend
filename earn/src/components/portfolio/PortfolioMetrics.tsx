@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 
 import { Token } from '../../data/Token';
-import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgba } from '../../util/Colors';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
@@ -28,8 +27,8 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
   const activeBalances =
     activeAsset != null
       ? balances.filter((balance) => {
-          const balanceTokenAddress = getUnderlyingTokenAddress(balance.token);
-          const activeAssetAddress = getUnderlyingTokenAddress(activeAsset);
+          const balanceTokenAddress = balance.token.underlying.address;
+          const activeAssetAddress = activeAsset.address;
           return balanceTokenAddress === activeAssetAddress;
         })
       : [];

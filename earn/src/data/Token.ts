@@ -16,4 +16,8 @@ export class Token {
     this.name = name;
     this.iconPath = iconPath;
   }
+
+  get underlying(): Token {
+    return this;
+  }
 }

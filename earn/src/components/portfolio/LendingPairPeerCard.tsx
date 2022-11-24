@@ -6,7 +6,6 @@ import styled from 'styled-components';
 
 import { LendingPair } from '../../data/LendingPair';
 import { Token } from '../../data/Token';
-import { getUnderlyingTokenAddress } from '../../data/TokenData';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 
 const Container = styled.div`
@@ -102,7 +101,7 @@ const SmallCardBodyItem = styled.div`
  * @returns The utilization and total supply.
  */
 function getActiveUtilizationAndTotalSupply(activeAsset: Token, selectedLendingPair: LendingPair): number[] {
-  const activeAssetAddress = getUnderlyingTokenAddress(activeAsset);
+  const activeAssetAddress = activeAsset.address;
   const token0Address = selectedLendingPair.token0.address;
   const token1Address = selectedLendingPair.token1.address;
   if (activeAssetAddress === token0Address) {

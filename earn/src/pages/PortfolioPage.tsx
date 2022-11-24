@@ -27,7 +27,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
-import { getTokenByTicker, getUnderlyingTokenAddress } from '../data/TokenData';
+import { getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -207,8 +207,8 @@ export default function PortfolioPage() {
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Address = getUnderlyingTokenAddress(pair.token0);
-      const token1Address = getUnderlyingTokenAddress(pair.token1);
+      const token0Address = pair.token0.address;
+      const token1Address = pair.token1.address;
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === token0Address);
       const token1Quote = tokenQuotes.find((quote) => quote.token.address === token1Address);
       const token0Price = token0Quote?.price || 0;
@@ -271,10 +271,10 @@ export default function PortfolioPage() {
     if (activeAsset == null) {
       return [];
     }
-    const activeAddress = getUnderlyingTokenAddress(activeAsset);
+    const activeAddress = activeAsset.address;
     return lendingPairs.filter((pair) => {
-      const token0Address = getUnderlyingTokenAddress(pair.token0);
-      const token1Address = getUnderlyingTokenAddress(pair.token1);
+      const token0Address = pair.token0.address;
+      const token1Address = pair.token1.address;
       return token0Address === activeAddress || token1Address === activeAddress;
     });
   }, [lendingPairs, activeAsset]);
