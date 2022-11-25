@@ -6,7 +6,7 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
-import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
+import { ReactComponent as BookIcon } from '../assets/svg/book.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
@@ -14,6 +14,7 @@ import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
+import HistoryModal from '../components/portfolio/modal/HistoryModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
@@ -28,7 +29,14 @@ import {
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
 import { getTokenByTicker } from '../data/TokenData';
+import {
+  ERC20TransactionHistory,
+  EtherscanERC20TransactionHistoryResponse,
+  EtherscanTransactionHistoryResponse,
+  TransactionHistory,
+} from '../data/TransactionHistory';
 import { getProminentColor } from '../util/Colors';
+import { getErc20TransactionsByAddress, getTransactionsByAddress } from '../util/Etherscan';
 import { formatUSD } from '../util/Numbers';
 
 const Container = styled.div`
@@ -77,17 +85,19 @@ export default function PortfolioPage() {
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
+  const [transactionHistory, setTransactionHistory] = useState<ERC20TransactionHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   const network = useNetwork();
-  const activeChainId = network.chain?.id || chain.goerli.id;
-  const provider = useProvider({ chainId: activeChainId });
+  const activeChain = network.chain || chain.goerli;
+  const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
@@ -98,6 +108,26 @@ export default function PortfolioPage() {
     });
     return Array.from(tokens);
   }, [lendingPairs]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchHistory() {
+      if (address) {
+        const subdomain =
+          activeChain.name.toLowerCase() === 'mainnet' ? 'api' : `api-${activeChain.name.toLowerCase()}`;
+        const transactions: AxiosResponse<EtherscanERC20TransactionHistoryResponse> =
+          await getErc20TransactionsByAddress(0, address, subdomain, 10, 1);
+        if (mounted) {
+          setTransactionHistory(transactions.data.result);
+          console.log('transactionHistory', transactions.data.result);
+        }
+      }
+    }
+    fetchHistory();
+    return () => {
+      mounted = false;
+    };
+  }, [activeChain.name, address]);
 
   /**
    * Get the latest and historical prices for all tokens
@@ -130,13 +160,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           priceEntries: data.prices,
         };
       });
@@ -150,7 +180,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, uniqueTokens]);
+  }, [activeChain, uniqueTokens]);
 
   useEffect(() => {
     let mounted = true;
@@ -177,7 +207,7 @@ export default function PortfolioPage() {
       if (!provider) {
         return;
       }
-      const results = await getAvailableLendingPairs(activeChainId, provider);
+      const results = await getAvailableLendingPairs(activeChain.id, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -187,7 +217,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, provider]);
+  }, [activeChain, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -314,7 +344,7 @@ export default function PortfolioPage() {
           )}
         </div>
         <div className='flex justify-between gap-4 mt-5'>
-          <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
+          <PortfolioActionButton label={'History'} Icon={<BookIcon />} onClick={() => setIsHistoryModalOpen(true)} />
           <PortfolioActionButton
             label={'Send Crypto'}
             Icon={<SendIcon />}
@@ -351,6 +381,12 @@ export default function PortfolioPage() {
       </Container>
       {activeAsset != null && (
         <>
+          <HistoryModal
+            isOpen={isHistoryModalOpen}
+            lendingPairs={lendingPairs}
+            transactionHistory={transactionHistory}
+            setIsOpen={setIsHistoryModalOpen}
+          />
           <SendCryptoModal
             options={uniqueTokens}
             defaultOption={activeAsset}

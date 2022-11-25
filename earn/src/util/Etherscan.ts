@@ -29,3 +29,45 @@ export function makeEtherscanRequest(
 
   return axios.get(query);
 }
+
+export function getTransactionsByAddress(
+  fromBlock: number,
+  address: string,
+  subdomain = 'api',
+  pageLength = 50,
+  page?: number,
+  toBlock?: number
+) {
+  let query = `https://${subdomain}.etherscan.io/api?module=account&action=txlist`.concat(
+    `&address=${address}`,
+    `&startblock=${fromBlock.toFixed(0)}`,
+    toBlock ? `&endblock=${toBlock.toFixed(0)}` : '&endblock=99999999',
+    `&page=${page || 1}`,
+    `&offset=${pageLength}`,
+    `&sort=desc`,
+    `&apikey=${process.env.REACT_APP_ETHERSCAN_API_KEY}`
+  );
+
+  return axios.get(query);
+}
+
+export function getErc20TransactionsByAddress(
+  fromBlock: number,
+  address: string,
+  subdomain = 'api',
+  pageLength = 50,
+  page?: number,
+  toBlock?: number
+) {
+  let query = `https://${subdomain}.etherscan.io/api?module=account&action=tokentx`.concat(
+    `&address=${address}`,
+    `&startblock=${fromBlock.toFixed(0)}`,
+    toBlock ? `&endblock=${toBlock.toFixed(0)}` : '&endblock=99999999',
+    `&page=${page || 1}`,
+    `&offset=${pageLength}`,
+    `&sort=desc`,
+    `&apikey=${process.env.REACT_APP_ETHERSCAN_API_KEY}`
+  );
+
+  return axios.get(query);
+}
