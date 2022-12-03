@@ -27,6 +27,7 @@ const StyledFooter = styled.footer`
   z-index: 40;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    display: none;
     padding-left: 16px;
     padding-right: 16px;
   }

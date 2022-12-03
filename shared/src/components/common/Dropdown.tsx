@@ -101,7 +101,7 @@ const CheckContainer = styled.div`
 export type DropdownOption<T> = {
   label: string;
   value: T;
-  icon?: string;
+  icon?: string | React.ReactNode;
 };
 
 export type DropdownProps<T> = {
@@ -133,7 +133,11 @@ export function Dropdown<T>(props: DropdownProps<T>) {
         <div className='flex items-center gap-3'>
           {selectedOption.icon && (
             <div className='w-4 h-4 bg-white rounded-full'>
-              <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+              {typeof selectedOption.icon === 'string' ? (
+                <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+              ) : (
+                selectedOption.icon
+              )}
             </div>
           )}
           <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
@@ -155,7 +159,8 @@ export function Dropdown<T>(props: DropdownProps<T>) {
               <div className='flex items-center gap-3'>
                 {option.icon && (
                   <div className='w-4 h-4 bg-white rounded-full'>
-                    <img className='w-4 h-4' src={option.icon} alt='' />
+                    {React.isValidElement(option.icon) && option.icon}
+                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
                   </div>
                 )}
                 <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
@@ -200,7 +205,10 @@ export function DropdownWithPlaceholder<T>(props: DropdownWithPlaceholderProps<T
             <>
               {selectedOption.icon && (
                 <div className='w-4 h-4 bg-white rounded-full'>
-                  <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+                  {React.isValidElement(selectedOption.icon) && selectedOption.icon}
+                  {typeof selectedOption.icon === 'string' && (
+                    <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+                  )}
                 </div>
               )}
               <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
@@ -226,7 +234,8 @@ export function DropdownWithPlaceholder<T>(props: DropdownWithPlaceholderProps<T
               <div className='flex items-center gap-3'>
                 {option.icon && (
                   <div className='w-4 h-4 bg-white rounded-full'>
-                    <img className='w-4 h-4' src={option.icon} alt='' />
+                    {React.isValidElement(option.icon) && option.icon}
+                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
                   </div>
                 )}
                 <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
