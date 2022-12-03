@@ -28,8 +28,6 @@ const StyledFooter = styled.footer`
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
     display: none;
-    padding-left: 16px;
-    padding-right: 16px;
   }
 `;
 
