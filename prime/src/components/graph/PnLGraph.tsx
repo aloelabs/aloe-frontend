@@ -275,7 +275,6 @@ export default function PnLGraph(props: PnLGraphProps) {
   useDebouncedEffect(
     () => {
       const updatedData = calculateGraphData();
-      console.log('updatedData', updatedData);
       setData(updatedData);
       setLocalInTermsOfToken0(inTermsOfToken0);
     },
