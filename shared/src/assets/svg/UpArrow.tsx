@@ -6,9 +6,9 @@ export default function UpArrow(props: SVGProps) {
       <path
         d='M3.33331 8.07054L7.99998 3.40387L12.6666 8.07054M8 12.7372V3.40387'
         stroke='#00C143'
-        stroke-width='1.25'
-        stroke-linecap='round'
-        stroke-linejoin='round'
+        strokeWidth='1.25'
+        strokeLinecap='round'
+        strokeLinejoin='round'
       />
     </svg>
   );
