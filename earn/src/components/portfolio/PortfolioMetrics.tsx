@@ -52,6 +52,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
     apySum = activeBalances[activeIndex].apy;
     apy = apySum;
   }
+  const isHoveringOverSlice = activeIndex >= 0;
   return (
     <>
       <PieChartContainer>
@@ -62,7 +63,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
           token={activeAsset}
         />
       </PieChartContainer>
-      <BalanceContainer>
+      <BalanceContainer className={isHoveringOverSlice ? 'active' : ''}>
         <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
           Balance
         </Text>
@@ -75,7 +76,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
           </Display>
         </div>
       </BalanceContainer>
-      <APYContainer>
+      <APYContainer className={isHoveringOverSlice ? 'active' : ''}>
         <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
           APY
         </Text>
