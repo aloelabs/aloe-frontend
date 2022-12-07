@@ -47,6 +47,14 @@ const EmptyAssetBar = styled.div`
   border-radius: 8px;
 `;
 
+const PortfolioActionButtonsContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  overflow-x: auto;
+`;
+
 export type PriceEntry = {
   price: number;
   timestamp: number;
@@ -313,7 +321,7 @@ export default function PortfolioPage() {
             </EmptyAssetBar>
           )}
         </div>
-        <div className='flex justify-between gap-4 mt-5'>
+        <PortfolioActionButtonsContainer>
           <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
           <PortfolioActionButton
             label={'Send Crypto'}
@@ -332,7 +340,7 @@ export default function PortfolioPage() {
               setIsWithdrawModalOpen(true);
             }}
           />
-        </div>
+        </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioGrid
             activeAsset={activeAsset}

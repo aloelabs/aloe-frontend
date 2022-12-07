@@ -1,12 +1,11 @@
 import React, { Fragment, useRef } from 'react';
 
 import { Dialog, Transition } from '@headlessui/react';
-import { Display } from 'shared/lib/components/common/Typography';
+import { Display } from './Typography';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
-import CloseIcon from '../../assets/svg/close_modal.svg';
-import LoadingIcon from '../../assets/svg/loading.svg';
+import CloseIcon from '../../assets/svg/CloseModal';
+import LoadingIcon from '../../assets/svg/Loading';
 import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
@@ -23,8 +22,14 @@ const StyledDialog = styled.div`
 const ModalWrapper = styled.div.attrs(
   (props: { borderGradient: string; backgroundColor?: string; fullWidth?: boolean; fullHeight?: boolean }) => props
 )`
-  ${tw`inline-block bg-grey-50 align-bottom rounded-lg text-left
-   overflow-hidden transition-all sm:my-4 sm:align-middle`}
+  display: inline-block;
+  background-color: #11222e;
+  border-radius: 0.5rem;
+  text-align: left;
+  overflow: hidden;
+  transition: all 0.25s ease-in-out;
+  vertical-align: middle;
+
   transform: translateY(0);
   min-width: 368px; //TODO: make sure this doesn't break any modals
   max-width: 100%;
@@ -44,6 +49,7 @@ const ModalWrapper = styled.div.attrs(
     border-radius: 8px;
     padding: 1.25px;
     background: ${(props) => props.borderGradient};
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -52,12 +58,14 @@ const ModalWrapper = styled.div.attrs(
 `;
 
 const LoaderWrapper = styled.div`
-  ${tw`flex justify-center items-center`}
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 24px;
   height: 24px;
 `;
 
-const Loader = styled.img`
+const Loader = styled(LoadingIcon)`
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -221,8 +229,9 @@ export function CloseableModal(props: CloseableModalProps) {
             props.setOpen(false);
           }}
           ref={cancelButtonRef}
+          title='Close'
         >
-          <img src={CloseIcon} alt='close' className='' />
+          <CloseIcon />
         </button>
       </div>
       {props.children}
@@ -244,7 +253,7 @@ export function LoadingModal(props: LoadingModalProps) {
           {props.title}
         </Display>
         <LoaderWrapper>
-          <Loader src={LoadingIcon} alt='loader' />
+          <Loader />
         </LoaderWrapper>
       </div>
       {props.children}
