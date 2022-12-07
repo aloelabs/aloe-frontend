@@ -2,7 +2,7 @@ import CoinbaseWalletIcon from '../../assets/svg/CoinbaseWalletLogo';
 import MetaMaskIcon from '../../assets/svg/MetaMaskLogo';
 import WalletConnectIcon from '../../assets/svg/WalletConnectLogo';
 
-export function mapConnectorNameToIcon(name: string): JSX.Element {
+export function getIconForWagmiConnectorNamed(name: string): JSX.Element {
   switch (name) {
     case 'WalletConnect':
       return <WalletConnectIcon width={40} height={40} />;

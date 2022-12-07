@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import { Chain, useConnect } from 'wagmi';
 
 import { CloseableModal } from '../common/Modal';
-import { mapConnectorNameToIcon } from './ConnectorIconMap';
+import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import { GetAccountResult, Provider } from '@wagmi/core';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { DEFAULT_CHAIN } from '../../data/constants/Values';
@@ -79,7 +79,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
             </Text>
             {connectors.map((connector) => (
               <div key={connector.id} className=' py-2 w-full flex flex-row gap-4 items-center justify-between'>
-                {mapConnectorNameToIcon(connector.name)}
+                {getIconForWagmiConnectorNamed(connector.name)}
                 <FilledStylizedButton
                   name='Disconnect'
                   size='M'

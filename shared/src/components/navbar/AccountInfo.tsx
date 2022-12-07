@@ -12,7 +12,7 @@ import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
 import { formatAddress } from '../../util/FormatAddress';
 import { CloseableModal } from '../common/Modal';
-import { mapConnectorNameToIcon } from './ConnectorIconMap';
+import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
@@ -175,7 +175,7 @@ export default function AccountInfo(props: AccountInfoProps) {
             </Text>
             {connectors.map((connector) => (
               <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
-                {mapConnectorNameToIcon(connector.name)}
+                {getIconForWagmiConnectorNamed(connector.name)}
                 <FilledStylizedButton
                   name='Disconnect'
                   size='M'

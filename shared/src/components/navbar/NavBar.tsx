@@ -182,8 +182,11 @@ export function NavBar(props: NavBarProps) {
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
           <ChainSelector chain={activeChain} />
-          {(!activeChain || !account.address) && <ConnectWalletButton account={account} activeChain={activeChain} />}
-          {activeChain && account.address && <AccountInfo account={account} chain={activeChain} />}
+          {!activeChain || !account.address ? (
+            <ConnectWalletButton account={account} activeChain={activeChain} />
+          ) : (
+            <AccountInfo account={account} chain={activeChain} />
+          )}
         </div>
       </DesktopTopNav>
       <MobileBottomNav>
