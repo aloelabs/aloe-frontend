@@ -12,7 +12,8 @@ import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
 import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
-import { TokenData } from '../../../../data/TokenData';
+import { Kitty } from '../../../../data/Kitty';
+import { Token } from '../../../../data/Token';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
@@ -25,8 +26,8 @@ enum ConfirmButtonState {
 
 function getConfirmButton(
   state: ConfirmButtonState,
-  token: TokenData,
-  kitty: TokenData
+  token: Token,
+  kitty: Kitty
 ): { text: string; Icon: ReactElement; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_KITTY:
@@ -47,8 +48,8 @@ function getConfirmButton(
 }
 
 export type WithdrawModalContentProps = {
-  token: TokenData;
-  kitty: TokenData;
+  token: Token;
+  kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;
 };
 

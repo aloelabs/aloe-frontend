@@ -150,12 +150,7 @@ function ModalBase(props: ModalBaseProps) {
             props.setOpen(false);
           }}
         >
-          <div
-            className={classNames(
-              'flex items-end justify-center min-h-screen text-center sm:block sm:p-0',
-              props.fullHeight ? '' : 'pt-4 px-4 pb-20'
-            )}
-          >
+          <div className={classNames('flex items-center justify-center min-h-screen text-center sm:block sm:p-0')}>
             <Transition.Child
               as={Fragment}
               enter='ease-out duration-300'

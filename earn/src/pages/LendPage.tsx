@@ -10,7 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useEnsName, useProvider } from 'wagmi';
+import { chain, useAccount, useEnsName, useNetwork, useProvider } from 'wagmi';
 
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
@@ -20,7 +20,7 @@ import LendPairCard from '../components/lend/LendPairCard';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { API_PRICE_RELAY_URL } from '../data/constants/Values';
+import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
   getAvailableLendingPairs,
@@ -28,8 +28,9 @@ import {
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { PriceRelayResponse } from '../data/PriceRelayResponse';
-import { GetTokenData, getTokens, TokenData } from '../data/TokenData';
+import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
+import { Token } from '../data/Token';
+import { getTokenByTicker, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
 
 const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
@@ -54,7 +55,7 @@ const LowerLendHeader = styled.div`
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column-reverse;
     align-items: flex-start;
-  }
+  } ;
 `;
 
 const LendCards = styled.div`
@@ -64,12 +65,12 @@ const LendCards = styled.div`
 `;
 
 export type TokenQuote = {
-  token: TokenData;
+  token: Token;
   price: number;
 };
 
 export type TokenBalance = {
-  token: TokenData;
+  token: Token;
   balance: number;
   balanceUSD: number;
   isKitty: boolean;
@@ -77,21 +78,14 @@ export type TokenBalance = {
   pairName: string;
 };
 
-const filterOptions: MultiDropdownOption[] = getTokens().map((token) => {
-  return {
-    value: token.address,
-    label: token.ticker,
-    icon: token.iconPath,
-  } as MultiDropdownOption;
-});
-
 export default function LendPage() {
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
   const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption[]>(filterOptions);
+  const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -105,42 +99,69 @@ export default function LendPage() {
   });
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: chain.goerli.id });
+  const network = useNetwork();
+  const activeChainId = network.chain?.id || chain.goerli.id;
+  const provider = useProvider({ chainId: activeChainId });
   const { address } = useAccount();
   const { data: ensName } = useEnsName({
     address: address,
     chainId: chain.mainnet.id,
   });
 
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch() {
-      // fetch token quotes
-      const quoteDataResponse: AxiosResponse = await axios.get(API_PRICE_RELAY_URL);
-      const prResponse: PriceRelayResponse = quoteDataResponse.data;
-      if (!prResponse || !prResponse.data) {
-        return;
-      }
-      const tokenQuoteData: TokenQuote[] = Object.values(prResponse.data).map((pr: any) => {
-        return {
-          token: GetTokenData(pr?.platform?.token_address || ''),
-          price: pr?.quote['USD']?.price || 0,
-        };
-      });
-      if (mounted) {
-        setTokenQuotes(tokenQuoteData);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  });
+  useEffect(() => {
+    const options: MultiDropdownOption<Token>[] = getTokens(activeChainId).map((token) => {
+      return {
+        value: token,
+        label: token.ticker || '',
+        icon: token.iconPath,
+      };
+    });
+    setFilterOptions(options);
+    setSelectedOptions(options);
+  }, [activeChainId]);
+
+  const uniqueSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    lendingPairs.forEach((pair) => {
+      symbols.add(pair.token0.ticker);
+      symbols.add(pair.token1.ticker);
+    });
+    return Array.from(symbols.values()).join(',');
+  }, [lendingPairs]);
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(provider);
+      // fetch token quotes
+      const quoteDataResponse: AxiosResponse<PriceRelayLatestResponse> = await axios.get(
+        `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols}`
+      );
+      const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
+      if (!prResponse) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
+        return {
+          token: getTokenByTicker(activeChainId, key),
+          price: value.price,
+        };
+      });
+      if (mounted && tokenQuotes.length === 0) {
+        setTokenQuotes(tokenQuoteData);
+      }
+    }
+    if (uniqueSymbols.length > 0 && tokenQuotes.length === 0) {
+      fetch();
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [activeChainId, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const results = await getAvailableLendingPairs(activeChainId, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -150,7 +171,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address]);
+  }, [provider, address, activeChainId]);
 
   useEffect(() => {
     let mounted = true;
@@ -173,10 +194,10 @@ export default function LendPage() {
     }
     let combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.referenceAddress || pair.token0.address)
+        (quote) => quote.token.address === (pair.token0?.address || pair.token0.address)
       );
       const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.referenceAddress || pair.token1.address)
+        (quote) => quote.token.address === (pair.token1?.address || pair.token1.address)
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
@@ -276,7 +297,7 @@ export default function LendPage() {
               <MultiDropdownButton
                 options={filterOptions}
                 activeOptions={selectedOptions}
-                handleChange={(updatedOptions: MultiDropdownOption[]) => {
+                handleChange={(updatedOptions: MultiDropdownOption<Token>[]) => {
                   setSelectedOptions(updatedOptions);
                 }}
                 DropdownButton={(props: { onClick: () => void }) => {
@@ -297,7 +318,7 @@ export default function LendPage() {
                     <SquareInputWithIcon
                       placeholder='Search'
                       value={props.searchTerm}
-                      onChange={(e) => {
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         props.onSearch(e.target.value);
                       }}
                       Icon={<SearchIcon />}

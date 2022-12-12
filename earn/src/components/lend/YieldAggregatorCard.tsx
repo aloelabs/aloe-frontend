@@ -13,7 +13,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 import { roundPercentage } from '../../util/Numbers';
 import LendTokenInfo from './LendTokenInfo';
 import YieldTokenIcons from './YieldTokenIcons';
@@ -39,7 +39,7 @@ const TokenAPYWrapper = styled.div`
 `;
 
 export type YieldAggregatorCardProps = {
-  tokens: TokenData[];
+  tokens: Token[];
   totalAPY: number;
   totalSupply: number;
   totalUtilization: number;

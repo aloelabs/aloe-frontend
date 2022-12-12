@@ -98,21 +98,21 @@ const CheckContainer = styled.div`
   }
 `;
 
-export type DropdownOption = {
+export type DropdownOption<T> = {
   label: string;
-  value: string;
-  icon?: string;
+  value: T;
+  icon?: string | React.ReactNode;
 };
 
-export type DropdownProps = {
-  options: DropdownOption[];
-  selectedOption: DropdownOption;
-  onSelect: (option: DropdownOption) => void;
+export type DropdownProps<T> = {
+  options: DropdownOption<T>[];
+  selectedOption: DropdownOption<T>;
+  onSelect: (option: DropdownOption<T>) => void;
   placeAbove?: boolean;
   small?: boolean;
 };
 
-export function Dropdown(props: DropdownProps) {
+export function Dropdown<T>(props: DropdownProps<T>) {
   const { options, selectedOption, onSelect, placeAbove, small } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -122,7 +122,7 @@ export function Dropdown(props: DropdownProps) {
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (option: DropdownOption) => {
+  const selectItem = (option: DropdownOption<T>) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -133,7 +133,8 @@ export function Dropdown(props: DropdownProps) {
         <div className='flex items-center gap-3'>
           {selectedOption.icon && (
             <div className='w-4 h-4 bg-white rounded-full'>
-              <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+              {React.isValidElement(selectedOption.icon) && selectedOption.icon}
+              {typeof selectedOption.icon === 'string' && <img className='w-4 h-4' src={selectedOption.icon} alt='' />}
             </div>
           )}
           <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
@@ -146,16 +147,17 @@ export function Dropdown(props: DropdownProps) {
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
-          {options.map((option) => (
+          {options.map((option, index) => (
             <DropdownOptionContainer
               className={option.value === selectedOption.value ? 'active' : ''}
-              key={option.value}
+              key={index}
               onClick={() => selectItem(option)}
             >
               <div className='flex items-center gap-3'>
                 {option.icon && (
                   <div className='w-4 h-4 bg-white rounded-full'>
-                    <img className='w-4 h-4' src={option.icon} alt='' />
+                    {React.isValidElement(option.icon) && option.icon}
+                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
                   </div>
                 )}
                 <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
@@ -168,16 +170,16 @@ export function Dropdown(props: DropdownProps) {
   );
 }
 
-export type DropdownWithPlaceholderProps = {
-  options: DropdownOption[];
-  selectedOption?: DropdownOption;
-  onSelect: (option: DropdownOption) => void;
+export type DropdownWithPlaceholderProps<T> = {
+  options: DropdownOption<T>[];
+  selectedOption?: DropdownOption<T>;
+  onSelect: (option: DropdownOption<T>) => void;
   placeholder: string;
   placeAbove?: boolean;
   small?: boolean;
 };
 
-export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
+export function DropdownWithPlaceholder<T>(props: DropdownWithPlaceholderProps<T>) {
   const { options, selectedOption, onSelect, placeholder, placeAbove, small } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -187,7 +189,7 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (option: DropdownOption) => {
+  const selectItem = (option: DropdownOption<T>) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -200,7 +202,10 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
             <>
               {selectedOption.icon && (
                 <div className='w-4 h-4 bg-white rounded-full'>
-                  <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+                  {React.isValidElement(selectedOption.icon) && selectedOption.icon}
+                  {typeof selectedOption.icon === 'string' && (
+                    <img className='w-4 h-4' src={selectedOption.icon} alt='' />
+                  )}
                 </div>
               )}
               <Text size={small ? 'XS' : 'M'}>{selectedOption.label}</Text>
@@ -217,16 +222,17 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
       </DropdownHeader>
       {isOpen && (
         <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
-          {options.map((option) => (
+          {options.map((option, index) => (
             <DropdownOptionContainer
               className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
-              key={option.value}
+              key={index}
               onClick={() => selectItem(option)}
             >
               <div className='flex items-center gap-3'>
                 {option.icon && (
                   <div className='w-4 h-4 bg-white rounded-full'>
-                    <img className='w-4 h-4' src={option.icon} alt='' />
+                    {React.isValidElement(option.icon) && option.icon}
+                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
                   </div>
                 )}
                 <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
@@ -239,18 +245,18 @@ export function DropdownWithPlaceholder(props: DropdownWithPlaceholderProps) {
   );
 }
 
-export type DropdownWithPlaceholderValueOption = DropdownOption & {
+export type DropdownWithPlaceholderValueOption<T> = DropdownOption<T> & {
   isDefault: boolean;
 };
 
-export type DropdownWithPlaceholderValueProps = {
-  options: DropdownWithPlaceholderValueOption[];
-  selectedOption: DropdownWithPlaceholderValueOption;
-  onSelect: (option: DropdownWithPlaceholderValueOption) => void;
+export type DropdownWithPlaceholderValueProps<T> = {
+  options: DropdownWithPlaceholderValueOption<T>[];
+  selectedOption: DropdownWithPlaceholderValueOption<T>;
+  onSelect: (option: DropdownWithPlaceholderValueOption<T>) => void;
   placeholder: string;
 };
 
-export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValueProps) {
+export function DropdownWithPlaceholderValue<T>(props: DropdownWithPlaceholderValueProps<T>) {
   const { options, selectedOption, onSelect, placeholder } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -260,7 +266,7 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
     setIsOpen(!isOpen);
   };
 
-  const selectItem = (option: DropdownWithPlaceholderValueOption, index: number) => {
+  const selectItem = (option: DropdownWithPlaceholderValueOption<T>) => {
     onSelect(option);
     setIsOpen(false);
   };
@@ -273,11 +279,11 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
       </DropdownHeader>
       {isOpen && (
         <DropdownList>
-          {options.map((option, index) => (
+          {options.map((option: DropdownWithPlaceholderValueOption<T>, index: number) => (
             <DropdownOptionContainer
               className={option.value === selectedOption.value ? 'active' : ''}
               key={index}
-              onClick={() => selectItem(option, index)}
+              onClick={() => selectItem(option)}
             >
               <Text size='M'>{option.label}</Text>
             </DropdownOptionContainer>
@@ -288,16 +294,16 @@ export function DropdownWithPlaceholderValue(props: DropdownWithPlaceholderValue
   );
 }
 
-export type MultiDropdownOption = {
+export type MultiDropdownOption<T> = {
   label: string;
-  value: string;
+  value: T;
   icon?: string;
 };
 
-type MultiDropdownBaseProps = {
-  options: MultiDropdownOption[];
-  activeOptions: MultiDropdownOption[];
-  handleChange: (options: MultiDropdownOption[]) => void;
+type MultiDropdownBaseProps<T> = {
+  options: MultiDropdownOption<T>[];
+  activeOptions: MultiDropdownOption<T>[];
+  handleChange: (options: MultiDropdownOption<T>[]) => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   /*Use this to flip the side the dropdown list expand towards*/
@@ -309,7 +315,7 @@ type MultiDropdownBaseProps = {
   }>;
 };
 
-function MultiDropdownBase(props: MultiDropdownBaseProps) {
+function MultiDropdownBase<T>(props: MultiDropdownBaseProps<T>) {
   const { options, activeOptions, handleChange, isOpen, setIsOpen, flipDirection, DropdownButton, SearchInput } = props;
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -321,7 +327,7 @@ function MultiDropdownBase(props: MultiDropdownBaseProps) {
     isOpen
   );
 
-  const selectItem = (option: MultiDropdownOption, index: number) => {
+  const selectItem = (option: MultiDropdownOption<T>, index: number) => {
     let updatedOptions;
     if (activeOptions.some((currentOption) => currentOption.value === option.value)) {
       updatedOptions = activeOptions.filter((currentOption) => currentOption.value !== option.value);
@@ -368,10 +374,10 @@ function MultiDropdownBase(props: MultiDropdownBaseProps) {
   );
 }
 
-export type MultiDropdownWithPlaceholderProps = {
-  options: MultiDropdownOption[];
-  activeOptions: MultiDropdownOption[];
-  handleChange: (options: MultiDropdownOption[]) => void;
+export type MultiDropdownWithPlaceholderProps<T> = {
+  options: MultiDropdownOption<T>[];
+  activeOptions: MultiDropdownOption<T>[];
+  handleChange: (options: MultiDropdownOption<T>[]) => void;
   placeholder: string;
   selectedText: string;
   flipDirection?: boolean;
@@ -381,12 +387,11 @@ export type MultiDropdownWithPlaceholderProps = {
   }>;
 };
 
-export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholderProps) {
+export function MultiDropdownWithPlaceholder<T>(props: MultiDropdownWithPlaceholderProps<T>) {
   const { options, activeOptions, handleChange, placeholder, selectedText, flipDirection, SearchInput } = props;
   const [isOpen, setIsOpen] = useState(false);
   let dropdownLabel =
     activeOptions.length === options.length ? placeholder : `${selectedText} (${activeOptions.length})`;
-  console.log(options, activeOptions);
   return MultiDropdownBase({
     options,
     activeOptions,
@@ -404,10 +409,10 @@ export function MultiDropdownWithPlaceholder(props: MultiDropdownWithPlaceholder
   });
 }
 
-export type MultiDropdownButtonProps = {
-  options: MultiDropdownOption[];
-  activeOptions: MultiDropdownOption[];
-  handleChange: (options: MultiDropdownOption[]) => void;
+export type MultiDropdownButtonProps<T> = {
+  options: MultiDropdownOption<T>[];
+  activeOptions: MultiDropdownOption<T>[];
+  handleChange: (options: MultiDropdownOption<T>[]) => void;
   flipDirection?: boolean;
   DropdownButton: React.FC<{
     onClick: () => void;
@@ -418,7 +423,7 @@ export type MultiDropdownButtonProps = {
   }>;
 };
 
-export function MultiDropdownButton(props: MultiDropdownButtonProps) {
+export function MultiDropdownButton<T>(props: MultiDropdownButtonProps<T>) {
   const { options, activeOptions, handleChange, flipDirection, DropdownButton, SearchInput } = props;
   const [isOpen, setIsOpen] = useState(false);
   return MultiDropdownBase({

@@ -7,7 +7,8 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { TokenData } from '../../../data/TokenData';
+import { Kitty } from '../../../data/Kitty';
+import { Token } from '../../../data/Token';
 import { CloseableModal } from '../../common/Modal';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
@@ -57,8 +58,8 @@ enum EditPositionModalState {
 }
 
 export type EditPositionModalProps = {
-  token: TokenData;
-  kitty: TokenData;
+  token: Token;
+  kitty: Kitty;
   open: boolean;
   setOpen: (open: boolean) => void;
 };

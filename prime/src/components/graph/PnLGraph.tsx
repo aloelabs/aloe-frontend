@@ -267,7 +267,7 @@ export default function PnLGraph(props: PnLGraphProps) {
         x: P,
         y: calculatePnL(marginAccount, uniswapPositions, P, initialValue),
       });
-      P *= 1.001;
+      P *= 1.005;
     }
     return updatedData;
   }
@@ -366,6 +366,7 @@ export default function PnLGraph(props: PnLGraphProps) {
               <ReferenceArea x1={liquidationUpper} x2={data[data.length - 1].x} fill='rgba(114, 167, 246, 0.5)' />
               <RechartsTooltip
                 isAnimationActive={false}
+                wrapperStyle={{ outline: 'none' }}
                 content={(props: any, active = false) => (
                   <PnLGraphTooltip
                     token0={marginAccount.token0}

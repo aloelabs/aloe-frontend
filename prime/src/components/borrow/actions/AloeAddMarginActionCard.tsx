@@ -20,7 +20,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1, kitty0, kitty1 } = marginAccount;
 
-  const dropdownOptions: DropdownOption[] = [
+  const dropdownOptions: DropdownOption<TokenType>[] = [
     {
       label: token0?.ticker || '',
       value: TokenType.ASSET0,
@@ -84,9 +84,9 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
         <Dropdown
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
-          onSelect={(option: DropdownOption) => {
+          onSelect={(option: DropdownOption<TokenType>) => {
             if (option.value !== selectedTokenOption.value) {
-              callbackWithFullResult(option.value as TokenType, '');
+              callbackWithFullResult(option.value, '');
             }
           }}
         />
