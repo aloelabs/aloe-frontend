@@ -3,7 +3,8 @@ import { ReactElement, useState } from 'react';
 import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Address, chain, Chain, erc20ABI, useContractRead, useContractWrite, useNetwork } from 'wagmi';
+import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { Address, Chain, erc20ABI, useContractRead, useContractWrite, useNetwork } from 'wagmi';
 
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
@@ -156,7 +157,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     onSuccessReceipt,
   } = props;
   const network = useNetwork();
-  const activeChain = network.chain || chain.goerli;
+  const activeChain = network.chain || DEFAULT_CHAIN;
 
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);
