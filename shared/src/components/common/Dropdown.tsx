@@ -15,7 +15,7 @@ const DROPDOWN_OPTION_BG_COLOR_ACTIVE = 'rgba(255, 255, 255, 0.1)';
 const CHECKBOX_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
 const CHECKBOX_BG_COLOR_ACTIVE = 'rgba(82, 182, 154, 1)';
 
-const DropdownWrapper = styled.div`
+export const DropdownWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: start;
@@ -25,7 +25,7 @@ const DropdownWrapper = styled.div`
   overflow: visible;
 `;
 
-const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props)`
+export const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props)`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -37,7 +37,7 @@ const DropdownHeader = styled.button.attrs((props: { small?: boolean }) => props
   white-space: nowrap;
 `;
 
-const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?: boolean }) => props)`
+export const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?: boolean }) => props)`
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -60,11 +60,7 @@ const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?:
   }
 `;
 
-const MultiDropdownList = styled(DropdownList)`
-  box-sizing: content-box;
-`;
-
-const DropdownOptionContainer = styled.button`
+export const DropdownOptionContainer = styled.button`
   width: 100%;
   text-align: start;
   padding: 6px 12px;
@@ -76,6 +72,10 @@ const DropdownOptionContainer = styled.button`
   &.active {
     background-color: ${DROPDOWN_OPTION_BG_COLOR_ACTIVE};
   }
+`;
+
+const MultiDropdownList = styled(DropdownList)`
+  box-sizing: content-box;
 `;
 
 const MultiDropdownOptionContainer = styled(DropdownOptionContainer)`
