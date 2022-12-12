@@ -8,7 +8,7 @@ import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useContract, useContractRead, useProvider } from 'wagmi';
+import { chain, useContract, useContractRead, useNetwork, useProvider } from 'wagmi';
 
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -165,6 +165,8 @@ async function fetchUniswapPositions(
 
 export default function BorrowActionsPage() {
   const navigate = useNavigate();
+  const network = useNetwork();
+  const activeChainId = network.chain?.id || chain.goerli.id;
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
 
@@ -182,7 +184,7 @@ export default function BorrowActionsPage() {
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: chain.goerli.id });
+  const provider = useProvider({ chainId: activeChainId });
   const marginAccountContract = useContract({
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
@@ -197,6 +199,7 @@ export default function BorrowActionsPage() {
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
+    chainId: activeChainId,
   });
   const uniswapV3PoolContract = useContract({
     address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
