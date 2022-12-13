@@ -70,8 +70,8 @@ const CardBody = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  margin-top: 24px;
+  gap: 30px;
+  margin-top: 30px;
 `;
 
 const LargeCardBodyItem = styled.div`
