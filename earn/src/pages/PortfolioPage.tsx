@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import ConnectWalletButton from 'shared/lib/components/navbar/ConnectWalletButton';
 import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
@@ -301,24 +302,36 @@ export default function PortfolioPage() {
           </Display>
         </div>
         <div className='h-16'>
-          {!isDoneLoading && <AssetBarPlaceholder />}
-          {isDoneLoading && (totalBalanceUSD > 0 || errorLoadingPrices) && (
-            <AssetBar
-              balances={combinedBalances}
-              tokenColors={tokenColors}
-              ignoreBalances={errorLoadingPrices}
-              setActiveAsset={(updatedAsset: Token) => {
-                setActiveAsset(updatedAsset);
-              }}
-            />
-          )}
-          {isDoneLoading && totalBalanceUSD === 0 && !errorLoadingPrices && (
-            <EmptyAssetBar>
-              <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                No assets found
-              </Text>
-            </EmptyAssetBar>
-          )}
+          {(() => {
+            if (!isDoneLoading) return <AssetBarPlaceholder />;
+            else if (!isConnected)
+              return (
+                <EmptyAssetBar>
+                  <div className='w-full px-2'>
+                    <ConnectWalletButton activeChain={network.chain} fillWidth={true} />
+                  </div>
+                </EmptyAssetBar>
+              );
+            else if (totalBalanceUSD > 0 || errorLoadingPrices)
+              return (
+                <AssetBar
+                  balances={combinedBalances}
+                  tokenColors={tokenColors}
+                  ignoreBalances={errorLoadingPrices}
+                  setActiveAsset={(updatedAsset: Token) => {
+                    setActiveAsset(updatedAsset);
+                  }}
+                />
+              );
+            else
+              return (
+                <EmptyAssetBar>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    No assets found
+                  </Text>
+                </EmptyAssetBar>
+              );
+          })()}
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
