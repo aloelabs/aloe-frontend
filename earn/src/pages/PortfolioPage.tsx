@@ -42,7 +42,7 @@ const EmptyAssetBar = styled.div`
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 64px;
+  height: 56px;
   background-color: transparent;
   border: 1px solid rgba(26, 41, 52, 1);
   border-radius: 8px;
@@ -307,7 +307,7 @@ export default function PortfolioPage() {
             else if (!isConnected)
               return (
                 <EmptyAssetBar>
-                  <div className='w-full px-2'>
+                  <div className='w-full px-1'>
                     <ConnectWalletButton activeChain={network.chain} fillWidth={true} />
                   </div>
                 </EmptyAssetBar>
