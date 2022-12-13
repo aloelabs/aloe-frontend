@@ -108,9 +108,10 @@ export function AssetBar(props: AssetBarProps) {
       const tokenAddress = balance.token.underlying.address;
       const existingBalance = combinedBalances.get(tokenAddress);
       if (combinedBalances.has(tokenAddress)) {
+        existingBalance!.balance += balance.balance;
         existingBalance!.balanceUSD += balance.balanceUSD;
       } else {
-        combinedBalances.set(tokenAddress, balance);
+        combinedBalances.set(tokenAddress, { ...balance });
       }
     });
     return Array.from(combinedBalances.values());
