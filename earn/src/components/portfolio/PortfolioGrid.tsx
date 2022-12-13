@@ -14,15 +14,13 @@ const STATUS_RED_LIGHT = 'rgba(255, 77, 79, 0.75)';
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 0.75fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 6fr 5fr 7fr;
+  grid-template-rows: 1fr 1fr;
   grid-template-areas:
-    'pie balance price'
-    'pie balance price'
-    'pie apy price'
-    'pie apy uptime';
-  grid-gap: 24px;
-  height: 260px;
+    'pie balance priceAndUptime'
+    'pie apy priceAndUptime';
+  grid-gap: 30px;
+  height: 240px;
 `;
 
 const BaseGridItem = styled.div`
@@ -32,6 +30,14 @@ const BaseGridItem = styled.div`
   align-items: center;
   background-color: rgb(13, 23, 30);
   border-radius: 8px;
+`;
+
+const PriceAndUptimeContainer = styled.div`
+  grid-area: priceAndUptime;
+
+  display: grid;
+  grid-template-rows: 160px 50px;
+  grid-gap: 30px;
 `;
 
 export const PieChartContainer = styled(BaseGridItem)`
@@ -69,11 +75,10 @@ export const APYContainer = styled(BaseGridItem)`
 `;
 
 const PriceContainer = styled(BaseGridItem)`
-  grid-area: price;
+  overflow: hidden;
 `;
 
 const UptimeContainer = styled(BaseGridItem)`
-  grid-area: uptime;
   flex-direction: row;
   justify-content: space-between;
   padding: 0 16px;
@@ -139,28 +144,30 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   return (
     <Grid>
       <PortfolioMetrics balances={balances} activeAsset={activeAsset} activeColor={activeColor} />
-      <PriceContainer>
-        <AssetPriceChartWidget
-          token={activeAsset}
-          color={activeColor !== undefined ? rgb(activeColor) : 'transparent'}
-          currentPrice={currentTokenQuote?.price || 0}
-          priceEntries={currentTokenPriceData?.priceEntries || []}
-          error={errorLoadingPrices}
-        />
-      </PriceContainer>
-      <UptimeContainer>
-        <Text size='M' color='rgba(130, 160, 182, 1)'>
-          Protocol Uptime
-        </Text>
-        <div className='flex items-center gap-2'>
-          <Display size='S' className='inline-block mr-0.5'>
-            100%
-          </Display>
-          <StatusDotContainer>
-            <StatusDot active={true} />
-          </StatusDotContainer>
-        </div>
-      </UptimeContainer>
+      <PriceAndUptimeContainer>
+        <PriceContainer>
+          <AssetPriceChartWidget
+            token={activeAsset}
+            color={activeColor !== undefined ? rgb(activeColor) : 'transparent'}
+            currentPrice={currentTokenQuote?.price || 0}
+            priceEntries={currentTokenPriceData?.priceEntries || []}
+            error={errorLoadingPrices}
+          />
+        </PriceContainer>
+        <UptimeContainer>
+          <Text size='S' color='rgba(130, 160, 182, 1)'>
+            Protocol Uptime
+          </Text>
+          <div className='flex items-center gap-2'>
+            <Display size='S' className='inline-block mr-0.5'>
+              100%
+            </Display>
+            <StatusDotContainer>
+              <StatusDot active={true} />
+            </StatusDotContainer>
+          </div>
+        </UptimeContainer>
+      </PriceAndUptimeContainer>
     </Grid>
   );
 }

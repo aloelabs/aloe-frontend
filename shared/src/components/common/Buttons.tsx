@@ -50,7 +50,7 @@ export const BaseButton = styled.button.attrs(
   justify-content: center;
   align-items: center;
   gap: 0.75rem;
-  width: max-content;
+  width: ${(props) => (props.fillWidth ? '100%' : 'max-content')};
   /* font-family: 'Satoshi-Variable'; */
   font-weight: 700;
   border-radius: 8px;
@@ -88,9 +88,6 @@ export const BaseButton = styled.button.attrs(
       return `padding: ${EMPTY_PADDING[props.size]}px; width: ${ICON_SIZES[props.size]}px; height: ${
         ICON_SIZES[props.size]
       }px; box-sizing: content-box;`;
-    }
-    if (props.fillWidth) {
-      return `width: 100%;`;
     }
   }};
 
@@ -405,7 +402,6 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
 
 const ButtonWithIconWrapper = styled.div.attrs((props: { svgColorType?: 'fill' | 'stroke' }) => props)`
   position: relative;
-  width: max-content;
 
   button:not(:disabled) ~ div {
     path {
