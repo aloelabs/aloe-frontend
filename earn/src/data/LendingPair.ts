@@ -25,16 +25,6 @@ export interface KittyInfo {
   utilization: number;
 }
 
-// export type LendingPair = {
-//   token0: Token;
-//   token1: Token;
-//   kitty0: Kitty;
-//   kitty1: Kitty;
-//   kitty0Info: KittyInfo;
-//   kitty1Info: KittyInfo;
-//   uniswapFeeTier: FeeTier;
-// };
-
 export class LendingPair {
   constructor(
     public token0: Token,
