@@ -2,7 +2,7 @@ import { ReactElement, useEffect, useState } from 'react';
 
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
-import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useAccount, useBalance, useNetwork } from 'wagmi';
 
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -13,7 +13,6 @@ import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { TokenQuote } from '../../../pages/PortfolioPage';
 import { formatNumberInput } from '../../../util/Numbers';
-import TokenDropdown from '../../common/TokenDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 import PortfolioModal from './PortfolioModal';
 
@@ -26,6 +25,11 @@ enum ConfirmButtonState {
   PENDING,
   LOADING,
   READY,
+}
+
+enum InputType {
+  BORROW,
+  COLLATERAL,
 }
 
 function getConfirmButton(
@@ -135,9 +139,26 @@ function calculateCollateralAmount(
     tokenQuotes.find((quote) => quote.token.address === collateral.underlying.address)?.price ?? 0;
   if (collateralTokenPrice === 0) return '0';
   const ratio = borrowingTokenPrice / collateralTokenPrice;
-  // Calculate the number that is the ratio * borrowAmount is 80% of
+  // Calculate the callateral amount from the borrow amount
   const collateralAmount = (parseFloat(borrowAmount) * ratio) / 0.8;
   return isNaN(collateralAmount) ? '' : collateralAmount.toString();
+}
+
+function calculateBorrowAmount(
+  collateralToken: Token,
+  collateralAmount: string,
+  borrowing: Token,
+  tokenQuotes: TokenQuote[]
+): string {
+  const collateralTokenPrice =
+    tokenQuotes.find((quote) => quote.token.address === collateralToken.underlying.address)?.price ?? 0;
+  const borrowingTokenPrice =
+    tokenQuotes.find((quote) => quote.token.address === borrowing.underlying.address)?.price ?? 0;
+  if (collateralTokenPrice === 0) return '0';
+  const ratio = collateralTokenPrice / borrowingTokenPrice;
+  // Calculate the borrow amount from the collateral amount
+  const borrowAmount = parseFloat(collateralAmount) * ratio * 0.8;
+  return isNaN(borrowAmount) ? '' : borrowAmount.toString();
 }
 
 export type BorrowCryptoModalProps = {
@@ -166,6 +187,8 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
   const [selectedCollateralOption, setSelectedCollateralOption] = useState<Token>(collateralOptions[0]);
   const [borrowAmountInputValue, setBorrowAmountInputValue] = useState<string>('');
   const [collateralAmountInputValue, setCollateralAmountInputValue] = useState<string>('');
+  // Keep track of which input was last changed
+  const [lastChangedInput, setLastChangedInput] = useState<InputType | null>(null);
   const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
@@ -190,15 +213,46 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
   }, [lendingPairs, selectedOption]);
 
   useEffect(() => {
+    // If the last changed input was the borrow amount, update the collateral amount
+    if (lastChangedInput === InputType.BORROW) {
+      const collateralAmount = calculateCollateralAmount(
+        selectedOption,
+        borrowAmountInputValue,
+        selectedCollateralOption,
+        tokenQuotes
+      );
+      setCollateralAmountInputValue(collateralAmount);
+    }
     // Calculate the amount of collateral needed to borrow the selected amount of the selected token
-    const collateralAmount = calculateCollateralAmount(
-      selectedOption,
-      borrowAmountInputValue,
-      selectedCollateralOption,
-      tokenQuotes
-    );
-    setCollateralAmountInputValue(collateralAmount);
-  }, [borrowAmountInputValue, selectedCollateralOption, selectedOption, tokenQuotes]);
+    // const collateralAmount = calculateCollateralAmount(
+    //   selectedOption,
+    //   borrowAmountInputValue,
+    //   selectedCollateralOption,
+    //   tokenQuotes
+    // );
+    // setCollateralAmountInputValue(collateralAmount);
+  }, [borrowAmountInputValue, lastChangedInput, selectedCollateralOption, selectedOption, tokenQuotes]);
+
+  useEffect(() => {
+    // If the last changed input was the collateral amount, update the borrow amount
+    if (lastChangedInput === InputType.COLLATERAL) {
+      const borrowAmount = calculateBorrowAmount(
+        selectedCollateralOption,
+        collateralAmountInputValue,
+        selectedOption,
+        tokenQuotes
+      );
+      setBorrowAmountInputValue(borrowAmount);
+    }
+    // Calculate the borrow amount needed to get the selected amount of collateral
+    // const borrowAmount = calculateBorrowAmount(
+    //   selectedCollateralOption,
+    //   collateralAmountInputValue,
+    //   selectedOption,
+    //   tokenQuotes
+    // );
+    // setBorrowAmountInputValue(borrowAmount);
+  }, [collateralAmountInputValue, lastChangedInput, selectedCollateralOption, selectedOption, tokenQuotes]);
 
   // Get the user's balance of the selected token
   const { data: borrowBalance } = useBalance({
@@ -219,12 +273,33 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
+              Collateral
+            </Text>
+          </div>
+          <TokenAmountSelectInput
+            inputValue={collateralAmountInputValue}
+            onChange={(value) => {
+              const output = formatNumberInput(value);
+              if (output != null) {
+                setLastChangedInput(InputType.COLLATERAL);
+                setCollateralAmountInputValue(output);
+              }
+            }}
+            options={collateralOptions}
+            selectedOption={selectedCollateralOption}
+            onSelect={setSelectedCollateralOption}
+          />
+        </div>
+        <div className='flex flex-col gap-1 w-full'>
+          <div className='flex flex-row justify-between mb-1'>
+            <Text size='M' weight='bold'>
               Amount
             </Text>
             <BaseMaxButton
               size='L'
               onClick={() => {
                 if (borrowBalance != null) {
+                  setLastChangedInput(InputType.BORROW);
                   setBorrowAmountInputValue(borrowBalance?.formatted);
                 }
               }}
@@ -237,6 +312,7 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
+                setLastChangedInput(InputType.BORROW);
                 setBorrowAmountInputValue(output);
               }
             }}
@@ -249,39 +325,6 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
             selectedOption={selectedOption}
           />
         </div>
-        <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between mb-1'>
-            <Text size='M' weight='bold'>
-              Collateral
-            </Text>
-          </div>
-          <TokenDropdown
-            options={collateralOptions}
-            onSelect={setSelectedCollateralOption}
-            selectedOption={selectedCollateralOption}
-            size='L'
-          />
-          <div className='flex justify-center'>
-            <Display size='S'>
-              {collateralAmountInputValue} {selectedCollateralOption.ticker}
-            </Display>
-          </div>
-
-          <TokenAmountSelectInput
-            inputValue={collateralAmountInputValue}
-            onChange={(value) => {
-              const output = formatNumberInput(value);
-              if (output != null) {
-                setCollateralAmountInputValue(output);
-              }
-            }}
-            options={collateralOptions}
-            selectedOption={selectedCollateralOption}
-            onSelect={setSelectedCollateralOption}
-            inputDisabled={true}
-          />
-        </div>
-
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
             Summary
