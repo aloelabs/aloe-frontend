@@ -102,10 +102,11 @@ export type TokenDropdownProps = {
   backgroundColor?: string;
   backgroundColorHover?: string;
   compact?: boolean;
+  disabled?: boolean;
 };
 
 export default function TokenDropdown(props: TokenDropdownProps) {
-  const { options, selectedOption, onSelect, size, backgroundColor, backgroundColorHover, compact } = props;
+  const { options, selectedOption, onSelect, size, backgroundColor, backgroundColorHover, compact, disabled } = props;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -129,6 +130,7 @@ export default function TokenDropdown(props: TokenDropdownProps) {
         backgroundColor={backgroundColor}
         compact={compact}
         className={isOpen ? 'active' : ''}
+        disabled={disabled}
       >
         <div className='flex items-center gap-1'>
           <TokenIcon src={selectedOption.iconPath || UNKNOWN_TOKEN_ICON} width={20} height={20} />

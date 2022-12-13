@@ -13,6 +13,7 @@ import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg'
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
+import BorrowCryptoModal from '../components/portfolio/modal/BorrowCryptoModal';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
@@ -89,6 +90,7 @@ export default function PortfolioPage() {
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
+  const [isBorrowCryptoModalOpen, setIsBorrowCryptoModalOpen] = useState(false);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -322,7 +324,11 @@ export default function PortfolioPage() {
           )}
         </div>
         <PortfolioActionButtonsContainer>
-          <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />
+          <PortfolioActionButton
+            label={'Borrow Crypto'}
+            Icon={<DollarIcon />}
+            onClick={() => setIsBorrowCryptoModalOpen(true)}
+          />
           <PortfolioActionButton
             label={'Send Crypto'}
             Icon={<SendIcon />}
@@ -359,11 +365,19 @@ export default function PortfolioPage() {
       </Container>
       {activeAsset != null && (
         <>
+          <BorrowCryptoModal
+            options={uniqueTokens}
+            defaultOption={activeAsset}
+            lendingPairs={lendingPairs}
+            tokenQuotes={tokenQuotes}
+            isOpen={isBorrowCryptoModalOpen}
+            setIsOpen={setIsBorrowCryptoModalOpen}
+          />
           <SendCryptoModal
             options={uniqueTokens}
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
-            setIsOpen={() => setIsSendCryptoModalOpen(false)}
+            setIsOpen={setIsSendCryptoModalOpen}
           />
           <EarnInterestModal
             options={uniqueTokens}
