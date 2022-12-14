@@ -17,8 +17,8 @@ const Container = styled.div`
 
 const PieChartWrapper = styled.div`
   position: relative;
-  width: 230px;
-  height: 230px;
+  width: 220px;
+  height: 220px;
 `;
 
 const PieChartPlaceholder = styled.div`

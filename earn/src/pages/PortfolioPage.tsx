@@ -32,7 +32,7 @@ import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
 const Container = styled.div`
-  max-width: 813px;
+  max-width: 780px;
   margin: 0 auto;
 `;
 
@@ -48,11 +48,12 @@ const EmptyAssetBar = styled.div`
 `;
 
 const PortfolioActionButtonsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  column-gap: 16px;
   margin-top: 20px;
   overflow-x: auto;
+  white-space: nowrap;
 `;
 
 export type PriceEntry = {
@@ -291,7 +292,7 @@ export default function PortfolioPage() {
   return (
     <AppPage>
       <Container>
-        <div className='flex flex-col items-center mb-8'>
+        <div className='flex flex-col items-center mb-14'>
           <Text size='L' weight='bold' color='rgba(130, 160, 182, 1)'>
             YOUR PORTFOLIO
           </Text>

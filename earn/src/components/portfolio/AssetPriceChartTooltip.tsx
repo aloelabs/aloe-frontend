@@ -24,7 +24,7 @@ const TooltipContainer = styled.div`
 `;
 
 const TooltipTitleContainer = styled.div`
-  ${tw`flex flex-col justify-center align-middle pt-3 pl-3 pr-3 pb-1`}
+  ${tw`flex flex-col justify-center align-middle pt-1 pl-3 pr-3 pb-1`}
   border-bottom: 1px solid ${TOOLTIP_BORDER_COLOR};
 `;
 

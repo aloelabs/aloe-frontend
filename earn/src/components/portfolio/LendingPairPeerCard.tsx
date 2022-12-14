@@ -61,6 +61,7 @@ const CardHeader = styled.div`
   background-color: rgb(13, 23, 30);
   padding: 8px 16px;
   border-radius: 8px;
+  height: 50px;
 `;
 
 const CardBody = styled.div`
@@ -141,14 +142,14 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   return (
     <Container key={activeAsset.address + selectedLendingPair.kitty0.address}>
       <CardHeader>
-        <Text size='M' color='rgba(130, 160, 182, 1)'>
+        <Text size='S' color='rgba(130, 160, 182, 1)'>
           Lending Pair Peer (Collateral Asset)
         </Text>
         <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} small={true} />
       </CardHeader>
       <CardBody>
         <LargeCardBodyItem>
-          <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
             Total Supply
           </Text>
           <div>
@@ -161,19 +162,19 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
           </div>
         </LargeCardBodyItem>
         <SmallCardBodyItem>
-          <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
             Users
           </Text>
           <Display size='L'>69</Display>
         </SmallCardBodyItem>
         <SmallCardBodyItem>
-          <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
             Utilization
           </Text>
           <Display size='L'>{roundPercentage(activeUtilization)}%</Display>
         </SmallCardBodyItem>
         <SmallCardBodyItem>
-          <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
             IV
           </Text>
           <Display size='L'>75%</Display>
