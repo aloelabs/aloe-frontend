@@ -20,7 +20,7 @@ const ErrorContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 8px;
-  height: 134px;
+  height: 122px;
 `;
 
 const AlertTriangleIconWrapper = styled.div`
@@ -60,8 +60,10 @@ export default function AssetPriceChartWidget(props: PortfolioPriceChartWidgetPr
   }
   return (
     <div className='flex flex-col justify-between w-full'>
-      <div className='flex justify-between items-center p-3'>
-        <Text size='M'>{token?.ticker || ''} Price</Text>
+      <div className='flex justify-between items-center my-2 px-3'>
+        <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
+          {token?.ticker || ''} Price
+        </Text>
         <Display size='M'>{error ? '-' : formatUSD(currentPrice)}</Display>
       </div>
       <div className='h-full'>
@@ -92,10 +94,10 @@ export default function AssetPriceChartWidget(props: PortfolioPriceChartWidgetPr
               </linearGradient>,
             ]}
             data={data}
-            containerHeight={134}
+            containerHeight={122}
             CustomTooltip={<AssetPriceChartTooltip />}
             tickTextColor={GRAY_STROKE_COLOR}
-            yAxisDomain={[(dataMin: number) => dataMin / 1.1, 'dataMax']}
+            yAxisDomain={[(dataMin: number) => dataMin / 1.05, 'dataMax']}
             hideTicks={true}
           />
         )}

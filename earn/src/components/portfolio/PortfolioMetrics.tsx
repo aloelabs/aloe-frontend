@@ -64,7 +64,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
         />
       </PieChartContainer>
       <BalanceContainer className={isHoveringOverSlice ? 'active' : ''}>
-        <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+        <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
           Balance
         </Text>
         <div>
@@ -77,7 +77,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
         </div>
       </BalanceContainer>
       <APYContainer className={isHoveringOverSlice ? 'active' : ''}>
-        <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+        <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
           APY
         </Text>
         <Display size='L'>{roundPercentage(apy, 3)}%</Display>

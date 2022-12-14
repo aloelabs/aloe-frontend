@@ -11,7 +11,14 @@ export type PortfolioActionButtonProps = {
 export default function PortfolioActionButton(props: PortfolioActionButtonProps) {
   const { label, Icon, onClick } = props;
   return (
-    <OutlinedWhiteButtonWithIcon Icon={Icon} position='leading' size='L' svgColorType='stroke' onClick={onClick}>
+    <OutlinedWhiteButtonWithIcon
+      Icon={Icon}
+      fillWidth={true}
+      position='leading'
+      size='M'
+      svgColorType='stroke'
+      onClick={onClick}
+    >
       {label}
     </OutlinedWhiteButtonWithIcon>
   );
