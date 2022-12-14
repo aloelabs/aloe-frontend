@@ -3,7 +3,7 @@ import { Address } from 'wagmi';
 import { Token } from './Token';
 
 export class Kitty extends Token {
-  public readonly underlyingToken: Token;
+  private readonly underlyingToken: Token;
 
   constructor(
     chainId: number,
