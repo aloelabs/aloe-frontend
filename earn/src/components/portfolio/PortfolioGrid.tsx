@@ -19,8 +19,8 @@ const Grid = styled.div`
   grid-template-areas:
     'pie balance priceAndUptime'
     'pie apy priceAndUptime';
-  grid-gap: 30px;
-  height: 240px;
+  grid-gap: 24px;
+  height: 244px;
 `;
 
 const BaseGridItem = styled.div`
@@ -36,8 +36,8 @@ const PriceAndUptimeContainer = styled.div`
   grid-area: priceAndUptime;
 
   display: grid;
-  grid-template-rows: 160px 50px;
-  grid-gap: 30px;
+  grid-template-rows: 170px 50px;
+  grid-gap: 24px;
 `;
 
 export const PieChartContainer = styled(BaseGridItem)`

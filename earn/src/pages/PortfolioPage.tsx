@@ -216,8 +216,8 @@ export default function PortfolioPage() {
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.address);
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.address);
+      const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.underlying.address);
+      const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.underlying.address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
