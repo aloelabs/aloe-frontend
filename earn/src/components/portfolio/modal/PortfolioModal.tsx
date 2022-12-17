@@ -23,7 +23,7 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxWidth?: string }) => pro
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 300px;
-  max-height: 600px;
+  max-height: 570px;
   min-width: 300px;
   max-width: ${(props) => props.maxWidth || '450px'};
   height: max-content;
@@ -76,7 +76,7 @@ export default function PortfolioModal(props: PortfolioModalProps) {
   return (
     <div>
       <Transition.Root show={isOpen} as={Fragment}>
-        <Dialog open={isOpen} onClose={handleClose} className='fixed inset-0 overflow-y-auto'>
+        <Dialog open={isOpen} onClose={handleClose} className='fixed inset-0 overflow-y-auto z-[100]'>
           <Transition.Child
             as={Fragment}
             enter='ease-out duration-300'

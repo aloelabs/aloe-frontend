@@ -25,15 +25,21 @@ export interface KittyInfo {
   utilization: number;
 }
 
-export type LendingPair = {
-  token0: Token;
-  token1: Token;
-  kitty0: Kitty;
-  kitty1: Kitty;
-  kitty0Info: KittyInfo;
-  kitty1Info: KittyInfo;
-  uniswapFeeTier: FeeTier;
-};
+export class LendingPair {
+  constructor(
+    public token0: Token,
+    public token1: Token,
+    public kitty0: Kitty,
+    public kitty1: Kitty,
+    public kitty0Info: KittyInfo,
+    public kitty1Info: KittyInfo,
+    public uniswapFeeTier: FeeTier
+  ) {}
+
+  equals(other: LendingPair) {
+    return other.kitty0.address === this.kitty0.address && other.kitty1.address === this.kitty1.address;
+  }
+}
 
 export type LendingPairBalances = {
   token0Balance: number;
@@ -113,25 +119,25 @@ export async function getAvailableLendingPairs(
           (365 * 24 * 60 * 60) -
         1.0;
       // inventory != totalSupply due to interest rates (inflation)
-      return {
+      return new LendingPair(
         token0,
         token1,
         kitty0,
         kitty1,
-        kitty0Info: {
+        {
           apy: APY0 * 100, // percentage
           inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
           totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
           utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
         },
-        kitty1Info: {
+        {
           apy: APY1 * 100, // percentage
           inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
           totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
           utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
         },
-        uniswapFeeTier: NumericFeeTierToEnum(result2),
-      };
+        NumericFeeTierToEnum(result2)
+      );
     })
   );
 }

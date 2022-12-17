@@ -2,6 +2,7 @@ import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useContractWrite, useNetwork } from 'wagmi';
 
@@ -14,8 +15,10 @@ import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { TokenBalance } from '../../../pages/PortfolioPage';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import TokenDropdown from '../../common/TokenDropdown';
+import { formatNumberInput } from '../../../util/Numbers';
+import PairDropdown from '../../common/PairDropdown';
+import Tooltip from '../../common/Tooltip';
+import TokenAmountSelectInput from '../TokenAmountSelectInput';
 import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -139,20 +142,18 @@ export type WithdrawModalProps = {
 export default function WithdrawModal(props: WithdrawModalProps) {
   const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
-  const [activeCollatealOptions, setActiveCollateralOptions] = useState<Token[]>([]);
-  const [selectedCollateralOption, setSelectedCollateralOption] = useState<Token | null>(null);
+  const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
+  const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
 
   useEffect(() => {
-    const activeCollateralOptions = lendingPairs
-      .filter((pair) => pair.token0 === selectedOption || pair.token1 === selectedOption)
-      .map((pair) => {
-        return pair.token0 === selectedOption ? pair.token1 : pair.token0;
-      });
-    setActiveCollateralOptions(activeCollateralOptions);
-    setSelectedCollateralOption(activeCollateralOptions[0]);
+    const activeCollateralOptions = lendingPairs.filter(
+      (pair) => pair.token0 === selectedOption || pair.token1 === selectedOption
+    );
+    setActivePairOptions(activeCollateralOptions);
+    setSelectedPairOption(activeCollateralOptions[0]);
   }, [lendingPairs, selectedOption]);
 
   useEffect(() => {
@@ -163,22 +164,25 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   // the selected token / collateral token lending pair
   let activeKitty: Kitty | null = useMemo(() => {
     for (const lendingPair of lendingPairs) {
-      if (lendingPair.token0 === selectedOption && lendingPair.token1 === selectedCollateralOption) {
-        return lendingPair.kitty0;
-      } else if (lendingPair.token1 === selectedOption && lendingPair.token0 === selectedCollateralOption) {
-        return lendingPair.kitty1;
+      if (selectedPairOption?.equals(lendingPair)) {
+        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
       }
     }
     return null;
-  }, [selectedCollateralOption, selectedOption, lendingPairs]);
+  }, [selectedPairOption, selectedOption, lendingPairs]);
+
+  if (selectedPairOption == null || activeKitty == null) {
+    return null;
+  }
+
+  const peerAsset: Token =
+    selectedOption.address === selectedPairOption.token0.address
+      ? selectedPairOption.token1
+      : selectedPairOption.token0;
 
   const activeKittyBalance = combinedBalances.find(
     (balance) => activeKitty && balance.token.address === activeKitty.address
   )?.balance;
-
-  if (selectedCollateralOption == null || activeKitty == null) {
-    return null;
-  }
 
   return (
     <PortfolioModal isOpen={isOpen} title='Withdraw' setIsOpen={setIsOpen}>
@@ -186,44 +190,71 @@ export default function WithdrawModal(props: WithdrawModalProps) {
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Asset
+              Amount
             </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                if (activeKittyBalance !== undefined) {
+                  setInputValue(activeKittyBalance.toString());
+                }
+              }}
+            >
+              MAX
+            </BaseMaxButton>
           </div>
-          <TokenDropdown
+          <TokenAmountSelectInput
+            inputValue={inputValue}
             options={options}
             selectedOption={selectedOption}
             onSelect={(option) => {
               setSelectedOption(option);
+              setInputValue('');
             }}
-            size='L'
+            onChange={(value) => {
+              const output = formatNumberInput(value);
+              if (output != null) {
+                setInputValue(output);
+              }
+            }}
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Collateral
-          </Text>
-          <TokenDropdown
-            options={activeCollatealOptions}
-            onSelect={setSelectedCollateralOption}
-            selectedOption={selectedCollateralOption}
+          <div className='flex items-center gap-2'>
+            <Text size='M' weight='bold'>
+              Lending Pair
+            </Text>
+            <Tooltip
+              buttonSize='S'
+              buttonText=''
+              content={`The lending pair is the combination of the asset you are withdrawing
+                and the collateral you are using to withdraw it.`}
+              position='top-center'
+              filled={true}
+            />
+          </div>
+          <PairDropdown
+            options={activePairOptions}
+            onSelect={setSelectedPairOption}
+            selectedOption={selectedPairOption}
             size='L'
             compact={false}
           />
         </div>
-        <TokenAmountInput
-          value={inputValue}
-          onChange={(value) => setInputValue(value)}
-          tokenLabel={selectedOption.ticker}
-          max={activeKittyBalance?.toString()}
-          maxed={activeKittyBalance?.toString() === inputValue}
-        />
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're withdrawing {inputValue || '0.00'} {selectedOption.ticker} from the {selectedOption.ticker}/
-            {selectedCollateralOption.ticker} lending market.
+            You're withdrawing{' '}
+            <strong>
+              {inputValue || '0.00'} {selectedOption.ticker}
+            </strong>{' '}
+            from the{' '}
+            <strong>
+              {selectedOption.ticker}/{peerAsset.ticker}
+            </strong>{' '}
+            lending market.
           </Text>
         </div>
         <div className='w-full'>
