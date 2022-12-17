@@ -29,7 +29,7 @@ const StyledDropdownOptionContainer = styled(DropdownOptionContainer)`
   white-space: nowrap;
   border-radius: 8px;
   &.pending {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
   }
 `;
 
@@ -44,7 +44,7 @@ export default function ChainSelector(props: ChainSelectorProps) {
   const [selectedChainOption, setSelectedChainOption] = useState<DropdownOption<Chain>>(DROPDOWN_OPTIONS[0]);
   const [pendingChainOption, setPendingChainOption] = useState<DropdownOption<Chain> | undefined>(undefined);
   const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
-  const { isLoading, reset, switchNetwork } = useSwitchNetwork({
+  const { isLoading, switchNetwork } = useSwitchNetwork({
     chainId: selectedChainOption.value.id,
     onError: () => {
       setShouldAttemptToSwitchNetwork(false);
@@ -104,8 +104,7 @@ export default function ChainSelector(props: ChainSelectorProps) {
               onClick={() => {
                 // If the user selects the currently selected chain, do nothing
                 if (option.value === selectedChainOption.value) return;
-                // Reset the switch network state if the user changes their mind
-                if (pendingChainOption !== undefined) reset();
+                if (pendingChainOption?.value !== undefined) return;
                 // Otherwise, set the pending chain option and attempt to switch networks
                 setPendingChainOption(option);
                 setShouldAttemptToSwitchNetwork(true);
