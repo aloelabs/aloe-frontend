@@ -2,9 +2,17 @@ import React from 'react';
 import styled from 'styled-components';
 
 export const ALT_SPINNER_SIZES = {
+  XS: 15,
   S: 30,
   M: 50,
   L: 70,
+};
+
+export const ALT_SPINNER_BORDER_WIDTHS = {
+  XS: 2,
+  S: 3,
+  M: 4,
+  L: 5,
 };
 
 export const IOS_STYLE_SPINNER_SIZES = {
@@ -13,7 +21,7 @@ export const IOS_STYLE_SPINNER_SIZES = {
   L: 1,
 };
 
-export const AltSpinner = styled.div.attrs((props: { size?: 'S' | 'M' | 'L' }) => props)`
+export const AltSpinner = styled.div.attrs((props: { size?: 'XS' | 'S' | 'M' | 'L' }) => props)`
   --size: ${(props) => ALT_SPINNER_SIZES[props.size || 'L']}px;
   --offset: ${(props) => ALT_SPINNER_SIZES[props.size || 'L'] / 2}px;
   position: absolute;
@@ -22,8 +30,8 @@ export const AltSpinner = styled.div.attrs((props: { size?: 'S' | 'M' | 'L' }) =
   top: calc(50% - var(--offset));
   left: calc(50% - var(--offset));
   border-radius: 50%;
-  border-top: 5px solid #63b59a;
-  border-right: 5px solid transparent;
+  border-top: ${(props) => ALT_SPINNER_BORDER_WIDTHS[props.size || 'L']}px solid #63b59a;
+  border-right: ${(props) => ALT_SPINNER_BORDER_WIDTHS[props.size || 'L']}px solid transparent;
   animation: alt-spin 1s linear infinite;
 
   @keyframes alt-spin {

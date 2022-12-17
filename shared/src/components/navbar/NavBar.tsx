@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { NavLink } from 'react-router-dom';
@@ -161,6 +161,11 @@ export type NavBarProps = {
 export function NavBar(props: NavBarProps) {
   const account = useAccount();
   const network = useNetwork();
+  const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
+  useEffect(() => {
+    // Close the chain selector dropdown when the chain changes
+    setIsSelectChainDropdownOpen(false);
+  }, [network.chain]);
   const activeChain = network.chain;
   return (
     <>
@@ -181,11 +186,19 @@ export function NavBar(props: NavBarProps) {
           ))}
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
-          <ChainSelector chain={activeChain} />
+          <ChainSelector
+            chain={activeChain}
+            isOpen={isSelectChainDropdownOpen}
+            setIsOpen={setIsSelectChainDropdownOpen}
+          />
           {!activeChain || !account.address ? (
             <ConnectWalletButton account={account} activeChain={activeChain} />
           ) : (
-            <AccountInfo account={account} chain={activeChain} />
+            <AccountInfo
+              account={account}
+              chain={activeChain}
+              closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
+            />
           )}
         </div>
       </DesktopTopNav>
