@@ -358,11 +358,9 @@ export default function LendPage() {
             {lendingPairs.map((lendPair, i) => (
               <LendPairCard
                 key={lendPair.token0.address}
-                {...{
-                  ...lendPair,
-                  hasDeposited0: (lendingPairBalances?.[i]?.kitty0Balance || 0) > 0,
-                  hasDeposited1: (lendingPairBalances?.[i]?.kitty1Balance || 0) > 0,
-                }}
+                pair={lendPair}
+                hasDeposited0={(lendingPairBalances?.[i]?.kitty0Balance || 0) > 0}
+                hasDeposited1={(lendingPairBalances?.[i]?.kitty1Balance || 0) > 0}
               />
             ))}
           </LendCards>
