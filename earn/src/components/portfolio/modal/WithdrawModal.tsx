@@ -238,6 +238,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             onSelect={setSelectedPairOption}
             selectedOption={selectedPairOption}
             size='L'
+            compact={false}
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
