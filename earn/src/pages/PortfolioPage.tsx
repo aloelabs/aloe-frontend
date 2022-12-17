@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import ConnectWalletButton from 'shared/lib/components/navbar/ConnectWalletButton';
 import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
