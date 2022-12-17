@@ -8,18 +8,16 @@ import { Chain, useConnect } from 'wagmi';
 import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import { GetAccountResult, Provider } from '@wagmi/core';
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { DEFAULT_CHAIN } from '../../data/constants/Values';
 
 const Container = styled.div`
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
-    width: 100%;
-  }
+  width: 100%;
 `;
 
 export type ConnectWalletButtonProps = {
   account?: GetAccountResult<Provider>;
   activeChain?: Chain;
+  fillWidth?: boolean;
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
@@ -47,6 +45,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           setWalletModalOpen(true);
         }}
         size='M'
+        fillWidth={props.fillWidth}
       >
         Connect Wallet
       </FilledStylizedButton>

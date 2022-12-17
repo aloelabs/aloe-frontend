@@ -41,7 +41,7 @@ const EmptyAssetBar = styled.div`
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 64px;
+  height: 56px;
   background-color: transparent;
   border: 1px solid rgba(26, 41, 52, 1);
   border-radius: 8px;
@@ -301,24 +301,36 @@ export default function PortfolioPage() {
           </Display>
         </div>
         <div className='h-16'>
-          {!isDoneLoading && <AssetBarPlaceholder />}
-          {isDoneLoading && (totalBalanceUSD > 0 || errorLoadingPrices) && (
-            <AssetBar
-              balances={combinedBalances}
-              tokenColors={tokenColors}
-              ignoreBalances={errorLoadingPrices}
-              setActiveAsset={(updatedAsset: Token) => {
-                setActiveAsset(updatedAsset);
-              }}
-            />
-          )}
-          {isDoneLoading && totalBalanceUSD === 0 && !errorLoadingPrices && (
-            <EmptyAssetBar>
-              <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                No assets found
-              </Text>
-            </EmptyAssetBar>
-          )}
+          {(() => {
+            if (!isDoneLoading) return <AssetBarPlaceholder />;
+            else if (!isConnected)
+              return (
+                <EmptyAssetBar>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    Please connect your wallet to get started
+                  </Text>
+                </EmptyAssetBar>
+              );
+            else if (totalBalanceUSD > 0 || errorLoadingPrices)
+              return (
+                <AssetBar
+                  balances={combinedBalances}
+                  tokenColors={tokenColors}
+                  ignoreBalances={errorLoadingPrices}
+                  setActiveAsset={(updatedAsset: Token) => {
+                    setActiveAsset(updatedAsset);
+                  }}
+                />
+              );
+            else
+              return (
+                <EmptyAssetBar>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    No assets found
+                  </Text>
+                </EmptyAssetBar>
+              );
+          })()}
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton label={'Buy Crypto'} Icon={<DollarIcon />} onClick={() => {}} />

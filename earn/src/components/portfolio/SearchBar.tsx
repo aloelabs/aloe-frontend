@@ -13,7 +13,7 @@ import SearchInput from './TokenSearchInput';
 const Container = styled.div`
   position: relative;
   width: 100%;
-  height: 64px;
+  height: 100%;
   display: flex;
   align-items: center;
 `;
