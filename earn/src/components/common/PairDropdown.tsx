@@ -6,10 +6,8 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { LendingPair } from '../../data/LendingPair';
-import { Token } from '../../data/Token';
 import TokenPairIcons from './TokenPairIcons';
 
-const UNKNOWN_TOKEN_ICON = '../../assets/svg/tokens/unknown_token.svg';
 const DEFAULT_BACKGROUND_COLOR = 'rgb(13, 23, 30)';
 const DEFAULT_BACKGROUND_COLOR_HOVER = 'rgb(18, 32, 41)';
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';

@@ -307,9 +307,9 @@ export default function PortfolioPage() {
             else if (!isConnected)
               return (
                 <EmptyAssetBar>
-                  <div className='w-full px-1'>
-                    <ConnectWalletButton activeChain={network.chain} fillWidth={true} />
-                  </div>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    Please connect your wallet to get started
+                  </Text>
                 </EmptyAssetBar>
               );
             else if (totalBalanceUSD > 0 || errorLoadingPrices)
