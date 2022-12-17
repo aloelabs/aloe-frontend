@@ -19,8 +19,8 @@ export default function AloeCapitalLogo(props: SVGProps) {
           y2='78.2951'
           gradientUnits='userSpaceOnUse'
         >
-          <stop offset='0.1905' stop-color='#9BD08A' />
-          <stop offset='0.9276' stop-color='#D9E693' />
+          <stop offset='0.1905' stopColor='#9BD08A' />
+          <stop offset='0.9276' stopColor='#D9E693' />
         </linearGradient>
       </defs>
     </svg>
