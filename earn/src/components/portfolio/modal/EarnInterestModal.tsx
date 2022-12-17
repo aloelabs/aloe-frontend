@@ -213,7 +213,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     return null;
   }
 
-  const peerAsset =
+  const peerAsset: Token =
     selectedOption.address === selectedPairOption.token0.address
       ? selectedPairOption.token1
       : selectedPairOption.token0;
@@ -246,7 +246,10 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
               }
             }}
             options={options}
-            onSelect={setSelectedOption}
+            onSelect={(updatedOption: Token) => {
+              setSelectedOption(updatedOption);
+              setInputValue('');
+            }}
             selectedOption={selectedOption}
           />
         </div>
@@ -279,13 +282,13 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're depositing{' '}
-            <b>
+            <strong>
               {inputValue || '0.00'} {selectedOption.ticker}
-            </b>{' '}
+            </strong>{' '}
             to the{' '}
-            <b>
+            <strong>
               {selectedPairOption.token0.ticker}/{selectedPairOption.token1.ticker}
-            </b>{' '}
+            </strong>{' '}
             lending market. Other users will be able to borrow your {selectedOption.ticker} by posting{' '}
             {peerAsset.ticker} as collateral. When they pay interest, you earn interest.
           </Text>
