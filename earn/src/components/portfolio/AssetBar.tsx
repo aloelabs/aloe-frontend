@@ -17,7 +17,7 @@ export type AssetBarItem = {
 const Container = styled.div`
   position: relative;
   width: 100%;
-  height: 64px;
+  height: 56px;
 `;
 
 const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color: string }) => props)`
@@ -39,7 +39,8 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
   }
   &.active {
     z-index: 1;
-    transform: scale(1.03);
+    transform: scaleY(1.03);
+
     box-shadow: 0px 0px 4px 0.25px ${(props) => props.color}, 0px 0px 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease-in-out, border-radius 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   }
