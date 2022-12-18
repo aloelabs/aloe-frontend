@@ -1,5 +1,6 @@
 import { ReactElement, useEffect, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -63,10 +64,11 @@ type SendCryptoConfirmButtonProps = {
   token: Token;
   activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
-  const { sendAddress, sendAmount, sendBalance, token, activeChain, setIsOpen } = props;
+  const { sendAddress, sendAmount, sendBalance, token, activeChain, setIsOpen, setPendingTxn } = props;
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const provider = useProvider();
@@ -92,13 +94,22 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     };
   }, [sendAddress, provider]);
 
-  const contract = useContractWrite({
+  const { write, isError, isSuccess, data } = useContractWrite({
     address: token.address,
     abi: ERC20ABI,
     mode: 'recklesslyUnprepared',
     functionName: 'transfer',
     chainId: activeChain.id,
   });
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      setPendingTxn(data);
+      setIsOpen(false);
+    } else if (isError) {
+      setIsPending(false);
+    }
+  }, [isError, isSuccess, data, setPendingTxn, setIsOpen]);
 
   const numericSendBalance = Number(sendBalance) || 0;
   const numericSendAmount = Number(sendAmount) || 0;
@@ -119,19 +130,10 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      contract
-        .writeAsync?.({
-          recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        })
-        .then((txnResult) => {
-          setIsOpen(false);
-          setIsPending(false);
-          // TODO: add txn to pending txns
-        })
-        .catch((error) => {
-          setIsPending(false);
-        });
+      write?.({
+        recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
+        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+      });
     }
   }
 
@@ -155,16 +157,23 @@ export type SendCryptoModalProps = {
   options: Token[];
   defaultOption: Token;
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function SendCryptoModal(props: SendCryptoModalProps) {
-  const { isOpen, options, defaultOption, setIsOpen } = props;
+  const { isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [addressInputValue, setAddressInputValue] = useState<string>('');
   const [sendAmountInputValue, setSendAmountInputValue] = useState<string>('');
   const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
+
+  function resetModal() {
+    setSelectedOption(defaultOption);
+    setAddressInputValue('');
+    setSendAmountInputValue('');
+  }
 
   useEffect(() => {
     setSelectedOption(defaultOption);
@@ -179,7 +188,17 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
-    <PortfolioModal isOpen={isOpen} title='Send Crypto' setIsOpen={setIsOpen} maxWidth='550px'>
+    <PortfolioModal
+      isOpen={isOpen}
+      title='Send Crypto'
+      setIsOpen={(isOpen: boolean) => {
+        setIsOpen(isOpen);
+        if (!isOpen) {
+          resetModal();
+        }
+      }}
+      maxWidth='550px'
+    >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
@@ -243,6 +262,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             token={selectedOption}
             activeChain={activeChain}
             setIsOpen={setIsOpen}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By sending, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that you

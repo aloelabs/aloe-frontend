@@ -1,15 +1,17 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
 
-import KittyABI from '../../../assets/abis/Kitty.json';
+import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
@@ -68,22 +70,32 @@ type DepositButtonProps = {
   accountAddress: Address;
   activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen, setPendingTxn } = props;
   const [isPending, setIsPending] = useState(false);
 
-  const { data: userAllowanceToken } = useAllowance(token, accountAddress, kitty.address);
+  const { data: userAllowanceToken } = useAllowance(token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
-  const writeAllowanceToken = useAllowanceWrite(activeChain, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
-  const contract = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
+  const { write, isError, isSuccess, data } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'deposit',
+    functionName: 'depositWithApprove(address,uint256)',
   });
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      setPendingTxn(data);
+      setIsOpen(false);
+    } else if (isError) {
+      setIsPending(false);
+    }
+  }, [isError, isSuccess, data, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -126,21 +138,13 @@ function DepositButton(props: DepositButtonProps) {
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            // If the user accepts the transaction, close the modal and wait for the transaction to be verified
-            setIsOpen(false);
-            setIsPending(false);
-            // TODO: Add loading state
-          })
-          .catch((error) => {
-            // If the user rejects the transaction, we want to reset the pending state
-            setIsPending(false);
-          });
+        write?.({
+          recklesslySetUnpreparedArgs: [
+            kitty.address,
+            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+          ],
+          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+        });
         break;
       default:
         break;
@@ -169,10 +173,11 @@ export type EarnInterestModalProps = {
   defaultOption: Token;
   lendingPairs: LendingPair[];
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
@@ -180,6 +185,11 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
+
+  function resetModal() {
+    setSelectedOption(defaultOption);
+    setInputValue('');
+  }
 
   useEffect(() => {
     const pairs = lendingPairs.filter((pair) => pair.token0 === selectedOption || pair.token1 === selectedOption);
@@ -219,7 +229,16 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
       : selectedPairOption.token0;
 
   return (
-    <PortfolioModal isOpen={isOpen} title='Earn Interest' setIsOpen={setIsOpen}>
+    <PortfolioModal
+      isOpen={isOpen}
+      title='Earn Interest'
+      setIsOpen={(isOpen: boolean) => {
+        setIsOpen(isOpen);
+        if (!isOpen) {
+          resetModal();
+        }
+      }}
+    >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
@@ -302,6 +321,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             accountAddress={account.address ?? '0x'}
             activeChain={activeChain}
             setIsOpen={setIsOpen}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By depositing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that
