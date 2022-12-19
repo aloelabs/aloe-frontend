@@ -59,11 +59,12 @@ export type AccountInfoProps = {
   account: GetAccountResult<Provider>;
   chain: Chain;
   buttonStyle?: 'secondary' | 'tertiary';
+  closeChainSelector: () => void;
 };
 
 export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component props
-  const { account, chain } = props;
+  const { account, chain, closeChainSelector } = props;
   const isConnected = account?.isConnected ?? false;
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
@@ -89,12 +90,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   return (
     <div>
       {!isConnected && (
-        <FilledGreyButton
-          onClick={() => {
-            setWalletModalOpen(true);
-          }}
-          size='M'
-        >
+        <FilledGreyButton onClick={() => setWalletModalOpen(true)} size='M'>
           Connect Wallet
         </FilledGreyButton>
       )}
@@ -102,7 +98,13 @@ export default function AccountInfo(props: AccountInfoProps) {
         <Popover>
           {({ open }) => (
             <>
-              <Popover.Button className='outline-none flex justify-center items-center gap-2'>
+              <Popover.Button
+                className='outline-none flex justify-center items-center gap-2'
+                onClick={() => {
+                  // A hack to close the chain selector when the user clicks on the account info button
+                  closeChainSelector();
+                }}
+              >
                 <Identicon />
                 <ButtonTextContainer>{buttonText}</ButtonTextContainer>
               </Popover.Button>

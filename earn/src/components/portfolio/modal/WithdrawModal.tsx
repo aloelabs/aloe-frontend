@@ -1,9 +1,11 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useContractWrite, useNetwork } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -14,8 +16,10 @@ import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { TokenBalance } from '../../../pages/PortfolioPage';
-import TokenAmountInput from '../../common/TokenAmountInput';
-import TokenDropdown from '../../common/TokenDropdown';
+import { formatNumberInput } from '../../../util/Numbers';
+import PairDropdown from '../../common/PairDropdown';
+import Tooltip from '../../common/Tooltip';
+import TokenAmountSelectInput from '../TokenAmountSelectInput';
 import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -62,20 +66,38 @@ type WithdrawButtonProps = {
   token: Token;
   kitty: Kitty;
   activeChain: Chain;
+  accountAddress: string;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function WithdrawButton(props: WithdrawButtonProps) {
-  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, setIsOpen } = props;
+  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, accountAddress, setIsOpen, setPendingTxn } =
+    props;
   const [isPending, setIsPending] = useState(false);
 
-  const contract = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'withdraw',
+    functionName: 'redeem',
     chainId: activeChain.id,
   });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(withdrawBalance) || 0;
   const numericDepositAmount = Number(withdrawAmount) || 0;
@@ -94,21 +116,14 @@ function WithdrawButton(props: WithdrawButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      contract
-        .writeAsync?.({
-          recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(withdrawAmount, token.decimals).toString()],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        })
-        .then((txnResult) => {
-          // If the user accepts the transaction, close the modal and wait for the transaction to be verified
-          setIsOpen(false);
-          setIsPending(false);
-          // TODO: Add loading state
-        })
-        .catch((error) => {
-          // If the user rejects the transaction, we want to reset the pending state
-          setIsPending(false);
-        });
+      contractWrite?.({
+        recklesslySetUnpreparedArgs: [
+          ethers.utils.parseUnits(withdrawAmount, token.decimals).toString(),
+          accountAddress,
+          accountAddress,
+        ],
+        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+      });
     }
   }
 
@@ -134,25 +149,30 @@ export type WithdrawModalProps = {
   lendingPairs: LendingPair[];
   combinedBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen } = props;
+  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
-  const [activeCollatealOptions, setActiveCollateralOptions] = useState<Token[]>([]);
-  const [selectedCollateralOption, setSelectedCollateralOption] = useState<Token | null>(null);
+  const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
+  const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
+  const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
 
+  function resetModal() {
+    setSelectedOption(defaultOption);
+    setInputValue('');
+  }
+
   useEffect(() => {
-    const activeCollateralOptions = lendingPairs
-      .filter((pair) => pair.token0 === selectedOption || pair.token1 === selectedOption)
-      .map((pair) => {
-        return pair.token0 === selectedOption ? pair.token1 : pair.token0;
-      });
-    setActiveCollateralOptions(activeCollateralOptions);
-    setSelectedCollateralOption(activeCollateralOptions[0]);
+    const activeCollateralOptions = lendingPairs.filter(
+      (pair) => pair.token0 === selectedOption || pair.token1 === selectedOption
+    );
+    setActivePairOptions(activeCollateralOptions);
+    setSelectedPairOption(activeCollateralOptions[0]);
   }, [lendingPairs, selectedOption]);
 
   useEffect(() => {
@@ -163,67 +183,106 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   // the selected token / collateral token lending pair
   let activeKitty: Kitty | null = useMemo(() => {
     for (const lendingPair of lendingPairs) {
-      if (lendingPair.token0 === selectedOption && lendingPair.token1 === selectedCollateralOption) {
-        return lendingPair.kitty0;
-      } else if (lendingPair.token1 === selectedOption && lendingPair.token0 === selectedCollateralOption) {
-        return lendingPair.kitty1;
+      if (selectedPairOption?.equals(lendingPair)) {
+        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
       }
     }
     return null;
-  }, [selectedCollateralOption, selectedOption, lendingPairs]);
+  }, [selectedPairOption, selectedOption, lendingPairs]);
+
+  if (selectedPairOption == null || activeKitty == null) {
+    return null;
+  }
+
+  const peerAsset: Token =
+    selectedOption.address === selectedPairOption.token0.address
+      ? selectedPairOption.token1
+      : selectedPairOption.token0;
 
   const activeKittyBalance = combinedBalances.find(
     (balance) => activeKitty && balance.token.address === activeKitty.address
   )?.balance;
 
-  if (selectedCollateralOption == null || activeKitty == null) {
-    return null;
-  }
-
   return (
-    <PortfolioModal isOpen={isOpen} title='Withdraw' setIsOpen={setIsOpen}>
+    <PortfolioModal
+      isOpen={isOpen}
+      title='Withdraw'
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
+          resetModal();
+        }
+      }}
+    >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Asset
+              Amount
             </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                if (activeKittyBalance !== undefined) {
+                  setInputValue(activeKittyBalance.toString());
+                }
+              }}
+            >
+              MAX
+            </BaseMaxButton>
           </div>
-          <TokenDropdown
+          <TokenAmountSelectInput
+            inputValue={inputValue}
             options={options}
             selectedOption={selectedOption}
             onSelect={(option) => {
               setSelectedOption(option);
+              setInputValue('');
             }}
-            size='L'
+            onChange={(value) => {
+              const output = formatNumberInput(value);
+              if (output != null) {
+                setInputValue(output);
+              }
+            }}
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Collateral
-          </Text>
-          <TokenDropdown
-            options={activeCollatealOptions}
-            onSelect={setSelectedCollateralOption}
-            selectedOption={selectedCollateralOption}
+          <div className='flex items-center gap-2'>
+            <Text size='M' weight='bold'>
+              Lending Pair
+            </Text>
+            <Tooltip
+              buttonSize='S'
+              buttonText=''
+              content={`The lending pair is the combination of the asset you are withdrawing
+                and the collateral you are using to withdraw it.`}
+              position='top-center'
+              filled={true}
+            />
+          </div>
+          <PairDropdown
+            options={activePairOptions}
+            onSelect={setSelectedPairOption}
+            selectedOption={selectedPairOption}
             size='L'
             compact={false}
           />
         </div>
-        <TokenAmountInput
-          value={inputValue}
-          onChange={(value) => setInputValue(value)}
-          tokenLabel={selectedOption.ticker}
-          max={activeKittyBalance?.toString()}
-          maxed={activeKittyBalance?.toString() === inputValue}
-        />
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're withdrawing {inputValue || '0.00'} {selectedOption.ticker} from the {selectedOption.ticker}/
-            {selectedCollateralOption.ticker} lending market.
+            You're withdrawing{' '}
+            <strong>
+              {inputValue || '0.00'} {selectedOption.ticker}
+            </strong>{' '}
+            from the{' '}
+            <strong>
+              {selectedOption.ticker}/{peerAsset.ticker}
+            </strong>{' '}
+            lending market.
           </Text>
         </div>
         <div className='w-full'>
@@ -233,7 +292,14 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
-            setIsOpen={setIsOpen}
+            accountAddress={account.address ?? '0x'}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By withdrawing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that

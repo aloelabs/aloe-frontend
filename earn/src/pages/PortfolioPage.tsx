@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
@@ -10,6 +11,7 @@ import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import PendingTxnModal from '../components/lend/modal/PendingTxnModal';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
@@ -33,7 +35,7 @@ import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
 const Container = styled.div`
-  max-width: 813px;
+  max-width: 780px;
   margin: 0 auto;
 `;
 
@@ -42,18 +44,19 @@ const EmptyAssetBar = styled.div`
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 64px;
+  height: 56px;
   background-color: transparent;
   border: 1px solid rgba(26, 41, 52, 1);
   border-radius: 8px;
 `;
 
 const PortfolioActionButtonsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  column-gap: 16px;
   margin-top: 20px;
   overflow-x: auto;
+  white-space: nowrap;
 `;
 
 export type PriceEntry = {
@@ -81,6 +84,7 @@ export type TokenBalance = {
 };
 
 export default function PortfolioPage() {
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
@@ -94,6 +98,7 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
 
   const network = useNetwork();
   const activeChainId = network.chain?.id || chain.goerli.id;
@@ -215,12 +220,32 @@ export default function PortfolioPage() {
     };
   }, [provider, address, lendingPairs, isLoading]);
 
+  useEffect(() => {
+    let mounted = true;
+    async function waitForTxn() {
+      if (!pendingTxn) return;
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (!mounted) return;
+      setPendingTxn(null);
+      setIsPendingTxnModalOpen(false);
+      if (receipt.status === 1) {
+        // TODO: Update balances
+        // TODO: Show success modal
+      } else {
+        // TODO: Show failure modal
+      }
+    }
+    waitForTxn();
+    return () => {
+      mounted = false;
+    };
+  }, [pendingTxn]);
+
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Address = pair.token0.address;
-      const token1Address = pair.token1.address;
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === token0Address);
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === token1Address);
+      const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.address);
+      const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
@@ -295,7 +320,7 @@ export default function PortfolioPage() {
   return (
     <AppPage>
       <Container>
-        <div className='flex flex-col items-center mb-8'>
+        <div className='flex flex-col items-center mb-14'>
           <Text size='L' weight='bold' color='rgba(130, 160, 182, 1)'>
             YOUR PORTFOLIO
           </Text>
@@ -304,24 +329,36 @@ export default function PortfolioPage() {
           </Display>
         </div>
         <div className='h-16'>
-          {!isDoneLoading && <AssetBarPlaceholder />}
-          {isDoneLoading && (totalBalanceUSD > 0 || errorLoadingPrices) && (
-            <AssetBar
-              balances={combinedBalances}
-              tokenColors={tokenColors}
-              ignoreBalances={errorLoadingPrices}
-              setActiveAsset={(updatedAsset: Token) => {
-                setActiveAsset(updatedAsset);
-              }}
-            />
-          )}
-          {isDoneLoading && totalBalanceUSD === 0 && !errorLoadingPrices && (
-            <EmptyAssetBar>
-              <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                No assets found
-              </Text>
-            </EmptyAssetBar>
-          )}
+          {(() => {
+            if (!isDoneLoading) return <AssetBarPlaceholder />;
+            else if (!isConnected)
+              return (
+                <EmptyAssetBar>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    Please connect your wallet to get started
+                  </Text>
+                </EmptyAssetBar>
+              );
+            else if (totalBalanceUSD > 0 || errorLoadingPrices)
+              return (
+                <AssetBar
+                  balances={combinedBalances}
+                  tokenColors={tokenColors}
+                  ignoreBalances={errorLoadingPrices}
+                  setActiveAsset={(updatedAsset: Token) => {
+                    setActiveAsset(updatedAsset);
+                  }}
+                />
+              );
+            else
+              return (
+                <EmptyAssetBar>
+                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                    No assets found
+                  </Text>
+                </EmptyAssetBar>
+              );
+          })()}
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton
@@ -378,6 +415,7 @@ export default function PortfolioPage() {
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
             setIsOpen={setIsSendCryptoModalOpen}
+            setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal
             options={uniqueTokens}
@@ -385,6 +423,7 @@ export default function PortfolioPage() {
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
             setIsOpen={setIsEarnInterestModalOpen}
+            setPendingTxn={setPendingTxn}
           />
           <WithdrawModal
             options={uniqueTokens}
@@ -393,9 +432,11 @@ export default function PortfolioPage() {
             combinedBalances={combinedBalances}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
+            setPendingTxn={setPendingTxn}
           />
         </>
       )}
+      <PendingTxnModal open={isPendingTxnModalOpen} txnHash={pendingTxn?.hash} setOpen={setIsPendingTxnModalOpen} />
     </AppPage>
   );
 }

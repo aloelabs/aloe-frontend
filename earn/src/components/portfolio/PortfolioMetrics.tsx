@@ -64,12 +64,12 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
         />
       </PieChartContainer>
       <BalanceContainer className={isHoveringOverSlice ? 'active' : ''}>
-        <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+        <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
           Balance
         </Text>
         <div>
           <Display size='L' className='inline-block mr-0.5'>
-            {formatTokenAmount(totalBalance)}
+            {formatTokenAmount(totalBalance, 3)}
           </Display>
           <Display size='S' className='inline-block ml-0.5'>
             {activeAsset?.ticker || ''}
@@ -77,7 +77,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
         </div>
       </BalanceContainer>
       <APYContainer className={isHoveringOverSlice ? 'active' : ''}>
-        <Text size='M' weight='bold' color='rgba(130, 160, 182, 1)'>
+        <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
           APY
         </Text>
         <Display size='L'>{roundPercentage(apy, 3)}%</Display>

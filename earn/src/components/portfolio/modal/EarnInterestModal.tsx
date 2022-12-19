@@ -1,15 +1,17 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
 
-import KittyABI from '../../../assets/abis/Kitty.json';
+import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
@@ -17,7 +19,8 @@ import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, toBig } from '../../../util/Numbers';
-import TokenDropdown from '../../common/TokenDropdown';
+import PairDropdown from '../../common/PairDropdown';
+import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 import PortfolioModal from './PortfolioModal';
 
@@ -67,22 +70,38 @@ type DepositButtonProps = {
   accountAddress: Address;
   activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen, setPendingTxn } = props;
   const [isPending, setIsPending] = useState(false);
 
-  const { data: userAllowanceToken } = useAllowance(token, accountAddress, kitty.address);
+  const { data: userAllowanceToken } = useAllowance(token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
-  const writeAllowanceToken = useAllowanceWrite(activeChain, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
-  const contract = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'deposit',
+    functionName: 'depositWithApprove(address,uint256)',
   });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -125,21 +144,13 @@ function DepositButton(props: DepositButtonProps) {
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            // If the user accepts the transaction, close the modal and wait for the transaction to be verified
-            setIsOpen(false);
-            setIsPending(false);
-            // TODO: Add loading state
-          })
-          .catch((error) => {
-            // If the user rejects the transaction, we want to reset the pending state
-            setIsPending(false);
-          });
+        contractWrite?.({
+          recklesslySetUnpreparedArgs: [
+            kitty.address,
+            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+          ],
+          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+        });
         break;
       default:
         break;
@@ -168,26 +179,28 @@ export type EarnInterestModalProps = {
   defaultOption: Token;
   lendingPairs: LendingPair[];
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
-  const [activeCollatealOptions, setActiveCollateralOptions] = useState<Token[]>([]);
-  const [selectedCollateralOption, setSelectedCollateralOption] = useState<Token | null>(null);
+  const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
+  const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
 
+  function resetModal() {
+    setSelectedOption(defaultOption);
+    setInputValue('');
+  }
+
   useEffect(() => {
-    const activeCollateralOptions = lendingPairs
-      .filter((pair) => pair.token0 === selectedOption || pair.token1 === selectedOption)
-      .map((pair) => {
-        return pair.token0 === selectedOption ? pair.token1 : pair.token0;
-      });
-    setActiveCollateralOptions(activeCollateralOptions);
-    setSelectedCollateralOption(activeCollateralOptions[0]);
+    const pairs = lendingPairs.filter((pair) => pair.token0 === selectedOption || pair.token1 === selectedOption);
+    setActivePairOptions(pairs);
+    setSelectedPairOption(pairs[0]);
   }, [lendingPairs, selectedOption]);
 
   useEffect(() => {
@@ -205,21 +218,33 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   // the selected token / collateral token lending pair
   let activeKitty: Kitty | null = useMemo(() => {
     for (const lendingPair of lendingPairs) {
-      if (lendingPair.token0 === selectedOption && lendingPair.token1 === selectedCollateralOption) {
-        return lendingPair.kitty0;
-      } else if (lendingPair.token1 === selectedOption && lendingPair.token0 === selectedCollateralOption) {
-        return lendingPair.kitty1;
+      if (selectedPairOption?.equals(lendingPair)) {
+        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
       }
     }
     return null;
-  }, [selectedCollateralOption, selectedOption, lendingPairs]);
+  }, [selectedPairOption, selectedOption, lendingPairs]);
 
-  if (selectedCollateralOption == null || activeKitty == null) {
+  if (selectedPairOption == null || activeKitty == null) {
     return null;
   }
 
+  const peerAsset: Token =
+    selectedOption.address === selectedPairOption.token0.address
+      ? selectedPairOption.token1
+      : selectedPairOption.token0;
+
   return (
-    <PortfolioModal isOpen={isOpen} title='Earn Interest' setIsOpen={setIsOpen}>
+    <PortfolioModal
+      isOpen={isOpen}
+      title='Earn Interest'
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
+          resetModal();
+        }
+      }}
+    >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
@@ -246,18 +271,32 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
               }
             }}
             options={options}
-            onSelect={setSelectedOption}
+            onSelect={(updatedOption: Token) => {
+              setSelectedOption(updatedOption);
+              setInputValue('');
+            }}
             selectedOption={selectedOption}
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Collateral
-          </Text>
-          <TokenDropdown
-            options={activeCollatealOptions}
-            onSelect={setSelectedCollateralOption}
-            selectedOption={selectedCollateralOption}
+          <div className='flex items-center gap-2'>
+            <Text size='M' weight='bold'>
+              Lending Pair
+            </Text>
+            <Tooltip
+              buttonSize='S'
+              buttonText=''
+              content={`You earn interest when other users borrow your assets. To do that, they have to post${' '}
+              collateral. Your choice of Lending Pair determines what kind of collateral is allowed. Never deposit${' '}
+              to a pair that includes unknown or untrustworthy tokens.`}
+              position='top-center'
+              filled={true}
+            />
+          </div>
+          <PairDropdown
+            options={activePairOptions}
+            onSelect={setSelectedPairOption}
+            selectedOption={selectedPairOption}
             size='L'
             compact={false}
           />
@@ -267,9 +306,16 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're depositing {inputValue || '0.00'} {selectedOption.ticker} to the {selectedOption.ticker}/
-            {selectedCollateralOption.ticker} lending market. Other users will be able to borrow your{' '}
-            {selectedOption.ticker} by posting {selectedCollateralOption.ticker} as collateral.
+            You're depositing{' '}
+            <strong>
+              {inputValue || '0.00'} {selectedOption.ticker}
+            </strong>{' '}
+            to the{' '}
+            <strong>
+              {selectedPairOption.token0.ticker}/{selectedPairOption.token1.ticker}
+            </strong>{' '}
+            lending market. Other users will be able to borrow your {selectedOption.ticker} by posting{' '}
+            {peerAsset.ticker} as collateral. When they pay interest, you earn interest.
           </Text>
         </div>
         <div className='w-full'>
@@ -280,7 +326,13 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
             activeChain={activeChain}
-            setIsOpen={setIsOpen}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By depositing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that
