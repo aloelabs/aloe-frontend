@@ -1,10 +1,11 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useContractWrite, useNetwork } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -65,20 +66,38 @@ type WithdrawButtonProps = {
   token: Token;
   kitty: Kitty;
   activeChain: Chain;
+  accountAddress: string;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function WithdrawButton(props: WithdrawButtonProps) {
-  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, setIsOpen } = props;
+  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, accountAddress, setIsOpen, setPendingTxn } =
+    props;
   const [isPending, setIsPending] = useState(false);
 
-  const contract = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'withdraw',
+    functionName: 'redeem',
     chainId: activeChain.id,
   });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(withdrawBalance) || 0;
   const numericDepositAmount = Number(withdrawAmount) || 0;
@@ -97,21 +116,14 @@ function WithdrawButton(props: WithdrawButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      contract
-        .writeAsync?.({
-          recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(withdrawAmount, token.decimals).toString()],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        })
-        .then((txnResult) => {
-          // If the user accepts the transaction, close the modal and wait for the transaction to be verified
-          setIsOpen(false);
-          setIsPending(false);
-          // TODO: Add loading state
-        })
-        .catch((error) => {
-          // If the user rejects the transaction, we want to reset the pending state
-          setIsPending(false);
-        });
+      contractWrite?.({
+        recklesslySetUnpreparedArgs: [
+          ethers.utils.parseUnits(withdrawAmount, token.decimals).toString(),
+          accountAddress,
+          accountAddress,
+        ],
+        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+      });
     }
   }
 
@@ -137,16 +149,23 @@ export type WithdrawModalProps = {
   lendingPairs: LendingPair[];
   combinedBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen } = props;
+  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
+  const account = useAccount();
   const network = useNetwork();
   const activeChain = network.chain ?? DEFAULT_CHAIN;
+
+  function resetModal() {
+    setSelectedOption(defaultOption);
+    setInputValue('');
+  }
 
   useEffect(() => {
     const activeCollateralOptions = lendingPairs.filter(
@@ -185,7 +204,16 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   )?.balance;
 
   return (
-    <PortfolioModal isOpen={isOpen} title='Withdraw' setIsOpen={setIsOpen}>
+    <PortfolioModal
+      isOpen={isOpen}
+      title='Withdraw'
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
+          resetModal();
+        }
+      }}
+    >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
@@ -264,7 +292,14 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
-            setIsOpen={setIsOpen}
+            accountAddress={account.address ?? '0x'}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By withdrawing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that

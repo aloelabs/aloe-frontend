@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
@@ -10,6 +11,7 @@ import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import PendingTxnModal from '../components/lend/modal/PendingTxnModal';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
@@ -81,6 +83,7 @@ export type TokenBalance = {
 };
 
 export default function PortfolioPage() {
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
@@ -93,6 +96,7 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
 
   const network = useNetwork();
   const activeChainId = network.chain?.id || chain.goerli.id;
@@ -213,6 +217,28 @@ export default function PortfolioPage() {
       mounted = false;
     };
   }, [provider, address, lendingPairs, isLoading]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function waitForTxn() {
+      if (!pendingTxn) return;
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (!mounted) return;
+      setPendingTxn(null);
+      setIsPendingTxnModalOpen(false);
+      if (receipt.status === 1) {
+        // TODO: Update balances
+        // TODO: Show success modal
+      } else {
+        // TODO: Show failure modal
+      }
+    }
+    waitForTxn();
+    return () => {
+      mounted = false;
+    };
+  }, [pendingTxn]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
@@ -374,7 +400,8 @@ export default function PortfolioPage() {
             options={uniqueTokens}
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
-            setIsOpen={() => setIsSendCryptoModalOpen(false)}
+            setIsOpen={setIsSendCryptoModalOpen}
+            setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal
             options={uniqueTokens}
@@ -382,6 +409,7 @@ export default function PortfolioPage() {
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
             setIsOpen={setIsEarnInterestModalOpen}
+            setPendingTxn={setPendingTxn}
           />
           <WithdrawModal
             options={uniqueTokens}
@@ -390,9 +418,11 @@ export default function PortfolioPage() {
             combinedBalances={combinedBalances}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
+            setPendingTxn={setPendingTxn}
           />
         </>
       )}
+      <PendingTxnModal open={isPendingTxnModalOpen} txnHash={pendingTxn?.hash} setOpen={setIsPendingTxnModalOpen} />
     </AppPage>
   );
 }
