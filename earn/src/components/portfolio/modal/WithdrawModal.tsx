@@ -16,7 +16,6 @@ import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { TokenBalance } from '../../../pages/PortfolioPage';
 import { formatNumberInput } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
