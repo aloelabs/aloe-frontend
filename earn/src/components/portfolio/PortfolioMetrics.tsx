@@ -69,7 +69,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
         </Text>
         <div>
           <Display size='L' className='inline-block mr-0.5'>
-            {formatTokenAmount(totalBalance)}
+            {formatTokenAmount(totalBalance, 3)}
           </Display>
           <Display size='S' className='inline-block ml-0.5'>
             {activeAsset?.ticker || ''}
