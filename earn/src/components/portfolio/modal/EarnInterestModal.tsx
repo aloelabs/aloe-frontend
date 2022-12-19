@@ -81,7 +81,12 @@ function DepositButton(props: DepositButtonProps) {
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
-  const { write, isError, isSuccess, data } = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
@@ -89,13 +94,14 @@ function DepositButton(props: DepositButtonProps) {
   });
 
   useEffect(() => {
-    if (isSuccess && data) {
-      setPendingTxn(data);
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
       setIsOpen(false);
-    } else if (isError) {
+    } else if (!contractIsLoading && !contractDidSucceed) {
       setIsPending(false);
     }
-  }, [isError, isSuccess, data, setPendingTxn, setIsOpen]);
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -138,7 +144,7 @@ function DepositButton(props: DepositButtonProps) {
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        write?.({
+        contractWrite?.({
           recklesslySetUnpreparedArgs: [
             kitty.address,
             ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
@@ -232,9 +238,9 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     <PortfolioModal
       isOpen={isOpen}
       title='Earn Interest'
-      setIsOpen={(isOpen: boolean) => {
-        setIsOpen(isOpen);
-        if (!isOpen) {
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
           resetModal();
         }
       }}
@@ -320,7 +326,12 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
             activeChain={activeChain}
-            setIsOpen={setIsOpen}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>

@@ -94,7 +94,12 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     };
   }, [sendAddress, provider]);
 
-  const { write, isError, isSuccess, data } = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: token.address,
     abi: ERC20ABI,
     mode: 'recklesslyUnprepared',
@@ -103,13 +108,14 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   });
 
   useEffect(() => {
-    if (isSuccess && data) {
-      setPendingTxn(data);
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
       setIsOpen(false);
-    } else if (isError) {
+    } else if (!contractIsLoading && !contractDidSucceed) {
       setIsPending(false);
     }
-  }, [isError, isSuccess, data, setPendingTxn, setIsOpen]);
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericSendBalance = Number(sendBalance) || 0;
   const numericSendAmount = Number(sendAmount) || 0;
@@ -130,7 +136,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      write?.({
+      contractWrite?.({
         recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
         recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
       });
@@ -191,9 +197,9 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     <PortfolioModal
       isOpen={isOpen}
       title='Send Crypto'
-      setIsOpen={(isOpen: boolean) => {
-        setIsOpen(isOpen);
-        if (!isOpen) {
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
           resetModal();
         }
       }}
@@ -261,7 +267,12 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             sendBalance={depositBalance?.formatted ?? '0.00'}
             token={selectedOption}
             activeChain={activeChain}
-            setIsOpen={setIsOpen}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>

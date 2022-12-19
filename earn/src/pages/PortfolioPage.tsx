@@ -222,7 +222,6 @@ export default function PortfolioPage() {
     let mounted = true;
     async function waitForTxn() {
       if (!pendingTxn) return;
-      console.log('Waiting for txn', pendingTxn.hash);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
       if (!mounted) return;
@@ -315,7 +314,6 @@ export default function PortfolioPage() {
 
   const noWallet = !isConnecting && !isConnected;
   const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
-  // console.log(pendingTxnHash);
 
   return (
     <AppPage>
@@ -402,7 +400,7 @@ export default function PortfolioPage() {
             options={uniqueTokens}
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
-            setIsOpen={() => setIsSendCryptoModalOpen(false)}
+            setIsOpen={setIsSendCryptoModalOpen}
             setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal

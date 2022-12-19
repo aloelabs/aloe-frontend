@@ -76,7 +76,12 @@ function WithdrawButton(props: WithdrawButtonProps) {
     props;
   const [isPending, setIsPending] = useState(false);
 
-  const { write, isError, isSuccess, data } = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
@@ -85,13 +90,14 @@ function WithdrawButton(props: WithdrawButtonProps) {
   });
 
   useEffect(() => {
-    if (isSuccess && data) {
-      setPendingTxn(data);
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
       setIsOpen(false);
-    } else if (isError) {
+    } else if (!contractIsLoading && !contractDidSucceed) {
       setIsPending(false);
     }
-  }, [isError, isSuccess, data, setIsOpen, setPendingTxn]);
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
   const numericDepositBalance = Number(withdrawBalance) || 0;
   const numericDepositAmount = Number(withdrawAmount) || 0;
@@ -110,7 +116,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      write?.({
+      contractWrite?.({
         recklesslySetUnpreparedArgs: [
           ethers.utils.parseUnits(withdrawAmount, token.decimals).toString(),
           accountAddress,
@@ -201,9 +207,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     <PortfolioModal
       isOpen={isOpen}
       title='Withdraw'
-      setIsOpen={(isOpen: boolean) => {
-        setIsOpen(isOpen);
-        if (!isOpen) {
+      setIsOpen={(open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
           resetModal();
         }
       }}
@@ -287,7 +293,12 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             kitty={activeKitty}
             activeChain={activeChain}
             accountAddress={account.address ?? '0x'}
-            setIsOpen={setIsOpen}
+            setIsOpen={(open: boolean) => {
+              setIsOpen(open);
+              if (!open) {
+                resetModal();
+              }
+            }}
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
