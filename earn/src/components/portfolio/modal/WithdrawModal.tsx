@@ -1,11 +1,12 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useContractRead, useContractWrite, useNetwork } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -147,13 +148,12 @@ export type WithdrawModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
-  combinedBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
@@ -190,6 +190,23 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     return null;
   }, [selectedPairOption, selectedOption, lendingPairs]);
 
+  const { data: maxReedem } = useContractRead({
+    address: activeKitty?.address,
+    abi: KittyABI,
+    enabled: activeKitty != null,
+    functionName: 'maxRedeem',
+    chainId: activeChain.id,
+    args: [account.address] as const,
+    watch: true,
+  });
+
+  const maxRedeemBalance = useMemo(() => {
+    if (maxReedem) {
+      return new Big(maxReedem.toString()).div(10 ** selectedOption.decimals).toString();
+    }
+    return '0.00';
+  }, [maxReedem, selectedOption]);
+
   if (selectedPairOption == null || activeKitty == null) {
     return null;
   }
@@ -198,10 +215,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     selectedOption.address === selectedPairOption.token0.address
       ? selectedPairOption.token1
       : selectedPairOption.token0;
-
-  const activeKittyBalance = combinedBalances.find(
-    (balance) => activeKitty && balance.token.address === activeKitty.address
-  )?.balance;
 
   return (
     <PortfolioModal
@@ -223,8 +236,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                if (activeKittyBalance !== undefined) {
-                  setInputValue(activeKittyBalance.toString());
+                if (maxReedem) {
+                  setInputValue(maxRedeemBalance);
                 }
               }}
             >
@@ -288,7 +301,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
         <div className='w-full'>
           <WithdrawButton
             withdrawAmount={inputValue}
-            withdrawBalance={activeKittyBalance?.toString() ?? '0.00'}
+            withdrawBalance={maxRedeemBalance}
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
