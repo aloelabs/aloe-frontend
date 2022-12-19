@@ -62,7 +62,8 @@ function getConfirmButton(
 
 type WithdrawButtonProps = {
   withdrawAmount: string;
-  withdrawBalance: string;
+  maxWithdrawBalance: string;
+  maxRedeemBalance: string;
   token: Token;
   kitty: Kitty;
   activeChain: Chain;
@@ -72,9 +73,25 @@ type WithdrawButtonProps = {
 };
 
 function WithdrawButton(props: WithdrawButtonProps) {
-  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, accountAddress, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    withdrawAmount,
+    maxWithdrawBalance,
+    maxRedeemBalance,
+    token,
+    kitty,
+    activeChain,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const [isPending, setIsPending] = useState(false);
+
+  const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'convertToShares',
+    args: [ethers.utils.parseUnits(withdrawAmount || '0.00', token.decimals).toString()],
+  });
 
   const {
     write: contractWrite,
@@ -99,7 +116,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  const numericDepositBalance = Number(withdrawBalance) || 0;
+  const numericDepositBalance = Number(maxWithdrawBalance) || 0;
   const numericDepositAmount = Number(withdrawAmount) || 0;
 
   let confirmButtonState = ConfirmButtonState.READY;
@@ -108,20 +125,23 @@ function WithdrawButton(props: WithdrawButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (convertToSharesIsLoading) {
+    confirmButtonState = ConfirmButtonState.PENDING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
-    if (confirmButtonState === ConfirmButtonState.READY) {
+    if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
       setIsPending(true);
+      const finalRequestedShares = BigNumber.from(requestedShares.toString());
+      const finalMaxRedeemBalance = ethers.utils.parseUnits(maxRedeemBalance, token.decimals);
+      // Being extra careful here to make sure we don't withdraw more than the user has
+      const finalWithdrawAmount = finalRequestedShares.gt(finalMaxRedeemBalance)
+        ? finalMaxRedeemBalance
+        : finalRequestedShares;
       contractWrite?.({
-        recklesslySetUnpreparedArgs: [
-          ethers.utils.parseUnits(withdrawAmount, token.decimals).toString(),
-          accountAddress,
-          accountAddress,
-        ],
+        recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
         recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
       });
     }
@@ -189,7 +209,17 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     return null;
   }, [selectedPairOption, selectedOption, lendingPairs]);
 
-  const { data: maxReedem } = useContractRead({
+  const { data: maxWithdraw } = useContractRead({
+    address: activeKitty?.address,
+    abi: KittyABI,
+    enabled: activeKitty != null,
+    functionName: 'maxWithdraw',
+    chainId: activeChain.id,
+    args: [account.address] as const,
+    watch: true,
+  });
+
+  const { data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
     enabled: activeKitty != null,
@@ -199,12 +229,19 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     watch: true,
   });
 
-  const maxRedeemBalance = useMemo(() => {
-    if (maxReedem) {
-      return new Big(maxReedem.toString()).div(10 ** selectedOption.decimals).toString();
+  const maxWithdrawBalance = useMemo(() => {
+    if (maxWithdraw) {
+      return new Big(maxWithdraw.toString()).div(10 ** selectedOption.decimals).toString();
     }
     return '0.00';
-  }, [maxReedem, selectedOption]);
+  }, [maxWithdraw, selectedOption]);
+
+  const maxRedeemBalance = useMemo(() => {
+    if (maxRedeem) {
+      return new Big(maxRedeem.toString()).div(10 ** selectedOption.decimals).toString();
+    }
+    return '0.00';
+  }, [maxRedeem, selectedOption]);
 
   if (selectedPairOption == null || activeKitty == null) {
     return null;
@@ -235,8 +272,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                if (maxReedem) {
-                  setInputValue(maxRedeemBalance);
+                if (maxWithdraw) {
+                  setInputValue(maxWithdrawBalance);
                 }
               }}
             >
@@ -300,7 +337,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
         <div className='w-full'>
           <WithdrawButton
             withdrawAmount={inputValue}
-            withdrawBalance={maxRedeemBalance}
+            maxWithdrawBalance={maxWithdrawBalance}
+            maxRedeemBalance={maxRedeemBalance}
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
