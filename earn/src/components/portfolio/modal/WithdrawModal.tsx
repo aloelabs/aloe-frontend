@@ -123,9 +123,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   if (numericDepositAmount > numericDepositBalance) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (convertToSharesIsLoading) {
+  } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
@@ -134,12 +132,12 @@ function WithdrawButton(props: WithdrawButtonProps) {
   function handleClickConfirm() {
     if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
       setIsPending(true);
-      const finalRequestedShares = BigNumber.from(requestedShares.toString());
-      const finalMaxRedeemBalance = ethers.utils.parseUnits(maxRedeemBalance, token.decimals);
+      const numericRequestedShares = BigNumber.from(requestedShares.toString());
+      const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
       // Being extra careful here to make sure we don't withdraw more than the user has
-      const finalWithdrawAmount = finalRequestedShares.gt(finalMaxRedeemBalance)
-        ? finalMaxRedeemBalance
-        : finalRequestedShares;
+      const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
+        ? numericMaxRedeemBalance
+        : numericRequestedShares;
       contractWrite?.({
         recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
         recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
@@ -236,13 +234,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     return '0.00';
   }, [maxWithdraw, selectedOption]);
 
-  const maxRedeemBalance = useMemo(() => {
-    if (maxRedeem) {
-      return new Big(maxRedeem.toString()).div(10 ** selectedOption.decimals).toString();
-    }
-    return '0.00';
-  }, [maxRedeem, selectedOption]);
-
   if (selectedPairOption == null || activeKitty == null) {
     return null;
   }
@@ -338,7 +329,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           <WithdrawButton
             withdrawAmount={inputValue}
             maxWithdrawBalance={maxWithdrawBalance}
-            maxRedeemBalance={maxRedeemBalance}
+            maxRedeemBalance={maxRedeem ? maxRedeem.toString() : '0'}
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
