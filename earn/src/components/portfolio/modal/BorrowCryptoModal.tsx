@@ -1,13 +1,22 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
+import { Contract, ContractReceipt, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useBalance, useNetwork } from 'wagmi';
+import { Chain, useAccount, useBalance, useNetwork, useSigner } from 'wagmi';
 
+import BorrowerABI from '../../../assets/abis/Borrower.json';
+import BorrowManagerABI from '../../../assets/abis/BorrowManager.json';
+import FactoryABI from '../../../assets/abis/Factory.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
+import { createMarginAccount } from '../../../connector/FactoryActions';
+import { getBorrowersForUser } from '../../../data/Borrower';
+import { ALOE_II_FACTORY_ADDRESS_WITH_FAUCET_GOERLI } from '../../../data/constants/Addresses';
 import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
@@ -23,6 +32,8 @@ enum ConfirmButtonState {
   INSUFFICIENT_BORROW_ASSET,
   INSUFFICIENT_COLLATERAL_ASSET,
   PENDING,
+  CREATING_BORROWER,
+  CREATE_BORROWER,
   LOADING,
   READY,
 }
@@ -52,6 +63,10 @@ function getConfirmButton(
       };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+    case ConfirmButtonState.CREATE_BORROWER:
+      return { text: 'Create Borrower', Icon: <MoreIcon />, enabled: true };
+    case ConfirmButtonState.CREATING_BORROWER:
+      return { text: 'Creating Borrower', Icon: <MoreIcon />, enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
     case ConfirmButtonState.LOADING:
@@ -67,13 +82,91 @@ type BorrowCryptoConfirmButtonProps = {
   collateralAmount: string;
   collateralBalance: string;
   collateralToken: Token;
+  accountAddress: string;
   activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function BorrowCryptoConfirmButton(props: BorrowCryptoConfirmButtonProps) {
-  const { borrowAmount, borrowBalance, borrowToken, collateralAmount, collateralBalance, collateralToken } = props;
+  const {
+    borrowAmount,
+    borrowBalance,
+    borrowToken,
+    collateralAmount,
+    collateralBalance,
+    collateralToken,
+    accountAddress,
+    // activeChain,
+    // setIsOpen,
+    // setPendingTxn,
+  } = props;
   const [isPending, setIsPending] = useState(false);
+  const [borrowerAddress, setBorrowerAddress] = useState<string | undefined>(undefined);
+
+  const { data: signer } = useSigner();
+
+  // const {
+  //   write: writeContract,
+  //   isLoading: contractIsLoading,
+  //   isSuccess: contractDidSucceed,
+  //   data: contractData,
+  // } = useContractWrite({
+  //   abi: BorrowManagerABI,
+  //   address: borrowerAddress,
+  //   mode: 'recklesslyUnprepared',
+  //   functionName: 'callback',
+  //   chainId: activeChain.id,
+  // });
+
+  const borrowManager = useMemo(() => {
+    return signer && borrowerAddress ? new Contract(borrowerAddress, BorrowManagerABI, signer) : null;
+  }, [signer, borrowerAddress]);
+
+  // TODO: Temporarily replacing actual factory with one that has a built-in faucet upon MarginAccount creation
+  const factory = useMemo(() => {
+    return signer ? new Contract(ALOE_II_FACTORY_ADDRESS_WITH_FAUCET_GOERLI, FactoryABI, signer) : null;
+  }, [signer]);
+
+  const borrower = useMemo(() => {
+    return signer && borrowerAddress ? new Contract(borrowerAddress, BorrowerABI, signer) : null;
+  }, [borrowerAddress, signer]);
+
+  console.log('borrower', borrower);
+
+  useEffect(() => {
+    async function fetch() {
+      const addresses = await getBorrowersForUser(accountAddress);
+      if (addresses.length > 0) {
+        setBorrowerAddress(addresses[0]);
+      }
+      console.log('addresses', addresses);
+    }
+    fetch();
+  }, [accountAddress]);
+
+  // useEffect(() => {
+  //   if (contractDidSucceed && contractData) {
+  //     setPendingTxn(contractData);
+  //     setIsPending(false);
+  //     setIsOpen(false);
+  //   } else if (!contractIsLoading && !contractDidSucceed) {
+  //     setIsPending(false);
+  //   }
+  // }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+
+  // if (factory) {
+  //   createMarginAccount(
+  //     factory,
+  //     '0xfBe57C73A82171A773D3328F1b563296151be515',
+  //     accountAddress,
+  //     (receipt: ContractReceipt | undefined) => {
+  //       console.log('receipt', receipt);
+  //     }
+  //   );
+  // }
+
+  const needsToCreateBorrower = borrowerAddress === undefined;
 
   const numericBorrowBalance = Number(borrowBalance) ?? 0;
   const numericBorrowAmount = Number(borrowAmount) ?? 0;
@@ -88,6 +181,8 @@ function BorrowCryptoConfirmButton(props: BorrowCryptoConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_COLLATERAL_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (needsToCreateBorrower && factory !== null) {
+    confirmButtonState = ConfirmButtonState.CREATE_BORROWER;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, borrowToken, collateralToken);
@@ -95,7 +190,29 @@ function BorrowCryptoConfirmButton(props: BorrowCryptoConfirmButtonProps) {
   function handleClickConfirm() {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
-      setIsPending(true);
+      // setIsPending(true);
+      let transactionOptions: any = {};
+      transactionOptions['gasLimit'] = 1000000;
+      const bigAmount0 = new Big(0.01).mul(10 ** 18);
+      const amount1 = 0;
+      const action = 0;
+      const encodedAction = ethers.utils.defaultAbiCoder.encode(['uint8'], [action]);
+      const encodedBigAmount0 = ethers.utils.defaultAbiCoder.encode(['uint256'], [bigAmount0.toFixed(0)]);
+      const encodedAmount1 = ethers.utils.defaultAbiCoder.encode(['uint256'], [amount1]);
+      borrower?.modify(
+        borrowManager?.address,
+        ethers.utils.defaultAbiCoder.encode(
+          ['uint8[]', 'uint256[]', 'uint256[]'],
+          [[encodedAction], [encodedBigAmount0], [encodedAmount1]]
+        ),
+        [false, false, false, false],
+        transactionOptions
+      );
+
+      // writeContract?.({
+      //   recklesslySetUnpreparedArgs: [factory?.address],
+      //   recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+      // });
       // contract
       //   .writeAsync?.({
       //     recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
@@ -109,6 +226,22 @@ function BorrowCryptoConfirmButton(props: BorrowCryptoConfirmButtonProps) {
       //   .catch((error) => {
       //     setIsPending(false);
       //   });
+    } else if (confirmButtonState === ConfirmButtonState.CREATE_BORROWER && factory !== null) {
+      // TODO: Do not use setStates in async functions outside of useEffect
+      setIsPending(true);
+      // TODO: Do not use setStates in async functions outside of useEffect
+      // TODO: Do not use setStates in async functions outside of useEffect
+      // TODO: Do not use setStates in async functions outside of useEffect
+      createMarginAccount(
+        factory,
+        '0xfBe57C73A82171A773D3328F1b563296151be515',
+        accountAddress,
+        (receipt: ContractReceipt | undefined) => {
+          console.log('receipt', receipt);
+          //TODO: move this to a useEffect
+          setIsPending(false);
+        }
+      );
     }
   }
 
@@ -168,10 +301,11 @@ export type BorrowCryptoModalProps = {
   lendingPairs: LendingPair[];
   tokenQuotes: TokenQuote[];
   setIsOpen: (open: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, tokenQuotes, setIsOpen } = props;
+  const { isOpen, options, defaultOption, lendingPairs, tokenQuotes, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [collateralOptions, setCollateralOptions] = useState<Token[]>(() => {
     return lendingPairs
@@ -342,8 +476,10 @@ export default function BorrowCryptoModal(props: BorrowCryptoModalProps) {
             collateralAmount={collateralAmountInputValue}
             collateralBalance={collateralBalance?.formatted ?? '0'}
             collateralToken={selectedCollateralOption}
+            accountAddress={account?.address ?? '0x'}
             activeChain={activeChain}
             setIsOpen={setIsOpen}
+            setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By borrowing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that

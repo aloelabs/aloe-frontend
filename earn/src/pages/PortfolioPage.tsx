@@ -362,11 +362,6 @@ export default function PortfolioPage() {
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton
-            label={'Borrow Crypto'}
-            Icon={<DollarIcon />}
-            onClick={() => setIsBorrowCryptoModalOpen(true)}
-          />
-          <PortfolioActionButton
             label={'Send Crypto'}
             Icon={<SendIcon />}
             onClick={() => setIsSendCryptoModalOpen(true)}
@@ -382,6 +377,12 @@ export default function PortfolioPage() {
             onClick={() => {
               setIsWithdrawModalOpen(true);
             }}
+          />
+          <PortfolioActionButton
+            label={'Borrow Crypto'}
+            Icon={<DollarIcon />}
+            onClick={() => setIsBorrowCryptoModalOpen(true)}
+            disabled={true}
           />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
@@ -409,6 +410,7 @@ export default function PortfolioPage() {
             tokenQuotes={tokenQuotes}
             isOpen={isBorrowCryptoModalOpen}
             setIsOpen={setIsBorrowCryptoModalOpen}
+            setPendingTxn={setPendingTxn}
           />
           <SendCryptoModal
             options={uniqueTokens}

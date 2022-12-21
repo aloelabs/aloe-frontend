@@ -1,0 +1,62 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract Factory",
+        "name": "_factory",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function",
+    "name": "FACTORY",
+    "outputs": [
+      {
+        "internalType": "contract Factory",
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "callback",
+    "outputs": [
+      {
+        "internalType": "struct Uniswap.Position[]",
+        "name": "positions",
+        "type": "tuple[]",
+        "components": [
+          {
+            "internalType": "int24",
+            "name": "lower",
+            "type": "int24"
+          },
+          {
+            "internalType": "int24",
+            "name": "upper",
+            "type": "int24"
+          }
+        ]
+      },
+      {
+        "internalType": "bool",
+        "name": "includeLenderReceipts",
+        "type": "bool"
+      }
+    ]
+  }
+]
