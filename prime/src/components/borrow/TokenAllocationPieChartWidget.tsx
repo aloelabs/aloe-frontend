@@ -8,7 +8,7 @@ import tw from 'twin.macro';
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
 import { BIGQ96 } from '../../data/constants/Values';
 import { Assets } from '../../data/MarginAccount';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
@@ -205,8 +205,8 @@ const DashedDivider = styled.div`
 `;
 
 export type TokenAllocationPieChartWidgetProps = {
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   assets: Assets;
   sqrtPriceX96: Big;
 };

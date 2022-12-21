@@ -11,7 +11,7 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import { TokenData } from '../../../data/TokenData';
+import { Token } from '../../../data/Token';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
@@ -45,7 +45,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
-  const tokenMap = new Map<TokenType, TokenData>();
+  const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
   tokenMap.set(TokenType.KITTY0, kitty0);
