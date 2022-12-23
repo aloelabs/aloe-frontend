@@ -156,9 +156,11 @@ export type NavBarLink = {
 
 export type NavBarProps = {
   links: NavBarLink[];
+  isAllowedToInteract: boolean;
 };
 
 export function NavBar(props: NavBarProps) {
+  const { links, isAllowedToInteract } = props;
   const account = useAccount();
   const network = useNetwork();
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
@@ -176,7 +178,7 @@ export function NavBar(props: NavBarProps) {
         </a>
         <DesktopNavLinks>
           <VerticalDivider />
-          {props.links.map((link, index) => (
+          {links.map((link, index) => (
             <React.Fragment key={index}>
               <DesktopNavLink key={link.to} to={link.to}>
                 <Text size='M'>{link.label}</Text>
@@ -192,7 +194,7 @@ export function NavBar(props: NavBarProps) {
             setIsOpen={setIsSelectChainDropdownOpen}
           />
           {!activeChain || !account.address ? (
-            <ConnectWalletButton account={account} activeChain={activeChain} />
+            <ConnectWalletButton account={account} activeChain={activeChain} disabled={!isAllowedToInteract} />
           ) : (
             <AccountInfo
               account={account}

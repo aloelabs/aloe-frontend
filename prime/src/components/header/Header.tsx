@@ -16,10 +16,14 @@ const Nav = styled.nav`
   z-index: 40;
 `;
 
-export default function Header() {
+export type HeaderProps = {
+  isAllowedToInteract: boolean;
+};
+
+export default function Header(props: HeaderProps) {
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} />
+      <NavBar links={NAV_LINKS} isAllowedToInteract={props.isAllowedToInteract} />
     </Nav>
   );
 }

@@ -17,12 +17,13 @@ const Container = styled.div`
 export type ConnectWalletButtonProps = {
   account?: GetAccountResult<Provider>;
   activeChain?: Chain;
+  disabled?: boolean;
   fillWidth?: boolean;
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account } = props;
+  const { account, activeChain, disabled, fillWidth } = props;
   const isConnected = account?.isConnected ?? false;
 
   // MARK: component state
@@ -30,7 +31,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
-  const { connect, connectors, error } = useConnect({ chainId: DEFAULT_CHAIN.id });
+  const { connect, connectors, error } = useConnect({ chainId: activeChain?.id ?? DEFAULT_CHAIN.id });
 
   useEffect(() => {
     if (isConnected) {
@@ -45,7 +46,8 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           setWalletModalOpen(true);
         }}
         size='M'
-        fillWidth={props.fillWidth}
+        fillWidth={fillWidth}
+        disabled={disabled}
       >
         Connect Wallet
       </FilledStylizedButton>

@@ -95,7 +95,7 @@ function App() {
         <WagmiProvider>
           <ScrollToTop />
           <AppBody>
-            <Header />
+            <Header isAllowedToInteract={isAllowedToInteract} />
             <main className='flex-grow'>
               <Routes>
                 <Route path='/borrow' element={<BorrowAccountsPage isAllowedToInteract={isAllowedToInteract} />} />
