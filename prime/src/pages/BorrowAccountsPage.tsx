@@ -39,7 +39,12 @@ const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
 `;
 
-export default function BorrowAccountsPage() {
+export type BorrowAccountsPageProps = {
+  isAllowedToInteract: boolean;
+};
+
+export default function BorrowAccountsPage(props: BorrowAccountsPageProps) {
+  const { isAllowedToInteract } = props;
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -71,7 +76,7 @@ export default function BorrowAccountsPage() {
 
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
-      if (!marginAccountLensContract) {
+      if (!marginAccountLensContract || !isAllowedToInteract) {
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
@@ -86,12 +91,12 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address, marginAccountLensContract, provider, blockNumber.data]);
+  }, [address, marginAccountLensContract, provider, blockNumber.data, isAllowedToInteract]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
       localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
-    if (shouldShowWelcomeModal) {
+    if (shouldShowWelcomeModal && isAllowedToInteract) {
       setShowWelcomeModal(true);
     }
   });
@@ -153,7 +158,7 @@ export default function BorrowAccountsPage() {
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
-          if (!signer || !address || !selectedPool) {
+          if (!signer || !address || !selectedPool || !isAllowedToInteract) {
             // TODO
             return;
           }
