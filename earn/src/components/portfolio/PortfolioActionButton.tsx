@@ -5,11 +5,12 @@ import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Button
 export type PortfolioActionButtonProps = {
   label: string;
   Icon: ReactElement;
+  disabled?: boolean;
   onClick: () => void;
 };
 
 export default function PortfolioActionButton(props: PortfolioActionButtonProps) {
-  const { label, Icon, onClick } = props;
+  const { label, Icon, disabled, onClick } = props;
   return (
     <OutlinedWhiteButtonWithIcon
       Icon={Icon}
@@ -18,6 +19,7 @@ export default function PortfolioActionButton(props: PortfolioActionButtonProps)
       size='M'
       svgColorType='stroke'
       onClick={onClick}
+      disabled={disabled}
     >
       {label}
     </OutlinedWhiteButtonWithIcon>
