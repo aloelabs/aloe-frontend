@@ -1,11 +1,12 @@
 import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useContractRead, useContractWrite, useNetwork } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
@@ -15,7 +16,6 @@ import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { TokenBalance } from '../../../pages/PortfolioPage';
 import { formatNumberInput } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
@@ -62,7 +62,8 @@ function getConfirmButton(
 
 type WithdrawButtonProps = {
   withdrawAmount: string;
-  withdrawBalance: string;
+  maxWithdrawBalance: string;
+  maxRedeemBalance: string;
   token: Token;
   kitty: Kitty;
   activeChain: Chain;
@@ -72,9 +73,25 @@ type WithdrawButtonProps = {
 };
 
 function WithdrawButton(props: WithdrawButtonProps) {
-  const { withdrawAmount, withdrawBalance, token, kitty, activeChain, accountAddress, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    withdrawAmount,
+    maxWithdrawBalance,
+    maxRedeemBalance,
+    token,
+    kitty,
+    activeChain,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const [isPending, setIsPending] = useState(false);
+
+  const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'convertToShares',
+    args: [ethers.utils.parseUnits(withdrawAmount || '0.00', token.decimals).toString()],
+  });
 
   const {
     write: contractWrite,
@@ -99,29 +116,30 @@ function WithdrawButton(props: WithdrawButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  const numericDepositBalance = Number(withdrawBalance) || 0;
+  const numericDepositBalance = Number(maxWithdrawBalance) || 0;
   const numericDepositAmount = Number(withdrawAmount) || 0;
 
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (numericDepositAmount > numericDepositBalance) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isPending) {
+  } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
-    if (confirmButtonState === ConfirmButtonState.READY) {
+    if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
       setIsPending(true);
+      const numericRequestedShares = BigNumber.from(requestedShares.toString());
+      const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
+      // Being extra careful here to make sure we don't withdraw more than the user has
+      const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
+        ? numericMaxRedeemBalance
+        : numericRequestedShares;
       contractWrite?.({
-        recklesslySetUnpreparedArgs: [
-          ethers.utils.parseUnits(withdrawAmount, token.decimals).toString(),
-          accountAddress,
-          accountAddress,
-        ],
+        recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
         recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
       });
     }
@@ -147,13 +165,12 @@ export type WithdrawModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
-  combinedBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, combinedBalances, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
@@ -190,6 +207,33 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     return null;
   }, [selectedPairOption, selectedOption, lendingPairs]);
 
+  const { data: maxWithdraw } = useContractRead({
+    address: activeKitty?.address,
+    abi: KittyABI,
+    enabled: activeKitty != null,
+    functionName: 'maxWithdraw',
+    chainId: activeChain.id,
+    args: [account.address] as const,
+    watch: true,
+  });
+
+  const { data: maxRedeem } = useContractRead({
+    address: activeKitty?.address,
+    abi: KittyABI,
+    enabled: activeKitty != null,
+    functionName: 'maxRedeem',
+    chainId: activeChain.id,
+    args: [account.address] as const,
+    watch: true,
+  });
+
+  const maxWithdrawBalance = useMemo(() => {
+    if (maxWithdraw) {
+      return new Big(maxWithdraw.toString()).div(10 ** selectedOption.decimals).toString();
+    }
+    return '0.00';
+  }, [maxWithdraw, selectedOption]);
+
   if (selectedPairOption == null || activeKitty == null) {
     return null;
   }
@@ -198,10 +242,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     selectedOption.address === selectedPairOption.token0.address
       ? selectedPairOption.token1
       : selectedPairOption.token0;
-
-  const activeKittyBalance = combinedBalances.find(
-    (balance) => activeKitty && balance.token.address === activeKitty.address
-  )?.balance;
 
   return (
     <PortfolioModal
@@ -223,8 +263,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                if (activeKittyBalance !== undefined) {
-                  setInputValue(activeKittyBalance.toString());
+                if (maxWithdraw) {
+                  setInputValue(maxWithdrawBalance);
                 }
               }}
             >
@@ -288,7 +328,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
         <div className='w-full'>
           <WithdrawButton
             withdrawAmount={inputValue}
-            withdrawBalance={activeKittyBalance?.toString() ?? '0.00'}
+            maxWithdrawBalance={maxWithdrawBalance}
+            maxRedeemBalance={maxRedeem ? maxRedeem.toString() : '0'}
             token={selectedOption}
             kitty={activeKitty}
             activeChain={activeChain}
