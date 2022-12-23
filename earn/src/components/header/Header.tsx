@@ -23,7 +23,7 @@ const Nav = styled.nav`
 export default function Header() {
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} />
+      <NavBar links={NAV_LINKS} isAllowedToInteract={true} />
     </Nav>
   );
 }
