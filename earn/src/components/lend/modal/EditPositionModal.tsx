@@ -175,6 +175,7 @@ export default function EditPositionModal(props: EditPositionModalProps) {
           )}
           {state === EditPositionModalState.SUCCESS && (
             <SuccessModalContent
+              activeChain={activeChain}
               confirmationType={confirmationType}
               txnHash={lastTxnHash || ''}
               onConfirm={() => {
@@ -193,7 +194,7 @@ export default function EditPositionModal(props: EditPositionModalProps) {
         </CloseableModal>
       )}
       {state === EditPositionModalState.LOADING && (
-        <PendingTxnModal open={open} setOpen={setOpen} txnHash={pendingTxnResult?.hash} />
+        <PendingTxnModal activeChain={activeChain} open={open} setOpen={setOpen} txnHash={pendingTxnResult?.hash} />
       )}
     </>
   );

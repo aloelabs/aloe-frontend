@@ -185,7 +185,7 @@ export default function BorrowAccountsPage(props: BorrowAccountsPageProps) {
         }}
       />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
-      <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
+      <PendingTxnModal activeChain={activeChain} open={showSubmittingModal} setOpen={setShowSubmittingModal} />
       <WelcomeModal
         open={showWelcomeModal}
         setOpen={setShowWelcomeModal}

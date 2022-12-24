@@ -424,7 +424,12 @@ export default function PortfolioPage(props: PortfolioPageProps) {
           />
         </>
       )}
-      <PendingTxnModal open={isPendingTxnModalOpen} txnHash={pendingTxn?.hash} setOpen={setIsPendingTxnModalOpen} />
+      <PendingTxnModal
+        activeChain={activeChain}
+        open={isPendingTxnModalOpen}
+        txnHash={pendingTxn?.hash}
+        setOpen={setIsPendingTxnModalOpen}
+      />
     </AppPage>
   );
 }

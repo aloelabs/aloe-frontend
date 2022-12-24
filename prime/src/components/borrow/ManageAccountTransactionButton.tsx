@@ -333,7 +333,12 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
       >
         {confirmButton.text}
       </FilledGradientButtonWithIcon>
-      <PendingTxnModal open={showPendingModal} setOpen={setShowPendingModal} txnHash={pendingTxnHash} />
+      <PendingTxnModal
+        activeChain={activeChain}
+        open={showPendingModal}
+        setOpen={setShowPendingModal}
+        txnHash={pendingTxnHash}
+      />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <SuccessfulTxnModal
         open={showSuccessModal}

@@ -2,6 +2,8 @@ import React from 'react';
 
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { DEFAULT_ETHERSCAN_URL } from 'shared/lib/data/constants/Values';
+import { Chain } from 'wagmi';
 
 import SuccessIcon from '../../../../assets/svg/success.svg';
 import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
@@ -9,13 +11,15 @@ import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
 import { ConfirmationType, getConfirmationTypeValue } from '../EditPositionModal';
 
 export type SuccessModalContentProps = {
+  activeChain: Chain;
   confirmationType: ConfirmationType;
   txnHash: string;
   onConfirm: () => void;
 };
 
 export default function SuccessModalContent(props: SuccessModalContentProps) {
-  const { confirmationType, txnHash, onConfirm } = props;
+  const { activeChain, confirmationType, txnHash, onConfirm } = props;
+  const etherscanUrl = activeChain.blockExplorers?.etherscan?.url ?? DEFAULT_ETHERSCAN_URL;
 
   return (
     <div>
@@ -28,12 +32,7 @@ export default function SuccessModalContent(props: SuccessModalContentProps) {
           {getConfirmationTypeValue(confirmationType)} Successful
         </Text>
         <Text>
-          <a
-            href={`https://goerli.etherscan.io/tx/${txnHash}`}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='underline'
-          >
+          <a href={`${etherscanUrl}/tx/${txnHash}`} target='_blank' rel='noopener noreferrer' className='underline'>
             View on Etherscan
           </a>
         </Text>
