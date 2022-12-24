@@ -3,6 +3,8 @@ import React, { Suspense, useEffect } from 'react';
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Footer from 'shared/lib/components/common/Footer';
+import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { Chain, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -25,6 +27,32 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
   cache: new InMemoryCache(),
 });
+
+function AppBodyWrapper() {
+  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
+  const network = useNetwork();
+
+  useEffect(() => {
+    if (network.chain !== undefined && network.chain !== activeChain) {
+      setActiveChain(network.chain);
+    }
+  }, [activeChain, network.chain]);
+
+  return (
+    <AppBody>
+      <Header activeChain={activeChain} setActiveChain={setActiveChain} />
+      <main className='flex-grow'>
+        <Routes>
+          <Route path='/borrow' element={<BorrowAccountsPage activeChain={activeChain} />} />
+          <Route path='/borrow/account/:account' element={<BorrowActionsPage activeChain={activeChain} />} />
+          <Route path='/' element={<Navigate replace to='/borrow' />} />
+          <Route path='*' element={<Navigate to='/' />} />
+        </Routes>
+      </main>
+      <Footer />
+    </AppBody>
+  );
+}
 
 function App() {
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
@@ -63,18 +91,7 @@ function App() {
       <Suspense fallback={null}>
         <WagmiProvider>
           <ScrollToTop />
-          <AppBody>
-            <Header />
-            <main className='flex-grow'>
-              <Routes>
-                <Route path='/borrow' element={<BorrowAccountsPage />} />
-                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                <Route path='/' element={<Navigate replace to='/borrow' />} />
-                <Route path='*' element={<Navigate to='/' />} />
-              </Routes>
-            </main>
-            <Footer />
-          </AppBody>
+          <AppBodyWrapper />
         </WagmiProvider>
       </Suspense>
     </>

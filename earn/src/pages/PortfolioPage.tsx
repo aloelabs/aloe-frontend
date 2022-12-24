@@ -5,7 +5,7 @@ import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
+import { Chain, useAccount, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
@@ -82,7 +82,12 @@ export type TokenBalance = {
   pairName: string;
 };
 
-export default function PortfolioPage() {
+export type PortfolioPageProps = {
+  activeChain: Chain;
+};
+
+export default function PortfolioPage(props: PortfolioPageProps) {
+  const { activeChain } = props;
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
@@ -98,9 +103,7 @@ export default function PortfolioPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
 
-  const network = useNetwork();
-  const activeChainId = network.chain?.id || chain.goerli.id;
-  const provider = useProvider({ chainId: activeChainId });
+  const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
@@ -143,13 +146,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           priceEntries: data.prices,
         };
       });
@@ -163,7 +166,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, uniqueTokens]);
+  }, [activeChain, uniqueTokens]);
 
   useEffect(() => {
     let mounted = true;
@@ -187,10 +190,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (!provider) {
-        return;
-      }
-      const results = await getAvailableLendingPairs(activeChainId, provider);
+      const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -200,7 +200,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, provider]);
+  }, [activeChain, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -397,6 +397,7 @@ export default function PortfolioPage() {
       {activeAsset != null && (
         <>
           <SendCryptoModal
+            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
@@ -404,6 +405,7 @@ export default function PortfolioPage() {
             setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal
+            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
@@ -412,6 +414,7 @@ export default function PortfolioPage() {
             setPendingTxn={setPendingTxn}
           />
           <WithdrawModal
+            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}

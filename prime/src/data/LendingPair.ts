@@ -1,6 +1,7 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Chain } from 'wagmi';
 
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -22,13 +23,16 @@ export type LendingPair = {
   uniswapFeeTier: FeeTier;
 };
 
-export async function getAvailableLendingPairs(provider: ethers.providers.BaseProvider): Promise<LendingPair[]> {
+export async function getAvailableLendingPairs(
+  chain: Chain,
+  provider: ethers.providers.BaseProvider
+): Promise<LendingPair[]> {
   const etherscanResult = await makeEtherscanRequest(
     7537163,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     true,
-    'api-goerli'
+    chain
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 

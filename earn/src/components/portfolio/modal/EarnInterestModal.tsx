@@ -5,14 +5,13 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+import { Address, Chain, useAccount, useBalance, useContractWrite } from 'wagmi';
 
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
@@ -77,7 +76,7 @@ function DepositButton(props: DepositButtonProps) {
   const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen, setPendingTxn } = props;
   const [isPending, setIsPending] = useState(false);
 
-  const { data: userAllowanceToken } = useAllowance(token, accountAddress, ALOE_II_ROUTER_ADDRESS);
+  const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
@@ -91,6 +90,7 @@ function DepositButton(props: DepositButtonProps) {
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
     functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
   });
 
   useEffect(() => {
@@ -174,6 +174,7 @@ function DepositButton(props: DepositButtonProps) {
 }
 
 export type EarnInterestModalProps = {
+  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -183,14 +184,12 @@ export type EarnInterestModalProps = {
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { activeChain, isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const account = useAccount();
-  const network = useNetwork();
-  const activeChain = network.chain ?? DEFAULT_CHAIN;
 
   function resetModal() {
     setSelectedOption(defaultOption);

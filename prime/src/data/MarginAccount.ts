@@ -3,6 +3,7 @@ import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Chain } from 'wagmi';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
@@ -60,6 +61,7 @@ export type MarginAccountPreview = Omit<
 >;
 
 export async function getMarginAccountsForUser(
+  chain: Chain,
   userAddress: string,
   provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
@@ -73,7 +75,7 @@ export async function getMarginAccountsForUser(
       `0x000000000000000000000000${userAddress.slice(2)}`,
     ],
     true,
-    'api-goerli'
+    chain
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
@@ -116,11 +118,12 @@ export async function resolveUniswapPools(
 }
 
 export async function fetchMarginAccountPreviews(
+  activeChain: Chain,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ): Promise<MarginAccountPreview[]> {
-  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
+  const marginAccountsAddresses = await getMarginAccountsForUser(activeChain, userAddress, provider);
   const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
   const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
     async ({ address: accountAddress, uniswapPool }) => {

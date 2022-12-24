@@ -8,7 +8,7 @@ import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useContract, useContractRead, useNetwork, useProvider } from 'wagmi';
+import { Chain, useContract, useContractRead, useProvider } from 'wagmi';
 
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -163,10 +163,15 @@ async function fetchUniswapPositions(
   return fetchedUniswapPositions;
 }
 
-export default function BorrowActionsPage() {
+export type BorrowActionsPageProps = {
+  activeChain: Chain;
+};
+
+export default function BorrowActionsPage(props: BorrowActionsPageProps) {
+  const { activeChain } = props;
+
   const navigate = useNavigate();
-  const network = useNetwork();
-  const activeChainId = network.chain?.id || chain.goerli.id;
+  const activeChainId = activeChain.id;
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
 
@@ -396,6 +401,7 @@ export default function BorrowActionsPage() {
       </HeaderBarContainer>
       <GridExpandingDiv>
         <ManageAccountWidget
+          activeChain={activeChain}
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}

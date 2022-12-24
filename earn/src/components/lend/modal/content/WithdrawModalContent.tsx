@@ -4,7 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractWrite } from 'wagmi';
+import { Chain, useAccount, useContractWrite } from 'wagmi';
 
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
@@ -48,6 +48,7 @@ function getConfirmButton(
 }
 
 export type WithdrawModalContentProps = {
+  chain: Chain;
   token: Token;
   kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;

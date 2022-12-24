@@ -6,13 +6,12 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractRead, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useContractRead, useContractWrite } from 'wagmi';
 
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
-import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
@@ -91,6 +90,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     abi: KittyABI,
     functionName: 'convertToShares',
     args: [ethers.utils.parseUnits(withdrawAmount || '0.00', token.decimals).toString()],
+    chainId: activeChain.id,
   });
 
   const {
@@ -161,6 +161,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
 }
 
 export type WithdrawModalProps = {
+  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -170,14 +171,12 @@ export type WithdrawModalProps = {
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { activeChain, isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const account = useAccount();
-  const network = useNetwork();
-  const activeChain = network.chain ?? DEFAULT_CHAIN;
 
   function resetModal() {
     setSelectedOption(defaultOption);

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { Chain } from 'wagmi';
 
 import { Kitty } from '../../../data/Kitty';
 import { Token } from '../../../data/Token';
@@ -58,6 +59,7 @@ enum EditPositionModalState {
 }
 
 export type EditPositionModalProps = {
+  activeChain: Chain;
   token: Token;
   kitty: Kitty;
   open: boolean;
@@ -65,7 +67,7 @@ export type EditPositionModalProps = {
 };
 
 export default function EditPositionModal(props: EditPositionModalProps) {
-  const { token, kitty, open, setOpen } = props;
+  const { activeChain, token, kitty, open, setOpen } = props;
   const [state, setState] = useState(EditPositionModalState.EDIT_POSITION);
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
   const [pendingTxnResult, setPendingTxnResult] = useState<SendTransactionResult | null>(null);
@@ -153,10 +155,20 @@ export default function EditPositionModal(props: EditPositionModalProps) {
               </Tab.List>
               <Tab.Panels as={Fragment}>
                 <Tab.Panel>
-                  <DepositModalContent token={token} kitty={kitty} setPendingTxnResult={setPendingTxnResult} />
+                  <DepositModalContent
+                    chain={activeChain}
+                    token={token}
+                    kitty={kitty}
+                    setPendingTxnResult={setPendingTxnResult}
+                  />
                 </Tab.Panel>
                 <Tab.Panel>
-                  <WithdrawModalContent token={token} kitty={kitty} setPendingTxnResult={setPendingTxnResult} />
+                  <WithdrawModalContent
+                    chain={activeChain}
+                    token={token}
+                    kitty={kitty}
+                    setPendingTxnResult={setPendingTxnResult}
+                  />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

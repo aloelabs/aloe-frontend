@@ -12,6 +12,7 @@ import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { Chain } from 'wagmi';
 
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
@@ -57,8 +58,15 @@ function EditPositionButton(props: { Icon: React.ReactChild; onClick?: () => voi
   );
 }
 
-export default function LendPairCard(props: { pair: LendingPair; hasDeposited0: boolean; hasDeposited1: boolean }) {
-  const { hasDeposited0, hasDeposited1 } = props;
+export type LendPairCardProps = {
+  activeChain: Chain;
+  pair: LendingPair;
+  hasDeposited0: boolean;
+  hasDeposited1: boolean;
+};
+
+export default function LendPairCard(props: LendPairCardProps) {
+  const { activeChain, hasDeposited0, hasDeposited1 } = props;
   const { token0, token1, kitty0, kitty1, kitty0Info, kitty1Info, uniswapFeeTier } = props.pair;
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] = useState<boolean>(false);
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] = useState<boolean>(false);
@@ -168,6 +176,7 @@ export default function LendPairCard(props: { pair: LendingPair; hasDeposited0: 
         </CardBodyWrapper>
       </CardWrapper>
       <EditPositionModal
+        activeChain={activeChain}
         token={token0}
         kitty={kitty0}
         open={isEditToken0PositionModalOpen}
@@ -176,6 +185,7 @@ export default function LendPairCard(props: { pair: LendingPair; hasDeposited0: 
         }}
       />
       <EditPositionModal
+        activeChain={activeChain}
         token={token1}
         kitty={kitty1}
         open={isEditToken1PositionModalOpen}

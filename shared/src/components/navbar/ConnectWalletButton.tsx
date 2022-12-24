@@ -8,7 +8,6 @@ import { Chain, useConnect } from 'wagmi';
 import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import { GetAccountResult, Provider } from '@wagmi/core';
-import { DEFAULT_CHAIN } from '../../data/constants/Values';
 
 const Container = styled.div`
   width: 100%;
@@ -16,13 +15,13 @@ const Container = styled.div`
 
 export type ConnectWalletButtonProps = {
   account?: GetAccountResult<Provider>;
-  activeChain?: Chain;
+  activeChain: Chain;
   fillWidth?: boolean;
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account } = props;
+  const { account, activeChain, fillWidth } = props;
   const isConnected = account?.isConnected ?? false;
 
   // MARK: component state
@@ -30,7 +29,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
-  const { connect, connectors, error } = useConnect({ chainId: DEFAULT_CHAIN.id });
+  const { connect, connectors, error } = useConnect({ chainId: activeChain.id });
 
   useEffect(() => {
     if (isConnected) {
@@ -45,7 +44,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           setWalletModalOpen(true);
         }}
         size='M'
-        fillWidth={props.fillWidth}
+        fillWidth={fillWidth}
       >
         Connect Wallet
       </FilledStylizedButton>

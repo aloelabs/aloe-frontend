@@ -4,13 +4,12 @@ import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+import { Chain, useAccount, useBalance, useContractWrite } from 'wagmi';
 
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
-import { DEFAULT_CHAIN } from '../../../../data/constants/Values';
 import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../../data/Kitty';
@@ -57,34 +56,36 @@ function getConfirmButton(
 }
 
 export type DepositModalContentProps = {
+  chain: Chain;
   token: Token;
   kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;
 };
 
 export default function DepositModalContent(props: DepositModalContentProps) {
-  const { token, kitty, setPendingTxnResult } = props;
+  const { chain, token, kitty, setPendingTxnResult } = props;
 
   const [depositAmount, setDepositAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
   const account = useAccount();
-  const network = useNetwork();
 
   const { data: depositBalance } = useBalance({
     addressOrName: account?.address ?? '',
     token: token.address,
     watch: true,
+    chainId: chain.id,
   });
 
-  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '0x', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(chain, token, account?.address ?? '0x', kitty.address);
 
-  const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(chain, token, kitty.address);
 
   const contract = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'deposit',
+    chainId: chain.id,
   });
 
   const numericDepositBalance = Number(depositBalance?.formatted ?? 0) || 0;

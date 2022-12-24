@@ -10,7 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useEnsName, useNetwork, useProvider } from 'wagmi';
+import { Chain, useAccount, useEnsName, useProvider } from 'wagmi';
 
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
@@ -21,7 +21,6 @@ import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
 import {
   getAvailableLendingPairs,
   getLendingPairBalances,
@@ -78,7 +77,12 @@ export type TokenBalance = {
   pairName: string;
 };
 
-export default function LendPage() {
+export type LendPageProps = {
+  activeChain: Chain;
+};
+
+export default function LendPage(props: LendPageProps) {
+  const { activeChain } = props;
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
@@ -90,26 +94,26 @@ export default function LendPage() {
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  useEffectOnce(() => {
-    const shouldShowWelcomeModal =
-      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
-    if (shouldShowWelcomeModal) {
-      setShowWelcomeModal(true);
-    }
-  });
-
   // MARK: wagmi hooks
-  const network = useNetwork();
-  const activeChainId = network.chain?.id || chain.goerli.id;
-  const provider = useProvider({ chainId: activeChainId });
-  const { address } = useAccount();
+  const account = useAccount();
+  const isOffline = !account.isConnected && !account.isConnecting;
+  const provider = useProvider({ chainId: activeChain?.id });
+  const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: chain.mainnet.id,
+    chainId: activeChain.id,
   });
 
   useEffect(() => {
-    const options: MultiDropdownOption<Token>[] = getTokens(activeChainId).map((token) => {
+    const shouldShowWelcomeModal =
+      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE && !isOffline;
+    if (shouldShowWelcomeModal) {
+      setShowWelcomeModal(true);
+    }
+  }, [isOffline]);
+
+  useEffect(() => {
+    const options: MultiDropdownOption<Token>[] = getTokens(activeChain.id).map((token) => {
       return {
         value: token,
         label: token.ticker || '',
@@ -118,7 +122,7 @@ export default function LendPage() {
     });
     setFilterOptions(options);
     setSelectedOptions(options);
-  }, [activeChainId]);
+  }, [activeChain]);
 
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
@@ -142,7 +146,7 @@ export default function LendPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: getTokenByTicker(activeChainId, key),
+          token: getTokenByTicker(activeChain.id, key),
           price: value.price,
         };
       });
@@ -156,12 +160,12 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
+  }, [activeChain, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
 
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(activeChainId, provider);
+      const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -171,7 +175,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address, activeChainId]);
+  }, [provider, address, activeChain]);
 
   useEffect(() => {
     let mounted = true;
@@ -358,6 +362,7 @@ export default function LendPage() {
             {lendingPairs.map((lendPair, i) => (
               <LendPairCard
                 key={lendPair.token0.address}
+                activeChain={activeChain}
                 pair={lendPair}
                 hasDeposited0={(lendingPairBalances?.[i]?.kitty0Balance || 0) > 0}
                 hasDeposited1={(lendingPairBalances?.[i]?.kitty1Balance || 0) > 0}

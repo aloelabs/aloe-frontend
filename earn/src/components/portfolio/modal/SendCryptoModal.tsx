@@ -6,13 +6,12 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useBalance, useContractWrite, useNetwork, useProvider } from 'wagmi';
+import { Chain, useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
 
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
-import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, String1E } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -159,6 +158,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
 }
 
 export type SendCryptoModalProps = {
+  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -167,13 +167,11 @@ export type SendCryptoModalProps = {
 };
 
 export default function SendCryptoModal(props: SendCryptoModalProps) {
-  const { isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
+  const { activeChain, isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [addressInputValue, setAddressInputValue] = useState<string>('');
   const [sendAmountInputValue, setSendAmountInputValue] = useState<string>('');
   const account = useAccount();
-  const network = useNetwork();
-  const activeChain = network.chain ?? DEFAULT_CHAIN;
 
   function resetModal() {
     setSelectedOption(defaultOption);
@@ -190,6 +188,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     addressOrName: account?.address ?? '',
     token: selectedOption.address,
     watch: true,
+    chainId: activeChain.id,
   });
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
