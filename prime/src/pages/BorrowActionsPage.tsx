@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
@@ -8,8 +8,9 @@ import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Chain, useContract, useContractRead, useProvider } from 'wagmi';
+import { useContract, useContractRead, useProvider } from 'wagmi';
 
+import { ChainContext } from '../App';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -163,12 +164,8 @@ async function fetchUniswapPositions(
   return fetchedUniswapPositions;
 }
 
-export type BorrowActionsPageProps = {
-  activeChain: Chain;
-};
-
-export default function BorrowActionsPage(props: BorrowActionsPageProps) {
-  const { activeChain } = props;
+export default function BorrowActionsPage() {
+  const { activeChain } = useContext(ChainContext);
 
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
@@ -401,7 +398,6 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
       </HeaderBarContainer>
       <GridExpandingDiv>
         <ManageAccountWidget
-          activeChain={activeChain}
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}

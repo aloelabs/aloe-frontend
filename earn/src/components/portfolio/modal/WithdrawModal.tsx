@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -6,8 +6,9 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractRead, useContractWrite } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -65,7 +66,6 @@ type WithdrawButtonProps = {
   maxRedeemBalance: string;
   token: Token;
   kitty: Kitty;
-  activeChain: Chain;
   accountAddress: string;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
@@ -78,11 +78,11 @@ function WithdrawButton(props: WithdrawButtonProps) {
     maxRedeemBalance,
     token,
     kitty,
-    activeChain,
     accountAddress,
     setIsOpen,
     setPendingTxn,
   } = props;
+  const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
@@ -161,7 +161,6 @@ function WithdrawButton(props: WithdrawButtonProps) {
 }
 
 export type WithdrawModalProps = {
-  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -171,7 +170,8 @@ export type WithdrawModalProps = {
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { activeChain, isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
@@ -331,7 +331,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             maxRedeemBalance={maxRedeem ? maxRedeem.toString() : '0'}
             token={selectedOption}
             kitty={activeKitty}
-            activeChain={activeChain}
             accountAddress={account.address ?? '0x'}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);

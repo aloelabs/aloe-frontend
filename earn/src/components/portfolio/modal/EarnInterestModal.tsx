@@ -1,12 +1,13 @@
-import { ReactElement, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, Chain, useAccount, useBalance, useContractWrite } from 'wagmi';
+import { Address, useAccount, useBalance, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -67,13 +68,13 @@ type DepositButtonProps = {
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
-  activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen, setPendingTxn } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
   const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
@@ -174,7 +175,6 @@ function DepositButton(props: DepositButtonProps) {
 }
 
 export type EarnInterestModalProps = {
-  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -184,7 +184,8 @@ export type EarnInterestModalProps = {
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { activeChain, isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
@@ -211,6 +212,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     addressOrName: account?.address ?? '',
     token: selectedOption.address,
     watch: true,
+    chainId: activeChain.id,
   });
 
   // Get the active kitty that corresponds to the selected token and is in
@@ -324,7 +326,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
-            activeChain={activeChain}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {

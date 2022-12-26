@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { ContractReceipt } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -7,8 +7,9 @@ import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useContract, useProvider, useSigner, useBlockNumber, Chain } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
+import { ChainContext } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -39,12 +40,8 @@ const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
 `;
 
-export type BorrowAccountsPageProps = {
-  activeChain: Chain;
-};
-
-export default function BorrowAccountsPage(props: BorrowAccountsPageProps) {
-  const { activeChain } = props;
+export default function BorrowAccountsPage() {
+  const { activeChain } = useContext(ChainContext);
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);

@@ -28,23 +28,29 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const ChainContext = React.createContext({
+  activeChain: DEFAULT_CHAIN,
+  setActiveChain: (chain: Chain) => {},
+});
+
 function AppBodyWrapper() {
-  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
+  const { activeChain, setActiveChain } = React.useContext(ChainContext);
+
   const network = useNetwork();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
       setActiveChain(network.chain);
     }
-  }, [activeChain, network.chain]);
+  }, [activeChain, network.chain, setActiveChain]);
 
   return (
     <AppBody>
-      <Header activeChain={activeChain} setActiveChain={setActiveChain} />
+      <Header />
       <main className='flex-grow'>
         <Routes>
-          <Route path='/portfolio' element={<PortfolioPage activeChain={activeChain} />} />
-          <Route path='/markets' element={<LendPage activeChain={activeChain} />} />
+          <Route path='/portfolio' element={<PortfolioPage />} />
+          <Route path='/markets' element={<LendPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
@@ -55,7 +61,9 @@ function AppBodyWrapper() {
 }
 
 function App() {
+  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {
@@ -91,8 +99,10 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <ScrollToTop />
-          <AppBodyWrapper />
+          <ChainContext.Provider value={value}>
+            <ScrollToTop />
+            <AppBodyWrapper />
+          </ChainContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>

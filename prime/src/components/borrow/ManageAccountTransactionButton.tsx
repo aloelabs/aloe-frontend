@@ -1,10 +1,11 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useContext, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Address, Chain, erc20ABI, useContractRead, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../App';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
@@ -127,7 +128,6 @@ function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
 }
 
 export type ManageAccountTransactionButtonProps = {
-  activeChain: Chain;
   userAddress: Address | undefined;
   accountAddress: Address;
   token0: Token;
@@ -145,7 +145,6 @@ const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
 
 export function ManageAccountTransactionButton(props: ManageAccountTransactionButtonProps) {
   const {
-    activeChain,
     userAddress,
     accountAddress,
     token0,
@@ -158,6 +157,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     transactionWillFail,
     onSuccessReceipt,
   } = props;
+  const { activeChain } = useContext(ChainContext);
 
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);

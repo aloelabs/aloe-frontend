@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -6,8 +6,9 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
+import { useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -61,13 +62,13 @@ type SendCryptoConfirmButtonProps = {
   sendAmount: string;
   sendBalance: string;
   token: Token;
-  activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
-  const { sendAddress, sendAmount, sendBalance, token, activeChain, setIsOpen, setPendingTxn } = props;
+  const { sendAddress, sendAmount, sendBalance, token, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const provider = useProvider();
@@ -158,7 +159,6 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
 }
 
 export type SendCryptoModalProps = {
-  activeChain: Chain;
   isOpen: boolean;
   options: Token[];
   defaultOption: Token;
@@ -167,7 +167,8 @@ export type SendCryptoModalProps = {
 };
 
 export default function SendCryptoModal(props: SendCryptoModalProps) {
-  const { activeChain, isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [addressInputValue, setAddressInputValue] = useState<string>('');
   const [sendAmountInputValue, setSendAmountInputValue] = useState<string>('');
@@ -265,7 +266,6 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             sendAmount={sendAmountInputValue || '0.00'}
             sendBalance={depositBalance?.formatted ?? '0.00'}
             token={selectedOption}
-            activeChain={activeChain}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {

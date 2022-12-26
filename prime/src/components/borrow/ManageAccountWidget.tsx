@@ -4,7 +4,7 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Address, Chain, useAccount, useBalance } from 'wagmi';
+import { Address, useAccount, useBalance } from 'wagmi';
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import {
@@ -107,7 +107,6 @@ const ActionCardWrapper = styled.div`
 `;
 
 export type ManageAccountWidgetProps = {
-  activeChain: Chain;
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
@@ -116,7 +115,7 @@ export type ManageAccountWidgetProps = {
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { activeChain, marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
+  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
 
   // actions
@@ -262,7 +261,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         </ActionsList>
         <div className='flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
-            activeChain={activeChain}
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
             token0={token0}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -10,8 +10,9 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Chain, useAccount, useEnsName, useProvider } from 'wagmi';
+import { useAccount, useEnsName, useProvider } from 'wagmi';
 
+import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import Tooltip from '../components/common/Tooltip';
@@ -77,12 +78,8 @@ export type TokenBalance = {
   pairName: string;
 };
 
-export type LendPageProps = {
-  activeChain: Chain;
-};
-
-export default function LendPage(props: LendPageProps) {
-  const { activeChain } = props;
+export default function LendPage() {
+  const { activeChain } = useContext(ChainContext);
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
   const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
@@ -362,7 +359,6 @@ export default function LendPage(props: LendPageProps) {
             {lendingPairs.map((lendPair, i) => (
               <LendPairCard
                 key={lendPair.token0.address}
-                activeChain={activeChain}
                 pair={lendPair}
                 hasDeposited0={(lendingPairBalances?.[i]?.kitty0Balance || 0) > 0}
                 hasDeposited1={(lendingPairBalances?.[i]?.kitty1Balance || 0) > 0}

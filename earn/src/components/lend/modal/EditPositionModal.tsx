@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Chain } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import { Kitty } from '../../../data/Kitty';
 import { Token } from '../../../data/Token';
 import { CloseableModal } from '../../common/Modal';
@@ -59,7 +59,6 @@ enum EditPositionModalState {
 }
 
 export type EditPositionModalProps = {
-  activeChain: Chain;
   token: Token;
   kitty: Kitty;
   open: boolean;
@@ -67,7 +66,8 @@ export type EditPositionModalProps = {
 };
 
 export default function EditPositionModal(props: EditPositionModalProps) {
-  const { activeChain, token, kitty, open, setOpen } = props;
+  const { token, kitty, open, setOpen } = props;
+  const { activeChain } = useContext(ChainContext);
   const [state, setState] = useState(EditPositionModalState.EDIT_POSITION);
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
   const [pendingTxnResult, setPendingTxnResult] = useState<SendTransactionResult | null>(null);

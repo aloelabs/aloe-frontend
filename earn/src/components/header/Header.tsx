@@ -1,7 +1,10 @@
+import { useContext } from 'react';
+
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Chain } from 'wagmi';
+
+import { ChainContext } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -21,13 +24,8 @@ const Nav = styled.nav`
   z-index: 40;
 `;
 
-export type HeaderProps = {
-  activeChain: Chain;
-  setActiveChain(c: Chain): void;
-};
-
-export default function Header(props: HeaderProps) {
-  const { activeChain, setActiveChain } = props;
+export default function Header() {
+  const { activeChain, setActiveChain } = useContext(ChainContext);
 
   return (
     <Nav>

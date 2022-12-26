@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { Chain, useAccount, useProvider } from 'wagmi';
+import { useAccount, useProvider } from 'wagmi';
 
+import { ChainContext } from '../App';
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
@@ -82,12 +83,8 @@ export type TokenBalance = {
   pairName: string;
 };
 
-export type PortfolioPageProps = {
-  activeChain: Chain;
-};
-
-export default function PortfolioPage(props: PortfolioPageProps) {
-  const { activeChain } = props;
+export default function PortfolioPage() {
+  const { activeChain } = useContext(ChainContext);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
@@ -397,7 +394,6 @@ export default function PortfolioPage(props: PortfolioPageProps) {
       {activeAsset != null && (
         <>
           <SendCryptoModal
-            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             isOpen={isSendCryptoModalOpen}
@@ -405,7 +401,6 @@ export default function PortfolioPage(props: PortfolioPageProps) {
             setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal
-            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
@@ -414,7 +409,6 @@ export default function PortfolioPage(props: PortfolioPageProps) {
             setPendingTxn={setPendingTxn}
           />
           <WithdrawModal
-            activeChain={activeChain}
             options={uniqueTokens}
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
