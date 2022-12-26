@@ -4,7 +4,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { TokenData } from '../../../data/TokenData';
+import { Token } from '../../../data/Token';
 import { formatNumberRelativeToSize } from '../PnLGraph';
 
 export const PORTFOLIO_TOOLTIP_WIDTH = 175;
@@ -22,8 +22,8 @@ const TooltipContainer = styled.div.attrs((props: { offset: number }) => props)`
 `;
 
 export default function PnLGraphTooltip(props: {
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   inTermsOfToken0: boolean;
   showAsterisk: boolean;
   data: any;

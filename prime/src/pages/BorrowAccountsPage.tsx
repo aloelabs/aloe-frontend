@@ -5,9 +5,10 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display } from 'shared/lib/components/common/Typography';
+import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { chain, useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner, useBlockNumber, useNetwork } from 'wagmi';
 
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
@@ -52,12 +53,13 @@ export default function BorrowAccountsPage() {
   const [isTxnPending, setIsTxnPending] = useState(false);
 
   // MARK: wagmi hooks
-  const currentChainId = chain.goerli.id;
-  const provider = useProvider({ chainId: currentChainId });
+  const network = useNetwork();
+  const currentChain = network?.chain ?? DEFAULT_CHAIN;
+  const provider = useProvider({ chainId: currentChain.id });
   const { address } = useAccount();
   const { data: signer } = useSigner();
   const blockNumber = useBlockNumber({
-    chainId: currentChainId,
+    chainId: currentChain.id,
     watch: true,
   });
   const marginAccountLensContract = useContract({
@@ -74,7 +76,12 @@ export default function BorrowAccountsPage() {
       if (!marginAccountLensContract) {
         return;
       }
-      const updatedMarginAccounts = await fetchMarginAccountPreviews(marginAccountLensContract, provider, userAddress);
+      const updatedMarginAccounts = await fetchMarginAccountPreviews(
+        currentChain,
+        marginAccountLensContract,
+        provider,
+        userAddress
+      );
       if (mounted) {
         setMarginAccounts(updatedMarginAccounts);
       }
@@ -86,7 +93,7 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address, marginAccountLensContract, provider, blockNumber.data]);
+  }, [address, marginAccountLensContract, provider, blockNumber.data, currentChain]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
