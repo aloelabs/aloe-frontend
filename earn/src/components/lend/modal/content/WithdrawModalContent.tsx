@@ -1,16 +1,16 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
+import Big from 'big.js';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractWrite } from 'wagmi';
+import { Chain, useAccount, useContractRead, useContractWrite } from 'wagmi';
 
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
-import { useAmountToShares } from '../../../../data/hooks/UseAmountToShares';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { Kitty } from '../../../../data/Kitty';
 import { Token } from '../../../../data/Token';
@@ -47,68 +47,150 @@ function getConfirmButton(
   }
 }
 
-export type WithdrawModalContentProps = {
-  chain: Chain;
+type WithdrawButtonProps = {
+  withdrawAmount: string;
+  maxWithdrawBalance: string;
+  maxRedeemBalance: string;
   token: Token;
   kitty: Kitty;
-  setPendingTxnResult: (result: SendTransactionResult) => void;
+  activeChain: Chain;
+  accountAddress: string;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
-export default function WithdrawModalContent(props: WithdrawModalContentProps) {
-  const { token, kitty, setPendingTxnResult } = props;
-
-  const [withdrawAmount, setWithdrawAmount] = useState('');
+function WithdrawButton(props: WithdrawButtonProps) {
+  const {
+    withdrawAmount,
+    maxWithdrawBalance,
+    maxRedeemBalance,
+    token,
+    kitty,
+    activeChain,
+    accountAddress,
+    setPendingTxn,
+  } = props;
   const [isPending, setIsPending] = useState(false);
 
-  const { address: accountAddress } = useAccount();
+  const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'convertToShares',
+    args: [ethers.utils.parseUnits(withdrawAmount || '0.00', token.decimals).toString()],
+    chainId: activeChain.id,
+  });
 
-  const contract = useContractWrite({
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'withdraw',
+    functionName: 'redeem',
+    chainId: activeChain.id,
   });
 
-  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
-  const amountToShares = useAmountToShares(token, kitty, withdrawAmount);
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn]);
 
-  const sharesToWithdraw = amountToShares ?? '0';
-  const underlyingBalance = balanceOfUnderlying ?? '0';
-
-  const numericWithdrawAmount = Number(withdrawAmount) || 0;
-  const numericWithdrawBalance = parseFloat(underlyingBalance);
+  const numericDepositBalance = Number(maxWithdrawBalance) || 0;
+  const numericDepositAmount = Number(withdrawAmount) || 0;
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (numericWithdrawAmount > numericWithdrawBalance) {
+  if (numericDepositAmount > numericDepositBalance) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY;
-  } else if (isPending) {
+  } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token, kitty);
 
   function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
-    switch (confirmButtonState) {
-      case ConfirmButtonState.READY:
-        setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [sharesToWithdraw],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            setPendingTxnResult(txnResult);
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
-        break;
-      default:
-        break;
+    if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
+      setIsPending(true);
+      const numericRequestedShares = BigNumber.from(requestedShares.toString());
+      const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
+      // Being extra careful here to make sure we don't withdraw more than the user has
+      const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
+        ? numericMaxRedeemBalance
+        : numericRequestedShares;
+      contractWrite?.({
+        recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
+        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+      });
     }
   }
+
+  const isDepositAmountValid = numericDepositAmount > 0;
+  const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
+
+  return (
+    <FilledStylizedButtonWithIcon
+      size='M'
+      fillWidth={true}
+      color={MODAL_BLACK_TEXT_COLOR}
+      onClick={handleClickConfirm}
+      Icon={confirmButton.Icon}
+      position='trailing'
+      svgColorType='stroke'
+      disabled={shouldConfirmButtonBeDisabled}
+    >
+      {confirmButton.text}
+    </FilledStylizedButtonWithIcon>
+  );
+}
+
+export type WithdrawModalContentProps = {
+  chain: Chain;
+  token: Token;
+  kitty: Kitty;
+  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+};
+
+export default function WithdrawModalContent(props: WithdrawModalContentProps) {
+  const { chain, token, kitty, setPendingTxnResult } = props;
+
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+
+  const { address: accountAddress } = useAccount();
+
+  const { data: maxWithdraw } = useContractRead({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'maxWithdraw',
+    chainId: chain.id,
+    args: [accountAddress] as const,
+    watch: true,
+  });
+
+  const { data: maxRedeem } = useContractRead({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'maxRedeem',
+    chainId: chain.id,
+    args: [accountAddress] as const,
+    watch: true,
+  });
+
+  const maxWithdrawBalance = useMemo(() => {
+    if (maxWithdraw) {
+      return new Big(maxWithdraw.toString()).div(10 ** token.decimals).toString();
+    }
+    return '0.00';
+  }, [maxWithdraw, token.decimals]);
+
+  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
+
+  const underlyingBalance = balanceOfUnderlying ?? '0';
 
   return (
     <>
@@ -133,18 +215,16 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         </Text>
       </div>
       <div className='w-max ml-auto'>
-        <FilledStylizedButtonWithIcon
-          size='M'
-          fillWidth={true}
-          color={MODAL_BLACK_TEXT_COLOR}
-          onClick={handleClickConfirm}
-          Icon={confirmButton.Icon}
-          position='trailing'
-          svgColorType='stroke'
-          disabled={!confirmButton.enabled || numericWithdrawAmount === 0}
-        >
-          {confirmButton.text}
-        </FilledStylizedButtonWithIcon>
+        <WithdrawButton
+          accountAddress={accountAddress || '0x'}
+          activeChain={chain}
+          token={token}
+          kitty={kitty}
+          withdrawAmount={withdrawAmount}
+          maxRedeemBalance={maxRedeem ? maxRedeem.toString() : '0'}
+          maxWithdrawBalance={maxWithdrawBalance}
+          setPendingTxn={setPendingTxnResult}
+        />
       </div>
     </>
   );
