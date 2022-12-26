@@ -9,7 +9,7 @@ import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { theGraphUniswapV3Client } from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
-import { TokenData } from '../data/TokenData';
+import { Token } from '../data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import { UniswapTicksQuery } from './GraphQL';
 
@@ -76,8 +76,8 @@ export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
 
 export function calculateTickInfo(
   poolBasics: UniswapV3PoolBasics,
-  token0: TokenData,
-  token1: TokenData,
+  token0: Token,
+  token1: Token,
   isToken0Selected: boolean
 ): TickInfo {
   const tickSpacing = poolBasics.tickSpacing;
@@ -252,12 +252,6 @@ export function tickToPrice(
   return isInTermsOfToken0 ? price0In1 : price1In0;
 }
 
-// export function tickToPrice2(token0: TokenData | null, token1: TokenData | null, tick: number) {
-//   const uniswapToken0 = new Token(1, token0?.address || '', token0?.decimals || 18);
-//   const uniswapToken1 = new Token(1, token1?.address || '', token1?.decimals || 18);
-//   return uniswapTickToPrice(uniswapToken0, uniswapToken1, tick);
-// }
-
 export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
   const decimalDiff = token0Decimals - token1Decimals;
   const priceX96 = new Big(price0In1).mul(BIGQ96).div(10 ** decimalDiff);
@@ -387,7 +381,7 @@ export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
   return numericFeeTier as FeeAmount;
 }
 
-export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, feeTier: FeeTier): string {
+export function getPoolAddressFromTokens(token0: Token, token1: Token, feeTier: FeeTier): string {
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
   // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
@@ -395,6 +389,7 @@ export function getPoolAddressFromTokens(token0: TokenData, token1: TokenData, f
   // const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
   // if (uniswapFeeAmount == null) return null;
   // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
+  // TODO: Update this before launch
   return '0xfbe57c73a82171a773d3328f1b563296151be515'; // TODO once we're working with mainnet uncomment the other stuff
 }
 

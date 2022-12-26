@@ -11,7 +11,8 @@ import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { UINT256_MAX } from '../../data/constants/Values';
-import { TokenData } from '../../data/TokenData';
+import { Kitty } from '../../data/Kitty';
+import { Token } from '../../data/Token';
 import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
@@ -36,10 +37,10 @@ enum ConfirmButtonState {
 
 function getConfirmButton(
   state: ConfirmButtonState,
-  token0: TokenData,
-  token1: TokenData,
-  kitty0: TokenData,
-  kitty1: TokenData
+  token0: Token,
+  token1: Token,
+  kitty0: Kitty,
+  kitty1: Kitty
 ): { text: string; Icon: ReactElement; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET0:
@@ -101,7 +102,7 @@ function getConfirmButton(
   }
 }
 
-function useAllowance(onChain: Chain, token: TokenData, owner: Address, spender: Address) {
+function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Address) {
   return useContractRead({
     address: token.address,
     abi: erc20ABI,
@@ -114,7 +115,7 @@ function useAllowance(onChain: Chain, token: TokenData, owner: Address, spender:
   });
 }
 
-function useAllowanceWrite(onChain: Chain, token: TokenData, spender: Address) {
+function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
   return useContractWrite({
     address: token.address,
     abi: erc20ABI,
@@ -129,10 +130,10 @@ export type ManageAccountTransactionButtonProps = {
   activeChain: Chain;
   userAddress: Address | undefined;
   accountAddress: Address;
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
+  token0: Token;
+  token1: Token;
+  kitty0: Kitty;
+  kitty1: Kitty;
   userBalances: UserBalances;
   accountState: AccountState;
   actionOutputs: ActionCardOutput[];

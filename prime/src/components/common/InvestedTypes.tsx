@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { SiloData } from '../../data/SiloData';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 const DASHED_DIVIDER_BORDER_COLOR = 'rgba(255, 255, 255, 0.6)';
 const SILO_TEXT_COLOR = 'rgba(228, 237, 246, 1)';
@@ -59,8 +59,8 @@ const DashedDivider = styled.div`
 `;
 
 export type InvestedTypeProps = {
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   silo0: SiloData;
   silo1: SiloData;
   figureColor: string;

@@ -1,19 +1,21 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { Chain } from 'wagmi';
+import { Address, Chain } from 'wagmi';
 
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
-import { GetTokenData, TokenData } from './TokenData';
+import { Kitty } from './Kitty';
+import { Token } from './Token';
+import { getToken } from './TokenData';
 
 export type LendingPair = {
-  token0: TokenData;
-  token1: TokenData;
-  kitty0: TokenData;
-  kitty1: TokenData;
+  token0: Token;
+  token1: Token;
+  kitty0: Kitty;
+  kitty1: Kitty;
   token0APY: number;
   token1APY: number;
   token0TotalSupply: number;
@@ -36,13 +38,15 @@ export async function getAvailableLendingPairs(
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 
-  const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
-    return {
-      pool: item.topics[1].slice(26),
-      kitty0: item.topics[2].slice(26),
-      kitty1: item.topics[3].slice(26),
-    };
-  });
+  const addresses: { pool: string; kitty0: Address; kitty1: Address }[] = etherscanResult.data.result.map(
+    (item: any) => {
+      return {
+        pool: item.topics[1].slice(26),
+        kitty0: item.topics[2].slice(26),
+        kitty1: item.topics[3].slice(26),
+      };
+    }
+  );
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
@@ -56,10 +60,10 @@ export async function getAvailableLendingPairs(
         uniswapPool.fee(),
       ]);
 
-      const token0 = GetTokenData(result0.asset);
-      const token1 = GetTokenData(result1.asset);
-      const kitty0 = GetTokenData(market.kitty0);
-      const kitty1 = GetTokenData(market.kitty1);
+      const token0 = getToken(chain.id, result0.asset);
+      const token1 = getToken(chain.id, result1.asset);
+      const kitty0 = new Kitty(chain.id, market.kitty0, 18, token0.ticker, token0.name, token0.iconPath, token0);
+      const kitty1 = new Kitty(chain.id, market.kitty1, 18, token0.ticker, token0.name, token0.iconPath, token0);
 
       const interestRate0 = new Big(result0.interestRate.toString());
       const interestRate1 = new Big(result1.interestRate.toString());

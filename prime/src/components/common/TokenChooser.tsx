@@ -3,7 +3,7 @@ import { StyledRadioButton } from 'shared/lib/components/common/Buttons';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 
 const RadioButtonsContainer = styled.div`
   ${tw`flex`}
@@ -14,8 +14,8 @@ const RadioButtonsContainer = styled.div`
 `;
 
 export type TokenChooserProps = {
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   isToken0Selected: boolean;
   setIsToken0Selected: (updatedValue: boolean) => void;
 };
