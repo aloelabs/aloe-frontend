@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
 
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
+import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
@@ -393,6 +394,12 @@ export default function PortfolioPage() {
             <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
           </div>
         )}
+        <div className='flex justify-center items-center gap-1 w-full mt-10'>
+          <InfoIcon width={16} height={16} />
+          <Text size='S' color='rgba(130, 160, 182, 1)'>
+            Hint: Click the space bar at any time to access search and shortcuts.
+          </Text>
+        </div>
       </Container>
       {activeAsset != null && (
         <>
