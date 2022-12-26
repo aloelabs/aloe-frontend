@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
@@ -6,10 +6,11 @@ import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Butto
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
 
-import KittyABI from '../../../../assets/abis/Kitty.json';
+import RouterABI from '../../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import { DEFAULT_CHAIN } from '../../../../data/constants/Values';
 import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
@@ -76,16 +77,30 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     watch: true,
   });
 
-  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '0x', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(token, account?.address ?? '0x', ALOE_II_ROUTER_ADDRESS);
 
-  const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(network?.chain ?? DEFAULT_CHAIN, token, ALOE_II_ROUTER_ADDRESS);
 
-  const contract = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'deposit',
+    functionName: 'depositWithApprove(address,uint256)',
   });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxnResult(contractData);
+      setIsPending(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setIsPending, setPendingTxnResult]);
 
   const numericDepositBalance = Number(depositBalance?.formatted ?? 0) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -128,17 +143,13 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            setPendingTxnResult(txnResult);
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
+        contractWrite?.({
+          recklesslySetUnpreparedArgs: [
+            kitty.address,
+            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+          ],
+          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+        });
         break;
       default:
         break;
