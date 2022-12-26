@@ -6,7 +6,7 @@ import tw from 'twin.macro';
 
 import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
 import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
-import { TokenData } from '../../../data/TokenData';
+import { Token } from '../../../data/Token';
 import { formatNumberInput } from '../../../util/Numbers';
 
 const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
@@ -62,8 +62,8 @@ const SvgButtonWrapper = styled.button`
 export type SteppedInputProps = {
   value: string;
   label: string;
-  token0: TokenData | null;
-  token1: TokenData | null;
+  token0: Token | null;
+  token1: Token | null;
   isToken0Selected: boolean;
   onChange: (value: string) => void;
   onDecrement: () => void;

@@ -11,7 +11,7 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../../data/constants/Breakpoints';
-import { TokenData } from '../../data/TokenData';
+import { Token } from '../../data/Token';
 import { formatAddressStart } from '../../util/FormatAddress';
 
 const MarginPairContainer = styled.div`
@@ -62,8 +62,8 @@ const Wrapper = styled.div`
 `;
 
 export type MarginAccountHeaderProps = {
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   feeTier: number;
   id: string;
 };
