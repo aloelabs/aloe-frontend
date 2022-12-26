@@ -3,6 +3,7 @@ import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Address, Chain } from 'wagmi';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
@@ -11,7 +12,9 @@ import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { BIGQ96 } from './constants/Values';
-import { GetTokenData, TokenData } from './TokenData';
+import { Kitty } from './Kitty';
+import { Token } from './Token';
+import { getToken } from './TokenData';
 
 export type Assets = {
   token0Raw: number;
@@ -33,13 +36,13 @@ export type Liabilities = {
 export type MarginAccount = {
   address: string;
   uniswapPool: string;
-  token0: TokenData;
-  token1: TokenData;
+  token0: Token;
+  token1: Token;
   feeTier: FeeTier;
   assets: Assets;
   liabilities: Liabilities;
-  kitty0: TokenData;
-  kitty1: TokenData;
+  kitty0: Kitty;
+  kitty1: Kitty;
   sqrtPriceX96: Big;
   tickAtLastModify: number;
   includeKittyReceipts: boolean;
@@ -93,12 +96,16 @@ export async function resolveUniswapPools(
 ) {
   const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
   // create an array to hold all the Promises we're about to create
-  const uniswapPoolData: Promise<[string, { token0: string; token1: string; feeTier: number }]>[] = [];
+  const uniswapPoolData: Promise<[string, { token0: Address; token1: Address; feeTier: number }]>[] = [];
   // for each pool, create a Promise that returns a tuple: (poolAddress, otherData)
   uniqueUniswapPools.forEach((pool) => {
-    async function getUniswapPoolData(): Promise<[string, { token0: string; token1: string; feeTier: number }]> {
+    async function getUniswapPoolData(): Promise<[string, { token0: Address; token1: Address; feeTier: number }]> {
       const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
-      const [token0, token1, feeTier] = await Promise.all([contract.token0(), contract.token1(), contract.fee()]);
+      const [token0, token1, feeTier] = await Promise.all([
+        contract.token0() as Address,
+        contract.token1() as Address,
+        contract.fee(),
+      ]);
       //     |key|  |          value           |
       return [
         pool,
@@ -116,6 +123,7 @@ export async function resolveUniswapPools(
 }
 
 export async function fetchMarginAccountPreviews(
+  chain: Chain,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string
@@ -124,8 +132,8 @@ export async function fetchMarginAccountPreviews(
   const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
   const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
     async ({ address: accountAddress, uniswapPool }) => {
-      const token0 = GetTokenData(uniswapPoolDataMap[uniswapPool].token0);
-      const token1 = GetTokenData(uniswapPoolDataMap[uniswapPool].token1);
+      const token0 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token0);
+      const token1 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token1);
       const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
 
       const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(accountAddress);
@@ -174,6 +182,7 @@ export async function fetchMarginAccountPreviews(
 }
 
 export async function fetchMarginAccount(
+  chain: Chain,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
@@ -194,10 +203,26 @@ export async function fetchMarginAccount(
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
   const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
 
-  const token0 = GetTokenData(results[0] as string);
-  const token1 = GetTokenData(results[1] as string);
-  const kitty0 = GetTokenData(results[2] as string);
-  const kitty1 = GetTokenData(results[3] as string);
+  const token0 = getToken(chain.id, results[0] as Address);
+  const token1 = getToken(chain.id, results[1] as Address);
+  const kitty0 = new Kitty(
+    chain.id,
+    results[2] as Address,
+    token0.decimals,
+    token0.ticker,
+    token0.name,
+    token0.iconPath,
+    token0
+  );
+  const kitty1 = new Kitty(
+    chain.id,
+    results[3] as Address,
+    token1.decimals,
+    token1.ticker,
+    token1.name,
+    token1.iconPath,
+    token1
+  );
   const assetsData = results[5] as BigNumber[];
   const liabilitiesData = results[6] as BigNumber[];
   const packedSlot = results[7];
