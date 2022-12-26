@@ -171,7 +171,6 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
   const { activeChain } = props;
 
   const navigate = useNavigate();
-  const activeChainId = activeChain.id;
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
 
@@ -189,7 +188,7 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: activeChainId });
+  const provider = useProvider({ chainId: activeChain.id });
   const marginAccountContract = useContract({
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
@@ -204,7 +203,7 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
-    chainId: activeChainId,
+    chainId: activeChain.id,
   });
   const uniswapV3PoolContract = useContract({
     address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
@@ -227,6 +226,7 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
       marginAccountLensContract: Contract
     ) {
       const fetchedMarginAccount = await fetchMarginAccount(
+        activeChain,
         marginAccountContract,
         marginAccountLensContract,
         provider,
@@ -242,7 +242,7 @@ export default function BorrowActionsPage(props: BorrowActionsPageProps) {
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider]);
+  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider, activeChain]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {
