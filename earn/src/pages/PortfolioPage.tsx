@@ -336,7 +336,7 @@ export default function PortfolioPage() {
         </div>
 
         <div className='h-16'>
-          <PortfolioPageWidgetWrapper tooltip={ASSET_BAR_TOOLTIP_TEXT}>
+          <PortfolioPageWidgetWrapper tooltip={ASSET_BAR_TOOLTIP_TEXT} tooltipId='assetBar'>
             {(() => {
               if (!isDoneLoading) return <AssetBarPlaceholder />;
               else if (!isConnected)
@@ -390,7 +390,7 @@ export default function PortfolioPage() {
           <PortfolioActionButton label={'Borrow Crypto'} Icon={<DollarIcon />} onClick={() => {}} disabled={true} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
-          <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT}>
+          <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
             <PortfolioGrid
               activeAsset={activeAsset}
               balances={combinedBalances}
@@ -403,7 +403,7 @@ export default function PortfolioPage() {
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
           <div className='mt-10'>
-            <PortfolioPageWidgetWrapper tooltip={LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT}>
+            <PortfolioPageWidgetWrapper tooltip={LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT} tooltipId='lendingPairPeerCard'>
               <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
             </PortfolioPageWidgetWrapper>
           </div>
