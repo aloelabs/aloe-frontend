@@ -390,7 +390,11 @@ export default function PortfolioPage(props: PortfolioPageProps) {
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
           <div className='mt-10'>
-            <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+            <LendingPairPeerCard
+              activeAsset={activeAsset}
+              activeChain={activeChain}
+              lendingPairs={filteredLendingPairs}
+            />
           </div>
         )}
       </Container>
