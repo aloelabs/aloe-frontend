@@ -20,6 +20,7 @@ import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
+import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
@@ -32,6 +33,13 @@ import { Token } from '../data/Token';
 import { getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
+
+const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
+  Hover/click on a segment to see more details.`;
+const PORTFOLIO_GRID_TOOLTIP_TEXT = `These widgets give you general information about an asset.`;
+const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `Before other users can borrow your funds, they must post collateral.
+  When you deposit, you get to pick what type of collateral is allowed. That choice determines what pair you're lending
+  to, and each pair has it's own stats.`;
 
 const Container = styled.div`
   max-width: 780px;
@@ -326,37 +334,40 @@ export default function PortfolioPage() {
             {errorLoadingPrices ? '$□□□' : formatUSD(totalBalanceUSD)}
           </Display>
         </div>
+
         <div className='h-16'>
-          {(() => {
-            if (!isDoneLoading) return <AssetBarPlaceholder />;
-            else if (!isConnected)
-              return (
-                <EmptyAssetBar>
-                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                    Please connect your wallet to get started
-                  </Text>
-                </EmptyAssetBar>
-              );
-            else if (totalBalanceUSD > 0 || errorLoadingPrices)
-              return (
-                <AssetBar
-                  balances={combinedBalances}
-                  tokenColors={tokenColors}
-                  ignoreBalances={errorLoadingPrices}
-                  setActiveAsset={(updatedAsset: Token) => {
-                    setActiveAsset(updatedAsset);
-                  }}
-                />
-              );
-            else
-              return (
-                <EmptyAssetBar>
-                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                    No assets found
-                  </Text>
-                </EmptyAssetBar>
-              );
-          })()}
+          <PortfolioPageWidgetWrapper tooltip={ASSET_BAR_TOOLTIP_TEXT}>
+            {(() => {
+              if (!isDoneLoading) return <AssetBarPlaceholder />;
+              else if (!isConnected)
+                return (
+                  <EmptyAssetBar>
+                    <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                      Please connect your wallet to get started
+                    </Text>
+                  </EmptyAssetBar>
+                );
+              else if (totalBalanceUSD > 0 || errorLoadingPrices)
+                return (
+                  <AssetBar
+                    balances={combinedBalances}
+                    tokenColors={tokenColors}
+                    ignoreBalances={errorLoadingPrices}
+                    setActiveAsset={(updatedAsset: Token) => {
+                      setActiveAsset(updatedAsset);
+                    }}
+                  />
+                );
+              else
+                return (
+                  <EmptyAssetBar>
+                    <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                      No assets found
+                    </Text>
+                  </EmptyAssetBar>
+                );
+            })()}
+          </PortfolioPageWidgetWrapper>
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton
@@ -379,18 +390,22 @@ export default function PortfolioPage() {
           <PortfolioActionButton label={'Borrow Crypto'} Icon={<DollarIcon />} onClick={() => {}} disabled={true} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
-          <PortfolioGrid
-            activeAsset={activeAsset}
-            balances={combinedBalances}
-            tokenColors={tokenColors}
-            tokenPriceData={tokenPriceData}
-            tokenQuotes={tokenQuotes}
-            errorLoadingPrices={errorLoadingPrices}
-          />
+          <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT}>
+            <PortfolioGrid
+              activeAsset={activeAsset}
+              balances={combinedBalances}
+              tokenColors={tokenColors}
+              tokenPriceData={tokenPriceData}
+              tokenQuotes={tokenQuotes}
+              errorLoadingPrices={errorLoadingPrices}
+            />
+          </PortfolioPageWidgetWrapper>
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
           <div className='mt-10'>
-            <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+            <PortfolioPageWidgetWrapper tooltip={LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT}>
+              <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+            </PortfolioPageWidgetWrapper>
           </div>
         )}
       </Container>
