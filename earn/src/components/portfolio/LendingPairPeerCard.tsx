@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
+import { AxiosResponse } from 'axios';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
+import { ChainContext } from '../../App';
 import { LendingPair } from '../../data/LendingPair';
 import { Token } from '../../data/Token';
+import { makeEtherscanRequest } from '../../util/Etherscan';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 
 const Container = styled.div`
@@ -115,12 +118,13 @@ function getActiveUtilizationAndTotalSupply(activeAsset: Token, selectedLendingP
 }
 
 export type LendingPairPeerCardProps = {
-  lendingPairs: LendingPair[];
   activeAsset: Token;
+  lendingPairs: LendingPair[];
 };
 
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
-  const { lendingPairs, activeAsset } = props;
+  const { activeAsset, lendingPairs } = props;
+  const { activeChain } = useContext(ChainContext);
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
       return {
@@ -130,12 +134,64 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     });
   }, [lendingPairs]);
 
+  const [numberOfUsers, setNumberOfUsers] = useState(0);
   const [selectedOption, setSelectedOption] = useState<DropdownOption<LendingPair>>(options[0]);
   useEffect(() => {
     setSelectedOption(options[0]);
   }, [options]);
 
   const selectedLendingPair = selectedOption.value;
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchNumberOfUsers() {
+      const etherscanRequestLender0 = makeEtherscanRequest(
+        7537163,
+        selectedLendingPair.kitty0.address,
+        ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
+        true,
+        activeChain
+      );
+      const etherscanRequestLender1 = makeEtherscanRequest(
+        7537163,
+        selectedLendingPair.kitty1.address,
+        ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
+        true,
+        activeChain
+      );
+      let etherscanResultLender0: AxiosResponse<any, any> | null = null;
+      let etherscanResultLender1: AxiosResponse<any, any> | null = null;
+      try {
+        [etherscanResultLender0, etherscanResultLender1] = await Promise.all([
+          etherscanRequestLender0,
+          etherscanRequestLender1,
+        ]);
+      } catch (error) {
+        console.error(error);
+      }
+      if (
+        etherscanResultLender0 == null ||
+        !Array.isArray(etherscanResultLender0.data.result) ||
+        etherscanResultLender1 == null ||
+        !Array.isArray(etherscanResultLender1.data.result)
+      )
+        return;
+      let uniqueUsers = new Set<string>();
+      const results = [...etherscanResultLender0.data.result, ...etherscanResultLender1.data.result];
+      results.forEach((result: any) => {
+        if (result.topics.length < 3) return;
+        const userAddress = `0x${result.topics[2].slice(26)}`;
+        uniqueUsers.add(userAddress);
+      });
+      if (mounted) {
+        setNumberOfUsers(uniqueUsers.size);
+      }
+    }
+    fetchNumberOfUsers();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedLendingPair, activeChain]);
 
   const [activeUtilization, activeTotalSupply] = getActiveUtilizationAndTotalSupply(activeAsset, selectedLendingPair);
 
@@ -165,7 +221,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
           <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
             Users
           </Text>
-          <Display size='L'>69</Display>
+          <Display size='L'>{numberOfUsers}</Display>
         </SmallCardBodyItem>
         <SmallCardBodyItem>
           <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
