@@ -1,11 +1,11 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useContext, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
-import { Address, Chain, erc20ABI, useContractRead, useContractWrite, useNetwork } from 'wagmi';
+import { Address, Chain, erc20ABI, useContractRead, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../App';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
@@ -157,8 +157,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     transactionWillFail,
     onSuccessReceipt,
   } = props;
-  const network = useNetwork();
-  const activeChain = network.chain || DEFAULT_CHAIN;
+  const { activeChain } = useContext(ChainContext);
 
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);

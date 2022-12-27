@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
@@ -6,11 +6,11 @@ import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useContract, useContractRead, useNetwork, useProvider } from 'wagmi';
+import { useContract, useContractRead, useProvider } from 'wagmi';
 
+import { ChainContext } from '../App';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -165,9 +165,9 @@ async function fetchUniswapPositions(
 }
 
 export default function BorrowActionsPage() {
+  const { activeChain } = useContext(ChainContext);
+
   const navigate = useNavigate();
-  const network = useNetwork();
-  const activeChain = network?.chain || DEFAULT_CHAIN;
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
 

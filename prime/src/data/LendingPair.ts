@@ -1,7 +1,7 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { Address, chain, Chain } from 'wagmi';
+import { Address, Chain } from 'wagmi';
 
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -25,11 +25,6 @@ export type LendingPair = {
   uniswapFeeTier: FeeTier;
 };
 
-const ETHERSCAN_SUBDOMAINS = {
-  [chain.mainnet.id]: 'api',
-  [chain.goerli.id]: 'api-goerli',
-};
-
 export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
@@ -39,7 +34,7 @@ export async function getAvailableLendingPairs(
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     true,
-    ETHERSCAN_SUBDOMAINS[chain.id]
+    chain
   );
   if (!Array.isArray(etherscanResult.data.result)) return [];
 

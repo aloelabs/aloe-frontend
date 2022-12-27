@@ -34,13 +34,15 @@ const StyledDropdownOptionContainer = styled(DropdownOptionContainer)`
 `;
 
 export type ChainSelectorProps = {
-  chain?: Chain;
+  activeChain: Chain;
   isOpen: boolean;
+  isOffline: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  setActiveChain: (chain: Chain) => void;
 };
 
 export default function ChainSelector(props: ChainSelectorProps) {
-  const { chain, isOpen, setIsOpen } = props;
+  const { activeChain, isOpen, isOffline, setIsOpen, setActiveChain } = props;
   const [selectedChainOption, setSelectedChainOption] = useState<DropdownOption<Chain>>(DROPDOWN_OPTIONS[0]);
   const [pendingChainOption, setPendingChainOption] = useState<DropdownOption<Chain> | undefined>(undefined);
   const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
@@ -59,10 +61,12 @@ export default function ChainSelector(props: ChainSelectorProps) {
   });
 
   useEffect(() => {
-    if (!isLoading && chain?.id) {
-      setSelectedChainOption(DROPDOWN_OPTIONS.find((option) => option.value.id === chain.id) ?? DROPDOWN_OPTIONS[0]);
+    if (!isLoading) {
+      setSelectedChainOption(
+        DROPDOWN_OPTIONS.find((option) => option.value.id === activeChain.id) ?? DROPDOWN_OPTIONS[0]
+      );
     }
-  }, [chain, isLoading]);
+  }, [activeChain, isLoading]);
 
   useEffect(() => {
     if (!isLoading && shouldAttemptToSwitchNetwork && pendingChainOption) {
@@ -105,6 +109,12 @@ export default function ChainSelector(props: ChainSelectorProps) {
                 // If the user selects the currently selected chain, do nothing
                 if (option.value === selectedChainOption.value) return;
                 if (pendingChainOption?.value !== undefined) return;
+                // If the user is offline, set the chain
+                if (isOffline) {
+                  setActiveChain(option.value);
+                  setIsOpen(false);
+                  return;
+                }
                 // Otherwise, set the pending chain option and attempt to switch networks
                 setPendingChainOption(option);
                 setShouldAttemptToSwitchNetwork(true);

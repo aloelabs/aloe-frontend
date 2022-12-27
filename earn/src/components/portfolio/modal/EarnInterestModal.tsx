@@ -1,18 +1,18 @@
-import { ReactElement, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, Chain, useAccount, useBalance, useContractWrite, useNetwork } from 'wagmi';
+import { Address, useAccount, useBalance, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import { DEFAULT_CHAIN } from '../../../data/constants/Values';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
@@ -68,16 +68,16 @@ type DepositButtonProps = {
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
-  activeChain: Chain;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, activeChain, setIsOpen, setPendingTxn } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
-  const { data: userAllowanceToken } = useAllowance(token, accountAddress, ALOE_II_ROUTER_ADDRESS);
+  const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
@@ -91,6 +91,7 @@ function DepositButton(props: DepositButtonProps) {
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
     functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
   });
 
   useEffect(() => {
@@ -184,13 +185,12 @@ export type EarnInterestModalProps = {
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
   const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const account = useAccount();
-  const network = useNetwork();
-  const activeChain = network.chain ?? DEFAULT_CHAIN;
 
   function resetModal() {
     setSelectedOption(defaultOption);
@@ -212,6 +212,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     addressOrName: account?.address ?? '',
     token: selectedOption.address,
     watch: true,
+    chainId: activeChain.id,
   });
 
   // Get the active kitty that corresponds to the selected token and is in
@@ -325,7 +326,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
-            activeChain={activeChain}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {
