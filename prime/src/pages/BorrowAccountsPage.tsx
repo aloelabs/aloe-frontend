@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { ContractReceipt } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display } from 'shared/lib/components/common/Typography';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useContract, useProvider, useSigner, useBlockNumber, useNetwork } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
+import { ChainContext } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -41,6 +41,7 @@ const MarginAccountsContainner = styled.div`
 `;
 
 export default function BorrowAccountsPage() {
+  const { activeChain } = useContext(ChainContext);
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -53,13 +54,14 @@ export default function BorrowAccountsPage() {
   const [isTxnPending, setIsTxnPending] = useState(false);
 
   // MARK: wagmi hooks
-  const network = useNetwork();
-  const currentChain = network?.chain ?? DEFAULT_CHAIN;
-  const provider = useProvider({ chainId: currentChain.id });
+  const provider = useProvider({ chainId: activeChain.id });
   const { address } = useAccount();
   const { data: signer } = useSigner();
+  // TODO: remove this once we have a better way of updating margin accounts
+  // Or rate limit the calls
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const blockNumber = useBlockNumber({
-    chainId: currentChain.id,
+    chainId: activeChain.id,
     watch: true,
   });
   const marginAccountLensContract = useContract({
@@ -77,7 +79,7 @@ export default function BorrowAccountsPage() {
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(
-        currentChain,
+        activeChain,
         marginAccountLensContract,
         provider,
         userAddress
@@ -93,7 +95,9 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
     //TODO: temporary while we need metamask to fetch this info
-  }, [address, marginAccountLensContract, provider, blockNumber.data, currentChain]);
+    //TODO: add a means of updating this periodically without having to rely
+    // on the block number changing (since arbitrum and optimism update too quickly)
+  }, [activeChain, address, marginAccountLensContract, provider]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
