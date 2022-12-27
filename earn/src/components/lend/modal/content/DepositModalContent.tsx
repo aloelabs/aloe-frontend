@@ -1,11 +1,12 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useContext, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useBalance, useContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../../App';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
@@ -56,14 +57,14 @@ function getConfirmButton(
 }
 
 export type DepositModalContentProps = {
-  chain: Chain;
   token: Token;
   kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;
 };
 
 export default function DepositModalContent(props: DepositModalContentProps) {
-  const { chain, token, kitty, setPendingTxnResult } = props;
+  const { token, kitty, setPendingTxnResult } = props;
+  const { activeChain } = useContext(ChainContext);
 
   const [depositAmount, setDepositAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -73,19 +74,19 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     addressOrName: account?.address ?? '',
     token: token.address,
     watch: true,
-    chainId: chain.id,
+    chainId: activeChain.id,
   });
 
-  const { data: userAllowanceToken } = useAllowance(chain, token, account?.address ?? '0x', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(activeChain, token, account?.address ?? '0x', kitty.address);
 
-  const writeAllowanceToken = useAllowanceWrite(chain, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(activeChain, token, kitty.address);
 
   const contract = useContractWrite({
     address: kitty.address,
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'deposit',
-    chainId: chain.id,
+    chainId: activeChain.id,
   });
 
   const numericDepositBalance = Number(depositBalance?.formatted ?? 0) || 0;

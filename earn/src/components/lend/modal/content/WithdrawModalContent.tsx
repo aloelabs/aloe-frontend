@@ -1,11 +1,12 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useContext, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Chain, useAccount, useContractWrite } from 'wagmi';
+import { useAccount, useContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../../App';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
@@ -48,7 +49,6 @@ function getConfirmButton(
 }
 
 export type WithdrawModalContentProps = {
-  chain: Chain;
   token: Token;
   kitty: Kitty;
   setPendingTxnResult: (result: SendTransactionResult) => void;
@@ -56,6 +56,7 @@ export type WithdrawModalContentProps = {
 
 export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   const { token, kitty, setPendingTxnResult } = props;
+  const { activeChain } = useContext(ChainContext);
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -67,6 +68,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     abi: KittyABI,
     mode: 'recklesslyUnprepared',
     functionName: 'withdraw',
+    chainId: activeChain.id,
   });
 
   const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
