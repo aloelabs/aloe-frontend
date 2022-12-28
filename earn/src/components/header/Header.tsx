@@ -29,7 +29,7 @@ export default function Header() {
 
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} activeChain={activeChain} setActiveChain={setActiveChain} />
+      <NavBar links={NAV_LINKS} activeChain={activeChain} setActiveChain={setActiveChain} isAllowedToInteract={true} />
     </Nav>
   );
 }
