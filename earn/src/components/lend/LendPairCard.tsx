@@ -57,7 +57,13 @@ function EditPositionButton(props: { Icon: React.ReactChild; onClick?: () => voi
   );
 }
 
-export default function LendPairCard(props: { pair: LendingPair; hasDeposited0: boolean; hasDeposited1: boolean }) {
+export type LendPairCardProps = {
+  pair: LendingPair;
+  hasDeposited0: boolean;
+  hasDeposited1: boolean;
+};
+
+export default function LendPairCard(props: LendPairCardProps) {
   const { hasDeposited0, hasDeposited1 } = props;
   const { token0, token1, kitty0, kitty1, kitty0Info, kitty1Info, uniswapFeeTier } = props.pair;
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] = useState<boolean>(false);

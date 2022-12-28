@@ -8,7 +8,7 @@ import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { useAccount, useNetwork } from 'wagmi';
+import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -157,10 +157,12 @@ export type NavBarLink = {
 export type NavBarProps = {
   links: NavBarLink[];
   isAllowedToInteract: boolean;
+  activeChain: Chain;
+  setActiveChain(c: Chain): void;
 };
 
 export function NavBar(props: NavBarProps) {
-  const { links, isAllowedToInteract } = props;
+  const { links, isAllowedToInteract, activeChain, setActiveChain } = props;
   const account = useAccount();
   const network = useNetwork();
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
@@ -168,7 +170,9 @@ export function NavBar(props: NavBarProps) {
     // Close the chain selector dropdown when the chain changes
     setIsSelectChainDropdownOpen(false);
   }, [network.chain]);
-  const activeChain = network.chain;
+
+  const isOffline = !account.isConnected && !account.isConnecting;
+
   return (
     <>
       <DesktopTopNav>
@@ -189,9 +193,11 @@ export function NavBar(props: NavBarProps) {
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
           <ChainSelector
-            chain={activeChain}
+            activeChain={activeChain}
+            isOffline={isOffline}
             isOpen={isSelectChainDropdownOpen}
             setIsOpen={setIsSelectChainDropdownOpen}
+            setActiveChain={setActiveChain}
           />
           {!activeChain || !account.address ? (
             <ConnectWalletButton account={account} activeChain={activeChain} disabled={!isAllowedToInteract} />

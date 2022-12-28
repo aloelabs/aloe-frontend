@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { chain, useAccount, useNetwork, useProvider } from 'wagmi';
+import { useAccount, useProvider } from 'wagmi';
 
+import { ChainContext } from '../App';
 import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
+import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
@@ -20,6 +22,7 @@ import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
+import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
@@ -32,6 +35,13 @@ import { Token } from '../data/Token';
 import { getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
+
+const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
+  Hover/click on a segment to see more details.`;
+const PORTFOLIO_GRID_TOOLTIP_TEXT = `These widgets give you general information about an asset.`;
+const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `Before other users can borrow your funds, they must post collateral.
+  When you deposit, you get to pick what type of collateral is allowed. That choice determines what pair you're lending
+  to, and each pair has it's own stats.`;
 
 const Container = styled.div`
   max-width: 780px;
@@ -83,6 +93,7 @@ export type TokenBalance = {
 };
 
 export default function PortfolioPage() {
+  const { activeChain } = useContext(ChainContext);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
@@ -98,9 +109,7 @@ export default function PortfolioPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
 
-  const network = useNetwork();
-  const activeChainId = network.chain?.id || chain.goerli.id;
-  const provider = useProvider({ chainId: activeChainId });
+  const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
@@ -143,13 +152,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
         return {
-          token: getTokenByTicker(activeChainId, ticker),
+          token: getTokenByTicker(activeChain.id, ticker),
           priceEntries: data.prices,
         };
       });
@@ -163,7 +172,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, uniqueTokens]);
+  }, [activeChain, uniqueTokens]);
 
   useEffect(() => {
     let mounted = true;
@@ -187,10 +196,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (!provider) {
-        return;
-      }
-      const results = await getAvailableLendingPairs(activeChainId, provider);
+      const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -200,7 +206,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChainId, provider]);
+  }, [activeChain, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -326,37 +332,40 @@ export default function PortfolioPage() {
             {errorLoadingPrices ? '$□□□' : formatUSD(totalBalanceUSD)}
           </Display>
         </div>
+
         <div className='h-16'>
-          {(() => {
-            if (!isDoneLoading) return <AssetBarPlaceholder />;
-            else if (!isConnected)
-              return (
-                <EmptyAssetBar>
-                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                    Please connect your wallet to get started
-                  </Text>
-                </EmptyAssetBar>
-              );
-            else if (totalBalanceUSD > 0 || errorLoadingPrices)
-              return (
-                <AssetBar
-                  balances={combinedBalances}
-                  tokenColors={tokenColors}
-                  ignoreBalances={errorLoadingPrices}
-                  setActiveAsset={(updatedAsset: Token) => {
-                    setActiveAsset(updatedAsset);
-                  }}
-                />
-              );
-            else
-              return (
-                <EmptyAssetBar>
-                  <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
-                    No assets found
-                  </Text>
-                </EmptyAssetBar>
-              );
-          })()}
+          <PortfolioPageWidgetWrapper tooltip={ASSET_BAR_TOOLTIP_TEXT} tooltipId='assetBar'>
+            {(() => {
+              if (!isDoneLoading) return <AssetBarPlaceholder />;
+              else if (!isConnected)
+                return (
+                  <EmptyAssetBar>
+                    <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                      Please connect your wallet to get started
+                    </Text>
+                  </EmptyAssetBar>
+                );
+              else if (totalBalanceUSD > 0 || errorLoadingPrices)
+                return (
+                  <AssetBar
+                    balances={combinedBalances}
+                    tokenColors={tokenColors}
+                    ignoreBalances={errorLoadingPrices}
+                    setActiveAsset={(updatedAsset: Token) => {
+                      setActiveAsset(updatedAsset);
+                    }}
+                  />
+                );
+              else
+                return (
+                  <EmptyAssetBar>
+                    <Text size='L' weight='medium' color='rgba(130, 160, 182, 1)'>
+                      No assets found
+                    </Text>
+                  </EmptyAssetBar>
+                );
+            })()}
+          </PortfolioPageWidgetWrapper>
         </div>
         <PortfolioActionButtonsContainer>
           <PortfolioActionButton
@@ -379,20 +388,30 @@ export default function PortfolioPage() {
           <PortfolioActionButton label={'Borrow Crypto'} Icon={<DollarIcon />} onClick={() => {}} disabled={true} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
-          <PortfolioGrid
-            activeAsset={activeAsset}
-            balances={combinedBalances}
-            tokenColors={tokenColors}
-            tokenPriceData={tokenPriceData}
-            tokenQuotes={tokenQuotes}
-            errorLoadingPrices={errorLoadingPrices}
-          />
+          <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
+            <PortfolioGrid
+              activeAsset={activeAsset}
+              balances={combinedBalances}
+              tokenColors={tokenColors}
+              tokenPriceData={tokenPriceData}
+              tokenQuotes={tokenQuotes}
+              errorLoadingPrices={errorLoadingPrices}
+            />
+          </PortfolioPageWidgetWrapper>
         </div>
         {isDoneLoading && filteredLendingPairs.length > 0 && activeAsset != null && (
           <div className='mt-10'>
-            <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+            <PortfolioPageWidgetWrapper tooltip={LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT} tooltipId='lendingPairPeerCard'>
+              <LendingPairPeerCard activeAsset={activeAsset} lendingPairs={filteredLendingPairs} />
+            </PortfolioPageWidgetWrapper>
           </div>
         )}
+        <div className='flex justify-center items-center gap-1 w-full mt-10'>
+          <InfoIcon width={16} height={16} />
+          <Text size='S' color='rgba(130, 160, 182, 1)'>
+            Hint: Click the space bar at any time to access search and shortcuts.
+          </Text>
+        </div>
       </Container>
       {activeAsset != null && (
         <>

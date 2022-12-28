@@ -1,16 +1,25 @@
 import axios from 'axios';
+import { chain as wagmiChain } from 'wagmi';
+
+const ETHERSCAN_DOMAINS_BY_CHAIN_ID = {
+  [wagmiChain.mainnet.id]: 'api.etherscan.io',
+  [wagmiChain.goerli.id]: 'api-goerli.etherscan.io',
+  [wagmiChain.optimism.id]: 'api-optimistic.etherscan.io',
+  [wagmiChain.arbitrum.id]: 'api.arbiscan.io',
+};
 
 export function makeEtherscanRequest(
   fromBlock: number,
   address: string,
   topics: (string | null)[],
   shouldMatchAll: boolean,
-  subdomain = 'api',
+  chain = wagmiChain.mainnet,
   pageLength = 1000,
   page?: number,
   toBlock?: number
 ) {
-  let query = `https://${subdomain}.etherscan.io/api?module=logs&action=getLogs`.concat(
+  const domain = ETHERSCAN_DOMAINS_BY_CHAIN_ID[chain.id];
+  let query = `https://${domain}/api?module=logs&action=getLogs`.concat(
     `&fromBlock=${fromBlock.toFixed(0)}`,
     toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '&toBlock=latest',
     `&address=${address}`

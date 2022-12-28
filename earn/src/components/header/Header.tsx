@@ -1,6 +1,10 @@
+import { useContext } from 'react';
+
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
+import { ChainContext } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -21,9 +25,11 @@ const Nav = styled.nav`
 `;
 
 export default function Header() {
+  const { activeChain, setActiveChain } = useContext(ChainContext);
+
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} isAllowedToInteract={true} />
+      <NavBar links={NAV_LINKS} activeChain={activeChain} setActiveChain={setActiveChain} isAllowedToInteract={true} />
     </Nav>
   );
 }

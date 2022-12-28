@@ -11,7 +11,7 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import { TokenData } from '../../../data/TokenData';
+import { Token } from '../../../data/Token';
 import { getBalanceFor } from '../../../data/UserBalances';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
@@ -49,7 +49,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const max = selectedToken ? getBalanceFor(selectedToken, accountState.availableBalances) : 0;
   const maxString = Math.max(0, max - 1e-6).toFixed(6);
 
-  const tokenMap = new Map<TokenType, TokenData>();
+  const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
   tokenMap.set(TokenType.KITTY0, kitty0);

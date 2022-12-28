@@ -4,6 +4,8 @@ import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks'
 import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Footer from 'shared/lib/components/common/Footer';
+import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { Chain, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -30,7 +32,44 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const ChainContext = React.createContext({
+  activeChain: DEFAULT_CHAIN,
+  setActiveChain: (chain: Chain) => {},
+});
+
+type AppBodyWrapperProps = {
+  isAllowedToInteract: boolean;
+};
+
+function AppBodyWrapper(props: AppBodyWrapperProps) {
+  const { isAllowedToInteract } = props;
+  const { activeChain, setActiveChain } = React.useContext(ChainContext);
+  const network = useNetwork();
+
+  useEffect(() => {
+    if (network.chain !== undefined && network.chain !== activeChain) {
+      setActiveChain(network.chain);
+    }
+  }, [activeChain, network.chain, setActiveChain]);
+
+  return (
+    <AppBody>
+      <Header isAllowedToInteract={isAllowedToInteract} />
+      <main className='flex-grow'>
+        <Routes>
+          <Route path='/borrow' element={<BorrowAccountsPage isAllowedToInteract={isAllowedToInteract} />} />
+          <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+          <Route path='/' element={<Navigate replace to='/borrow' />} />
+          <Route path='*' element={<Navigate to='/' />} />
+        </Routes>
+      </main>
+      <Footer />
+    </AppBody>
+  );
+}
+
 function App() {
+  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
   const [isAllowedToInteract, setIsAllowedToInteract] = React.useState<boolean>(false);
 
@@ -59,6 +98,7 @@ function App() {
     };
   });
 
+  const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {
@@ -93,19 +133,10 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <ScrollToTop />
-          <AppBody>
-            <Header isAllowedToInteract={isAllowedToInteract} />
-            <main className='flex-grow'>
-              <Routes>
-                <Route path='/borrow' element={<BorrowAccountsPage isAllowedToInteract={isAllowedToInteract} />} />
-                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                <Route path='/' element={<Navigate replace to='/borrow' />} />
-                <Route path='*' element={<Navigate to='/' />} />
-              </Routes>
-            </main>
-            <Footer />
-          </AppBody>
+          <ChainContext.Provider value={value}>
+            <ScrollToTop />
+            <AppBodyWrapper isAllowedToInteract={isAllowedToInteract} />
+          </ChainContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>

@@ -3,10 +3,12 @@ import React, { Suspense, useEffect } from 'react';
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Footer from 'shared/lib/components/common/Footer';
+import { Chain, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import WagmiProvider from './connector/WagmiProvider';
+import { DEFAULT_CHAIN } from './data/constants/Values';
 import LendPage from './pages/LendPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
@@ -26,8 +28,42 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const ChainContext = React.createContext({
+  activeChain: DEFAULT_CHAIN,
+  setActiveChain: (chain: Chain) => {},
+});
+
+function AppBodyWrapper() {
+  const { activeChain, setActiveChain } = React.useContext(ChainContext);
+
+  const network = useNetwork();
+
+  useEffect(() => {
+    if (network.chain !== undefined && network.chain !== activeChain) {
+      setActiveChain(network.chain);
+    }
+  }, [activeChain, network.chain, setActiveChain]);
+
+  return (
+    <AppBody>
+      <Header />
+      <main className='flex-grow'>
+        <Routes>
+          <Route path='/portfolio' element={<PortfolioPage />} />
+          <Route path='/markets' element={<LendPage />} />
+          <Route path='/' element={<Navigate replace to='/portfolio' />} />
+          <Route path='*' element={<Navigate to='/' />} />
+        </Routes>
+      </main>
+      <Footer />
+    </AppBody>
+  );
+}
+
 function App() {
+  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {
@@ -58,23 +94,15 @@ function App() {
       mounted = false;
     };
   });
+
   return (
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <ScrollToTop />
-          <AppBody>
-            <Header />
-            <main className='flex-grow'>
-              <Routes>
-                <Route path='/portfolio' element={<PortfolioPage />} />
-                <Route path='/markets' element={<LendPage />} />
-                <Route path='/' element={<Navigate replace to='/portfolio' />} />
-                <Route path='*' element={<Navigate to='/' />} />
-              </Routes>
-            </main>
-            <Footer />
-          </AppBody>
+          <ChainContext.Provider value={value}>
+            <ScrollToTop />
+            <AppBodyWrapper />
+          </ChainContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>
