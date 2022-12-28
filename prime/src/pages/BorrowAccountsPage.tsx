@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
-import { ChainContext } from '../App';
+import { ChainContext, GeoFencingContext } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -40,12 +40,8 @@ const MarginAccountsContainner = styled.div`
   ${tw`flex items-center justify-start flex-wrap gap-4`}
 `;
 
-export type BorrowAccountsPageProps = {
-  isAllowedToInteract: boolean;
-};
-
-export default function BorrowAccountsPage(props: BorrowAccountsPageProps) {
-  const { isAllowedToInteract } = props;
+export default function BorrowAccountsPage() {
+  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
   // --> transaction modals

@@ -37,12 +37,9 @@ export const ChainContext = React.createContext({
   setActiveChain: (chain: Chain) => {},
 });
 
-type AppBodyWrapperProps = {
-  isAllowedToInteract: boolean;
-};
+export const GeoFencingContext = React.createContext({ isAllowedToInteract: false });
 
-function AppBodyWrapper(props: AppBodyWrapperProps) {
-  const { isAllowedToInteract } = props;
+function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
   const network = useNetwork();
 
@@ -54,10 +51,10 @@ function AppBodyWrapper(props: AppBodyWrapperProps) {
 
   return (
     <AppBody>
-      <Header isAllowedToInteract={isAllowedToInteract} />
+      <Header />
       <main className='flex-grow'>
         <Routes>
-          <Route path='/borrow' element={<BorrowAccountsPage isAllowedToInteract={isAllowedToInteract} />} />
+          <Route path='/borrow' element={<BorrowAccountsPage />} />
           <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
           <Route path='/' element={<Navigate replace to='/borrow' />} />
           <Route path='*' element={<Navigate to='/' />} />
@@ -133,10 +130,12 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <ChainContext.Provider value={value}>
-            <ScrollToTop />
-            <AppBodyWrapper isAllowedToInteract={isAllowedToInteract} />
-          </ChainContext.Provider>
+          <GeoFencingContext.Provider value={{ isAllowedToInteract }}>
+            <ChainContext.Provider value={value}>
+              <ScrollToTop />
+              <AppBodyWrapper />
+            </ChainContext.Provider>
+          </GeoFencingContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>
