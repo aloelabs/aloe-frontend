@@ -86,7 +86,7 @@ function App() {
         return;
       }
       if (mounted) {
-        setIsAllowedToInteract(geoFencingResponse.data.isAllowed);
+        setIsAllowedToInteract(geoFencingResponse.data.isAllowed || (activeChain.testnet as boolean));
       }
     }
     fetch();
