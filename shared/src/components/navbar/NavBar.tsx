@@ -156,12 +156,13 @@ export type NavBarLink = {
 
 export type NavBarProps = {
   links: NavBarLink[];
+  isAllowedToInteract: boolean;
   activeChain: Chain;
   setActiveChain(c: Chain): void;
 };
 
 export function NavBar(props: NavBarProps) {
-  const { links, activeChain, setActiveChain } = props;
+  const { links, isAllowedToInteract, activeChain, setActiveChain } = props;
   const account = useAccount();
   const network = useNetwork();
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
@@ -199,7 +200,7 @@ export function NavBar(props: NavBarProps) {
             setActiveChain={setActiveChain}
           />
           {!activeChain || !account.address ? (
-            <ConnectWalletButton account={account} activeChain={activeChain} />
+            <ConnectWalletButton account={account} activeChain={activeChain} disabled={!isAllowedToInteract} />
           ) : (
             <AccountInfo
               account={account}

@@ -4,7 +4,7 @@ import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { ChainContext } from '../../App';
+import { ChainContext, GeoFencingContext } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -21,11 +21,17 @@ const Nav = styled.nav`
 `;
 
 export default function Header() {
+  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain, setActiveChain } = useContext(ChainContext);
 
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} activeChain={activeChain} setActiveChain={setActiveChain} />
+      <NavBar
+        links={NAV_LINKS}
+        activeChain={activeChain}
+        setActiveChain={setActiveChain}
+        isAllowedToInteract={isAllowedToInteract}
+      />
     </Nav>
   );
 }

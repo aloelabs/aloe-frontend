@@ -16,12 +16,13 @@ const Container = styled.div`
 export type ConnectWalletButtonProps = {
   account?: GetAccountResult<Provider>;
   activeChain: Chain;
+  disabled?: boolean;
   fillWidth?: boolean;
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account, activeChain, fillWidth } = props;
+  const { account, activeChain, disabled, fillWidth } = props;
   const isConnected = account?.isConnected ?? false;
 
   // MARK: component state
@@ -45,6 +46,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         }}
         size='M'
         fillWidth={fillWidth}
+        disabled={disabled}
       >
         Connect Wallet
       </FilledStylizedButton>

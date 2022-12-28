@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
-import { ChainContext } from '../App';
+import { ChainContext, GeoFencingContext } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -41,6 +41,7 @@ const MarginAccountsContainner = styled.div`
 `;
 
 export default function BorrowAccountsPage() {
+  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
   // --> transaction modals
@@ -75,7 +76,7 @@ export default function BorrowAccountsPage() {
 
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
-      if (!marginAccountLensContract) {
+      if (!marginAccountLensContract || !isAllowedToInteract) {
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(
@@ -97,12 +98,12 @@ export default function BorrowAccountsPage() {
     //TODO: temporary while we need metamask to fetch this info
     //TODO: add a means of updating this periodically without having to rely
     // on the block number changing (since arbitrum and optimism update too quickly)
-  }, [activeChain, address, marginAccountLensContract, provider]);
+  }, [activeChain, address, isAllowedToInteract, marginAccountLensContract, provider]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
       localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
-    if (shouldShowWelcomeModal) {
+    if (shouldShowWelcomeModal && isAllowedToInteract) {
       setShowWelcomeModal(true);
     }
   });
@@ -164,7 +165,7 @@ export default function BorrowAccountsPage() {
         setOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
-          if (!signer || !address || !selectedPool) {
+          if (!signer || !address || !selectedPool || !isAllowedToInteract) {
             // TODO
             return;
           }
