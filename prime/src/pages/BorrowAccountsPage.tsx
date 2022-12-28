@@ -77,6 +77,7 @@ export default function BorrowAccountsPage() {
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
       if (!marginAccountLensContract || !isAllowedToInteract) {
+        setMarginAccounts([]);
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(
@@ -148,7 +149,7 @@ export default function BorrowAccountsPage() {
           onClick={() => {
             setShowConfirmModal(true);
           }}
-          disabled={address === undefined}
+          disabled={address === undefined || !isAllowedToInteract}
         >
           New
         </FilledGradientButtonWithIcon>
