@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Chain, useNetwork } from 'wagmi';
 
@@ -47,6 +48,7 @@ function AppBodyWrapper() {
   return (
     <AppBody>
       <Header />
+      <BetaBanner />
       <main className='flex-grow'>
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
