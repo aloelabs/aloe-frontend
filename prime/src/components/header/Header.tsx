@@ -4,7 +4,7 @@ import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { ChainContext, GeoFencingContext } from '../../App';
+import { ChainContext, useGeoFencing } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -21,8 +21,8 @@ const Nav = styled.nav`
 `;
 
 export default function Header() {
-  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain, setActiveChain } = useContext(ChainContext);
+  const isAllowedToInteract = useGeoFencing(activeChain);
 
   return (
     <Nav>
