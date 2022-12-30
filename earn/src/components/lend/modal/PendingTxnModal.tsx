@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
+import { ChainContext } from '../../../App';
 import { LoadingModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 
 export type PendingTxnModalProps = {
@@ -11,6 +13,7 @@ export type PendingTxnModalProps = {
 };
 
 export default function PendingTxnModal(props: PendingTxnModalProps) {
+  const { activeChain } = useContext(ChainContext);
   return (
     <LoadingModal open={props.open} setOpen={props.setOpen} title='Submitting Order'>
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
@@ -19,7 +22,7 @@ export default function PendingTxnModal(props: PendingTxnModalProps) {
       {props.txnHash && (
         <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
           <a
-            href={`https://goerli.etherscan.io/tx/${props.txnHash}`}
+            href={`${getEtherscanUrlForChain(activeChain)}/tx/${props.txnHash}`}
             target='_blank'
             rel='noopener noreferrer'
             className='underline'
