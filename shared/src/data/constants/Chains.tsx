@@ -2,7 +2,7 @@ import { chain } from 'wagmi';
 
 import { ArbitrumLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
 
-export const SUPPORTED_CHAINS = [chain.mainnet, chain.goerli, chain.optimism, chain.arbitrum];
+export const SUPPORTED_CHAINS = [chain.goerli, chain.optimism];
 
 export const CHAIN_LOGOS = {
   [chain.mainnet.id]: <EthereumLogo width={16} height={16} />,
