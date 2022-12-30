@@ -14,10 +14,8 @@ import { Token } from '../../data/Token';
 
 const PIE_CHART_HOVER_GROWTH = 1.05;
 const TOKEN0_COLOR_UNISWAP = '#BEEDC7';
-const TOKEN0_COLOR_INTEREST_BEARING = '#59D67C';
 const TOKEN0_COLOR_RAW = '#00C143';
 const TOKEN1_COLOR_UNISWAP = '#BBA3F7';
-const TOKEN1_COLOR_INTEREST_BEARING = '#865EF2';
 const TOKEN1_COLOR_RAW = '#6002EE';
 
 const PieChartContainer = styled.div`
@@ -231,13 +229,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     .div(sqrtPriceX96)
     .mul(10 ** (token1.decimals - token0.decimals))
     .toNumber();
-  const totalAssets: number =
-    assets.token0Raw +
-    assets.token1Raw * price +
-    assets.token0Plus +
-    assets.token1Plus * price +
-    assets.uni0 +
-    assets.uni1 * price;
+  const totalAssets: number = assets.token0Raw + assets.token1Raw * price + assets.uni0 + assets.uni1 * price;
 
   const slices: AllocationPieChartSlice[] = [
     {
@@ -248,30 +240,18 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     },
     {
       index: 1,
-      percent: assets.token0Plus / totalAssets,
-      color: TOKEN0_COLOR_INTEREST_BEARING,
-      category: 'Interest Bearing',
-    },
-    {
-      index: 2,
       percent: assets.uni0 / totalAssets,
       color: TOKEN0_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
-      index: 3,
+      index: 2,
       percent: (assets.uni1 * price) / totalAssets,
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
-      index: 4,
-      percent: (assets.token1Plus * price) / totalAssets,
-      color: TOKEN1_COLOR_INTEREST_BEARING,
-      category: 'Interest Bearing',
-    },
-    {
-      index: 5,
+      index: 3,
       percent: (assets.token1Raw * price) / totalAssets,
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
