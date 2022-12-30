@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
-import { ChainContext, GeoFencingContext } from '../App';
+import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -41,8 +41,8 @@ const MarginAccountsContainner = styled.div`
 `;
 
 export default function BorrowAccountsPage() {
-  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain } = useContext(ChainContext);
+  const isAllowedToInteract = useGeoFencing(activeChain);
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
