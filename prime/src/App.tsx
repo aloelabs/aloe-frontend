@@ -68,6 +68,7 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
   const [isAllowedToInteract, setIsAllowedToInteract] = React.useState<boolean>(false);
 
   useEffectOnce(() => {
@@ -80,13 +81,10 @@ function App() {
         console.error(error);
       }
       if (geoFencingResponse == null) {
-        if (mounted) {
-          setIsAllowedToInteract(false);
-        }
         return;
       }
       if (mounted) {
-        setIsAllowedToInteract(geoFencingResponse.data.isAllowed);
+        setGeoFencingResponse(geoFencingResponse.data);
       }
     }
     fetch();
@@ -94,6 +92,14 @@ function App() {
       mounted = false;
     };
   });
+
+  useEffect(() => {
+    if (geoFencingResponse == null) {
+      return;
+    }
+    const isAllowed = geoFencingResponse.isAllowed || !!activeChain.testnet;
+    setIsAllowedToInteract(isAllowed);
+  }, [activeChain, geoFencingResponse]);
 
   const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
