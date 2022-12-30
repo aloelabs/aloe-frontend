@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useContext, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
@@ -37,7 +37,12 @@ export const ChainContext = React.createContext({
   setActiveChain: (chain: Chain) => {},
 });
 
-export const GeoFencingContext = React.createContext({ isAllowedToInteract: false });
+export const GeoFencingContext = React.createContext<GeoFencingResponse | null>(null);
+
+export function useGeoFencing(activeChain: Chain) {
+  const ctxt = useContext(GeoFencingContext);
+  return ctxt?.isAllowed || !!activeChain.testnet;
+}
 
 function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
@@ -69,22 +74,15 @@ function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
   const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
-  const [isAllowedToInteract, setIsAllowedToInteract] = React.useState<boolean>(false);
 
   useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
-      let geoFencingResponse: AxiosResponse<GeoFencingResponse> | null = null;
       try {
-        geoFencingResponse = await axios.get(API_GEO_FENCING_URL);
+        const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
+        if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
       } catch (error) {
         console.error(error);
-      }
-      if (geoFencingResponse == null) {
-        return;
-      }
-      if (mounted) {
-        setGeoFencingResponse(geoFencingResponse.data);
       }
     }
     fetch();
@@ -92,14 +90,6 @@ function App() {
       mounted = false;
     };
   });
-
-  useEffect(() => {
-    if (geoFencingResponse == null) {
-      return;
-    }
-    const isAllowed = geoFencingResponse.isAllowed || !!activeChain.testnet;
-    setIsAllowedToInteract(isAllowed);
-  }, [activeChain, geoFencingResponse]);
 
   const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
@@ -136,7 +126,7 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <GeoFencingContext.Provider value={{ isAllowedToInteract }}>
+          <GeoFencingContext.Provider value={geoFencingResponse}>
             <ChainContext.Provider value={value}>
               <ScrollToTop />
               <AppBodyWrapper />
