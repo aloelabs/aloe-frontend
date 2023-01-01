@@ -5,8 +5,6 @@ import { ReactComponent as AloeLogo } from '../../assets/svg/aloe_capital_logo.s
 import { ReactComponent as UniswapLogo } from '../../assets/svg/uniswap_logo.svg';
 import { AloeAddMarginActionCard } from '../../components/borrow/actions/AloeAddMarginActionCard';
 import { AloeBorrowActionCard } from '../../components/borrow/actions/AloeBorrowActionCard';
-import { AloeBurnTokenPlusActionCard } from '../../components/borrow/actions/AloeBurnTokenPlusActionCard';
-import { AloeMintTokenPlusActionCard } from '../../components/borrow/actions/AloeMintTokenPlusActionCard';
 import { AloeRepayActionCard } from '../../components/borrow/actions/AloeRepayActionCard';
 import { AloeWithdrawActionCard } from '../../components/borrow/actions/AloeWithdrawActionCard';
 import UniswapAddLiquidityActionCard from '../../components/borrow/actions/UniswapAddLiquidityActionCard';
@@ -91,19 +89,6 @@ export type ActionTemplate = {
   userInputFields?: (string[] | undefined)[];
 };
 
-export const MINT_TOKEN_PLUS: Action = {
-  id: ActionID.MINT,
-  description:
-    'Exchange raw assets for their interest-bearing counterpart. Using these as collateral reduces maximum leverage.',
-  actionCard: AloeMintTokenPlusActionCard,
-};
-
-export const BURN_TOKEN_PLUS: Action = {
-  id: ActionID.BURN,
-  description: 'Exchange interest-bearing tokens for the underlying asset.',
-  actionCard: AloeBurnTokenPlusActionCard,
-};
-
 export const BORROW: Action = {
   id: ActionID.BORROW,
   description: "Request assets from the money market. This won't work if market utilization is already at 100%.",
@@ -156,8 +141,6 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
       WITHDRAW,
       BORROW,
       REPAY,
-      MINT_TOKEN_PLUS,
-      BURN_TOKEN_PLUS,
     },
   },
   UniswapV3: {
@@ -173,17 +156,16 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
 };
 
 export const ActionTemplates: { [key: string]: ActionTemplate } = {
-  TEN_X_LEVERAGE: {
-    name: 'Classic Borrow',
-    description: 'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
-    actions: [ADD_MARGIN, MINT_TOKEN_PLUS, BORROW, WITHDRAW],
-    userInputFields: [
-      [TokenType.ASSET0, '100'],
-      [TokenType.ASSET0, '100'],
-      [TokenType.ASSET1, '0.044'],
-      [TokenType.ASSET1, '0.044'],
-    ],
-  },
+  // TEN_X_LEVERAGE: {
+  //   name: 'Classic Borrow',
+  //   description: 'Take out a WETH loan, using interest-bearing USDC+ as collateral.',
+  //   actions: [ADD_MARGIN, BORROW, WITHDRAW],
+  //   userInputFields: [
+  //     [TokenType.ASSET0, '100'],
+  //     [TokenType.ASSET1, '0.044'],
+  //     [TokenType.ASSET1, '0.044'],
+  //   ],
+  // },
   MARKET_MAKING: {
     name: 'Market-Making',
     description: 'Create an in-range Uniswap Position at 20x leverage.',
