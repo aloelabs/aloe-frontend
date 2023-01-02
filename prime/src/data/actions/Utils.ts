@@ -1,3 +1,4 @@
+import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
 import { MarginAccount, isSolvent } from '../MarginAccount';
 import { AccountState } from './Actions';
 
@@ -45,6 +46,12 @@ export function runWithChecks(
   if (!solvency.atA || !solvency.atB) {
     console.log('Margin Account not solvent!');
     console.log(solvency);
+    return null;
+  }
+
+  // Check that there are not too many Uniswap positions
+  if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
+    console.log('Too many Uniswap positions!');
     return null;
   }
 
