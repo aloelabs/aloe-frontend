@@ -8,7 +8,7 @@ import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { Chain, useAccount, useNetwork } from 'wagmi';
+import { Chain, useAccount, useNetwork, useDisconnect } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -158,13 +158,15 @@ export type NavBarProps = {
   links: NavBarLink[];
   isAllowedToInteract: boolean;
   activeChain: Chain;
+  checkboxes: string[];
   setActiveChain(c: Chain): void;
 };
 
 export function NavBar(props: NavBarProps) {
-  const { links, isAllowedToInteract, activeChain, setActiveChain } = props;
+  const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
   const account = useAccount();
   const network = useNetwork();
+  const { disconnect } = useDisconnect();
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
   useEffect(() => {
     // Close the chain selector dropdown when the chain changes
@@ -200,12 +202,18 @@ export function NavBar(props: NavBarProps) {
             setActiveChain={setActiveChain}
           />
           {!activeChain || !account.address ? (
-            <ConnectWalletButton account={account} activeChain={activeChain} disabled={!isAllowedToInteract} />
+            <ConnectWalletButton
+              account={account}
+              checkboxes={checkboxes}
+              activeChain={activeChain}
+              disabled={!isAllowedToInteract}
+            />
           ) : (
             <AccountInfo
               account={account}
               chain={activeChain}
               closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
+              disconnect={disconnect}
             />
           )}
         </div>

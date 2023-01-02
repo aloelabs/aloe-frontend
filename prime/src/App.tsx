@@ -1,11 +1,13 @@
-import React, { Suspense, useContext, useEffect } from 'react';
+import React, { Suspense, createContext, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Footer from 'shared/lib/components/common/Footer';
+import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
-import { Chain, useNetwork } from 'wagmi';
+import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
+import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -16,6 +18,11 @@ import useEffectOnce from './data/hooks/UseEffectOnce';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import ScrollToTop from './util/ScrollToTop';
+
+const CONNECT_WALLET_CHECKBOXES = [
+  'I am not a citizen or resident of the United States of America.',
+  'I acknowledge that Aloe II is in beta and that use of the platform may result in loss of funds.',
+];
 
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
@@ -37,7 +44,7 @@ export const ChainContext = React.createContext({
   setActiveChain: (chain: Chain) => {},
 });
 
-export const GeoFencingContext = React.createContext<GeoFencingResponse | null>(null);
+export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
 
 export function useGeoFencing(activeChain: Chain) {
   const ctxt = useContext(GeoFencingContext);
@@ -45,8 +52,17 @@ export function useGeoFencing(activeChain: Chain) {
 }
 
 function AppBodyWrapper() {
-  const { activeChain, setActiveChain } = React.useContext(ChainContext);
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+  const { activeChain, setActiveChain } = useContext(ChainContext);
+  const account = useAccount();
   const network = useNetwork();
+
+  useEffect(() => {
+    const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
+    if (!account?.isConnecting && !account?.isConnected && !hasSeenWelcomeModal) {
+      setIsWelcomeModalOpen(true);
+    }
+  }, [account?.isConnecting, account?.isConnected]);
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -56,7 +72,7 @@ function AppBodyWrapper() {
 
   return (
     <AppBody>
-      <Header />
+      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
       <main className='flex-grow'>
         <Routes>
           <Route path='/borrow' element={<BorrowAccountsPage />} />
@@ -66,6 +82,14 @@ function AppBodyWrapper() {
         </Routes>
       </main>
       <Footer />
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        activeChain={activeChain}
+        checkboxes={CONNECT_WALLET_CHECKBOXES}
+        account={account}
+        setIsOpen={() => setIsWelcomeModalOpen(false)}
+        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+      />
     </AppBody>
   );
 }

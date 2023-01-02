@@ -24,12 +24,23 @@ const Nav = styled.nav`
   z-index: 40;
 `;
 
-export default function Header() {
+export type HeaderProps = {
+  checkboxes: string[];
+};
+
+export default function Header(props: HeaderProps) {
+  const { checkboxes } = props;
   const { activeChain, setActiveChain } = useContext(ChainContext);
 
   return (
     <Nav>
-      <NavBar links={NAV_LINKS} activeChain={activeChain} setActiveChain={setActiveChain} isAllowedToInteract={true} />
+      <NavBar
+        links={NAV_LINKS}
+        activeChain={activeChain}
+        checkboxes={checkboxes}
+        setActiveChain={setActiveChain}
+        isAllowedToInteract={true}
+      />
     </Nav>
   );
 }
