@@ -5,6 +5,7 @@ import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
+import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
 
@@ -16,7 +17,6 @@ import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.sv
 import { Token } from '../../../data/Token';
 import { formatNumberInput, String1E } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
-import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -194,7 +194,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
-    <PortfolioModal
+    <Modal
       isOpen={isOpen}
       title='Send Crypto'
       setIsOpen={(open: boolean) => {
@@ -281,6 +281,6 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
           </Text>
         </div>
       </div>
-    </PortfolioModal>
+    </Modal>
   );
 }
