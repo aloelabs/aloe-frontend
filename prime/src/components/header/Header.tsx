@@ -20,7 +20,12 @@ const Nav = styled.nav`
   z-index: 40;
 `;
 
-export default function Header() {
+export type HeaderProps = {
+  checkboxes: string[];
+};
+
+export default function Header(props: HeaderProps) {
+  const { checkboxes } = props;
   const { activeChain, setActiveChain } = useContext(ChainContext);
   const isAllowedToInteract = useGeoFencing(activeChain);
 
@@ -29,6 +34,7 @@ export default function Header() {
       <NavBar
         links={NAV_LINKS}
         activeChain={activeChain}
+        checkboxes={checkboxes}
         setActiveChain={setActiveChain}
         isAllowedToInteract={isAllowedToInteract}
       />

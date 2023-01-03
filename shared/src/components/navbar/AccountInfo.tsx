@@ -6,7 +6,7 @@ import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { Chain, useConnect, useEnsName, useDisconnect } from 'wagmi';
+import { Chain, useConnect, useEnsName } from 'wagmi';
 
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
@@ -60,11 +60,12 @@ export type AccountInfoProps = {
   chain: Chain;
   buttonStyle?: 'secondary' | 'tertiary';
   closeChainSelector: () => void;
+  disconnect: () => void;
 };
 
 export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component props
-  const { account, chain, closeChainSelector } = props;
+  const { account, chain, closeChainSelector, disconnect } = props;
   const isConnected = account?.isConnected ?? false;
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
@@ -79,7 +80,6 @@ export default function AccountInfo(props: AccountInfoProps) {
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect({ chainId: chain.id });
-  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     if (isConnected) {
@@ -136,7 +136,7 @@ export default function AccountInfo(props: AccountInfoProps) {
                           svgColorType='stroke'
                           position='center'
                           onClick={() => {
-                            disconnect?.();
+                            disconnect();
                           }}
                         />
                       </div>
@@ -148,10 +148,14 @@ export default function AccountInfo(props: AccountInfoProps) {
           )}
         </Popover>
       )}
-      <CloseableModal open={switchChainPromptModalOpen} setOpen={setSwitchChainPromptModalOpen} title={'Switch Chain'}>
+      <CloseableModal
+        isOpen={switchChainPromptModalOpen}
+        setIsOpen={setSwitchChainPromptModalOpen}
+        title={'Switch Chain'}
+      >
         <div className='w-full'></div>
       </CloseableModal>
-      <CloseableModal open={walletModalOpen} setOpen={setWalletModalOpen} title={'Connect Wallet'}>
+      <CloseableModal isOpen={walletModalOpen} setIsOpen={setWalletModalOpen} title={'Connect Wallet'}>
         <div className='w-full'>
           <div className='py-2'>
             <Text size='M' weight='medium'>
