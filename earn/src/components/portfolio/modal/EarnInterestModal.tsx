@@ -18,7 +18,7 @@ import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, toBig } from '../../../util/Numbers';
+import { formatNumberInput, roundPercentage, toBig } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -217,13 +217,15 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
 
   // Get the active kitty that corresponds to the selected token and is in
   // the selected token / collateral token lending pair
-  let activeKitty: Kitty | null = useMemo(() => {
+  const [activeKitty, activeKittyInfo] = useMemo(() => {
     for (const lendingPair of lendingPairs) {
       if (selectedPairOption?.equals(lendingPair)) {
-        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
+        return lendingPair.token0.address === selectedOption.address
+          ? [lendingPair.kitty0, lendingPair.kitty0Info]
+          : [lendingPair.kitty1, lendingPair.kitty1Info];
       }
     }
-    return null;
+    return [null, null];
   }, [selectedPairOption, selectedOption, lendingPairs]);
 
   if (selectedPairOption == null || activeKitty == null) {
@@ -238,7 +240,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   return (
     <PortfolioModal
       isOpen={isOpen}
-      title='Earn Interest'
+      title='Deposit'
       setIsOpen={(open: boolean) => {
         setIsOpen(open);
         if (!open) {
@@ -250,7 +252,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
         <div className='w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Deposit
+              Amount
             </Text>
             <BaseMaxButton
               size='L'
@@ -301,6 +303,23 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             size='L'
             compact={false}
           />
+        </div>
+        <div className='flex flex-col gap-1 w-full'>
+          <div className='flex items-center gap-2'>
+            <Text size='M' weight='bold'>
+              Estimated APY
+            </Text>
+            <Tooltip
+              buttonSize='S'
+              buttonText=''
+              content={`The actual APY is dynamic and is calculated based on the utilization of the pool.`}
+              position='top-center'
+              filled={true}
+            />
+          </div>
+          <Text size='L' weight='bold' color={SECONDARY_COLOR}>
+            {roundPercentage(activeKittyInfo?.apy ?? 0, 2).toFixed(2)}%
+          </Text>
         </div>
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
