@@ -34,6 +34,11 @@ const SearchInputDropdownOption = styled.div`
   height: 48px;
   padding: 0 16px;
   cursor: pointer;
+
+  &:hover,
+  &.selected {
+    background-color: rgba(26, 41, 52, 0.5);
+  }
 `;
 
 export type TokenSearchInputProps = {
@@ -45,6 +50,7 @@ export type TokenSearchInputProps = {
 export default function TokenSearchInput(props: TokenSearchInputProps) {
   const { autoFocus, options, onOptionSelected } = props;
   const [searchText, setSearchText] = useState('');
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(-1);
   const inputRef = createRef<HTMLInputElement>();
   const [matchingOptions, setMatchingOptions] = useState<DropdownOption<Token>[]>([]);
 
@@ -68,7 +74,28 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
       <SquareInputWithIcon
         innerRef={inputRef}
         value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          setSearchText(e.target.value);
+          setSelectedOptionIndex(-1);
+        }}
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (matchingOptions.length > 0 && selectedOptionIndex < matchingOptions.length - 1) {
+              setSelectedOptionIndex((selectedOptionIndex) => selectedOptionIndex + 1);
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (matchingOptions.length > 0 && selectedOptionIndex > 0) {
+              setSelectedOptionIndex((selectedOptionIndex) => selectedOptionIndex - 1);
+            }
+          }
+        }}
+        onEnter={() => {
+          if (selectedOptionIndex >= 0) {
+            onOptionSelected(matchingOptions[selectedOptionIndex]);
+          }
+        }}
         Icon={<SearchIcon />}
         size='L'
         svgColorType='stroke'
@@ -79,7 +106,11 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
       {matchingOptions.length > 0 && (
         <SearchInputDropdownContainer>
           {matchingOptions.map((option, index) => (
-            <SearchInputDropdownOption onClick={() => onOptionSelected(option)} key={index}>
+            <SearchInputDropdownOption
+              onClick={() => onOptionSelected(option)}
+              key={index}
+              className={index === selectedOptionIndex ? 'selected' : ''}
+            >
               {option.label}
             </SearchInputDropdownOption>
           ))}

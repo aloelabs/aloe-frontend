@@ -229,6 +229,7 @@ export type InputProps = {
   disabled?: boolean;
   onEnter?: () => void;
   onBlur?: () => void;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   id?: string;
   innerRef?: React.RefObject<HTMLInputElement>;
   paddingRightOverride?: string;
@@ -246,6 +247,7 @@ export function RoundedInput(props: InputProps) {
     disabled,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
     paddingRightOverride,
@@ -266,6 +268,7 @@ export function RoundedInput(props: InputProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
         paddingRightOverride={paddingRightOverride}
@@ -286,6 +289,7 @@ export function SquareInput(props: InputProps) {
     disabled,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
     paddingRightOverride,
@@ -306,6 +310,7 @@ export function SquareInput(props: InputProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
         paddingRightOverride={paddingRightOverride}
@@ -330,6 +335,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
     disabled,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
     unit,
@@ -350,6 +356,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
       />
@@ -378,6 +385,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     disabled,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
   } = props;
@@ -397,6 +405,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
       />
@@ -431,6 +440,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     onIconClick,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
   } = props;
@@ -451,6 +461,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
       />
@@ -482,6 +493,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     onIconClick,
     onEnter,
     onBlur,
+    onKeyDown,
     id,
     innerRef,
   } = props;
@@ -502,6 +514,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
           }
         }}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         id={id}
         ref={innerRef}
       />
