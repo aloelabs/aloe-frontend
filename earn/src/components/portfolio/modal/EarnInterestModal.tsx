@@ -247,6 +247,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           resetModal();
         }
       }}
+      maxHeight='650px'
     >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='w-full'>

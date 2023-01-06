@@ -132,6 +132,7 @@ export type ModalProps = {
   title?: string;
   children: React.ReactNode;
   noClose?: boolean;
+  maxHeight?: string;
   maxWidth?: string;
   setIsOpen: (open: boolean) => void;
 };
@@ -216,11 +217,11 @@ const ModalPanel = styled(Dialog.Panel)`
   overflow: hidden;
 `;
 
-const ModalPanelWrapper = styled.div.attrs((props: { maxWidth?: string }) => props)`
+const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidth?: string }) => props)`
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 300px;
-  max-height: 570px;
+  max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
   min-width: 300px;
   max-width: ${(props) => props.maxWidth || '450px'};
   height: max-content;
@@ -255,7 +256,7 @@ const InnerContainer = styled.div`
 `;
 
 export default function Modal(props: ModalProps) {
-  const { isOpen, title, children, noClose, maxWidth, setIsOpen } = props;
+  const { isOpen, title, children, noClose, maxHeight, maxWidth, setIsOpen } = props;
   function handleClose() {
     if (!noClose) {
       setIsOpen(false);
@@ -286,7 +287,7 @@ export default function Modal(props: ModalProps) {
             leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
           >
             <ModalPanel>
-              <ModalPanelWrapper maxWidth={maxWidth}>
+              <ModalPanelWrapper maxHeight={maxHeight} maxWidth={maxWidth}>
                 {title && (
                   <ModalTitle>
                     <Text size='L'>{title}</Text>
