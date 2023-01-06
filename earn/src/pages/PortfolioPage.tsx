@@ -374,7 +374,7 @@ export default function PortfolioPage() {
             onClick={() => setIsSendCryptoModalOpen(true)}
           />
           <PortfolioActionButton
-            label={'Earn Interest'}
+            label={'Deposit'}
             Icon={<TrendingUpIcon />}
             onClick={() => setIsEarnInterestModalOpen(true)}
           />
