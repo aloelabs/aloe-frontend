@@ -1,4 +1,4 @@
-import React, { createRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
@@ -45,7 +45,7 @@ export type TokenSearchInputProps = {
 export default function TokenSearchInput(props: TokenSearchInputProps) {
   const { autoFocus, options, onOptionSelected } = props;
   const [searchText, setSearchText] = useState('');
-  const inputRef = createRef<HTMLInputElement>();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [matchingOptions, setMatchingOptions] = useState<DropdownOption<Token>[]>([]);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
       <SquareInputWithIcon
         innerRef={inputRef}
         value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
         Icon={<SearchIcon />}
         size='L'
         svgColorType='stroke'
