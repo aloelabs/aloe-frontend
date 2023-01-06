@@ -5,16 +5,17 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as CloseModalIcon } from '../../assets/svg/close_modal.svg';
+import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 
 const TooltipContainer = styled.div.attrs((props: { verticallyCentered?: boolean; filled?: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center absolute`}
   padding: 16px;
   z-index: 30;
   border-radius: 8px;
-  width: 220px;
+  width: 170px;
   background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
   border: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
-  right: -245px;
+  right: -195px;
   top: 0;
   &:before {
     content: '';
@@ -31,6 +32,10 @@ const TooltipContainer = styled.div.attrs((props: { verticallyCentered?: boolean
     background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
     border-left: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
     border-bottom: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    display: none;
   }
 `;
 
