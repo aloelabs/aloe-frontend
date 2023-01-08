@@ -1,39 +1,71 @@
 import { BigNumberish, Contract, ethers } from 'ethers';
-import { arrayify, defaultAbiCoder, keccak256, solidityKeccak256, toUtf8Bytes } from 'ethers/lib/utils';
+import { arrayify, defaultAbiCoder, keccak256, solidityKeccak256, splitSignature, toUtf8Bytes } from 'ethers/lib/utils';
 
-export type PermitData = {
-  approve: {
-    owner: string;
-    spender: string;
-    value: BigNumberish;
-  };
-  deadline: BigNumberish;
-  digest: string;
+type Domain = {
+  name?: string;
+  version?: string;
+  chainId?: number;
+  verifyingContract?: string;
+  salt?: string;
 };
 
-export type Signature = {
-  v: string;
-  r: string;
-  s: string;
-};
-
-export async function sign(digest: string, signer: ethers.Signer): Promise<Signature> {
-  const digestUint8Array = arrayify(digest);
-  const signature = await signer.signMessage(digestUint8Array);
-  return {
-    v: '0x' + signature.slice(130, 132),
-    r: signature.slice(0, 66),
-    s: '0x' + signature.slice(66, 130),
-  };
+// Gets the EIP712 domain separator
+function getDomainSeparator(erc20Contract: Contract) {
+  return erc20Contract.DOMAIN_SEPARATOR();
 }
 
-export const PERMIT_TYPEHASH = keccak256(
-  toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
-);
+function getNonce(erc20Contract: Contract, owner: string) {
+  return erc20Contract.nonces(owner);
+}
 
-// Returns the EIP712 hash which should be signed by the user
-// in order to make a call to `permit`
-export async function getPermitDigest(
+function computeDomainSeparator(domain: Domain) {
+  let params: string[] = [];
+  let types: ('bytes32' | 'uint256' | 'address')[] = ['bytes32'];
+  let args: any[] = [];
+
+  if (domain.name) {
+    params.push('string name');
+    types.push('bytes32');
+    args.push(keccak256(toUtf8Bytes(domain.name)));
+  }
+  if (domain.version) {
+    params.push('string version');
+    types.push('bytes32');
+    args.push(keccak256(toUtf8Bytes(domain.version)));
+  }
+  if (domain.chainId) {
+    params.push('uint256 chainId');
+    types.push('uint256');
+    args.push(domain.chainId.toFixed(0));
+  }
+  if (domain.verifyingContract) {
+    params.push('address verifyingContract');
+    types.push('address');
+    args.push(domain.verifyingContract);
+  }
+  if (domain.salt) {
+    params.push('bytes32 salt');
+    types.push('bytes32');
+    args.push(domain.salt);
+  }
+
+  return keccak256(
+    defaultAbiCoder.encode(types, [keccak256(toUtf8Bytes(`EIP712Domain(${params.join(',')})`)), ...args])
+  );
+}
+
+export async function doesSupportPermit(erc20Contract: Contract) {
+  try {
+    await getDomainSeparator(erc20Contract);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getErc2612Signature(
+  signer: any,
+  chainId: number,
   erc20Contract: Contract,
   approve: {
     owner: string;
@@ -42,40 +74,61 @@ export async function getPermitDigest(
   },
   deadline: BigNumberish
 ) {
-  try {
-    const DOMAIN_SEPARATOR = await getDomainSeparator(erc20Contract);
-    const nonce = await getNonce(erc20Contract, approve.owner);
+  const version = '1';
+  const [nonce, name, expectedDomainSeparator] = await Promise.all([
+    getNonce(erc20Contract, approve.owner),
+    erc20Contract.name(),
+    getDomainSeparator(erc20Contract),
+  ]);
 
-    const digest = solidityKeccak256(
-      ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
-      [
-        '0x19',
-        '0x01',
-        DOMAIN_SEPARATOR,
-        keccak256(
-          defaultAbiCoder.encode(
-            ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-            [PERMIT_TYPEHASH, approve.owner, approve.spender, approve.value, nonce, deadline]
-          )
-        ),
-      ]
-    );
-    return { approve, deadline, digest };
-  } catch (e) {
-    // eslint-disable-next-line max-len
-    console.error(
-      'Unable to fetch EIP712 domain separator, implying that this ERC20 token does not conform to EIP2612. ',
-      e
-    );
-    return undefined;
+  const domain: Domain = {
+    name,
+    version,
+    chainId,
+    verifyingContract: erc20Contract.address,
+    // salt: undefined,
+  };
+  if (computeDomainSeparator(domain) !== expectedDomainSeparator) {
+    delete domain.name;
+    if (computeDomainSeparator(domain) !== expectedDomainSeparator) {
+      console.error('Could not infer structure of domain separator');
+    }
   }
-}
 
-// Gets the EIP712 domain separator
-export async function getDomainSeparator(erc20Contract: Contract) {
-  return erc20Contract.DOMAIN_SEPARATOR();
-}
-
-export async function getNonce(erc20Contract: Contract, owner: string) {
-  return erc20Contract.nonces(owner);
+  return splitSignature(
+    await signer._signTypedData(
+      domain,
+      {
+        Permit: [
+          {
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            name: 'spender',
+            type: 'address',
+          },
+          {
+            name: 'value',
+            type: 'uint256',
+          },
+          {
+            name: 'nonce',
+            type: 'uint256',
+          },
+          {
+            name: 'deadline',
+            type: 'uint256',
+          },
+        ],
+      },
+      {
+        owner: approve.owner,
+        spender: approve.spender,
+        value: approve.value,
+        nonce: nonce,
+        deadline: deadline,
+      }
+    )
+  );
 }

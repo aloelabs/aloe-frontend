@@ -1,7 +1,7 @@
 import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -20,7 +20,7 @@ import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, roundPercentage, toBig } from '../../../util/Numbers';
-import { getPermitDigest, PermitData, sign, Signature } from '../../../util/Permit';
+import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -71,6 +71,16 @@ function getConfirmButton(
   }
 }
 
+type PermitData = {
+  signature: ethers.Signature;
+  approve: {
+    owner: string;
+    spender: string;
+    value: BigNumberish;
+  };
+  deadline: BigNumberish;
+};
+
 type DepositButtonProps = {
   depositAmount: string;
   depositBalance: string;
@@ -85,11 +95,8 @@ function DepositButton(props: DepositButtonProps) {
   const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
-  const [permitData, setPermitData] = useState<{ data: PermitData | undefined; didTryToLoad: boolean }>({
-    data: undefined,
-    didTryToLoad: false,
-  });
-  const [signature, setSignature] = useState<Signature | undefined>(undefined);
+  const [canUsePermit, setCanUsePermit] = useState<boolean>(false);
+  const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
 
   const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
@@ -125,37 +132,21 @@ function DepositButton(props: DepositButtonProps) {
     chainId: activeChain.id,
   });
 
-  // This useEffect is fetching (a) the DOMAIN_SEPARATOR() and (b) the user's nonce, and then mashing everything
-  // together into a single string. Right now we're actually doing some unnecessary renders though, because most of
-  // the hash could be computed synchronously. Only the DOMAIN_SEPARATOR and nonce calls truly need to be async here.
+  const erc20Contract = new ethers.Contract(token.address, ERC20ABI, provider);
+
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (!depositAmount) return;
-
-      const erc20Contract = new ethers.Contract(token.address, ERC20ABI, provider);
-      const result = await getPermitDigest(
-        erc20Contract,
-        {
-          owner: accountAddress,
-          spender: kitty.address,
-          value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
-        },
-        (Date.now() / 1000 + 60 * 5).toFixed(0)
-      );
-      console.log(result);
+      const result = await doesSupportPermit(erc20Contract);
       if (mounted) {
-        setPermitData({
-          data: result,
-          didTryToLoad: true,
-        });
+        setCanUsePermit(result);
       }
     }
     fetch();
     return () => {
       mounted = false;
     };
-  }, [token, kitty, accountAddress, depositAmount, provider]);
+  }, [token, provider]);
 
   // TODO: I naively combined these using the old variable names; not sure if it's correct
   const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
@@ -181,11 +172,10 @@ function DepositButton(props: DepositButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  const canUsePermit = permitData.didTryToLoad && permitData.data;
   if (canUsePermit) {
     if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-    } else if (!signature) {
+    } else if (!permitData) {
       confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
     } else if (isPending) {
       confirmButtonState = ConfirmButtonState.PENDING;
@@ -224,24 +214,33 @@ function DepositButton(props: DepositButtonProps) {
         break;
       case ConfirmButtonState.PERMIT_ASSET:
         setIsPending(true);
-        sign(permitData.data!.digest, signer!).then((sig) => {
-          setSignature(sig);
+
+        const approve = {
+          owner: accountAddress,
+          spender: ALOE_II_ROUTER_ADDRESS,
+          value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
+        };
+        const deadline = (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+        getErc2612Signature(signer!, activeChain.id, erc20Contract, approve, deadline).then((signature) => {
+          setPermitData({ signature, approve, deadline });
           setIsPending(false);
         });
+
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
 
-        if (signature) {
+        if (permitData) {
           depositUsingPermitFlow?.({
             recklesslySetUnpreparedArgs: [
               kitty.address,
               ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
-              permitData.data!.approve.value,
-              permitData.data!.deadline,
-              signature!.v,
-              signature!.r,
-              signature!.s,
+              permitData.approve.value,
+              permitData.deadline,
+              permitData.signature.v,
+              permitData.signature.r,
+              permitData.signature.s,
             ],
             recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           });
