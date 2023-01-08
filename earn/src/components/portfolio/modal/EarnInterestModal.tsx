@@ -4,6 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
+import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Address, useAccount, useBalance, useContractWrite, useProvider, useSigner } from 'wagmi';
 
@@ -24,7 +25,6 @@ import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
-import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -339,7 +339,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
       : selectedPairOption.token0;
 
   return (
-    <PortfolioModal
+    <Modal
       isOpen={isOpen}
       title='Deposit'
       setIsOpen={(open: boolean) => {
@@ -461,6 +461,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           </Text>
         </div>
       </div>
-    </PortfolioModal>
+    </Modal>
   );
 }
