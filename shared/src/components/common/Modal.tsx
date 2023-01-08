@@ -9,7 +9,6 @@ import LoadingIcon from '../../assets/svg/Loading';
 import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
-const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';
 export const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 export const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 export const MESSAGE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -57,7 +56,7 @@ const ModalWrapper = styled.div.attrs(
   }
 `;
 
-const LoaderWrapper = styled.div`
+const LoaderContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -65,13 +64,13 @@ const LoaderWrapper = styled.div`
   height: 24px;
 `;
 
-const Loader = styled(LoadingIcon)`
+const LoaderWrapper = styled.div`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: loadingSpin 1s linear infinite;
 
-  @keyframes spin {
+  @keyframes loadingSpin {
     from {
       transform: rotate(0deg);
     }
@@ -80,6 +79,12 @@ const Loader = styled(LoadingIcon)`
       transform: rotate(360deg);
     }
   }
+`;
+
+const Loader = styled(LoadingIcon)`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
 `;
 
 export const Label = styled.div`
@@ -220,10 +225,11 @@ const ModalPanel = styled(Dialog.Panel)`
 const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidth?: string }) => props)`
   overflow-x: hidden;
   overflow-y: auto;
-  min-height: 300px;
+  min-height: 150px;
   max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
   min-width: 300px;
   max-width: ${(props) => props.maxWidth || '450px'};
+  max-height: ${(props) => props.maxHeight || '570px'};
   height: max-content;
   &::-webkit-scrollbar {
     width: 8px;
@@ -349,23 +355,29 @@ export function CloseableModal(props: CloseableModalProps) {
 
 type LoadingModalProps = ModalProps & {
   title: string;
-  borderGradient?: string;
 };
 
 export function LoadingModal(props: LoadingModalProps) {
-  const borderGradient = props.borderGradient || LOADING_BORDER_GRADIENT;
   return (
-    <ModalBase isOpen={props.isOpen} setIsOpen={(_open: boolean) => {}} borderGradient={borderGradient}>
+    <Modal
+      isOpen={props.isOpen}
+      setIsOpen={(_open: boolean) => {}}
+      noClose={true}
+      maxWidth={props.maxWidth}
+      maxHeight={props.maxHeight}
+    >
       <div className='w-full flex flex-row items-center justify-between mb-8'>
         <Display size='M' weight='semibold'>
           {props.title}
         </Display>
-        <LoaderWrapper>
-          <Loader />
-        </LoaderWrapper>
+        <LoaderContainer>
+          <LoaderWrapper>
+            <Loader />
+          </LoaderWrapper>
+        </LoaderContainer>
       </div>
       {props.children}
-    </ModalBase>
+    </Modal>
   );
 }
 
