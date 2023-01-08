@@ -86,7 +86,6 @@ export async function getErc2612Signature(
     version,
     chainId,
     verifyingContract: erc20Contract.address,
-    // salt: undefined,
   };
   if (computeDomainSeparator(domain) !== expectedDomainSeparator) {
     delete domain.name;
