@@ -1,5 +1,5 @@
-import { BigNumberish, Contract, ethers } from 'ethers';
-import { arrayify, defaultAbiCoder, keccak256, solidityKeccak256, splitSignature, toUtf8Bytes } from 'ethers/lib/utils';
+import { BigNumberish, Contract } from 'ethers';
+import { defaultAbiCoder, keccak256, splitSignature, toUtf8Bytes } from 'ethers/lib/utils';
 
 type Domain = {
   name?: string;

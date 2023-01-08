@@ -132,7 +132,7 @@ function DepositButton(props: DepositButtonProps) {
     chainId: activeChain.id,
   });
 
-  const erc20Contract = new ethers.Contract(token.address, ERC20ABI, provider);
+  const erc20Contract = useMemo(() => new ethers.Contract(token.address, ERC20ABI, provider), [token, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -146,7 +146,7 @@ function DepositButton(props: DepositButtonProps) {
     return () => {
       mounted = false;
     };
-  }, [token, provider]);
+  }, [token, provider, erc20Contract]);
 
   // TODO: I naively combined these using the old variable names; not sure if it's correct
   const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
