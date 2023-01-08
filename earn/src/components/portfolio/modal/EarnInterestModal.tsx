@@ -19,7 +19,7 @@ import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, roundPercentage, toBig } from '../../../util/Numbers';
+import { formatNumberInput, roundPercentage, toBig, truncateDecimals } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -271,7 +271,8 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
-                setInputValue(output);
+                const truncatedOutput = truncateDecimals(output, selectedOption.decimals);
+                setInputValue(truncatedOutput);
               }
             }}
             options={options}
