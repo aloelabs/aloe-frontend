@@ -1,176 +1,81 @@
-import { VoidSigner } from '@ethersproject/abstract-signer';
-import { Contract, Signer } from 'ethers';
+import { BigNumberish, Contract, ethers } from 'ethers';
+import { arrayify, defaultAbiCoder, keccak256, solidityKeccak256, toUtf8Bytes } from 'ethers/lib/utils';
 
-export type PermitResult = ERC2612PermitMessage & RSV;
-
-const EIP712Domain = [
-  { name: 'version', type: 'string' },
-  { name: 'chainId', type: 'uint256' },
-  { name: 'verifyingContract', type: 'address' },
-];
-
-const MAX_INT = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-
-type ERC2612PermitMessage = {
-  owner: string;
-  spender: string;
-  value: number | string;
-  nonce: number | string;
-  deadline: number | string;
+export type PermitData = {
+  approve: {
+    owner: string;
+    spender: string;
+    value: BigNumberish;
+  };
+  deadline: BigNumberish;
+  digest: string;
 };
 
-type Domain = {
-  version: string;
-  chainId: number;
-  verifyingContract: string;
-};
-
-const randomId = () => Math.floor(Math.random() * 10000000000);
-
-export const send = (provider: any, method: string, params?: any[]) =>
-  new Promise<any>((resolve, reject) => {
-    const payload = {
-      id: randomId(),
-      method,
-      params,
-    };
-    const callback = (err: any, result: any) => {
-      if (err) {
-        reject(err);
-      } else if (result.error) {
-        console.error(result.error);
-        reject(result.error);
-      } else {
-        resolve(result.result);
-      }
-    };
-
-    const _provider = provider.provider?.provider || provider.provider || provider;
-
-    if (_provider.getUncheckedSigner /* ethers provider */) {
-      _provider
-        .send(method, params)
-        .then((r: any) => resolve(r))
-        .catch((e: any) => reject(e));
-    } else if (_provider.sendAsync) {
-      _provider.sendAsync(payload, callback);
-    } else {
-      _provider.send(payload, callback).catch((error: any) => {
-        if (error.message === "Hardhat Network doesn't support JSON-RPC params sent as an object") {
-          _provider
-            .send(method, params)
-            .then((r: any) => resolve(r))
-            .catch((e: any) => reject(e));
-        } else {
-          throw error;
-        }
-      });
-    }
-  });
-
-export interface RSV {
+export type Signature = {
+  v: string;
   r: string;
   s: string;
-  v: number;
+};
+
+export async function sign(digest: string, signer: ethers.Signer): Promise<Signature> {
+  const digestUint8Array = arrayify(digest);
+  const signature = await signer.signMessage(digestUint8Array);
+  return {
+    v: '0x' + signature.slice(130, 132),
+    r: signature.slice(0, 66),
+    s: '0x' + signature.slice(66, 130),
+  };
 }
 
-const createTypedERC2612Data = (message: ERC2612PermitMessage, domain: Domain) => {
-  const typedData = {
-    types: {
-      EIP712Domain,
-      Permit: [
-        { name: 'owner', type: 'address' },
-        { name: 'spender', type: 'address' },
-        { name: 'value', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-        { name: 'deadline', type: 'uint256' },
-      ],
-    },
-    primaryType: 'Permit',
-    domain,
-    message,
-  };
+export const PERMIT_TYPEHASH = keccak256(
+  toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
+);
 
-  return typedData;
-};
+// Returns the EIP712 hash which should be signed by the user
+// in order to make a call to `permit`
+export async function getPermitDigest(
+  erc20Contract: Contract,
+  approve: {
+    owner: string;
+    spender: string;
+    value: BigNumberish;
+  },
+  deadline: BigNumberish
+) {
+  try {
+    const DOMAIN_SEPARATOR = await getDomainSeparator(erc20Contract);
+    const nonce = await getNonce(erc20Contract, approve.owner);
 
-const splitSignatureToRSV = (signature: string): RSV => {
-  const r = '0x' + signature.substring(2).substring(0, 64);
-  const s = '0x' + signature.substring(2).substring(64, 128);
-  const v = parseInt(signature.substring(2).substring(128, 130), 16);
-  return { r, s, v };
-};
-
-const signWithEthers = async (signer: any, fromAddress: string, typeData: any): Promise<RSV> => {
-  const signerAddress = await signer.getAddress();
-  if (signerAddress.toLowerCase() !== fromAddress.toLowerCase()) {
-    throw new Error('Signer address does not match requested signing address');
+    const digest = solidityKeccak256(
+      ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
+      [
+        '0x19',
+        '0x01',
+        DOMAIN_SEPARATOR,
+        keccak256(
+          defaultAbiCoder.encode(
+            ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
+            [PERMIT_TYPEHASH, approve.owner, approve.spender, approve.value, nonce, deadline]
+          )
+        ),
+      ]
+    );
+    return { approve, deadline, digest };
+  } catch (e) {
+    // eslint-disable-next-line max-len
+    console.error(
+      'Unable to fetch EIP712 domain separator, implying that this ERC20 token does not conform to EIP2612. ',
+      e
+    );
+    return undefined;
   }
+}
 
-  const { EIP712Domain: _unused, ...types } = typeData.types;
-  const rawSignature = await (signer.signTypedData
-    ? signer.signTypedData(typeData.domain, types, typeData.message)
-    : signer._signTypedData(typeData.domain, types, typeData.message));
+// Gets the EIP712 domain separator
+export async function getDomainSeparator(erc20Contract: Contract) {
+  return erc20Contract.DOMAIN_SEPARATOR();
+}
 
-  return splitSignatureToRSV(rawSignature);
-};
-
-export const signData = async (provider: any, fromAddress: string, typeData: any): Promise<RSV> => {
-  if (provider._signTypedData || provider.signTypedData) {
-    return signWithEthers(provider, fromAddress, typeData);
-  }
-
-  const typeDataString = typeof typeData === 'string' ? typeData : JSON.stringify(typeData);
-  const result = await send(provider, 'eth_signTypedData_v4', [fromAddress, typeDataString]).catch((error: any) => {
-    if (error.message === 'Method eth_signTypedData_v4 not supported.') {
-      return send(provider, 'eth_signTypedData', [fromAddress, typeData]);
-    } else {
-      throw error;
-    }
-  });
-
-  return {
-    r: result.slice(0, 66),
-    s: '0x' + result.slice(66, 130),
-    v: parseInt(result.slice(130, 132), 16),
-  };
-};
-
-let chainIdOverride: null | number = null;
-export const setChainIdOverride = (id: number) => {
-  chainIdOverride = id;
-};
-export const getChainId = async (provider: any): Promise<any> => chainIdOverride || send(provider, 'eth_chainId');
-
-export const call = (provider: any, to: string, data: string) =>
-  send(provider, 'eth_call', [
-    {
-      to,
-      data,
-    },
-    'latest',
-  ]);
-
-export const signERC2612Permit = async (
-  contract: Contract,
-  provider: Signer | null | undefined,
-  owner: string,
-  spender: string,
-  value: string | number = MAX_INT,
-  deadline?: number,
-  nonce?: number
-): Promise<PermitResult> => {
-  const message: ERC2612PermitMessage = {
-    owner,
-    spender,
-    value,
-    nonce: nonce === undefined ? await contract.nonces(owner) : nonce,
-    deadline: deadline || MAX_INT,
-  };
-
-  const domain = await contract.DOMAIN_SEPARATOR();
-  const typedData = createTypedERC2612Data(message, domain);
-  const sig = await signData(provider as VoidSigner, owner, typedData);
-
-  return { ...sig, ...message };
-};
+export async function getNonce(erc20Contract: Contract, owner: string) {
+  return erc20Contract.nonces(owner);
+}

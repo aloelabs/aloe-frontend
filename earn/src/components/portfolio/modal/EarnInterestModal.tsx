@@ -1,25 +1,25 @@
 import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { erc20ABI, SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, useAccount, useBalance, useContractWrite, useProvider, useSigner } from 'wagmi';
+import { Address, useAccount, useBalance, useContractWrite, useSigner } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import ERC20ABI from '../../../assets/abis/ERC20.json';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
+import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, roundPercentage } from '../../../util/Numbers';
-import { PermitResult, signERC2612Permit } from '../../../util/Permit';
+import { formatNumberInput, roundPercentage, toBig } from '../../../util/Numbers';
+import { getPermitDigest, PermitData, sign, Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -30,6 +30,7 @@ const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
+  PERMIT_ASSET,
   APPROVE_ASSET,
   PENDING,
   LOADING,
@@ -47,9 +48,15 @@ function getConfirmButton(
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
-    case ConfirmButtonState.APPROVE_ASSET:
+    case ConfirmButtonState.PERMIT_ASSET:
       return {
         text: `Permit ${token.ticker}`,
+        Icon: <CheckIcon />,
+        enabled: true,
+      };
+    case ConfirmButtonState.APPROVE_ASSET:
+      return {
+        text: `Approve ${token.ticker}`,
         Icon: <CheckIcon />,
         enabled: true,
       };
@@ -77,17 +84,36 @@ function DepositButton(props: DepositButtonProps) {
   const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
-  const [permitResult, setPermitResult] = useState<PermitResult | null>(null);
-  const provider = useProvider();
-  const { data: signer } = useSigner();
+  const [permitData, setPermitData] = useState<{ data: PermitData | undefined; didTryToLoad: boolean }>({
+    data: undefined,
+    didTryToLoad: false,
+  });
+  const [signature, setSignature] = useState<Signature | undefined>(undefined);
 
   const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
+  const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
+
+  const { data: signer } = useSigner();
+
   const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
+    write: depositUsingApprovalFlow,
+    isSuccess: successfullyDepositedWithApproval,
+    isLoading: isLoadingApprovalFlow,
+    data: approvalFlowData,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    mode: 'recklesslyUnprepared',
+    functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
+  });
+
+  const {
+    write: depositUsingPermitFlow,
+    isSuccess: successfullyDepositedWithPermit,
+    isLoading: isLoadingPermitFlow,
+    data: permitFlowData,
   } = useContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
@@ -95,6 +121,40 @@ function DepositButton(props: DepositButtonProps) {
     functionName: 'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32)',
     chainId: activeChain.id,
   });
+
+  // This useEffect is fetching (a) the DOMAIN_SEPARATOR() and (b) the user's nonce, and then mashing everything
+  // together into a single string. Right now we're actually doing some unnecessary renders though, because most of
+  // the hash could be computed synchronously. Only the DOMAIN_SEPARATOR and nonce calls truly need to be async here.
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const erc20Contract = new ethers.Contract(token.address, erc20ABI);
+      const result = await getPermitDigest(
+        erc20Contract,
+        {
+          owner: accountAddress,
+          spender: kitty.address,
+          value: ethers.utils.parseUnits(depositAmount + 1, token.decimals).toString(),
+        },
+        Date.now() / 1000 + 60 * 5
+      );
+      if (mounted) {
+        setPermitData({
+          data: result,
+          didTryToLoad: true,
+        });
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [token, kitty, accountAddress, depositAmount]);
+
+  // TODO: I naively combined these using the old variable names; not sure if it's correct
+  const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
+  const contractData = approvalFlowData ?? permitFlowData;
+  const contractIsLoading = isLoadingApprovalFlow || isLoadingPermitFlow;
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -110,19 +170,32 @@ function DepositButton(props: DepositButtonProps) {
   const numericDepositAmount = Number(depositAmount) || 0;
 
   const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
+  const needsApproval =
+    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (numericDepositAmount > numericDepositBalance) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (loadingApproval) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (permitResult == null && isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (permitResult === null) {
-    confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
+  const canUsePermit = permitData.didTryToLoad && permitData.data;
+  if (canUsePermit) {
+    if (numericDepositAmount > numericDepositBalance) {
+      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (!signature) {
+      confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
+    } else if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    }
+  } else {
+    if (numericDepositAmount > numericDepositBalance) {
+      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (loadingApproval) {
+      confirmButtonState = ConfirmButtonState.LOADING;
+    } else if (needsApproval && isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    } else if (needsApproval) {
+      confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
+    } else if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    }
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -132,30 +205,49 @@ function DepositButton(props: DepositButtonProps) {
     switch (confirmButtonState) {
       case ConfirmButtonState.APPROVE_ASSET:
         setIsPending(true);
-        const erc20Contract = new ethers.Contract(token.address, ERC20ABI, provider);
-        const deadline = Math.floor(Date.now() / 1000) + 60 * 5;
-        signERC2612Permit(erc20Contract, signer, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount, deadline).then(
-          (permit) => {
-            setPermitResult(permit);
+        writeAllowanceToken
+          .writeAsync?.()
+          .then((txnResult) => {
+            txnResult.wait(1).then(() => {
+              setIsPending(false);
+            });
+          })
+          .catch((error) => {
             setIsPending(false);
-          }
-        );
+          });
+        break;
+      case ConfirmButtonState.PERMIT_ASSET:
+        setIsPending(true);
+        sign(permitData.data!.digest, signer!).then((sig) => {
+          setSignature(sig);
+          setIsPending(false);
+        });
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        const numericAllowance = numericDepositAmount + 1;
-        contractWrite?.({
-          recklesslySetUnpreparedArgs: [
-            kitty.address,
-            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
-            ethers.utils.parseUnits(numericAllowance.toString(), token.decimals).toString(),
-            permitResult?.deadline,
-            permitResult?.v,
-            permitResult?.r,
-            permitResult?.s,
-          ],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        });
+
+        if (signature) {
+          depositUsingPermitFlow?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+              permitData.data!.approve.value,
+              permitData.data!.deadline,
+              signature!.v,
+              signature!.r,
+              signature!.s,
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        } else {
+          depositUsingApprovalFlow?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        }
         break;
       default:
         break;
