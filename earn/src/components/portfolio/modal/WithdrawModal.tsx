@@ -5,6 +5,7 @@ import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
+import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
@@ -20,7 +21,6 @@ import { formatNumberInput } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
-import PortfolioModal from './PortfolioModal';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -243,7 +243,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
       : selectedPairOption.token0;
 
   return (
-    <PortfolioModal
+    <Modal
       isOpen={isOpen}
       title='Withdraw'
       setIsOpen={(open: boolean) => {
@@ -347,6 +347,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           </Text>
         </div>
       </div>
-    </PortfolioModal>
+    </Modal>
   );
 }
