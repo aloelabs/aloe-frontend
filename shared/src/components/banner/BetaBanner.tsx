@@ -20,15 +20,13 @@ const BannerContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  background-color: rgba(6, 11, 15, 1);
-  background-color: #070e12;
   background-color: #0d171e;
   border: 1px solid rgba(26, 41, 52, 1);
   border-top: 0;
   border-radius: 4px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  padding: 12px 8px;
+  padding: 12px;
 `;
 
 const BetaBadge = styled.div`
