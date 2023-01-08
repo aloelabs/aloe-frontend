@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
+import { ChainContext } from '../../../../App';
 import SuccessIcon from '../../../../assets/svg/success.svg';
 import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
@@ -16,6 +18,7 @@ export type SuccessModalContentProps = {
 
 export default function SuccessModalContent(props: SuccessModalContentProps) {
   const { confirmationType, txnHash, onConfirm } = props;
+  const { activeChain } = useContext(ChainContext);
 
   return (
     <div>
@@ -29,7 +32,7 @@ export default function SuccessModalContent(props: SuccessModalContentProps) {
         </Text>
         <Text>
           <a
-            href={`https://goerli.etherscan.io/tx/${txnHash}`}
+            href={`${getEtherscanUrlForChain(activeChain)}/tx/${txnHash}`}
             target='_blank'
             rel='noopener noreferrer'
             className='underline'

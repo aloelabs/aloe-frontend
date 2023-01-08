@@ -1,7 +1,7 @@
 import React, { Fragment, useRef } from 'react';
 
 import { Dialog, Transition } from '@headlessui/react';
-import { Display } from './Typography';
+import { Display, Text } from './Typography';
 import styled from 'styled-components';
 
 import CloseIcon from '../../assets/svg/CloseModal';
@@ -9,7 +9,6 @@ import LoadingIcon from '../../assets/svg/Loading';
 import { classNames } from '../../util/ClassNames';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
-const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';
 export const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 export const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 export const MESSAGE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -57,7 +56,7 @@ const ModalWrapper = styled.div.attrs(
   }
 `;
 
-const LoaderWrapper = styled.div`
+const LoaderContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -65,13 +64,13 @@ const LoaderWrapper = styled.div`
   height: 24px;
 `;
 
-const Loader = styled(LoadingIcon)`
+const LoaderWrapper = styled.div`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: loadingSpin 1s linear infinite;
 
-  @keyframes spin {
+  @keyframes loadingSpin {
     from {
       transform: rotate(0deg);
     }
@@ -80,6 +79,12 @@ const Loader = styled(LoadingIcon)`
       transform: rotate(360deg);
     }
   }
+`;
+
+const Loader = styled(LoadingIcon)`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
 `;
 
 export const Label = styled.div`
@@ -127,10 +132,14 @@ export const Message = styled.div`
   color: rgba(255, 255, 255, 1);
 `;
 
-type ModalProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  children?: React.ReactNode;
+export type ModalProps = {
+  isOpen: boolean;
+  title?: string;
+  children: React.ReactNode;
+  noClose?: boolean;
+  maxHeight?: string;
+  maxWidth?: string;
+  setIsOpen: (open: boolean) => void;
 };
 
 type ModalBaseProps = ModalProps & {
@@ -148,14 +157,14 @@ function ModalBase(props: ModalBaseProps) {
   const borderGradient = props.borderGradient || DEFAULT_BORDER_GRADIENT;
   return (
     <div>
-      <Transition.Root show={props.open} as={Fragment}>
+      <Transition.Root show={props.isOpen} as={Fragment}>
         <Dialog
           as={StyledDialog}
           className='fixed inset-0 overflow-y-auto'
           initialFocus={props.initialFocusRef}
           onClose={() => {
             props.onClose && props.onClose();
-            props.setOpen(false);
+            props.setIsOpen(false);
           }}
         >
           <div className={classNames('flex items-center justify-center min-h-screen text-center sm:block sm:p-0')}>
@@ -200,6 +209,111 @@ function ModalBase(props: ModalBaseProps) {
   );
 }
 
+const ModalPanel = styled(Dialog.Panel)`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  width: fit-content;
+  background-color: rgba(13, 23, 30, 1);
+  border: 2px solid rgba(43, 64, 80, 1);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidth?: string }) => props)`
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 150px;
+  max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
+  min-width: 300px;
+  max-width: ${(props) => props.maxWidth || '450px'};
+  max-height: ${(props) => props.maxHeight || '570px'};
+  height: max-content;
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const ModalTitle = styled(Dialog.Title)`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 0px 24px;
+`;
+
+const InnerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 24px;
+`;
+
+export default function Modal(props: ModalProps) {
+  const { isOpen, title, children, noClose, maxHeight, maxWidth, setIsOpen } = props;
+  function handleClose() {
+    if (!noClose) {
+      setIsOpen(false);
+    }
+  }
+  return (
+    <div>
+      <Transition.Root show={isOpen} as={Fragment}>
+        <Dialog open={isOpen} onClose={handleClose} className='fixed inset-0 overflow-y-auto z-[100]'>
+          <Transition.Child
+            as={Fragment}
+            enter='ease-out duration-300'
+            enterFrom='opacity-0'
+            enterTo='opacity-100'
+            leave='ease-in duration-200'
+            leaveFrom='opacity-100'
+            leaveTo='opacity-0'
+          >
+            <Dialog.Overlay className='fixed inset-0 bg-[#0A1821] bg-opacity-[88%] transition-opacity' />
+          </Transition.Child>
+          <Transition.Child
+            as={Fragment}
+            enter='ease-out duration-300'
+            enterFrom='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+            enterTo='opacity-100 translate-y-0 sm:scale-100'
+            leave='ease-in duration-200'
+            leaveFrom='opacity-100 translate-y-0 sm:scale-100'
+            leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+          >
+            <ModalPanel>
+              <ModalPanelWrapper maxHeight={maxHeight} maxWidth={maxWidth}>
+                {title && (
+                  <ModalTitle>
+                    <Text size='L'>{title}</Text>
+                    {!noClose && (
+                      <button type='button' title='Close Modal' onClick={() => setIsOpen(false)}>
+                        <CloseIcon />
+                      </button>
+                    )}
+                  </ModalTitle>
+                )}
+                <InnerContainer>{children}</InnerContainer>
+              </ModalPanelWrapper>
+            </ModalPanel>
+          </Transition.Child>
+        </Dialog>
+      </Transition.Root>
+    </div>
+  );
+}
+
 export type CloseableModalProps = ModalProps & {
   title: string;
   onClose?: () => void;
@@ -210,8 +324,8 @@ export function CloseableModal(props: CloseableModalProps) {
   const cancelButtonRef = useRef(null);
   return (
     <ModalBase
-      open={props.open}
-      setOpen={props.setOpen}
+      isOpen={props.isOpen}
+      setIsOpen={props.setIsOpen}
       onClose={props.onClose}
       initialFocusRef={cancelButtonRef}
       borderGradient={props.borderGradient}
@@ -226,7 +340,7 @@ export function CloseableModal(props: CloseableModalProps) {
            text-white focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm'
           onClick={() => {
             props.onClose && props.onClose();
-            props.setOpen(false);
+            props.setIsOpen(false);
           }}
           ref={cancelButtonRef}
           title='Close'
@@ -241,31 +355,37 @@ export function CloseableModal(props: CloseableModalProps) {
 
 type LoadingModalProps = ModalProps & {
   title: string;
-  borderGradient?: string;
 };
 
 export function LoadingModal(props: LoadingModalProps) {
-  const borderGradient = props.borderGradient || LOADING_BORDER_GRADIENT;
   return (
-    <ModalBase open={props.open} setOpen={(_open: boolean) => {}} borderGradient={borderGradient}>
+    <Modal
+      isOpen={props.isOpen}
+      setIsOpen={(_open: boolean) => {}}
+      noClose={true}
+      maxWidth={props.maxWidth}
+      maxHeight={props.maxHeight}
+    >
       <div className='w-full flex flex-row items-center justify-between mb-8'>
         <Display size='M' weight='semibold'>
           {props.title}
         </Display>
-        <LoaderWrapper>
-          <Loader />
-        </LoaderWrapper>
+        <LoaderContainer>
+          <LoaderWrapper>
+            <Loader />
+          </LoaderWrapper>
+        </LoaderContainer>
       </div>
       {props.children}
-    </ModalBase>
+    </Modal>
   );
 }
 
 export function FullscreenModal(props: ModalProps) {
   return (
     <ModalBase
-      open={props.open}
-      setOpen={props.setOpen}
+      isOpen={props.isOpen}
+      setIsOpen={props.setIsOpen}
       backgroundColor='rgba(13, 23, 30, 0.7)'
       borderGradient={DEFAULT_BORDER_GRADIENT}
       fullWidth

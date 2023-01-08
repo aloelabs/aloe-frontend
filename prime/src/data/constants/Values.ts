@@ -15,3 +15,4 @@ export const DEFAULT_ADD_LIQUIDITY_SLIPPAGE_PERCENTAGE = 0.5;
 export const Q48 = BigNumber.from('0x1000000000000');
 export const Q96 = BigNumber.from('0x1000000000000000000000000');
 export const BIGQ96 = toBig(Q96);
+export const MAX_UNISWAP_POSITIONS = 3;

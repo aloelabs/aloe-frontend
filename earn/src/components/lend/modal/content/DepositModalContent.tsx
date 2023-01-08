@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useState } from 'react';
+import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
@@ -7,10 +7,11 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import KittyABI from '../../../../assets/abis/Kitty.json';
+import RouterABI from '../../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../../data/Kitty';
@@ -29,8 +30,7 @@ enum ConfirmButtonState {
 
 function getConfirmButton(
   state: ConfirmButtonState,
-  token: Token,
-  kitty: Kitty
+  token: Token
 ): { text: string; Icon: ReactElement; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
@@ -74,20 +74,37 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     addressOrName: account?.address ?? '',
     token: token.address,
     watch: true,
-    chainId: activeChain.id,
   });
 
-  const { data: userAllowanceToken } = useAllowance(activeChain, token, account?.address ?? '0x', kitty.address);
+  const { data: userAllowanceToken } = useAllowance(
+    activeChain,
+    token,
+    account?.address ?? '0x',
+    ALOE_II_ROUTER_ADDRESS
+  );
 
-  const writeAllowanceToken = useAllowanceWrite(activeChain, token, kitty.address);
+  const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
-  const contract = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
+  const {
+    write: contractWrite,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
     mode: 'recklesslyUnprepared',
-    functionName: 'deposit',
-    chainId: activeChain.id,
+    functionName: 'depositWithApprove(address,uint256)',
   });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxnResult(contractData);
+      setIsPending(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setIsPending, setPendingTxnResult]);
 
   const numericDepositBalance = Number(depositBalance?.formatted ?? 0) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -110,7 +127,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState, token, kitty);
+  const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
     // TODO: Do not use setStates in async functions outside of useEffect
@@ -130,17 +147,13 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contract
-          .writeAsync?.({
-            recklesslySetUnpreparedArgs: [ethers.utils.parseUnits(depositAmount, token.decimals).toString()],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-          })
-          .then((txnResult) => {
-            setPendingTxnResult(txnResult);
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
+        contractWrite?.({
+          recklesslySetUnpreparedArgs: [
+            kitty.address,
+            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+          ],
+          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+        });
         break;
       default:
         break;

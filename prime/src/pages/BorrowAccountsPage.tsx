@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
-import { ChainContext, GeoFencingContext } from '../App';
+import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
@@ -41,8 +41,8 @@ const MarginAccountsContainner = styled.div`
 `;
 
 export default function BorrowAccountsPage() {
-  const { isAllowedToInteract } = useContext(GeoFencingContext);
   const { activeChain } = useContext(ChainContext);
+  const isAllowedToInteract = useGeoFencing(activeChain);
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -77,6 +77,7 @@ export default function BorrowAccountsPage() {
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
       if (!marginAccountLensContract || !isAllowedToInteract) {
+        setMarginAccounts([]);
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(
@@ -148,7 +149,7 @@ export default function BorrowAccountsPage() {
           onClick={() => {
             setShowConfirmModal(true);
           }}
-          disabled={address === undefined}
+          disabled={address === undefined || !isAllowedToInteract}
         >
           New
         </FilledGradientButtonWithIcon>

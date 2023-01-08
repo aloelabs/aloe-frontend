@@ -230,7 +230,7 @@ export type InputProps = {
   onEnter?: () => void;
   onBlur?: () => void;
   id?: string;
-  ref?: React.RefObject<HTMLInputElement>;
+  innerRef?: React.RefObject<HTMLInputElement>;
   paddingRightOverride?: string;
 };
 
@@ -247,7 +247,7 @@ export function RoundedInput(props: InputProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
     paddingRightOverride,
   } = props;
   return (
@@ -267,7 +267,7 @@ export function RoundedInput(props: InputProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
         paddingRightOverride={paddingRightOverride}
       />
     </RoundedInputWrapper>
@@ -287,7 +287,7 @@ export function SquareInput(props: InputProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
     paddingRightOverride,
   } = props;
   return (
@@ -307,7 +307,7 @@ export function SquareInput(props: InputProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
         paddingRightOverride={paddingRightOverride}
       />
     </SquareInputWrapper>
@@ -331,7 +331,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
     unit,
   } = props;
   return (
@@ -351,7 +351,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
       />
       <TrailingUnit size={size}>{unit}</TrailingUnit>
     </SquareInputWrapper>
@@ -379,7 +379,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
   } = props;
   return (
     <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
@@ -398,7 +398,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
       />
       {props.maxHidden !== true && (
         <MaxButton size={size} onClick={onMaxClick} disabled={disabled || maxDisabled}>
@@ -432,7 +432,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
   } = props;
   return (
     <RoundedInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
@@ -452,7 +452,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
       />
       <SvgWrapper
         size={size}
@@ -483,7 +483,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
     onEnter,
     onBlur,
     id,
-    ref,
+    innerRef,
   } = props;
   return (
     <SquareInputWrapper className={classNames(fullWidth ? 'w-full' : 'w-max', wrapperClassName || '')}>
@@ -503,7 +503,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         }}
         onBlur={onBlur}
         id={id}
-        ref={ref}
+        ref={innerRef}
       />
       <SvgWrapper
         size={size}

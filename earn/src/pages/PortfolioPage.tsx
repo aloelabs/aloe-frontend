@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
+import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
@@ -13,11 +14,11 @@ import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
-import PendingTxnModal from '../components/lend/modal/PendingTxnModal';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
+import PendingTxnModal, { PendingTxnModalStatus } from '../components/portfolio/modal/PendingTxnModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
@@ -108,9 +109,11 @@ export default function PortfolioPage() {
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
+  const navigate = useNavigate();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -228,16 +231,14 @@ export default function PortfolioPage() {
     let mounted = true;
     async function waitForTxn() {
       if (!pendingTxn) return;
+      setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
       if (!mounted) return;
-      setPendingTxn(null);
-      setIsPendingTxnModalOpen(false);
       if (receipt.status === 1) {
-        // TODO: Update balances
-        // TODO: Show success modal
+        setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
-        // TODO: Show failure modal
+        setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     }
     waitForTxn();
@@ -374,7 +375,7 @@ export default function PortfolioPage() {
             onClick={() => setIsSendCryptoModalOpen(true)}
           />
           <PortfolioActionButton
-            label={'Earn Interest'}
+            label={'Deposit'}
             Icon={<TrendingUpIcon />}
             onClick={() => setIsEarnInterestModalOpen(true)}
           />
@@ -440,7 +441,23 @@ export default function PortfolioPage() {
           />
         </>
       )}
-      <PendingTxnModal open={isPendingTxnModalOpen} txnHash={pendingTxn?.hash} setOpen={setIsPendingTxnModalOpen} />
+      <PendingTxnModal
+        isOpen={isPendingTxnModalOpen}
+        txnHash={pendingTxn?.hash}
+        setIsOpen={(isOpen: boolean) => {
+          setIsPendingTxnModalOpen(isOpen);
+          if (!isOpen) {
+            setPendingTxn(null);
+          }
+        }}
+        onConfirm={() => {
+          setIsPendingTxnModalOpen(false);
+          setTimeout(() => {
+            navigate(0);
+          }, 100);
+        }}
+        status={pendingTxnModalStatus}
+      />
     </AppPage>
   );
 }

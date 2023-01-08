@@ -1,12 +1,14 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, createContext, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
+import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
-import { Chain, useNetwork } from 'wagmi';
+import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
+import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -17,6 +19,11 @@ import useEffectOnce from './data/hooks/UseEffectOnce';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import ScrollToTop from './util/ScrollToTop';
+
+const CONNECT_WALLET_CHECKBOXES = [
+  'I am not a citizen or resident of the United States of America.',
+  'I acknowledge that Aloe II is in beta and that use of the platform may result in loss of funds.',
+];
 
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
@@ -38,11 +45,25 @@ export const ChainContext = React.createContext({
   setActiveChain: (chain: Chain) => {},
 });
 
-export const GeoFencingContext = React.createContext({ isAllowedToInteract: false });
+export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
+
+export function useGeoFencing(activeChain: Chain) {
+  const ctxt = useContext(GeoFencingContext);
+  return ctxt?.isAllowed || !!activeChain.testnet;
+}
 
 function AppBodyWrapper() {
-  const { activeChain, setActiveChain } = React.useContext(ChainContext);
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+  const { activeChain, setActiveChain } = useContext(ChainContext);
+  const account = useAccount();
   const network = useNetwork();
+
+  useEffect(() => {
+    const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
+    if (!account?.isConnecting && !account?.isConnected && !hasSeenWelcomeModal) {
+      setIsWelcomeModalOpen(true);
+    }
+  }, [account?.isConnecting, account?.isConnected]);
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -52,7 +73,7 @@ function AppBodyWrapper() {
 
   return (
     <AppBody>
-      <Header />
+      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
       <BetaBanner />
       <main className='flex-grow'>
         <Routes>
@@ -63,6 +84,14 @@ function AppBodyWrapper() {
         </Routes>
       </main>
       <Footer />
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        activeChain={activeChain}
+        checkboxes={CONNECT_WALLET_CHECKBOXES}
+        account={account}
+        setIsOpen={() => setIsWelcomeModalOpen(false)}
+        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+      />
     </AppBody>
   );
 }
@@ -70,25 +99,16 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
-  const [isAllowedToInteract, setIsAllowedToInteract] = React.useState<boolean>(false);
+  const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
 
   useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
-      let geoFencingResponse: AxiosResponse<GeoFencingResponse> | null = null;
       try {
-        geoFencingResponse = await axios.get(API_GEO_FENCING_URL);
+        const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
+        if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
       } catch (error) {
         console.error(error);
-      }
-      if (geoFencingResponse == null) {
-        if (mounted) {
-          setIsAllowedToInteract(false);
-        }
-        return;
-      }
-      if (mounted) {
-        setIsAllowedToInteract(geoFencingResponse.data.isAllowed);
       }
     }
     fetch();
@@ -132,7 +152,7 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <GeoFencingContext.Provider value={{ isAllowedToInteract }}>
+          <GeoFencingContext.Provider value={geoFencingResponse}>
             <ChainContext.Provider value={value}>
               <ScrollToTop />
               <AppBodyWrapper />
