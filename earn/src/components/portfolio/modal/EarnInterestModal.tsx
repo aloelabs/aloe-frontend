@@ -1,13 +1,14 @@
 import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
-import { erc20ABI, SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, useAccount, useBalance, useContractWrite, useSigner } from 'wagmi';
+import { Address, useAccount, useBalance, useContractWrite, useProvider, useSigner } from 'wagmi';
 
 import { ChainContext } from '../../../App';
+import ERC20ABI from '../../../assets/abis/ERC20.json';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -96,6 +97,8 @@ function DepositButton(props: DepositButtonProps) {
 
   const { data: signer } = useSigner();
 
+  const provider = useProvider();
+
   const {
     write: depositUsingApprovalFlow,
     isSuccess: successfullyDepositedWithApproval,
@@ -128,16 +131,19 @@ function DepositButton(props: DepositButtonProps) {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const erc20Contract = new ethers.Contract(token.address, erc20ABI);
+      if (!depositAmount) return;
+
+      const erc20Contract = new ethers.Contract(token.address, ERC20ABI, provider);
       const result = await getPermitDigest(
         erc20Contract,
         {
           owner: accountAddress,
           spender: kitty.address,
-          value: ethers.utils.parseUnits(depositAmount + 1, token.decimals).toString(),
+          value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
         },
-        Date.now() / 1000 + 60 * 5
+        (Date.now() / 1000 + 60 * 5).toFixed(0)
       );
+      console.log(result);
       if (mounted) {
         setPermitData({
           data: result,
@@ -149,7 +155,7 @@ function DepositButton(props: DepositButtonProps) {
     return () => {
       mounted = false;
     };
-  }, [token, kitty, accountAddress, depositAmount]);
+  }, [token, kitty, accountAddress, depositAmount, provider]);
 
   // TODO: I naively combined these using the old variable names; not sure if it's correct
   const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
