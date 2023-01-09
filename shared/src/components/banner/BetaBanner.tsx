@@ -63,7 +63,7 @@ export default function BetaBanner() {
             </Text>
           </BetaBadge>
           <Text size='S' weight='medium'>
-            Aloe II is currently in Beta. Please use at your own risk.
+            Aloe II is currently in beta. Please use at your own risk.
           </Text>
         </div>
         <div className='flex justify-center items-center'>
