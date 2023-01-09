@@ -115,10 +115,14 @@ export async function getAvailableLendingPairs(
         token1
       );
 
+      const utilization0 = new Big(result0.utilization.toString()).div(10 ** 18).toNumber();
+      const utilization1 = new Big(result1.utilization.toString()).div(10 ** 18).toNumber();
+
       const interestRate0 = new Big(result0.interestRate.toString());
       const interestRate1 = new Big(result1.interestRate.toString());
-      const APY0 = interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0;
-      const APY1 = interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0;
+      // SupplyAPY = Utilization * BorrowAPY
+      const APY0 = utilization0 * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+      const APY1 = utilization1 * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
       // inventory != totalSupply due to interest rates (inflation)
       return new LendingPair(
         token0,
@@ -129,13 +133,13 @@ export async function getAvailableLendingPairs(
           apy: APY0 * 100, // percentage
           inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
           totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
-          utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+          utilization: utilization0 * 100.0, // Percentage
         },
         {
           apy: APY1 * 100, // percentage
           inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
           totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
-          utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+          utilization: utilization1 * 100.0, // Percentage
         },
         NumericFeeTierToEnum(result2)
       );
