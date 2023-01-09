@@ -31,18 +31,12 @@ export function runWithChecks(
   //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
   //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
   // TLDR: It's simpler to check solvency inside this for loop
-  const includeKittyReceipts = assets.token0Plus > 0 || assets.token1Plus > 0;
-  const solvency = isSolvent(
-    {
-      ...marginAccount,
-      assets,
-      liabilities,
-      includeKittyReceipts,
-    },
-    uniswapPositions,
-    marginAccount.sqrtPriceX96,
-    0.025
-  );
+  const updatedMarginAccount = {
+    ...marginAccount,
+    assets,
+    liabilities,
+  };
+  const solvency = isSolvent(updatedMarginAccount, uniswapPositions, marginAccount.sqrtPriceX96, 0.025);
   if (!solvency.atA || !solvency.atB) {
     console.log('Margin Account not solvent!');
     console.log(solvency);

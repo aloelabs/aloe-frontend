@@ -11,6 +11,7 @@ import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_tria
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
+import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Kitty } from '../../data/Kitty';
 import { Token } from '../../data/Token';
@@ -141,8 +142,6 @@ export type ManageAccountTransactionButtonProps = {
   onSuccessReceipt: () => void;
 };
 
-const MARGIN_ACCOUNT_CALLEE = '0xbafcdca9576ca3db1b5e0b4190ad8b4424eb813d';
-
 export function ManageAccountTransactionButton(props: ManageAccountTransactionButtonProps) {
   const {
     userAddress,
@@ -179,14 +178,34 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     chainId: activeChain.id,
   });
 
-  const { data: userAllowance0Asset } = useAllowance(activeChain, token0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Asset } = useAllowance(activeChain, token1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance0Kitty } = useAllowance(activeChain, kitty0, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const { data: userAllowance1Kitty } = useAllowance(activeChain, kitty1, userAddress ?? '0x', MARGIN_ACCOUNT_CALLEE);
-  const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, MARGIN_ACCOUNT_CALLEE);
-  const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, MARGIN_ACCOUNT_CALLEE);
-  const writeKitty0Allowance = useAllowanceWrite(activeChain, kitty0, MARGIN_ACCOUNT_CALLEE);
-  const writeKitty1Allowance = useAllowanceWrite(activeChain, kitty1, MARGIN_ACCOUNT_CALLEE);
+  const { data: userAllowance0Asset } = useAllowance(
+    activeChain,
+    token0,
+    userAddress ?? '0x',
+    ALOE_II_FRONTEND_MANAGER_ADDRESS
+  );
+  const { data: userAllowance1Asset } = useAllowance(
+    activeChain,
+    token1,
+    userAddress ?? '0x',
+    ALOE_II_FRONTEND_MANAGER_ADDRESS
+  );
+  const { data: userAllowance0Kitty } = useAllowance(
+    activeChain,
+    kitty0,
+    userAddress ?? '0x',
+    ALOE_II_FRONTEND_MANAGER_ADDRESS
+  );
+  const { data: userAllowance1Kitty } = useAllowance(
+    activeChain,
+    kitty1,
+    userAddress ?? '0x',
+    ALOE_II_FRONTEND_MANAGER_ADDRESS
+  );
+  const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+  const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+  const writeKitty0Allowance = useAllowanceWrite(activeChain, kitty0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+  const writeKitty1Allowance = useAllowanceWrite(activeChain, kitty1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
 
   const requiredBalances = [
     accountState.requiredAllowances.amount0Asset,
@@ -289,7 +308,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
               contract
                 .writeAsync?.({
                   recklesslySetUnpreparedArgs: [
-                    MARGIN_ACCOUNT_CALLEE,
+                    ALOE_II_FRONTEND_MANAGER_ADDRESS,
                     calldata,
                     [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
                   ],
