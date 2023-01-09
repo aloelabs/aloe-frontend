@@ -355,8 +355,7 @@ export function isSolvent(
     sqrtPriceX96
   );
 
-  liabilities0 = liabilities0 * 1.005;
-  liabilities1 = liabilities1 * 1.005 + liquidationIncentive;
+  liabilities1 += liquidationIncentive;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;

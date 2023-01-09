@@ -4,7 +4,7 @@ import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Address, Chain, erc20ABI, useContractRead, useContractWrite } from 'wagmi';
+import { Address, Chain, erc20ABI, useBalance, useContractRead, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
@@ -111,6 +111,8 @@ export type ManageAccountTransactionButtonProps = {
   onSuccessReceipt: () => void;
 };
 
+const ANTE = 0.001e18; // TODO move to constants
+
 export function ManageAccountTransactionButton(props: ManageAccountTransactionButtonProps) {
   const {
     userAddress,
@@ -143,6 +145,11 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
       setShowPendingModal(true);
     },
     chainId: activeChain.id,
+  });
+
+  const { data: accountEtherBalance } = useBalance({
+    addressOrName: accountAddress,
+    watch: true,
   });
 
   const { data: userAllowance0Asset } = useAllowance(
@@ -233,6 +240,12 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             });
           }
 
+          // provide ante if necessary
+          const shouldProvideAnte =
+            accountEtherBalance &&
+            accountEtherBalance.value.toNumber() < ANTE &&
+            (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
+
           const calldata = ethers.utils.defaultAbiCoder.encode(
             ['uint8[]', 'bytes[]', 'int24[]'],
             [actionIds, actionArgs, positions]
@@ -254,6 +267,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
                     // we should probably work with the underlying ethers.Contract, but for now
                     // we just provide hard-coded overrides.
                     gasLimit: BigNumber.from((600000 + 200000 * actionIds.length).toFixed(0)),
+                    value: shouldProvideAnte ? ANTE + 1 : undefined,
                   },
                 })
                 .then((txnResult) => {
