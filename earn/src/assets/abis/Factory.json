@@ -1,6 +1,6 @@
 [
   {
-    "inputs": [{ "internalType": "contract InterestModel", "name": "_interestModel", "type": "address" }],
+    "inputs": [{ "internalType": "contract RateModel", "name": "rateModel_", "type": "address" }],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
@@ -8,8 +8,8 @@
     "anonymous": false,
     "inputs": [
       { "indexed": true, "internalType": "contract IUniswapV3Pool", "name": "pool", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "account", "type": "address" },
-      { "indexed": false, "internalType": "address", "name": "owner", "type": "address" }
+      { "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "CreateBorrower",
     "type": "event"
@@ -18,16 +18,16 @@
     "anonymous": false,
     "inputs": [
       { "indexed": true, "internalType": "contract IUniswapV3Pool", "name": "pool", "type": "address" },
-      { "indexed": true, "internalType": "contract Lender", "name": "lender0", "type": "address" },
-      { "indexed": true, "internalType": "contract Lender", "name": "lender1", "type": "address" }
+      { "indexed": false, "internalType": "contract Lender", "name": "lender0", "type": "address" },
+      { "indexed": false, "internalType": "contract Lender", "name": "lender1", "type": "address" }
     ],
     "name": "CreateMarket",
     "type": "event"
   },
   {
     "inputs": [],
-    "name": "INTEREST_MODEL",
-    "outputs": [{ "internalType": "contract InterestModel", "name": "", "type": "address" }],
+    "name": "RATE_MODEL",
+    "outputs": [{ "internalType": "contract RateModel", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
