@@ -12,7 +12,7 @@ export function useBalanceOfUnderlying(token: Token, kitty: Kitty, accountAddres
   const { data: balanceOfUnderlying } = useContractRead({
     address: kitty.address,
     abi: KittyABI,
-    functionName: 'balanceOfUnderlying',
+    functionName: 'underlyingBalance',
     args: [accountAddress] as const,
     watch: true,
   });
