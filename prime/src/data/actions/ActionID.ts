@@ -1,8 +1,6 @@
 export enum ActionID {
   TRANSFER_IN,
   TRANSFER_OUT,
-  MINT,
-  BURN,
   BORROW,
   REPAY,
   ADD_LIQUIDITY,
@@ -17,10 +15,6 @@ export function getNameOfAction(id: ActionID): string {
       return 'Add Margin';
     case ActionID.TRANSFER_OUT:
       return 'Withdraw';
-    case ActionID.MINT:
-      return 'Mint Token+';
-    case ActionID.BURN:
-      return 'Burn Token+';
     case ActionID.BORROW:
       return 'Borrow';
     case ActionID.REPAY:

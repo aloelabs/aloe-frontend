@@ -21,12 +21,10 @@ export function transferInOperator(operand: AccountState, token: TokenType, amou
       requiredAllowances.amount1Asset += amount;
       break;
     case TokenType.KITTY0:
-      assets.token0Plus += amount;
       availableBalances.amount0Kitty -= amount;
       requiredAllowances.amount0Kitty += amount;
       break;
     case TokenType.KITTY1:
-      assets.token1Plus += amount;
       availableBalances.amount1Kitty -= amount;
       requiredAllowances.amount1Kitty += amount;
       break;
@@ -44,10 +42,8 @@ export function mintOperator(operand: AccountState, token: TokenType, amount: nu
 
   if (token === TokenType.ASSET0) {
     assets.token0Raw -= amount;
-    assets.token0Plus += amount;
   } else {
     assets.token1Raw -= amount;
-    assets.token1Plus += amount;
   }
 
   return { ...operand, assets };

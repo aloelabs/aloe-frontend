@@ -2,9 +2,14 @@
   {
     "inputs": [
       {
-        "internalType": "contract MarginAccount",
+        "internalType": "contract Borrower",
         "name": "account",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "includeUniswapFees",
+        "type": "bool"
       }
     ],
     "name": "getAssets",
@@ -28,16 +33,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -46,7 +41,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract MarginAccount",
+        "internalType": "contract Borrower",
         "name": "account",
         "type": "address"
       }
@@ -70,7 +65,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract MarginAccount",
+        "internalType": "contract Borrower",
         "name": "account",
         "type": "address"
       }

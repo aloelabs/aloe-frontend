@@ -19,8 +19,6 @@ import { getToken } from './TokenData';
 export type Assets = {
   token0Raw: number;
   token1Raw: number;
-  token0Plus: number;
-  token1Plus: number;
   uni0: number;
   uni1: number;
 };
@@ -45,7 +43,6 @@ export type MarginAccount = {
   kitty1: Kitty;
   sqrtPriceX96: Big;
   tickAtLastModify: number;
-  includeKittyReceipts: boolean;
 };
 
 export type LiquidationThresholds = {
@@ -57,10 +54,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<
-  MarginAccount,
-  'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify' | 'includeKittyReceipts'
->;
+export type MarginAccountPreview = Omit<MarginAccount, 'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -147,12 +141,6 @@ export async function fetchMarginAccountPreviews(
         token1Raw: Big(assetsData[1].toString())
           .div(10 ** token1.decimals)
           .toNumber(),
-        token0Plus: Big(assetsData[2].toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Plus: Big(assetsData[3].toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
         uni0: Big(assetsData[4].toString())
           .div(10 ** token0.decimals)
           .toNumber(),
@@ -235,12 +223,6 @@ export async function fetchMarginAccount(
     token1Raw: toBig(assetsData[1])
       .div(10 ** token1.decimals)
       .toNumber(),
-    token0Plus: toBig(assetsData[2])
-      .div(10 ** kitty0.decimals)
-      .toNumber(),
-    token1Plus: toBig(assetsData[3])
-      .div(10 ** kitty1.decimals)
-      .toNumber(),
     uni0: toBig(assetsData[4])
       .div(10 ** token0.decimals)
       .toNumber(),
@@ -268,7 +250,6 @@ export async function fetchMarginAccount(
     liabilities: liabilities,
     sqrtPriceX96: toBig(slot0.sqrtPriceX96),
     tickAtLastModify: packedSlot.tickAtLastModify,
-    includeKittyReceipts: packedSlot.includeKittyReceipts,
   };
 }
 
@@ -314,10 +295,6 @@ export function getAssets(
 
   let fixed0 = marginAccount.assets.token0Raw;
   let fixed1 = marginAccount.assets.token1Raw;
-  if (marginAccount.includeKittyReceipts) {
-    fixed0 += marginAccount.assets.token0Plus;
-    fixed1 += marginAccount.assets.token1Plus;
-  }
 
   let fluid1A = 0;
   let fluid1B = 0;
@@ -388,7 +365,7 @@ export function isSolvent(
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
 
-  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.includeKittyReceipts ? sigma * Math.sqrt(24) : sigma);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, sigma);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
@@ -506,5 +483,5 @@ export function computeLiquidationThresholds(
 }
 
 export function sumAssetsPerToken(assets: Assets): [number, number] {
-  return [assets.token0Raw + assets.token0Plus + assets.uni0, assets.token1Raw + assets.token1Plus + assets.uni1];
+  return [assets.token0Raw + assets.uni0, assets.token1Raw + assets.uni1];
 }
