@@ -187,9 +187,11 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   // Get the user's balance of the selected token
   const { data: depositBalance } = useBalance({
     addressOrName: account?.address ?? '',
+    enabled: options.length > 0,
     token: selectedOption.address,
     watch: true,
     chainId: activeChain.id,
+    staleTime: 13_000,
   });
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');

@@ -171,7 +171,10 @@ export async function getLendingPairBalances(
     token1Contract.balanceOf(userAddress),
     kitty0Contract.balanceOfUnderlying(userAddress),
     kitty1Contract.balanceOfUnderlying(userAddress),
-  ]);
+  ]).catch((e) => {
+    console.error(e);
+    return [0, 0, 0, 0];
+  });
   const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
   const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
   const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();

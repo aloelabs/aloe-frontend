@@ -209,21 +209,23 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const { data: maxWithdraw } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && options.length > 0,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
     watch: true,
+    staleTime: 13_000,
   });
 
   const { data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && options.length > 0,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,
     watch: true,
+    staleTime: 13_000,
   });
 
   const maxWithdrawBalance = useMemo(() => {

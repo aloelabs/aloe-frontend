@@ -210,9 +210,11 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   // Get the user's balance of the selected token
   const { data: depositBalance } = useBalance({
     addressOrName: account?.address ?? '',
+    enabled: options.length > 0,
     token: selectedOption.address,
     watch: true,
     chainId: activeChain.id,
+    staleTime: 13_000,
   });
 
   // Get the active kitty that corresponds to the selected token and is in

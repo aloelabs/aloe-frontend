@@ -72,8 +72,10 @@ export default function DepositModalContent(props: DepositModalContentProps) {
 
   const { data: depositBalance } = useBalance({
     addressOrName: account?.address ?? '',
+    chainId: activeChain.id,
     token: token.address,
     watch: true,
+    staleTime: 13_000,
   });
 
   const { data: userAllowanceToken } = useAllowance(
