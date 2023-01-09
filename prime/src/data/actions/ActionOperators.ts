@@ -20,17 +20,14 @@ export function transferInOperator(operand: AccountState, token: TokenType, amou
       availableBalances.amount1Asset -= amount;
       requiredAllowances.amount1Asset += amount;
       break;
-    case TokenType.KITTY0:
-      availableBalances.amount0Kitty -= amount;
-      requiredAllowances.amount0Kitty += amount;
-      break;
-    case TokenType.KITTY1:
-      availableBalances.amount1Kitty -= amount;
-      requiredAllowances.amount1Kitty += amount;
-      break;
   }
 
-  return { ...operand, assets, availableBalances };
+  return {
+    ...operand,
+    assets,
+    availableBalances,
+    requiredAllowances,
+  };
 }
 
 export function transferOutOperator(operand: AccountState, token: TokenType, amount: number): AccountState {

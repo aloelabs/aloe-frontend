@@ -2,7 +2,6 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
-import { Kitty } from '../Kitty';
 import { Token } from '../Token';
 
 export function getTransferInActionArgs(token: Token, amount: number): string {
@@ -14,20 +13,6 @@ export function getTransferInActionArgs(token: Token, amount: number): string {
 
 export function getTransferOutActionArgs(token: Token, amount: number): string {
   const address = token.address;
-  const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
-
-  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
-}
-
-export function getMintActionArgs(token: Token, kitty: Kitty, amount: number): string {
-  const address = kitty.address;
-  const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
-
-  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
-}
-
-export function getBurnActionArgs(token: Token, kitty: Kitty, amount: number): string {
-  const address = kitty.address;
   const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
 
   return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);

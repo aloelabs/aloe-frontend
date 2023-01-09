@@ -12,7 +12,6 @@ import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
 import { BIGQ96 } from './constants/Values';
-import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
 
@@ -39,10 +38,7 @@ export type MarginAccount = {
   feeTier: FeeTier;
   assets: Assets;
   liabilities: Liabilities;
-  kitty0: Kitty;
-  kitty1: Kitty;
   sqrtPriceX96: Big;
-  tickAtLastModify: number;
 };
 
 export type LiquidationThresholds = {
@@ -54,7 +50,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'kitty0' | 'kitty1' | 'sqrtPriceX96' | 'tickAtLastModify'>;
+export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -65,8 +61,7 @@ export async function getMarginAccountsForUser(
     7569633,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     [
-      '0x9d919356967ac224401bdb3794d4f477506d9186bd4dab6abf7559ec9f14bd78',
-      null,
+      '0x1ff0a9a76572c6e0f2f781872c1e45b4bab3a0d90df274ebf884b4c11e3068f4',
       null,
       `0x000000000000000000000000${userAddress.slice(2)}`,
     ],
@@ -77,7 +72,7 @@ export async function getMarginAccountsForUser(
 
   const accounts: { address: string; uniswapPool: string }[] = etherscanResult.data.result.map((item: any) => {
     return {
-      address: item.topics[2].slice(0, 2) + item.topics[2].slice(26),
+      address: item.data.slice(0, 2) + item.data.slice(26),
       uniswapPool: item.topics[1].slice(26),
     };
   });
@@ -119,7 +114,7 @@ export async function resolveUniswapPools(
 
 export async function fetchMarginAccountPreviews(
   chain: Chain,
-  marginAccountLensContract: ethers.Contract,
+  borrowerLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ): Promise<MarginAccountPreview[]> {
@@ -131,8 +126,8 @@ export async function fetchMarginAccountPreviews(
       const token1 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token1);
       const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
 
-      const assetsData: BigNumber[] = await marginAccountLensContract.getAssets(accountAddress);
-      const liabilitiesData: BigNumber[] = await marginAccountLensContract.getLiabilities(accountAddress);
+      const assetsData: BigNumber[] = await borrowerLensContract.getAssets(accountAddress, false);
+      const liabilitiesData: BigNumber[] = await borrowerLensContract.getLiabilities(accountAddress);
 
       const assets: Assets = {
         token0Raw: Big(assetsData[0].toString())
@@ -141,10 +136,10 @@ export async function fetchMarginAccountPreviews(
         token1Raw: Big(assetsData[1].toString())
           .div(10 ** token1.decimals)
           .toNumber(),
-        uni0: Big(assetsData[4].toString())
+        uni0: Big(assetsData[2].toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        uni1: Big(assetsData[5].toString())
+        uni1: Big(assetsData[3].toString())
           .div(10 ** token1.decimals)
           .toNumber(),
       };
@@ -180,12 +175,11 @@ export async function fetchMarginAccount(
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
     marginAccountContract.TOKEN1(),
-    marginAccountContract.KITTY0(),
-    marginAccountContract.KITTY1(),
+    marginAccountContract.LENDER0(),
+    marginAccountContract.LENDER1(),
     marginAccountContract.UNISWAP_POOL(),
-    marginAccountLensContract.getAssets(marginAccountAddress),
+    marginAccountLensContract.getAssets(marginAccountAddress, false),
     marginAccountLensContract.getLiabilities(marginAccountAddress),
-    marginAccountContract.packedSlot(),
   ]);
 
   const uniswapPool = results[4];
@@ -194,27 +188,8 @@ export async function fetchMarginAccount(
 
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
-  const kitty0 = new Kitty(
-    chain.id,
-    results[2] as Address,
-    token0.decimals,
-    token0.ticker,
-    token0.name,
-    token0.iconPath,
-    token0
-  );
-  const kitty1 = new Kitty(
-    chain.id,
-    results[3] as Address,
-    token1.decimals,
-    token1.ticker,
-    token1.name,
-    token1.iconPath,
-    token1
-  );
   const assetsData = results[5] as BigNumber[];
   const liabilitiesData = results[6] as BigNumber[];
-  const packedSlot = results[7];
 
   const assets: Assets = {
     token0Raw: toBig(assetsData[0])
@@ -223,10 +198,10 @@ export async function fetchMarginAccount(
     token1Raw: toBig(assetsData[1])
       .div(10 ** token1.decimals)
       .toNumber(),
-    uni0: toBig(assetsData[4])
+    uni0: toBig(assetsData[2])
       .div(10 ** token0.decimals)
       .toNumber(),
-    uni1: toBig(assetsData[5])
+    uni1: toBig(assetsData[3])
       .div(10 ** token1.decimals)
       .toNumber(),
   };
@@ -243,13 +218,10 @@ export async function fetchMarginAccount(
     uniswapPool: uniswapPool,
     token0: token0,
     token1: token1,
-    kitty0: kitty0,
-    kitty1: kitty1,
     feeTier: NumericFeeTierToEnum(feeTier),
     assets: assets,
     liabilities: liabilities,
     sqrtPriceX96: toBig(slot0.sqrtPriceX96),
-    tickAtLastModify: packedSlot.tickAtLastModify,
   };
 }
 
@@ -269,9 +241,9 @@ export function priceToSqrtRatio(price: number, token0Decimals: number, token1De
     .mul(BIGQ96);
 }
 
-const MIN_SIGMA = 0.02;
+const MIN_SIGMA = 0.01;
 const MAX_SIGMA = 0.15;
-const SIGMA_B = 2;
+const SIGMA_B = 3;
 
 function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   sigma = Math.min(Math.max(MIN_SIGMA, sigma), MAX_SIGMA);
