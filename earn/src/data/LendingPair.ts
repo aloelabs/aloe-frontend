@@ -77,8 +77,8 @@ export async function getAvailableLendingPairs(
   const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
     return {
       pool: item.topics[1].slice(26),
-      kitty0: `0x${item.topics[2].slice(26)}`,
-      kitty1: `0x${item.topics[3].slice(26)}`,
+      kitty0: `0x${item.data.slice(26, 66)}`,
+      kitty1: `0x${item.data.slice(90, 134)}`,
     };
   });
 
@@ -117,20 +117,8 @@ export async function getAvailableLendingPairs(
 
       const interestRate0 = new Big(result0.interestRate.toString());
       const interestRate1 = new Big(result1.interestRate.toString());
-      const APY0 =
-        interestRate0
-          .div(10 ** 18)
-          .plus(1.0)
-          .toNumber() **
-          (365 * 24 * 60 * 60) -
-        1.0;
-      const APY1 =
-        interestRate1
-          .div(10 ** 18)
-          .plus(1.0)
-          .toNumber() **
-          (365 * 24 * 60 * 60) -
-        1.0;
+      const APY0 = interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0;
+      const APY1 = interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0;
       // inventory != totalSupply due to interest rates (inflation)
       return new LendingPair(
         token0,
@@ -169,8 +157,8 @@ export async function getLendingPairBalances(
   const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
     token0Contract.balanceOf(userAddress),
     token1Contract.balanceOf(userAddress),
-    kitty0Contract.balanceOfUnderlying(userAddress),
-    kitty1Contract.balanceOfUnderlying(userAddress),
+    kitty0Contract.underlyingBalance(userAddress),
+    kitty1Contract.underlyingBalance(userAddress),
   ]);
   const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
   const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();

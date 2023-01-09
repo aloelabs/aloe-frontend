@@ -7,8 +7,6 @@
         "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function",
     "name": "readBasics",
     "outputs": [
       {
@@ -41,6 +39,8 @@
         "name": "totalSupply",
         "type": "uint256"
       }
-    ]
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
