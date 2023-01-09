@@ -3,6 +3,7 @@ import React, { Suspense, createContext, useContext, useEffect, useState } from 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
@@ -73,6 +74,7 @@ function AppBodyWrapper() {
   return (
     <AppBody>
       <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+      <BetaBanner />
       <main className='flex-grow'>
         <Routes>
           <Route path='/borrow' element={<BorrowAccountsPage />} />
