@@ -76,7 +76,7 @@ export function roundPercentage(percentage: number, precision?: number): number 
 }
 
 //TODO: refactor this to handle edge cases better
-export function formatNumberInput(input: string, negative?: boolean): string | null {
+export function formatNumberInput(input: string, negative?: boolean, maxDecimals?: number): string | null {
   if (input === '' || input === '-') {
     return '';
   } else if (input === '.') {
@@ -188,4 +188,20 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
 
 export function areWithinNSigDigs(a: Big, b: Big, n: number): boolean {
   return a.prec(n).eq(b.prec(n));
+}
+
+export function truncateDecimals(value: string, decimals: number): string {
+  const decimalIndex = value.indexOf('.');
+  if (decimalIndex === -1) {
+    return value;
+  }
+  return value.slice(0, decimalIndex + decimals + 1);
+}
+
+export function getDecimalPlaces(value: string): number {
+  const decimalIndex = value.indexOf('.');
+  if (decimalIndex === -1) {
+    return 0;
+  }
+  return value.length - decimalIndex - 1;
 }

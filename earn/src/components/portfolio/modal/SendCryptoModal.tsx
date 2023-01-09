@@ -15,7 +15,7 @@ import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_t
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, String1E } from '../../../util/Numbers';
+import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -243,7 +243,8 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
-                setSendAmountInputValue(output);
+                const truncatedOutput = truncateDecimals(output, selectedOption.decimals);
+                setSendAmountInputValue(truncatedOutput);
               }
             }}
             options={options}
