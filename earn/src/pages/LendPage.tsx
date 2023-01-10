@@ -23,6 +23,7 @@ import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import {
+  filterLendingPairsByTokens,
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
@@ -284,11 +285,10 @@ export default function LendPage() {
   }, [kittyBalances, totalKittyBalanceUSD]);
 
   const filteredLendingPairs = useMemo(() => {
-    return lendingPairs.filter((pair) => {
-      return selectedOptions.some(
-        (option) => option.value.address === pair.token0.address || option.value.address === pair.token1.address
-      );
-    });
+    return filterLendingPairsByTokens(
+      lendingPairs,
+      selectedOptions.map((o) => o.value)
+    );
   }, [lendingPairs, selectedOptions]);
 
   return (
