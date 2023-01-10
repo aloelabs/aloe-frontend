@@ -1,14 +1,15 @@
 import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Address, useAccount, useBalance, useContractWrite } from 'wagmi';
+import { Address, useAccount, useBalance, useContractWrite, useProvider, useSigner } from 'wagmi';
 
 import { ChainContext } from '../../../App';
+import ERC20ABI from '../../../assets/abis/ERC20.json';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -20,6 +21,7 @@ import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, roundPercentage, toBig, truncateDecimals } from '../../../util/Numbers';
+import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -29,6 +31,7 @@ const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
+  PERMIT_ASSET,
   APPROVE_ASSET,
   PENDING,
   LOADING,
@@ -46,6 +49,12 @@ function getConfirmButton(
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return {
+        text: `Permit ${token.ticker}`,
+        Icon: <CheckIcon />,
+        enabled: true,
+      };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
         text: `Approve ${token.ticker}`,
@@ -62,6 +71,16 @@ function getConfirmButton(
   }
 }
 
+type PermitData = {
+  signature: ethers.Signature;
+  approve: {
+    owner: string;
+    spender: string;
+    value: BigNumberish;
+  };
+  deadline: BigNumberish;
+};
+
 type DepositButtonProps = {
   depositAmount: string;
   depositBalance: string;
@@ -76,16 +95,22 @@ function DepositButton(props: DepositButtonProps) {
   const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
+  const [canUsePermit, setCanUsePermit] = useState<boolean>(false);
+  const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
 
   const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
+  const { data: signer } = useSigner();
+
+  const provider = useProvider();
+
   const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
+    write: depositUsingApprovalFlow,
+    isSuccess: successfullyDepositedWithApproval,
+    isLoading: isLoadingApprovalFlow,
+    data: approvalFlowData,
   } = useContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
@@ -93,6 +118,39 @@ function DepositButton(props: DepositButtonProps) {
     functionName: 'depositWithApprove(address,uint256)',
     chainId: activeChain.id,
   });
+
+  const {
+    write: depositUsingPermitFlow,
+    isSuccess: successfullyDepositedWithPermit,
+    isLoading: isLoadingPermitFlow,
+    data: permitFlowData,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    mode: 'recklesslyUnprepared',
+    functionName: 'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32)',
+    chainId: activeChain.id,
+  });
+
+  const erc20Contract = useMemo(() => new ethers.Contract(token.address, ERC20ABI, provider), [token, provider]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const result = await doesSupportPermit(erc20Contract);
+      if (mounted) {
+        setCanUsePermit(result);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [token, provider, erc20Contract]);
+
+  const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
+  const contractData = approvalFlowData ?? permitFlowData;
+  const contractIsLoading = isLoadingApprovalFlow || isLoadingPermitFlow;
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -113,16 +171,26 @@ function DepositButton(props: DepositButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (numericDepositAmount > numericDepositBalance) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (loadingApproval) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (needsApproval && isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (needsApproval) {
-    confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
+  if (canUsePermit) {
+    if (numericDepositAmount > numericDepositBalance) {
+      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (!permitData) {
+      confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
+    } else if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    }
+  } else {
+    if (numericDepositAmount > numericDepositBalance) {
+      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (loadingApproval) {
+      confirmButtonState = ConfirmButtonState.LOADING;
+    } else if (needsApproval && isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    } else if (needsApproval) {
+      confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
+    } else if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    }
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -143,15 +211,47 @@ function DepositButton(props: DepositButtonProps) {
             setIsPending(false);
           });
         break;
+      case ConfirmButtonState.PERMIT_ASSET:
+        setIsPending(true);
+
+        const approve = {
+          owner: accountAddress,
+          spender: ALOE_II_ROUTER_ADDRESS,
+          value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
+        };
+        const deadline = (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+        getErc2612Signature(signer!, activeChain.id, erc20Contract, approve, deadline).then((signature) => {
+          setPermitData({ signature, approve, deadline });
+          setIsPending(false);
+        });
+
+        break;
       case ConfirmButtonState.READY:
         setIsPending(true);
-        contractWrite?.({
-          recklesslySetUnpreparedArgs: [
-            kitty.address,
-            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
-          ],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        });
+
+        if (permitData) {
+          depositUsingPermitFlow?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+              permitData.approve.value,
+              permitData.deadline,
+              permitData.signature.v,
+              permitData.signature.r,
+              permitData.signature.s,
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        } else {
+          depositUsingApprovalFlow?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        }
         break;
       default:
         break;
