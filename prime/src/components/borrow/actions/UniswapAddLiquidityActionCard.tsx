@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { Address, useNetwork, useProvider } from 'wagmi';
+import { Address, useProvider } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import { getAddLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { addLiquidityOperator } from '../../../data/actions/ActionOperators';
@@ -55,6 +56,7 @@ function fromFields(fields: string[] | undefined): PreviousState {
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
+  const { activeChain } = useContext(ChainContext);
 
   // MARK: state for user inputs
   const [localIsAmount0UserDefined, setLocalIsAmount0UserDefined] = useState(false);
@@ -62,7 +64,6 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   // MARK: wagmi hooks
   const provider = useProvider();
-  const { chain: activeChain } = useNetwork();
 
   // MARK: chart data and other fetched state
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
@@ -70,7 +71,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [chartData, setChartData] = useState<ChartEntry[]>([]);
 
   // MARK: pre-compute some useful stuff
-  const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier, activeChain?.id ?? 1);
+  const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier, activeChain.id);
   const {
     isToken0Selected,
     amount0Str: previousAmount0Str,
