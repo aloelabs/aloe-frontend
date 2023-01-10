@@ -175,3 +175,16 @@ export async function getLendingPairBalances(
     kitty1Balance,
   };
 }
+
+/**
+ * Filter lending pairs by tokens
+ * @param lendingPairs Lending pairs
+ * @param tokens Tokens
+ * @returns Filtered lending pairs that contain at least one of the tokens
+ */
+
+export function filterLendingPairsByTokens(lendingPairs: LendingPair[], tokens: Token[]): LendingPair[] {
+  return lendingPairs.filter((pair) => {
+    return tokens.some((token) => token.address === pair.token0.address || token.address === pair.token1.address);
+  });
+}

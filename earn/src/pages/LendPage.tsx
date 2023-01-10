@@ -23,6 +23,7 @@ import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import {
+  filterLendingPairsByTokens,
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
@@ -283,6 +284,13 @@ export default function LendPage() {
     );
   }, [kittyBalances, totalKittyBalanceUSD]);
 
+  const filteredLendingPairs = useMemo(() => {
+    return filterLendingPairsByTokens(
+      lendingPairs,
+      selectedOptions.map((o) => o.value)
+    );
+  }, [lendingPairs, selectedOptions]);
+
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -356,7 +364,7 @@ export default function LendPage() {
             />
           </div>
           <LendCards>
-            {lendingPairs.map((lendPair, i) => (
+            {filteredLendingPairs.map((lendPair, i) => (
               <LendPairCard
                 key={lendPair.token0.address}
                 pair={lendPair}
@@ -365,18 +373,30 @@ export default function LendPage() {
               />
             ))}
           </LendCards>
-          <Pagination
-            totalItems={lendingPairs.length}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            loading={isLoading}
-            onPageChange={(page: number) => {
-              setCurrentPage(page);
-            }}
-            onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
-              setItemsPerPage(itemsPerPage);
-            }}
-          />
+          {filteredLendingPairs.length > 0 && (
+            <Pagination
+              totalItems={filteredLendingPairs.length}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              loading={isLoading}
+              onPageChange={(page: number) => {
+                setCurrentPage(page);
+              }}
+              onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
+                setItemsPerPage(itemsPerPage);
+              }}
+            />
+          )}
+          {filteredLendingPairs.length === 0 && (
+            <div className='flex flex-col items-center gap-2'>
+              <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
+                No lending pairs found
+              </Text>
+              <Text size='M' color={LEND_TITLE_TEXT_COLOR}>
+                Try adjusting your filters
+              </Text>
+            </div>
+          )}
         </div>
       </div>
       <WelcomeModal
