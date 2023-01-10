@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
@@ -61,6 +62,7 @@ function AppBodyWrapper() {
   return (
     <AppBody>
       <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+      <BetaBanner />
       <main className='flex-grow'>
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />

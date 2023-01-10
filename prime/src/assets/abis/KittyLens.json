@@ -1,9 +1,19 @@
 [
   {
-    "inputs": [{ "internalType": "contract Kitty", "name": "kitty", "type": "address" }],
+    "inputs": [
+      {
+        "internalType": "contract Lender",
+        "name": "lender",
+        "type": "address"
+      }
+    ],
     "name": "readBasics",
     "outputs": [
-      { "internalType": "contract ERC20", "name": "asset", "type": "address" },
+      {
+        "internalType": "contract ERC20",
+        "name": "asset",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "interestRate",
@@ -22,6 +32,11 @@
       {
         "internalType": "uint256",
         "name": "totalBorrows",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalSupply",
         "type": "uint256"
       }
     ],

@@ -77,8 +77,8 @@ export async function getAvailableLendingPairs(
   const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
     return {
       pool: item.topics[1].slice(26),
-      kitty0: `0x${item.topics[2].slice(26)}`,
-      kitty1: `0x${item.topics[3].slice(26)}`,
+      kitty0: `0x${item.data.slice(26, 66)}`,
+      kitty1: `0x${item.data.slice(90, 134)}`,
     };
   });
 
@@ -115,22 +115,14 @@ export async function getAvailableLendingPairs(
         token1
       );
 
+      const utilization0 = new Big(result0.utilization.toString()).div(10 ** 18).toNumber();
+      const utilization1 = new Big(result1.utilization.toString()).div(10 ** 18).toNumber();
+
       const interestRate0 = new Big(result0.interestRate.toString());
       const interestRate1 = new Big(result1.interestRate.toString());
-      const APY0 =
-        interestRate0
-          .div(10 ** 18)
-          .plus(1.0)
-          .toNumber() **
-          (365 * 24 * 60 * 60) -
-        1.0;
-      const APY1 =
-        interestRate1
-          .div(10 ** 18)
-          .plus(1.0)
-          .toNumber() **
-          (365 * 24 * 60 * 60) -
-        1.0;
+      // SupplyAPY = Utilization * BorrowAPY
+      const APY0 = utilization0 * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+      const APY1 = utilization1 * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
       // inventory != totalSupply due to interest rates (inflation)
       return new LendingPair(
         token0,
@@ -141,13 +133,13 @@ export async function getAvailableLendingPairs(
           apy: APY0 * 100, // percentage
           inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
           totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
-          utilization: new Big(result0.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+          utilization: utilization0 * 100.0, // Percentage
         },
         {
           apy: APY1 * 100, // percentage
           inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
           totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
-          utilization: new Big(result1.utilization.toString()).div(10 ** 18).toNumber() * 100.0, // Percentage
+          utilization: utilization1 * 100.0, // Percentage
         },
         NumericFeeTierToEnum(result2)
       );
@@ -169,8 +161,8 @@ export async function getLendingPairBalances(
   const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
     token0Contract.balanceOf(userAddress),
     token1Contract.balanceOf(userAddress),
-    kitty0Contract.balanceOfUnderlying(userAddress),
-    kitty1Contract.balanceOfUnderlying(userAddress),
+    kitty0Contract.underlyingBalance(userAddress),
+    kitty1Contract.underlyingBalance(userAddress),
   ]);
   const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
   const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
@@ -182,4 +174,17 @@ export async function getLendingPairBalances(
     kitty0Balance,
     kitty1Balance,
   };
+}
+
+/**
+ * Filter lending pairs by tokens
+ * @param lendingPairs Lending pairs
+ * @param tokens Tokens
+ * @returns Filtered lending pairs that contain at least one of the tokens
+ */
+
+export function filterLendingPairsByTokens(lendingPairs: LendingPair[], tokens: Token[]): LendingPair[] {
+  return lendingPairs.filter((pair) => {
+    return tokens.some((token) => token.address === pair.token0.address || token.address === pair.token1.address);
+  });
 }

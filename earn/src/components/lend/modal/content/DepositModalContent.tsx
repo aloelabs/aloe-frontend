@@ -168,7 +168,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     <>
       <div className='flex justify-between items-center mb-4'>
         <TokenAmountInput
-          tokenLabel={token?.ticker || ''}
+          token={token}
           onChange={(updatedAmount: string) => {
             setDepositAmount(updatedAmount);
           }}

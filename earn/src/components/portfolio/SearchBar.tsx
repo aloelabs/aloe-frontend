@@ -96,6 +96,7 @@ export function SearchBar(props: SearchBarProps) {
         </Container>
       ) : (
         <SearchInput
+          autoFocus={true}
           options={searchInputOptions}
           onOptionSelected={(option) => {
             setActiveSearchAsset(option.value);
