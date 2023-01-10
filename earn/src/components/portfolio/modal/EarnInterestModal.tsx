@@ -148,7 +148,6 @@ function DepositButton(props: DepositButtonProps) {
     };
   }, [token, provider, erc20Contract]);
 
-  // TODO: I naively combined these using the old variable names; not sure if it's correct
   const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
   const contractData = approvalFlowData ?? permitFlowData;
   const contractIsLoading = isLoadingApprovalFlow || isLoadingPermitFlow;
