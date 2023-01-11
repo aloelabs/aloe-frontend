@@ -279,3 +279,5 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     </Wrapper>
   );
 }
+
+// ManageAccountWidget.whyDidYouRender = true;

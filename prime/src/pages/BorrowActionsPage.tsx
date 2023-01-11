@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import { Contract } from 'ethers';
@@ -32,13 +32,12 @@ import {
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
+import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
 import {
-  computeLiquidationThresholds,
-  fetchMarginAccount,
-  LiquidationThresholds,
-  MarginAccount,
-  sumAssetsPerToken,
-} from '../data/MarginAccount';
+  ComputeLiquidationThresholdsRequest,
+  stringifyMarginAccount,
+  stringifyUniswapPositions,
+} from '../util/ComputeLiquidationThresholdUtils';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
@@ -171,6 +170,10 @@ export default function BorrowActionsPage() {
   const params = useParams<AccountParams>();
   const accountAddressParam = params.account;
 
+  const worker: Worker = useMemo(() => {
+    return new Worker(new URL('../computeLiquidationThresholdsWorker.ts', import.meta.url));
+  }, []);
+
   // MARK: component state
   const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
@@ -183,6 +186,34 @@ export default function BorrowActionsPage() {
   const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    const handleWorkerMessage = (e: MessageEvent<string>) => {
+      let response = null;
+      if (typeof e.data !== 'string') {
+        return;
+      }
+      try {
+        response = JSON.parse(e.data) as LiquidationThresholds;
+        if (mounted) {
+          setLiquidationThresholds(response);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (window.Worker) {
+      worker.addEventListener('message', handleWorkerMessage);
+    }
+    return () => {
+      if (window.Worker) {
+        worker.removeEventListener('message', handleWorkerMessage);
+        worker.terminate();
+      }
+      mounted = false;
+    };
+  }, [worker]);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
@@ -349,15 +380,14 @@ export default function BorrowActionsPage() {
   // compute liquidation thresholds for the currently-selected data (current or hypothetical)
   useDebouncedEffect(
     () => {
-      if (!displayedMarginAccount) return;
-      const lt: LiquidationThresholds = computeLiquidationThresholds(
-        displayedMarginAccount,
-        displayedUniswapPositions.concat(),
-        0.025,
-        120,
-        6
-      );
-      setLiquidationThresholds(lt);
+      if (!window.Worker || !displayedMarginAccount) return;
+      worker.postMessage({
+        marginAccountParams: stringifyMarginAccount(displayedMarginAccount),
+        uniswapPositionParams: stringifyUniswapPositions(displayedUniswapPositions.concat()),
+        sigma: 0.025,
+        iterations: 120,
+        precision: 6,
+      } as ComputeLiquidationThresholdsRequest);
     },
     GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
