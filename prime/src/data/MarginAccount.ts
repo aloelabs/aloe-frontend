@@ -11,7 +11,14 @@ import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
-import { BIGQ96 } from './constants/Values';
+import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
+import {
+  ALOE_II_LIQUIDATION_INCENTIVE,
+  ALOE_II_SIGMA_MAX,
+  ALOE_II_SIGMA_MIN,
+  ALOE_II_SIGMA_SCALER,
+  BIGQ96,
+} from './constants/Values';
 import { Token } from './Token';
 import { getToken } from './TokenData';
 
@@ -60,11 +67,7 @@ export async function getMarginAccountsForUser(
   const etherscanResult = await makeEtherscanRequest(
     7569633,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
-    [
-      '0x1ff0a9a76572c6e0f2f781872c1e45b4bab3a0d90df274ebf884b4c11e3068f4',
-      null,
-      `0x000000000000000000000000${userAddress.slice(2)}`,
-    ],
+    [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
     chain
   );
@@ -241,13 +244,9 @@ export function priceToSqrtRatio(price: number, token0Decimals: number, token1De
     .mul(BIGQ96);
 }
 
-const MIN_SIGMA = 0.01;
-const MAX_SIGMA = 0.15;
-const SIGMA_B = 3;
-
 function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
-  sigma = Math.min(Math.max(MIN_SIGMA, sigma), MAX_SIGMA);
-  sigma *= SIGMA_B;
+  sigma = Math.min(Math.max(ALOE_II_SIGMA_MIN, sigma), ALOE_II_SIGMA_MAX);
+  sigma *= ALOE_II_SIGMA_SCALER;
 
   const a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
   const b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
@@ -319,11 +318,11 @@ function _computeLiquidationIncentive(
   let reward = 0;
   if (liabilities0 > assets0) {
     const shortfall = liabilities0 - assets0;
-    reward += 0.05 * shortfall * price;
+    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall * price;
   }
   if (liabilities1 > assets1) {
     const shortfall = liabilities1 - assets1;
-    reward += 0.05 * shortfall;
+    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall;
   }
   return reward;
 }
