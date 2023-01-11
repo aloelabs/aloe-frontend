@@ -187,25 +187,20 @@ export default function BorrowActionsPage() {
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
 
+  // MARK: worker message handling (for liquidation threshold calcs)
   useEffect(() => {
     let mounted = true;
     const handleWorkerMessage = (e: MessageEvent<string>) => {
-      let response = null;
-      if (typeof e.data !== 'string') {
-        return;
-      }
       try {
-        response = JSON.parse(e.data) as LiquidationThresholds;
-        if (mounted) {
-          setLiquidationThresholds(response);
-        }
-      } catch (e) {
-        console.error(e);
+        const response = JSON.parse(e.data) as LiquidationThresholds;
+        // Only set state if the component is still mounted
+        if (mounted) setLiquidationThresholds(response);
+      } catch (error) {
+        console.error(error);
       }
     };
-    if (window.Worker) {
-      worker.addEventListener('message', handleWorkerMessage);
-    }
+    // Add event listener for worker messages
+    if (window.Worker) worker.addEventListener('message', handleWorkerMessage);
     return () => {
       if (window.Worker) {
         worker.removeEventListener('message', handleWorkerMessage);
