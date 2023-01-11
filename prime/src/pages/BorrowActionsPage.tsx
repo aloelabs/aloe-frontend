@@ -25,7 +25,7 @@ import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsT
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
-import { ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS } from '../data/constants/Addresses';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
@@ -192,11 +192,11 @@ export default function BorrowActionsPage() {
     signerOrProvider: provider,
   });
   const marginAccountLensContract = useContract({
-    address: ALOE_II_MARGIN_ACCOUNT_LENS_ADDRESS,
+    address: ALOE_II_BORROWER_LENS_ADDRESS,
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
-  const { data: uniswapPositionPriors } = useContractRead({
+  const { data: uniswapPositionTicks } = useContractRead({
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
@@ -245,10 +245,18 @@ export default function BorrowActionsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionPriors)) return;
+      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionTicks)) return;
+
+      const uniswapPositionPriors: UniswapPositionPrior[] = [];
+      for (let i = 0; i < uniswapPositionTicks.length; i += 2) {
+        uniswapPositionPriors.push({
+          lower: uniswapPositionTicks[i] as number,
+          upper: uniswapPositionTicks[i + 1] as number,
+        });
+      }
 
       const fetchedUniswapPositions = await fetchUniswapPositions(
-        uniswapPositionPriors as UniswapPositionPrior[],
+        uniswapPositionPriors,
         accountAddressParam,
         uniswapV3PoolContract
       );
@@ -291,7 +299,7 @@ export default function BorrowActionsPage() {
     marginAccount?.sqrtPriceX96,
     marginAccount?.token0,
     marginAccount?.token1,
-    uniswapPositionPriors,
+    uniswapPositionTicks,
     uniswapV3PoolContract,
   ]);
 

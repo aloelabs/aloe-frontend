@@ -26,8 +26,6 @@ export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' |
 export enum TokenType {
   ASSET0 = 'ASSET0',
   ASSET1 = 'ASSET1',
-  KITTY0 = 'KITTY0',
-  KITTY1 = 'KITTY1',
 }
 
 export interface AccountState {

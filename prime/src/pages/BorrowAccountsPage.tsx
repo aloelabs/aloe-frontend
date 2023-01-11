@@ -18,7 +18,8 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import WelcomeModal from '../components/borrow/modal/WelcomeModal';
-import { createMarginAccount } from '../connector/FactoryActions';
+import { createBorrower } from '../connector/FactoryActions';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/Addresses';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
 
@@ -65,8 +66,8 @@ export default function BorrowAccountsPage() {
     chainId: activeChain.id,
     watch: true,
   });
-  const marginAccountLensContract = useContract({
-    address: '0x2CfDfC4817b0fAf09Fa1613108418D7Ba286725a',
+  const borrowerLensContract = useContract({
+    address: ALOE_II_BORROWER_LENS_ADDRESS,
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
@@ -76,13 +77,13 @@ export default function BorrowAccountsPage() {
 
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
-      if (!marginAccountLensContract || !isAllowedToInteract) {
+      if (!borrowerLensContract || !isAllowedToInteract) {
         setMarginAccounts([]);
         return;
       }
       const updatedMarginAccounts = await fetchMarginAccountPreviews(
         activeChain,
-        marginAccountLensContract,
+        borrowerLensContract,
         provider,
         userAddress
       );
@@ -99,7 +100,7 @@ export default function BorrowAccountsPage() {
     //TODO: temporary while we need metamask to fetch this info
     //TODO: add a means of updating this periodically without having to rely
     // on the block number changing (since arbitrum and optimism update too quickly)
-  }, [activeChain, address, isAllowedToInteract, marginAccountLensContract, provider]);
+  }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
@@ -170,7 +171,7 @@ export default function BorrowAccountsPage() {
             // TODO
             return;
           }
-          createMarginAccount(signer, selectedPool, address, onCommencement, onCompletion);
+          createBorrower(signer, selectedPool, address, onCommencement, onCompletion);
         }}
         onCancel={() => {
           // TODO
