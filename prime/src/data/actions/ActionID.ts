@@ -9,6 +9,26 @@ export enum ActionID {
   SWAP,
 }
 
+export function getFrontendManagerCodeFor(id: ActionID) {
+  switch (id) {
+    case ActionID.TRANSFER_IN:
+      return 0;
+    case ActionID.TRANSFER_OUT:
+      return 1;
+    case ActionID.BORROW:
+      return 2;
+    case ActionID.REPAY:
+      return 3;
+    case ActionID.ADD_LIQUIDITY:
+      return 4;
+    // REMOVE_LIQUIDITY and CLAIM_FEES are the same thing under the hood
+    case ActionID.REMOVE_LIQUIDITY:
+      return 5;
+    case ActionID.CLAIM_FEES:
+      return 5;
+  }
+}
+
 export function getNameOfAction(id: ActionID): string {
   switch (id) {
     case ActionID.TRANSFER_IN:

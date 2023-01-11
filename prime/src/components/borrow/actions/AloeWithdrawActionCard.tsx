@@ -17,7 +17,7 @@ import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const { marginAccount, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
-  const { token0, token1, kitty0, kitty1 } = marginAccount;
+  const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
@@ -30,16 +30,6 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       value: TokenType.ASSET1,
       icon: token1?.iconPath || '',
     },
-    {
-      label: kitty0?.ticker || '',
-      value: TokenType.KITTY0,
-      icon: kitty0?.iconPath || '',
-    },
-    {
-      label: kitty1?.ticker || '',
-      value: TokenType.KITTY1,
-      icon: kitty1?.iconPath || '',
-    },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
@@ -48,8 +38,6 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
-  tokenMap.set(TokenType.KITTY0, kitty0);
-  tokenMap.set(TokenType.KITTY1, kitty1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;

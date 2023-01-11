@@ -1,6 +1,7 @@
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { MaxUint256 } from '@uniswap/sdk-core';
-import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount } from '@uniswap/v3-sdk';
+import { Token as UniswapToken } from '@uniswap/sdk-core';
+import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount, Pool } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
@@ -381,16 +382,14 @@ export function feeTierToFeeAmount(feeTier: FeeTier): FeeAmount | null {
   return numericFeeTier as FeeAmount;
 }
 
-export function getPoolAddressFromTokens(token0: Token, token1: Token, feeTier: FeeTier): string {
+export function getPoolAddressFromTokens(token0: Token, token1: Token, feeTier: FeeTier, chainId: number): string {
   //If in the future we want to use this with something besides ethereum, we will need to change the
   //chainId passed to the tokens.
-  // const uniswapToken0 = new Token(1, token0.address, token0.decimals);
-  // const uniswapToken1 = new Token(1, token1.address, token1.decimals);
-  // const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
-  // if (uniswapFeeAmount == null) return null;
-  // return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
-  // TODO: Update this before launch
-  return '0xfbe57c73a82171a773d3328f1b563296151be515'; // TODO once we're working with mainnet uncomment the other stuff
+  const uniswapToken0 = new UniswapToken(chainId, token0.address, token0.decimals);
+  const uniswapToken1 = new UniswapToken(chainId, token1.address, token1.decimals);
+  const uniswapFeeAmount = feeTierToFeeAmount(feeTier);
+  if (uniswapFeeAmount == null) return '';
+  return Pool.getAddress(uniswapToken0, uniswapToken1, uniswapFeeAmount).toLowerCase();
 }
 
 export function uniswapPositionKey(owner: string, lower: number, upper: number): string {

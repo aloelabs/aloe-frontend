@@ -116,7 +116,7 @@ export type ManageAccountWidgetProps = {
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
   const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
-  const { address: accountAddress, token0, token1, kitty0, kitty1 } = marginAccount;
+  const { address: accountAddress, token0, token1 } = marginAccount;
 
   // actions
   const [userInputFields, setUserInputFields] = useState<(string[] | undefined)[]>([]);
@@ -138,26 +138,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     token: token1.address,
     watch: true,
   });
-  const { data: userBalance0Kitty } = useBalance({
-    addressOrName: userAddress,
-    token: kitty0.address,
-    watch: true,
-  });
-  const { data: userBalance1Kitty } = useBalance({
-    addressOrName: userAddress,
-    token: kitty1.address,
-    watch: true,
-  });
 
   // MARK: logic to ensure that listed balances and MAXes work
   const userBalances: UserBalances = useMemo(
     () => ({
       amount0Asset: Number(userBalance0Asset?.formatted ?? 0) || 0,
       amount1Asset: Number(userBalance1Asset?.formatted ?? 0) || 0,
-      amount0Kitty: Number(userBalance0Kitty?.formatted ?? 0) || 0,
-      amount1Kitty: Number(userBalance1Kitty?.formatted ?? 0) || 0,
     }),
-    [userBalance0Asset, userBalance1Asset, userBalance0Kitty, userBalance1Kitty]
+    [userBalance0Asset, userBalance1Asset]
   );
 
   const initialState: AccountState = useMemo(
@@ -169,8 +157,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       requiredAllowances: {
         amount0Asset: 0,
         amount1Asset: 0,
-        amount0Kitty: 0,
-        amount1Kitty: 0,
       },
       claimedFeeUniswapKeys: [],
     }),
@@ -265,8 +251,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             accountAddress={accountAddress as Address}
             token0={token0}
             token1={token1}
-            kitty0={kitty0}
-            kitty1={kitty1}
             userBalances={userBalances}
             accountState={finalState}
             actionOutputs={actionOutputs}

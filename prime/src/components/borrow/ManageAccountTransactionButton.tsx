@@ -1,19 +1,20 @@
 import { ReactElement, useContext, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Address, Chain, erc20ABI, useContractRead, useContractWrite } from 'wagmi';
+import { Address, Chain, erc20ABI, useBalance, useContractRead, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
+import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { UINT256_MAX } from '../../data/constants/Values';
-import { Kitty } from '../../data/Kitty';
 import { Token } from '../../data/Token';
 import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
@@ -24,12 +25,8 @@ import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET0,
   INSUFFICIENT_ASSET1,
-  INSUFFICIENT_KITTY0,
-  INSUFFICIENT_KITTY1,
   APPROVE_ASSET0,
   APPROVE_ASSET1,
-  APPROVE_KITTY0,
-  APPROVE_KITTY1,
   NO_ACTIONS,
   ERRORING_ACTIONS,
   PENDING,
@@ -40,9 +37,7 @@ enum ConfirmButtonState {
 function getConfirmButton(
   state: ConfirmButtonState,
   token0: Token,
-  token1: Token,
-  kitty0: Kitty,
-  kitty1: Kitty
+  token1: Token
 ): { text: string; Icon: ReactElement; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET0:
@@ -57,18 +52,6 @@ function getConfirmButton(
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
-    case ConfirmButtonState.INSUFFICIENT_KITTY0:
-      return {
-        text: `Insufficient ${kitty0.ticker}`,
-        Icon: <AlertTriangleIcon />,
-        enabled: false,
-      };
-    case ConfirmButtonState.INSUFFICIENT_KITTY1:
-      return {
-        text: `Insufficient ${kitty1.ticker}`,
-        Icon: <AlertTriangleIcon />,
-        enabled: false,
-      };
     case ConfirmButtonState.APPROVE_ASSET0:
       return {
         text: `Approve ${token0.ticker}`,
@@ -78,18 +61,6 @@ function getConfirmButton(
     case ConfirmButtonState.APPROVE_ASSET1:
       return {
         text: `Approve ${token1.ticker}`,
-        Icon: <CheckIcon />,
-        enabled: true,
-      };
-    case ConfirmButtonState.APPROVE_KITTY0:
-      return {
-        text: `Approve ${kitty0.ticker}`,
-        Icon: <CheckIcon />,
-        enabled: true,
-      };
-    case ConfirmButtonState.APPROVE_KITTY1:
-      return {
-        text: `Approve ${kitty1.ticker}`,
         Icon: <CheckIcon />,
         enabled: true,
       };
@@ -133,8 +104,6 @@ export type ManageAccountTransactionButtonProps = {
   accountAddress: Address;
   token0: Token;
   token1: Token;
-  kitty0: Kitty;
-  kitty1: Kitty;
   userBalances: UserBalances;
   accountState: AccountState;
   actionOutputs: ActionCardOutput[];
@@ -142,14 +111,14 @@ export type ManageAccountTransactionButtonProps = {
   onSuccessReceipt: () => void;
 };
 
+const ANTE = 0.001e18; // TODO move to constants
+
 export function ManageAccountTransactionButton(props: ManageAccountTransactionButtonProps) {
   const {
     userAddress,
     accountAddress,
     token0,
     token1,
-    kitty0,
-    kitty1,
     userBalances,
     accountState,
     actionOutputs,
@@ -178,6 +147,11 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     chainId: activeChain.id,
   });
 
+  const { data: accountEtherBalance } = useBalance({
+    addressOrName: accountAddress,
+    watch: true,
+  });
+
   const { data: userAllowance0Asset } = useAllowance(
     activeChain,
     token0,
@@ -190,52 +164,25 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     userAddress ?? '0x',
     ALOE_II_FRONTEND_MANAGER_ADDRESS
   );
-  const { data: userAllowance0Kitty } = useAllowance(
-    activeChain,
-    kitty0,
-    userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
-  );
-  const { data: userAllowance1Kitty } = useAllowance(
-    activeChain,
-    kitty1,
-    userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
-  );
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
-  const writeKitty0Allowance = useAllowanceWrite(activeChain, kitty0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
-  const writeKitty1Allowance = useAllowanceWrite(activeChain, kitty1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
 
-  const requiredBalances = [
-    accountState.requiredAllowances.amount0Asset,
-    accountState.requiredAllowances.amount1Asset,
-    accountState.requiredAllowances.amount0Kitty,
-    accountState.requiredAllowances.amount1Kitty,
-  ];
+  const requiredBalances = [accountState.requiredAllowances.amount0Asset, accountState.requiredAllowances.amount1Asset];
   const insufficient = [
     requiredBalances[0] > userBalances.amount0Asset,
     requiredBalances[1] > userBalances.amount1Asset,
-    requiredBalances[2] > userBalances.amount0Kitty,
-    requiredBalances[3] > userBalances.amount1Kitty,
   ];
   const loadingApprovals = [
     requiredBalances[0] > 0 && !userAllowance0Asset,
     requiredBalances[1] > 0 && !userAllowance1Asset,
-    requiredBalances[2] > 0 && !userAllowance0Kitty,
-    requiredBalances[3] > 0 && !userAllowance1Kitty,
   ];
   const needsApproval = [
     userAllowance0Asset && toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0],
     userAllowance1Asset && toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1],
-    userAllowance0Kitty && toBig(userAllowance0Kitty).div(kitty0.decimals).toNumber() < requiredBalances[2],
-    userAllowance1Kitty && toBig(userAllowance1Kitty).div(kitty1.decimals).toNumber() < requiredBalances[3],
   ];
 
   if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
   if (writeAsset1Allowance.isError) writeAsset1Allowance.reset();
-  if (writeKitty0Allowance.isError) writeKitty0Allowance.reset();
-  if (writeKitty1Allowance.isError) writeKitty1Allowance.reset();
   if (contract.isError || contract.isSuccess) setTimeout(contract.reset, 500);
 
   // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
@@ -252,18 +199,10 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET0;
   } else if (insufficient[1]) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET1;
-  } else if (insufficient[2]) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY0;
-  } else if (insufficient[3]) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY1;
   } else if (needsApproval[0] && writeAsset0Allowance.isIdle) {
     confirmButtonState = ConfirmButtonState.APPROVE_ASSET0;
   } else if (needsApproval[1] && writeAsset1Allowance.isIdle) {
     confirmButtonState = ConfirmButtonState.APPROVE_ASSET1;
-  } else if (needsApproval[2] && writeKitty0Allowance.isIdle) {
-    confirmButtonState = ConfirmButtonState.APPROVE_KITTY0;
-  } else if (needsApproval[3] && writeKitty1Allowance.isIdle) {
-    confirmButtonState = ConfirmButtonState.APPROVE_KITTY1;
   } else if (needsApproval.includes(true)) {
     confirmButtonState = ConfirmButtonState.PENDING;
   } else if (contract.isIdle) {
@@ -272,7 +211,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState, token0, token1, kitty0, kitty1);
+  const confirmButton = getConfirmButton(confirmButtonState, token0, token1);
 
   return (
     <div>
@@ -287,9 +226,30 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             return;
           }
 
-          const actionIds = actionOutputs.map((o) => o.actionId);
+          const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
           const actionArgs = actionOutputs.map((o) => o.actionArgs!);
-          const calldata = ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]'], [actionIds, actionArgs]);
+          const positions: number[] = [];
+
+          // if Uniswap positions are being changed, make sure to send an updated array of positions
+          if (actionIds.includes(4) || actionIds.includes(5)) {
+            accountState.uniswapPositions.forEach((position) => {
+              if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
+                positions.push(position.lower);
+                positions.push(position.upper);
+              }
+            });
+          }
+
+          // provide ante if necessary
+          const shouldProvideAnte =
+            accountEtherBalance &&
+            accountEtherBalance.value.toNumber() < ANTE &&
+            (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
+
+          const calldata = ethers.utils.defaultAbiCoder.encode(
+            ['uint8[]', 'bytes[]', 'int24[]'],
+            [actionIds, actionArgs, positions]
+          );
 
           switch (confirmButtonState) {
             case ConfirmButtonState.APPROVE_ASSET0:
@@ -298,25 +258,16 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             case ConfirmButtonState.APPROVE_ASSET1:
               writeAsset1Allowance.write?.();
               break;
-            case ConfirmButtonState.APPROVE_KITTY0:
-              writeKitty0Allowance.write?.();
-              break;
-            case ConfirmButtonState.APPROVE_KITTY1:
-              writeKitty1Allowance.write?.();
-              break;
             case ConfirmButtonState.READY:
               contract
                 .writeAsync?.({
-                  recklesslySetUnpreparedArgs: [
-                    ALOE_II_FRONTEND_MANAGER_ADDRESS,
-                    calldata,
-                    [UINT256_MAX, UINT256_MAX, UINT256_MAX, UINT256_MAX],
-                  ],
+                  recklesslySetUnpreparedArgs: [ALOE_II_FRONTEND_MANAGER_ADDRESS, calldata, [UINT256_MAX, UINT256_MAX]],
                   recklesslySetUnpreparedOverrides: {
                     // TODO gas estimation was occassionally causing errors. To fix this,
                     // we should probably work with the underlying ethers.Contract, but for now
                     // we just provide hard-coded overrides.
                     gasLimit: BigNumber.from((600000 + 200000 * actionIds.length).toFixed(0)),
+                    value: shouldProvideAnte ? ANTE + 1 : undefined,
                   },
                 })
                 .then((txnResult) => {
