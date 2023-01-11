@@ -21,6 +21,7 @@ export function getFrontendManagerCodeFor(id: ActionID) {
       return 3;
     case ActionID.ADD_LIQUIDITY:
       return 4;
+    // REMOVE_LIQUIDITY and CLAIM_FEES are the same thing under the hood
     case ActionID.REMOVE_LIQUIDITY:
       return 5;
     case ActionID.CLAIM_FEES:
