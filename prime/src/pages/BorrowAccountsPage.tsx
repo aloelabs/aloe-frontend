@@ -4,6 +4,7 @@ import { ContractReceipt } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -53,6 +54,7 @@ export default function BorrowAccountsPage() {
   // --> other
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
+  const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
 
   // MARK: wagmi hooks
@@ -81,18 +83,28 @@ export default function BorrowAccountsPage() {
         setMarginAccounts([]);
         return;
       }
-      const updatedMarginAccounts = await fetchMarginAccountPreviews(
-        activeChain,
-        borrowerLensContract,
-        provider,
-        userAddress
-      );
-      if (mounted) {
-        setMarginAccounts(updatedMarginAccounts);
+      try {
+        const updatedMarginAccounts = await fetchMarginAccountPreviews(
+          activeChain,
+          borrowerLensContract,
+          provider,
+          userAddress
+        );
+        if (mounted) {
+          setMarginAccounts(updatedMarginAccounts);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (mounted) {
+          setIsLoadingMarginAccounts(false);
+        }
       }
     }
     if (address) {
       fetch(address);
+    } else {
+      setIsLoadingMarginAccounts(false);
     }
     return () => {
       mounted = false;
@@ -136,6 +148,8 @@ export default function BorrowAccountsPage() {
     }
   }
 
+  console.log(isLoadingMarginAccounts);
+
   return (
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
@@ -156,9 +170,15 @@ export default function BorrowAccountsPage() {
         </FilledGradientButtonWithIcon>
       </div>
       <MarginAccountsContainner>
-        {marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
-          <MarginAccountCard key={index} {...marginAccount} />
-        ))}
+        {isLoadingMarginAccounts ? (
+          <div className='flex items-center justify-center w-full'>
+            <AltSpinner size='M' />
+          </div>
+        ) : (
+          marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
+            <MarginAccountCard key={index} {...marginAccount} />
+          ))
+        )}
       </MarginAccountsContainner>
       <CreateMarginAccountModal
         availablePools={MARGIN_ACCOUNT_OPTIONS}
