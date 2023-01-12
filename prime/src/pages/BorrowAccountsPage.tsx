@@ -65,7 +65,9 @@ export default function BorrowAccountsPage() {
   const blockNumber = useBlockNumber({
     chainId: activeChain.id,
     watch: true,
+    staleTime: 13_000,
   });
+
   const borrowerLensContract = useContract({
     address: ALOE_II_BORROWER_LENS_ADDRESS,
     abi: MarginAccountLensABI,
@@ -100,7 +102,7 @@ export default function BorrowAccountsPage() {
     //TODO: temporary while we need metamask to fetch this info
     //TODO: add a means of updating this periodically without having to rely
     // on the block number changing (since arbitrum and optimism update too quickly)
-  }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider]);
+  }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
@@ -162,9 +164,9 @@ export default function BorrowAccountsPage() {
       </MarginAccountsContainner>
       <CreateMarginAccountModal
         availablePools={MARGIN_ACCOUNT_OPTIONS}
-        open={showConfirmModal}
+        isOpen={showConfirmModal}
         isTxnPending={isTxnPending}
-        setOpen={setShowConfirmModal}
+        setIsOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
           if (!signer || !address || !selectedPool || !isAllowedToInteract) {
@@ -173,13 +175,10 @@ export default function BorrowAccountsPage() {
           }
           createBorrower(signer, selectedPool, address, onCommencement, onCompletion);
         }}
-        onCancel={() => {
-          // TODO
-        }}
       />
       <CreatedMarginAccountModal
-        open={showSuccessModal}
-        setOpen={setShowSuccessModal}
+        isOpen={showSuccessModal}
+        setIsOpen={setShowSuccessModal}
         onConfirm={() => {
           setShowSuccessModal(false);
         }}
