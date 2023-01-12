@@ -53,7 +53,7 @@ export default function BorrowAccountsPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
-  const { address } = useAccount();
+  const { address: accountAddress } = useAccount();
   const { data: signer } = useSigner();
 
   // MARK: block number
@@ -97,15 +97,15 @@ export default function BorrowAccountsPage() {
         }
       }
     }
-    if (address) {
-      fetch(address);
+    if (accountAddress) {
+      fetch(accountAddress);
     } else {
       setIsLoadingMarginAccounts(false);
     }
     return () => {
       mounted = false;
     };
-  }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
+  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
 
   useEffectOnce(() => {
     const shouldShowWelcomeModal =
@@ -155,7 +155,7 @@ export default function BorrowAccountsPage() {
           onClick={() => {
             setShowConfirmModal(true);
           }}
-          disabled={address === undefined || !isAllowedToInteract}
+          disabled={accountAddress === undefined || !isAllowedToInteract}
         >
           New
         </FilledGradientButtonWithIcon>
@@ -166,7 +166,7 @@ export default function BorrowAccountsPage() {
             <AltSpinner size='M' />
           </div>
         ) : (
-          <ActiveMarginAccounts marginAccounts={marginAccounts} />
+          <ActiveMarginAccounts marginAccounts={marginAccounts} accountAddress={accountAddress} />
         )}
       </div>
       <CreateMarginAccountModal
@@ -176,10 +176,10 @@ export default function BorrowAccountsPage() {
         setIsOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
-          if (!signer || !address || !selectedPool || !isAllowedToInteract) {
+          if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
             return;
           }
-          createBorrower(signer, selectedPool, address, onCommencement, onCompletion);
+          createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
         }}
       />
       <CreatedMarginAccountModal

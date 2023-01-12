@@ -5,10 +5,18 @@ import { MarginAccountCard } from './MarginAccountCard';
 
 export type ActiveMarginAccountsProps = {
   marginAccounts: MarginAccountPreview[];
+  accountAddress?: string;
 };
 
 export default function ActiveMarginAccounts(props: ActiveMarginAccountsProps) {
-  const { marginAccounts } = props;
+  const { marginAccounts, accountAddress } = props;
+  if (!accountAddress) {
+    return (
+      <Text size='M' weight='bold'>
+        Please connect your wallet to get started.
+      </Text>
+    );
+  }
   return (
     <div className='flex items-center justify-start flex-wrap gap-4'>
       {marginAccounts.length > 0 ? (
