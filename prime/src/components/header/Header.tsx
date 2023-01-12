@@ -11,6 +11,11 @@ const NAV_LINKS: NavBarLink[] = [
     label: 'Borrow',
     to: '/borrow',
   },
+  {
+    label: 'Earn',
+    to: 'https://earn.aloe.capital',
+    isExternal: true,
+  },
 ];
 
 const Nav = styled.nav`

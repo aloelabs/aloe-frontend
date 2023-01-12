@@ -15,6 +15,11 @@ const NAV_LINKS: NavBarLink[] = [
     label: 'Markets',
     to: '/markets',
   },
+  {
+    label: 'Borrow',
+    to: 'https://prime.aloe.capital',
+    isExternal: true,
+  },
 ];
 
 const Nav = styled.nav`
