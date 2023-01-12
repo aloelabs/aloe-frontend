@@ -12,10 +12,10 @@ export default function useClickOutside(
       }
     }
     if (shouldHandleClick) {
-      window.addEventListener('click', listener);
+      document.addEventListener('mousedown', listener);
     }
     return () => {
-      window.removeEventListener('click', listener);
+      document.removeEventListener('mousedown', listener);
     };
   }, [handler, ref, shouldHandleClick]);
 }
