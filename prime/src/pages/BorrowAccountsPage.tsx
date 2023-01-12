@@ -6,14 +6,12 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
-import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
+import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
@@ -38,10 +36,6 @@ const MARGIN_ACCOUNT_OPTIONS: DropdownOption<string>[] = [
   },
 ];
 
-const MarginAccountsContainner = styled.div`
-  ${tw`flex items-center justify-start flex-wrap gap-4`}
-`;
-
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
   const isAllowedToInteract = useGeoFencing(activeChain);
@@ -61,12 +55,12 @@ export default function BorrowAccountsPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address } = useAccount();
   const { data: signer } = useSigner();
-  // TODO: remove this once we have a better way of updating margin accounts
-  // Or rate limit the calls
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+  // MARK: block number
   const blockNumber = useBlockNumber({
     chainId: activeChain.id,
     watch: true,
+    // Keep this at 13 seconds for consistency between networks
     staleTime: 13_000,
   });
 
@@ -111,9 +105,6 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-    //TODO: temporary while we need metamask to fetch this info
-    //TODO: add a means of updating this periodically without having to rely
-    // on the block number changing (since arbitrum and optimism update too quickly)
   }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
 
   useEffectOnce(() => {
@@ -150,8 +141,6 @@ export default function BorrowAccountsPage() {
     }
   }
 
-  console.log(isLoadingMarginAccounts);
-
   return (
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
@@ -171,17 +160,15 @@ export default function BorrowAccountsPage() {
           New
         </FilledGradientButtonWithIcon>
       </div>
-      <MarginAccountsContainner>
+      <div className='flex items-center justify-start flex-wrap gap-4'>
         {isLoadingMarginAccounts ? (
           <div className='flex items-center justify-center w-full'>
             <AltSpinner size='M' />
           </div>
         ) : (
-          marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
-            <MarginAccountCard key={index} {...marginAccount} />
-          ))
+          <ActiveMarginAccounts marginAccounts={marginAccounts} />
         )}
-      </MarginAccountsContainner>
+      </div>
       <CreateMarginAccountModal
         availablePools={MARGIN_ACCOUNT_OPTIONS}
         isOpen={showConfirmModal}
@@ -190,7 +177,6 @@ export default function BorrowAccountsPage() {
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
           if (!signer || !address || !selectedPool || !isAllowedToInteract) {
-            // TODO
             return;
           }
           createBorrower(signer, selectedPool, address, onCommencement, onCompletion);
