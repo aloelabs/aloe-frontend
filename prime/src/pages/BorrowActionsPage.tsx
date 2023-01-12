@@ -14,6 +14,7 @@ import { ChainContext } from '../App';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
 import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
@@ -544,15 +545,28 @@ export default function BorrowActionsPage() {
           <Text size='L' weight='medium'>
             Uniswap Positions
           </Text>
-          <UniswapPositionTable
-            accountAddress={accountAddressParam || ''}
-            marginAccount={marginAccount}
-            marginAccountLensContract={marginAccountLensContract}
-            provider={provider}
-            uniswapPositions={displayedUniswapPositions}
-            isInTermsOfToken0={isToken0Selected}
-            showAsterisk={isShowingHypothetical}
-          />
+          {uniswapPositions.length === 0 ? (
+            <EmptyStateWrapper>
+              <EmptyStateContainer>
+                <EmptyStateSvgWrapper>
+                  <InboxIcon />
+                </EmptyStateSvgWrapper>
+                <Display size='XS' color={SECONDARY_COLOR}>
+                  A list of your open Uniswap positions will appear here.
+                </Display>
+              </EmptyStateContainer>
+            </EmptyStateWrapper>
+          ) : (
+            <UniswapPositionTable
+              accountAddress={accountAddressParam || ''}
+              marginAccount={marginAccount}
+              marginAccountLensContract={marginAccountLensContract}
+              provider={provider}
+              uniswapPositions={displayedUniswapPositions}
+              isInTermsOfToken0={isToken0Selected}
+              showAsterisk={isShowingHypothetical}
+            />
+          )}
         </div>
         <div className='w-full flex flex-col gap-4'>
           <Text size='L' weight='medium'>
