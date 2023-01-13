@@ -322,6 +322,9 @@ export default function PortfolioPage() {
   const noWallet = !isConnecting && !isConnected;
   const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
 
+  // The asset to be used as the default in the modals
+  const defaultAsset: Token | undefined = activeAsset ?? combinedBalances[0]?.token;
+
   return (
     <AppPage>
       <Container>
@@ -414,18 +417,18 @@ export default function PortfolioPage() {
           </Text>
         </div>
       </Container>
-      {activeAsset != null && (
+      {defaultAsset != null && (
         <>
           <SendCryptoModal
             options={uniqueTokens}
-            defaultOption={activeAsset}
+            defaultOption={defaultAsset}
             isOpen={isSendCryptoModalOpen}
             setIsOpen={setIsSendCryptoModalOpen}
             setPendingTxn={setPendingTxn}
           />
           <EarnInterestModal
             options={uniqueTokens}
-            defaultOption={activeAsset}
+            defaultOption={defaultAsset}
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
             setIsOpen={setIsEarnInterestModalOpen}
@@ -433,7 +436,7 @@ export default function PortfolioPage() {
           />
           <WithdrawModal
             options={uniqueTokens}
-            defaultOption={activeAsset}
+            defaultOption={defaultAsset}
             lendingPairs={lendingPairs}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
@@ -441,6 +444,7 @@ export default function PortfolioPage() {
           />
         </>
       )}
+
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
         txnHash={pendingTxn?.hash}
