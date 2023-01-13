@@ -115,7 +115,42 @@ const DesktopNavLink = styled(NavLink)`
   }
 `;
 
+const ExternalDesktopLink = styled.a`
+  width: fit-content;
+  padding: 20px 32px;
+  cursor: pointer;
+  user-select: none;
+
+  &.active {
+    color: rgba(255, 255, 255, 1);
+  }
+
+  :hover:not(&.active) {
+    color: ${FOOTER_LINK_TEXT_COLOR};
+  }
+
+  &.mobile {
+    border-bottom: 1px solid rgba(26, 41, 52, 1);
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    width: 100%;
+    padding: 12px 0px;
+  }
+`;
+
 const MobileNavLink = styled(NavLink)`
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+
+  &:hover {
+    background-color: rgba(26, 41, 52, 1);
+    border-radius: 8px;
+  }
+`;
+
+const MobileExternalLink = styled.a`
   display: flex;
   align-items: center;
   padding: 8px 16px;
@@ -152,6 +187,7 @@ const StyledPopoverPanel = styled(Popover.Panel)`
 export type NavBarLink = {
   label: string;
   to: string;
+  isExternal?: boolean;
 };
 
 export type NavBarProps = {
@@ -186,9 +222,15 @@ export function NavBar(props: NavBarProps) {
           <VerticalDivider />
           {links.map((link, index) => (
             <React.Fragment key={index}>
-              <DesktopNavLink key={link.to} to={link.to}>
-                <Text size='M'>{link.label}</Text>
-              </DesktopNavLink>
+              {link.isExternal ? (
+                <ExternalDesktopLink href={link.to} target='_blank' rel='noopener noreferrer'>
+                  <Text size='M'>{link.label}</Text>
+                </ExternalDesktopLink>
+              ) : (
+                <DesktopNavLink to={link.to}>
+                  <Text size='M'>{link.label}</Text>
+                </DesktopNavLink>
+              )}
               <VerticalDivider />
             </React.Fragment>
           ))}
@@ -220,11 +262,21 @@ export function NavBar(props: NavBarProps) {
       </DesktopTopNav>
       <MobileBottomNav>
         {props.links.map((link, index) => (
-          <MobileNavLink key={index} to={link.to}>
-            <Text size='M' weight='bold'>
-              {link.label}
-            </Text>
-          </MobileNavLink>
+          <React.Fragment key={index}>
+            {link.isExternal ? (
+              <MobileExternalLink href={link.to} target='_blank' rel='noopener noreferrer'>
+                <Text size='M' weight='bold'>
+                  {link.label}
+                </Text>
+              </MobileExternalLink>
+            ) : (
+              <MobileNavLink to={link.to}>
+                <Text size='M' weight='bold'>
+                  {link.label}
+                </Text>
+              </MobileNavLink>
+            )}
+          </React.Fragment>
         ))}
         <Popover className='flex'>
           <StyledPopoverButton>
