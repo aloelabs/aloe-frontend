@@ -8,8 +8,8 @@ import { ChainContext } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
-    label: 'Earn',
-    to: '/earn',
+    label: 'Portfolio',
+    to: '/portfolio',
   },
   {
     label: 'Markets',
