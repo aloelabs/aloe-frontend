@@ -17,14 +17,9 @@ import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginA
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
-import WelcomeModal from '../components/borrow/modal/WelcomeModal';
 import { createBorrower } from '../connector/FactoryActions';
 import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/Addresses';
-import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
-
-const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-borrow';
-const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 
 const MARGIN_ACCOUNT_OPTIONS: DropdownOption<string>[] = [
   {
@@ -51,7 +46,6 @@ export default function BorrowAccountsPage() {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
   const [isTxnPending, setIsTxnPending] = useState(false);
 
@@ -103,14 +97,6 @@ export default function BorrowAccountsPage() {
     //TODO: add a means of updating this periodically without having to rely
     // on the block number changing (since arbitrum and optimism update too quickly)
   }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
-
-  useEffectOnce(() => {
-    const shouldShowWelcomeModal =
-      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE;
-    if (shouldShowWelcomeModal && isAllowedToInteract) {
-      setShowWelcomeModal(true);
-    }
-  });
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -185,13 +171,6 @@ export default function BorrowAccountsPage() {
       />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
       <PendingTxnModal open={showSubmittingModal} setOpen={setShowSubmittingModal} />
-      <WelcomeModal
-        open={showWelcomeModal}
-        setOpen={setShowWelcomeModal}
-        onConfirm={() => {
-          localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
-        }}
-      />
     </AppPage>
   );
 }
