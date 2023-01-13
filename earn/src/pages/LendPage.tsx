@@ -19,7 +19,6 @@ import Tooltip from '../components/common/Tooltip';
 import BalanceSlider from '../components/lend/BalanceSlider';
 import LendPairCard from '../components/lend/LendPairCard';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
-import WelcomeModal from '../components/lend/modal/WelcomeModal';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import {
@@ -33,9 +32,6 @@ import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
 import { getTokenByTicker, getTokens } from '../data/TokenData';
 import { formatUSD, roundPercentage } from '../util/Numbers';
-
-const WELCOME_MODAL_LOCAL_STORAGE_KEY = 'acknowledged-welcome-modal-lend';
-const WELCOME_MODAL_LOCAL_STORAGE_VALUE = 'acknowledged';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -90,25 +86,15 @@ export default function LendPage() {
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   // MARK: wagmi hooks
   const account = useAccount();
-  const isOffline = !account.isConnected && !account.isConnecting;
   const provider = useProvider({ chainId: activeChain?.id });
   const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
     chainId: activeChain.id,
   });
-
-  useEffect(() => {
-    const shouldShowWelcomeModal =
-      localStorage.getItem(WELCOME_MODAL_LOCAL_STORAGE_KEY) !== WELCOME_MODAL_LOCAL_STORAGE_VALUE && !isOffline;
-    if (shouldShowWelcomeModal) {
-      setShowWelcomeModal(true);
-    }
-  }, [isOffline]);
 
   useEffect(() => {
     const options: MultiDropdownOption<Token>[] = getTokens(activeChain.id).map((token) => {
@@ -399,13 +385,6 @@ export default function LendPage() {
           )}
         </div>
       </div>
-      <WelcomeModal
-        open={showWelcomeModal}
-        setOpen={setShowWelcomeModal}
-        onConfirm={() => {
-          localStorage.setItem(WELCOME_MODAL_LOCAL_STORAGE_KEY, WELCOME_MODAL_LOCAL_STORAGE_VALUE);
-        }}
-      />
     </AppPage>
   );
 }
