@@ -180,11 +180,6 @@ export default function ReferralModal(props: ReferralModalProps) {
         />
       </div>
       <InteractionContainer>
-        {isLoading && (
-          <div className='flex justify-center relative'>
-            <AltSpinner size='S' />
-          </div>
-        )}
         {!isLoading && referralLink == null && pendingTxn == null && (
           <FilledStylizedButton
             size='M'
@@ -202,8 +197,8 @@ export default function ReferralModal(props: ReferralModalProps) {
             Generate Link
           </FilledStylizedButton>
         )}
-        {!isLoading && pendingTxn != null && (
-          <div className='flex justify-center relative'>
+        {(isLoading || (!isLoading && pendingTxn != null)) && (
+          <div className='flex justify-center relative top-1/2'>
             <AltSpinner size='S' />
           </div>
         )}
