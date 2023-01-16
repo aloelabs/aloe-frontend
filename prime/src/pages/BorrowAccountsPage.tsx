@@ -4,15 +4,14 @@ import { ContractReceipt } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
-import styled from 'styled-components';
-import tw from 'twin.macro';
 import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
-import { MarginAccountCard } from '../components/borrow/MarginAccountCard';
+import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
@@ -32,10 +31,6 @@ const MARGIN_ACCOUNT_OPTIONS: DropdownOption<string>[] = [
   },
 ];
 
-const MarginAccountsContainner = styled.div`
-  ${tw`flex items-center justify-start flex-wrap gap-4`}
-`;
-
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
   const isAllowedToInteract = useGeoFencing(activeChain);
@@ -47,18 +42,19 @@ export default function BorrowAccountsPage() {
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
+  const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
-  const { address } = useAccount();
+  const { address: accountAddress } = useAccount();
   const { data: signer } = useSigner();
-  // TODO: remove this once we have a better way of updating margin accounts
-  // Or rate limit the calls
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+  // MARK: block number
   const blockNumber = useBlockNumber({
     chainId: activeChain.id,
     watch: true,
+    // Keep this at 13 seconds for consistency between networks
     staleTime: 13_000,
   });
 
@@ -77,26 +73,33 @@ export default function BorrowAccountsPage() {
         setMarginAccounts([]);
         return;
       }
-      const updatedMarginAccounts = await fetchMarginAccountPreviews(
-        activeChain,
-        borrowerLensContract,
-        provider,
-        userAddress
-      );
-      if (mounted) {
-        setMarginAccounts(updatedMarginAccounts);
+      try {
+        const updatedMarginAccounts = await fetchMarginAccountPreviews(
+          activeChain,
+          borrowerLensContract,
+          provider,
+          userAddress
+        );
+        if (mounted) {
+          setMarginAccounts(updatedMarginAccounts);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (mounted) {
+          setIsLoadingMarginAccounts(false);
+        }
       }
     }
-    if (address) {
-      fetch(address);
+    if (accountAddress) {
+      fetch(accountAddress);
+    } else {
+      setIsLoadingMarginAccounts(false);
     }
     return () => {
       mounted = false;
     };
-    //TODO: temporary while we need metamask to fetch this info
-    //TODO: add a means of updating this periodically without having to rely
-    // on the block number changing (since arbitrum and optimism update too quickly)
-  }, [activeChain, address, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
+  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -138,16 +141,20 @@ export default function BorrowAccountsPage() {
           onClick={() => {
             setShowConfirmModal(true);
           }}
-          disabled={address === undefined || !isAllowedToInteract}
+          disabled={accountAddress === undefined || !isAllowedToInteract}
         >
           New
         </FilledGradientButtonWithIcon>
       </div>
-      <MarginAccountsContainner>
-        {marginAccounts.map((marginAccount: MarginAccountPreview, index: number) => (
-          <MarginAccountCard key={index} {...marginAccount} />
-        ))}
-      </MarginAccountsContainner>
+      <div className='flex items-center justify-start flex-wrap gap-4'>
+        {isLoadingMarginAccounts ? (
+          <div className='flex items-center justify-center w-full'>
+            <AltSpinner size='M' />
+          </div>
+        ) : (
+          <ActiveMarginAccounts marginAccounts={marginAccounts} accountAddress={accountAddress} />
+        )}
+      </div>
       <CreateMarginAccountModal
         availablePools={MARGIN_ACCOUNT_OPTIONS}
         isOpen={showConfirmModal}
@@ -155,11 +162,10 @@ export default function BorrowAccountsPage() {
         setIsOpen={setShowConfirmModal}
         onConfirm={(selectedPool: string | null) => {
           setIsTxnPending(true);
-          if (!signer || !address || !selectedPool || !isAllowedToInteract) {
-            // TODO
+          if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
             return;
           }
-          createBorrower(signer, selectedPool, address, onCommencement, onCompletion);
+          createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
         }}
       />
       <CreatedMarginAccountModal
