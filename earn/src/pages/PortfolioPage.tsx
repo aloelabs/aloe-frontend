@@ -2,23 +2,25 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { getSessionStorageInteger, setSessionStorageInteger } from 'shared/lib/util/SessionStorage';
 import styled from 'styled-components';
 import { useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
-import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import { ReactComponent as UsersIcon } from '../assets/svg/users.svg';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/portfolio/modal/PendingTxnModal';
+import ReferralModal from '../components/portfolio/modal/ReferralModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
@@ -108,8 +110,11 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [sessionReferrer, setSessionReferrer] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
@@ -123,6 +128,24 @@ export default function PortfolioPage() {
     });
     return Array.from(tokens);
   }, [lendingPairs]);
+
+  /**
+   * Handle referral search param
+   */
+  useEffect(() => {
+    const existingSessionReferrer = getSessionStorageInteger('referrer');
+    if (searchParams.has('ref')) {
+      const referrer = parseInt(searchParams.get('ref') ?? '');
+      if (referrer > 0) {
+        setSessionReferrer(referrer);
+        setSessionStorageInteger('referrer', referrer);
+      }
+    } else if (existingSessionReferrer) {
+      setSessionReferrer(existingSessionReferrer);
+    }
+  }, [searchParams]);
+
+  console.log('sessionReferrer', sessionReferrer);
 
   /**
    * Get the latest and historical prices for all tokens
@@ -386,7 +409,7 @@ export default function PortfolioPage() {
               setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton label={'Borrow Crypto'} Icon={<DollarIcon />} onClick={() => {}} disabled={true} />
+          <PortfolioActionButton label={'Referral'} Icon={<UsersIcon />} onClick={() => setIsReferralModalOpen(true)} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
@@ -430,6 +453,7 @@ export default function PortfolioPage() {
             isOpen={isEarnInterestModalOpen}
             setIsOpen={setIsEarnInterestModalOpen}
             setPendingTxn={setPendingTxn}
+            referralCode={sessionReferrer}
           />
           <WithdrawModal
             options={uniqueTokens}
@@ -438,6 +462,12 @@ export default function PortfolioPage() {
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}
+          />
+          <ReferralModal
+            options={lendingPairs}
+            defaultOption={lendingPairs[0]}
+            isOpen={isReferralModalOpen}
+            setIsOpen={setIsReferralModalOpen}
           />
         </>
       )}

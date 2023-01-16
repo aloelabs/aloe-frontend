@@ -279,6 +279,7 @@ export type EarnInterestModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
+  referralCode: number | null;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
