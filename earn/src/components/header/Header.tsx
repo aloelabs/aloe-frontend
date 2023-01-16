@@ -8,12 +8,17 @@ import { ChainContext } from '../../App';
 
 const NAV_LINKS: NavBarLink[] = [
   {
-    label: 'Earn',
-    to: '/earn',
+    label: 'Portfolio',
+    to: '/portfolio',
   },
   {
     label: 'Markets',
     to: '/markets',
+  },
+  {
+    label: 'Borrow',
+    to: 'https://prime.aloe.capital',
+    isExternal: true,
   },
 ];
 
