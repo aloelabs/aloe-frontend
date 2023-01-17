@@ -11,6 +11,7 @@ import { useAccount, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
+import { TOPIC0_ENROLL_COURIER_EVENT } from '../../../data/constants/Signatures';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { makeEtherscanRequest } from '../../../util/Etherscan';
@@ -119,7 +120,7 @@ export default function ReferralModal(props: ReferralModalProps) {
       const res = await makeEtherscanRequest(
         7537163,
         selectedToken.address,
-        ['0xf2403ab87a0324b325bde5c839afbc7b00e1b5d73169ba8a42bb7e552abd677f'],
+        [TOPIC0_ENROLL_COURIER_EVENT],
         false,
         activeChain
       );
