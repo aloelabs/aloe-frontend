@@ -29,10 +29,10 @@ const InteractionContainer = styled.div`
  * @returns a random 32-bit unsigned integer that is not in existingCourierIds
  */
 function generateCourierId(existingCourierIds: number[]): number {
-  let courierId = Math.floor(Math.random() * 2 ** 32);
-  while (existingCourierIds.includes(courierId)) {
+  let courierId: number;
+  do {
     courierId = Math.floor(Math.random() * 2 ** 32);
-  }
+  } while (existingCourierIds.includes(courierId));
   return courierId;
 }
 
