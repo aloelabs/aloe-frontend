@@ -227,7 +227,7 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidt
   overflow-y: auto;
   min-height: 150px;
   max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
-  min-width: 300px;
+  min-width: 400px;
   max-width: ${(props) => props.maxWidth || '450px'};
   max-height: ${(props) => props.maxHeight || '570px'};
   height: max-content;
@@ -243,6 +243,11 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidt
   }
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* On mobile, the modal should take up (almost) the full screen */
+  @media (max-width: 450px) {
+    min-width: 90vw;
   }
 `;
 
