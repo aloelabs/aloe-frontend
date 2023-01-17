@@ -93,17 +93,16 @@ export default function ReferralModal(props: ReferralModalProps) {
       if (pendingTxn) {
         const receipt = await pendingTxn.wait();
         setPendingTxn(null);
-        if (receipt.status === 1) {
-          const logs = receipt.logs;
-          const enrollCourierLog = logs.find(
-            (log) => log.address.toLowerCase() === selectedToken.address.toLowerCase()
-          );
-          const newCourierIdTopic = enrollCourierLog?.topics[1];
-          if (newCourierIdTopic) {
-            const newCourierId = ethers.utils.defaultAbiCoder.decode(['uint256'], newCourierIdTopic);
-            if (mounted) {
-              setCourierId(parseInt(newCourierId[0].toString()));
-            }
+        // If the transaction did not succeed, return
+        if (receipt.status !== 1) return;
+        const enrollCourierLog = receipt.logs.find(
+          (log) => log.address.toLowerCase() === selectedToken.address.toLowerCase()
+        );
+        const newCourierIdTopic = enrollCourierLog?.topics[1];
+        if (newCourierIdTopic) {
+          const newCourierId = ethers.utils.defaultAbiCoder.decode(['uint256'], newCourierIdTopic);
+          if (mounted) {
+            setCourierId(parseInt(newCourierId[0].toString()));
           }
         }
       }
