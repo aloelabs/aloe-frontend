@@ -93,8 +93,14 @@ const TooltipContainer = styled.div.attrs(
     transform: rotate(-45deg);
     border-radius: 0 4px 0 0;
     background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
-    border-left: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
-    border-bottom: ${(props) => (props.filled ? 'none;' : '1px solid rgba(43, 64, 80, 1);')};
+    ${(props) =>
+      !props.filled && props.position.startsWith('top')
+        ? 'border-left: 1px solid rgba(43, 64, 80, 1);'
+        : 'border-right: 1px solid rgba(43, 64, 80, 1);'};
+    ${(props) =>
+      !props.filled && props.position.startsWith('top')
+        ? 'border-bottom: 1px solid rgba(43, 64, 80, 1);'
+        : 'border-top: 1px solid rgba(43, 64, 80, 1);'};
   }
 `;
 
