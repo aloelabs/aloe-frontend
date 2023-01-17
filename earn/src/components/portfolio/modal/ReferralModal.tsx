@@ -155,10 +155,10 @@ export default function ReferralModal(props: ReferralModalProps) {
 
   const referralLink = useMemo(() => {
     if (courierId != null) {
-      return `https://earn.aloe.capital/?ref=${courierId}`;
+      return `https://earn.aloe.capital/?ref=${courierId}&lender=${selectedToken.address}`;
     }
     return null;
-  }, [courierId]);
+  }, [courierId, selectedToken.address]);
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Referral' maxWidth='500px'>
