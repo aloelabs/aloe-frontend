@@ -11,6 +11,7 @@ import { useAccount, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
+import { TOPIC0_ENROLL_COURIER_EVENT } from '../../../data/constants/Signatures';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { makeEtherscanRequest } from '../../../util/Etherscan';
@@ -18,21 +19,23 @@ import CopyToClipboard from '../../common/CopyToClipboard';
 import PairDropdown from '../../common/PairDropdown';
 import TokenDropdown from '../../common/TokenDropdown';
 
+const COURIER_CUT = 250; // 2.5%
+
 const InteractionContainer = styled.div`
   width: 100%;
   height: 64px;
 `;
 
 /**
- * Gen
+ * Generates a random 32-bit unsigned integer that is not in existingCourierIdss
  * @param existingCourierIds an array of existing courier IDs
  * @returns a random 32-bit unsigned integer that is not in existingCourierIds
  */
 function generateCourierId(existingCourierIds: number[]): number {
-  let courierId = Math.floor(Math.random() * 2 ** 32);
-  while (existingCourierIds.includes(courierId)) {
+  let courierId: number;
+  do {
     courierId = Math.floor(Math.random() * 2 ** 32);
-  }
+  } while (existingCourierIds.includes(courierId));
   return courierId;
 }
 
@@ -93,17 +96,16 @@ export default function ReferralModal(props: ReferralModalProps) {
       if (pendingTxn) {
         const receipt = await pendingTxn.wait();
         setPendingTxn(null);
-        if (receipt.status === 1) {
-          const logs = receipt.logs;
-          const enrollCourierLog = logs.find(
-            (log) => log.address.toLowerCase() === selectedToken.address.toLowerCase()
-          );
-          const newCourierIdTopic = enrollCourierLog?.topics[1];
-          if (newCourierIdTopic) {
-            const newCourierId = ethers.utils.defaultAbiCoder.decode(['uint256'], newCourierIdTopic);
-            if (mounted) {
-              setCourierId(parseInt(newCourierId[0].toString()));
-            }
+        // If the transaction did not succeed, return
+        if (receipt.status !== 1) return;
+        const enrollCourierLog = receipt.logs.find(
+          (log) => log.address.toLowerCase() === selectedToken.address.toLowerCase()
+        );
+        const newCourierIdTopic = enrollCourierLog?.topics[1];
+        if (newCourierIdTopic) {
+          const newCourierId = ethers.utils.defaultAbiCoder.decode(['uint256'], newCourierIdTopic);
+          if (mounted) {
+            setCourierId(parseInt(newCourierId[0].toString()));
           }
         }
       }
@@ -120,7 +122,7 @@ export default function ReferralModal(props: ReferralModalProps) {
       const res = await makeEtherscanRequest(
         7537163,
         selectedToken.address,
-        ['0xf2403ab87a0324b325bde5c839afbc7b00e1b5d73169ba8a42bb7e552abd677f'],
+        [TOPIC0_ENROLL_COURIER_EVENT],
         false,
         activeChain
       );
@@ -163,7 +165,8 @@ export default function ReferralModal(props: ReferralModalProps) {
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Referral' maxWidth='500px'>
       <Text size='M' className='mb-8'>
-        Share your referral link to earn a cut of the interest earned by your referrals.
+        Share your referral link with friends and earn a portion of their interest. You'll earn more and your friends
+        will keep more.
       </Text>
       <div className='w-full flex flex-col gap-8 mb-8'>
         <PairDropdown
@@ -189,7 +192,7 @@ export default function ReferralModal(props: ReferralModalProps) {
               setIsPending(true);
               const generatedCourierId = generateCourierId(existingCourierIds);
               contractWrite?.({
-                recklesslySetUnpreparedArgs: [generatedCourierId, account.address, 5_000],
+                recklesslySetUnpreparedArgs: [generatedCourierId, account.address, COURIER_CUT],
                 recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
               });
             }}
@@ -204,6 +207,25 @@ export default function ReferralModal(props: ReferralModalProps) {
         )}
         {!isLoading && referralLink != null && <CopyToClipboard text={referralLink || ''} />}
       </InteractionContainer>
+      <div className='flex flex-col justify-center align-middle mt-4'>
+        <Text size='M' weight='bold' className='text-center'>
+          Summary
+        </Text>
+        <Text size='M' className='text-center'>
+          Their Fee:
+          <div className='inline-flex ml-1 gap-1'>
+            <strong className='line-through'>5.00%</strong>
+            <strong className='text-green-500'>2.50%</strong>
+          </div>
+        </Text>
+        <Text size='M' className='text-center'>
+          You Earn:
+          <div className='inline-flex ml-1 gap-1'>
+            <strong className='text-green-500'>2.50%</strong>
+            <span>(of their interest)</span>
+          </div>
+        </Text>
+      </div>
     </Modal>
   );
 }

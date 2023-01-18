@@ -6,10 +6,12 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { ChainContext } from '../../App';
+import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { LendingPair } from '../../data/LendingPair';
 import { Token } from '../../data/Token';
 import { makeEtherscanRequest } from '../../util/Etherscan';
 import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
+import Tooltip from '../common/Tooltip';
 
 const Container = styled.div`
   width: 100%;
@@ -75,6 +77,10 @@ const CardBody = styled.div`
   align-items: center;
   gap: 24px;
   margin-top: 24px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const LargeCardBodyItem = styled.div`
@@ -96,6 +102,10 @@ const SmallCardBodyItem = styled.div`
   padding: 16px;
   background-color: rgb(13, 23, 30);
   border-radius: 8px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    width: 100%;
+  }
 `;
 
 /**
@@ -198,8 +208,9 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   return (
     <Container key={activeAsset.address + selectedLendingPair.kitty0.address}>
       <CardHeader>
-        <Text size='S' color='rgba(130, 160, 182, 1)'>
-          Lending Pair Peer (Collateral Asset)
+        <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
+          Lending Pair Peer
+          <Tooltip buttonSize='S' content='Collateral Asset' position='bottom-center' />
         </Text>
         <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} small={true} />
       </CardHeader>

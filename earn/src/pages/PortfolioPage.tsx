@@ -31,6 +31,7 @@ import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
@@ -71,9 +72,18 @@ const PortfolioActionButtonsContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   column-gap: 16px;
+  row-gap: 16px;
   margin-top: 20px;
   overflow-x: auto;
   white-space: nowrap;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export type PriceEntry = {
