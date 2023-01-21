@@ -129,28 +129,28 @@ export async function fetchMarginAccountPreviews(
       const token1 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token1);
       const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
 
-      const assetsData: BigNumber[] = await borrowerLensContract.getAssets(accountAddress, false);
-      const liabilitiesData: BigNumber[] = await borrowerLensContract.getLiabilities(accountAddress);
+      const assetsData = await borrowerLensContract.getAssets(accountAddress);
+      const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
 
       const assets: Assets = {
-        token0Raw: Big(assetsData[0].toString())
+        token0Raw: Big(assetsData.fixed0.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        token1Raw: Big(assetsData[1].toString())
+        token1Raw: Big(assetsData.fixed1.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
-        uni0: Big(assetsData[2].toString())
+        uni0: Big(assetsData.fluid0C.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        uni1: Big(assetsData[3].toString())
+        uni1: Big(assetsData.fluid1C.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
       };
       const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData[0].toString())
+        amount0: Big(liabilitiesData.amount0.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        amount1: Big(liabilitiesData[1].toString())
+        amount1: Big(liabilitiesData.amount1.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
       };
@@ -181,7 +181,7 @@ export async function fetchMarginAccount(
     marginAccountContract.LENDER0(),
     marginAccountContract.LENDER1(),
     marginAccountContract.UNISWAP_POOL(),
-    marginAccountLensContract.getAssets(marginAccountAddress, false),
+    marginAccountLensContract.getAssets(marginAccountAddress),
     marginAccountLensContract.getLiabilities(marginAccountAddress),
   ]);
 
@@ -191,28 +191,28 @@ export async function fetchMarginAccount(
 
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
-  const assetsData = results[5] as BigNumber[];
-  const liabilitiesData = results[6] as BigNumber[];
+  const assetsData = results[5];
+  const liabilitiesData = results[6];
 
   const assets: Assets = {
-    token0Raw: toBig(assetsData[0])
+    token0Raw: Big(assetsData.fixed0.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    token1Raw: toBig(assetsData[1])
+    token1Raw: Big(assetsData.fixed1.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
-    uni0: toBig(assetsData[2])
+    uni0: Big(assetsData.fluid0C.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    uni1: toBig(assetsData[3])
+    uni1: Big(assetsData.fluid1C.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
   const liabilities: Liabilities = {
-    amount0: toBig(liabilitiesData[0])
+    amount0: Big(liabilitiesData.amount0.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    amount1: toBig(liabilitiesData[1])
+    amount1: Big(liabilitiesData.amount1.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
