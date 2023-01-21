@@ -1,11 +1,16 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { Address, SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { getSessionStorageInteger, setSessionStorageInteger } from 'shared/lib/util/SessionStorage';
+import {
+  getSessionStorageInteger,
+  getSessionStorageString,
+  setSessionStorageInteger,
+  setSessionStorageString,
+} from 'shared/lib/util/SessionStorage';
 import styled from 'styled-components';
 import { useAccount, useProvider } from 'wagmi';
 
@@ -36,7 +41,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
-import { getTokenByTicker } from '../data/TokenData';
+import { getToken, getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
@@ -105,6 +110,11 @@ export type TokenBalance = {
   pairName: string;
 };
 
+export type ReferralData = {
+  courierId: number;
+  lender: Token;
+};
+
 export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
@@ -123,7 +133,7 @@ export default function PortfolioPage() {
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
-  const [sessionReferrer, setSessionReferrer] = useState<number | null>(null);
+  const [sessionReferrer, setSessionReferrer] = useState<ReferralData | null>(null);
   const [searchParams] = useSearchParams();
 
   const provider = useProvider({ chainId: activeChain.id });
@@ -139,23 +149,39 @@ export default function PortfolioPage() {
     return Array.from(tokens);
   }, [lendingPairs]);
 
+  const kitties = useMemo(() => {
+    return lendingPairs.flatMap((pair) => [pair.kitty0, pair.kitty1]);
+  }, [lendingPairs]);
+
   /**
    * Handle referral search param
    */
   useEffect(() => {
     const existingSessionReferrer = getSessionStorageInteger('referrer');
-    if (searchParams.has('ref')) {
+    const existingSessionLenderAddress = getSessionStorageString('lender');
+    if (searchParams.has('ref') && searchParams.has('lender') && kitties.length > 0) {
       const referrer = parseInt(searchParams.get('ref') ?? '');
-      if (referrer > 0) {
-        setSessionReferrer(referrer);
+      const lenderAddress = searchParams.get('lender');
+      const lender = kitties.find((kitty) => kitty.address === lenderAddress) ?? null;
+      if (referrer > 0 && lender != null) {
+        setSessionReferrer({
+          courierId: referrer,
+          lender,
+        });
         setSessionStorageInteger('referrer', referrer);
+        setSessionStorageString('lender', lender.address);
       }
-    } else if (existingSessionReferrer) {
-      setSessionReferrer(existingSessionReferrer);
+    } else if (existingSessionReferrer != null && existingSessionLenderAddress != null) {
+      const existingSessionLender = getToken(activeChain.id, existingSessionLenderAddress as Address);
+      if (existingSessionLender == null) {
+        return;
+      }
+      setSessionReferrer({
+        courierId: existingSessionReferrer,
+        lender: existingSessionLender,
+      });
     }
-  }, [searchParams]);
-
-  console.log('sessionReferrer', sessionReferrer);
+  }, [activeChain.id, searchParams, kitties]);
 
   /**
    * Get the latest and historical prices for all tokens
@@ -461,9 +487,9 @@ export default function PortfolioPage() {
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
+            referralData={sessionReferrer}
             setIsOpen={setIsEarnInterestModalOpen}
             setPendingTxn={setPendingTxn}
-            referralCode={sessionReferrer}
           />
           <WithdrawModal
             options={uniqueTokens}

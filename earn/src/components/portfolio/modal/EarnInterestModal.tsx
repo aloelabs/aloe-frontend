@@ -1,6 +1,7 @@
 import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
@@ -10,6 +11,7 @@ import { Address, useAccount, useBalance, useContractWrite, useProvider, useSign
 
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
+import KittyABI from '../../../assets/abis/Kitty.json';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
@@ -17,9 +19,11 @@ import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.sv
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
+import { useBalanceOfUnderlying } from '../../../data/hooks/UseUnderlyingBalanceOf';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
+import { ReferralData } from '../../../pages/PortfolioPage';
 import { formatNumberInput, roundPercentage, toBig, truncateDecimals } from '../../../util/Numbers';
 import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
@@ -36,6 +40,7 @@ enum ConfirmButtonState {
   PENDING,
   LOADING,
   READY,
+  PERMIT_COURIER,
 }
 
 function getConfirmButton(
@@ -48,6 +53,12 @@ function getConfirmButton(
         text: `Insufficient ${token.ticker}`,
         Icon: <AlertTriangleIcon />,
         enabled: false,
+      };
+    case ConfirmButtonState.PERMIT_COURIER:
+      return {
+        text: 'Use Referral Discount',
+        Icon: <CheckIcon />,
+        enabled: true,
       };
     case ConfirmButtonState.PERMIT_ASSET:
       return {
@@ -87,16 +98,18 @@ type DepositButtonProps = {
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
+  courierId: number | null;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, courierId, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
   const [canUsePermit, setCanUsePermit] = useState<boolean>(false);
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
+  const [courierPermitData, setCourierPermitData] = useState<PermitData | undefined>(undefined);
 
   const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
 
@@ -105,6 +118,9 @@ function DepositButton(props: DepositButtonProps) {
   const { data: signer } = useSigner();
 
   const provider = useProvider();
+
+  const kittyBalance = useBalanceOfUnderlying(token, kitty, accountAddress);
+  const numericKittyBalance: Big | null = useMemo(() => (kittyBalance ? new Big(kittyBalance) : null), [kittyBalance]);
 
   const {
     write: depositUsingApprovalFlow,
@@ -116,6 +132,19 @@ function DepositButton(props: DepositButtonProps) {
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
     functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
+  });
+
+  const {
+    write: depositUsingApprovalFlowWithCourier,
+    isSuccess: successfullyDepositedWithApprovalWithCourier,
+    isLoading: isLoadingApprovalFlowWithCourier,
+    data: approvalFlowDataWithCourier,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    mode: 'recklesslyUnprepared',
+    functionName: 'depositWithApprove(address,uint256,uint32,uint256,uint8,bytes32,bytes32)',
     chainId: activeChain.id,
   });
 
@@ -132,7 +161,22 @@ function DepositButton(props: DepositButtonProps) {
     chainId: activeChain.id,
   });
 
+  const {
+    write: depositUsingPermitFlowWithCourier,
+    isSuccess: successfullyDepositedWithPermitWithCourier,
+    isLoading: isLoadingPermitFlowWithCourier,
+    data: permitFlowDataWithCourier,
+  } = useContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    mode: 'recklesslyUnprepared',
+    functionName:
+      'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32,uint32,uint8,bytes32,bytes32)',
+    chainId: activeChain.id,
+  });
+
   const erc20Contract = useMemo(() => new ethers.Contract(token.address, ERC20ABI, provider), [token, provider]);
+  const kittyContract = useMemo(() => new ethers.Contract(kitty.address, KittyABI, provider), [kitty, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -148,9 +192,14 @@ function DepositButton(props: DepositButtonProps) {
     };
   }, [token, provider, erc20Contract]);
 
-  const contractDidSucceed = successfullyDepositedWithApproval || successfullyDepositedWithPermit;
-  const contractData = approvalFlowData ?? permitFlowData;
-  const contractIsLoading = isLoadingApprovalFlow || isLoadingPermitFlow;
+  const contractDidSucceed =
+    successfullyDepositedWithApproval ||
+    successfullyDepositedWithPermit ||
+    successfullyDepositedWithPermitWithCourier ||
+    successfullyDepositedWithApprovalWithCourier;
+  const contractData = approvalFlowData ?? permitFlowData ?? permitFlowDataWithCourier ?? approvalFlowDataWithCourier;
+  const contractIsLoading =
+    isLoadingApprovalFlow || isLoadingPermitFlow || isLoadingPermitFlowWithCourier || isLoadingApprovalFlowWithCourier;
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -169,11 +218,16 @@ function DepositButton(props: DepositButtonProps) {
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
+  const needsToPermitCourier =
+    courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
+
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (canUsePermit) {
     if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (needsToPermitCourier) {
+      confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
     } else if (!permitData) {
       confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
     } else if (isPending) {
@@ -184,6 +238,8 @@ function DepositButton(props: DepositButtonProps) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
     } else if (loadingApproval) {
       confirmButtonState = ConfirmButtonState.LOADING;
+    } else if (needsToPermitCourier) {
+      confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
     } else if (needsApproval && isPending) {
       confirmButtonState = ConfirmButtonState.PENDING;
     } else if (needsApproval) {
@@ -219,7 +275,7 @@ function DepositButton(props: DepositButtonProps) {
           spender: ALOE_II_ROUTER_ADDRESS,
           value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
         };
-        const deadline = (Date.now() / 1000 + 60 * 5).toFixed(0);
+        const deadline = courierPermitData?.deadline ?? (Date.now() / 1000 + 60 * 5).toFixed(0);
 
         getErc2612Signature(signer!, activeChain.id, erc20Contract, approve, deadline).then((signature) => {
           setPermitData({ signature, approve, deadline });
@@ -227,10 +283,45 @@ function DepositButton(props: DepositButtonProps) {
         });
 
         break;
+      case ConfirmButtonState.PERMIT_COURIER:
+        setIsPending(true);
+
+        const approveWithCourier = {
+          owner: accountAddress,
+          spender: ALOE_II_ROUTER_ADDRESS,
+          value: 1,
+        };
+        const deadlineWithCourier = (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+        getErc2612Signature(signer!, activeChain.id, kittyContract, approveWithCourier, deadlineWithCourier).then(
+          (signature) => {
+            setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
+            setIsPending(false);
+          }
+        );
+
+        break;
       case ConfirmButtonState.READY:
         setIsPending(true);
 
-        if (permitData) {
+        if (permitData && courierPermitData && courierId) {
+          depositUsingPermitFlowWithCourier?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+              permitData.approve.value,
+              permitData.deadline,
+              permitData.signature.v,
+              permitData.signature.r,
+              permitData.signature.s,
+              courierId,
+              courierPermitData.signature.v,
+              courierPermitData.signature.r,
+              courierPermitData.signature.s,
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        } else if (permitData) {
           depositUsingPermitFlow?.({
             recklesslySetUnpreparedArgs: [
               kitty.address,
@@ -240,6 +331,19 @@ function DepositButton(props: DepositButtonProps) {
               permitData.signature.v,
               permitData.signature.r,
               permitData.signature.s,
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
+          });
+        } else if (!permitData && courierPermitData && courierId) {
+          depositUsingApprovalFlowWithCourier?.({
+            recklesslySetUnpreparedArgs: [
+              kitty.address,
+              ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
+              courierId,
+              courierPermitData.deadline,
+              courierPermitData.signature.v,
+              courierPermitData.signature.r,
+              courierPermitData.signature.s,
             ],
             recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
           });
@@ -279,13 +383,13 @@ export type EarnInterestModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
-  referralCode: number | null;
+  referralData: ReferralData | null;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, referralData, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
@@ -448,6 +552,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
+            courierId={referralData?.lender.address === activeKitty.address ? referralData.courierId : null}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {

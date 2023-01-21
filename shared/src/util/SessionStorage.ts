@@ -1,19 +1,47 @@
 /**
+ * Get a string value from session storage. If the value is not set, return null.
+ * @param key The key to get the value for.
+ * @returns The value from session storage, or null if the value is not set.
+ */
+export function getSessionStorageString(key: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+/**
+ * Set a string value in session storage.
+ * @param key The key to set the value for.
+ * @param value The value to set.
+ */
+export function setSessionStorageString(key: string, value: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+/**
  * Get an integer value from session storage. If the value is not set, return null.
  * @param key The key to get the value for.
  * @returns The value from session storage, or null if the value is not set.
  */
 export function getSessionStorageInteger(key: string): number | null {
-  if (typeof window === 'undefined') {
+  const value = getSessionStorageString(key);
+  if (value === null) {
     return null;
   }
-  try {
-    const value = window.sessionStorage.getItem(key);
-    return value ? parseInt(value) : null;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+  return parseInt(value, 10);
 }
 
 /**
@@ -22,12 +50,5 @@ export function getSessionStorageInteger(key: string): number | null {
  * @param value The value to set.
  */
 export function setSessionStorageInteger(key: string, value: number): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  try {
-    window.sessionStorage.setItem(key, value.toString());
-  } catch (error) {
-    console.error(error);
-  }
+  setSessionStorageString(key, value.toString());
 }
