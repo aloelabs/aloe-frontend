@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
 
+import { ChainContext } from '../../App';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import {
   AccountState,
@@ -118,6 +119,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
+  const { activeChain } = useContext(ChainContext);
+
   // actions
   const [userInputFields, setUserInputFields] = useState<(string[] | undefined)[]>([]);
   const [actionOutputs, setActionOutputs] = useState<ActionCardOutput[]>([]);
@@ -129,14 +132,16 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
   const { data: userBalance0Asset } = useBalance({
-    addressOrName: userAddress,
+    address: userAddress ?? '0x',
     token: token0.address,
     watch: true,
+    chainId: activeChain.id,
   });
   const { data: userBalance1Asset } = useBalance({
-    addressOrName: userAddress,
+    address: userAddress ?? '0x',
     token: token1.address,
     watch: true,
+    chainId: activeChain.id,
   });
 
   // MARK: logic to ensure that listed balances and MAXes work

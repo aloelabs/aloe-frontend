@@ -63,7 +63,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
 
   // MARK: wagmi hooks
-  const provider = useProvider();
+  const provider = useProvider({ chainId: activeChain.id });
 
   // MARK: chart data and other fetched state
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
