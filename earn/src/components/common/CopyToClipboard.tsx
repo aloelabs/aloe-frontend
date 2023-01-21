@@ -25,9 +25,17 @@ export default function CopyToClipboard(props: CopyToClipboardProps) {
   return (
     <Container>
       <Text size='M' className='nowrap'>
-        {text}
+        {text.length > 40 ? `${text.slice(0, 40)}...` : text}
       </Text>
-      <FilledGreyButtonWithIcon Icon={<CopyIcon />} position='center' size='S' svgColorType='stroke' />
+      <FilledGreyButtonWithIcon
+        Icon={<CopyIcon />}
+        position='center'
+        size='S'
+        svgColorType='stroke'
+        onClick={() => {
+          navigator.clipboard.writeText(text);
+        }}
+      />
     </Container>
   );
 }
