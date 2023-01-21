@@ -186,7 +186,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
 
   // Get the user's balance of the selected token
   const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
+    address: account?.address ?? '0x',
     token: selectedOption.address,
     watch: true,
     chainId: activeChain.id,

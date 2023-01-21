@@ -71,7 +71,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   const account = useAccount();
 
   const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
+    address: account?.address ?? '0x',
     token: token.address,
     watch: true,
   });
