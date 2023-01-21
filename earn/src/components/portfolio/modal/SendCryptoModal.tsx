@@ -71,7 +71,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const { activeChain } = useContext(ChainContext);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const provider = useProvider();
+  const provider = useProvider({ chainId: activeChain.id });
 
   const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
 
