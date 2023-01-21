@@ -63,7 +63,7 @@ function getConfirmButton(
       };
     case ConfirmButtonState.PERMIT_COURIER:
       return {
-        text: 'Permit Courier',
+        text: 'Use Referral Discount',
         Icon: <CheckIcon />,
         enabled: true,
       };
