@@ -214,9 +214,7 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
   useEffectOnce(() => {
     let mounted = true;
     async function fetch(marginAccountLensContract: Contract) {
-      const earnedFees: [string[], BigNumber[]] = await marginAccountLensContract.getUniswapPositions(
-        marginAccount.address
-      );
+      const earnedFees: [string[], BigNumber[]] = await marginAccountLensContract.getUniswapFees(marginAccount.address);
       const earnedFeesMap: UniswapPositionEarnedFees = {};
       earnedFees[0].forEach((positionId, index) => {
         earnedFeesMap[positionId] = {
