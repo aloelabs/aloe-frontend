@@ -7,7 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractRead, useContractWrite } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
@@ -93,18 +93,29 @@ function WithdrawButton(props: WithdrawButtonProps) {
     chainId: activeChain.id,
   });
 
+  const numericRequestedShares = requestedShares ? BigNumber.from(requestedShares.toString()) : BigNumber.from(0);
+  const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
+  // Being extra careful here to make sure we don't withdraw more than the user has
+  const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
+    ? numericMaxRedeemBalance
+    : numericRequestedShares;
+
+  const { config: contractConfig } = usePrepareContractWrite({
+    address: kitty.address,
+    abi: KittyABI,
+    functionName: 'redeem',
+    args: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
+    enabled: finalWithdrawAmount.gt(0),
+    chainId: activeChain.id,
+    staleTime: 13_000,
+  });
+
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
-  } = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
-    mode: 'recklesslyUnprepared',
-    functionName: 'redeem',
-    chainId: activeChain.id,
-  });
+  } = useContractWrite(contractConfig);
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -132,16 +143,8 @@ function WithdrawButton(props: WithdrawButtonProps) {
   function handleClickConfirm() {
     if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
       setIsPending(true);
-      const numericRequestedShares = BigNumber.from(requestedShares.toString());
-      const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
-      // Being extra careful here to make sure we don't withdraw more than the user has
-      const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
-        ? numericMaxRedeemBalance
-        : numericRequestedShares;
-      contractWrite?.({
-        recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
-        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-      });
+
+      contractWrite?.();
     }
   }
 
