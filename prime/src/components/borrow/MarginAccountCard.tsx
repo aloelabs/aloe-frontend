@@ -110,10 +110,10 @@ function MetricContainer(props: MetricContainerProps) {
   );
 }
 
-export type MarginAccountCardProps = MarginAccountPreview;
+export type MarginAccountCardProps = MarginAccountPreview & { health: number };
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { address, assets, feeTier, liabilities, token0, token1 } = props;
+  const { address, assets, feeTier, liabilities, token0, token1, health } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   const link = `/borrow/account/${address}`;
@@ -173,7 +173,7 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
             label={token1.ticker ?? 'Token1'}
             value={formatTokenAmount(assets1 - liabilities.amount1, 3)}
           />
-          <MetricContainer label='Version' value='1' />
+          <MetricContainer label='Health' value={health.toString()} />
         </div>
         <IDContainer>
           <Text size='S' weight='medium' title={address}>

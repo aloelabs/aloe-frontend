@@ -132,6 +132,9 @@ export async function fetchMarginAccountPreviews(
       const assetsData = await borrowerLensContract.getAssets(accountAddress);
       const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
 
+      const healthData = await borrowerLensContract.getHealth(accountAddress);
+      const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+
       const assets: Assets = {
         token0Raw: Big(assetsData.fixed0.toString())
           .div(10 ** token0.decimals)
@@ -162,6 +165,7 @@ export async function fetchMarginAccountPreviews(
         feeTier,
         assets,
         liabilities,
+        health: health.div(1e9).toNumber() / 1e9,
       };
     }
   );
