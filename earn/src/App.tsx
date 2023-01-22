@@ -6,6 +6,7 @@ import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
+import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
@@ -17,7 +18,21 @@ import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
 
 const CONNECT_WALLET_CHECKBOXES = [
-  'I acknowledge that Aloe II is in beta and that use of the platform may result in loss of funds.',
+  <Text size='M' weight='regular'>
+    I have read, understood, and agreed to the{' '}
+    <a className='underline text-green-600 hover:text-green-700' href='/terms.pdf' target='_blank'>
+      Terms of Service
+    </a>{' '}
+    and{' '}
+    <a className='underline text-green-600 hover:text-green-700' href='/privacy.pdf' target='_blank'>
+      Privacy Policy
+    </a>
+    .
+  </Text>,
+  <Text>
+    I will not use the platform in any way that violates applicable federal, state, local, or international laws.
+  </Text>,
+  <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
 export const theGraphUniswapV2Client = new ApolloClient({

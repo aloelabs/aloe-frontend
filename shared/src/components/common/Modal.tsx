@@ -255,7 +255,7 @@ const ModalTitle = styled(Dialog.Title)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px 0px 24px;
+  padding: 18px 20px 0px 20px;
 `;
 
 const InnerContainer = styled.div`
@@ -263,7 +263,7 @@ const InnerContainer = styled.div`
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 24px;
+  padding: 20px;
 `;
 
 export default function Modal(props: ModalProps) {
@@ -301,7 +301,9 @@ export default function Modal(props: ModalProps) {
               <ModalPanelWrapper maxHeight={maxHeight} maxWidth={maxWidth}>
                 {title && (
                   <ModalTitle>
-                    <Text size='L'>{title}</Text>
+                    <Text size='L' weight='medium'>
+                      {title}
+                    </Text>
                     {!noClose && (
                       <button type='button' title='Close Modal' onClick={() => setIsOpen(false)}>
                         <CloseIcon />
