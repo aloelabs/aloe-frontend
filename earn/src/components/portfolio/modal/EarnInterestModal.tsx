@@ -158,12 +158,24 @@ function DepositButton(props: DepositButtonProps) {
       numericDepositAmount > 0 &&
       !canUsePermit,
   });
+  const depositWithApprovalConfigUpdatedRequest = useMemo(() => {
+    if (depositWithApprovalConfig.request) {
+      return {
+        ...depositWithApprovalConfig.request,
+        gasLimit: depositWithApprovalConfig.request?.gasLimit.mul(105).div(100),
+      };
+    }
+    return undefined;
+  }, [depositWithApprovalConfig.request]);
   const {
     write: depositUsingApprovalFlow,
     isSuccess: successfullyDepositedWithApproval,
     isLoading: isLoadingApprovalFlow,
     data: approvalFlowData,
-  } = useContractWrite(depositWithApprovalConfig);
+  } = useContractWrite({
+    ...depositWithApprovalConfig,
+    request: depositWithApprovalConfigUpdatedRequest,
+  });
 
   // Approval flow with courier
   const { config: depositUsingApprovalWithCourierConfig } = usePrepareContractWrite({
@@ -187,12 +199,24 @@ function DepositButton(props: DepositButtonProps) {
       courierId !== null &&
       !canUsePermit,
   });
+  const depositUsingApprovalWithCourierConfigUpdatedRequest = useMemo(() => {
+    if (depositUsingApprovalWithCourierConfig.request) {
+      return {
+        ...depositUsingApprovalWithCourierConfig.request,
+        gasLimit: depositUsingApprovalWithCourierConfig.request?.gasLimit.mul(105).div(100),
+      };
+    }
+    return undefined;
+  }, [depositUsingApprovalWithCourierConfig.request]);
   const {
     write: depositUsingApprovalFlowWithCourier,
     isSuccess: successfullyDepositedWithApprovalWithCourier,
     isLoading: isLoadingApprovalFlowWithCourier,
     data: approvalFlowDataWithCourier,
-  } = useContractWrite(depositUsingApprovalWithCourierConfig);
+  } = useContractWrite({
+    ...depositUsingApprovalWithCourierConfig,
+    request: depositUsingApprovalWithCourierConfigUpdatedRequest,
+  });
 
   // Permit flow
   const { config: depositWithPermitConfig } = usePrepareContractWrite({
@@ -216,12 +240,24 @@ function DepositButton(props: DepositButtonProps) {
       canUsePermit &&
       permitData !== undefined,
   });
+  const depositWithPermitConfigUpdatedRequest = useMemo(() => {
+    if (depositWithPermitConfig.request) {
+      return {
+        ...depositWithPermitConfig.request,
+        gasLimit: depositWithPermitConfig.request?.gasLimit.mul(105).div(100),
+      };
+    }
+    return undefined;
+  }, [depositWithPermitConfig.request]);
   const {
     write: depositUsingPermitFlow,
     isSuccess: successfullyDepositedWithPermit,
     isLoading: isLoadingPermitFlow,
     data: permitFlowData,
-  } = useContractWrite(depositWithPermitConfig);
+  } = useContractWrite({
+    ...depositWithPermitConfig,
+    request: depositWithPermitConfigUpdatedRequest,
+  });
 
   // Permit flow with courier
   const { config: depositWithPermitCourierConfig } = usePrepareContractWrite({
@@ -252,12 +288,24 @@ function DepositButton(props: DepositButtonProps) {
       courierId !== 0 &&
       courierPermitData !== undefined,
   });
+  const depositWithPermitCourierConfigUpdatedRequest = useMemo(() => {
+    if (depositWithPermitCourierConfig.request) {
+      return {
+        ...depositWithPermitCourierConfig.request,
+        gasLimit: depositWithPermitCourierConfig.request?.gasLimit.mul(105).div(100),
+      };
+    }
+    return undefined;
+  }, [depositWithPermitCourierConfig.request]);
   const {
     write: depositUsingPermitFlowWithCourier,
     isSuccess: successfullyDepositedWithPermitWithCourier,
     isLoading: isLoadingPermitFlowWithCourier,
     data: permitFlowDataWithCourier,
-  } = useContractWrite(depositWithPermitCourierConfig);
+  } = useContractWrite({
+    ...depositWithPermitCourierConfig,
+    request: depositWithPermitCourierConfigUpdatedRequest,
+  });
 
   const erc20Contract = useMemo(() => new ethers.Contract(token.address, ERC20ABI, provider), [token, provider]);
   const kittyContract = useMemo(() => new ethers.Contract(kitty.address, KittyABI, provider), [kitty, provider]);
