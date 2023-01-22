@@ -228,7 +228,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
           const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
           const actionArgs = actionOutputs.map((o) => o.actionArgs!);
-          let positions = '';
+          let positions = '0';
 
           // if Uniswap positions are being changed, make sure to send an updated array of positions
           if (actionIds.includes(4) || actionIds.includes(5)) {
