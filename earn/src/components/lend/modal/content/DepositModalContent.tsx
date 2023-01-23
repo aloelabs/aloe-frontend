@@ -71,9 +71,11 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   const account = useAccount();
 
   const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
+    address: account?.address ?? '0x',
     token: token.address,
+    enabled: account.address !== undefined,
     watch: true,
+    chainId: activeChain.id,
   });
 
   const { data: userAllowanceToken } = useAllowance(
@@ -95,6 +97,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
     functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
   });
 
   useEffect(() => {
