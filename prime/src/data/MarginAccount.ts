@@ -1,6 +1,6 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
@@ -46,6 +46,7 @@ export type MarginAccount = {
   assets: Assets;
   liabilities: Liabilities;
   sqrtPriceX96: Big;
+  health: number;
 };
 
 export type LiquidationThresholds = {
@@ -132,6 +133,9 @@ export async function fetchMarginAccountPreviews(
       const assetsData = await borrowerLensContract.getAssets(accountAddress);
       const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
 
+      const healthData = await borrowerLensContract.getHealth(accountAddress);
+      const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+
       const assets: Assets = {
         token0Raw: Big(assetsData.fixed0.toString())
           .div(10 ** token0.decimals)
@@ -162,6 +166,7 @@ export async function fetchMarginAccountPreviews(
         feeTier,
         assets,
         liabilities,
+        health: health.div(1e9).toNumber() / 1e9,
       };
     }
   );
@@ -169,6 +174,7 @@ export async function fetchMarginAccountPreviews(
 }
 
 export async function fetchMarginAccount(
+  accountAddress: string,
   chain: Chain,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
@@ -183,6 +189,7 @@ export async function fetchMarginAccount(
     marginAccountContract.UNISWAP_POOL(),
     marginAccountLensContract.getAssets(marginAccountAddress),
     marginAccountLensContract.getLiabilities(marginAccountAddress),
+    marginAccountLensContract.getHealth(accountAddress),
   ]);
 
   const uniswapPool = results[4];
@@ -216,6 +223,10 @@ export async function fetchMarginAccount(
       .div(10 ** token1.decimals)
       .toNumber(),
   };
+
+  const healthData = results[7];
+  const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+
   return {
     address: marginAccountAddress,
     uniswapPool: uniswapPool,
@@ -225,6 +236,7 @@ export async function fetchMarginAccount(
     assets: assets,
     liabilities: liabilities,
     sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+    health: health.div(1e9).toNumber() / 1e9,
   };
 }
 
