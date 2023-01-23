@@ -4,9 +4,9 @@ import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks'
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
+import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
-import { Text } from 'shared/lib/components/common/Typography';
 import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
