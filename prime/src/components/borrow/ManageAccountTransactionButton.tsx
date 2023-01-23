@@ -1,7 +1,6 @@
 import { ReactElement, useContext, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
-import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Address, Chain, erc20ABI, useBalance, useContractRead, useContractWrite } from 'wagmi';
@@ -11,6 +10,7 @@ import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
+import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
@@ -228,16 +228,11 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
           const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
           const actionArgs = actionOutputs.map((o) => o.actionArgs!);
-          const positions: number[] = [];
+          let positions = '0';
 
           // if Uniswap positions are being changed, make sure to send an updated array of positions
           if (actionIds.includes(4) || actionIds.includes(5)) {
-            accountState.uniswapPositions.forEach((position) => {
-              if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
-                positions.push(position.lower);
-                positions.push(position.upper);
-              }
-            });
+            positions = zip(accountState.uniswapPositions);
           }
 
           // provide ante if necessary
@@ -247,7 +242,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
 
           const calldata = ethers.utils.defaultAbiCoder.encode(
-            ['uint8[]', 'bytes[]', 'int24[]'],
+            ['uint8[]', 'bytes[]', 'uint144'],
             [actionIds, actionArgs, positions]
           );
 
