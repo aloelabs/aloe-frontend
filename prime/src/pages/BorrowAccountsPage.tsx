@@ -53,9 +53,8 @@ export default function BorrowAccountsPage() {
   // MARK: block number
   const blockNumber = useBlockNumber({
     chainId: activeChain.id,
-    watch: true,
-    // Keep this at 13 seconds for consistency between networks
-    staleTime: 13_000,
+    // TODO: Find a way to poll this without spamming the network
+    // watch: true,
   });
 
   const borrowerLensContract = useContract({

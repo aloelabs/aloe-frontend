@@ -134,14 +134,16 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const { data: userBalance0Asset } = useBalance({
     address: userAddress ?? '0x',
     token: token0.address,
-    watch: true,
     chainId: activeChain.id,
+    // TODO: Find a way to poll this without spamming the network
+    // watch: true,
   });
   const { data: userBalance1Asset } = useBalance({
     address: userAddress ?? '0x',
     token: token1.address,
-    watch: true,
     chainId: activeChain.id,
+    // TODO: Find a way to poll this without spamming the network
+    // watch: true,
   });
 
   // MARK: logic to ensure that listed balances and MAXes work

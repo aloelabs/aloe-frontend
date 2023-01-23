@@ -82,9 +82,10 @@ function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Add
     functionName: 'allowance',
     args: [owner, spender],
     cacheOnBlock: true,
-    watch: true,
     chainId: onChain.id,
     enabled: owner !== '0x',
+    // TODO: Find a way to poll this without spamming the network
+    // watch: true,
   });
 }
 
@@ -149,8 +150,9 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
   const { data: accountEtherBalance } = useBalance({
     address: accountAddress,
-    watch: true,
     chainId: activeChain.id,
+    // TODO: Find a way to poll this without spamming the network
+    // watch: true,
   });
 
   const { data: userAllowance0Asset } = useAllowance(
