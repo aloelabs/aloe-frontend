@@ -21,6 +21,7 @@ export type MarginAccountParams = {
   assets: Assets;
   liabilities: Liabilities;
   sqrtPriceX96: string;
+  health: number;
 };
 
 export type CalculateLiquidationThresholdsParams = {

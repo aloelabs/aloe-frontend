@@ -9,6 +9,7 @@ import tw from 'twin.macro';
 import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
+import { getHealthColor } from '../../util/Health';
 import { formatTokenAmount } from '../../util/Numbers';
 import TokenPairIcons from '../common/TokenPairIcons';
 
@@ -94,23 +95,25 @@ const IDContainer = styled.div`
 type MetricContainerProps = {
   label: string;
   value: string;
+  valueColor?: string;
+  valueWeight?: 'medium' | 'bold';
 };
 
 function MetricContainer(props: MetricContainerProps) {
-  const { label, value } = props;
+  const { label, value, valueColor, valueWeight } = props;
   return (
     <div className='flex flex-col'>
       <Text size='M' weight='bold' color={LABEL_TEXT_COLOR}>
         {label}
       </Text>
-      <Text size='L' weight='medium'>
+      <Text size='L' weight={valueWeight ?? 'medium'} color={valueColor}>
         {value}
       </Text>
     </div>
   );
 }
 
-export type MarginAccountCardProps = MarginAccountPreview & { health: number };
+export type MarginAccountCardProps = MarginAccountPreview;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
   const { address, assets, feeTier, liabilities, token0, token1, health } = props;
@@ -143,6 +146,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   const cardBorderGradient = `linear-gradient(90deg, ${rgb(token0Color)} 0%, ${rgb(token1Color)} 100%)`;
   const cardShadowColor = rgba(getBrighterColor(token0Color, token1Color), 0.16);
 
+  const accountHealthColor = getHealthColor(health);
+
   return (
     <CardWrapper to={link} border={cardBorderGradient} shadow={cardShadowColor}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
@@ -173,7 +178,12 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
             label={token1.ticker ?? 'Token1'}
             value={formatTokenAmount(assets1 - liabilities.amount1, 3)}
           />
-          <MetricContainer label='Health' value={health.toString()} />
+          <MetricContainer
+            label='Health'
+            value={health >= 5 ? '5+' : health.toFixed(2)}
+            valueColor={accountHealthColor}
+            valueWeight='bold'
+          />
         </div>
         <IDContainer>
           <Text size='S' weight='medium' title={address}>
