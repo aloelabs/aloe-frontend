@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useState } from 'react';
+import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
@@ -75,17 +75,14 @@ function getConfirmButton(
   }
 }
 
-function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Address) {
+function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Address, enabled: boolean) {
   return useContractRead({
     address: token.address,
     abi: erc20ABI,
     functionName: 'allowance',
     args: [owner, spender],
-    cacheOnBlock: true,
     chainId: onChain.id,
-    enabled: owner !== '0x',
-    // TODO: Find a way to poll this without spamming the network
-    // watch: true,
+    enabled: enabled && owner !== '0x',
   });
 }
 
@@ -128,6 +125,9 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   } = props;
   const { activeChain } = useContext(ChainContext);
 
+  // chain agnostic wagmi rate-limiter
+  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
+
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
@@ -136,6 +136,13 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 7_000 < 1_000), 500);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const contract = useContractWrite({
     address: accountAddress,
@@ -151,21 +158,22 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const { data: accountEtherBalance } = useBalance({
     address: accountAddress,
     chainId: activeChain.id,
-    // TODO: Find a way to poll this without spamming the network
-    // watch: true,
+    enabled: shouldEnableWagmiHooks,
   });
 
   const { data: userAllowance0Asset } = useAllowance(
     activeChain,
     token0,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    shouldEnableWagmiHooks
   );
   const { data: userAllowance1Asset } = useAllowance(
     activeChain,
     token1,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    shouldEnableWagmiHooks
   );
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
@@ -264,7 +272,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
                     // TODO gas estimation was occassionally causing errors. To fix this,
                     // we should probably work with the underlying ethers.Contract, but for now
                     // we just provide hard-coded overrides.
-                    gasLimit: BigNumber.from((600000 + 200000 * actionIds.length).toFixed(0)),
+                    gasLimit: BigNumber.from((300000 + 200000 * actionIds.length).toFixed(0)),
                     value: shouldProvideAnte ? ANTE + 1 : undefined,
                   },
                 })

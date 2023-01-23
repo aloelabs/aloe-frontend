@@ -121,6 +121,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const { activeChain } = useContext(ChainContext);
 
+  // MARK: component state
   // actions
   const [userInputFields, setUserInputFields] = useState<(string[] | undefined)[]>([]);
   const [actionOutputs, setActionOutputs] = useState<ActionCardOutput[]>([]);
@@ -129,21 +130,28 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // modals
   const [showAddActionModal, setShowAddActionModal] = useState(false);
 
+  // MARK: chain agnostic wagmi rate-limiter
+  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 15_000 < 1_000), 500);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
   const { data: userBalance0Asset } = useBalance({
     address: userAddress ?? '0x',
     token: token0.address,
     chainId: activeChain.id,
-    // TODO: Find a way to poll this without spamming the network
-    // watch: true,
+    enabled: shouldEnableWagmiHooks && !!userAddress,
   });
   const { data: userBalance1Asset } = useBalance({
     address: userAddress ?? '0x',
     token: token1.address,
     chainId: activeChain.id,
-    // TODO: Find a way to poll this without spamming the network
-    // watch: true,
+    enabled: shouldEnableWagmiHooks && !!userAddress,
   });
 
   // MARK: logic to ensure that listed balances and MAXes work

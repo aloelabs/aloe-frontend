@@ -66,7 +66,7 @@ export async function getMarginAccountsForUser(
   provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
-    7569633,
+    0,
     ALOE_II_FACTORY_ADDRESS_GOERLI,
     [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
@@ -84,51 +84,31 @@ export async function getMarginAccountsForUser(
   return accounts;
 }
 
-export async function resolveUniswapPools(
-  marginAccounts: { address: string; uniswapPool: string }[],
-  provider: ethers.providers.BaseProvider
-) {
-  const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
-  // create an array to hold all the Promises we're about to create
-  const uniswapPoolData: Promise<[string, { token0: Address; token1: Address; feeTier: number }]>[] = [];
-  // for each pool, create a Promise that returns a tuple: (poolAddress, otherData)
-  uniqueUniswapPools.forEach((pool) => {
-    async function getUniswapPoolData(): Promise<[string, { token0: Address; token1: Address; feeTier: number }]> {
-      const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
-      const [token0, token1, feeTier] = await Promise.all([
-        contract.token0() as Address,
-        contract.token1() as Address,
-        contract.fee(),
-      ]);
-      //     |key|  |          value           |
-      return [
-        pool,
-        {
-          token0,
-          token1,
-          feeTier,
-        },
-      ];
-    }
-    uniswapPoolData.push(getUniswapPoolData());
-  });
-  // resolve all the Promised tuples and turn them into a Map
-  return Object.fromEntries(await Promise.all(uniswapPoolData));
-}
+export type UniswapPoolInfo = {
+  token0: Address;
+  token1: Address;
+  fee: number;
+};
 
 export async function fetchMarginAccountPreviews(
   chain: Chain,
   borrowerLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  userAddress: string
+  userAddress: string,
+  uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccountPreview[]> {
   const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
-  const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
-  const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
+  const marginAccounts: Promise<MarginAccountPreview | null>[] = marginAccountsAddresses.map(
     async ({ address: accountAddress, uniswapPool }) => {
-      const token0 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token0);
-      const token1 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token1);
-      const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
+      const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
+
+      if (uniswapPoolInfo === null) return null;
+
+      const token0 = getToken(chain.id, uniswapPoolInfo.token0);
+      const token1 = getToken(chain.id, uniswapPoolInfo.token1);
+      const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
+
+      if (!token0 || !token1) return null;
 
       const assetsData = await borrowerLensContract.getAssets(accountAddress);
       const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
@@ -170,7 +150,7 @@ export async function fetchMarginAccountPreviews(
       };
     }
   );
-  return Promise.all(marginAccounts);
+  return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
 }
 
 export async function fetchMarginAccount(
