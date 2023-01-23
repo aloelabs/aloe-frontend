@@ -39,6 +39,7 @@ import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
+const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -162,7 +163,7 @@ function DepositButton(props: DepositButtonProps) {
     if (depositWithApprovalConfig.request) {
       return {
         ...depositWithApprovalConfig.request,
-        gasLimit: depositWithApprovalConfig.request.gasLimit.mul(105).div(100),
+        gasLimit: depositWithApprovalConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
@@ -203,7 +204,7 @@ function DepositButton(props: DepositButtonProps) {
     if (depositUsingApprovalWithCourierConfig.request) {
       return {
         ...depositUsingApprovalWithCourierConfig.request,
-        gasLimit: depositUsingApprovalWithCourierConfig.request.gasLimit.mul(105).div(100),
+        gasLimit: depositUsingApprovalWithCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
@@ -244,7 +245,7 @@ function DepositButton(props: DepositButtonProps) {
     if (depositWithPermitConfig.request) {
       return {
         ...depositWithPermitConfig.request,
-        gasLimit: depositWithPermitConfig.request.gasLimit.mul(105).div(100),
+        gasLimit: depositWithPermitConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
@@ -292,7 +293,7 @@ function DepositButton(props: DepositButtonProps) {
     if (depositWithPermitCourierConfig.request) {
       return {
         ...depositWithPermitCourierConfig.request,
-        gasLimit: depositWithPermitCourierConfig.request.gasLimit.mul(105).div(100),
+        gasLimit: depositWithPermitCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
