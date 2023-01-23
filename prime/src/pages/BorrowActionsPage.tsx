@@ -250,6 +250,7 @@ export default function BorrowActionsPage() {
       marginAccountLensContract: Contract
     ) {
       const fetchedMarginAccount = await fetchMarginAccount(
+        accountAddressParam ?? '0x', // TODO better optional resolution
         activeChain,
         marginAccountContract,
         marginAccountLensContract,
