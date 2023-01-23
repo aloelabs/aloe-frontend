@@ -17,7 +17,7 @@ import { getToken } from './TokenData';
 const ALOE_II_FACTORY_ADDRESSES = {
   [wagmiChain.goerli.id]: ALOE_II_FACTORY_ADDRESS_GOERLI,
   [wagmiChain.mainnet.id]: '0x0000000000000000000000000000000000000000', // TODO: Add mainnet address
-  [wagmiChain.optimism.id]: '0x0000000000000000000000000000000000000000', // TODO: Add optimism address
+  [wagmiChain.optimism.id]: ALOE_II_FACTORY_ADDRESS_GOERLI, // TODO: Add optimism address
   [wagmiChain.arbitrum.id]: '0x0000000000000000000000000000000000000000', // TODO: Add arbitrum address
 };
 
@@ -60,6 +60,7 @@ export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
+  console.log('getAvailableLendingPairs', chain.id);
   let etherscanResult: AxiosResponse<any, any> | null = null;
   try {
     etherscanResult = await makeEtherscanRequest(
@@ -69,6 +70,7 @@ export async function getAvailableLendingPairs(
       true,
       chain
     );
+    console.log('etherscanResult', etherscanResult);
   } catch (e) {
     console.error(e);
   }
@@ -84,7 +86,7 @@ export async function getAvailableLendingPairs(
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return Promise.all(
+  const unfilteredPairs: Array<LendingPair | null> = await Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
@@ -96,6 +98,7 @@ export async function getAvailableLendingPairs(
 
       const token0 = getToken(chain.id, result0.asset);
       const token1 = getToken(chain.id, result1.asset);
+      if (token0 == null || token1 == null) return null;
       const kitty0 = new Kitty(
         chain.id,
         market.kitty0 as Address,
@@ -145,6 +148,8 @@ export async function getAvailableLendingPairs(
       );
     })
   );
+  const filteredPairs = unfilteredPairs.filter((pair) => pair != null) as LendingPair[];
+  return filteredPairs;
 }
 
 export async function getLendingPairBalances(
