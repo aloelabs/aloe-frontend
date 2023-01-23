@@ -60,7 +60,6 @@ export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
-  console.log('getAvailableLendingPairs', chain.id);
   let etherscanResult: AxiosResponse<any, any> | null = null;
   try {
     etherscanResult = await makeEtherscanRequest(
@@ -70,7 +69,6 @@ export async function getAvailableLendingPairs(
       true,
       chain
     );
-    console.log('etherscanResult', etherscanResult);
   } catch (e) {
     console.error(e);
   }

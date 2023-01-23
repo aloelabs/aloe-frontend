@@ -213,7 +213,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
-    watch: true,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
   });
 
   const { data: maxRedeem } = useContractRead({
@@ -223,7 +224,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,
-    watch: true,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
   });
 
   const maxWithdrawBalance = useMemo(() => {

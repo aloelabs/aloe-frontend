@@ -188,8 +188,9 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   const { data: depositBalance } = useBalance({
     address: account?.address ?? '0x',
     token: selectedOption.address,
-    watch: true,
     chainId: activeChain.id,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
   });
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');

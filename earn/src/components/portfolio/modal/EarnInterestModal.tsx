@@ -9,8 +9,10 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   Address,
+  erc20ABI,
   useAccount,
   useBalance,
+  useContractRead,
   useContractWrite,
   usePrepareContractWrite,
   useProvider,
@@ -122,7 +124,17 @@ function DepositButton(props: DepositButtonProps) {
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
 
-  const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
+  // const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
+  const { refetch, data: userAllowanceToken } = useContractRead({
+    address: token.address,
+    abi: erc20ABI,
+    functionName: 'allowance',
+    args: [accountAddress, ALOE_II_ROUTER_ADDRESS] as const,
+    cacheOnBlock: true,
+    chainId: activeChain.id,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
+  });
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
@@ -134,8 +146,11 @@ function DepositButton(props: DepositButtonProps) {
     address: accountAddress,
     token: kitty.address,
     chainId: activeChain.id,
-    watch: true,
-    staleTime: 13_000,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
+    onSuccess(data) {
+      console.log('kitty balance', data);
+    },
   });
 
   const numericKittyBalance: Big | null = useMemo(
@@ -145,6 +160,8 @@ function DepositButton(props: DepositButtonProps) {
 
   const parsedDepositAmount =
     depositAmount !== '' ? ethers.utils.parseUnits(depositAmount, token.decimals).toString() : '0';
+
+  console.log(canUsePermit);
 
   // Approval flow
   const { config: depositWithApprovalConfig } = usePrepareContractWrite({
@@ -355,6 +372,8 @@ function DepositButton(props: DepositButtonProps) {
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
+  console.log('needsApproval', needsApproval, userAllowanceToken, numericDepositBalance);
+
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
 
@@ -398,6 +417,7 @@ function DepositButton(props: DepositButtonProps) {
           .then((txnResult) => {
             txnResult.wait(1).then(() => {
               setIsPending(false);
+              refetch();
             });
           })
           .catch((error) => {
@@ -510,9 +530,9 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   const { data: depositBalance } = useBalance({
     address: account?.address ?? '0x',
     token: selectedOption.address,
-    watch: true,
-    staleTime: 13_000,
     chainId: activeChain.id,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
   });
 
   // Get the active kitty that corresponds to the selected token and is in

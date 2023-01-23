@@ -17,8 +17,8 @@ export function useBalanceOfUnderlying(token: Token, kitty: Kitty, accountAddres
     functionName: 'underlyingBalance',
     args: [accountAddress] as const,
     chainId: activeChain?.id,
-    watch: true,
-    staleTime: 13_000,
+    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
+    // watch: true,
   });
   useEffect(() => {
     if (balanceOfUnderlying) {
