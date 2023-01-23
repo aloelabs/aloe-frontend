@@ -189,6 +189,7 @@ export async function fetchMarginAccount(
     marginAccountContract.UNISWAP_POOL(),
     marginAccountLensContract.getAssets(marginAccountAddress),
     marginAccountLensContract.getLiabilities(marginAccountAddress),
+    marginAccountLensContract.getHealth(accountAddress),
   ]);
 
   const uniswapPool = results[4];
@@ -223,7 +224,7 @@ export async function fetchMarginAccount(
       .toNumber(),
   };
 
-  const healthData = await marginAccountLensContract.getHealth(accountAddress);
+  const healthData = results[7];
   const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
 
   return {

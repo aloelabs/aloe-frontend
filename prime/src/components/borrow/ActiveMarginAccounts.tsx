@@ -20,7 +20,6 @@ export default function ActiveMarginAccounts(props: ActiveMarginAccountsProps) {
   return (
     <div className='flex items-center justify-start flex-wrap gap-4'>
       {marginAccounts.length > 0 ? (
-        // @ts-ignore
         marginAccounts.map((marginAccount, index) => <MarginAccountCard key={index} {...marginAccount} />)
       ) : (
         <Text size='M' weight='bold'>
