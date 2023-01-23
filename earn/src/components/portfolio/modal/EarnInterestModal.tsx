@@ -9,10 +9,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   Address,
-  erc20ABI,
   useAccount,
   useBalance,
-  useContractRead,
   useContractWrite,
   usePrepareContractWrite,
   useProvider,
@@ -27,7 +25,6 @@ import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_t
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
@@ -38,6 +35,7 @@ import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
+import useAllowance from '../../../data/hooks/UseAllowance';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -109,12 +107,14 @@ type DepositButtonProps = {
   kitty: Kitty;
   accountAddress: Address;
   courierId: number | null;
+  isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, courierId, setIsOpen, setPendingTxn } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, courierId, isOpen, setIsOpen, setPendingTxn } =
+    props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
   const [canUsePermit, setCanUsePermit] = useState<boolean>(false);
@@ -124,17 +124,12 @@ function DepositButton(props: DepositButtonProps) {
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
 
-  // const { data: userAllowanceToken } = useAllowance(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS);
-  const { refetch, data: userAllowanceToken } = useContractRead({
-    address: token.address,
-    abi: erc20ABI,
-    functionName: 'allowance',
-    args: [accountAddress, ALOE_II_ROUTER_ADDRESS] as const,
-    cacheOnBlock: true,
-    chainId: activeChain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
-  });
+  const { refetch: refetchUserAllowance, data: userAllowanceToken } = useAllowance(
+    activeChain,
+    token,
+    accountAddress,
+    ALOE_II_ROUTER_ADDRESS
+  );
 
   const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
 
@@ -142,15 +137,14 @@ function DepositButton(props: DepositButtonProps) {
 
   const provider = useProvider({ chainId: activeChain.id });
 
-  const { data: kittyBalance, isSuccess: isKittyBalanceSuccess } = useBalance({
+  const {
+    refetch: refetchKittyBalance,
+    data: kittyBalance,
+    isSuccess: isKittyBalanceSuccess,
+  } = useBalance({
     address: accountAddress,
     token: kitty.address,
     chainId: activeChain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
-    onSuccess(data) {
-      console.log('kitty balance', data);
-    },
   });
 
   const numericKittyBalance: Big | null = useMemo(
@@ -160,8 +154,6 @@ function DepositButton(props: DepositButtonProps) {
 
   const parsedDepositAmount =
     depositAmount !== '' ? ethers.utils.parseUnits(depositAmount, token.decimals).toString() : '0';
-
-  console.log(canUsePermit);
 
   // Approval flow
   const { config: depositWithApprovalConfig } = usePrepareContractWrite({
@@ -329,6 +321,24 @@ function DepositButton(props: DepositButtonProps) {
   const kittyContract = useMemo(() => new ethers.Contract(kitty.address, KittyABI, provider), [kitty, provider]);
 
   useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchKittyBalance();
+        refetchUserAllowance();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchKittyBalance, refetchUserAllowance, isOpen]);
+
+  useEffect(() => {
     let mounted = true;
     async function fetch() {
       const result = await doesSupportPermit(erc20Contract);
@@ -371,8 +381,6 @@ function DepositButton(props: DepositButtonProps) {
   const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
-
-  console.log('needsApproval', needsApproval, userAllowanceToken, numericDepositBalance);
 
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
@@ -417,7 +425,7 @@ function DepositButton(props: DepositButtonProps) {
           .then((txnResult) => {
             txnResult.wait(1).then(() => {
               setIsPending(false);
-              refetch();
+              refetchUserAllowance();
             });
           })
           .catch((error) => {
@@ -462,12 +470,24 @@ function DepositButton(props: DepositButtonProps) {
         setIsPending(true);
 
         if (permitData && courierPermitData && courierId) {
+          if (!depositWithPermitCourierConfig.request) {
+            console.error('Cannot deposit with undefined request');
+          }
           depositUsingPermitFlowWithCourier?.();
         } else if (permitData) {
+          if (!depositWithPermitConfig.request) {
+            console.error('Cannot deposit with undefined request');
+          }
           depositUsingPermitFlow?.();
         } else if (!permitData && courierPermitData && courierId) {
+          if (!depositUsingApprovalWithCourierConfig.request) {
+            console.error('Cannot deposit with undefined request');
+          }
           depositUsingApprovalFlowWithCourier?.();
         } else {
+          if (!depositWithApprovalConfig.request) {
+            console.error('Cannot deposit with undefined request');
+          }
           depositUsingApprovalFlow?.();
         }
         break;
@@ -527,13 +547,28 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   }, [defaultOption]);
 
   // Get the user's balance of the selected token
-  const { data: depositBalance } = useBalance({
+  const { refetch: refetchDepositBalance, data: depositBalance } = useBalance({
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchDepositBalance();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchDepositBalance, isOpen]);
 
   // Get the active kitty that corresponds to the selected token and is in
   // the selected token / collateral token lending pair
@@ -668,6 +703,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
             courierId={referralData?.lender.address === activeKitty.address ? referralData.courierId : null}
+            isOpen={isOpen}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {

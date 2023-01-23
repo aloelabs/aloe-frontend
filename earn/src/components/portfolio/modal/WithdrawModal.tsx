@@ -206,27 +206,41 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     return null;
   }, [selectedPairOption, selectedOption, lendingPairs]);
 
-  const { data: maxWithdraw } = useContractRead({
+  const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
     enabled: activeKitty != null,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
 
-  const { data: maxRedeem } = useContractRead({
+  const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
     enabled: activeKitty != null,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchMaxWithdraw();
+        refetchMaxRedeem();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchMaxWithdraw, refetchMaxRedeem, isOpen]);
 
   const maxWithdrawBalance = useMemo(() => {
     if (maxWithdraw) {
