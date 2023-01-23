@@ -99,7 +99,7 @@ export async function getAvailableLendingPairs(
       const kitty0 = new Kitty(
         chain.id,
         market.kitty0 as Address,
-        18,
+        token0.decimals,
         `${token0.ticker}+`,
         `Aloe II ${token0.name}`,
         token0.iconPath,
@@ -108,7 +108,7 @@ export async function getAvailableLendingPairs(
       const kitty1 = new Kitty(
         chain.id,
         market.kitty1 as Address,
-        18,
+        token1.decimals,
         `${token1.ticker}+`,
         `Aloe II ${token1.name}`,
         token1.iconPath,

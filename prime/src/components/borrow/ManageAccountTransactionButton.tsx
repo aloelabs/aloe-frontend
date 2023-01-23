@@ -148,8 +148,9 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   });
 
   const { data: accountEtherBalance } = useBalance({
-    addressOrName: accountAddress,
+    address: accountAddress,
     watch: true,
+    chainId: activeChain.id,
   });
 
   const { data: userAllowance0Asset } = useAllowance(

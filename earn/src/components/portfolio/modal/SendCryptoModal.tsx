@@ -71,7 +71,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const { activeChain } = useContext(ChainContext);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const provider = useProvider();
+  const provider = useProvider({ chainId: activeChain.id });
 
   const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
 
@@ -186,7 +186,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
 
   // Get the user's balance of the selected token
   const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
+    address: account?.address ?? '0x',
     token: selectedOption.address,
     watch: true,
     chainId: activeChain.id,

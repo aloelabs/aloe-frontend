@@ -10,10 +10,10 @@ const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet, chain.optimism, chain.arbitrum, chain.goerli],
   [
     alchemyProvider({
-      apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
+      apiKey: process.env.REACT_APP_ALCHEMY_API_KEY!,
       priority: 0,
     }),
-    infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID, priority: 1 }),
+    infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID!, priority: 1 }),
     publicProvider({ priority: 2 }),
   ],
   { stallTimeout: 5000 }

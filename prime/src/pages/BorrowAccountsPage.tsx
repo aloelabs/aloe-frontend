@@ -48,7 +48,7 @@ export default function BorrowAccountsPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
   const { address: accountAddress } = useAccount();
-  const { data: signer } = useSigner();
+  const { data: signer } = useSigner({ chainId: activeChain.id });
 
   // MARK: block number
   const blockNumber = useBlockNumber({

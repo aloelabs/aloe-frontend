@@ -157,7 +157,7 @@ export default function ReferralModal(props: ReferralModalProps) {
 
   const referralLink = useMemo(() => {
     if (courierId != null) {
-      return `https://earn.aloe.capital/?ref=${courierId}&lender=${selectedToken.address}`;
+      return `https://earn.aloe.capital/portfolio?ref=${courierId}&lender=${selectedToken.address}`;
     }
     return null;
   }, [courierId, selectedToken.address]);
