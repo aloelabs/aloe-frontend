@@ -358,9 +358,12 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By withdrawing, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that
-            you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is your duty to
-            educate yourself and be aware of the risks.
+            By withdrawing, you agree to our{' '}
+            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+              Terms of Service
+            </a>{' '}
+            and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It
+            is your duty to educate yourself and be aware of the risks.
           </Text>
         </div>
       </div>

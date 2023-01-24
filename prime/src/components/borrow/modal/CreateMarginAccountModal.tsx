@@ -51,7 +51,7 @@ export default function CreateMarginAccountModal(props: CreateMarginAccountModal
       </FilledStylizedButton>
       <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
         By creating a margin account, you agree to our{' '}
-        <a href='/prime/public/terms.pdf' rel='noreferrer' target='_blank' className='underline'>
+        <a href='/terms.pdf' rel='noreferrer' target='_blank' className='underline'>
           Terms of Service
         </a>{' '}
         and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
