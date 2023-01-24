@@ -13,7 +13,7 @@ const StyledLink = styled.a`
 export type WelcomeModalProps = {
   isOpen: boolean;
   activeChain: Chain;
-  checkboxes: string[];
+  checkboxes: React.ReactNode[];
   account?: GetAccountResult<Provider>;
   setIsOpen: (open: boolean) => void;
   onAcknowledged: () => void;
