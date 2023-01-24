@@ -546,7 +546,7 @@ export default function BorrowActionsPage() {
           <Text size='L' weight='medium'>
             Uniswap Positions
           </Text>
-          {uniswapPositions.length === 0 ? (
+          {displayedUniswapPositions.length === 0 ? (
             <EmptyStateWrapper>
               <EmptyStateContainer>
                 <EmptyStateSvgWrapper>
