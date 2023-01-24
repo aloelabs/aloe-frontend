@@ -2,24 +2,17 @@ import { AxiosResponse } from 'axios';
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { Address, chain as wagmiChain, Chain } from 'wagmi';
+import { Address, Chain } from 'wagmi';
 
 import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
-
-const ALOE_II_FACTORY_ADDRESSES = {
-  [wagmiChain.goerli.id]: ALOE_II_FACTORY_ADDRESS_GOERLI,
-  [wagmiChain.mainnet.id]: '0x0000000000000000000000000000000000000000', // TODO: Add mainnet address
-  [wagmiChain.optimism.id]: '0x0000000000000000000000000000000000000000', // TODO: Add optimism address
-  [wagmiChain.arbitrum.id]: '0x0000000000000000000000000000000000000000', // TODO: Add arbitrum address
-};
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -64,7 +57,7 @@ export async function getAvailableLendingPairs(
   try {
     etherscanResult = await makeEtherscanRequest(
       7537163,
-      ALOE_II_FACTORY_ADDRESSES[chain.id],
+      ALOE_II_FACTORY_ADDRESS,
       ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
       true,
       chain
@@ -84,7 +77,7 @@ export async function getAvailableLendingPairs(
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
 
-  return Promise.all(
+  const unfilteredPairs: Array<LendingPair | null> = await Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
@@ -96,6 +89,7 @@ export async function getAvailableLendingPairs(
 
       const token0 = getToken(chain.id, result0.asset);
       const token1 = getToken(chain.id, result1.asset);
+      if (token0 == null || token1 == null) return null;
       const kitty0 = new Kitty(
         chain.id,
         market.kitty0 as Address,
@@ -145,6 +139,8 @@ export async function getAvailableLendingPairs(
       );
     })
   );
+  const filteredPairs = unfilteredPairs.filter((pair) => pair != null) as LendingPair[];
+  return filteredPairs;
 }
 
 export async function getLendingPairBalances(
