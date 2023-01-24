@@ -10,7 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useEnsName, useProvider } from 'wagmi';
+import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi';
 
 import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
@@ -93,7 +93,7 @@ export default function LendPage() {
   const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: activeChain.id,
+    chainId: wagmiChain.mainnet.id,
   });
 
   useEffect(() => {
