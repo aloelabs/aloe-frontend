@@ -111,8 +111,8 @@ export default function LendPage() {
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
     lendingPairs.forEach((pair) => {
-      symbols.add(pair.token0.ticker);
-      symbols.add(pair.token1.ticker);
+      symbols.add(pair.token0.ticker.toUpperCase());
+      symbols.add(pair.token1.ticker.toUpperCase());
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
