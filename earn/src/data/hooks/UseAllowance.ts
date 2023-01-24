@@ -11,7 +11,5 @@ export default function useAllowance(chain: Chain, token: Token, owner: Address,
     args: [owner, spender] as const,
     cacheOnBlock: true,
     chainId: chain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
-  }) as { data: BigNumber | null };
+  }) as { refetch: () => void; data: BigNumber | null };
 }

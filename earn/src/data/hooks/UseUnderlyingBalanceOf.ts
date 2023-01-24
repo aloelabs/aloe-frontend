@@ -8,22 +8,27 @@ import KittyABI from '../../assets/abis/Kitty.json';
 import { Kitty } from '../Kitty';
 import { Token } from '../Token';
 
-export function useBalanceOfUnderlying(token: Token, kitty: Kitty, accountAddress: string) {
+export function useBalanceOfUnderlying(
+  token: Token,
+  kitty: Kitty,
+  accountAddress: string
+): { refetch: () => void; data: string | null } {
   const { activeChain } = useContext(ChainContext);
   const [state, setState] = useState<string | null>(null);
-  const { data: balanceOfUnderlying } = useContractRead({
+  const { refetch, data: balanceOfUnderlying } = useContractRead({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'underlyingBalance',
     args: [accountAddress] as const,
     chainId: activeChain?.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
   useEffect(() => {
     if (balanceOfUnderlying) {
       setState(new Big(balanceOfUnderlying.toString()).div(10 ** token.decimals).toString());
     }
   }, [balanceOfUnderlying, token.decimals]);
-  return state;
+  return {
+    refetch,
+    data: state,
+  };
 }
