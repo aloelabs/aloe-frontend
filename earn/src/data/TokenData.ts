@@ -23,7 +23,7 @@ const USDC_MAINNET = new Token(
 
 const USDC_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+  '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
   6,
   'USDC',
   'USD Coin',
@@ -32,7 +32,7 @@ const USDC_OPTIMISM = new Token(
 
 const USDC_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+  '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
   6,
   'USDC',
   'USD Coin',
@@ -68,7 +68,7 @@ const WETH_OPTIMISM = new Token(
 
 const WETH_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+  '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
   18,
   'WETH',
   'Wrapped Ether',
@@ -95,7 +95,7 @@ const WBTC_MAINNET = new Token(
 
 const WBTC_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
+  '0x68f180fcce6836688e9084f035309e29bf0a2095',
   8,
   'WBTC',
   'Wrapped Bitcoin',
@@ -104,7 +104,7 @@ const WBTC_OPTIMISM = new Token(
 
 const WBTC_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+  '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
   8,
   'WBTC',
   'Wrapped Bitcoin',

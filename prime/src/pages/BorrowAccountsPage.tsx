@@ -1,15 +1,17 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { ContractReceipt } from 'ethers';
+import { ContractReceipt, ethers } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
-import { useAccount, useContract, useProvider, useSigner, useBlockNumber } from 'wagmi';
+import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
+import { useAccount, useContract, useProvider, useSigner, useBlockNumber, Address } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -17,19 +19,11 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/Addresses';
-import { fetchMarginAccountPreviews, MarginAccountPreview } from '../data/MarginAccount';
-
-const MARGIN_ACCOUNT_OPTIONS: DropdownOption<string>[] = [
-  {
-    label: 'USDC/WETH 0.05%',
-    value: '0xfBe57C73A82171A773D3328F1b563296151be515',
-  },
-  {
-    label: 'WBTC/WETH 0.3%',
-    value: '0xc0A1c271efD6D6325D5db33db5e7cF42A715CD12',
-  },
-];
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS_GOERLI } from '../data/constants/Addresses';
+import { TOPIC0_CREAET_MARKET_EVENT } from '../data/constants/Signatures';
+import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
+import { getToken } from '../data/TokenData';
+import { makeEtherscanRequest } from '../util/Etherscan';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -41,9 +35,19 @@ export default function BorrowAccountsPage() {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
+  const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
   const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
+
+  // MARK: chain agnostic wagmi rate-limiter
+  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 7_000 < 1_000), 500);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
@@ -53,9 +57,7 @@ export default function BorrowAccountsPage() {
   // MARK: block number
   const blockNumber = useBlockNumber({
     chainId: activeChain.id,
-    watch: true,
-    // Keep this at 13 seconds for consistency between networks
-    staleTime: 13_000,
+    enabled: shouldEnableWagmiHooks,
   });
 
   const borrowerLensContract = useContract({
@@ -63,6 +65,53 @@ export default function BorrowAccountsPage() {
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
+
+  // MARK: Fetch all available Uniswap Pools, i.e. any that are associated with a lending pair market
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchAvailablePools() {
+      const result = await makeEtherscanRequest(
+        0,
+        ALOE_II_FACTORY_ADDRESS_GOERLI,
+        [TOPIC0_CREAET_MARKET_EVENT],
+        false,
+        activeChain
+      );
+      const createMarketEvents = result.data.result;
+
+      if (!Array.isArray(createMarketEvents)) return;
+
+      const poolAddresses = createMarketEvents.map((e) => `0x${e.topics[1].slice(-40)}`);
+      const poolInfoTuples = await Promise.all(
+        poolAddresses.map((addr) => {
+          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
+          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
+        })
+      );
+
+      if (mounted)
+        setAvailablePools(
+          new Map(
+            poolAddresses.map((addr, i) => {
+              return [
+                addr.toLowerCase(),
+                {
+                  token0: poolInfoTuples[i][0] as Address,
+                  token1: poolInfoTuples[i][1] as Address,
+                  fee: poolInfoTuples[i][2] as number,
+                },
+              ];
+            })
+          )
+        );
+    }
+
+    fetchAvailablePools();
+    return () => {
+      mounted = false;
+    };
+  }, [activeChain, provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -78,7 +127,8 @@ export default function BorrowAccountsPage() {
           activeChain,
           borrowerLensContract,
           provider,
-          userAddress
+          userAddress,
+          availablePools
         );
         if (mounted) {
           setMarginAccounts(updatedMarginAccounts);
@@ -99,7 +149,15 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, blockNumber.data]);
+  }, [
+    activeChain,
+    accountAddress,
+    isAllowedToInteract,
+    borrowerLensContract,
+    provider,
+    blockNumber.data,
+    availablePools,
+  ]);
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -126,6 +184,24 @@ export default function BorrowAccountsPage() {
       }, 500);
     }
   }
+
+  const dropdownOptions: DropdownOption<string>[] = Array.from(availablePools.entries())
+    .map(([addr, info]) => {
+      const token0 = getToken(activeChain.id, info.token0);
+      const token1 = getToken(activeChain.id, info.token1);
+      const feeTier = NumericFeeTierToEnum(info.fee);
+
+      if (!token0 || !token1) {
+        console.error(`Unfamiliar with tokens in pool ${addr}`);
+        return null;
+      }
+
+      return {
+        label: `${token0.ticker}/${token1.ticker} ${PrintFeeTier(feeTier)}`,
+        value: addr,
+      };
+    })
+    .filter((opt) => opt !== null) as DropdownOption<string>[];
 
   return (
     <AppPage>
@@ -156,7 +232,7 @@ export default function BorrowAccountsPage() {
         )}
       </div>
       <CreateMarginAccountModal
-        availablePools={MARGIN_ACCOUNT_OPTIONS}
+        availablePools={dropdownOptions}
         isOpen={showConfirmModal}
         isTxnPending={isTxnPending}
         setIsOpen={setShowConfirmModal}

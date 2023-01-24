@@ -179,18 +179,33 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     setAddressInputValue('');
     setSendAmountInputValue('');
   }
+  // Get the user's balance of the selected token
+  const { refetch: refetchDepositBalance, data: depositBalance } = useBalance({
+    address: account?.address ?? '0x',
+    token: selectedOption.address,
+    chainId: activeChain.id,
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchDepositBalance();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchDepositBalance, isOpen]);
 
   useEffect(() => {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
-
-  // Get the user's balance of the selected token
-  const { data: depositBalance } = useBalance({
-    address: account?.address ?? '0x',
-    token: selectedOption.address,
-    watch: true,
-    chainId: activeChain.id,
-  });
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (

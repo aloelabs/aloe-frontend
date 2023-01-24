@@ -63,6 +63,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
+  // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
     abi: KittyABI,
@@ -155,22 +156,20 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { address: accountAddress } = useAccount();
 
-  const { data: maxWithdraw } = useContractRead({
+  const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [accountAddress] as const,
-    watch: true,
   });
 
-  const { data: maxRedeem } = useContractRead({
+  const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [accountAddress] as const,
-    watch: true,
   });
 
   const maxWithdrawBalance = useMemo(() => {
@@ -180,7 +179,25 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     return '0.00';
   }, [maxWithdraw, token.decimals]);
 
-  const balanceOfUnderlying = useBalanceOfUnderlying(token, kitty, accountAddress || '');
+  const { refetch: refetchBalanceOfUnderlying, data: balanceOfUnderlying } = useBalanceOfUnderlying(
+    token,
+    kitty,
+    accountAddress || ''
+  );
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    interval = setInterval(() => {
+      refetchBalanceOfUnderlying();
+      refetchMaxRedeem();
+      refetchMaxWithdraw();
+    }, 13_000);
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchBalanceOfUnderlying, refetchMaxRedeem, refetchMaxWithdraw]);
 
   const underlyingBalance = balanceOfUnderlying ?? '0';
 
