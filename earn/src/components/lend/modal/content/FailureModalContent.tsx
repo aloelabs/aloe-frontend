@@ -3,8 +3,8 @@ import React, { useContext } from 'react';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
-import { ChainContext } from '../../../../App';
 
+import { ChainContext } from '../../../../App';
 import ErrorIcon from '../../../../assets/svg/error.svg';
 import { MESSAGE_TEXT_COLOR } from '../../../common/Modal';
 import { ConfirmationType, getConfirmationTypeValue } from '../EditPositionModal';
