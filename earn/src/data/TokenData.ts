@@ -142,7 +142,7 @@ const WSTETH_OPTIMISM = new Token(
   chain.optimism.id,
   '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
   18,
-  'WSTETH',
+  'wstETH',
   'Wrapped Liquid Staked Ether 2.0',
   WstEthLogo
 );
@@ -183,7 +183,7 @@ export function getToken(chainId: number, address: Address): Token {
 }
 
 export function getTokenByTicker(chainId: number, ticker: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker === ticker);
+  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker.toUpperCase() === ticker.toUpperCase());
   if (!token) {
     throw new Error(`Could not find token with ticker ${ticker}`);
   }

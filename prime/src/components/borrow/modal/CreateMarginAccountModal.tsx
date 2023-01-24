@@ -19,16 +19,11 @@ export type CreateMarginAccountModalProps = {
 
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
   const { isOpen, isTxnPending, availablePools, setIsOpen, onConfirm } = props;
-  const [selectedPool, setSelectedPool] = useState<DropdownOption<string> | null>(
-    availablePools.length > 0 ? availablePools[0] : null
-  );
-  if (selectedPool == null) {
-    return null;
-  }
+  const [selectedPool, setSelectedPool] = useState<DropdownOption<string> | null>(null);
   const confirmButtonText = isTxnPending ? 'Pending' : 'Create Margin Account';
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='New Margin Account'>
-      <div className='flex flex-col gap-3 mb-8 w-full'>
+      <div className='flex flex-row items-center w-full justify-between mb-8'>
         <Text size='M' weight='bold' color={LABEL_TEXT_COLOR}>
           Uniswap Pool
         </Text>
