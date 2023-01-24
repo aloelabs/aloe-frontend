@@ -21,7 +21,7 @@ export default function SuccessModalContent(props: SuccessModalContentProps) {
   const { activeChain } = useContext(ChainContext);
 
   return (
-    <div>
+    <div className='w-full'>
       <div className='flex justify-center items-center mb-4'>
         <img src={SuccessIcon} width={100} height={99} alt='success' />
       </div>
@@ -29,6 +29,9 @@ export default function SuccessModalContent(props: SuccessModalContentProps) {
       <div className='mb-8'>
         <Text size='L' weight='bold' color={MESSAGE_TEXT_COLOR}>
           {getConfirmationTypeValue(confirmationType)} Successful
+        </Text>
+        <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR} className='mb-4'>
+          Your transaction has been confirmed.
         </Text>
         <Text>
           <a
