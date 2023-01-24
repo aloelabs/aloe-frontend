@@ -35,7 +35,20 @@ export function formatUSD(amount: number | null, placeholder = '-'): string {
   if (amount === null) {
     return placeholder;
   }
-  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  if (amount < 0.1) {
+    return amount.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumSignificantDigits: 2,
+      maximumSignificantDigits: 2,
+    });
+  }
+  return amount.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /**
