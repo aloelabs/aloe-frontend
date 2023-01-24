@@ -35,7 +35,7 @@ export function formatUSD(amount: number | null, placeholder = '-'): string {
   if (amount === null) {
     return placeholder;
   }
-  if (amount < 0.01) {
+  if (amount < 0.1) {
     return amount.toLocaleString('en-US', {
       style: 'currency',
       currency: 'USD',
