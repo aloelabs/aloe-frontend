@@ -48,9 +48,8 @@ import { formatUSD } from '../util/Numbers';
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
 const PORTFOLIO_GRID_TOOLTIP_TEXT = `These widgets give you general information about an asset.`;
-const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `Before other users can borrow your funds, they must post collateral.
-  When you deposit, you get to pick what type of collateral is allowed. That choice determines what pair you're lending
-  to, and each pair has it's own stats.`;
+const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `The asset you've selected may be available in multiple lending pairs. Use
+  this dropdown to see its stats in a particular pair.`;
 
 const Container = styled.div`
   max-width: 780px;

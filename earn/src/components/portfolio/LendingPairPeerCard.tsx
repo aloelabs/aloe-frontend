@@ -209,8 +209,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     <Container key={activeAsset.address + selectedLendingPair.kitty0.address}>
       <CardHeader>
         <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
-          Lending Pair Peer
-          <Tooltip buttonSize='S' content='Collateral Asset' position='bottom-center' />
+          Lending Pair
         </Text>
         <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} small={true} />
       </CardHeader>
