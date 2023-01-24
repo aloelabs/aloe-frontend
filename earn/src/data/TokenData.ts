@@ -1,6 +1,6 @@
 import { Address, chain } from 'wagmi';
 
-import { UsdcLogo, WbtcLogo, WethLogo } from '../assets/svg/tokens';
+import { DaiLogo, OpLogo, UsdcLogo, VeloLogo, WbtcLogo, WethLogo, WstEthLogo } from '../assets/svg/tokens';
 import { Token } from './Token';
 
 const USDC_GOERLI = new Token(
@@ -111,6 +111,42 @@ const WBTC_ARBITRUM = new Token(
   WbtcLogo
 );
 
+const VELO_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x3c8b650257cfb5f272f799f5e2b4e65093a11a05',
+  18,
+  'VELO',
+  'Velodrome',
+  VeloLogo
+);
+
+const DAI_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+  18,
+  'DAI',
+  'Dai Stablecoin',
+  DaiLogo
+);
+
+const OP_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x4200000000000000000000000000000000000042',
+  18,
+  'OP',
+  'Optimism',
+  OpLogo
+);
+
+const WSTETH_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+  18,
+  'wstETH',
+  'Wrapped Liquid Staked Ether 2.0',
+  WstEthLogo
+);
+
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [chain.mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
@@ -126,6 +162,10 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_OPTIMISM.address]: USDC_OPTIMISM,
     [WETH_OPTIMISM.address]: WETH_OPTIMISM,
     [WBTC_OPTIMISM.address]: WBTC_OPTIMISM,
+    [DAI_OPTIMISM.address]: DAI_OPTIMISM,
+    [VELO_OPTIMISM.address]: VELO_OPTIMISM,
+    [OP_OPTIMISM.address]: OP_OPTIMISM,
+    [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
   },
   [chain.arbitrum.id]: {
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
@@ -143,7 +183,7 @@ export function getToken(chainId: number, address: Address): Token {
 }
 
 export function getTokenByTicker(chainId: number, ticker: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker === ticker);
+  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker.toUpperCase() === ticker.toUpperCase());
   if (!token) {
     throw new Error(`Could not find token with ticker ${ticker}`);
   }
