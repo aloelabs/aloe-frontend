@@ -1,7 +1,70 @@
 import { Address, chain } from 'wagmi';
 
-import { UsdcLogo, WbtcLogo, WethLogo } from '../assets/svg/tokens';
+import { UsdcLogo, WbtcLogo, WethLogo, VeloLogo, DaiLogo, OpLogo, WstEthLogo } from '../assets/svg/tokens';
 import { Token } from './Token';
+
+const USDC_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
+  6,
+  'USDC',
+  'USD Coin',
+  UsdcLogo
+);
+
+const WETH_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x4200000000000000000000000000000000000006',
+  18,
+  'WETH',
+  'Wrapped Ether',
+  WethLogo
+);
+
+const WBTC_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x68f180fcce6836688e9084f035309e29bf0a2095',
+  8,
+  'WBTC',
+  'Wrapped Bitcoin',
+  WbtcLogo
+);
+
+const VELO_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x3c8b650257cfb5f272f799f5e2b4e65093a11a05',
+  18,
+  'VELO',
+  'Velodrome',
+  VeloLogo
+);
+
+const DAI_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+  18,
+  'DAI',
+  'Dai Stablecoin',
+  DaiLogo
+);
+
+const OP_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x4200000000000000000000000000000000000042',
+  18,
+  'OP',
+  'Optimism',
+  OpLogo
+);
+
+const WSTETH_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+  18,
+  'wstETH',
+  'Wrapped Liquid Staked Ether 2.0',
+  WstEthLogo
+);
 
 const USDC_GOERLI = new Token(
   chain.goerli.id,
@@ -67,6 +130,15 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_GOERLI.address]: USDC_GOERLI,
     [WETH_GOERLI.address]: WETH_GOERLI,
     [WBTC_GOERLI.address]: WBTC_GOERLI,
+  },
+  [chain.optimism.id]: {
+    [USDC_OPTIMISM.address]: USDC_OPTIMISM,
+    [WETH_OPTIMISM.address]: WETH_OPTIMISM,
+    [WBTC_OPTIMISM.address]: WBTC_OPTIMISM,
+    [VELO_OPTIMISM.address]: VELO_OPTIMISM,
+    [DAI_OPTIMISM.address]: DAI_OPTIMISM,
+    [OP_OPTIMISM.address]: OP_OPTIMISM,
+    [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
   },
 };
 

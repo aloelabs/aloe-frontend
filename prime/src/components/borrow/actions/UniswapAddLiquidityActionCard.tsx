@@ -121,8 +121,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }
-      // TODO replace this hard-coded string with `poolAddress` once we're done with testnet!!!
-      const tickData = await calculateTickData('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', poolBasics);
+      const tickData = await calculateTickData(poolAddress, poolBasics, activeChain.id);
       if (mounted) {
         setLiquidityData(tickData);
       }
