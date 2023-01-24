@@ -9,10 +9,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   Address,
-  erc20ABI,
   useAccount,
   useBalance,
-  useContractRead,
   useContractWrite,
   usePrepareContractWrite,
   useProvider,
@@ -156,8 +154,6 @@ function DepositButton(props: DepositButtonProps) {
 
   const parsedDepositAmount =
     depositAmount !== '' ? ethers.utils.parseUnits(depositAmount, token.decimals).toString() : '0';
-
-  console.log(canUsePermit);
 
   // Approval flow
   const { config: depositWithApprovalConfig } = usePrepareContractWrite({
@@ -386,8 +382,6 @@ function DepositButton(props: DepositButtonProps) {
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
-  console.log('needsApproval', needsApproval, userAllowanceToken, numericDepositBalance);
-
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
 
@@ -557,8 +551,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
 
   useEffect(() => {

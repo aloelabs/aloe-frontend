@@ -75,8 +75,6 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     token: token.address,
     enabled: account.address !== undefined,
     chainId: activeChain.id,
-    // TODO: Add an alternative to watch that doesn't re-fetch each block (because of optimism)
-    // watch: true,
   });
 
   const { refetch: refetchUserAllowance, data: userAllowanceToken } = useAllowance(
