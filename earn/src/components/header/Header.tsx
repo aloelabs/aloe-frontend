@@ -30,7 +30,7 @@ const Nav = styled.nav`
 `;
 
 export type HeaderProps = {
-  checkboxes: string[];
+  checkboxes: React.ReactNode[];
 };
 
 export default function Header(props: HeaderProps) {

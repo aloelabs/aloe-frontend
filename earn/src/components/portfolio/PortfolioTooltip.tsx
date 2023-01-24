@@ -10,7 +10,7 @@ import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 const TooltipContainer = styled.div.attrs((props: { verticallyCentered?: boolean; filled?: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center absolute`}
   padding: 16px;
-  z-index: 30;
+  z-index: 8;
   border-radius: 8px;
   width: 170px;
   background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
