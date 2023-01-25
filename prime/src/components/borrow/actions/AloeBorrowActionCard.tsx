@@ -34,6 +34,15 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
+  const asset0TotalSupply = marginAccount.lender0TotalSupply;
+  const asset1TotalSupply = marginAccount.lender1TotalSupply;
+  const asset0Utilization = marginAccount.lender0Utilization;
+  const asset1Utilization = marginAccount.lender1Utilization;
+  const asset0Available = asset0TotalSupply - asset0TotalSupply * (asset0Utilization / 100);
+  const asset1Available = asset1TotalSupply - asset1TotalSupply * (asset1Utilization / 100);
+  const max = selectedToken === TokenType.ASSET0 ? asset0Available : asset1Available;
+  const maxString = max.toString();
+
   const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
     let amount0 = 0;
@@ -81,17 +90,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
-          max={
-            selectedToken === TokenType.ASSET0
-              ? marginAccount.lender0TotalSupply.toString()
-              : marginAccount.lender1TotalSupply.toString()
-          }
-          maxed={
-            tokenAmount ===
-            (selectedToken === TokenType.ASSET0
-              ? marginAccount.lender0TotalSupply.toString()
-              : marginAccount.lender1TotalSupply.toString())
-          }
+          max={maxString}
+          maxed={tokenAmount === maxString}
           maxLabel='Total Supply'
         />
       </div>
