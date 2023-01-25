@@ -492,18 +492,14 @@ export default function BorrowActionsPage() {
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}, ${
-                displayedMarginAccount.borrowerAPR0
-              }%`}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
               denomination={token0.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}, ${
-                displayedMarginAccount.borrowerAPR1
-              }%`}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
               denomination={token1.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
