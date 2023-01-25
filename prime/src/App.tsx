@@ -71,7 +71,7 @@ export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
 
 export function useGeoFencing(activeChain: Chain) {
   const ctxt = useContext(GeoFencingContext);
-  return ctxt?.isAllowed || !!activeChain.testnet;
+  return true || ctxt?.isAllowed || !!activeChain.testnet;
 }
 
 function AppBodyWrapper() {

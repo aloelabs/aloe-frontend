@@ -11,6 +11,7 @@ import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
@@ -26,7 +27,7 @@ import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsT
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
-import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/Addresses';
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
@@ -223,6 +224,11 @@ export default function BorrowActionsPage() {
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
+  const lenderLensContract = useContract({
+    address: ALOE_II_LENDER_LENS_ADDRESS,
+    abi: KittyLensAbi,
+    signerOrProvider: provider,
+  });
   const { data: uniswapPositionTicks } = useContractRead({
     address: accountAddressParam ?? '0x', // TODO better optional resolution
     abi: MarginAccountABI,
@@ -246,12 +252,14 @@ export default function BorrowActionsPage() {
     // Ensure we have non-null values
     async function fetch(
       marginAccountAddress: string,
+      lenderLensContract: Contract,
       marginAccountContract: Contract,
       marginAccountLensContract: Contract
     ) {
       const fetchedMarginAccount = await fetchMarginAccount(
         accountAddressParam ?? '0x', // TODO better optional resolution
         activeChain,
+        lenderLensContract,
         marginAccountContract,
         marginAccountLensContract,
         provider,
@@ -261,13 +269,20 @@ export default function BorrowActionsPage() {
         setMarginAccount(fetchedMarginAccount);
       }
     }
-    if (accountAddressParam && marginAccountContract && marginAccountLensContract) {
-      fetch(accountAddressParam, marginAccountContract, marginAccountLensContract);
+    if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
+      fetch(accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract);
     }
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider, activeChain]);
+  }, [
+    accountAddressParam,
+    lenderLensContract,
+    marginAccountContract,
+    marginAccountLensContract,
+    provider,
+    activeChain,
+  ]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {
@@ -477,14 +492,18 @@ export default function BorrowActionsPage() {
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}, ${
+                displayedMarginAccount.borrowerAPR0
+              }%`}
               denomination={token0.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
+              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}, ${
+                displayedMarginAccount.borrowerAPR1
+              }%`}
               denomination={token1.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
@@ -507,6 +526,45 @@ export default function BorrowActionsPage() {
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
               }
+              showAsterisk={isShowingHypothetical}
+            />
+          </AccountStatsGrid>
+        </div>
+        <div className='w-full flex flex-col gap-4 mb-8'>
+          <Text size='L' weight='medium'>
+            Pair Stats
+          </Text>
+          <AccountStatsGrid>
+            <AccountStatsCard
+              label={`${token0.ticker} APR`}
+              value={`${displayedMarginAccount.borrowerAPR0.toFixed(2)}%`}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label={`${token1.ticker} APR`}
+              value={`${displayedMarginAccount.borrowerAPR1.toFixed(2)}%`}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label={`${token0.ticker} Utilization`}
+              value={`${displayedMarginAccount.lender0Utilization.toFixed(2)}%`}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label={`${token1.ticker} Utilization`}
+              value={`${displayedMarginAccount.lender1Utilization.toFixed(2)}%`}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label={`${token0.ticker} Total Supply`}
+              value={formatTokenAmount(displayedMarginAccount.lender0TotalSupply, 2)}
+              denomination={token0.ticker ?? ''}
+              showAsterisk={isShowingHypothetical}
+            />
+            <AccountStatsCard
+              label={`${token1.ticker} Total Supply`}
+              value={formatTokenAmount(displayedMarginAccount.lender1TotalSupply, 2)}
+              denomination={token1.ticker ?? ''}
               showAsterisk={isShowingHypothetical}
             />
           </AccountStatsGrid>
