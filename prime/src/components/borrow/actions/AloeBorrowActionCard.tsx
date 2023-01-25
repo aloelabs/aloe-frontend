@@ -92,7 +92,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
           maxed={tokenAmount === maxString}
-          maxLabel='Total Supply'
+          maxLabel='Available Supply'
         />
       </div>
     </BaseActionCard>
