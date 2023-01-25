@@ -156,7 +156,7 @@ export default function TokenDropdown(props: TokenDropdownProps) {
               backgroundColor={backgroundColor}
               backgroundColorHover={backgroundColorHover}
             >
-              <div className='flex items-center gap-1'>
+              <div className='flex items-center gap-1 min-w-max'>
                 <TokenIcon src={option.iconPath || UNKNOWN_TOKEN_ICON} width={20} height={20} />
                 <Text size='M' weight='bold'>
                   {option.ticker}
