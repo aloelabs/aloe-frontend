@@ -49,6 +49,7 @@ export type TokenAmountInputProps = {
   onMax?: (maxValue: string) => void;
   max?: string;
   maxed?: boolean;
+  maxLabel?: string;
   error?: boolean;
   errorMessage?: string;
   disabled?: boolean;
@@ -64,7 +65,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         </Text>
         {props.max !== undefined && (
           <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
-            Balance: {props.max}
+            {props.maxLabel || 'Balance'} {props.max}
           </Text>
         )}
       </div>

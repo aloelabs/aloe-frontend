@@ -81,6 +81,18 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label || ''}
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
+          max={
+            selectedToken === TokenType.ASSET0
+              ? marginAccount.lender0TotalSupply.toString()
+              : marginAccount.lender1TotalSupply.toString()
+          }
+          maxed={
+            tokenAmount ===
+            (selectedToken === TokenType.ASSET0
+              ? marginAccount.lender0TotalSupply.toString()
+              : marginAccount.lender1TotalSupply.toString())
+          }
+          maxLabel='Total Supply'
         />
       </div>
     </BaseActionCard>
