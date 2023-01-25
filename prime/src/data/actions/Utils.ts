@@ -23,6 +23,19 @@ export function runWithChecks(
     return null;
   }
 
+  const asset0Borrowed = updatedOperand.liabilities.amount0;
+  const asset1Borrowed = updatedOperand.liabilities.amount1;
+  const asset0TotalSupply = marginAccount.lender0TotalSupply;
+  const asset1TotalSupply = marginAccount.lender1TotalSupply;
+  const asset0Utilization = marginAccount.lender0Utilization;
+  const asset1Utilization = marginAccount.lender1Utilization;
+  const asset0Available = asset0TotalSupply - asset0TotalSupply * (asset0Utilization / 100);
+  const asset1Available = asset1TotalSupply - asset1TotalSupply * (asset1Utilization / 100);
+  if (asset0Borrowed > asset0Available || asset1Borrowed > asset1Available) {
+    console.log('Margin Account borrowed more than available supply!');
+    return null;
+  }
+
   // if the action would cause insolvency, we have an issue!
   // note: Technically (in the contracts) solvency is only checked at the end of a series of actions,
   //       not after each individual one. We tried following that pattern here, but it made the UX
