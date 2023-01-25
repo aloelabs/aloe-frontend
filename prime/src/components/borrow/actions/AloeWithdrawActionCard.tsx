@@ -16,7 +16,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
-  const { marginAccount, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
@@ -38,6 +38,9 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
+
+  const max = selectedToken === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
+  const maxString = max.toString();
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
     const parsedValue = parseFloat(value) || 0;
@@ -78,6 +81,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           tokenLabel={selectedTokenOption.label}
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
+          max={maxString}
+          maxed={tokenAmount === maxString}
         />
       </div>
     </BaseActionCard>
