@@ -35,6 +35,17 @@ export type Liabilities = {
   amount1: number;
 };
 
+export type MarketInfo = {
+  lender0: Address;
+  lender1: Address;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: Big;
+  lender1TotalSupply: Big;
+};
+
 /**
  * For the use-cases that require all of the data
  */
@@ -48,17 +59,7 @@ export type MarginAccount = {
   liabilities: Liabilities;
   sqrtPriceX96: Big;
   health: number;
-};
-
-export type MarketInfo = {
-  lender0: Address;
-  lender1: Address;
-  borrowerAPR0: number;
-  borrowerAPR1: number;
-  lender0Utilization: number;
-  lender1Utilization: number;
-  lender0TotalSupply: Big;
-  lender1TotalSupply: Big;
+  marketInfo: MarketInfo;
 };
 
 export type LiquidationThresholds = {
@@ -70,7 +71,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1'>;
+export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'marketInfo'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -165,47 +166,15 @@ export async function fetchMarginAccountPreviews(
   return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
 }
 
-export async function fetchMarketInfoFor(
-  lenderLensContract: ethers.Contract,
-  lender0: Address,
-  lender1: Address
-): Promise<MarketInfo> {
-  const [lender0Basics, lender1Basics] = await Promise.all([
-    lenderLensContract.readBasics(lender0),
-    lenderLensContract.readBasics(lender1),
-  ]);
-
-  const interestRate0 = new Big(lender0Basics.interestRate.toString());
-  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const interestRate1 = new Big(lender1Basics.interestRate.toString());
-  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
-  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
-  return {
-    lender0,
-    lender1,
-    borrowerAPR0: borrowAPR0,
-    borrowerAPR1: borrowAPR1,
-    lender0Utilization: lender0Utilization,
-    lender1Utilization: lender1Utilization,
-    lender0TotalSupply: lender0TotalSupply,
-    lender1TotalSupply: lender1TotalSupply,
-  };
-}
-
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
+  lenderLensContract: ethers.Contract,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   marginAccountAddress: string
-): Promise<{
-  marginAccount: MarginAccount;
-  lenderAddresses: { lender0: Address; lender1: Address };
-}> {
+): Promise<MarginAccount> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
     marginAccountContract.TOKEN1(),
@@ -225,7 +194,21 @@ export async function fetchMarginAccount(
   const lender1 = results[3] as Address;
   const assetsData = results[5];
   const liabilitiesData = results[6];
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
+  const [feeTier, slot0, lender0Basics, lender1Basics] = await Promise.all([
+    uniswapPoolContract.fee(),
+    uniswapPoolContract.slot0(),
+    lenderLensContract.readBasics(lender0),
+    lenderLensContract.readBasics(lender1),
+  ]);
+
+  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
+  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
 
   const assets: Assets = {
     token0Raw: Big(assetsData.fixed0.toString())
@@ -254,18 +237,25 @@ export async function fetchMarginAccount(
   const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
 
   return {
-    marginAccount: {
-      address: marginAccountAddress,
-      uniswapPool: uniswapPool,
-      token0: token0,
-      token1: token1,
-      feeTier: NumericFeeTierToEnum(feeTier),
-      assets: assets,
-      liabilities: liabilities,
-      sqrtPriceX96: toBig(slot0.sqrtPriceX96),
-      health: health.div(1e9).toNumber() / 1e9,
+    address: marginAccountAddress,
+    uniswapPool: uniswapPool,
+    token0: token0,
+    token1: token1,
+    feeTier: NumericFeeTierToEnum(feeTier),
+    assets: assets,
+    liabilities: liabilities,
+    sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+    health: health.div(1e9).toNumber() / 1e9,
+    marketInfo: {
+      borrowerAPR0: borrowAPR0,
+      borrowerAPR1: borrowAPR1,
+      lender0: lender0,
+      lender1: lender1,
+      lender0TotalSupply: lender0TotalSupply,
+      lender1TotalSupply: lender1TotalSupply,
+      lender0Utilization: lender0Utilization,
+      lender1Utilization: lender1Utilization,
     },
-    lenderAddresses: { lender0, lender1 },
   };
 }
 

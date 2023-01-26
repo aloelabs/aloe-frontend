@@ -13,6 +13,17 @@ export type UniswapPositionParams = {
   liquidity: string;
 };
 
+export type MarketInfoParams = {
+  lender0: Address;
+  lender1: Address;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: string;
+  lender1TotalSupply: string;
+};
+
 export type MarginAccountParams = {
   address: string;
   uniswapPool: string;
@@ -23,6 +34,7 @@ export type MarginAccountParams = {
   liabilities: Liabilities;
   sqrtPriceX96: string;
   health: number;
+  marketInfo: MarketInfoParams;
 };
 
 export type CalculateLiquidationThresholdsParams = {
@@ -44,6 +56,11 @@ export type ComputeLiquidationThresholdsRequest = {
 export function stringifyMarginAccount(marginAccount: MarginAccount): MarginAccountParams {
   return {
     ...marginAccount,
+    marketInfo: {
+      ...marginAccount.marketInfo,
+      lender0TotalSupply: marginAccount.marketInfo.lender0TotalSupply.toString(),
+      lender1TotalSupply: marginAccount.marketInfo.lender1TotalSupply.toString(),
+    },
     sqrtPriceX96: marginAccount.sqrtPriceX96.toString(),
   };
 }
@@ -51,6 +68,11 @@ export function stringifyMarginAccount(marginAccount: MarginAccount): MarginAcco
 export function parseMarginAccountParams(marginAccount: MarginAccountParams): MarginAccount {
   return {
     ...marginAccount,
+    marketInfo: {
+      ...marginAccount.marketInfo,
+      lender0TotalSupply: new Big(marginAccount.marketInfo.lender0TotalSupply),
+      lender1TotalSupply: new Big(marginAccount.marketInfo.lender1TotalSupply),
+    },
     sqrtPriceX96: new Big(marginAccount.sqrtPriceX96),
   };
 }
