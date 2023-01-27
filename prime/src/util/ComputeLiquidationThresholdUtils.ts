@@ -22,6 +22,12 @@ export type MarginAccountParams = {
   liabilities: Liabilities;
   sqrtPriceX96: string;
   health: number;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: number;
+  lender1TotalSupply: number;
 };
 
 export type CalculateLiquidationThresholdsParams = {

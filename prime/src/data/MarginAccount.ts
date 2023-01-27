@@ -47,6 +47,12 @@ export type MarginAccount = {
   liabilities: Liabilities;
   sqrtPriceX96: Big;
   health: number;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: number;
+  lender1TotalSupply: number;
 };
 
 export type LiquidationThresholds = {
@@ -58,7 +64,16 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96'>;
+export type MarginAccountPreview = Omit<
+  MarginAccount,
+  | 'sqrtPriceX96'
+  | 'borrowerAPR0'
+  | 'borrowerAPR1'
+  | 'lender0Utilization'
+  | 'lender1Utilization'
+  | 'lender0TotalSupply'
+  | 'lender1TotalSupply'
+>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -156,6 +171,7 @@ export async function fetchMarginAccountPreviews(
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
+  lenderLensContract: ethers.Contract,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
@@ -174,12 +190,27 @@ export async function fetchMarginAccount(
 
   const uniswapPool = results[4];
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
-
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
+  const lender0Address = results[2] as Address;
+  const lender1Address = results[3] as Address;
   const assetsData = results[5];
   const liabilitiesData = results[6];
+  const [feeTier, slot0, lender0Basics, lender1Basics] = await Promise.all([
+    uniswapPoolContract.fee(),
+    uniswapPoolContract.slot0(),
+    lenderLensContract.readBasics(lender0Address),
+    lenderLensContract.readBasics(lender1Address),
+  ]);
+
+  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const borrowAPR0 = (interestRate0.div(10 ** 12).toNumber() - 1) * 365 * 24 * 60 * 60;
+  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const borrowAPR1 = (interestRate1.div(10 ** 12).toNumber() - 1) * 365 * 24 * 60 * 60;
+  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString()).div(10 ** token0.decimals).toNumber();
+  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString()).div(10 ** token1.decimals).toNumber();
 
   const assets: Assets = {
     token0Raw: Big(assetsData.fixed0.toString())
@@ -217,6 +248,12 @@ export async function fetchMarginAccount(
     liabilities: liabilities,
     sqrtPriceX96: toBig(slot0.sqrtPriceX96),
     health: health.div(1e9).toNumber() / 1e9,
+    borrowerAPR0: borrowAPR0,
+    borrowerAPR1: borrowAPR1,
+    lender0Utilization: lender0Utilization,
+    lender1Utilization: lender1Utilization,
+    lender0TotalSupply: lender0TotalSupply,
+    lender1TotalSupply: lender1TotalSupply,
   };
 }
 
