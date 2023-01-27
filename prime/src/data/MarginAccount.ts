@@ -110,44 +110,49 @@ export async function fetchMarginAccountPreviews(
 
       if (!token0 || !token1) return null;
 
-      const assetsData = await borrowerLensContract.getAssets(accountAddress);
-      const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
+      try {
+        const assetsData = await borrowerLensContract.getAssets(accountAddress);
+        const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
+        const healthData = await borrowerLensContract.getHealth(accountAddress);
 
-      const healthData = await borrowerLensContract.getHealth(accountAddress);
-      const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+        const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
 
-      const assets: Assets = {
-        token0Raw: Big(assetsData.fixed0.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Raw: Big(assetsData.fixed1.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        uni0: Big(assetsData.fluid0C.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        uni1: Big(assetsData.fluid1C.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
-      const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData.amount0.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        amount1: Big(liabilitiesData.amount1.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-      };
-      return {
-        address: accountAddress,
-        uniswapPool,
-        token0,
-        token1,
-        feeTier,
-        assets,
-        liabilities,
-        health: health.div(1e9).toNumber() / 1e9,
-      };
+        const assets: Assets = {
+          token0Raw: Big(assetsData.fixed0.toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          token1Raw: Big(assetsData.fixed1.toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+          uni0: Big(assetsData.fluid0C.toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          uni1: Big(assetsData.fluid1C.toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+        };
+        const liabilities: Liabilities = {
+          amount0: Big(liabilitiesData.amount0.toString())
+            .div(10 ** token0.decimals)
+            .toNumber(),
+          amount1: Big(liabilitiesData.amount1.toString())
+            .div(10 ** token1.decimals)
+            .toNumber(),
+        };
+        return {
+          address: accountAddress,
+          uniswapPool,
+          token0,
+          token1,
+          feeTier,
+          assets,
+          liabilities,
+          health: health.div(1e9).toNumber() / 1e9,
+        };
+      } catch (e) {
+        console.error(`borrowerLens.getAssets failed for account ${accountAddress} in pool ${uniswapPool}`, e);
+        return null;
+      }
     }
   );
   return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
