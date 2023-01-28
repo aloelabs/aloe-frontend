@@ -277,12 +277,14 @@ export default function BorrowActionsPage() {
     // Ensure we have non-null values
     async function fetch(
       marginAccountAddress: string,
+      lenderLensContract: Contract,
       marginAccountContract: Contract,
       marginAccountLensContract: Contract
     ) {
       const result = await fetchMarginAccount(
         accountAddressParam ?? '0x', // TODO better optional resolution
         activeChain,
+        lenderLensContract,
         marginAccountContract,
         marginAccountLensContract,
         provider,
@@ -292,13 +294,20 @@ export default function BorrowActionsPage() {
         setMarginAccount(result.marginAccount);
       }
     }
-    if (accountAddressParam && marginAccountContract && marginAccountLensContract) {
-      fetch(accountAddressParam, marginAccountContract, marginAccountLensContract);
+    if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
+      fetch(accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract);
     }
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, marginAccountContract, marginAccountLensContract, provider, activeChain]);
+  }, [
+    accountAddressParam,
+    lenderLensContract,
+    marginAccountContract,
+    marginAccountLensContract,
+    provider,
+    activeChain,
+  ]);
 
   // MARK: fetch MarketInfo
   useEffect(() => {

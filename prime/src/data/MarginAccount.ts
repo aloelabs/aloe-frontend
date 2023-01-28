@@ -200,6 +200,7 @@ export async function fetchMarketInfoFor(
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
+  lenderLensContract: ethers.Contract,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
