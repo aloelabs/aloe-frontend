@@ -34,7 +34,14 @@ import {
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import { fetchMarginAccount, LiquidationThresholds, MarginAccount, sumAssetsPerToken } from '../data/MarginAccount';
+import {
+  fetchMarginAccount,
+  fetchMarketInfoFor,
+  LiquidationThresholds,
+  MarginAccount,
+  MarketInfo,
+  sumAssetsPerToken,
+} from '../data/MarginAccount';
 import {
   ComputeLiquidationThresholdsRequest,
   stringifyMarginAccount,
@@ -144,6 +151,23 @@ const AccountStatsGrid = styled.div`
   }
 `;
 
+const MarketStatsGrid = styled.div`
+  display: grid;
+  grid-template:
+    'a a b b' 1fr
+    'c d e f' 1fr / 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  max-width: 100%;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    grid-template:
+      'a a' 1fr
+      'c d' 1fr
+      'b b' 1fr
+      'e f' 1fr / 1fr 1fr;
+  }
+`;
+
 type AccountParams = {
   account: string;
 };
@@ -181,6 +205,7 @@ export default function BorrowActionsPage() {
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
+  const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
   const [hypotheticalState, setHypotheticalState] = useState<AccountState | null>(null);
   const [displayedMarginAccount, setDisplayedMarginAccount] = useState<MarginAccount | null>(null);
@@ -256,7 +281,7 @@ export default function BorrowActionsPage() {
       marginAccountContract: Contract,
       marginAccountLensContract: Contract
     ) {
-      const fetchedMarginAccount = await fetchMarginAccount(
+      const result = await fetchMarginAccount(
         accountAddressParam ?? '0x', // TODO better optional resolution
         activeChain,
         lenderLensContract,
@@ -266,7 +291,7 @@ export default function BorrowActionsPage() {
         marginAccountAddress
       );
       if (mounted) {
-        setMarginAccount(fetchedMarginAccount);
+        setMarginAccount(result.marginAccount);
       }
     }
     if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
@@ -283,6 +308,20 @@ export default function BorrowActionsPage() {
     provider,
     activeChain,
   ]);
+
+  // MARK: fetch MarketInfo
+  useEffect(() => {
+    let mounted = true;
+    async function fetchMarketInfo() {
+      if (!lenderLensContract || !marginAccount) return;
+      const marketInfo = await fetchMarketInfoFor(lenderLensContract, marginAccount.lender0, marginAccount.lender1);
+      if (mounted) setMarketInfo(marketInfo);
+    }
+    fetchMarketInfo();
+    return () => {
+      mounted = false;
+    };
+  }, [lenderLensContract, marginAccount]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {
@@ -458,7 +497,7 @@ export default function BorrowActionsPage() {
         <div className='w-full flex flex-col gap-4 mb-8'>
           <div className='flex gap-4 items-center'>
             <Text size='L' weight='medium'>
-              Summary
+              Account Summary
             </Text>
             <TokenChooser
               token0={token0}
@@ -526,45 +565,53 @@ export default function BorrowActionsPage() {
             />
           </AccountStatsGrid>
         </div>
-        <div className='w-full flex flex-col gap-4 mb-8'>
-          <Text size='L' weight='medium'>
-            Pair Stats
-          </Text>
-          <AccountStatsGrid>
-            <AccountStatsCard
-              label={`${token0.ticker} APR`}
-              value={`${displayedMarginAccount.borrowerAPR0.toFixed(2)}%`}
-              showAsterisk={isShowingHypothetical}
-            />
-            <AccountStatsCard
-              label={`${token1.ticker} APR`}
-              value={`${displayedMarginAccount.borrowerAPR1.toFixed(2)}%`}
-              showAsterisk={isShowingHypothetical}
-            />
-            <AccountStatsCard
-              label={`${token0.ticker} Utilization`}
-              value={`${displayedMarginAccount.lender0Utilization.toFixed(2)}%`}
-              showAsterisk={isShowingHypothetical}
-            />
-            <AccountStatsCard
-              label={`${token1.ticker} Utilization`}
-              value={`${displayedMarginAccount.lender1Utilization.toFixed(2)}%`}
-              showAsterisk={isShowingHypothetical}
-            />
-            <AccountStatsCard
-              label={`${token0.ticker} Total Supply`}
-              value={formatTokenAmount(displayedMarginAccount.lender0TotalSupply, 2)}
-              denomination={token0.ticker ?? ''}
-              showAsterisk={isShowingHypothetical}
-            />
-            <AccountStatsCard
-              label={`${token1.ticker} Total Supply`}
-              value={formatTokenAmount(displayedMarginAccount.lender1TotalSupply, 2)}
-              denomination={token1.ticker ?? ''}
-              showAsterisk={isShowingHypothetical}
-            />
-          </AccountStatsGrid>
-        </div>
+        {marketInfo !== null && (
+          <div className='w-full flex flex-col gap-4 mb-8'>
+            <Text size='L' weight='medium'>
+              Market Stats
+            </Text>
+            <MarketStatsGrid>
+              <AccountStatsCard
+                gridArea='d'
+                label={`${token0.ticker} APR`}
+                value={`${marketInfo.borrowerAPR0.toFixed(2)}%`}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                gridArea='f'
+                label={`${token1.ticker} APR`}
+                value={`${marketInfo.borrowerAPR1.toFixed(2)}%`}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                gridArea='c'
+                label={`${token0.ticker} Utilization`}
+                value={`${marketInfo.lender0Utilization.toFixed(2)}%`}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                gridArea='e'
+                label={`${token1.ticker} Utilization`}
+                value={`${marketInfo.lender1Utilization.toFixed(2)}%`}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                gridArea='a'
+                label={`${token0.ticker} Supply`}
+                value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
+                denomination={token0.ticker ?? ''}
+                showAsterisk={isShowingHypothetical}
+              />
+              <AccountStatsCard
+                gridArea='b'
+                label={`${token1.ticker} Supply`}
+                value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
+                denomination={token1.ticker ?? ''}
+                showAsterisk={isShowingHypothetical}
+              />
+            </MarketStatsGrid>
+          </div>
+        )}
         <div className='w-full mb-8'>
           {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
             <PnLGraph
