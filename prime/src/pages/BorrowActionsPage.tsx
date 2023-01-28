@@ -8,7 +8,7 @@ import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Address, useContract, useContractRead, useProvider } from 'wagmi';
+import { useContract, useContractRead, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
@@ -205,7 +205,6 @@ export default function BorrowActionsPage() {
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
-  const [lenderAddresses, setLenderAddresses] = useState<{ lender0: Address; lender1: Address } | null>(null);
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
   const [hypotheticalState, setHypotheticalState] = useState<AccountState | null>(null);
@@ -291,7 +290,6 @@ export default function BorrowActionsPage() {
       );
       if (mounted) {
         setMarginAccount(result.marginAccount);
-        setLenderAddresses(result.lenderAddresses);
       }
     }
     if (accountAddressParam && marginAccountContract && marginAccountLensContract) {
@@ -306,15 +304,15 @@ export default function BorrowActionsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetchMarketInfo() {
-      if (!lenderLensContract || !lenderAddresses) return;
-      const marketInfo = await fetchMarketInfoFor(lenderLensContract, lenderAddresses.lender0, lenderAddresses.lender1);
+      if (!lenderLensContract || !marginAccount) return;
+      const marketInfo = await fetchMarketInfoFor(lenderLensContract, marginAccount.lender0, marginAccount.lender1);
       if (mounted) setMarketInfo(marketInfo);
     }
     fetchMarketInfo();
     return () => {
       mounted = false;
     };
-  }, [lenderLensContract, lenderAddresses]);
+  }, [lenderLensContract, marginAccount]);
 
   // MARK: fetch uniswap positions
   useEffect(() => {

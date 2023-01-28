@@ -48,6 +48,8 @@ export type MarginAccount = {
   liabilities: Liabilities;
   sqrtPriceX96: Big;
   health: number;
+  lender0: Address;
+  lender1: Address;
 };
 
 export type MarketInfo = {
@@ -204,7 +206,6 @@ export async function fetchMarginAccount(
   marginAccountAddress: string
 ): Promise<{
   marginAccount: MarginAccount;
-  lenderAddresses: { lender0: Address; lender1: Address };
 }> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
@@ -264,8 +265,9 @@ export async function fetchMarginAccount(
       liabilities: liabilities,
       sqrtPriceX96: toBig(slot0.sqrtPriceX96),
       health: health.div(1e9).toNumber() / 1e9,
+      lender0: lender0,
+      lender1: lender1,
     },
-    lenderAddresses: { lender0, lender1 },
   };
 }
 
