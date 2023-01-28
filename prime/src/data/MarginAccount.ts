@@ -126,9 +126,9 @@ export async function fetchMarginAccountPreviews(
       if (!token0 || !token1) return null;
 
       const assetsData = await borrowerLensContract.getAssets(accountAddress);
-      const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
+      const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
 
-      const healthData = await borrowerLensContract.getHealth(accountAddress);
+      const healthData = await borrowerLensContract.getHealth(accountAddress, true);
       const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
 
       const assets: Assets = {
@@ -184,8 +184,8 @@ export async function fetchMarginAccount(
     marginAccountContract.LENDER1(),
     marginAccountContract.UNISWAP_POOL(),
     marginAccountLensContract.getAssets(marginAccountAddress),
-    marginAccountLensContract.getLiabilities(marginAccountAddress),
-    marginAccountLensContract.getHealth(accountAddress),
+    marginAccountLensContract.getLiabilities(marginAccountAddress, true),
+    marginAccountLensContract.getHealth(accountAddress, true),
   ]);
 
   const uniswapPool = results[4];
