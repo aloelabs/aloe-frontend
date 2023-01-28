@@ -32,7 +32,7 @@ import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { ReferralData } from '../../../pages/PortfolioPage';
 import { formatNumberInput, roundPercentage, toBig, truncateDecimals } from '../../../util/Numbers';
-import { doesSupportPermit, getErc2612Signature } from '../../../util/Permit';
+import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -117,7 +117,7 @@ function DepositButton(props: DepositButtonProps) {
     props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
-  const [canUsePermit, setCanUsePermit] = useState<boolean>(false);
+  const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
   const [courierPermitData, setCourierPermitData] = useState<PermitData | undefined>(undefined);
 
@@ -166,7 +166,7 @@ function DepositButton(props: DepositButtonProps) {
       depositAmount !== '' &&
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
-      !canUsePermit,
+      permitDomain === null,
   });
   const depositWithApprovalConfigUpdatedRequest = useMemo(() => {
     if (depositWithApprovalConfig.request) {
@@ -207,7 +207,7 @@ function DepositButton(props: DepositButtonProps) {
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
       courierId !== null &&
-      !canUsePermit,
+      !permitDomain,
   });
   const depositUsingApprovalWithCourierConfigUpdatedRequest = useMemo(() => {
     if (depositUsingApprovalWithCourierConfig.request) {
@@ -247,7 +247,7 @@ function DepositButton(props: DepositButtonProps) {
       depositAmount !== '' &&
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
-      canUsePermit &&
+      permitDomain !== null &&
       permitData !== undefined,
   });
   const depositWithPermitConfigUpdatedRequest = useMemo(() => {
@@ -294,7 +294,7 @@ function DepositButton(props: DepositButtonProps) {
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
       permitData !== undefined &&
-      canUsePermit &&
+      permitDomain !== null &&
       courierId !== 0 &&
       courierPermitData !== undefined,
   });
@@ -341,16 +341,16 @@ function DepositButton(props: DepositButtonProps) {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const result = await doesSupportPermit(erc20Contract);
+      const result = await attemptToInferPermitDomain(erc20Contract, activeChain.id);
       if (mounted) {
-        setCanUsePermit(result);
+        setPermitDomain(result);
       }
     }
     fetch();
     return () => {
       mounted = false;
     };
-  }, [token, provider, erc20Contract]);
+  }, [erc20Contract, activeChain.id]);
 
   const contractDidSucceed =
     successfullyDepositedWithApproval ||
@@ -387,7 +387,7 @@ function DepositButton(props: DepositButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (canUsePermit) {
+  if (permitDomain !== null) {
     if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
     } else if (needsToPermitCourier) {
@@ -442,7 +442,7 @@ function DepositButton(props: DepositButtonProps) {
         };
         const deadline = courierPermitData?.deadline ?? (Date.now() / 1000 + 60 * 5).toFixed(0);
 
-        getErc2612Signature(signer!, activeChain.id, erc20Contract, approve, deadline).then((signature) => {
+        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline).then((signature) => {
           setPermitData({ signature, approve, deadline });
           setIsPending(false);
         });
@@ -458,12 +458,17 @@ function DepositButton(props: DepositButtonProps) {
         };
         const deadlineWithCourier = (Date.now() / 1000 + 60 * 5).toFixed(0);
 
-        getErc2612Signature(signer!, activeChain.id, kittyContract, approveWithCourier, deadlineWithCourier).then(
-          (signature) => {
-            setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
-            setIsPending(false);
+        attemptToInferPermitDomain(kittyContract, activeChain.id).then((kittyDomain) => {
+          if (kittyDomain === null) {
+            console.error('This should never happen. We know that Lender domains exist.');
           }
-        );
+          getErc2612Signature(signer!, kittyContract, kittyDomain!, approveWithCourier, deadlineWithCourier).then(
+            (signature) => {
+              setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
+              setIsPending(false);
+            }
+          );
+        });
 
         break;
       case ConfirmButtonState.READY:
