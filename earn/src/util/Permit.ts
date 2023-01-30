@@ -1,7 +1,7 @@
 import { BigNumberish, Contract } from 'ethers';
 import { defaultAbiCoder, keccak256, splitSignature, toUtf8Bytes } from 'ethers/lib/utils';
 
-type Domain = {
+export type EIP2612Domain = {
   name?: string;
   version?: string;
   chainId?: number;
@@ -18,7 +18,7 @@ function getNonce(erc20Contract: Contract, owner: string) {
   return erc20Contract.nonces(owner);
 }
 
-function computeDomainSeparator(domain: Domain) {
+function computeDomainSeparator(domain: EIP2612Domain) {
   let params: string[] = [];
   let types: ('bytes32' | 'uint256' | 'address')[] = ['bytes32'];
   let args: any[] = [];
@@ -63,10 +63,55 @@ export async function doesSupportPermit(erc20Contract: Contract) {
   }
 }
 
+export async function attemptToInferPermitDomain(
+  erc20Contract: Contract,
+  chainId: number
+): Promise<EIP2612Domain | null> {
+  try {
+    const [name, expectedDomainSeparator] = await Promise.all([
+      erc20Contract.name(),
+      getDomainSeparator(erc20Contract),
+    ]);
+
+    let domain: EIP2612Domain = {
+      name,
+      version: '1',
+      chainId,
+      verifyingContract: erc20Contract.address,
+    };
+
+    let attempt = 1;
+    while (computeDomainSeparator(domain) !== expectedDomainSeparator) {
+      switch (attempt) {
+        case 1:
+          // Increase to version 2
+          domain.version = '2';
+          break;
+        case 2:
+          // Try removing name, still at version 2
+          delete domain.name;
+          break;
+        case 3:
+          // Back to version 1, still without name
+          domain.version = '1';
+          break;
+        default:
+          console.error('Could not infer structure of domain separator');
+          return null;
+      }
+      attempt += 1;
+    }
+
+    return domain;
+  } catch {
+    return null;
+  }
+}
+
 export async function getErc2612Signature(
   signer: any,
-  chainId: number,
   erc20Contract: Contract,
+  domain: EIP2612Domain,
   approve: {
     owner: string;
     spender: string;
@@ -74,25 +119,7 @@ export async function getErc2612Signature(
   },
   deadline: BigNumberish
 ) {
-  const version = '1';
-  const [nonce, name, expectedDomainSeparator] = await Promise.all([
-    getNonce(erc20Contract, approve.owner),
-    erc20Contract.name(),
-    getDomainSeparator(erc20Contract),
-  ]);
-
-  const domain: Domain = {
-    name,
-    version,
-    chainId,
-    verifyingContract: erc20Contract.address,
-  };
-  if (computeDomainSeparator(domain) !== expectedDomainSeparator) {
-    delete domain.name;
-    if (computeDomainSeparator(domain) !== expectedDomainSeparator) {
-      console.error('Could not infer structure of domain separator');
-    }
-  }
+  const nonce = await getNonce(erc20Contract, approve.owner);
 
   return splitSignature(
     await signer._signTypedData(

@@ -1,6 +1,7 @@
 import Big from 'big.js';
 import JSBI from 'jsbi';
 import { FeeTier } from 'shared/lib/data/FeeTier';
+import { Address } from 'wagmi';
 
 import { UniswapPosition } from '../data/actions/Actions';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
@@ -22,6 +23,8 @@ export type MarginAccountParams = {
   liabilities: Liabilities;
   sqrtPriceX96: string;
   health: number;
+  lender0: Address;
+  lender1: Address;
 };
 
 export type CalculateLiquidationThresholdsParams = {

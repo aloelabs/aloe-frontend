@@ -1,5 +1,6 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
+import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
@@ -47,6 +48,19 @@ export type MarginAccount = {
   liabilities: Liabilities;
   sqrtPriceX96: Big;
   health: number;
+  lender0: Address;
+  lender1: Address;
+};
+
+export type MarketInfo = {
+  lender0: Address;
+  lender1: Address;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: Big;
+  lender1TotalSupply: Big;
 };
 
 export type LiquidationThresholds = {
@@ -58,7 +72,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96'>;
+export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -161,14 +175,47 @@ export async function fetchMarginAccountPreviews(
   return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
 }
 
+export async function fetchMarketInfoFor(
+  lenderLensContract: ethers.Contract,
+  lender0: Address,
+  lender1: Address
+): Promise<MarketInfo> {
+  const [lender0Basics, lender1Basics] = await Promise.all([
+    lenderLensContract.readBasics(lender0),
+    lenderLensContract.readBasics(lender1),
+  ]);
+
+  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
+  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
+  return {
+    lender0,
+    lender1,
+    borrowerAPR0: borrowAPR0,
+    borrowerAPR1: borrowAPR1,
+    lender0Utilization: lender0Utilization,
+    lender1Utilization: lender1Utilization,
+    lender0TotalSupply: lender0TotalSupply,
+    lender1TotalSupply: lender1TotalSupply,
+  };
+}
+
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
+  lenderLensContract: ethers.Contract,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   marginAccountAddress: string
-): Promise<MarginAccount> {
+): Promise<{
+  marginAccount: MarginAccount;
+}> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
     marginAccountContract.TOKEN1(),
@@ -176,18 +223,19 @@ export async function fetchMarginAccount(
     marginAccountContract.LENDER1(),
     marginAccountContract.UNISWAP_POOL(),
     marginAccountLensContract.getAssets(marginAccountAddress),
-    marginAccountLensContract.getLiabilities(marginAccountAddress),
-    marginAccountLensContract.getHealth(accountAddress),
+    marginAccountLensContract.getLiabilities(marginAccountAddress, true),
+    marginAccountLensContract.getHealth(accountAddress, true),
   ]);
 
   const uniswapPool = results[4];
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
-
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
+  const lender0 = results[2] as Address;
+  const lender1 = results[3] as Address;
   const assetsData = results[5];
   const liabilitiesData = results[6];
+  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
 
   const assets: Assets = {
     token0Raw: Big(assetsData.fixed0.toString())
@@ -216,15 +264,19 @@ export async function fetchMarginAccount(
   const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
 
   return {
-    address: marginAccountAddress,
-    uniswapPool: uniswapPool,
-    token0: token0,
-    token1: token1,
-    feeTier: NumericFeeTierToEnum(feeTier),
-    assets: assets,
-    liabilities: liabilities,
-    sqrtPriceX96: toBig(slot0.sqrtPriceX96),
-    health: health.div(1e9).toNumber() / 1e9,
+    marginAccount: {
+      address: marginAccountAddress,
+      uniswapPool: uniswapPool,
+      token0: token0,
+      token1: token1,
+      feeTier: NumericFeeTierToEnum(feeTier),
+      assets: assets,
+      liabilities: liabilities,
+      sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+      health: health.div(1e9).toNumber() / 1e9,
+      lender0: lender0,
+      lender1: lender1,
+    },
   };
 }
 

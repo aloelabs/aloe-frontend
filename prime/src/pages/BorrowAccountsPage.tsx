@@ -193,6 +193,7 @@ export default function BorrowAccountsPage() {
 
       if (!token0 || !token1) {
         console.error(`Unfamiliar with tokens in pool ${addr}`);
+        console.info(info.token0, info.token1);
         return null;
       }
 
