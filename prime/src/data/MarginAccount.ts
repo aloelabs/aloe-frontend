@@ -130,8 +130,8 @@ export async function fetchMarginAccountPreviews(
 
       try {
         assetsData = await borrowerLensContract.getAssets(accountAddress);
-        liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress);
-        healthData = await borrowerLensContract.getHealth(accountAddress);
+        liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
+        healthData = await borrowerLensContract.getHealth(accountAddress, true);
       } catch (e) {
         console.error(`borrowerLens.getAssets failed for account ${accountAddress} in pool ${uniswapPool}`, e);
         return null;
