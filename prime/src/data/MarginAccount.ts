@@ -124,12 +124,20 @@ export async function fetchMarginAccountPreviews(
 
       if (!token0 || !token1) return null;
 
-      const assetsData = await borrowerLensContract.getAssets(accountAddress);
-      const liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
+      let assetsData = null;
+      let liabilitiesData = null;
+      let healthData = null;
 
-      const healthData = await borrowerLensContract.getHealth(accountAddress, true);
+      try {
+        assetsData = await borrowerLensContract.getAssets(accountAddress);
+        liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
+        healthData = await borrowerLensContract.getHealth(accountAddress, true);
+      } catch (e) {
+        console.error(`borrowerLens.getAssets failed for account ${accountAddress} in pool ${uniswapPool}`, e);
+        return null;
+      }
+
       const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
-
       const assets: Assets = {
         token0Raw: Big(assetsData.fixed0.toString())
           .div(10 ** token0.decimals)
