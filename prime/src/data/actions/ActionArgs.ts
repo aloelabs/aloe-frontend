@@ -43,6 +43,13 @@ export function getRemoveLiquidityActionArgs(lower: number, upper: number, liqui
   return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
 }
 
+export function getSwapActionArgs(token0: Token, amount0: number, token1: Token, amount1: number): string {
+  const bigAmount0 = new Big(amount0.toFixed(Math.min(token0.decimals, 20))).mul(10 ** token0.decimals);
+  const bigAmount1 = new Big(amount1.toFixed(Math.min(token1.decimals, 20))).mul(10 ** token1.decimals);
+
+  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [bigAmount0.toFixed(0), bigAmount1.toFixed(0)]);
+}
+
 function modQ24(value: number) {
   return value & 0b00000000111111111111111111111111;
 }

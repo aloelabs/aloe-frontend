@@ -6,11 +6,13 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import ErrorIcon from '../../assets/svg/interaction_error.svg';
+import { Token } from '../../data/Token';
+import { truncateDecimals } from '../../util/Numbers';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
-const formatNumberInput = (input: string, max?: string): string | null => {
+const formatNumberInput = (input: string): string | null => {
   if (input === '') {
     return '';
   }
@@ -19,7 +21,7 @@ const formatNumberInput = (input: string, max?: string): string | null => {
     return '0.';
   }
 
-  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,18}$/;
+  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,}$/;
 
   if (re.test(input)) {
     // if (max && new Big(input).gt(new Big(max))) {
@@ -43,7 +45,7 @@ const ErrorMessageText = styled.div`
 
 export type TokenAmountInputProps = {
   value: string;
-  tokenLabel: string;
+  token: Token;
   onChange: (newValue: string) => void;
   //NOTE: if onMax is defined, onChange will not run when max button is clicked
   onMax?: (maxValue: string) => void;
@@ -60,7 +62,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
     <div className='w-full'>
       <div className='flex items-center justify-between mb-2'>
         <Text size='M' weight='medium' color={INPUT_LABEL_TEXT_COLOR}>
-          {props.tokenLabel}
+          {props.token.ticker}
         </Text>
         {props.max !== undefined && (
           <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>
@@ -72,10 +74,13 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         size='L'
         inputClassName={props.value !== '' ? 'active' : ''}
         placeholder='0.00'
-        onChange={(event) => {
-          const output = formatNumberInput(event.target.value, props.max);
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          console.log(event.target.value);
+          const output = formatNumberInput(event.target.value);
+          console.log(output);
           if (output !== null) {
-            props.onChange(output);
+            const truncatedOutput = truncateDecimals(output, props.token.decimals);
+            props.onChange(truncatedOutput);
           }
         }}
         value={props.value}

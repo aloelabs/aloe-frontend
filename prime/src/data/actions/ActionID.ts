@@ -45,6 +45,8 @@ export function getNameOfAction(id: ActionID): string {
       return 'Remove Liquidity';
     case ActionID.CLAIM_FEES:
       return 'Claim Fees';
+    case ActionID.SWAP:
+      return 'Swap';
     default:
       return 'UNKNOWN';
   }
