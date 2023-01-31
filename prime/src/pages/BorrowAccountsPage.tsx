@@ -7,7 +7,7 @@ import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { useAccount, useContract, useProvider, useSigner, useBlockNumber, Address } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner, Address } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -21,6 +21,7 @@ import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS_GOERLI } from '../data/constants/Addresses';
 import { TOPIC0_CREAET_MARKET_EVENT } from '../data/constants/Signatures';
+import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
@@ -39,31 +40,31 @@ export default function BorrowAccountsPage() {
   const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
   const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
-
-  // MARK: chain agnostic wagmi rate-limiter
-  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
-  useEffect(() => {
-    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 7_000 < 1_000), 500);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  const [refetchCount, setRefetchCount] = useState(0);
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
   const { address: accountAddress } = useAccount();
   const { data: signer } = useSigner({ chainId: activeChain.id });
 
-  // MARK: block number
-  const blockNumber = useBlockNumber({
-    chainId: activeChain.id,
-    enabled: shouldEnableWagmiHooks,
-  });
-
   const borrowerLensContract = useContract({
     address: ALOE_II_BORROWER_LENS_ADDRESS,
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
+  });
+
+  useEffectOnce(() => {
+    let mounted = true;
+    const interval = setInterval(() => {
+      // only refetch if the page is visible (i.e. not in the background) to avoid unnecessary requests
+      if (mounted && !document.hidden) {
+        setRefetchCount((c) => c + 1);
+      }
+    }, 60_000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   });
 
   // MARK: Fetch all available Uniswap Pools, i.e. any that are associated with a lending pair market
@@ -149,15 +150,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [
-    activeChain,
-    accountAddress,
-    isAllowedToInteract,
-    borrowerLensContract,
-    provider,
-    blockNumber.data,
-    availablePools,
-  ]);
+  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, refetchCount, availablePools]);
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -232,19 +225,22 @@ export default function BorrowAccountsPage() {
           <ActiveMarginAccounts marginAccounts={marginAccounts} accountAddress={accountAddress} />
         )}
       </div>
-      <CreateMarginAccountModal
-        availablePools={dropdownOptions}
-        isOpen={showConfirmModal}
-        isTxnPending={isTxnPending}
-        setIsOpen={setShowConfirmModal}
-        onConfirm={(selectedPool: string | null) => {
-          setIsTxnPending(true);
-          if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
-            return;
-          }
-          createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
-        }}
-      />
+      {availablePools.size > 0 && (
+        <CreateMarginAccountModal
+          availablePools={dropdownOptions}
+          defaultPool={dropdownOptions[0]}
+          isOpen={showConfirmModal}
+          isTxnPending={isTxnPending}
+          setIsOpen={setShowConfirmModal}
+          onConfirm={(selectedPool: string | null) => {
+            setIsTxnPending(true);
+            if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
+              return;
+            }
+            createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
+          }}
+        />
+      )}
       <CreatedMarginAccountModal
         isOpen={showSuccessModal}
         setIsOpen={setShowSuccessModal}

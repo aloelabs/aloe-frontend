@@ -574,25 +574,25 @@ export default function BorrowActionsPage() {
               <AccountStatsCard
                 gridArea='d'
                 label={`${token0.ticker} APR`}
-                value={`${marketInfo.borrowerAPR0.toFixed(2)}%`}
+                value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 gridArea='f'
                 label={`${token1.ticker} APR`}
-                value={`${marketInfo.borrowerAPR1.toFixed(2)}%`}
+                value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 gridArea='c'
                 label={`${token0.ticker} Utilization`}
-                value={`${marketInfo.lender0Utilization.toFixed(2)}%`}
+                value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard
                 gridArea='e'
                 label={`${token1.ticker} Utilization`}
-                value={`${marketInfo.lender1Utilization.toFixed(2)}%`}
+                value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
                 showAsterisk={isShowingHypothetical}
               />
               <AccountStatsCard

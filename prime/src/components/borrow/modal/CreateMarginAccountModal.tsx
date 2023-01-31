@@ -13,13 +13,14 @@ export type CreateMarginAccountModalProps = {
   isOpen: boolean;
   isTxnPending: boolean;
   availablePools: DropdownOption<string>[];
+  defaultPool: DropdownOption<string>;
   setIsOpen: (open: boolean) => void;
   onConfirm: (selectedPool: string | null) => void;
 };
 
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
-  const { isOpen, isTxnPending, availablePools, setIsOpen, onConfirm } = props;
-  const [selectedPool, setSelectedPool] = useState<DropdownOption<string> | null>(null);
+  const { isOpen, isTxnPending, availablePools, defaultPool, setIsOpen, onConfirm } = props;
+  const [selectedPool, setSelectedPool] = useState<DropdownOption<string>>(defaultPool);
   const confirmButtonText = isTxnPending ? 'Pending' : 'Create Margin Account';
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='New Margin Account'>
@@ -40,7 +41,7 @@ export default function CreateMarginAccountModal(props: CreateMarginAccountModal
         fillWidth={true}
         color={MODAL_BLACK_TEXT_COLOR}
         onClick={() => {
-          const selectedPoolValue = selectedPool?.value;
+          const selectedPoolValue = selectedPool.value;
           if (selectedPoolValue) {
             onConfirm(selectedPoolValue);
           }
