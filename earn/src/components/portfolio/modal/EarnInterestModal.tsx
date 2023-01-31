@@ -155,8 +155,15 @@ function DepositButton(props: DepositButtonProps) {
   const parsedDepositAmount =
     depositAmount !== '' ? ethers.utils.parseUnits(depositAmount, token.decimals).toString() : '0';
 
+  const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
+  const needsApproval =
+    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
+
+  const needsToPermitCourier =
+    courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
+
   // Approval flow
-  const { config: depositWithApprovalConfig } = usePrepareContractWrite({
+  const { config: depositWithApprovalConfig, refetch: refetchDepositWithApproval } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
     functionName: 'depositWithApprove(address,uint256)',
@@ -166,6 +173,7 @@ function DepositButton(props: DepositButtonProps) {
       depositAmount !== '' &&
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
+      !needsApproval &&
       permitDomain === null,
   });
   const depositWithApprovalConfigUpdatedRequest = useMemo(() => {
@@ -188,27 +196,29 @@ function DepositButton(props: DepositButtonProps) {
   });
 
   // Approval flow with courier
-  const { config: depositUsingApprovalWithCourierConfig } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName: 'depositWithApprove(address,uint256,uint32,uint256,uint8,bytes32,bytes32)',
-    args: [
-      kitty.address,
-      parsedDepositAmount,
-      courierId,
-      courierPermitData?.deadline,
-      courierPermitData?.signature.v,
-      courierPermitData?.signature.r,
-      courierPermitData?.signature.s,
-    ],
-    chainId: activeChain.id,
-    enabled:
-      depositAmount !== '' &&
-      numericDepositAmount <= numericDepositBalance &&
-      numericDepositAmount > 0 &&
-      courierId !== null &&
-      !permitDomain,
-  });
+  const { config: depositUsingApprovalWithCourierConfig, refetch: refetchDepositUsingApprovalWithCourier } =
+    usePrepareContractWrite({
+      address: ALOE_II_ROUTER_ADDRESS,
+      abi: RouterABI,
+      functionName: 'depositWithApprove(address,uint256,uint32,uint256,uint8,bytes32,bytes32)',
+      args: [
+        kitty.address,
+        parsedDepositAmount,
+        courierId,
+        courierPermitData?.deadline,
+        courierPermitData?.signature.v,
+        courierPermitData?.signature.r,
+        courierPermitData?.signature.s,
+      ],
+      chainId: activeChain.id,
+      enabled:
+        depositAmount !== '' &&
+        numericDepositAmount <= numericDepositBalance &&
+        numericDepositAmount > 0 &&
+        courierId !== null &&
+        !needsApproval &&
+        !permitDomain,
+    });
   const depositUsingApprovalWithCourierConfigUpdatedRequest = useMemo(() => {
     if (depositUsingApprovalWithCourierConfig.request) {
       return {
@@ -229,7 +239,7 @@ function DepositButton(props: DepositButtonProps) {
   });
 
   // Permit flow
-  const { config: depositWithPermitConfig } = usePrepareContractWrite({
+  const { config: depositWithPermitConfig, refetch: refetchDepositWithPermit } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
     functionName: 'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32)',
@@ -270,7 +280,7 @@ function DepositButton(props: DepositButtonProps) {
   });
 
   // Permit flow with courier
-  const { config: depositWithPermitCourierConfig } = usePrepareContractWrite({
+  const { config: depositWithPermitCourierConfig, refetch: refetchDepositWithPermitCourier } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
     functionName:
@@ -378,13 +388,6 @@ function DepositButton(props: DepositButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
-  const needsApproval =
-    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
-
-  const needsToPermitCourier =
-    courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
-
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (permitDomain !== null) {
@@ -477,21 +480,42 @@ function DepositButton(props: DepositButtonProps) {
         if (permitData && courierPermitData && courierId) {
           if (!depositWithPermitCourierConfig.request) {
             console.error('Cannot deposit with undefined request');
+            refetchDepositWithPermitCourier().then((result) => {
+              if (result) {
+                depositUsingPermitFlowWithCourier?.();
+              }
+            });
           }
           depositUsingPermitFlowWithCourier?.();
         } else if (permitData) {
           if (!depositWithPermitConfig.request) {
             console.error('Cannot deposit with undefined request');
+            refetchDepositWithPermit().then((result) => {
+              if (result) {
+                depositUsingPermitFlow?.();
+              }
+            });
+            break;
           }
           depositUsingPermitFlow?.();
         } else if (!permitData && courierPermitData && courierId) {
           if (!depositUsingApprovalWithCourierConfig.request) {
             console.error('Cannot deposit with undefined request');
+            refetchDepositUsingApprovalWithCourier().then((result) => {
+              if (result) {
+                depositUsingApprovalFlowWithCourier?.();
+              }
+            });
           }
           depositUsingApprovalFlowWithCourier?.();
         } else {
           if (!depositWithApprovalConfig.request) {
             console.error('Cannot deposit with undefined request');
+            refetchDepositWithApproval().then((result) => {
+              if (result) {
+                depositUsingApprovalFlow?.();
+              }
+            });
           }
           depositUsingApprovalFlow?.();
         }
