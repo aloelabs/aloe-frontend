@@ -26,6 +26,8 @@ export function getFrontendManagerCodeFor(id: ActionID) {
       return 5;
     case ActionID.CLAIM_FEES:
       return 5;
+    case ActionID.SWAP:
+      return 6;
   }
 }
 

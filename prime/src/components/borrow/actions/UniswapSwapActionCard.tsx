@@ -4,16 +4,13 @@ import Big from 'big.js';
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
 import styled from 'styled-components';
-import { useProvider } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { getSwapActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { swapOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, TokenType } from '../../../data/actions/Actions';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { truncateDecimals } from '../../../util/Numbers';
-import { getOutputForSwap, getUniswapPoolBasics, UniswapV3PoolBasics } from '../../../util/Uniswap';
+import { getOutputForSwap } from '../../../util/Uniswap';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import Settings from '../uniswap/Settings';
@@ -59,46 +56,26 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 export default function UniswapSwapActionCard(props: ActionCardProps) {
   const { accountState, isCausingError, marginAccount, onChange, onRemove, userInputFields } = props;
   const { token0, token1 } = marginAccount;
-  const { activeChain } = useContext(ChainContext);
-  const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
 
   let swapFromAmount = userInputFields?.at(0) ?? '';
   let swapToAmount = userInputFields?.at(1) ?? '';
   const swapFromToken = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
   const swapToToken = (userInputFields?.at(3) ?? TokenType.ASSET1) as TokenType;
   const slippage = userInputFields?.at(4) ?? '0.5';
-  const provider = useProvider({ chainId: activeChain.id });
-
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch() {
-      const poolBasics = await getUniswapPoolBasics(marginAccount.uniswapPool, provider);
-      if (mounted) {
-        setUniswapPoolBasics(poolBasics);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  });
 
   const priceX96 = useMemo(() => {
-    const sqrtPriceX96 = uniswapPoolBasics?.slot0.sqrtPriceX96;
-    const sqrtPriceX96JSBI = new Big(sqrtPriceX96?.toString() || '0');
-    if (sqrtPriceX96 !== undefined) {
-      return sqrtPriceX96JSBI.mul(sqrtPriceX96JSBI).div(2 ** 96);
-    }
-    return undefined;
-  }, [uniswapPoolBasics?.slot0.sqrtPriceX96]);
+    const sqrtPriceX96 = marginAccount.sqrtPriceX96;
+    return sqrtPriceX96.mul(sqrtPriceX96).div(2 ** 96);
+  }, [marginAccount]);
 
   if (swapFromAmount) {
     swapToAmount = getOutputForSwap(
-      priceX96 || new Big(0),
-      swapFromAmount || '0',
+      priceX96,
+      swapFromAmount,
       swapFromToken === TokenType.ASSET0,
       swapFromToken === TokenType.ASSET0 ? token0.decimals : token1.decimals,
-      swapFromToken === TokenType.ASSET0 ? token1.decimals : token0.decimals
+      swapFromToken === TokenType.ASSET0 ? token1.decimals : token0.decimals,
+      parseFloat(slippage) / 100 || 0
     );
     swapToAmount = truncateDecimals(swapToAmount, swapToToken === TokenType.ASSET0 ? token0.decimals : token1.decimals);
   }
@@ -110,12 +87,18 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
     swapToToken: TokenType,
     slippage: string
   ) {
+    const parsedAmountIn = parseFloat(swapFromAmount) || 0;
+    const parsedAmountOut = parseFloat(swapToAmount) || 0;
+
+    const amount0 = swapFromToken === TokenType.ASSET0 ? -parsedAmountIn : parsedAmountOut;
+    const amount1 = swapFromToken === TokenType.ASSET1 ? -parsedAmountIn : parsedAmountOut;
+
     onChange(
       {
         actionId: ActionID.SWAP,
-        actionArgs: token0 !== null && token1 !== null ? getSwapActionArgs(token0, 0, token1, 0) : undefined,
+        actionArgs: token0 && token1 ? getSwapActionArgs(token0, amount0, token1, amount1) : undefined,
         operator(operand) {
-          return swapOperator(operand, TokenType.ASSET0, TokenType.ASSET1, 0, 0);
+          return swapOperator(operand, amount0, amount1);
         },
       },
       [swapFromAmount, swapToAmount, swapFromToken, swapToToken, slippage]
@@ -125,8 +108,6 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const maxFromAmount =
     swapFromToken === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
   const maxFromAmountString = maxFromAmount.toString();
-  const maxToAmount = swapToToken === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
-  const maxToAmountString = maxToAmount.toString();
 
   return (
     <BaseActionCard
@@ -165,8 +146,6 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
         token={swapToToken === TokenType.ASSET0 ? token0 : token1}
         value={swapToAmount}
         onChange={() => {}}
-        max={maxToAmountString}
-        maxed={swapToAmount === maxToAmountString}
       />
     </BaseActionCard>
   );

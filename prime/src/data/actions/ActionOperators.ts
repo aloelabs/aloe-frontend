@@ -159,16 +159,11 @@ export function removeLiquidityOperator(
   return { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys };
 }
 
-export function swapOperator(
-  operand: AccountState,
-  token0: TokenType,
-  token1: TokenType,
-  amount0: number,
-  amount1: number
-): AccountState {
+export function swapOperator(operand: AccountState, amount0: number, amount1: number): AccountState {
   const assets = { ...operand.assets };
 
-  // TODO add logic
+  assets.token0Raw += amount0;
+  assets.token1Raw += amount1;
 
   return { ...operand, assets };
 }

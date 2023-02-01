@@ -505,16 +505,19 @@ export function getOutputForSwap(
   amount: string,
   isInputToken0: boolean,
   inputDecimals: number,
-  outputDecimals: number
+  outputDecimals: number,
+  slippage: number
 ): string {
   return isInputToken0
     ? new Big(amount)
+        .mul(1 - slippage)
         .mul(10 ** inputDecimals)
         .mul(priceX96)
         .div(2 ** 96)
         .div(10 ** outputDecimals)
         .toString()
     : new Big(amount)
+        .mul(1 - slippage)
         .mul(10 ** inputDecimals)
         .mul(2 ** 96)
         .div(priceX96)
