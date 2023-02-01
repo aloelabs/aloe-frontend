@@ -11,7 +11,7 @@ import { makeEtherscanRequest } from '../util/Etherscan';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import {
   ALOE_II_LIQUIDATION_INCENTIVE,
@@ -81,7 +81,7 @@ export async function getMarginAccountsForUser(
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
     0,
-    ALOE_II_FACTORY_ADDRESS_GOERLI,
+    ALOE_II_FACTORY_ADDRESS,
     [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
     chain
