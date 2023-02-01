@@ -39,6 +39,7 @@ import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import {
   fetchMarginAccount,
   fetchMarketInfoFor,
+  isSolvent,
   LiquidationThresholds,
   MarginAccount,
   MarketInfo,
@@ -466,7 +467,8 @@ export default function BorrowActionsPage() {
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
-  console.log(displayedMarginAccount.health);
+  const { health } = isSolvent(displayedMarginAccount, uniswapPositions, displayedMarginAccount.sqrtPriceX96);
+  displayedMarginAccount.health = health;
 
   return (
     <BodyWrapper>

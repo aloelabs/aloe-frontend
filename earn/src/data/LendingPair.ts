@@ -8,8 +8,9 @@ import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
@@ -34,7 +35,8 @@ export class LendingPair {
     public kitty1: Kitty,
     public kitty0Info: KittyInfo,
     public kitty1Info: KittyInfo,
-    public uniswapFeeTier: FeeTier
+    public uniswapFeeTier: FeeTier,
+    public iv: number
   ) {}
 
   equals(other: LendingPair) {
@@ -76,19 +78,21 @@ export async function getAvailableLendingPairs(
   });
 
   const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
+  const oracle = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
 
   const unfilteredPairs: Array<LendingPair | null> = await Promise.all(
     addresses.map(async (market) => {
       const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
 
-      const [result0, result1, result2] = await Promise.all([
+      const [basics0, basics1, feeTier, oracleResult] = await Promise.all([
         kittyLens.readBasics(market.kitty0),
         kittyLens.readBasics(market.kitty1),
         uniswapPool.fee(),
+        oracle.consult(market.pool),
       ]);
 
-      const token0 = getToken(chain.id, result0.asset);
-      const token1 = getToken(chain.id, result1.asset);
+      const token0 = getToken(chain.id, basics0.asset);
+      const token1 = getToken(chain.id, basics1.asset);
       if (token0 == null || token1 == null) return null;
       const kitty0 = new Kitty(
         chain.id,
@@ -109,15 +113,19 @@ export async function getAvailableLendingPairs(
         token1
       );
 
-      const utilization0 = new Big(result0.utilization.toString()).div(10 ** 18).toNumber();
-      const utilization1 = new Big(result1.utilization.toString()).div(10 ** 18).toNumber();
+      const utilization0 = new Big(basics0.utilization.toString()).div(10 ** 18).toNumber();
+      const utilization1 = new Big(basics1.utilization.toString()).div(10 ** 18).toNumber();
 
-      const interestRate0 = new Big(result0.interestRate.toString());
-      const interestRate1 = new Big(result1.interestRate.toString());
-      // SupplyAPY = Utilization * BorrowAPY
-      const APY0 = utilization0 * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
-      const APY1 = utilization1 * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
-      // inventory != totalSupply due to interest rates (inflation)
+      const interestRate0 = new Big(basics0.interestRate.toString());
+      const interestRate1 = new Big(basics1.interestRate.toString());
+      // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
+      const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+      const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+
+      let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
+      // Annualize it
+      IV *= Math.sqrt(365);
+
       return new LendingPair(
         token0,
         token1,
@@ -125,17 +133,18 @@ export async function getAvailableLendingPairs(
         kitty1,
         {
           apy: APY0 * 100, // percentage
-          inventory: new Big(result0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
-          totalSupply: new Big(result0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
+          inventory: new Big(basics0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
+          totalSupply: new Big(basics0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
           utilization: utilization0 * 100.0, // Percentage
         },
         {
           apy: APY1 * 100, // percentage
-          inventory: new Big(result1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
-          totalSupply: new Big(result1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
+          inventory: new Big(basics1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
+          totalSupply: new Big(basics1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
           utilization: utilization1 * 100.0, // Percentage
         },
-        NumericFeeTierToEnum(result2)
+        NumericFeeTierToEnum(feeTier),
+        IV * 100
       );
     })
   );

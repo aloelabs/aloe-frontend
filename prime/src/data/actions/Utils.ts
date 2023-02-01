@@ -36,7 +36,7 @@ export function runWithChecks(
     assets,
     liabilities,
   };
-  const solvency = isSolvent(updatedMarginAccount, uniswapPositions, marginAccount.sqrtPriceX96, 0.025);
+  const solvency = isSolvent(updatedMarginAccount, uniswapPositions, marginAccount.sqrtPriceX96);
   if (!solvency.atA || !solvency.atB) {
     console.log('Margin Account not solvent!');
     console.log(solvency);

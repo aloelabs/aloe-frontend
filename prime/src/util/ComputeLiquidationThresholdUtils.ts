@@ -25,12 +25,12 @@ export type MarginAccountParams = {
   health: number;
   lender0: Address;
   lender1: Address;
+  iv: number;
 };
 
 export type CalculateLiquidationThresholdsParams = {
   marginAccount: MarginAccountParams;
   uniswapPositions: UniswapPositionParams[];
-  sigma: number;
   iterations?: number;
   precision?: number;
 };
@@ -38,7 +38,6 @@ export type CalculateLiquidationThresholdsParams = {
 export type ComputeLiquidationThresholdsRequest = {
   marginAccountParams: MarginAccountParams;
   uniswapPositionParams: UniswapPositionParams[];
-  sigma: number;
   iterations?: number;
   precision?: number;
 };
