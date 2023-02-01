@@ -57,41 +57,38 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const { accountState, isCausingError, marginAccount, onChange, onRemove, userInputFields } = props;
   const { token0, token1 } = marginAccount;
 
-  let swapFromAmount = userInputFields?.at(0) ?? '';
-  let swapToAmount = userInputFields?.at(1) ?? '';
-  const swapFromToken = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
-  const swapToToken = (userInputFields?.at(3) ?? TokenType.ASSET1) as TokenType;
-  const slippage = userInputFields?.at(4) ?? '0.5';
+  const amountInExact = userInputFields?.at(0) ?? '';
+  const amountOutMin = userInputFields?.at(1) ?? '';
+  const tokenTypeIn = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
+  const slippage = userInputFields?.at(3) ?? '0.5';
 
   const priceX96 = useMemo(() => {
     const sqrtPriceX96 = marginAccount.sqrtPriceX96;
     return sqrtPriceX96.mul(sqrtPriceX96).div(2 ** 96);
   }, [marginAccount]);
 
-  if (swapFromAmount) {
-    swapToAmount = getOutputForSwap(
-      priceX96,
-      swapFromAmount,
-      swapFromToken === TokenType.ASSET0,
-      swapFromToken === TokenType.ASSET0 ? token0.decimals : token1.decimals,
-      swapFromToken === TokenType.ASSET0 ? token1.decimals : token0.decimals,
-      parseFloat(slippage) / 100 || 0
-    );
-    swapToAmount = truncateDecimals(swapToAmount, swapToToken === TokenType.ASSET0 ? token0.decimals : token1.decimals);
-  }
+  function updateResult(newAmountInExact: string, newTokenTypeIn: TokenType, newSlippage: string) {
+    const tokenTypeInDecimals = newTokenTypeIn === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const tokenTypeOutDecimals = newTokenTypeIn === TokenType.ASSET0 ? token1.decimals : token0.decimals;
 
-  function updateResult(
-    swapFromAmount: string,
-    swapToAmount: string,
-    swapFromToken: TokenType,
-    swapToToken: TokenType,
-    slippage: string
-  ) {
-    const parsedAmountIn = parseFloat(swapFromAmount) || 0;
-    const parsedAmountOut = parseFloat(swapToAmount) || 0;
+    let newAmountOutMin = '';
+    if (newAmountInExact !== '') {
+      newAmountOutMin = getOutputForSwap(
+        priceX96,
+        newAmountInExact,
+        newTokenTypeIn === TokenType.ASSET0,
+        tokenTypeInDecimals,
+        tokenTypeOutDecimals,
+        parseFloat(newSlippage) / 100 || 0
+      );
+      newAmountOutMin = truncateDecimals(newAmountOutMin, tokenTypeOutDecimals);
+    }
 
-    const amount0 = swapFromToken === TokenType.ASSET0 ? -parsedAmountIn : parsedAmountOut;
-    const amount1 = swapFromToken === TokenType.ASSET1 ? -parsedAmountIn : parsedAmountOut;
+    const parsedAmountIn = parseFloat(newAmountInExact) || 0;
+    const parsedAmountOut = parseFloat(newAmountOutMin) || 0;
+
+    const amount0 = newTokenTypeIn === TokenType.ASSET0 ? -parsedAmountIn : parsedAmountOut;
+    const amount1 = newTokenTypeIn === TokenType.ASSET1 ? -parsedAmountIn : parsedAmountOut;
 
     onChange(
       {
@@ -101,12 +98,12 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
           return swapOperator(operand, amount0, amount1);
         },
       },
-      [swapFromAmount, swapToAmount, swapFromToken, swapToToken, slippage]
+      [newAmountInExact, newAmountOutMin, newTokenTypeIn, newSlippage]
     );
   }
 
   const maxFromAmount =
-    swapFromToken === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
+    tokenTypeIn === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
   const maxFromAmountString = maxFromAmount.toString();
 
   return (
@@ -120,22 +117,22 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
         <Settings
           slippagePercentage={slippage}
           updateSlippagePercentage={(updatedSlippage: string) => {
-            updateResult(swapFromAmount, '', swapFromToken, swapToToken, updatedSlippage);
+            updateResult(amountInExact, tokenTypeIn, updatedSlippage);
           }}
         />
       </div>
       <TokenAmountInput
-        token={swapFromToken === TokenType.ASSET0 ? token0 : token1}
-        value={swapFromAmount}
+        token={tokenTypeIn === TokenType.ASSET0 ? token0 : token1}
+        value={amountInExact}
         onChange={(updatedSwapFromAmount: string) => {
-          updateResult(updatedSwapFromAmount, swapToAmount, swapFromToken, swapToToken, slippage);
+          updateResult(updatedSwapFromAmount, tokenTypeIn, slippage);
         }}
         max={maxFromAmountString}
-        maxed={swapFromAmount === maxFromAmountString}
+        maxed={amountInExact === maxFromAmountString}
       />
       <StyledArrowButton
         onClick={() => {
-          updateResult(swapToAmount, '', swapToToken, swapFromToken, slippage);
+          updateResult(amountOutMin, tokenTypeIn === TokenType.ASSET0 ? TokenType.ASSET1 : TokenType.ASSET0, slippage);
         }}
       >
         <SVGIconWrapper width={24} height={24}>
@@ -143,8 +140,8 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
         </SVGIconWrapper>
       </StyledArrowButton>
       <TokenAmountInput
-        token={swapToToken === TokenType.ASSET0 ? token0 : token1}
-        value={swapToAmount}
+        token={tokenTypeIn === TokenType.ASSET0 ? token1 : token0}
+        value={amountOutMin}
         onChange={() => {}}
       />
     </BaseActionCard>
