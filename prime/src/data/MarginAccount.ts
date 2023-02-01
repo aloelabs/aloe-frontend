@@ -7,14 +7,16 @@ import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import {
   ALOE_II_LIQUIDATION_INCENTIVE,
+  ALOE_II_MAX_LEVERAGE,
   ALOE_II_SIGMA_MAX,
   ALOE_II_SIGMA_MIN,
   ALOE_II_SIGMA_SCALER,
@@ -50,6 +52,7 @@ export type MarginAccount = {
   health: number;
   lender0: Address;
   lender1: Address;
+  iv: number;
 };
 
 export type MarketInfo = {
@@ -72,7 +75,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1'>;
+export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1' | 'iv'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -81,7 +84,7 @@ export async function getMarginAccountsForUser(
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
     0,
-    ALOE_II_FACTORY_ADDRESS_GOERLI,
+    ALOE_II_FACTORY_ADDRESS,
     [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
     chain
@@ -229,13 +232,17 @@ export async function fetchMarginAccount(
 
   const uniswapPool = results[4];
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
+  const volatilityOracleContract = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
   const lender0 = results[2] as Address;
   const lender1 = results[3] as Address;
   const assetsData = results[5];
   const liabilitiesData = results[6];
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
+  const [feeTier, oracleResult] = await Promise.all([
+    uniswapPoolContract.fee(),
+    volatilityOracleContract.consult(uniswapPool),
+  ]);
 
   const assets: Assets = {
     token0Raw: Big(assetsData.fixed0.toString())
@@ -272,10 +279,11 @@ export async function fetchMarginAccount(
       feeTier: NumericFeeTierToEnum(feeTier),
       assets: assets,
       liabilities: liabilities,
-      sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+      sqrtPriceX96: toBig(oracleResult[0]),
       health: health.div(1e9).toNumber() / 1e9,
       lender0: lender0,
       lender1: lender1,
+      iv: oracleResult[1].div(1e9).toNumber() / 1e9,
     },
   };
 }
@@ -300,8 +308,16 @@ function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   sigma = Math.min(Math.max(ALOE_II_SIGMA_MIN, sigma), ALOE_II_SIGMA_MAX);
   sigma *= ALOE_II_SIGMA_SCALER;
 
-  const a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
-  const b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
+  let a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
+  let b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
+
+  // Constrain to be within TickMath's MIN_TICK and MAX_TICK
+  if (a.lt('4295128740')) {
+    a = new Big('4295128740');
+  }
+  if (b.gt('1461446703485210103287273052203988822378723970341')) {
+    b = new Big('1461446703485210103287273052203988822378723970341');
+  }
   return [a, b];
 }
 
@@ -370,11 +386,11 @@ function _computeLiquidationIncentive(
   let reward = 0;
   if (liabilities0 > assets0) {
     const shortfall = liabilities0 - assets0;
-    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall * price;
+    reward += (shortfall * price) / ALOE_II_LIQUIDATION_INCENTIVE;
   }
   if (liabilities1 > assets1) {
     const shortfall = liabilities1 - assets1;
-    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall;
+    reward += shortfall / ALOE_II_LIQUIDATION_INCENTIVE;
   }
   return reward;
 }
@@ -382,13 +398,12 @@ function _computeLiquidationIncentive(
 export function isSolvent(
   marginAccount: MarginAccount,
   uniswapPositions: readonly UniswapPosition[],
-  sqrtPriceX96: Big,
-  sigma: number
+  sqrtPriceX96: Big
 ) {
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
 
-  const [a, b] = _computeProbePrices(sqrtPriceX96, sigma);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.iv);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
@@ -406,14 +421,16 @@ export function isSolvent(
     sqrtPriceX96
   );
 
-  liabilities0 += liabilities0 / 200;
-  liabilities1 += liabilities1 / 200 + liquidationIncentive;
+  liabilities0 += liabilities0 / ALOE_II_MAX_LEVERAGE;
+  liabilities1 += liabilities1 / ALOE_II_MAX_LEVERAGE + liquidationIncentive;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+  const healthA = liabilitiesA > 0 ? assetsA / liabilitiesA : 1000;
 
   const liabilitiesB = liabilities1 + liabilities0 * priceB;
   const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
+  const healthB = liabilitiesB > 0 ? assetsB / liabilitiesB : 1000;
 
   return {
     priceA,
@@ -424,13 +441,13 @@ export function isSolvent(
     liabilitiesB,
     atA: assetsA >= liabilitiesA,
     atB: assetsB >= liabilitiesB,
+    health: Math.min(healthA, healthB),
   };
 }
 
 export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
-  sigma: number,
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
@@ -443,7 +460,7 @@ export function computeLiquidationThresholds(
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
+  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE);
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -459,7 +476,7 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is lower
@@ -473,7 +490,7 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
+  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE);
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -489,7 +506,7 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is higher

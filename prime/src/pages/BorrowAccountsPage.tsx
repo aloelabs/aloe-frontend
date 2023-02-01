@@ -19,7 +19,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS_GOERLI } from '../data/constants/Addresses';
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
 import { TOPIC0_CREAET_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
@@ -74,7 +74,7 @@ export default function BorrowAccountsPage() {
     async function fetchAvailablePools() {
       const result = await makeEtherscanRequest(
         0,
-        ALOE_II_FACTORY_ADDRESS_GOERLI,
+        ALOE_II_FACTORY_ADDRESS,
         [TOPIC0_CREAET_MARKET_EVENT],
         false,
         activeChain
