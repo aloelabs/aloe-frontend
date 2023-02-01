@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
+import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipses.svg';
 import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
@@ -51,6 +52,10 @@ const AssetIcon = styled.img`
   height: 32px;
   border: 2px solid transparent;
   border-radius: 50%;
+`;
+
+const StyledMoreIcon = styled(MoreIcon)`
+  transform: rotate(90deg);
 `;
 
 export type AssetChunkProps = {
@@ -145,11 +150,18 @@ export function AssetBar(props: AssetBarProps) {
     const filteredChunks = combinedTokenBalances.filter(
       (balance) => balance.balance !== 0 && balance.balanceUSD >= totalBalanceUSD * 0.1
     );
+
+    const hasHiddenTokens = filteredChunks.length !== combinedTokenBalances.length;
     const updatedTotalBalanceUSD = filteredChunks.reduce((acc, balance) => acc + balance.balanceUSD, 0);
 
     const newChunks = filteredChunks.map((chunk, index) => {
       const currentColor = tokenColors.get(chunk.token.address);
-      const percentage = ignoreBalances ? 1 / filteredChunks.length : chunk.balanceUSD / updatedTotalBalanceUSD || 0;
+      let percentage: number = ignoreBalances
+        ? 1 / filteredChunks.length
+        : chunk.balanceUSD / updatedTotalBalanceUSD || 0;
+      if (hasHiddenTokens) {
+        percentage = percentage - 0.05 / filteredChunks.length;
+      }
       return {
         token: chunk.token,
         percentage: percentage,
@@ -174,6 +186,8 @@ export function AssetBar(props: AssetBarProps) {
     setChunks(newChunks);
   }, [combinedTokenBalances, tokenColors, activeIndex, defaultIndex, setActiveAsset, ignoreBalances]);
 
+  const hasHiddenTokens = combinedTokenBalances.length !== chunks.length;
+
   return (
     <Container>
       {searchModeEnabled && (
@@ -188,6 +202,17 @@ export function AssetBar(props: AssetBarProps) {
         />
       )}
       {!searchModeEnabled && chunks.map((chunk, index) => <AssetChunk key={index} {...chunk} />)}
+      {!searchModeEnabled && hasHiddenTokens && (
+        <AssetChunkContainer
+          percentage={0.05}
+          color='rgba(26,41,52,1)'
+          onClick={() => {
+            setSearchModeEnabled(true);
+          }}
+        >
+          <StyledMoreIcon width={32} height={32} />
+        </AssetChunkContainer>
+      )}
     </Container>
   );
 }
