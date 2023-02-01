@@ -152,20 +152,10 @@ const AccountStatsGrid = styled.div`
 `;
 
 const MarketStatsGrid = styled.div`
-  display: grid;
-  grid-template:
-    'a a b b' 1fr
-    'c d e f' 1fr / 1fr 1fr 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   max-width: 100%;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-template:
-      'a a' 1fr
-      'c d' 1fr
-      'b b' 1fr
-      'e f' 1fr / 1fr 1fr;
-  }
 `;
 
 type AccountParams = {
@@ -572,43 +562,41 @@ export default function BorrowActionsPage() {
             </Text>
             <MarketStatsGrid>
               <AccountStatsCard
-                gridArea='d'
-                label={`${token0.ticker} APR`}
-                value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                gridArea='f'
-                label={`${token1.ticker} APR`}
-                value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                gridArea='c'
-                label={`${token0.ticker} Utilization`}
-                value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                gridArea='e'
-                label={`${token1.ticker} Utilization`}
-                value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                showAsterisk={isShowingHypothetical}
-              />
-              <AccountStatsCard
-                gridArea='a'
                 label={`${token0.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
-                denomination={token0.ticker ?? ''}
+                denomination={token0.ticker}
                 showAsterisk={isShowingHypothetical}
               />
+              <div className='grid grid-cols-2 gap-4'>
+                <AccountStatsCard
+                  label={`${token0.ticker} Utilization`}
+                  value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
+                />
+                <AccountStatsCard
+                  label={`${token0.ticker} APR`}
+                  value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
+                />
+              </div>
               <AccountStatsCard
-                gridArea='b'
                 label={`${token1.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
-                denomination={token1.ticker ?? ''}
+                denomination={token1.ticker}
                 showAsterisk={isShowingHypothetical}
               />
+              <div className='grid grid-cols-2 gap-4'>
+                <AccountStatsCard
+                  label={`${token1.ticker} Utilization`}
+                  value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
+                />
+                <AccountStatsCard
+                  label={`${token1.ticker} APR`}
+                  value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
+                />
+              </div>
             </MarketStatsGrid>
           </div>
         )}

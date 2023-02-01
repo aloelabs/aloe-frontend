@@ -9,12 +9,11 @@ import { RESPONSIVE_BREAKPOINT_LG, RESPONSIVE_BREAKPOINT_MD } from '../../data/c
 const PRIMARY_COLOR = '#ffffff';
 const SECONDARY_COLOR = '#82a0b6';
 
-const AccountStatsCardWrapper = styled.div.attrs((props: { gridArea?: string }) => props)`
+const AccountStatsCardWrapper = styled.div`
   ${tw`flex flex-col justify-center`}
   background-color: rgba(13, 23, 30, 1);
   border-radius: 8px;
   padding: 24px 32px;
-  ${(props) => (props.gridArea ? 'grid-area: ' + props.gridArea + ';' : '')}
 `;
 
 const TextWrapper = styled.div`
@@ -47,13 +46,12 @@ export type AccountStatsCardProps = {
   boxColor?: string;
   showAsterisk: boolean;
   className?: string;
-  gridArea?: string;
 };
 
 export function AccountStatsCard(props: AccountStatsCardProps) {
-  const { label, value, denomination, boxColor, showAsterisk, className, gridArea } = props;
+  const { label, value, denomination, boxColor, showAsterisk, className } = props;
   return (
-    <AccountStatsCardWrapper className={className} gridArea={gridArea}>
+    <AccountStatsCardWrapper className={className}>
       <div className='flex'>
         <Text size='M' weight='medium' color={SECONDARY_COLOR}>
           {label}
