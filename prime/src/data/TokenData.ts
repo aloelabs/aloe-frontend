@@ -1,6 +1,16 @@
 import { Address, chain } from 'wagmi';
 
-import { UsdcLogo, WbtcLogo, WethLogo, VeloLogo, DaiLogo, OpLogo, WstEthLogo } from '../assets/svg/tokens';
+import {
+  UsdcLogo,
+  WbtcLogo,
+  WethLogo,
+  VeloLogo,
+  DaiLogo,
+  OpLogo,
+  WstEthLogo,
+  FraxLogo,
+  UniLogo,
+} from '../assets/svg/tokens';
 import { Token } from './Token';
 
 const USDC_OPTIMISM = new Token(
@@ -64,6 +74,24 @@ const WSTETH_OPTIMISM = new Token(
   'wstETH',
   'Wrapped Liquid Staked Ether 2.0',
   WstEthLogo
+);
+
+const FRAX_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x2e3d870790dc77a83dd1d18184acc7439a53f475',
+  18,
+  'FRAX',
+  'Frax',
+  FraxLogo
+);
+
+const UNI_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x6fd9d7ad17242c41f7131d257212c54a0e816691',
+  18,
+  'UNI',
+  'Uniswap',
+  UniLogo
 );
 
 const USDC_GOERLI = new Token(
@@ -139,6 +167,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [DAI_OPTIMISM.address]: DAI_OPTIMISM,
     [OP_OPTIMISM.address]: OP_OPTIMISM,
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
+    [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
+    [UNI_OPTIMISM.address]: UNI_OPTIMISM,
   },
 };
 

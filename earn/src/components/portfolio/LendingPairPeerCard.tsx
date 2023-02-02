@@ -58,6 +58,13 @@ const Container = styled.div`
   }
 `;
 
+const PlaceAboveContainer = styled.div`
+  position: absolute;
+  top: 6px;
+  right: 16px;
+  z-index: 6;
+`;
+
 const CardHeader = styled.div`
   display: flex;
   flex-direction: row;
@@ -206,46 +213,51 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const [activeUtilization, activeTotalSupply] = getActiveUtilizationAndTotalSupply(activeAsset, selectedLendingPair);
 
   return (
-    <Container key={activeAsset.address + selectedLendingPair.kitty0.address}>
-      <CardHeader>
-        <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
-          Lending Pair
-        </Text>
+    <>
+      <Container key={activeAsset.address + selectedLendingPair.kitty0.address}>
+        <CardHeader>
+          <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
+            Lending Pair Peer
+            <Tooltip buttonSize='S' content='Collateral Asset' position='bottom-center' />
+          </Text>
+        </CardHeader>
+        <CardBody>
+          <LargeCardBodyItem>
+            <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
+              Total Supply
+            </Text>
+            <div>
+              <Display size='L' className='inline-block mr-0.5'>
+                {formatTokenAmount(activeTotalSupply)}
+              </Display>
+              <Display size='S' className='inline-block ml-0.5'>
+                {activeAsset?.ticker || ''}
+              </Display>
+            </div>
+          </LargeCardBodyItem>
+          <SmallCardBodyItem>
+            <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
+              Users
+            </Text>
+            <Display size='L'>{numberOfUsers}</Display>
+          </SmallCardBodyItem>
+          <SmallCardBodyItem>
+            <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
+              Utilization
+            </Text>
+            <Display size='L'>{roundPercentage(activeUtilization)}%</Display>
+          </SmallCardBodyItem>
+          <SmallCardBodyItem>
+            <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
+              IV
+            </Text>
+            <Display size='L'>{roundPercentage(selectedLendingPair.iv, 1)}</Display>
+          </SmallCardBodyItem>
+        </CardBody>
+      </Container>
+      <PlaceAboveContainer>
         <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} small={true} />
-      </CardHeader>
-      <CardBody>
-        <LargeCardBodyItem>
-          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-            Total Supply
-          </Text>
-          <div>
-            <Display size='L' className='inline-block mr-0.5'>
-              {formatTokenAmount(activeTotalSupply)}
-            </Display>
-            <Display size='S' className='inline-block ml-0.5'>
-              {activeAsset?.ticker || ''}
-            </Display>
-          </div>
-        </LargeCardBodyItem>
-        <SmallCardBodyItem>
-          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-            Users
-          </Text>
-          <Display size='L'>{numberOfUsers}</Display>
-        </SmallCardBodyItem>
-        <SmallCardBodyItem>
-          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-            Utilization
-          </Text>
-          <Display size='L'>{roundPercentage(activeUtilization)}%</Display>
-        </SmallCardBodyItem>
-        <SmallCardBodyItem>
-          <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-            IV
-          </Text>
-          <Display size='L'>75%</Display>
-        </SmallCardBodyItem>
-      </CardBody>
-    </Container>
+      </PlaceAboveContainer>
+    </>
   );
 }

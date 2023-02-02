@@ -17,7 +17,8 @@ export const Q96 = BigNumber.from('0x1000000000000000000000000');
 export const BIGQ96 = toBig(Q96);
 export const MAX_UNISWAP_POSITIONS = 3;
 
-export const ALOE_II_SIGMA_MIN = 0.02;
-export const ALOE_II_SIGMA_MAX = 0.15;
-export const ALOE_II_SIGMA_SCALER = 3;
-export const ALOE_II_LIQUIDATION_INCENTIVE = 0.05;
+export const ALOE_II_SIGMA_MIN = 0.01;
+export const ALOE_II_SIGMA_MAX = 0.18;
+export const ALOE_II_SIGMA_SCALER = 5;
+export const ALOE_II_LIQUIDATION_INCENTIVE = 20;
+export const ALOE_II_MAX_LEVERAGE = 200;

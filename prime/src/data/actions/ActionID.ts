@@ -26,6 +26,8 @@ export function getFrontendManagerCodeFor(id: ActionID) {
       return 5;
     case ActionID.CLAIM_FEES:
       return 5;
+    case ActionID.SWAP:
+      return 6;
   }
 }
 
@@ -45,6 +47,8 @@ export function getNameOfAction(id: ActionID): string {
       return 'Remove Liquidity';
     case ActionID.CLAIM_FEES:
       return 'Claim Fees';
+    case ActionID.SWAP:
+      return 'Swap';
     default:
       return 'UNKNOWN';
   }
