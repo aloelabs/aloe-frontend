@@ -10,6 +10,8 @@ import {
   WstEthLogo,
   FraxLogo,
   UniLogo,
+  LyraLogo,
+  PerpLogo,
 } from '../assets/svg/tokens';
 import { Token } from './Token';
 
@@ -94,6 +96,24 @@ const UNI_OPTIMISM = new Token(
   UniLogo
 );
 
+const LYRA_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+  18,
+  'LYRA',
+  'Lyra Token',
+  LyraLogo
+);
+
+const PERP_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x9e1028f5f1d5ede59748ffcee5532509976840e0',
+  18,
+  'PERP',
+  'Perpetual',
+  PerpLogo
+);
+
 const USDC_GOERLI = new Token(
   chain.goerli.id,
   '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
@@ -169,6 +189,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
     [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
     [UNI_OPTIMISM.address]: UNI_OPTIMISM,
+    [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
+    [PERP_OPTIMISM.address]: PERP_OPTIMISM,
   },
 };
 

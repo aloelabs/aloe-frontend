@@ -1,7 +1,9 @@
 import DaiLogo from './dai.svg';
 import FraxLogo from './frax.svg';
 import LooksLogo from './looks.svg';
+import LyraLogo from './lyra.svg';
 import OpLogo from './op.svg';
+import PerpLogo from './perp.svg';
 import RaiLogo from './rai.svg';
 import TribeLogo from './tribe.svg';
 import UniLogo from './uni.svg';
@@ -15,7 +17,9 @@ import WstEthLogo from './wsteth.svg';
 export {
   DaiLogo,
   FraxLogo,
+  LyraLogo,
   OpLogo,
+  PerpLogo,
   UsdcLogo,
   WbtcLogo,
   WethLogo,
