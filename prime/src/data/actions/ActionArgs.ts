@@ -43,6 +43,25 @@ export function getRemoveLiquidityActionArgs(lower: number, upper: number, liqui
   return ethers.utils.defaultAbiCoder.encode(['int24', 'int24', 'uint128'], [lower, upper, liquidity.toString(10)]);
 }
 
+/**
+ * Get the FrontendManager arguments necessary to swap one token for another
+ * @param token0 Data for the first token in the pair
+ * @param amount0 If negative, the amount of `token0` to sell. If positive, the amount of `token0` we expect to receive
+ * @param token1 Data for the second token in the pair
+ * @param amount1 If negative, the amount of `token1` to sell. If positive, the amount of `token1` we expect to receive
+ * @returns
+ */
+export function getSwapActionArgs(token0: Token, amount0: number, token1: Token, amount1: number): string {
+  const bigAmount0 = new Big(amount0.toFixed(Math.min(token0.decimals, 20))).mul(10 ** token0.decimals);
+  const bigAmount1 = new Big(amount1.toFixed(Math.min(token1.decimals, 20))).mul(10 ** token1.decimals);
+  const assetIn = amount0 < 0 ? token0.address : token1.address;
+
+  return ethers.utils.defaultAbiCoder.encode(
+    ['address', 'int256', 'int256'],
+    [assetIn, bigAmount0.toFixed(0), bigAmount1.toFixed(0)]
+  );
+}
+
 function modQ24(value: number) {
   return value & 0b00000000111111111111111111111111;
 }

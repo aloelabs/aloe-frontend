@@ -152,9 +152,6 @@ export async function calculateTickData(
   const tickDataLeft: TickData[] = [];
   const tickDataRight: TickData[] = [];
 
-  // console.log('Current Tick:');
-  // console.log(currentTick);
-
   // MARK -- filling out data for ticks *above* the current tick
   let liquidity = currentLiquidity;
   let splitIdx = rawTicksData.length;
@@ -501,4 +498,29 @@ export function getValueOfLiquidity(
   const value = JSBI.add(value0, value1);
 
   return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+}
+
+export function getOutputForSwap(
+  priceX96: Big,
+  amount: string,
+  isInputToken0: boolean,
+  inputDecimals: number,
+  outputDecimals: number,
+  slippage: number
+): string {
+  return isInputToken0
+    ? new Big(amount)
+        .mul(1 - slippage)
+        .mul(10 ** inputDecimals)
+        .mul(priceX96)
+        .div(2 ** 96)
+        .div(10 ** outputDecimals)
+        .toString()
+    : new Big(amount)
+        .mul(1 - slippage)
+        .mul(10 ** inputDecimals)
+        .mul(2 ** 96)
+        .div(priceX96)
+        .div(10 ** outputDecimals)
+        .toString();
 }

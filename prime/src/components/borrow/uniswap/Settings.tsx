@@ -36,7 +36,7 @@ const SvgButtonWrapper = styled.button`
 
 const SettingsMenuWrapper = styled.div`
   ${tw`absolute flex flex-col gap-4`}
-  z-index: 30;
+  z-index: 6;
   background-color: rgba(13, 24, 33, 1);
   border: 1px solid rgba(26, 41, 52, 1);
   border-radius: 8px;
