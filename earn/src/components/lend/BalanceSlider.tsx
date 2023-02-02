@@ -19,7 +19,7 @@ const Wrapper = styled.div`
     width: 40px;
     height: 100%;
     background: linear-gradient(to left, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
-    z-index: 10;
+    z-index: 5;
   }
 
   &:after {
@@ -30,7 +30,7 @@ const Wrapper = styled.div`
     width: 40px;
     height: 100%;
     background: linear-gradient(to right, rgba(8, 14, 18, 0), rgba(8, 14, 18, 0.8));
-    z-index: 10;
+    z-index: 5;
   }
 `;
 
