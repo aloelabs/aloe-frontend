@@ -10,6 +10,7 @@ import { AloeWithdrawActionCard } from '../../components/borrow/actions/AloeWith
 import UniswapAddLiquidityActionCard from '../../components/borrow/actions/UniswapAddLiquidityActionCard';
 import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapClaimFeesActionCard';
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
+import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapActionCard';
 import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
 import { UserBalances } from '../UserBalances';
 import { ActionID } from './ActionID';
@@ -129,6 +130,12 @@ export const CLAIM_FEES: Action = {
   actionCard: UnsiwapClaimFeesActionCard,
 };
 
+export const SWAP: Action = {
+  id: ActionID.SWAP,
+  description: 'Swap tokens on Uniswap.',
+  actionCard: UniswapSwapActionCard,
+};
+
 export const ActionProviders: { [key: string]: ActionProvider } = {
   AloeII: {
     name: 'Aloe II',
@@ -149,6 +156,7 @@ export const ActionProviders: { [key: string]: ActionProvider } = {
       ADD_LIQUIDITY,
       REMOVE_LIQUIDITY,
       CLAIM_FEES,
+      SWAP,
     },
   },
 };

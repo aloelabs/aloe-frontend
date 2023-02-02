@@ -404,7 +404,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       </div>
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
-          tokenLabel={token0?.ticker || ''}
+          token={isToken0Selected ? token0 : token1}
           value={isInput0Disabled ? '' : localTokenAmounts[0]}
           onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
           disabled={isInput0Disabled}
@@ -416,7 +416,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
         />
         <TokenAmountInput
-          tokenLabel={token1?.ticker || ''}
+          token={isToken0Selected ? token1 : token0}
           value={isInput1Disabled ? '' : localTokenAmounts[1]}
           onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
           disabled={isInput1Disabled}

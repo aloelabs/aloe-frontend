@@ -165,3 +165,11 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
 export function areWithinNSigDigs(a: Big, b: Big, n: number): boolean {
   return a.prec(n).eq(b.prec(n));
 }
+
+export function truncateDecimals(value: string, decimals: number): string {
+  const decimalIndex = value.indexOf('.');
+  if (decimalIndex === -1) {
+    return value;
+  }
+  return value.slice(0, decimalIndex + decimals + 1);
+}
