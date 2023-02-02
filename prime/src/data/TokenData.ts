@@ -98,7 +98,7 @@ const UNI_OPTIMISM = new Token(
 
 const LYRA_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
+  '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
   18,
   'LYRA',
   'Lyra Token',
@@ -107,7 +107,7 @@ const LYRA_OPTIMISM = new Token(
 
 const PERP_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x9e1028F5F1D5eDE59748FFceE5532509976840E0',
+  '0x9e1028f5f1d5ede59748ffcee5532509976840e0',
   18,
   'PERP',
   'Perpetual',
