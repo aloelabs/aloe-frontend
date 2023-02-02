@@ -183,8 +183,6 @@ function DepositButton(props: DepositButtonProps) {
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
 
-  console.log('needsToPermitCourier', needsToPermitCourier);
-
   // Approval flow
   const { config: depositWithApprovalConfig, refetch: refetchDepositWithApproval } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
