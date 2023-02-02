@@ -194,7 +194,7 @@ export default function BorrowActionsPage() {
   }, []);
 
   // MARK: component state
-  const [isShowingHypothetical, setIsShowingHypothetical] = useState<boolean>(false);
+  const [userWantsHypothetical, setUserWantsHypothetical] = useState<boolean>(false);
   const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [isToken0Selected, setIsToken0Selected] = useState(true);
@@ -393,7 +393,7 @@ export default function BorrowActionsPage() {
 
     // tell React about our findings
     const _marginAccount = { ...marginAccount };
-    if (isShowingHypothetical) {
+    if (userWantsHypothetical) {
       const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
       const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
       // Apply the user's inputted swap fees to the displayed margin account's assets
@@ -410,12 +410,12 @@ export default function BorrowActionsPage() {
       };
     }
     setDisplayedMarginAccount(_marginAccount);
-    setDisplayedUniswapPositions(isShowingHypothetical ? uniswapPositionsF : uniswapPositions);
+    setDisplayedUniswapPositions(userWantsHypothetical ? uniswapPositionsF : uniswapPositions);
   }, [
     marginAccount,
     uniswapPositions,
     hypotheticalState,
-    isShowingHypothetical,
+    userWantsHypothetical,
     isToken0Selected,
     borrowInterestInputValue,
     swapFeesInputValue,
@@ -439,8 +439,6 @@ export default function BorrowActionsPage() {
 
   const updateHypotheticalState = useCallback((state: AccountState | null) => {
     setHypotheticalState(state);
-    // If state is null, there aren't any hypotheticals to show
-    if (state == null) setIsShowingHypothetical(false);
   }, []);
 
   // if no account data is found, don't render the page
@@ -470,6 +468,8 @@ export default function BorrowActionsPage() {
   const { health } = isSolvent(displayedMarginAccount, uniswapPositions, displayedMarginAccount.sqrtPriceX96);
   displayedMarginAccount.health = health;
 
+  const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
+
   return (
     <BodyWrapper>
       <HeaderBarContainer>
@@ -486,7 +486,7 @@ export default function BorrowActionsPage() {
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
-          onAddFirstAction={() => setIsShowingHypothetical(true)}
+          onAddFirstAction={() => setUserWantsHypothetical(true)}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>
@@ -519,8 +519,8 @@ export default function BorrowActionsPage() {
             <div className='ml-auto'>
               {hypotheticalState && (
                 <HypotheticalToggleButton
-                  showHypothetical={isShowingHypothetical}
-                  setShowHypothetical={setIsShowingHypothetical}
+                  showHypothetical={userWantsHypothetical}
+                  setShowHypothetical={setUserWantsHypothetical}
                 />
               )}
             </div>
