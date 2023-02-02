@@ -79,7 +79,7 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
           }}
         />
         <TokenAmountInput
-          tokenLabel={selectedTokenOption.label || ''}
+          token={selectedTokenOption.value === TokenType.ASSET0 ? token0 : token1}
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}

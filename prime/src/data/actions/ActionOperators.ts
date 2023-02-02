@@ -158,3 +158,12 @@ export function removeLiquidityOperator(
   // eslint-disable-next-line object-curly-newline
   return { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys };
 }
+
+export function swapOperator(operand: AccountState, amount0: number, amount1: number): AccountState {
+  const assets = { ...operand.assets };
+
+  assets.token0Raw += amount0;
+  assets.token1Raw += amount1;
+
+  return { ...operand, assets };
+}

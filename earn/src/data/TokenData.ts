@@ -1,7 +1,35 @@
 import { Address, chain } from 'wagmi';
 
-import { UsdcLogo, WbtcLogo, WethLogo } from '../assets/svg/tokens';
+import {
+  DaiLogo,
+  FraxLogo,
+  OpLogo,
+  UniLogo,
+  UsdcLogo,
+  VeloLogo,
+  WbtcLogo,
+  WethLogo,
+  WstEthLogo,
+} from '../assets/svg/tokens';
 import { Token } from './Token';
+
+const FRAX_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x2e3d870790dc77a83dd1d18184acc7439a53f475',
+  18,
+  'FRAX',
+  'Frax',
+  FraxLogo
+);
+
+const UNI_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x6fd9d7ad17242c41f7131d257212c54a0e816691',
+  18,
+  'UNI',
+  'Uniswap',
+  UniLogo
+);
 
 const USDC_GOERLI = new Token(
   chain.goerli.id,
@@ -23,7 +51,7 @@ const USDC_MAINNET = new Token(
 
 const USDC_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+  '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
   6,
   'USDC',
   'USD Coin',
@@ -32,7 +60,7 @@ const USDC_OPTIMISM = new Token(
 
 const USDC_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+  '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
   6,
   'USDC',
   'USD Coin',
@@ -68,7 +96,7 @@ const WETH_OPTIMISM = new Token(
 
 const WETH_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+  '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
   18,
   'WETH',
   'Wrapped Ether',
@@ -95,7 +123,7 @@ const WBTC_MAINNET = new Token(
 
 const WBTC_OPTIMISM = new Token(
   chain.optimism.id,
-  '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
+  '0x68f180fcce6836688e9084f035309e29bf0a2095',
   8,
   'WBTC',
   'Wrapped Bitcoin',
@@ -104,11 +132,47 @@ const WBTC_OPTIMISM = new Token(
 
 const WBTC_ARBITRUM = new Token(
   chain.arbitrum.id,
-  '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+  '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
   8,
   'WBTC',
   'Wrapped Bitcoin',
   WbtcLogo
+);
+
+const VELO_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x3c8b650257cfb5f272f799f5e2b4e65093a11a05',
+  18,
+  'VELO',
+  'Velodrome',
+  VeloLogo
+);
+
+const DAI_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+  18,
+  'DAI',
+  'Dai Stablecoin',
+  DaiLogo
+);
+
+const OP_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x4200000000000000000000000000000000000042',
+  18,
+  'OP',
+  'Optimism',
+  OpLogo
+);
+
+const WSTETH_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+  18,
+  'wstETH',
+  'Wrapped Liquid Staked Ether 2.0',
+  WstEthLogo
 );
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
@@ -126,6 +190,12 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_OPTIMISM.address]: USDC_OPTIMISM,
     [WETH_OPTIMISM.address]: WETH_OPTIMISM,
     [WBTC_OPTIMISM.address]: WBTC_OPTIMISM,
+    [DAI_OPTIMISM.address]: DAI_OPTIMISM,
+    [VELO_OPTIMISM.address]: VELO_OPTIMISM,
+    [OP_OPTIMISM.address]: OP_OPTIMISM,
+    [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
+    [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
+    [UNI_OPTIMISM.address]: UNI_OPTIMISM,
   },
   [chain.arbitrum.id]: {
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
@@ -143,7 +213,7 @@ export function getToken(chainId: number, address: Address): Token {
 }
 
 export function getTokenByTicker(chainId: number, ticker: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker === ticker);
+  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker.toUpperCase() === ticker.toUpperCase());
   if (!token) {
     throw new Error(`Could not find token with ticker ${ticker}`);
   }

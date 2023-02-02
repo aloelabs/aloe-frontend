@@ -227,7 +227,7 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidt
   overflow-y: auto;
   min-height: 150px;
   max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
-  min-width: 300px;
+  min-width: 400px;
   max-width: ${(props) => props.maxWidth || '450px'};
   max-height: ${(props) => props.maxHeight || '570px'};
   height: max-content;
@@ -244,13 +244,18 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidt
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+
+  /* On mobile, the modal should take up (almost) the full screen */
+  @media (max-width: 450px) {
+    min-width: 90vw;
+  }
 `;
 
 const ModalTitle = styled(Dialog.Title)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px 0px 24px;
+  padding: 18px 20px 0px 20px;
 `;
 
 const InnerContainer = styled.div`
@@ -258,7 +263,7 @@ const InnerContainer = styled.div`
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 24px;
+  padding: 20px;
 `;
 
 export default function Modal(props: ModalProps) {
@@ -296,7 +301,9 @@ export default function Modal(props: ModalProps) {
               <ModalPanelWrapper maxHeight={maxHeight} maxWidth={maxWidth}>
                 {title && (
                   <ModalTitle>
-                    <Text size='L'>{title}</Text>
+                    <Text size='L' weight='medium'>
+                      {title}
+                    </Text>
                     {!noClose && (
                       <button type='button' title='Close Modal' onClick={() => setIsOpen(false)}>
                         <CloseIcon />

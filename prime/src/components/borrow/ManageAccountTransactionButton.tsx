@@ -1,7 +1,6 @@
-import { ReactElement, useContext, useState } from 'react';
+import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
-import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Address, Chain, erc20ABI, useBalance, useContractRead, useContractWrite } from 'wagmi';
@@ -11,6 +10,7 @@ import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
+import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
@@ -75,16 +75,14 @@ function getConfirmButton(
   }
 }
 
-function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Address) {
+function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Address, enabled: boolean) {
   return useContractRead({
     address: token.address,
     abi: erc20ABI,
     functionName: 'allowance',
     args: [owner, spender],
-    cacheOnBlock: true,
-    watch: true,
     chainId: onChain.id,
-    enabled: owner !== '0x',
+    enabled: enabled && owner !== '0x',
   });
 }
 
@@ -127,6 +125,9 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   } = props;
   const { activeChain } = useContext(ChainContext);
 
+  // chain agnostic wagmi rate-limiter
+  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
+
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
@@ -135,6 +136,13 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 7_000 < 1_000), 500);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const contract = useContractWrite({
     address: accountAddress,
@@ -148,21 +156,24 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   });
 
   const { data: accountEtherBalance } = useBalance({
-    addressOrName: accountAddress,
-    watch: true,
+    address: accountAddress,
+    chainId: activeChain.id,
+    enabled: shouldEnableWagmiHooks,
   });
 
   const { data: userAllowance0Asset } = useAllowance(
     activeChain,
     token0,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    shouldEnableWagmiHooks
   );
   const { data: userAllowance1Asset } = useAllowance(
     activeChain,
     token1,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    shouldEnableWagmiHooks
   );
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
@@ -228,16 +239,11 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
           const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
           const actionArgs = actionOutputs.map((o) => o.actionArgs!);
-          const positions: number[] = [];
+          let positions = '0';
 
           // if Uniswap positions are being changed, make sure to send an updated array of positions
           if (actionIds.includes(4) || actionIds.includes(5)) {
-            accountState.uniswapPositions.forEach((position) => {
-              if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
-                positions.push(position.lower);
-                positions.push(position.upper);
-              }
-            });
+            positions = zip(accountState.uniswapPositions);
           }
 
           // provide ante if necessary
@@ -247,7 +253,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
 
           const calldata = ethers.utils.defaultAbiCoder.encode(
-            ['uint8[]', 'bytes[]', 'int24[]'],
+            ['uint8[]', 'bytes[]', 'uint144'],
             [actionIds, actionArgs, positions]
           );
 
@@ -266,7 +272,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
                     // TODO gas estimation was occassionally causing errors. To fix this,
                     // we should probably work with the underlying ethers.Contract, but for now
                     // we just provide hard-coded overrides.
-                    gasLimit: BigNumber.from((600000 + 200000 * actionIds.length).toFixed(0)),
+                    gasLimit: BigNumber.from((300000 + 200000 * actionIds.length).toFixed(0)),
                     value: shouldProvideAnte ? ANTE + 1 : undefined,
                   },
                 })

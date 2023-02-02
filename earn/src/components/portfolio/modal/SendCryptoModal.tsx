@@ -71,7 +71,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const { activeChain } = useContext(ChainContext);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const provider = useProvider();
+  const provider = useProvider({ chainId: activeChain.id });
 
   const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
 
@@ -179,18 +179,33 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     setAddressInputValue('');
     setSendAmountInputValue('');
   }
+  // Get the user's balance of the selected token
+  const { refetch: refetchDepositBalance, data: depositBalance } = useBalance({
+    address: account?.address ?? '0x',
+    token: selectedOption.address,
+    chainId: activeChain.id,
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchDepositBalance();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchDepositBalance, isOpen]);
 
   useEffect(() => {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
-
-  // Get the user's balance of the selected token
-  const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
-    token: selectedOption.address,
-    watch: true,
-    chainId: activeChain.id,
-  });
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
@@ -276,9 +291,12 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By sending, you agree to our <a href='/earn/public/terms.pdf'>Terms of Service</a> and acknowledge that you
-            may lose your money. Aloe Labs is not responsible for any losses you may incur. It is your duty to educate
-            yourself and be aware of the risks.
+            By sending, you agree to our{' '}
+            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+              Terms of Service
+            </a>{' '}
+            and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It
+            is your duty to educate yourself and be aware of the risks.
           </Text>
         </div>
       </div>

@@ -10,7 +10,6 @@ export default function useAllowance(chain: Chain, token: Token, owner: Address,
     functionName: 'allowance',
     args: [owner, spender] as const,
     cacheOnBlock: true,
-    watch: true,
     chainId: chain.id,
-  }) as { data: BigNumber | null };
+  }) as { refetch: () => void; data: BigNumber | null };
 }

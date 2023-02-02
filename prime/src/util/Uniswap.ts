@@ -6,8 +6,9 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { chain } from 'wagmi';
 
-import { theGraphUniswapV3Client } from '../App';
+import { theGraphUniswapV3Client, theGraphUniswapV3GoerliClient, theGraphUniswapV3OptimismClient } from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
 import { Token } from '../data/Token';
@@ -107,12 +108,29 @@ export function calculateTickInfo(
   };
 }
 
-export async function calculateTickData(poolAddress: string, poolBasics: UniswapV3PoolBasics): Promise<TickData[]> {
+export async function calculateTickData(
+  poolAddress: string,
+  poolBasics: UniswapV3PoolBasics,
+  chainId: number
+): Promise<TickData[]> {
   const tickOffset = Math.floor((BINS_TO_FETCH * poolBasics.tickSpacing) / 2);
   const minTick = poolBasics.slot0.tick - tickOffset;
   const maxTick = poolBasics.slot0.tick + tickOffset;
 
-  const uniswapV3GraphQLTicksQueryResponse = (await theGraphUniswapV3Client.query({
+  let theGraphClient = theGraphUniswapV3Client;
+  switch (chainId) {
+    case chain.optimism.id:
+      theGraphClient = theGraphUniswapV3OptimismClient;
+      break;
+    case chain.goerli.id:
+      theGraphClient = theGraphUniswapV3GoerliClient;
+      break;
+    case chain.mainnet.id:
+    default:
+      break;
+  }
+
+  const uniswapV3GraphQLTicksQueryResponse = (await theGraphClient.query({
     query: UniswapTicksQuery,
     variables: {
       poolAddress: poolAddress.toLowerCase(),
@@ -133,9 +151,6 @@ export async function calculateTickData(poolAddress: string, poolBasics: Uniswap
 
   const tickDataLeft: TickData[] = [];
   const tickDataRight: TickData[] = [];
-
-  // console.log('Current Tick:');
-  // console.log(currentTick);
 
   // MARK -- filling out data for ticks *above* the current tick
   let liquidity = currentLiquidity;
@@ -483,4 +498,29 @@ export function getValueOfLiquidity(
   const value = JSBI.add(value0, value1);
 
   return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+}
+
+export function getOutputForSwap(
+  priceX96: Big,
+  amount: string,
+  isInputToken0: boolean,
+  inputDecimals: number,
+  outputDecimals: number,
+  slippage: number
+): string {
+  return isInputToken0
+    ? new Big(amount)
+        .mul(1 - slippage)
+        .mul(10 ** inputDecimals)
+        .mul(priceX96)
+        .div(2 ** 96)
+        .div(10 ** outputDecimals)
+        .toString()
+    : new Big(amount)
+        .mul(1 - slippage)
+        .mul(10 ** inputDecimals)
+        .mul(2 ** 96)
+        .div(priceX96)
+        .div(10 ** outputDecimals)
+        .toString();
 }

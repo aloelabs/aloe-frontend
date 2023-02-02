@@ -5,6 +5,7 @@ import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
+import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
@@ -21,8 +22,19 @@ import BorrowActionsPage from './pages/BorrowActionsPage';
 import ScrollToTop from './util/ScrollToTop';
 
 const CONNECT_WALLET_CHECKBOXES = [
-  'I am not a citizen or resident of the United States of America.',
-  'I acknowledge that Aloe II is in beta and that use of the platform may result in loss of funds.',
+  <Text size='M' weight='regular'>
+    I have read, understood, and agreed to the{' '}
+    <a className='underline text-green-600 hover:text-green-700' href='/terms.pdf' target='_blank'>
+      Terms of Service
+    </a>{' '}
+    and{' '}
+    <a className='underline text-green-600 hover:text-green-700' href='/privacy.pdf' target='_blank'>
+      Privacy Policy
+    </a>
+    .
+  </Text>,
+  <Text>I am not a citizen or resident of the United States.</Text>,
+  <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
 export const theGraphUniswapV2Client = new ApolloClient({
@@ -32,6 +44,16 @@ export const theGraphUniswapV2Client = new ApolloClient({
 
 export const theGraphUniswapV3Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3OptimismClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3GoerliClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/0xfind/uniswap-v3-goerli-2' }),
   cache: new InMemoryCache(),
 });
 

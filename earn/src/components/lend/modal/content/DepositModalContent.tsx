@@ -70,13 +70,14 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   const [isPending, setIsPending] = useState(false);
   const account = useAccount();
 
-  const { data: depositBalance } = useBalance({
-    addressOrName: account?.address ?? '',
+  const { refetch: refetchBalance, data: depositBalance } = useBalance({
+    address: account?.address ?? '0x',
     token: token.address,
-    watch: true,
+    enabled: account.address !== undefined,
+    chainId: activeChain.id,
   });
 
-  const { data: userAllowanceToken } = useAllowance(
+  const { refetch: refetchUserAllowance, data: userAllowanceToken } = useAllowance(
     activeChain,
     token,
     account?.address ?? '0x',
@@ -95,7 +96,21 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     abi: RouterABI,
     mode: 'recklesslyUnprepared',
     functionName: 'depositWithApprove(address,uint256)',
+    chainId: activeChain.id,
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    interval = setInterval(() => {
+      refetchBalance();
+      refetchUserAllowance();
+    }, 13_000);
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchBalance, refetchUserAllowance]);
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {

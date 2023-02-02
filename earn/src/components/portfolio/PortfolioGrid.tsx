@@ -1,6 +1,7 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
+import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { Token } from '../../data/Token';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
@@ -21,6 +22,17 @@ const Grid = styled.div`
     'pie apy priceAndUptime';
   grid-gap: 24px;
   height: 244px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    grid-template-columns: 1fr;
+    grid-template-rows: 7fr 3fr 3fr 7fr;
+    grid-template-areas:
+      'pie'
+      'balance'
+      'apy'
+      'priceAndUptime';
+    height: 100%;
+  }
 `;
 
 const BaseGridItem = styled.div`
@@ -34,7 +46,6 @@ const BaseGridItem = styled.div`
 
 const PriceAndUptimeContainer = styled.div`
   grid-area: priceAndUptime;
-
   display: grid;
   grid-template-rows: 170px 50px;
   grid-gap: 24px;
@@ -47,30 +58,34 @@ export const PieChartContainer = styled(BaseGridItem)`
 export const BalanceContainer = styled(BaseGridItem)`
   grid-area: balance;
   position: relative;
-  &.active::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    top: calc(50% - 5px);
-    left: -25px;
-    width: 25px;
-    height: 10px;
-    background-color: rgba(130, 160, 182, 1);
+  @media (min-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    &.active::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: calc(50% - 5px);
+      left: -25px;
+      width: 25px;
+      height: 10px;
+      background-color: rgba(130, 160, 182, 1);
+    }
   }
 `;
 
 export const APYContainer = styled(BaseGridItem)`
   grid-area: apy;
   position: relative;
-  &.active::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    top: calc(50% - 5px);
-    left: -25px;
-    width: 25px;
-    height: 10px;
-    background-color: rgba(130, 160, 182, 1);
+  @media (min-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    &.active::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: calc(50% - 5px);
+      left: -25px;
+      width: 25px;
+      height: 10px;
+      background-color: rgba(130, 160, 182, 1);
+    }
   }
 `;
 

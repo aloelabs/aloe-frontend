@@ -63,7 +63,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
 
   // MARK: wagmi hooks
-  const provider = useProvider();
+  const provider = useProvider({ chainId: activeChain.id });
 
   // MARK: chart data and other fetched state
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
@@ -121,8 +121,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }
-      // TODO replace this hard-coded string with `poolAddress` once we're done with testnet!!!
-      const tickData = await calculateTickData('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', poolBasics);
+      const tickData = await calculateTickData(poolAddress, poolBasics, activeChain.id);
       if (mounted) {
         setLiquidityData(tickData);
       }
@@ -405,7 +404,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       </div>
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
-          tokenLabel={token0?.ticker || ''}
+          token={isToken0Selected ? token0 : token1}
           value={isInput0Disabled ? '' : localTokenAmounts[0]}
           onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
           disabled={isInput0Disabled}
@@ -417,7 +416,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           }}
         />
         <TokenAmountInput
-          tokenLabel={token1?.ticker || ''}
+          token={isToken0Selected ? token1 : token0}
           value={isInput1Disabled ? '' : localTokenAmounts[1]}
           onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
           disabled={isInput1Disabled}

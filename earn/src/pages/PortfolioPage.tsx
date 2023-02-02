@@ -1,29 +1,37 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { Address, SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import {
+  getSessionStorageInteger,
+  getSessionStorageString,
+  setSessionStorageInteger,
+  setSessionStorageString,
+} from 'shared/lib/util/SessionStorage';
 import styled from 'styled-components';
 import { useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
-import { ReactComponent as DollarIcon } from '../assets/svg/dollar.svg';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import { ReactComponent as UsersIcon } from '../assets/svg/users.svg';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/portfolio/modal/PendingTxnModal';
+import ReferralModal from '../components/portfolio/modal/ReferralModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
@@ -33,16 +41,15 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
-import { getTokenByTicker } from '../data/TokenData';
+import { getToken, getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 import { formatUSD } from '../util/Numbers';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
 const PORTFOLIO_GRID_TOOLTIP_TEXT = `These widgets give you general information about an asset.`;
-const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `Before other users can borrow your funds, they must post collateral.
-  When you deposit, you get to pick what type of collateral is allowed. That choice determines what pair you're lending
-  to, and each pair has it's own stats.`;
+const LENDING_PAIR_PEER_CARD_TOOLTIP_TEXT = `The asset you've selected may be available in multiple lending pairs. Use
+  this dropdown to see its stats in a particular pair.`;
 
 const Container = styled.div`
   max-width: 780px;
@@ -64,9 +71,18 @@ const PortfolioActionButtonsContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   column-gap: 16px;
+  row-gap: 16px;
   margin-top: 20px;
   overflow-x: auto;
   white-space: nowrap;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export type PriceEntry = {
@@ -93,6 +109,11 @@ export type TokenBalance = {
   pairName: string;
 };
 
+export type ReferralData = {
+  courierId: number;
+  lender: Token;
+};
+
 export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
@@ -108,8 +129,11 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [sessionReferrer, setSessionReferrer] = useState<ReferralData | null>(null);
+  const [searchParams] = useSearchParams();
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
@@ -123,6 +147,40 @@ export default function PortfolioPage() {
     });
     return Array.from(tokens);
   }, [lendingPairs]);
+
+  const kitties = useMemo(() => {
+    return lendingPairs.flatMap((pair) => [pair.kitty0, pair.kitty1]);
+  }, [lendingPairs]);
+
+  /**
+   * Handle referral search param
+   */
+  useEffect(() => {
+    const existingSessionReferrer = getSessionStorageInteger('referrer');
+    const existingSessionLenderAddress = getSessionStorageString('lender');
+    if (searchParams.has('ref') && searchParams.has('lender') && kitties.length > 0) {
+      const referrer = parseInt(searchParams.get('ref') ?? '');
+      const lenderAddress = searchParams.get('lender');
+      const lender = kitties.find((kitty) => kitty.address === lenderAddress) ?? null;
+      if (referrer > 0 && lender != null) {
+        setSessionReferrer({
+          courierId: referrer,
+          lender,
+        });
+        setSessionStorageInteger('referrer', referrer);
+        setSessionStorageString('lender', lender.address);
+      }
+    } else if (existingSessionReferrer != null && existingSessionLenderAddress != null) {
+      const existingSessionLender = getToken(activeChain.id, existingSessionLenderAddress as Address);
+      if (existingSessionLender == null) {
+        return;
+      }
+      setSessionReferrer({
+        courierId: existingSessionReferrer,
+        lender: existingSessionLender,
+      });
+    }
+  }, [activeChain.id, searchParams, kitties]);
 
   /**
    * Get the latest and historical prices for all tokens
@@ -386,7 +444,7 @@ export default function PortfolioPage() {
               setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton label={'Borrow Crypto'} Icon={<DollarIcon />} onClick={() => {}} disabled={true} />
+          <PortfolioActionButton label={'Referral'} Icon={<UsersIcon />} onClick={() => setIsReferralModalOpen(true)} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
@@ -428,6 +486,7 @@ export default function PortfolioPage() {
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
+            referralData={sessionReferrer}
             setIsOpen={setIsEarnInterestModalOpen}
             setPendingTxn={setPendingTxn}
           />
@@ -438,6 +497,12 @@ export default function PortfolioPage() {
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}
+          />
+          <ReferralModal
+            options={lendingPairs}
+            defaultOption={lendingPairs[0]}
+            isOpen={isReferralModalOpen}
+            setIsOpen={setIsReferralModalOpen}
           />
         </>
       )}

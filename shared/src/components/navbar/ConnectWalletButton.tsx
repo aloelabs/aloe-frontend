@@ -13,14 +13,10 @@ const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
   width: ${(props) => (props.fillWidth ? '100%' : 'max-content')};
 `;
 
-const StyledLink = styled.a`
-  text-decoration: underline;
-`;
-
 export type ConnectWalletButtonProps = {
   account?: GetAccountResult<Provider>;
   activeChain: Chain;
-  checkboxes: string[];
+  checkboxes: React.ReactNode[];
   disabled?: boolean;
   fillWidth?: boolean;
   onConnected?: () => void;
@@ -65,30 +61,9 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
       <Modal isOpen={walletModalOpen} setIsOpen={setWalletModalOpen} title={'Connect Wallet'}>
         {acceptedTerms ? (
           <div className='w-full'>
-            <div className='py-2'>
-              <Text size='M' weight='medium'>
-                By connecting a wallet, I agree to Aloe Labs, Inc's{' '}
-                <a
-                  href={'/terms.pdf'}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='underline text-green-600 hover:text-green-700'
-                >
-                  Terms of Use
-                </a>{' '}
-                and{' '}
-                <a
-                  href={'/privacy.pdf'}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='underline text-green-600 hover:text-green-700'
-                >
-                  Privacy Policy
-                </a>
-                .
-              </Text>
+            <div>
               {connectors.map((connector) => (
-                <div key={connector.id} className=' py-2 w-full flex flex-row gap-4 items-center justify-between'>
+                <div key={connector.id} className='py-2 w-full flex flex-row gap-4 items-center justify-between'>
                   {getIconForWagmiConnectorNamed(connector.name)}
                   <FilledStylizedButton
                     name='Connect'
@@ -113,24 +88,16 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           </div>
         ) : (
           <div>
-            <div>
-              <Text size='L' weight='bold' className='mb-8'>
-                By using Aloe II, I agree to the{' '}
-                <StyledLink href='/terms.pdf' target='_blank'>
-                  Terms of Service
-                </StyledLink>{' '}
-                and confirm that I have read and understood the{' '}
-                <StyledLink href='/privacy.pdf' target='_blank'>
-                  Privacy Policy
-                </StyledLink>
-                .
+            <div className='flex flex-col gap-2'>
+              <Text size='M' weight='regular' color='hsla(205, 47%, 87%, 1)' className='mb-4'>
+                At Aloe Labs, we believe everyone should be able to use financial services without being surveilled. But
+                running a site like this makes some data collection inevitable, and the US Government feels differently
+                about financial access and surveillance.{' '}
+                <strong>As such, we have to ask you to confirm the following:</strong>
               </Text>
-              <div>
-                <Text size='M'>I hearby further confirm that:</Text>
-              </div>
               {checkboxes?.map((checkbox, index) => (
-                <label className='flex items-center gap-2' key={index}>
-                  <div>
+                <label className='flex items-start gap-2' key={index}>
+                  <div className='mt-1'>
                     <input
                       type='checkbox'
                       checked={acknowledgedCheckboxes[index]}
@@ -142,7 +109,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                       className='w-4 h-4'
                     />
                   </div>
-                  <Text size='M'>{checkbox}</Text>
+                  {checkbox}
                 </label>
               ))}
             </div>

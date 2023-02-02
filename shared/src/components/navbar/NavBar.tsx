@@ -194,7 +194,7 @@ export type NavBarProps = {
   links: NavBarLink[];
   isAllowedToInteract: boolean;
   activeChain: Chain;
-  checkboxes: string[];
+  checkboxes: React.ReactNode[];
   setActiveChain(c: Chain): void;
 };
 

@@ -10,7 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useEnsName, useProvider } from 'wagmi';
+import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi';
 
 import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
@@ -93,7 +93,7 @@ export default function LendPage() {
   const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: activeChain.id,
+    chainId: wagmiChain.mainnet.id,
   });
 
   useEffect(() => {
@@ -111,8 +111,8 @@ export default function LendPage() {
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
     lendingPairs.forEach((pair) => {
-      symbols.add(pair.token0.ticker);
-      symbols.add(pair.token1.ticker);
+      symbols.add(pair.token0.ticker.toUpperCase());
+      symbols.add(pair.token1.ticker.toUpperCase());
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
@@ -352,7 +352,7 @@ export default function LendPage() {
           <LendCards>
             {filteredLendingPairs.map((lendPair, i) => (
               <LendPairCard
-                key={lendPair.token0.address}
+                key={`${lendPair.token0.address}${lendPair.token1.address}${lendPair.uniswapFeeTier}`}
                 pair={lendPair}
                 hasDeposited0={(lendingPairBalances?.[i]?.kitty0Balance || 0) > 0}
                 hasDeposited1={(lendingPairBalances?.[i]?.kitty1Balance || 0) > 0}

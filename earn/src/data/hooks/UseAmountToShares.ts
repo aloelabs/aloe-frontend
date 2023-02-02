@@ -14,7 +14,7 @@ export function useAmountToShares(token: Token, kitty: Kitty, withdrawAmount: st
     abi: KittyABI,
     functionName: 'convertToShares',
     args: [new Big(withdrawAmount || '0').mul(10 ** token.decimals).toFixed(0)] as const,
-    watch: true,
+    // watch: true,
   });
   useEffect(() => {
     if (amountOfShares) {

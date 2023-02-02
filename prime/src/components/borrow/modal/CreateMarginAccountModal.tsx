@@ -13,22 +13,18 @@ export type CreateMarginAccountModalProps = {
   isOpen: boolean;
   isTxnPending: boolean;
   availablePools: DropdownOption<string>[];
+  defaultPool: DropdownOption<string>;
   setIsOpen: (open: boolean) => void;
   onConfirm: (selectedPool: string | null) => void;
 };
 
 export default function CreateMarginAccountModal(props: CreateMarginAccountModalProps) {
-  const { isOpen, isTxnPending, availablePools, setIsOpen, onConfirm } = props;
-  const [selectedPool, setSelectedPool] = useState<DropdownOption<string> | null>(
-    availablePools.length > 0 ? availablePools[0] : null
-  );
-  if (selectedPool == null) {
-    return null;
-  }
+  const { isOpen, isTxnPending, availablePools, defaultPool, setIsOpen, onConfirm } = props;
+  const [selectedPool, setSelectedPool] = useState<DropdownOption<string>>(defaultPool);
   const confirmButtonText = isTxnPending ? 'Pending' : 'Create Margin Account';
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='New Margin Account'>
-      <div className='flex flex-col gap-3 mb-8 w-full'>
+      <div className='flex flex-row items-center w-full justify-between mb-8'>
         <Text size='M' weight='bold' color={LABEL_TEXT_COLOR}>
           Uniswap Pool
         </Text>
@@ -45,7 +41,7 @@ export default function CreateMarginAccountModal(props: CreateMarginAccountModal
         fillWidth={true}
         color={MODAL_BLACK_TEXT_COLOR}
         onClick={() => {
-          const selectedPoolValue = selectedPool?.value;
+          const selectedPoolValue = selectedPool.value;
           if (selectedPoolValue) {
             onConfirm(selectedPoolValue);
           }
@@ -56,7 +52,7 @@ export default function CreateMarginAccountModal(props: CreateMarginAccountModal
       </FilledStylizedButton>
       <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
         By creating a margin account, you agree to our{' '}
-        <a href='/prime/public/terms.pdf' rel='noreferrer' target='_blank' className='underline'>
+        <a href='/terms.pdf' rel='noreferrer' target='_blank' className='underline'>
           Terms of Service
         </a>{' '}
         and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

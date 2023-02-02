@@ -1,19 +1,22 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { secondsInYear } from 'date-fns';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { areWithinNSigDigs, toBig } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
-import { ALOE_II_FACTORY_ADDRESS_GOERLI } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import {
   ALOE_II_LIQUIDATION_INCENTIVE,
+  ALOE_II_MAX_LEVERAGE,
   ALOE_II_SIGMA_MAX,
   ALOE_II_SIGMA_MIN,
   ALOE_II_SIGMA_SCALER,
@@ -46,6 +49,21 @@ export type MarginAccount = {
   assets: Assets;
   liabilities: Liabilities;
   sqrtPriceX96: Big;
+  health: number;
+  lender0: Address;
+  lender1: Address;
+  iv: number;
+};
+
+export type MarketInfo = {
+  lender0: Address;
+  lender1: Address;
+  borrowerAPR0: number;
+  borrowerAPR1: number;
+  lender0Utilization: number;
+  lender1Utilization: number;
+  lender0TotalSupply: Big;
+  lender1TotalSupply: Big;
 };
 
 export type LiquidationThresholds = {
@@ -57,7 +75,7 @@ export type LiquidationThresholds = {
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
  */
-export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96'>;
+export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1' | 'iv'>;
 
 export async function getMarginAccountsForUser(
   chain: Chain,
@@ -65,8 +83,8 @@ export async function getMarginAccountsForUser(
   provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
   const etherscanResult = await makeEtherscanRequest(
-    7569633,
-    ALOE_II_FACTORY_ADDRESS_GOERLI,
+    0,
+    ALOE_II_FACTORY_ADDRESS,
     [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     true,
     chain
@@ -83,74 +101,65 @@ export async function getMarginAccountsForUser(
   return accounts;
 }
 
-export async function resolveUniswapPools(
-  marginAccounts: { address: string; uniswapPool: string }[],
-  provider: ethers.providers.BaseProvider
-) {
-  const uniqueUniswapPools = new Set(marginAccounts.map((x) => x.uniswapPool));
-  // create an array to hold all the Promises we're about to create
-  const uniswapPoolData: Promise<[string, { token0: Address; token1: Address; feeTier: number }]>[] = [];
-  // for each pool, create a Promise that returns a tuple: (poolAddress, otherData)
-  uniqueUniswapPools.forEach((pool) => {
-    async function getUniswapPoolData(): Promise<[string, { token0: Address; token1: Address; feeTier: number }]> {
-      const contract = new ethers.Contract(pool, UniswapV3PoolABI, provider);
-      const [token0, token1, feeTier] = await Promise.all([
-        contract.token0() as Address,
-        contract.token1() as Address,
-        contract.fee(),
-      ]);
-      //     |key|  |          value           |
-      return [
-        pool,
-        {
-          token0,
-          token1,
-          feeTier,
-        },
-      ];
-    }
-    uniswapPoolData.push(getUniswapPoolData());
-  });
-  // resolve all the Promised tuples and turn them into a Map
-  return Object.fromEntries(await Promise.all(uniswapPoolData));
-}
+export type UniswapPoolInfo = {
+  token0: Address;
+  token1: Address;
+  fee: number;
+};
 
 export async function fetchMarginAccountPreviews(
   chain: Chain,
   borrowerLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
-  userAddress: string
+  userAddress: string,
+  uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccountPreview[]> {
   const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
-  const uniswapPoolDataMap = await resolveUniswapPools(marginAccountsAddresses, provider);
-  const marginAccounts: Promise<MarginAccountPreview>[] = marginAccountsAddresses.map(
+  const marginAccounts: Promise<MarginAccountPreview | null>[] = marginAccountsAddresses.map(
     async ({ address: accountAddress, uniswapPool }) => {
-      const token0 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token0);
-      const token1 = getToken(chain.id, uniswapPoolDataMap[uniswapPool].token1);
-      const feeTier = NumericFeeTierToEnum(uniswapPoolDataMap[uniswapPool].feeTier);
+      const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
 
-      const assetsData: BigNumber[] = await borrowerLensContract.getAssets(accountAddress, false);
-      const liabilitiesData: BigNumber[] = await borrowerLensContract.getLiabilities(accountAddress);
+      if (uniswapPoolInfo === null) return null;
 
+      const token0 = getToken(chain.id, uniswapPoolInfo.token0);
+      const token1 = getToken(chain.id, uniswapPoolInfo.token1);
+      const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
+
+      if (!token0 || !token1) return null;
+
+      let assetsData = null;
+      let liabilitiesData = null;
+      let healthData = null;
+
+      try {
+        assetsData = await borrowerLensContract.getAssets(accountAddress);
+        liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
+        healthData = await borrowerLensContract.getHealth(accountAddress, true);
+      } catch (e) {
+        console.error(`borrowerLens.getAssets failed for account ${accountAddress} in pool ${uniswapPool}`, e);
+        return null;
+      }
+
+      const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
       const assets: Assets = {
-        token0Raw: Big(assetsData[0].toString())
+        token0Raw: Big(assetsData.fixed0.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        token1Raw: Big(assetsData[1].toString())
+        token1Raw: Big(assetsData.fixed1.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
-        uni0: Big(assetsData[2].toString())
+        uni0: Big(assetsData.fluid0C.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        uni1: Big(assetsData[3].toString())
+        uni1: Big(assetsData.fluid1C.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
       };
       const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData[0].toString())
+        amount0: Big(liabilitiesData.amount0.toString())
           .div(10 ** token0.decimals)
           .toNumber(),
-        amount1: Big(liabilitiesData[1].toString())
+        amount1: Big(liabilitiesData.amount1.toString())
           .div(10 ** token1.decimals)
           .toNumber(),
       };
@@ -162,69 +171,120 @@ export async function fetchMarginAccountPreviews(
         feeTier,
         assets,
         liabilities,
+        health: health.div(1e9).toNumber() / 1e9,
       };
     }
   );
-  return Promise.all(marginAccounts);
+  return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
+}
+
+export async function fetchMarketInfoFor(
+  lenderLensContract: ethers.Contract,
+  lender0: Address,
+  lender1: Address
+): Promise<MarketInfo> {
+  const [lender0Basics, lender1Basics] = await Promise.all([
+    lenderLensContract.readBasics(lender0),
+    lenderLensContract.readBasics(lender1),
+  ]);
+
+  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
+  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
+  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
+  return {
+    lender0,
+    lender1,
+    borrowerAPR0: borrowAPR0,
+    borrowerAPR1: borrowAPR1,
+    lender0Utilization: lender0Utilization,
+    lender1Utilization: lender1Utilization,
+    lender0TotalSupply: lender0TotalSupply,
+    lender1TotalSupply: lender1TotalSupply,
+  };
 }
 
 export async function fetchMarginAccount(
+  accountAddress: string,
   chain: Chain,
+  lenderLensContract: ethers.Contract,
   marginAccountContract: ethers.Contract,
   marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   marginAccountAddress: string
-): Promise<MarginAccount> {
+): Promise<{
+  marginAccount: MarginAccount;
+}> {
   const results = await Promise.all([
     marginAccountContract.TOKEN0(),
     marginAccountContract.TOKEN1(),
     marginAccountContract.LENDER0(),
     marginAccountContract.LENDER1(),
     marginAccountContract.UNISWAP_POOL(),
-    marginAccountLensContract.getAssets(marginAccountAddress, false),
-    marginAccountLensContract.getLiabilities(marginAccountAddress),
+    marginAccountLensContract.getAssets(marginAccountAddress),
+    marginAccountLensContract.getLiabilities(marginAccountAddress, true),
+    marginAccountLensContract.getHealth(accountAddress, true),
   ]);
 
   const uniswapPool = results[4];
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-  const [feeTier, slot0] = await Promise.all([uniswapPoolContract.fee(), uniswapPoolContract.slot0()]);
-
+  const volatilityOracleContract = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
   const token0 = getToken(chain.id, results[0] as Address);
   const token1 = getToken(chain.id, results[1] as Address);
-  const assetsData = results[5] as BigNumber[];
-  const liabilitiesData = results[6] as BigNumber[];
+  const lender0 = results[2] as Address;
+  const lender1 = results[3] as Address;
+  const assetsData = results[5];
+  const liabilitiesData = results[6];
+  const [feeTier, oracleResult] = await Promise.all([
+    uniswapPoolContract.fee(),
+    volatilityOracleContract.consult(uniswapPool),
+  ]);
 
   const assets: Assets = {
-    token0Raw: toBig(assetsData[0])
+    token0Raw: Big(assetsData.fixed0.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    token1Raw: toBig(assetsData[1])
+    token1Raw: Big(assetsData.fixed1.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
-    uni0: toBig(assetsData[2])
+    uni0: Big(assetsData.fluid0C.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    uni1: toBig(assetsData[3])
+    uni1: Big(assetsData.fluid1C.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
   const liabilities: Liabilities = {
-    amount0: toBig(liabilitiesData[0])
+    amount0: Big(liabilitiesData.amount0.toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    amount1: toBig(liabilitiesData[1])
+    amount1: Big(liabilitiesData.amount1.toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
+
+  const healthData = results[7];
+  const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+
   return {
-    address: marginAccountAddress,
-    uniswapPool: uniswapPool,
-    token0: token0,
-    token1: token1,
-    feeTier: NumericFeeTierToEnum(feeTier),
-    assets: assets,
-    liabilities: liabilities,
-    sqrtPriceX96: toBig(slot0.sqrtPriceX96),
+    marginAccount: {
+      address: marginAccountAddress,
+      uniswapPool: uniswapPool,
+      token0: token0,
+      token1: token1,
+      feeTier: NumericFeeTierToEnum(feeTier),
+      assets: assets,
+      liabilities: liabilities,
+      sqrtPriceX96: toBig(oracleResult[0]),
+      health: health.div(1e9).toNumber() / 1e9,
+      lender0: lender0,
+      lender1: lender1,
+      iv: oracleResult[1].div(1e9).toNumber() / 1e9,
+    },
   };
 }
 
@@ -248,8 +308,16 @@ function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
   sigma = Math.min(Math.max(ALOE_II_SIGMA_MIN, sigma), ALOE_II_SIGMA_MAX);
   sigma *= ALOE_II_SIGMA_SCALER;
 
-  const a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
-  const b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
+  let a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
+  let b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
+
+  // Constrain to be within TickMath's MIN_TICK and MAX_TICK
+  if (a.lt('4295128740')) {
+    a = new Big('4295128740');
+  }
+  if (b.gt('1461446703485210103287273052203988822378723970341')) {
+    b = new Big('1461446703485210103287273052203988822378723970341');
+  }
   return [a, b];
 }
 
@@ -318,11 +386,11 @@ function _computeLiquidationIncentive(
   let reward = 0;
   if (liabilities0 > assets0) {
     const shortfall = liabilities0 - assets0;
-    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall * price;
+    reward += (shortfall * price) / ALOE_II_LIQUIDATION_INCENTIVE;
   }
   if (liabilities1 > assets1) {
     const shortfall = liabilities1 - assets1;
-    reward += ALOE_II_LIQUIDATION_INCENTIVE * shortfall;
+    reward += shortfall / ALOE_II_LIQUIDATION_INCENTIVE;
   }
   return reward;
 }
@@ -330,13 +398,12 @@ function _computeLiquidationIncentive(
 export function isSolvent(
   marginAccount: MarginAccount,
   uniswapPositions: readonly UniswapPosition[],
-  sqrtPriceX96: Big,
-  sigma: number
+  sqrtPriceX96: Big
 ) {
   const token0Decimals = marginAccount.token0.decimals;
   const token1Decimals = marginAccount.token1.decimals;
 
-  const [a, b] = _computeProbePrices(sqrtPriceX96, sigma);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.iv);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
@@ -354,13 +421,16 @@ export function isSolvent(
     sqrtPriceX96
   );
 
-  liabilities1 += liquidationIncentive;
+  liabilities0 += liabilities0 / ALOE_II_MAX_LEVERAGE;
+  liabilities1 += liabilities1 / ALOE_II_MAX_LEVERAGE + liquidationIncentive;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+  const healthA = liabilitiesA > 0 ? assetsA / liabilitiesA : 1000;
 
   const liabilitiesB = liabilities1 + liabilities0 * priceB;
   const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
+  const healthB = liabilitiesB > 0 ? assetsB / liabilitiesB : 1000;
 
   return {
     priceA,
@@ -371,13 +441,13 @@ export function isSolvent(
     liabilitiesB,
     atA: assetsA >= liabilitiesA,
     atB: assetsB >= liabilitiesB,
+    health: Math.min(healthA, healthB),
   };
 }
 
 export function computeLiquidationThresholds(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
-  sigma: number,
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
@@ -390,7 +460,7 @@ export function computeLiquidationThresholds(
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE, sigma);
+  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE);
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -406,7 +476,7 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is lower
@@ -420,7 +490,7 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE, sigma);
+  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE);
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
@@ -436,7 +506,7 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice, sigma);
+      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is higher
