@@ -40,6 +40,7 @@ import TokenAmountSelectInput from '../TokenAmountSelectInput';
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
+const FRONTEND_COURIER_ID = 1;
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -48,6 +49,7 @@ enum ConfirmButtonState {
   PENDING,
   LOADING,
   READY,
+  PERMIT_COURIER_REFERRAL,
   PERMIT_COURIER,
 }
 
@@ -62,9 +64,15 @@ function getConfirmButton(
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
-    case ConfirmButtonState.PERMIT_COURIER:
+    case ConfirmButtonState.PERMIT_COURIER_REFERRAL:
       return {
         text: 'Use Referral Discount',
+        Icon: <CheckIcon />,
+        enabled: true,
+      };
+    case ConfirmButtonState.PERMIT_COURIER:
+      return {
+        text: 'Allow Frontend Fee',
         Icon: <CheckIcon />,
         enabled: true,
       };
@@ -106,20 +114,31 @@ type DepositButtonProps = {
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
-  courierId: number | null;
+  referralCourierId: number | null;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, courierId, isOpen, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    depositAmount,
+    depositBalance,
+    token,
+    kitty,
+    accountAddress,
+    referralCourierId,
+    isOpen,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
   const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
   const [courierPermitData, setCourierPermitData] = useState<PermitData | undefined>(undefined);
+
+  console.log(token, kitty);
 
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
@@ -159,8 +178,12 @@ function DepositButton(props: DepositButtonProps) {
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
+  const courierId = referralCourierId || FRONTEND_COURIER_ID;
+
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
+
+  console.log('needsToPermitCourier', needsToPermitCourier);
 
   // Approval flow
   const { config: depositWithApprovalConfig, refetch: refetchDepositWithApproval } = usePrepareContractWrite({
@@ -393,6 +416,8 @@ function DepositButton(props: DepositButtonProps) {
   if (permitDomain !== null) {
     if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+    } else if (needsToPermitCourier && referralCourierId !== null) {
+      confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
     } else if (needsToPermitCourier) {
       confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
     } else if (!permitData) {
@@ -405,6 +430,8 @@ function DepositButton(props: DepositButtonProps) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
     } else if (loadingApproval) {
       confirmButtonState = ConfirmButtonState.LOADING;
+    } else if (needsToPermitCourier && referralCourierId !== null) {
+      confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
     } else if (needsToPermitCourier) {
       confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
     } else if (needsApproval && isPending) {
@@ -482,6 +509,7 @@ function DepositButton(props: DepositButtonProps) {
             console.error('Cannot deposit with undefined request');
             refetchDepositWithPermitCourier().then((result) => {
               if (result) {
+                console.log('depositWithPermitCourierConfig.request', depositWithPermitCourierConfig.request, result);
                 depositUsingPermitFlowWithCourier?.();
               }
             });
@@ -731,7 +759,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
-            courierId={referralData?.lender.address === activeKitty.address ? referralData.courierId : null}
+            referralCourierId={referralData?.lender.address === activeKitty.address ? referralData.courierId : null}
             isOpen={isOpen}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
