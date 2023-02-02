@@ -178,7 +178,8 @@ function DepositButton(props: DepositButtonProps) {
   const needsApproval =
     userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
 
-  const courierId = referralCourierId || FRONTEND_COURIER_ID;
+  // TODO: Temporarily disabled (we should add feature flags)
+  const courierId = referralCourierId; // || FRONTEND_COURIER_ID;
 
   const needsToPermitCourier =
     courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
