@@ -3,7 +3,9 @@ import { Address, chain } from 'wagmi';
 import {
   DaiLogo,
   FraxLogo,
+  LyraLogo,
   OpLogo,
+  PerpLogo,
   UniLogo,
   UsdcLogo,
   VeloLogo,
@@ -29,6 +31,24 @@ const UNI_OPTIMISM = new Token(
   'UNI',
   'Uniswap',
   UniLogo
+);
+
+const LYRA_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
+  18,
+  'LYRA',
+  'Lyra Token',
+  LyraLogo
+);
+
+const PERP_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x9e1028F5F1D5eDE59748FFceE5532509976840E0',
+  18,
+  'PERP',
+  'Perpetual',
+  PerpLogo
 );
 
 const USDC_GOERLI = new Token(
@@ -196,6 +216,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
     [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
     [UNI_OPTIMISM.address]: UNI_OPTIMISM,
+    [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
+    [PERP_OPTIMISM.address]: PERP_OPTIMISM,
   },
   [chain.arbitrum.id]: {
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
