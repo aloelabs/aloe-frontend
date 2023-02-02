@@ -251,7 +251,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
             <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
               IV
             </Text>
-            <Display size='L'>{roundPercentage(selectedLendingPair.iv, 1)}</Display>
+            <Display size='L'>{roundPercentage(selectedLendingPair.iv, 1)}%</Display>
           </SmallCardBodyItem>
         </CardBody>
       </Container>
