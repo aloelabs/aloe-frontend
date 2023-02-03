@@ -138,8 +138,6 @@ function DepositButton(props: DepositButtonProps) {
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
   const [courierPermitData, setCourierPermitData] = useState<PermitData | undefined>(undefined);
 
-  console.log(token, kitty);
-
   const numericDepositBalance = Number(depositBalance) || 0;
   const numericDepositAmount = Number(depositAmount) || 0;
 
