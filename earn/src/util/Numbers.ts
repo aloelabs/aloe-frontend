@@ -95,8 +95,7 @@ export function formatNumberInput(input: string, negative?: boolean, maxDecimals
   } else if (input === '.') {
     return negative ? '-0.' : '0.';
   }
-
-  const re = /^[0-9\b]+[.\b]?[0-9\b]{0,}$/;
+  const re = new RegExp(`^${negative ? '-?' : ''}[0-9\b]+[.\b]?[0-9\b]{0,}$`);
 
   if (re.test(input)) {
     // if (max && new Big(input).gt(new Big(max))) {
