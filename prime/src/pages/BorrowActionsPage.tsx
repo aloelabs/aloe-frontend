@@ -586,36 +586,36 @@ export default function BorrowActionsPage() {
                 label={`${token0.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
                 denomination={token0.ticker}
-                showAsterisk={isShowingHypothetical}
+                showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token0.ticker} Utilization`}
                   value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
                 <AccountStatsCard
                   label={`${token0.ticker} APR`}
                   value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
                 denomination={token1.ticker}
-                showAsterisk={isShowingHypothetical}
+                showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token1.ticker} Utilization`}
                   value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
                 <AccountStatsCard
                   label={`${token1.ticker} APR`}
                   value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
               </div>
             </MarketStatsGrid>
