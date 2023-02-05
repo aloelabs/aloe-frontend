@@ -465,7 +465,7 @@ export default function BorrowActionsPage() {
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
-  const { health } = isSolvent(displayedMarginAccount, uniswapPositions, displayedMarginAccount.sqrtPriceX96);
+  const { health } = isSolvent(displayedMarginAccount, displayedUniswapPositions, displayedMarginAccount.sqrtPriceX96);
   displayedMarginAccount.health = health;
 
   const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
