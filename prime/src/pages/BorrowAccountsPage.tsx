@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { ContractReceipt, ethers } from 'ethers';
+import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
@@ -46,6 +47,9 @@ export default function BorrowAccountsPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: accountAddress } = useAccount();
   const { data: signer } = useSigner({ chainId: activeChain.id });
+
+  // MARK: react router hooks
+  const navigate = useNavigate();
 
   const borrowerLensContract = useContract({
     address: ALOE_II_BORROWER_LENS_ADDRESS,
@@ -246,6 +250,7 @@ export default function BorrowAccountsPage() {
         setIsOpen={setShowSuccessModal}
         onConfirm={() => {
           setShowSuccessModal(false);
+          navigate(0);
         }}
       />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
