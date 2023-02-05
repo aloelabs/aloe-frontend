@@ -133,28 +133,19 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // modals
   const [showAddActionModal, setShowAddActionModal] = useState(false);
 
-  // MARK: chain agnostic wagmi rate-limiter
-  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
-  useEffect(() => {
-    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 15_000 < 1_000), 500);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
-  const { data: userBalance0Asset } = useBalance({
+  const { data: userBalance0Asset, refetch: refetchBalance0 } = useBalance({
     address: userAddress ?? '0x',
     token: token0.address,
     chainId: activeChain.id,
-    enabled: shouldEnableWagmiHooks && !!userAddress,
+    enabled: !!userAddress,
   });
-  const { data: userBalance1Asset } = useBalance({
+  const { data: userBalance1Asset, refetch: refetchBalance1 } = useBalance({
     address: userAddress ?? '0x',
     token: token1.address,
     chainId: activeChain.id,
-    enabled: shouldEnableWagmiHooks && !!userAddress,
+    enabled: !!userAddress,
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
@@ -180,6 +171,22 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     }),
     [marginAccount, uniswapPositions, userBalances]
   );
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    interval = setInterval(() => {
+      refetchBalance0();
+      refetchBalance1();
+    }, 13_000);
+    if (interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchBalance0, refetchBalance1]);
 
   useEffect(() => {
     const operators = actionOutputs.map((o) => o.operator);

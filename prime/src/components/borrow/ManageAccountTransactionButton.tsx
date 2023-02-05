@@ -125,9 +125,6 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   } = props;
   const { activeChain } = useContext(ChainContext);
 
-  // chain agnostic wagmi rate-limiter
-  const [shouldEnableWagmiHooks, setShouldEnableWagmiHooks] = useState(true);
-
   // modals
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [showFailedModal, setShowFailedModal] = useState(false);
@@ -136,13 +133,6 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const interval = setInterval(() => setShouldEnableWagmiHooks(Date.now() % 7_000 < 1_000), 500);
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
 
   const contract = useContractWrite({
     address: accountAddress,
@@ -155,28 +145,44 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     chainId: activeChain.id,
   });
 
-  const { data: accountEtherBalance } = useBalance({
+  const { data: accountEtherBalance, refetch: refetchEtherBalance } = useBalance({
     address: accountAddress,
     chainId: activeChain.id,
-    enabled: shouldEnableWagmiHooks,
   });
 
-  const { data: userAllowance0Asset } = useAllowance(
+  const { data: userAllowance0Asset, refetch: refetchAllowance0 } = useAllowance(
     activeChain,
     token0,
     userAddress ?? '0x',
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
-    shouldEnableWagmiHooks
+    !!userAddress
   );
-  const { data: userAllowance1Asset } = useAllowance(
+  const { data: userAllowance1Asset, refetch: refetchAllowance1 } = useAllowance(
     activeChain,
     token1,
     userAddress ?? '0x',
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
-    shouldEnableWagmiHooks
+    !!userAddress
   );
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    interval = setInterval(() => {
+      refetchEtherBalance();
+      refetchAllowance0();
+      refetchAllowance1();
+    }, 13_000);
+    if (interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchEtherBalance, refetchAllowance0, refetchAllowance1]);
 
   const requiredBalances = [accountState.requiredAllowances.amount0Asset, accountState.requiredAllowances.amount1Asset];
   const insufficient = [
