@@ -19,6 +19,7 @@ import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/c
 import { MarginAccount } from '../../data/MarginAccount';
 import { UserBalances } from '../../data/UserBalances';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
+import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
 
 const Wrapper = styled.div`
@@ -112,11 +113,13 @@ export type ManageAccountWidgetProps = {
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
   onAddFirstAction: () => void;
+  hypotheticalMarginAccount: MarginAccount;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
+  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction, hypotheticalMarginAccount } =
+    props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
   const { activeChain } = useContext(ChainContext);
@@ -260,6 +263,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
+        <HealthBar health={hypotheticalMarginAccount?.health || marginAccount.health} />
         <div className='flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}

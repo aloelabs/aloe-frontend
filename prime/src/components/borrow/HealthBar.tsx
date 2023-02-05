@@ -1,5 +1,7 @@
-import { Display } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
+
+import Tooltip from '../common/Tooltip';
 
 const MAX_HEALTH = 3;
 const MIN_HEALTH = 0.5;
@@ -43,10 +45,22 @@ export default function HealthBar(props: HealthBarProps) {
     ((Math.max(Math.min(health, MAX_HEALTH), MIN_HEALTH) - MIN_HEALTH) / (MAX_HEALTH - MIN_HEALTH)) * 100;
   const healthLabel = health > MAX_HEALTH ? `${MAX_HEALTH}+` : health.toFixed(2);
   return (
-    <div className='w-full flex flex-col align-middle mt-[-24px]'>
-      <Display size='L' weight='medium' className='text-center'>
-        {healthLabel}
-      </Display>
+    <div className='w-full flex flex-col align-middle mb-8 mt-8'>
+      <div className='flex gap-2 items-center mb-4'>
+        <Tooltip
+          buttonSize='M'
+          content={`Health is a measure of how close your account is to being liquidated.
+              It is calculated by dividing your account's assets by its liabilities.
+              If your health is at or below 1.0, your account may be liquidated.`}
+          position='top-center'
+        />
+        <Text size='L' weight='medium'>
+          Account Health:
+        </Text>
+        <Display size='M' weight='medium' className='text-center'>
+          {healthLabel}
+        </Display>
+      </div>
       <HealthBarContainer>
         <HealthBarDial healthPercent={healthPercent} />
       </HealthBarContainer>
