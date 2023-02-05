@@ -1,16 +1,13 @@
-import { ReactElement, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
-import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import RouterABI from '../../../../assets/abis/Router.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
-import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import useAllowance from '../../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
@@ -20,6 +17,8 @@ import { toBig } from '../../../../util/Numbers';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
+const TERTIARY_COLOR = '#4b6980';
+
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
   APPROVE_ASSET,
@@ -28,31 +27,26 @@ enum ConfirmButtonState {
   READY,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token
-): { text: string; Icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
         text: `Insufficient ${token.ticker}`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
         text: `Approve ${token.ticker}`,
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.LOADING:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     default:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
@@ -201,20 +195,25 @@ export default function DepositModalContent(props: DepositModalContentProps) {
           {depositAmount || 0} {token?.ticker}
         </Text>
       </div>
-      <div className='w-max ml-auto'>
-        <FilledStylizedButtonWithIcon
+      <div className='w-full ml-auto'>
+        <FilledStylizedButton
           size='M'
           fillWidth={true}
           color={MODAL_BLACK_TEXT_COLOR}
           onClick={handleClickConfirm}
-          Icon={confirmButton.Icon}
-          position='trailing'
-          svgColorType='stroke'
           disabled={shouldConfirmButtonBeDisabled}
         >
           {confirmButton.text}
-        </FilledStylizedButtonWithIcon>
+        </FilledStylizedButton>
       </div>
+      <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+        By depositing, you agree to our{' '}
+        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          Terms of Service
+        </a>{' '}
+        and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+        your duty to educate yourself and be aware of the risks.
+      </Text>
     </>
   );
 }

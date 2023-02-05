@@ -176,16 +176,16 @@ export default function LendPairCard(props: LendPairCardProps) {
       <EditPositionModal
         token={token0}
         kitty={kitty0}
-        open={isEditToken0PositionModalOpen}
-        setOpen={(open: boolean) => {
+        isOpen={isEditToken0PositionModalOpen}
+        setIsOpen={(open: boolean) => {
           setIsEditToken0PositionModalOpen(open);
         }}
       />
       <EditPositionModal
         token={token1}
         kitty={kitty1}
-        open={isEditToken1PositionModalOpen}
-        setOpen={(open: boolean) => {
+        isOpen={isEditToken1PositionModalOpen}
+        setIsOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);
         }}
       />
