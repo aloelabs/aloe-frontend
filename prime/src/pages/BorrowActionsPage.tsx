@@ -19,14 +19,12 @@ import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
 import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
-import HealthBar from '../components/borrow/HealthBar';
 import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
 import MarginAccountHeader from '../components/borrow/MarginAccountHeader';
 import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationPieChartWidget';
 import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
 import TokenChooser from '../components/common/TokenChooser';
-import Tooltip from '../components/common/Tooltip';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
@@ -465,7 +463,7 @@ export default function BorrowActionsPage() {
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
-  const { health } = isSolvent(displayedMarginAccount, uniswapPositions, displayedMarginAccount.sqrtPriceX96);
+  const { health } = isSolvent(displayedMarginAccount, displayedUniswapPositions, displayedMarginAccount.sqrtPriceX96);
   displayedMarginAccount.health = health;
 
   const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
@@ -487,24 +485,10 @@ export default function BorrowActionsPage() {
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
           onAddFirstAction={() => setUserWantsHypothetical(true)}
+          hypotheticalMarginAccount={displayedMarginAccount}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>
-        <div className='w-full flex flex-col gap-4 mb-8'>
-          <div className='flex gap-2 items-center'>
-            <Text size='L' weight='medium'>
-              Account Health
-            </Text>
-            <Tooltip
-              buttonSize='M'
-              content={`Health is a measure of how close your account is to being liquidated.
-              It is calculated by dividing your account's assets by its liabilities.
-              If your health is at or below 1.0, your account may be liquidated.`}
-              position='top-center'
-            />
-          </div>
-          <HealthBar health={displayedMarginAccount.health} />
-        </div>
         <div className='w-full flex flex-col gap-4 mb-8'>
           <div className='flex gap-4 items-center'>
             <Text size='L' weight='medium'>
@@ -586,36 +570,36 @@ export default function BorrowActionsPage() {
                 label={`${token0.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
                 denomination={token0.ticker}
-                showAsterisk={isShowingHypothetical}
+                showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token0.ticker} Utilization`}
                   value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
                 <AccountStatsCard
                   label={`${token0.ticker} APR`}
                   value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
                 value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
                 denomination={token1.ticker}
-                showAsterisk={isShowingHypothetical}
+                showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token1.ticker} Utilization`}
                   value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
                 <AccountStatsCard
                   label={`${token1.ticker} APR`}
                   value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                  showAsterisk={isShowingHypothetical}
+                  showAsterisk={false /*TODO*/}
                 />
               </div>
             </MarketStatsGrid>

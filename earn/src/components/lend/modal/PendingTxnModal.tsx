@@ -7,15 +7,15 @@ import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { ChainContext } from '../../../App';
 
 export type PendingTxnModalProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
   txnHash?: string;
 };
 
 export default function PendingTxnModal(props: PendingTxnModalProps) {
   const { activeChain } = useContext(ChainContext);
   return (
-    <LoadingModal isOpen={props.open} setIsOpen={props.setOpen} title='Submitting Order'>
+    <LoadingModal isOpen={props.isOpen} setIsOpen={props.setIsOpen} title='Submitting Order'>
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
         This might take a while. Feel free to leave the page and come back later.
       </Text>

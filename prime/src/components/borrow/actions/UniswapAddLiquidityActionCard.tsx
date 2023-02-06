@@ -369,6 +369,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     />
   );
 
+  const input0MaxString = isToken0Selected ? maxString0 : maxString1;
+  const input1MaxString = isToken0Selected ? maxString1 : maxString0;
+
   return (
     <BaseActionCard
       action={ActionID.ADD_LIQUIDITY}
@@ -408,8 +411,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           value={isInput0Disabled ? '' : localTokenAmounts[0]}
           onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
           disabled={isInput0Disabled}
-          max={maxString0}
-          maxed={localTokenAmounts[0] === maxString0}
+          max={input0MaxString}
+          maxed={localTokenAmounts[0] === input0MaxString}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
             updateAmount(maxValue, true, previousLower, previousUpper);
@@ -420,8 +423,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           value={isInput1Disabled ? '' : localTokenAmounts[1]}
           onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
           disabled={isInput1Disabled}
-          max={maxString1}
-          maxed={localTokenAmounts[1] === maxString1}
+          max={input1MaxString}
+          maxed={localTokenAmounts[1] === input1MaxString}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
             updateAmount(maxValue, false, previousLower, previousUpper);

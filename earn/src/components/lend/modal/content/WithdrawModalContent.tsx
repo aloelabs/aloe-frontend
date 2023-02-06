@@ -1,22 +1,21 @@
-import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { FilledStylizedButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import KittyABI from '../../../../assets/abis/Kitty.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../../assets/svg/check_black.svg';
-import { ReactComponent as MoreIcon } from '../../../../assets/svg/more_ellipses.svg';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { Kitty } from '../../../../data/Kitty';
 import { Token } from '../../../../data/Token';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
+
+const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_KITTY,
@@ -25,26 +24,21 @@ enum ConfirmButtonState {
   READY,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token,
-  kitty: Kitty
-): { text: string; Icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, kitty: Kitty): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_KITTY:
       return {
         text: `Insufficient ${kitty.ticker}`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.LOADING:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     default:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
@@ -105,7 +99,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     confirmButtonState = ConfirmButtonState.PENDING;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState, token, kitty);
+  const confirmButton = getConfirmButton(confirmButtonState, kitty);
 
   function handleClickConfirm() {
     if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
@@ -127,18 +121,15 @@ function WithdrawButton(props: WithdrawButtonProps) {
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
-    <FilledStylizedButtonWithIcon
+    <FilledStylizedButton
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
       onClick={handleClickConfirm}
-      Icon={confirmButton.Icon}
-      position='trailing'
-      svgColorType='stroke'
       disabled={shouldConfirmButtonBeDisabled}
     >
       {confirmButton.text}
-    </FilledStylizedButtonWithIcon>
+    </FilledStylizedButton>
   );
 }
 
@@ -223,7 +214,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
           {withdrawAmount || '0'} {token?.ticker}
         </Text>
       </div>
-      <div className='w-max ml-auto'>
+      <div className='w-full ml-auto'>
         <WithdrawButton
           accountAddress={accountAddress || '0x'}
           token={token}
@@ -234,6 +225,14 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
           setPendingTxn={setPendingTxnResult}
         />
       </div>
+      <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+        By withdrawing, you agree to our{' '}
+        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          Terms of Service
+        </a>{' '}
+        and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+        your duty to educate yourself and be aware of the risks.
+      </Text>
     </>
   );
 }

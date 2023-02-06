@@ -3,13 +3,13 @@ import { Fragment, useEffect, useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate } from 'react-router-dom';
+import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { Kitty } from '../../../data/Kitty';
 import { Token } from '../../../data/Token';
-import { CloseableModal } from '../../common/Modal';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
 import SuccessModalContent from './content/SuccessModalContent';
@@ -60,12 +60,12 @@ enum EditPositionModalState {
 export type EditPositionModalProps = {
   token: Token;
   kitty: Kitty;
-  open: boolean;
-  setOpen: (open: boolean) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 };
 
 export default function EditPositionModal(props: EditPositionModalProps) {
-  const { token, kitty, open, setOpen } = props;
+  const { token, kitty, isOpen, setIsOpen } = props;
   const [state, setState] = useState(EditPositionModalState.EDIT_POSITION);
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
   const [pendingTxnResult, setPendingTxnResult] = useState<SendTransactionResult | null>(null);
@@ -105,7 +105,7 @@ export default function EditPositionModal(props: EditPositionModalProps) {
   }, [pendingTxnResult]);
 
   function clearState() {
-    setOpen(false);
+    setIsOpen(false);
     /* Timeout used to take transition into account */
     setTimeout(() => {
       setConfirmationType(ConfirmationType.DEPOSIT);
@@ -117,23 +117,24 @@ export default function EditPositionModal(props: EditPositionModalProps) {
   return (
     <>
       {state !== EditPositionModalState.LOADING && (
-        <CloseableModal
-          open={open}
-          setOpen={setOpen}
-          onClose={() => {
-            if (state === EditPositionModalState.SUCCESS) {
-              // If the transaction was successful, refresh the page to load updated data
-              navigate(0);
-            } else {
-              // Otherwise, just clear the state
-              clearState();
+        <Modal
+          isOpen={isOpen}
+          setIsOpen={(open) => {
+            if (!open) {
+              if (state === EditPositionModalState.SUCCESS) {
+                // If the transaction was successful, refresh the page to load updated data
+                navigate(0);
+              } else {
+                // Otherwise, just clear the state
+                clearState();
+              }
             }
           }}
           title={ConfirmationType.DEPOSIT === confirmationType ? 'Deposit' : 'Withdraw'}
         >
           {state === EditPositionModalState.EDIT_POSITION && (
             <Tab.Group>
-              <Tab.List className='flex rounded-md mb-6'>
+              <Tab.List className='w-full flex rounded-md mb-6'>
                 <TabsWrapper>
                   {Object.keys(ConfirmationType).map((type: string, index: number) => (
                     <Tab as={Fragment} key={index}>
@@ -152,10 +153,10 @@ export default function EditPositionModal(props: EditPositionModalProps) {
                 </TabsWrapper>
               </Tab.List>
               <Tab.Panels as={Fragment}>
-                <Tab.Panel>
+                <Tab.Panel className='w-full px-2'>
                   <DepositModalContent token={token} kitty={kitty} setPendingTxnResult={setPendingTxnResult} />
                 </Tab.Panel>
-                <Tab.Panel>
+                <Tab.Panel className='w-full px-2'>
                   <WithdrawModalContent token={token} kitty={kitty} setPendingTxnResult={setPendingTxnResult} />
                 </Tab.Panel>
               </Tab.Panels>
@@ -173,15 +174,17 @@ export default function EditPositionModal(props: EditPositionModalProps) {
           )}
           {state === EditPositionModalState.FAILURE && (
             <FailureModalContent
+              confirmationType={confirmationType}
               onConfirm={() => {
                 clearState();
               }}
+              txnHash={pendingTxnResult?.hash || ''}
             />
           )}
-        </CloseableModal>
+        </Modal>
       )}
       {state === EditPositionModalState.LOADING && (
-        <PendingTxnModal open={open} setOpen={setOpen} txnHash={pendingTxnResult?.hash} />
+        <PendingTxnModal isOpen={isOpen} setIsOpen={setIsOpen} txnHash={pendingTxnResult?.hash} />
       )}
     </>
   );
