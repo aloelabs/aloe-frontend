@@ -6,7 +6,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
+import { ChainContext, IdleContext } from '../../../../App';
 import RouterABI from '../../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import useAllowance from '../../../../data/hooks/UseAllowance';
@@ -59,6 +59,7 @@ export type DepositModalContentProps = {
 export default function DepositModalContent(props: DepositModalContentProps) {
   const { token, kitty, setPendingTxnResult } = props;
   const { activeChain } = useContext(ChainContext);
+  const { isIdle } = useContext(IdleContext);
 
   const [depositAmount, setDepositAmount] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -96,15 +97,17 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
     interval = setInterval(() => {
-      refetchBalance();
-      refetchUserAllowance();
+      if (!isIdle) {
+        refetchBalance();
+        refetchUserAllowance();
+      }
     }, 13_000);
     return () => {
       if (interval != null) {
         clearInterval(interval);
       }
     };
-  }, [refetchBalance, refetchUserAllowance]);
+  }, [isIdle, refetchBalance, refetchUserAllowance]);
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {

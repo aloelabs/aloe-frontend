@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
+import { useIdleTimer } from 'react-idle-timer';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
@@ -35,6 +36,8 @@ const CONNECT_WALLET_CHECKBOXES = [
   <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
+const IDLE_TIMEOUT = 1000 * 60 * 3; // 3 minutes
+
 export const theGraphUniswapV2Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
   cache: new InMemoryCache(),
@@ -54,6 +57,8 @@ export const ChainContext = React.createContext({
   activeChain: DEFAULT_CHAIN,
   setActiveChain: (chain: Chain) => {},
 });
+
+export const IdleContext = React.createContext({ isIdle: false });
 
 function AppBodyWrapper() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = React.useState(false);
@@ -102,6 +107,7 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const [isIdle, setIsIdle] = React.useState(false);
   const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
@@ -134,13 +140,25 @@ function App() {
     };
   });
 
+  useIdleTimer({
+    timeout: IDLE_TIMEOUT,
+    onIdle: () => {
+      setIsIdle(true);
+    },
+    onActive: () => {
+      setIsIdle(false);
+    },
+  });
+
   return (
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
           <ChainContext.Provider value={value}>
-            <ScrollToTop />
-            <AppBodyWrapper />
+            <IdleContext.Provider value={{ isIdle: isIdle }}>
+              <ScrollToTop />
+              <AppBodyWrapper />
+            </IdleContext.Provider>
           </ChainContext.Provider>
         </WagmiProvider>
       </Suspense>

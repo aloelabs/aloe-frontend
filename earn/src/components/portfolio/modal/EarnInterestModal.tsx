@@ -17,7 +17,7 @@ import {
   useSigner,
 } from 'wagmi';
 
-import { ChainContext } from '../../../App';
+import { ChainContext, IdleContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import KittyABI from '../../../assets/abis/Kitty.json';
 import RouterABI from '../../../assets/abis/Router.json';
@@ -133,6 +133,8 @@ function DepositButton(props: DepositButtonProps) {
     setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
+  const { isIdle } = useContext(IdleContext);
+
   const [isPending, setIsPending] = useState(false);
   const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
@@ -354,8 +356,10 @@ function DepositButton(props: DepositButtonProps) {
     let interval: NodeJS.Timer | null = null;
     if (isOpen) {
       interval = setInterval(() => {
-        refetchKittyBalance();
-        refetchUserAllowance();
+        if (!isIdle) {
+          refetchKittyBalance();
+          refetchUserAllowance();
+        }
       }, 13_000);
     }
     if (!isOpen && interval != null) {
@@ -366,7 +370,7 @@ function DepositButton(props: DepositButtonProps) {
         clearInterval(interval);
       }
     };
-  }, [refetchKittyBalance, refetchUserAllowance, isOpen]);
+  }, [refetchKittyBalance, refetchUserAllowance, isOpen, isIdle]);
 
   useEffect(() => {
     let mounted = true;

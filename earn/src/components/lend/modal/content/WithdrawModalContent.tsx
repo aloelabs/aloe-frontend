@@ -7,7 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
+import { ChainContext, IdleContext } from '../../../../App';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { Kitty } from '../../../../data/Kitty';
@@ -142,6 +142,7 @@ export type WithdrawModalContentProps = {
 export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   const { token, kitty, setPendingTxnResult } = props;
   const { activeChain } = useContext(ChainContext);
+  const { isIdle } = useContext(IdleContext);
 
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
@@ -179,16 +180,18 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
     interval = setInterval(() => {
-      refetchBalanceOfUnderlying();
-      refetchMaxRedeem();
-      refetchMaxWithdraw();
+      if (!isIdle) {
+        refetchBalanceOfUnderlying();
+        refetchMaxRedeem();
+        refetchMaxWithdraw();
+      }
     }, 13_000);
     return () => {
       if (interval != null) {
         clearInterval(interval);
       }
     };
-  }, [refetchBalanceOfUnderlying, refetchMaxRedeem, refetchMaxWithdraw]);
+  }, [isIdle, refetchBalanceOfUnderlying, refetchMaxRedeem, refetchMaxWithdraw]);
 
   const underlyingBalance = balanceOfUnderlying ?? '0';
 
