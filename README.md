@@ -83,3 +83,7 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 You can learn more in the [Aloe documentation](https://docs.aloe.capital/).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
