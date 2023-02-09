@@ -16,11 +16,9 @@ export default function PortfolioBalance(props: PortfolioBalanceProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
-    const id = setTimeout(() => setElapsedTime(elapsedTime + INTERVAL / 1000), INTERVAL - (Date.now() % INTERVAL));
-    return () => clearTimeout(id);
-  }, [elapsedTime]);
-
-  // console.log(elapsedTime);
+    const id = setInterval(() => setElapsedTime((prevEllapsedtime) => prevEllapsedtime + INTERVAL / 1000), INTERVAL);
+    return () => clearInterval(id);
+  }, []);
 
   const secondsPerYear = 365 * 24 * 60 * 60;
   const totalUsdPlusYield = totalUsd * (1 + weightedAvgApy / 100) ** (elapsedTime / secondsPerYear);
@@ -28,19 +26,27 @@ export default function PortfolioBalance(props: PortfolioBalanceProps) {
   let displayDigits = 2;
   if (totalUsdPlusYield > 0) {
     const smallestIncrement = totalUsd * (1 + weightedAvgApy / 100) ** (INTERVAL / 1000 / secondsPerYear) - totalUsd;
-    displayDigits = Math.max(2, Math.ceil(-Math.log10(smallestIncrement)) - 2);
+    displayDigits = Math.max(2, Math.ceil(-Math.log10(smallestIncrement)) - 1);
   }
+  const localeArgs = {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: displayDigits,
+    maximumFractionDigits: displayDigits,
+  };
+  const widthReferenceNumber = 10 ** Math.floor(Math.log10(totalUsdPlusYield));
 
   return (
-    <Display size='L' weight='semibold'>
-      {errorLoadingPrices
-        ? '$□□□'
-        : totalUsdPlusYield.toLocaleString('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: displayDigits,
-            maximumFractionDigits: displayDigits,
-          })}
-    </Display>
+    <div className='relative'>
+      <Display size='L' weight='semibold' className='opacity-0 select-none'>
+        {errorLoadingPrices ? '$□□□' : widthReferenceNumber.toLocaleString('en-US', localeArgs)}
+      </Display>
+
+      <div className='absolute'>
+        <Display size='L' weight='semibold' className='mt-[-1em]'>
+          {errorLoadingPrices ? '$□□□' : totalUsdPlusYield.toLocaleString('en-US', localeArgs)}
+        </Display>
+      </div>
+    </div>
   );
 }
