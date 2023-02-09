@@ -77,6 +77,7 @@ export type GraphProps = {
   LegendContent?: JSX.Element;
   allowEscapeViewBoxX?: boolean;
   yAxisDomain?: AxisDomain;
+  showYAxis?: boolean;
   hideTicks?: boolean;
   setIsActive?: (isActive: boolean) => void;
 };
@@ -97,6 +98,7 @@ export default function Graph(props: GraphProps) {
     LegendContent,
     allowEscapeViewBoxX,
     yAxisDomain,
+    showYAxis,
     hideTicks,
     setIsActive,
   } = props;
@@ -140,7 +142,14 @@ export default function Graph(props: GraphProps) {
           display={hideTicks ? 'none' : 'auto'}
           height={hideTicks ? 0 : undefined}
         />
-        <YAxis axisLine={false} tick={false} width={0} domain={yAxisDomain} />
+        <YAxis
+          axisLine={false}
+          tick={{ fill: tickTextColor, fontSize: '14px' }}
+          tickLine={false}
+          domain={yAxisDomain}
+          display={hideTicks || !showYAxis ? 'none' : 'auto'}
+          width={hideTicks || !showYAxis ? 0 : undefined}
+        />
         <Tooltip
           content={CustomTooltip}
           allowEscapeViewBox={{ x: allowEscapeViewBoxX, y: false }}

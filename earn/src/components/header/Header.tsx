@@ -17,6 +17,10 @@ const NAV_LINKS: NavBarLink[] = [
   },
   {
     label: 'Borrow',
+    to: '/borrow',
+  },
+  {
+    label: 'Advanced',
     to: 'https://prime.aloe.capital',
     isExternal: true,
   },
