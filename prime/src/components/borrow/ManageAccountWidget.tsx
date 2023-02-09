@@ -16,7 +16,7 @@ import {
   UniswapPosition,
 } from '../../data/actions/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
-import { MarginAccount } from '../../data/MarginAccount';
+import { MarginAccount, MarketInfo } from '../../data/MarginAccount';
 import { UserBalances } from '../../data/UserBalances';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
@@ -109,6 +109,7 @@ const ActionCardWrapper = styled.div`
 `;
 
 export type ManageAccountWidgetProps = {
+  marketInfo: MarketInfo;
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
@@ -118,8 +119,14 @@ export type ManageAccountWidgetProps = {
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction, hypotheticalMarginAccount } =
-    props;
+  const {
+    marketInfo,
+    marginAccount,
+    uniswapPositions,
+    updateHypotheticalState,
+    onAddFirstAction,
+    hypotheticalMarginAccount,
+  } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
   const { activeChain } = useContext(ChainContext);
@@ -213,6 +220,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
+                  marketInfo={marketInfo}
                   marginAccount={marginAccount}
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}

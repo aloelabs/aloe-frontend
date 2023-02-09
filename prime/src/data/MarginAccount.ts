@@ -62,8 +62,10 @@ export type MarketInfo = {
   borrowerAPR1: number;
   lender0Utilization: number;
   lender1Utilization: number;
-  lender0TotalSupply: Big;
-  lender1TotalSupply: Big;
+  lender0TotalAssets: Big;
+  lender1TotalAssets: Big;
+  lender0AvailableAssets: Big;
+  lender1AvailableAssets: Big;
 };
 
 export type LiquidationThresholds = {
@@ -194,8 +196,10 @@ export async function fetchMarketInfoFor(
   const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
   const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
-  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
+  const lender0Inventory = new Big(lender0Basics.inventory.toString());
+  const lender1Inventory = new Big(lender1Basics.inventory.toString());
+  const lender0TotalBorrows = new Big(lender0Basics.totalBorrows.toString());
+  const lender1TotalBorrows = new Big(lender1Basics.totalBorrows.toString());
   return {
     lender0,
     lender1,
@@ -203,8 +207,10 @@ export async function fetchMarketInfoFor(
     borrowerAPR1: borrowAPR1,
     lender0Utilization: lender0Utilization,
     lender1Utilization: lender1Utilization,
-    lender0TotalSupply: lender0TotalSupply,
-    lender1TotalSupply: lender1TotalSupply,
+    lender0TotalAssets: lender0Inventory,
+    lender1TotalAssets: lender1Inventory,
+    lender0AvailableAssets: lender0Inventory.sub(lender0TotalBorrows),
+    lender1AvailableAssets: lender1Inventory.sub(lender1TotalBorrows),
   };
 }
 
@@ -443,6 +449,46 @@ export function isSolvent(
     atB: assetsB >= liabilitiesB,
     health: Math.min(healthA, healthB),
   };
+}
+
+export function maxBorrows(
+  marginAccount: MarginAccount,
+  uniswapPositions: readonly UniswapPosition[],
+  sqrtPriceX96: Big
+) {
+  const token0Decimals = marginAccount.token0.decimals;
+  const token1Decimals = marginAccount.token1.decimals;
+
+  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.iv);
+  const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
+  const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
+
+  const mem = getAssets(marginAccount, uniswapPositions, a, b, sqrtPriceX96);
+  const liabilities0 = marginAccount.liabilities.amount0;
+  const liabilities1 = marginAccount.liabilities.amount1;
+
+  const liquidationIncentive = _computeLiquidationIncentive(
+    mem.fixed0 + mem.fluid0C,
+    mem.fixed1 + mem.fluid1C,
+    liabilities0,
+    liabilities1,
+    token0Decimals,
+    token1Decimals,
+    sqrtPriceX96
+  );
+
+  const liabilitiesA = liabilities1 + liabilities0 * priceA;
+  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+  const liabilitiesB = liabilities1 + liabilities0 * priceB;
+  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
+
+  const coeff = 1 + 1 / ALOE_II_MAX_LEVERAGE;
+  const maxNewBorrowsA = (assetsA - liquidationIncentive - coeff * liabilitiesA) * ALOE_II_MAX_LEVERAGE;
+  const maxNewBorrowsB = (assetsB - liquidationIncentive - coeff * liabilitiesB) * ALOE_II_MAX_LEVERAGE;
+
+  const maxNewBorrows0 = Math.min(maxNewBorrowsA / priceA, maxNewBorrowsB / priceB);
+  const maxNewBorrows1 = Math.min(maxNewBorrowsA, maxNewBorrowsB);
+  return [maxNewBorrows0, maxNewBorrows1];
 }
 
 export function computeLiquidationThresholds(
