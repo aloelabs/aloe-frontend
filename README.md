@@ -18,9 +18,7 @@ yarn install
 The frontend repository is a monorepo that contains 3 separate apps. Additionally, the `shared` directory contains shared components and utilities that are used by both earn and prime.
 
 ### Setting up the environment
-The frontend uses environment variables to configure the app. These variables are stored in the `.env` file in the root directory. Despite the fact that we include our envionment variables in the repository, they will not work for you. You will need to create your own `.env` file and populate it with the correct values.
-
-More specifically, you will need to create a `.env` file in the root directory and populate it with the following variables:
+The frontend uses environment variables to configure the app. These variables are stored in a `.env` file in each app directory. For example, the `.env` file for the Earn app is located at `earn/.env`. The `.env` file is not included in the repository, so you will need to create it yourself. The `.env` file should contain the following variables:
 ```
 REACT_APP_ETHERSCAN_API_KEY=YOUR_ETHERSCAN_API_KEY
 REACT_APP_ALCHEMY_API_KEY=YOUR_ALCHEMY_API_KEY
