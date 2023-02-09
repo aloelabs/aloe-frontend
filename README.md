@@ -52,7 +52,7 @@ To run the Earn app, run the following command from the root directory:
 cd earn
 yarn start
 ```
-> Note that the `yarn start` command will also build the `shared` directory. If you are making changes to the `shared` directory, you will need to run stop the app and run `yarn start` again to see the changes. Changes made to the `earn` directory will be reflected immediately however.
+> Note that the `yarn start` command will also build the `shared` directory. If you are making changes to the `shared` directory, you will need to stop the app and run `yarn start` again to see the changes. Changes made to the `earn` directory will be reflected immediately however.
 
 To build the Earn app for production, run the following command from the root directory:
 ```
@@ -68,7 +68,7 @@ To run the Prime app, run the following command from the root directory:
 cd prime
 yarn start
 ```
-> Note that the `yarn start` command will also build the `shared` directory. If you are making changes to the `shared` directory, you will need to run stop the app and run `yarn start` again to see the changes. Changes made to the `prime` directory will be reflected immediately however.
+> Note that the `yarn start` command will also build the `shared` directory. If you are making changes to the `shared` directory, you will need to stop the app and run `yarn start` again to see the changes. Changes made to the `prime` directory will be reflected immediately however.
 
 To build the Prime app for production, run the following command from the root directory:
 ```
