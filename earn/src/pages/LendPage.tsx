@@ -277,6 +277,20 @@ export default function LendPage() {
     );
   }, [lendingPairs, selectedOptions]);
 
+  const filteredPages: LendingPair[][] = useMemo(() => {
+    const pages: LendingPair[][] = [];
+    let page: LendingPair[] = [];
+    filteredLendingPairs.forEach((pair, i) => {
+      if (i % itemsPerPage === 0 && i !== 0) {
+        pages.push(page);
+        page = [];
+      }
+      page.push(pair);
+    });
+    pages.push(page);
+    return pages;
+  }, [filteredLendingPairs, itemsPerPage]);
+
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -350,7 +364,7 @@ export default function LendPage() {
             />
           </div>
           <LendCards>
-            {filteredLendingPairs.map((lendPair, i) => (
+            {filteredPages[currentPage - 1].map((lendPair, i) => (
               <LendPairCard
                 key={`${lendPair.token0.address}${lendPair.token1.address}${lendPair.uniswapFeeTier}`}
                 pair={lendPair}
