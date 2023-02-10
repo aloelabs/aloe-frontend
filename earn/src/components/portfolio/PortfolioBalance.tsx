@@ -8,6 +8,7 @@ export type PortfolioBalanceProps = {
   weightedAvgApy: number;
 };
 
+const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 const INTERVAL = 100;
 
 export default function PortfolioBalance(props: PortfolioBalanceProps) {
@@ -20,12 +21,11 @@ export default function PortfolioBalance(props: PortfolioBalanceProps) {
     return () => clearInterval(id);
   }, []);
 
-  const secondsPerYear = 365 * 24 * 60 * 60;
-  const totalUsdPlusYield = totalUsd * (1 + weightedAvgApy / 100) ** (elapsedTime / secondsPerYear);
+  const totalUsdPlusYield = totalUsd * (1 + weightedAvgApy / 100) ** (elapsedTime / SECONDS_PER_YEAR);
 
   let displayDigits = 2;
   if (totalUsdPlusYield > 0) {
-    const smallestIncrement = totalUsd * (1 + weightedAvgApy / 100) ** (INTERVAL / 1000 / secondsPerYear) - totalUsd;
+    const smallestIncrement = totalUsd * (1 + weightedAvgApy / 100) ** (INTERVAL / 1000 / SECONDS_PER_YEAR) - totalUsd;
     displayDigits = Math.max(2, Math.ceil(-Math.log10(smallestIncrement)) - 1);
   }
   const localeArgs = {
