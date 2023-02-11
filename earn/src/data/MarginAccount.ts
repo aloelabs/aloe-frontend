@@ -1,4 +1,3 @@
-import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
@@ -229,8 +228,6 @@ export async function fetchMarginAccount(
     marginAccountLensContract.getLiabilities(marginAccountAddress, true),
     marginAccountLensContract.getHealth(accountAddress, true),
   ]);
-
-  console.log('results', results);
 
   const uniswapPool = results[4];
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);

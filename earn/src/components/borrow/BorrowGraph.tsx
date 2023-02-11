@@ -1,7 +1,12 @@
 import { Text } from 'shared/lib/components/common/Typography';
+import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import styled from 'styled-components';
 
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_SM,
+  RESPONSIVE_BREAKPOINTS,
+} from '../../data/constants/Breakpoints';
 import Graph from '../graph/Graph';
 import BorrowGraphTooltip from './BorrowGraphTooltip';
 
@@ -23,6 +28,8 @@ const Container = styled.div`
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     margin-left: 0;
     margin-right: auto;
+    /* 99% is important here as the graph does not render properly at 100% width */
+    width: 99%;
   }
 `;
 
@@ -79,6 +86,8 @@ export type BorrowGraphProps = {
 
 export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
+
+  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
   return (
     <Container>
       <Graph
@@ -112,8 +121,9 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         showLegend={true}
         LegendContent={<GraphLegend />}
         data={graphData}
+        hideTicks={!isBiggerThanMobile}
         containerHeight={300}
-        tickTextColor='#fff'
+        tickTextColor='#ffffff'
         showYAxis={true}
       />
     </Container>

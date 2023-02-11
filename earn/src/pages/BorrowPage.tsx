@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useContext } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
+import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -20,13 +22,14 @@ import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
 import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
 import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
+import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_KITTY_LENS_ADDRESS,
   ALOE_II_ORACLE,
 } from '../data/constants/Addresses';
-import { RESPONSIVE_BREAKPOINT_MD } from '../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREAET_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import {
   fetchMarginAccount,
@@ -40,11 +43,22 @@ import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
+const TOPIC1_PREFIX = '0x000000000000000000000000';
 
 const Container = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 64px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    gap: 32px;
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
 `;
 
 const PageGrid = styled.div`
@@ -59,8 +73,9 @@ const PageGrid = styled.div`
   margin-top: 38px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    width: 100%;
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas:
       'monitor'
       'graph'
@@ -73,6 +88,10 @@ const SmartWalletsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    width: 100%;
+  }
 `;
 
 const SmartWalletsList = styled.div`
@@ -126,8 +145,11 @@ export default function BorrowPage() {
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const TOPIC1_PREFIX = '0x000000000000000000000000';
+  const navigate = useNavigate();
 
   const borrowerLensContract = useContract({
     abi: MarginAccountLensABI,
@@ -135,67 +157,9 @@ export default function BorrowPage() {
     signerOrProvider: provider,
   });
 
+  // MARK: Fetch available pools
   useEffect(() => {
     let mounted = true;
-    async function fetch() {
-      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
-      const marginAccountPreviews = await fetchMarginAccountPreviews(
-        activeChain,
-        borrowerLensContract,
-        provider,
-        userAddress,
-        availablePools
-      );
-      if (mounted) {
-        setMarginAccountPreviews(marginAccountPreviews);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [userAddress, activeChain, borrowerLensContract, provider, availablePools]);
-
-  useEffect(() => {
-    if (selectedMarginAccountPreview == null && marginAccountPreviews?.length) {
-      setSelectedMarginAccountPreview(marginAccountPreviews[0]);
-    }
-  }, [marginAccountPreviews, selectedMarginAccountPreview]);
-
-  useEffect(() => {
-    let mounted = true;
-    const cachedMarginAccount = cachedMarginAccounts.get(selectedMarginAccountPreview?.address ?? '');
-    if (cachedMarginAccount != null) {
-      setSelectedMarginAccount(cachedMarginAccount);
-      return;
-    }
-    async function fetch() {
-      if (selectedMarginAccountPreview == null || borrowerLensContract == null) return;
-      const borrowerContract = new ethers.Contract(selectedMarginAccountPreview.address, MarginAccountABI, provider);
-      const result = await fetchMarginAccount(
-        selectedMarginAccountPreview.address,
-        activeChain,
-        borrowerContract,
-        borrowerLensContract,
-        provider,
-        selectedMarginAccountPreview.address
-      );
-      if (mounted) {
-        setCachedMarginAccounts((prev) => {
-          return new Map(prev).set(selectedMarginAccountPreview.address, result.marginAccount);
-        });
-        setSelectedMarginAccount(result.marginAccount);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedMarginAccountPreview, activeChain, borrowerLensContract, provider, userAddress, cachedMarginAccounts]);
-
-  useEffect(() => {
-    let mounted = true;
-
     async function fetchAvailablePools() {
       const result = await makeEtherscanRequest(
         0,
@@ -239,6 +203,96 @@ export default function BorrowPage() {
     };
   }, [activeChain, provider]);
 
+  // MARK: Fetch margin account previews
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
+      const marginAccountPreviews = await fetchMarginAccountPreviews(
+        activeChain,
+        borrowerLensContract,
+        provider,
+        userAddress,
+        availablePools
+      );
+      if (mounted) {
+        setMarginAccountPreviews(marginAccountPreviews);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [userAddress, activeChain, borrowerLensContract, provider, availablePools]);
+
+  useEffect(() => {
+    if (selectedMarginAccountPreview == null && marginAccountPreviews?.length) {
+      setSelectedMarginAccountPreview(marginAccountPreviews[0]);
+    }
+  }, [marginAccountPreviews, selectedMarginAccountPreview]);
+
+  // MARK: Fetch margin account
+  useEffect(() => {
+    let mounted = true;
+    const cachedMarginAccount = cachedMarginAccounts.get(selectedMarginAccountPreview?.address ?? '');
+    if (cachedMarginAccount != null) {
+      setSelectedMarginAccount(cachedMarginAccount);
+      return;
+    }
+    async function fetch() {
+      if (selectedMarginAccountPreview == null || borrowerLensContract == null) return;
+      const borrowerContract = new ethers.Contract(selectedMarginAccountPreview.address, MarginAccountABI, provider);
+      const result = await fetchMarginAccount(
+        selectedMarginAccountPreview.address,
+        activeChain,
+        borrowerContract,
+        borrowerLensContract,
+        provider,
+        selectedMarginAccountPreview.address
+      );
+      if (mounted) {
+        setCachedMarginAccounts((prev) => {
+          return new Map(prev).set(selectedMarginAccountPreview.address, result.marginAccount);
+        });
+        setSelectedMarginAccount(result.marginAccount);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedMarginAccountPreview, activeChain, borrowerLensContract, provider, userAddress, cachedMarginAccounts]);
+
+  // MARK: Fetch market info
+  useEffect(() => {
+    let mounted = true;
+    const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
+    if (cachedMarketInfo != null) {
+      setSelectedMarketInfo(cachedMarketInfo);
+      return;
+    }
+    async function fetch() {
+      if (selectedMarginAccount == null) return;
+      const lenderLensContract = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensAbi, provider);
+      const result = await fetchMarketInfoFor(
+        lenderLensContract,
+        selectedMarginAccount.lender0,
+        selectedMarginAccount.lender1
+      );
+      if (mounted) {
+        setCachedMarketInfos((prev) => {
+          return new Map(prev).set(selectedMarginAccount.address, result);
+        });
+        setSelectedMarketInfo(result);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedMarginAccount, provider, cachedMarketInfos]);
+
+  // MARK: Fetch GraphData
   useEffect(() => {
     let mounted = true;
     async function fetch() {
@@ -279,31 +333,23 @@ export default function BorrowPage() {
 
   useEffect(() => {
     let mounted = true;
-    const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
-    if (cachedMarketInfo != null) {
-      setSelectedMarketInfo(cachedMarketInfo);
-      return;
-    }
-    async function fetch() {
-      if (selectedMarginAccount == null) return;
-      const lenderLensContract = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensAbi, provider);
-      const result = await fetchMarketInfoFor(
-        lenderLensContract,
-        selectedMarginAccount.lender0,
-        selectedMarginAccount.lender1
-      );
-      if (mounted) {
-        setCachedMarketInfos((prev) => {
-          return new Map(prev).set(selectedMarginAccount.address, result);
-        });
-        setSelectedMarketInfo(result);
+    async function waitForTxn() {
+      if (!pendingTxn) return;
+      setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (!mounted) return;
+      if (receipt.status === 1) {
+        setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
+      } else {
+        setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     }
-    fetch();
+    waitForTxn();
     return () => {
       mounted = false;
     };
-  }, [selectedMarginAccount, provider, cachedMarketInfos]);
+  }, [pendingTxn]);
 
   const availablePoolOptions: DropdownOption<string>[] = useMemo(
     () =>
@@ -379,8 +425,26 @@ export default function BorrowPage() {
           defaultOption={availablePoolOptions[0]}
           isOpen={newSmartWalletModalOpen}
           setIsOpen={setNewSmartWalletModalOpen}
+          setPendingTxn={setPendingTxn}
         />
       )}
+      <PendingTxnModal
+        isOpen={isPendingTxnModalOpen}
+        setIsOpen={(isOpen: boolean) => {
+          setIsPendingTxnModalOpen(isOpen);
+          if (!isOpen) {
+            setPendingTxn(null);
+          }
+        }}
+        txnHash={pendingTxn?.hash}
+        onConfirm={() => {
+          setIsPendingTxnModalOpen(false);
+          setTimeout(() => {
+            navigate(0);
+          }, 100);
+        }}
+        status={pendingTxnModalStatus}
+      />
     </AppPage>
   );
 }
