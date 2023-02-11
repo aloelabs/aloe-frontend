@@ -125,6 +125,7 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         containerHeight={300}
         tickTextColor='#ffffff'
         showYAxis={true}
+        yAxisUnit='%'
       />
     </Container>
   );

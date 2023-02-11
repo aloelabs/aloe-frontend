@@ -37,7 +37,7 @@ export default function BorrowGraphTooltip(data: any, active = false) {
             {item.name}
           </Text>
           <Text size='S' weight='medium' color={item.color}>
-            {prettify(item.value)}
+            {prettify(item.value)}%
           </Text>
         </div>
       );

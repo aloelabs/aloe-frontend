@@ -77,6 +77,7 @@ export type GraphProps = {
   LegendContent?: JSX.Element;
   allowEscapeViewBoxX?: boolean;
   yAxisDomain?: AxisDomain;
+  yAxisUnit?: string;
   showYAxis?: boolean;
   hideTicks?: boolean;
   setIsActive?: (isActive: boolean) => void;
@@ -98,6 +99,7 @@ export default function Graph(props: GraphProps) {
     LegendContent,
     allowEscapeViewBoxX,
     yAxisDomain,
+    yAxisUnit,
     showYAxis,
     hideTicks,
     setIsActive,
@@ -149,6 +151,7 @@ export default function Graph(props: GraphProps) {
           domain={yAxisDomain}
           display={hideTicks || !showYAxis ? 'none' : 'auto'}
           width={hideTicks || !showYAxis ? 0 : undefined}
+          unit={yAxisUnit}
         />
         <Tooltip
           content={CustomTooltip}
