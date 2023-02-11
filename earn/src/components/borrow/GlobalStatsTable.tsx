@@ -2,8 +2,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
-import { MarketInfo } from '../../data/MarginAccount';
-import { Token } from '../../data/Token';
+import { MarginAccountPreview, MarketInfo } from '../../data/MarginAccount';
 import { roundPercentage } from '../../util/Numbers';
 
 const STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -48,13 +47,16 @@ const StatContainer = styled.div`
 `;
 
 export type GlobalStatsTableProps = {
-  token0: Token;
-  token1: Token;
-  marketInfo: MarketInfo;
+  marginAccountPreview?: MarginAccountPreview;
+  marketInfo?: MarketInfo;
 };
 
 export default function GlobalStatsTable(props: GlobalStatsTableProps) {
-  const { token0, token1, marketInfo } = props;
+  const { marginAccountPreview, marketInfo } = props;
+  if (!marginAccountPreview || !marketInfo) {
+    return null;
+  }
+  const { token0, token1 } = marginAccountPreview;
   const lender0TotalSupply = marketInfo.lender0TotalSupply.div(10 ** token0.decimals);
   const lender1TotalSupply = marketInfo.lender1TotalSupply.div(10 ** token1.decimals);
   return (

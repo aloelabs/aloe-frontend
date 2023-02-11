@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useContext } from 'react';
 
 import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider } from 'wagmi';
@@ -14,10 +14,11 @@ import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
-import { MetricCard, HorizontalMetricCard, HealthMetricCard } from '../components/borrow/BorrowMetrics';
+import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
+import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
+import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -35,8 +36,8 @@ import {
   MarginAccountPreview,
   MarketInfo,
 } from '../data/MarginAccount';
+import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { formatTokenAmount, roundPercentage } from '../util/Numbers';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -49,13 +50,23 @@ const Container = styled.div`
 const PageGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   grid-template-areas:
     'monitor graph'
     'metrics metrics'
     'stats stats';
   flex-grow: 1;
   margin-top: 38px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      'monitor'
+      'graph'
+      'metrics'
+      'stats';
+  }
 `;
 
 const SmartWalletsContainer = styled.div`
@@ -64,9 +75,20 @@ const SmartWalletsContainer = styled.div`
   gap: 8px;
 `;
 
+const SmartWalletsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  min-width: 200px;
+`;
+
 const MonitorContainer = styled.div`
   grid-area: monitor;
   margin-bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 `;
 
 const GraphContainer = styled.div`
@@ -79,33 +101,8 @@ const StatsContainer = styled.div`
 `;
 
 const MetricsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   grid-area: metrics;
   margin-bottom: 64px;
-`;
-
-const MetricsTopGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  grid-column-gap: 16px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-row-gap: 16px;
-    grid-template-columns: 1fr 1fr;
-  }
-`;
-
-const MetricsBottomGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
-  grid-column-gap: 16px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    grid-row-gap: 16px;
-    grid-template-columns: 1fr;
-  }
 `;
 
 export type UniswapPoolInfo = {
@@ -121,11 +118,15 @@ export default function BorrowPage() {
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
   const [marginAccountPreviews, setMarginAccountPreviews] = useState<MarginAccountPreview[] | null>(null);
-  const [selectedMarginAccountPreview, setSelectedMarginAccountPreview] = useState<MarginAccountPreview | null>(null);
+  const [selectedMarginAccountPreview, setSelectedMarginAccountPreview] = useState<MarginAccountPreview | undefined>(
+    undefined
+  );
   const [cachedMarginAccounts, setCachedMarginAccounts] = useState<Map<string, MarginAccount>>(new Map());
-  const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | null>(null);
+  const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
-  const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | null>(null);
+  const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
+  const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
+
   const TOPIC1_PREFIX = '0x000000000000000000000000';
 
   const borrowerLensContract = useContract({
@@ -304,6 +305,19 @@ export default function BorrowPage() {
     };
   }, [selectedMarginAccount, provider, cachedMarketInfos]);
 
+  const availablePoolOptions: DropdownOption<string>[] = useMemo(
+    () =>
+      Array.from(availablePools.entries()).map(([poolAddress, poolInfo]) => {
+        const token0 = getToken(activeChain.id, poolInfo.token0);
+        const token1 = getToken(activeChain.id, poolInfo.token1);
+        return {
+          label: token0.ticker + '/' + token1.ticker,
+          value: poolAddress,
+        };
+      }),
+    [availablePools, activeChain]
+  );
+
   const selectedMarginAccountIV = (selectedMarginAccount?.iv || 0) * Math.sqrt(365) * 100;
   const dailyIntest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
@@ -316,7 +330,7 @@ export default function BorrowPage() {
           <Text size='L' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
             Smart Wallets
           </Text>
-          <div className='flex flex-col w-max gap-2'>
+          <SmartWalletsList>
             {marginAccountPreviews?.map((preview) => (
               <SmartWalletButton
                 token0={preview.token0}
@@ -324,103 +338,49 @@ export default function BorrowPage() {
                 isActive={selectedMarginAccountPreview?.address === preview.address}
                 onClick={() => {
                   setSelectedMarginAccountPreview(preview);
-                  setSelectedMarginAccount(cachedMarginAccounts.get(preview.address) ?? null);
-                  setSelectedMarketInfo(cachedMarketInfos.get(preview.address) ?? null);
+                  setSelectedMarginAccount(cachedMarginAccounts.get(preview.address) ?? undefined);
+                  setSelectedMarketInfo(cachedMarketInfos.get(preview.address) ?? undefined);
                 }}
                 key={preview.address}
               />
             ))}
-            <NewSmartWalletButton onClick={() => {}} />
-          </div>
+            <NewSmartWalletButton
+              onClick={() => {
+                setNewSmartWalletModalOpen(true);
+              }}
+            />
+          </SmartWalletsList>
         </SmartWalletsContainer>
         <PageGrid>
           <MonitorContainer>
-            <Text size='XL' weight='bold'>
+            <Text size='XXL' weight='bold'>
               <p>Monitor and manage</p>
               <p>your smart wallet</p>
             </Text>
-            <div className='flex flex-col gap-2 w-max mt-4'>
-              <OutlinedWhiteButtonWithIcon
-                Icon={<PlusIcon />}
-                position='leading'
-                onClick={() => {}}
-                size='S'
-                svgColorType='stroke'
-              >
-                Add Collateral
-              </OutlinedWhiteButtonWithIcon>
-              <OutlinedWhiteButtonWithIcon
-                Icon={<PlusIcon />}
-                position='leading'
-                onClick={() => {}}
-                size='S'
-                svgColorType='stroke'
-              >
-                Remove Collateral
-              </OutlinedWhiteButtonWithIcon>
-              <OutlinedWhiteButtonWithIcon
-                Icon={<PlusIcon />}
-                position='leading'
-                onClick={() => {}}
-                size='S'
-                svgColorType='stroke'
-              >
-                Borrow
-              </OutlinedWhiteButtonWithIcon>
-              <OutlinedWhiteButtonWithIcon
-                Icon={<PlusIcon />}
-                position='leading'
-                onClick={() => {}}
-                size='S'
-                svgColorType='stroke'
-              >
-                Repay
-              </OutlinedWhiteButtonWithIcon>
-            </div>
+            <ManageAccountButtons />
           </MonitorContainer>
           <GraphContainer>{graphData && graphData.length > 0 && <BorrowGraph graphData={graphData} />}</GraphContainer>
           <MetricsContainer>
-            <MetricsTopGrid>
-              <MetricCard
-                label={`${selectedMarginAccountPreview?.token0.ticker} Collateral`}
-                value={formatTokenAmount(selectedMarginAccountPreview?.assets.token0Raw || 0, 3)}
-              />
-              <MetricCard
-                label={`${selectedMarginAccountPreview?.token1.ticker} Collateral`}
-                value={formatTokenAmount(selectedMarginAccountPreview?.assets.token1Raw || 0, 3)}
-              />
-              <MetricCard
-                label={`${selectedMarginAccountPreview?.token0.ticker} Borrows`}
-                value={formatTokenAmount(selectedMarginAccountPreview?.liabilities.amount0 || 0, 3)}
-              />
-              <MetricCard
-                label={`${selectedMarginAccountPreview?.token1.ticker} Borrows`}
-                value={formatTokenAmount(selectedMarginAccountPreview?.liabilities.amount1 || 0, 3)}
-              />
-              <MetricCard label='IV' value={`${roundPercentage(selectedMarginAccountIV, 2).toString()}%`} />
-            </MetricsTopGrid>
-            <MetricsBottomGrid>
-              <HealthMetricCard health={selectedMarginAccountPreview?.health || 0} />
-              <HorizontalMetricCard label='Liquidation Distance' value='±1020' />
-              <HorizontalMetricCard
-                label='Daily Interest'
-                value={`${formatTokenAmount(dailyIntest0, 3)} ${
-                  selectedMarginAccountPreview?.token0.ticker
-                }, ${formatTokenAmount(dailyIntest1, 3)} ${selectedMarginAccountPreview?.token1.ticker}`}
-              />
-            </MetricsBottomGrid>
+            <BorrowMetrics
+              marginAccountPreview={selectedMarginAccountPreview}
+              iv={selectedMarginAccountIV}
+              dailyIntest0={dailyIntest0}
+              dailyIntest1={dailyIntest1}
+            />
           </MetricsContainer>
-          {selectedMarginAccountPreview && selectedMarketInfo && (
-            <StatsContainer>
-              <GlobalStatsTable
-                token0={selectedMarginAccountPreview?.token0}
-                token1={selectedMarginAccountPreview?.token1}
-                marketInfo={selectedMarketInfo}
-              />
-            </StatsContainer>
-          )}
+          <StatsContainer>
+            <GlobalStatsTable marginAccountPreview={selectedMarginAccountPreview} marketInfo={selectedMarketInfo} />
+          </StatsContainer>
         </PageGrid>
       </Container>
+      {availablePoolOptions.length > 0 && (
+        <NewSmartWalletModal
+          availablePoolOptions={availablePoolOptions}
+          defaultOption={availablePoolOptions[0]}
+          isOpen={newSmartWalletModalOpen}
+          setIsOpen={setNewSmartWalletModalOpen}
+        />
+      )}
     </AppPage>
   );
 }

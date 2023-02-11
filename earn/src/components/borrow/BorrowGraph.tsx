@@ -1,7 +1,7 @@
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import Graph from '../graph/Graph';
 import BorrowGraphTooltip from './BorrowGraphTooltip';
 
@@ -19,6 +19,11 @@ const Container = styled.div`
   height: 300px;
   width: 450px;
   margin-left: auto;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    margin-left: 0;
+    margin-right: auto;
+  }
 `;
 
 const LegendWrapper = styled.div`
