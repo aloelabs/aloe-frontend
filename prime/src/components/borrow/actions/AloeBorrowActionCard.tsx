@@ -11,11 +11,13 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
+import { maxBorrows } from '../../../data/MarginAccount';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { marginAccount, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
+  const { marketInfo, marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } =
+    prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
@@ -60,6 +62,22 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
     if (forceOutput) callbackWithFullResult(selectedToken, tokenAmount);
   });
 
+  const [allowed0, allowed1] = maxBorrows(
+    {
+      ...marginAccount,
+      assets: accountState.assets,
+      liabilities: accountState.liabilities,
+    },
+    accountState.uniswapPositions,
+    marginAccount.sqrtPriceX96
+  );
+  const available0 = marketInfo.lender0AvailableAssets.div(10 ** marginAccount.token0.decimals).toNumber();
+  const available1 = marketInfo.lender1AvailableAssets.div(10 ** marginAccount.token1.decimals).toNumber();
+
+  const max =
+    selectedTokenOption.value === TokenType.ASSET0 ? Math.min(allowed0, available0) : Math.min(allowed1, available1);
+  const maxString = Math.max(0, max - 1e-6).toFixed(6);
+
   return (
     <BaseActionCard
       action={ActionID.BORROW}
@@ -81,6 +99,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           token={selectedTokenOption.value === TokenType.ASSET0 ? token0 : token1}
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
+          max={maxString}
+          maxed={tokenAmount === maxString}
         />
       </div>
     </BaseActionCard>

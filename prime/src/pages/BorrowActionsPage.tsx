@@ -52,6 +52,7 @@ import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
+const SUPPLY_SIGNIFICANT_DIGITS = 4;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
@@ -481,6 +482,7 @@ export default function BorrowActionsPage() {
       </HeaderBarContainer>
       <GridExpandingDiv>
         <ManageAccountWidget
+          marketInfo={marketInfo}
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
@@ -568,7 +570,10 @@ export default function BorrowActionsPage() {
             <MarketStatsGrid>
               <AccountStatsCard
                 label={`${token0.ticker} Supply`}
-                value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
+                value={formatTokenAmount(
+                  marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
+                  SUPPLY_SIGNIFICANT_DIGITS
+                )}
                 denomination={token0.ticker}
                 showAsterisk={false}
               />
@@ -586,7 +591,10 @@ export default function BorrowActionsPage() {
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
-                value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
+                value={formatTokenAmount(
+                  marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
+                  SUPPLY_SIGNIFICANT_DIGITS
+                )}
                 denomination={token1.ticker}
                 showAsterisk={false}
               />
