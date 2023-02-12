@@ -109,7 +109,7 @@ const ActionCardWrapper = styled.div`
 `;
 
 export type ManageAccountWidgetProps = {
-  marketInfo: MarketInfo;
+  marketInfo: MarketInfo | null;
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
@@ -197,6 +197,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
+
+  if (marketInfo === null) return null;
 
   //TODO: add some sort of error message when !transactionIsViable
   return (

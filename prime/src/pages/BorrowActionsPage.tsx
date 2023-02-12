@@ -440,7 +440,7 @@ export default function BorrowActionsPage() {
   }, []);
 
   // if no account data is found, don't render the page
-  if (!marginAccount || !displayedMarginAccount || !marketInfo) {
+  if (!marginAccount || !displayedMarginAccount) {
     return null;
   }
 
@@ -561,49 +561,51 @@ export default function BorrowActionsPage() {
             />
           </AccountStatsGrid>
         </div>
-        <div className='w-full flex flex-col gap-4 mb-8'>
-          <Text size='L' weight='medium'>
-            Market Stats
-          </Text>
-          <MarketStatsGrid>
-            <AccountStatsCard
-              label={`${token0.ticker} Supply`}
-              value={formatTokenAmount(marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(), 2)}
-              denomination={token0.ticker}
-              showAsterisk={false}
-            />
-            <div className='grid grid-cols-2 gap-4'>
+        {marketInfo !== null && (
+          <div className='w-full flex flex-col gap-4 mb-8'>
+            <Text size='L' weight='medium'>
+              Market Stats
+            </Text>
+            <MarketStatsGrid>
               <AccountStatsCard
-                label={`${token0.ticker} Utilization`}
-                value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                showAsterisk={false /*TODO*/}
+                label={`${token0.ticker} Supply`}
+                value={formatTokenAmount(marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(), 2)}
+                denomination={token0.ticker}
+                showAsterisk={false}
               />
+              <div className='grid grid-cols-2 gap-4'>
+                <AccountStatsCard
+                  label={`${token0.ticker} Utilization`}
+                  value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
+                  showAsterisk={false /*TODO*/}
+                />
+                <AccountStatsCard
+                  label={`${token0.ticker} APR`}
+                  value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
+                  showAsterisk={false /*TODO*/}
+                />
+              </div>
               <AccountStatsCard
-                label={`${token0.ticker} APR`}
-                value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                showAsterisk={false /*TODO*/}
+                label={`${token1.ticker} Supply`}
+                value={formatTokenAmount(marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(), 2)}
+                denomination={token1.ticker}
+                showAsterisk={false}
               />
-            </div>
-            <AccountStatsCard
-              label={`${token1.ticker} Supply`}
-              value={formatTokenAmount(marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(), 2)}
-              denomination={token1.ticker}
-              showAsterisk={false}
-            />
-            <div className='grid grid-cols-2 gap-4'>
-              <AccountStatsCard
-                label={`${token1.ticker} Utilization`}
-                value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                showAsterisk={false /*TODO*/}
-              />
-              <AccountStatsCard
-                label={`${token1.ticker} APR`}
-                value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                showAsterisk={false /*TODO*/}
-              />
-            </div>
-          </MarketStatsGrid>
-        </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <AccountStatsCard
+                  label={`${token1.ticker} Utilization`}
+                  value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
+                  showAsterisk={false /*TODO*/}
+                />
+                <AccountStatsCard
+                  label={`${token1.ticker} APR`}
+                  value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
+                  showAsterisk={false /*TODO*/}
+                />
+              </div>
+            </MarketStatsGrid>
+          </div>
+        )}
         <div className='w-full mb-8'>
           {!isActiveAssetsEmpty || !isActiveLiabilitiesEmpty ? (
             <PnLGraph
