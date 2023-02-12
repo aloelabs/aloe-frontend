@@ -12,7 +12,7 @@ import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapC
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapActionCard';
 import { Assets, Liabilities, MarginAccount, MarketInfo } from '../MarginAccount';
-import { UserBalances } from '../UserBalances';
+import { Balances } from '../Balances';
 import { ActionID } from './ActionID';
 import { runWithChecks } from './Utils';
 
@@ -33,8 +33,9 @@ export interface AccountState {
   readonly assets: Assets;
   readonly liabilities: Liabilities;
   readonly uniswapPositions: readonly UniswapPosition[];
-  readonly availableBalances: UserBalances;
-  readonly requiredAllowances: UserBalances;
+  readonly availableForDeposit: Balances;
+  readonly availableForBorrow: Balances;
+  readonly requiredAllowances: Balances;
   readonly claimedFeeUniswapKeys: readonly string[];
 }
 

@@ -11,15 +11,16 @@ export function runWithChecks(
   const updatedOperand = operator(operand);
   if (updatedOperand == null) return null;
 
-  const { assets, liabilities, uniswapPositions, availableBalances } = updatedOperand;
+  const { assets, liabilities, uniswapPositions, availableForDeposit, availableForBorrow } = updatedOperand;
 
   // if any assets or liabilities are < 0, we have an issue!
   if (
     Object.values(assets).find((x) => x < 0) ||
     Object.values(liabilities).find((x) => x < 0) ||
-    Object.values(availableBalances).find((x) => x < 0)
+    Object.values(availableForDeposit).find((x) => x < 0) ||
+    Object.values(availableForBorrow).find((x) => x < 0)
   ) {
-    console.log('Margin Account or EOA balance dropped below 0!');
+    console.log('Margin Account, EOA, or Lender balance dropped below 0!');
     return null;
   }
 
