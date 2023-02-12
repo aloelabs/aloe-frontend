@@ -356,8 +356,8 @@ export default function LendPage() {
               buttonSize='M'
               buttonText=''
               content={`With lending pairs, you can pick which assets borrowers can post as collateral.${' '}
-              For example, when you deposit to the USDC/WETH lending pair,${' '}
-              borrowers can only use your funds if they post USDC or WETH as collateral.${' '}
+              For example, when you deposit to the WETH/USDC lending pair,${' '}
+              borrowers can only use your funds if they post WETH or USDC as collateral.${' '}
               Never deposit to a pair that includes unknown/untrustworthy token(s).`}
               position='top-center'
               filled={true}
