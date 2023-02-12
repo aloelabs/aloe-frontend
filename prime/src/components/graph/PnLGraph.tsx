@@ -80,7 +80,15 @@ function calculatePnL1(
   initialValue = 0
 ): number {
   const sqrtPriceX96 = priceToSqrtRatio(price, marginAccount.token0.decimals, marginAccount.token1.decimals);
-  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  const assets = getAssets(
+    marginAccount.assets,
+    uniswapPositions,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
   return (
     (assets.fixed0 + assets.fluid0C) * price +
     assets.fixed1 +
@@ -97,7 +105,15 @@ function calculatePnL0(
 ): number {
   const invertedPrice = 1 / price;
   const sqrtPriceX96 = priceToSqrtRatio(invertedPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
-  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  const assets = getAssets(
+    marginAccount.assets,
+    uniswapPositions,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
   return (
     (assets.fixed1 + assets.fluid1C) * price +
     assets.fixed0 +
