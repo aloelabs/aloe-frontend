@@ -13,6 +13,7 @@ import { Chain, useAccount, useNetwork } from 'wagmi';
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import WagmiProvider from './connector/WagmiProvider';
+import BorrowPage from './pages/BorrowPage';
 import LendPage from './pages/LendPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
@@ -82,6 +83,7 @@ function AppBodyWrapper() {
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<LendPage />} />
+          <Route path='/borrow' element={<BorrowPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>

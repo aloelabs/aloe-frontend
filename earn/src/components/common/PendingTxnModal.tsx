@@ -5,9 +5,9 @@ import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/c
 import { Text } from 'shared/lib/components/common/Typography';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
-import { ChainContext } from '../../../App';
-import { ReactComponent as ErrorIcon } from '../../../assets/svg/error.svg';
-import { ReactComponent as SuccessIcon } from '../../../assets/svg/success.svg';
+import { ChainContext } from '../../App';
+import { ReactComponent as ErrorIcon } from '../../assets/svg/error.svg';
+import { ReactComponent as SuccessIcon } from '../../assets/svg/success.svg';
 
 export enum PendingTxnModalStatus {
   PENDING,
