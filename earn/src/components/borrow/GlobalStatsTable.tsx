@@ -61,7 +61,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
   const lender1TotalSupply = marketInfo.lender1TotalSupply.div(10 ** token1.decimals);
   return (
     <Wrapper>
-      <Text size='M'>Pool Stats</Text>
+      <Text size='M'>Pair Stats</Text>
       <StatsWidgetGrid>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
