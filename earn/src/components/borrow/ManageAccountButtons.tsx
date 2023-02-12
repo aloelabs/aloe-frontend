@@ -4,7 +4,7 @@ import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 
 export default function ManageAccountButtons() {
   return (
-    <div className='flex flex-col gap-2 w-max'>
+    <div className='flex flex-col gap-3 w-max'>
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'

@@ -22,6 +22,7 @@ import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
 import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
 import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
+import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -65,14 +66,14 @@ const Container = styled.div`
 
 const PageGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.2fr;
   grid-template-rows: auto auto auto;
   grid-template-areas:
     'monitor graph'
     'metrics metrics'
     'stats stats';
   flex-grow: 1;
-  margin-top: 38px;
+  margin-top: 26px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     width: 100%;
@@ -101,7 +102,7 @@ const SmartWalletsList = styled.div`
   flex-direction: column;
   gap: 8px;
   width: max-content;
-  min-width: 200px;
+  min-width: 280px;
 `;
 
 const MonitorContainer = styled.div`
@@ -317,11 +318,10 @@ export default function BorrowPage() {
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
         const iv = ethers.BigNumber.from(decoded[1]).div(1e9).toNumber() / 1e9;
         const collateralFactor = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005));
-        const convertedTimestamp = new Date(parseInt(timeStamp.toString()) * 1000).toISOString();
         const resultData: BorrowGraphData = {
           IV: iv * Math.sqrt(365) * 100,
           'Collateral Factor': collateralFactor * 100,
-          x: convertedTimestamp,
+          x: new Date(parseInt(timeStamp.toString()) * 1000),
         };
         return resultData;
       });
@@ -375,7 +375,7 @@ export default function BorrowPage() {
     <AppPage>
       <Container>
         <SmartWalletsContainer>
-          <Text size='L' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
+          <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
             Smart Wallets
           </Text>
           <SmartWalletsList>
@@ -407,7 +407,21 @@ export default function BorrowPage() {
             </Text>
             <ManageAccountButtons />
           </MonitorContainer>
-          <GraphContainer>{graphData && graphData.length > 0 && <BorrowGraph graphData={graphData} />}</GraphContainer>
+          <GraphContainer>
+            {graphData && graphData.length > 0 ? (
+              <div>
+                <BorrowGraph graphData={graphData} />
+                <div className='text-center opacity-50 pl-8'>
+                  <Text size='S' weight='regular' color={LABEL_TEXT_COLOR}>
+                    <em>
+                      IV comes from an on-chain oracle. It influences the current collateral factor, which impacts the
+                      health of your account.
+                    </em>
+                  </Text>
+                </div>
+              </div>
+            ) : null}
+          </GraphContainer>
           <MetricsContainer>
             <BorrowMetrics
               marginAccountPreview={selectedMarginAccountPreview}
