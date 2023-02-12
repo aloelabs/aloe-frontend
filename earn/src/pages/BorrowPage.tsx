@@ -30,7 +30,7 @@ import {
   ALOE_II_ORACLE,
 } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { TOPIC0_CREAET_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
+import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import {
   fetchMarginAccount,
   fetchMarginAccountPreviews,
@@ -49,6 +49,8 @@ const Container = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 64px;
+  max-width: 1280px;
+  margin: 0 auto;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     gap: 32px;
@@ -164,7 +166,7 @@ export default function BorrowPage() {
       const result = await makeEtherscanRequest(
         0,
         ALOE_II_FACTORY_ADDRESS,
-        [TOPIC0_CREAET_MARKET_EVENT],
+        [TOPIC0_CREATE_MARKET_EVENT],
         false,
         activeChain
       );
@@ -317,8 +319,8 @@ export default function BorrowPage() {
         const collateralFactor = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005));
         const convertedTimestamp = new Date(parseInt(timeStamp.toString()) * 1000).toISOString();
         const resultData: BorrowGraphData = {
-          IV: iv * Math.sqrt(365),
-          'Collateral Factor': collateralFactor,
+          IV: iv * Math.sqrt(365) * 100,
+          'Collateral Factor': collateralFactor * 100,
           x: convertedTimestamp,
         };
         return resultData;
@@ -365,9 +367,9 @@ export default function BorrowPage() {
   );
 
   const selectedMarginAccountIV = (selectedMarginAccount?.iv || 0) * Math.sqrt(365) * 100;
-  const dailyIntest0 =
+  const dailyInterest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
-  const dailyIntest1 =
+  const dailyInterest1 =
     ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount1 || 0);
   return (
     <AppPage>
@@ -410,8 +412,8 @@ export default function BorrowPage() {
             <BorrowMetrics
               marginAccountPreview={selectedMarginAccountPreview}
               iv={selectedMarginAccountIV}
-              dailyIntest0={dailyIntest0}
-              dailyIntest1={dailyIntest1}
+              dailyInterest0={dailyInterest0}
+              dailyInterest1={dailyInterest1}
             />
           </MetricsContainer>
           <StatsContainer>

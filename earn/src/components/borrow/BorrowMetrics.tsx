@@ -121,12 +121,12 @@ function HealthMetricCard(props: { health: number }) {
 export type BorrowMetricsProps = {
   marginAccountPreview?: MarginAccountPreview;
   iv: number;
-  dailyIntest0: number;
-  dailyIntest1: number;
+  dailyInterest0: number;
+  dailyInterest1: number;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccountPreview, iv, dailyIntest0, dailyIntest1 } = props;
+  const { marginAccountPreview, iv, dailyInterest0, dailyInterest1 } = props;
   if (!marginAccountPreview) {
     return null;
   }
@@ -156,8 +156,8 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
         <HorizontalMetricCard label='Liquidation Distance' value='±1020' />
         <HorizontalMetricCard
           label='Daily Interest'
-          value={`${formatTokenAmount(dailyIntest0, 3)} ${marginAccountPreview.token0.ticker}, ${formatTokenAmount(
-            dailyIntest1,
+          value={`${formatTokenAmount(dailyInterest0, 3)} ${marginAccountPreview.token0.ticker}, ${formatTokenAmount(
+            dailyInterest1,
             3
           )} ${marginAccountPreview.token1.ticker}`}
         />
