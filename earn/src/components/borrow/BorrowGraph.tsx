@@ -7,22 +7,24 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINTS,
 } from '../../data/constants/Breakpoints';
+import { LABEL_TEXT_COLOR } from '../common/Modal';
 import Graph from '../graph/Graph';
 import BorrowGraphTooltip from './BorrowGraphTooltip';
 
 const TEXT_COLOR = '#82a0b6';
 const GREEN_COLOR = '#82ca9d';
 const PURPLE_COLOR = '#8884d8';
+const MILLIS_PER_WEEK = 10 * 24 * 60 * 60 * 1000;
 
 export type BorrowGraphData = {
   IV: number;
   'Collateral Factor': number;
-  x: string;
+  x: Date;
 };
 
 const Container = styled.div`
-  height: 300px;
-  width: 450px;
+  height: 380px;
+  width: 520px;
   margin-left: auto;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
@@ -87,6 +89,13 @@ export type BorrowGraphProps = {
 export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
 
+  const now = Date.now();
+  const filteredGraphData = graphData
+    .filter((item) => now - item.x.getTime() <= MILLIS_PER_WEEK)
+    .map((item) => {
+      return { ...item, x: item.x.toISOString() };
+    });
+
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
   return (
     <Container>
@@ -120,10 +129,10 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         ]}
         showLegend={true}
         LegendContent={<GraphLegend />}
-        data={graphData}
+        data={filteredGraphData}
         hideTicks={!isBiggerThanMobile}
-        containerHeight={300}
-        tickTextColor='#ffffff'
+        containerHeight={380}
+        tickTextColor={LABEL_TEXT_COLOR}
         showYAxis={true}
         yAxisUnit='%'
       />

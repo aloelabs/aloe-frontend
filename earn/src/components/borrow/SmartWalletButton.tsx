@@ -16,14 +16,15 @@ export const Container = styled.button.attrs((props: { backgroundGradient: strin
   padding: 8px 16px;
   gap: 8px;
   border-radius: 8px;
-  background: ${(props) => props.backgroundGradient};
+  background: ${(props) => (props.active ? props.backgroundGradient : 'none')};
   opacity: ${(props) => (props.active ? 1 : 0.25)};
   filter: ${(props) => (props.active ? 'none' : 'grayscale(100%)')};
   cursor: pointer;
 
   &:hover {
+    background: ${(props) => props.backgroundGradient};
     filter: none;
-    opacity: 0.75;
+    opacity: 1;
   }
 `;
 

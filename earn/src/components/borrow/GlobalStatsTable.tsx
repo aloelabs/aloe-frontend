@@ -61,9 +61,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
   const lender1TotalSupply = marketInfo.lender1TotalSupply.div(10 ** token1.decimals);
   return (
     <Wrapper>
-      <Text size='M'>
-        {token0.ticker}/{token1.ticker} Stats
-      </Text>
+      <Text size='M'>Pair Stats</Text>
       <StatsWidgetGrid>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
@@ -79,6 +77,22 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {lender1TotalSupply.toFixed(2)}
+          </Display>
+        </StatContainer>
+        <StatContainer>
+          <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
+            {token0.ticker} Borrows
+          </Text>
+          <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
+            TODO
+          </Display>
+        </StatContainer>
+        <StatContainer>
+          <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
+            {token1.ticker} Borrows
+          </Text>
+          <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
+            TODO
           </Display>
         </StatContainer>
         <StatContainer>

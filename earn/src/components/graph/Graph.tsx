@@ -175,7 +175,7 @@ export default function Graph(props: GraphProps) {
             activeDot={chart.activeDot}
           />
         ))}
-        {showLegend && <Legend iconType='rect' content={LegendContent}></Legend>}
+        {showLegend && <Legend verticalAlign='bottom' iconType='rect' content={LegendContent}></Legend>}
       </AreaChart>
     </CustomizedResponsiveContainer>
   );

@@ -130,7 +130,7 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       maximumSignificantDigits: sigDigs,
       minimumSignificantDigits: 2,
     });
-  } else if (amount > 1e-6 || amount === 0) {
+  } else if (amount > 1e-5 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: sigDigs,
