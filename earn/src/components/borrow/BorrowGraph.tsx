@@ -14,6 +14,7 @@ import BorrowGraphTooltip from './BorrowGraphTooltip';
 const TEXT_COLOR = '#82a0b6';
 const GREEN_COLOR = '#82ca9d';
 const PURPLE_COLOR = '#8884d8';
+const MILLIS_PER_WEEK = 10 * 24 * 60 * 60 * 1000;
 
 export type BorrowGraphData = {
   IV: number;
@@ -85,13 +86,11 @@ export type BorrowGraphProps = {
   graphData: BorrowGraphData[];
 };
 
-const MILLIS_PER_WEEK = 10 * 24 * 60 * 60 * 1000;
-
 export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
 
   const now = Date.now();
-  const prettyGraphData = graphData
+  const filteredGraphData = graphData
     .filter((item) => now - item.x.getTime() <= MILLIS_PER_WEEK)
     .map((item) => {
       return { ...item, x: item.x.toISOString() };
@@ -130,7 +129,7 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         ]}
         showLegend={true}
         LegendContent={<GraphLegend />}
-        data={prettyGraphData}
+        data={filteredGraphData}
         hideTicks={!isBiggerThanMobile}
         containerHeight={380}
         tickTextColor={LABEL_TEXT_COLOR}
