@@ -1,9 +1,9 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccountPreview } from '../../data/MarginAccount';
-import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
+import { formatTokenAmount } from '../../util/Numbers';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;
@@ -52,6 +52,10 @@ const MetricsGridUpper = styled.div`
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    grid-template-columns: 1fr;
   }
 `;
 
