@@ -43,6 +43,7 @@ import {
   MarketInfo,
   sumAssetsPerToken,
 } from '../data/MarginAccount';
+import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 import {
   ComputeLiquidationThresholdsRequest,
   stringifyMarginAccount,
@@ -50,7 +51,6 @@ import {
 } from '../util/ComputeLiquidationThresholdUtils';
 import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
-import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SUPPLY_SIGNIFICANT_DIGITS = 4;

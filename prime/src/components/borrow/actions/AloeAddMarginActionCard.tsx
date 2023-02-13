@@ -11,8 +11,8 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import { Token } from '../../../data/Token';
 import { getBalanceFor } from '../../../data/Balances';
+import { Token } from '../../../data/Token';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 

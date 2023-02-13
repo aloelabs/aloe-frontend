@@ -15,9 +15,9 @@ import {
   calculateHypotheticalStates,
   UniswapPosition,
 } from '../../data/actions/Actions';
+import { Balances } from '../../data/Balances';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { isSolvent, MarginAccount, MarketInfo } from '../../data/MarginAccount';
-import { Balances } from '../../data/Balances';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
