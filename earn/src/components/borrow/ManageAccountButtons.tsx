@@ -1,6 +1,9 @@
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 
+import { ReactComponent as MinusIcon } from '../../assets/svg/minus.svg';
+import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 
 export default function ManageAccountButtons() {
   return (
@@ -15,7 +18,7 @@ export default function ManageAccountButtons() {
         Add Collateral
       </OutlinedWhiteButtonWithIcon>
       <OutlinedWhiteButtonWithIcon
-        Icon={<PlusIcon />}
+        Icon={<MinusIcon />}
         position='leading'
         onClick={() => {}}
         size='S'
@@ -24,7 +27,7 @@ export default function ManageAccountButtons() {
         Remove Collateral
       </OutlinedWhiteButtonWithIcon>
       <OutlinedWhiteButtonWithIcon
-        Icon={<PlusIcon />}
+        Icon={<PercentIcon />}
         position='leading'
         onClick={() => {}}
         size='S'
@@ -33,7 +36,7 @@ export default function ManageAccountButtons() {
         Borrow
       </OutlinedWhiteButtonWithIcon>
       <OutlinedWhiteButtonWithIcon
-        Icon={<PlusIcon />}
+        Icon={<ZapIcon />}
         position='leading'
         onClick={() => {}}
         size='S'
