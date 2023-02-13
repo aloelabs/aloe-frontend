@@ -2,13 +2,21 @@ import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Button
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 
-export default function ManageAccountButtons() {
+export type ManageAccountButtonsProps = {
+  onAddCollateral: () => void;
+  onRemoveCollateral: () => void;
+  onBorrow: () => void;
+  onRepay: () => void;
+};
+
+export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
+  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay } = props;
   return (
     <div className='flex flex-col gap-2 w-max'>
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onAddCollateral}
         size='S'
         svgColorType='stroke'
       >
@@ -17,7 +25,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onRemoveCollateral}
         size='S'
         svgColorType='stroke'
       >
@@ -26,7 +34,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onBorrow}
         size='S'
         svgColorType='stroke'
       >
@@ -35,7 +43,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onRepay}
         size='S'
         svgColorType='stroke'
       >
