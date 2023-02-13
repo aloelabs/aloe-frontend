@@ -16,7 +16,7 @@ import {
   UniswapPosition,
 } from '../../data/actions/Actions';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
-import { MarginAccount, MarketInfo } from '../../data/MarginAccount';
+import { isSolvent, MarginAccount, MarketInfo } from '../../data/MarginAccount';
 import { UserBalances } from '../../data/UserBalances';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
@@ -114,19 +114,11 @@ export type ManageAccountWidgetProps = {
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
   onAddFirstAction: () => void;
-  hypotheticalMarginAccount: MarginAccount;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const {
-    marketInfo,
-    marginAccount,
-    uniswapPositions,
-    updateHypotheticalState,
-    onAddFirstAction,
-    hypotheticalMarginAccount,
-  } = props;
+  const { marketInfo, marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
   const { activeChain } = useContext(ChainContext);
@@ -197,6 +189,16 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
+
+  const { health } = isSolvent(
+    finalState.assets,
+    finalState.liabilities,
+    finalState.uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    token0.decimals,
+    token1.decimals
+  );
 
   if (marketInfo === null) return null;
 
@@ -273,7 +275,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
-        <HealthBar health={hypotheticalMarginAccount?.health || marginAccount.health} />
+        <HealthBar health={health} />
         <div className='flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}

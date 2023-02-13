@@ -63,13 +63,13 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   });
 
   const [allowed0, allowed1] = maxBorrows(
-    {
-      ...marginAccount,
-      assets: accountState.assets,
-      liabilities: accountState.liabilities,
-    },
+    accountState.assets,
+    accountState.liabilities,
     accountState.uniswapPositions,
-    marginAccount.sqrtPriceX96
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    token0.decimals,
+    token1.decimals
   );
   const available0 = marketInfo.lender0AvailableAssets.div(10 ** marginAccount.token0.decimals).toNumber();
   const available1 = marketInfo.lender1AvailableAssets.div(10 ** marginAccount.token1.decimals).toNumber();

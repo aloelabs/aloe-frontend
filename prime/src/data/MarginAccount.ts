@@ -328,18 +328,17 @@ function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
 }
 
 export function getAssets(
-  marginAccount: MarginAccount,
+  assets: Assets,
   uniswapPositions: readonly UniswapPosition[],
   a: Big,
   b: Big,
-  c: Big
+  c: Big,
+  token0Decimals: number,
+  token1Decimals: number
 ) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
   const tickC = TickMath.getTickAtSqrtRatio(JSBI.BigInt(c.toFixed(0)));
-
-  let fixed0 = marginAccount.assets.token0Raw;
-  let fixed1 = marginAccount.assets.token1Raw;
 
   let fluid1A = 0;
   let fluid1B = 0;
@@ -354,23 +353,16 @@ export function getAssets(
       continue;
     }
 
-    fluid1A += getValueOfLiquidity(liquidity, lower, upper, tickA, marginAccount.token1.decimals);
-    fluid1B += getValueOfLiquidity(liquidity, lower, upper, tickB, marginAccount.token1.decimals);
-    const temp = getAmountsForLiquidity(
-      liquidity,
-      lower,
-      upper,
-      tickC,
-      marginAccount.token0.decimals,
-      marginAccount.token1.decimals
-    );
+    fluid1A += getValueOfLiquidity(liquidity, lower, upper, tickA, token1Decimals);
+    fluid1B += getValueOfLiquidity(liquidity, lower, upper, tickB, token1Decimals);
+    const temp = getAmountsForLiquidity(liquidity, lower, upper, tickC, token0Decimals, token1Decimals);
     fluid0C += temp[0];
     fluid1C += temp[1];
   }
 
   return {
-    fixed0,
-    fixed1,
+    fixed0: assets.token0Raw,
+    fixed1: assets.token1Raw,
     fluid1A,
     fluid1B,
     fluid0C,
@@ -402,20 +394,21 @@ function _computeLiquidationIncentive(
 }
 
 export function isSolvent(
-  marginAccount: MarginAccount,
+  assets: Assets,
+  liabilities: Liabilities,
   uniswapPositions: readonly UniswapPosition[],
-  sqrtPriceX96: Big
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number
 ) {
-  const token0Decimals = marginAccount.token0.decimals;
-  const token1Decimals = marginAccount.token1.decimals;
-
-  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.iv);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, iv);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
-  const mem = getAssets(marginAccount, uniswapPositions, a, b, sqrtPriceX96);
-  let liabilities0 = marginAccount.liabilities.amount0;
-  let liabilities1 = marginAccount.liabilities.amount1;
+  const mem = getAssets(assets, uniswapPositions, a, b, sqrtPriceX96, token0Decimals, token1Decimals);
+  let liabilities0 = liabilities.amount0;
+  let liabilities1 = liabilities.amount1;
 
   const liquidationIncentive = _computeLiquidationIncentive(
     mem.fixed0 + mem.fluid0C,
@@ -452,20 +445,21 @@ export function isSolvent(
 }
 
 export function maxBorrows(
-  marginAccount: MarginAccount,
+  assets: Assets,
+  liabilities: Liabilities,
   uniswapPositions: readonly UniswapPosition[],
-  sqrtPriceX96: Big
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number
 ) {
-  const token0Decimals = marginAccount.token0.decimals;
-  const token1Decimals = marginAccount.token1.decimals;
-
-  const [a, b] = _computeProbePrices(sqrtPriceX96, marginAccount.iv);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, iv);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
-  const mem = getAssets(marginAccount, uniswapPositions, a, b, sqrtPriceX96);
-  const liabilities0 = marginAccount.liabilities.amount0;
-  const liabilities1 = marginAccount.liabilities.amount1;
+  const mem = getAssets(assets, uniswapPositions, a, b, sqrtPriceX96, token0Decimals, token1Decimals);
+  const liabilities0 = liabilities.amount0;
+  const liabilities1 = liabilities.amount1;
 
   const liquidationIncentive = _computeLiquidationIncentive(
     mem.fixed0 + mem.fluid0C,
@@ -492,8 +486,13 @@ export function maxBorrows(
 }
 
 export function computeLiquidationThresholds(
-  marginAccount: MarginAccount,
+  assets: Assets,
+  liabilities: Liabilities,
   uniswapPositions: UniswapPosition[],
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number,
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
@@ -506,14 +505,14 @@ export function computeLiquidationThresholds(
   const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString()).div(1.23);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(marginAccount, uniswapPositions, MINPRICE);
+  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, MINPRICE, iv, token0Decimals, token1Decimals);
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
-    result.lower = sqrtRatioToPrice(MINPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.lower = sqrtRatioToPrice(MINPRICE, token0Decimals, token1Decimals);
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = MINPRICE;
-    let upperBoundSqrtPrice = marginAccount.sqrtPriceX96;
+    let upperBoundSqrtPrice = sqrtPriceX96;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
       const prevSearchPrice = searchPrice;
@@ -522,7 +521,15 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
+      const isSolventAtSearchPrice = isSolvent(
+        assets,
+        liabilities,
+        uniswapPositions,
+        searchPrice,
+        iv,
+        token0Decimals,
+        token1Decimals
+      );
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is lower
@@ -532,17 +539,17 @@ export function computeLiquidationThresholds(
         upperBoundSqrtPrice = searchPrice;
       }
     }
-    result.lower = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.lower = sqrtRatioToPrice(searchPrice, token0Decimals, token1Decimals);
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(marginAccount, uniswapPositions, MAXPRICE);
+  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, MAXPRICE, iv, token0Decimals, token1Decimals);
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
-    result.upper = sqrtRatioToPrice(MAXPRICE, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.upper = sqrtRatioToPrice(MAXPRICE, token0Decimals, token1Decimals);
   } else {
     // Start binary search
-    let lowerBoundSqrtPrice = marginAccount.sqrtPriceX96;
+    let lowerBoundSqrtPrice = sqrtPriceX96;
     let upperBoundSqrtPrice = MAXPRICE;
     let searchPrice: Big = new Big(0);
     for (let i = 0; i < iterations; i++) {
@@ -552,7 +559,15 @@ export function computeLiquidationThresholds(
         // binary search has converged
         break;
       }
-      const isSolventAtSearchPrice = isSolvent(marginAccount, uniswapPositions, searchPrice);
+      const isSolventAtSearchPrice = isSolvent(
+        assets,
+        liabilities,
+        uniswapPositions,
+        searchPrice,
+        iv,
+        token0Decimals,
+        token1Decimals
+      );
       const isLiquidatableAtSearchPrice = !isSolventAtSearchPrice.atA || !isSolventAtSearchPrice.atB;
       if (isLiquidatableAtSearchPrice) {
         // liquidation threshold is higher
@@ -562,7 +577,7 @@ export function computeLiquidationThresholds(
         lowerBoundSqrtPrice = searchPrice;
       }
     }
-    result.upper = sqrtRatioToPrice(searchPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+    result.upper = sqrtRatioToPrice(searchPrice, token0Decimals, token1Decimals);
   }
 
   return result;

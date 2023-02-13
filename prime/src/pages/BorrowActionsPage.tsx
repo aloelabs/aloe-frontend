@@ -464,7 +464,15 @@ export default function BorrowActionsPage() {
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
-  const { health } = isSolvent(displayedMarginAccount, displayedUniswapPositions, displayedMarginAccount.sqrtPriceX96);
+  const { health } = isSolvent(
+    displayedMarginAccount.assets,
+    displayedMarginAccount.liabilities,
+    displayedUniswapPositions,
+    displayedMarginAccount.sqrtPriceX96,
+    displayedMarginAccount.iv,
+    token0.decimals,
+    token1.decimals
+  );
   displayedMarginAccount.health = health;
 
   const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
@@ -487,7 +495,6 @@ export default function BorrowActionsPage() {
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
           onAddFirstAction={() => setUserWantsHypothetical(true)}
-          hypotheticalMarginAccount={displayedMarginAccount}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>
