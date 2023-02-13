@@ -2,7 +2,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -10,6 +9,9 @@ import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 import { ChainContext } from '../../../App';
 import FactoryABI from '../../../assets/abis/Factory.json';
 import { ALOE_II_FACTORY_ADDRESS } from '../../../data/constants/Addresses';
+import { UniswapPoolInfo } from '../../../data/MarginAccount';
+import { getToken } from '../../../data/TokenData';
+import SmartWalletButton from '../SmartWalletButton';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
@@ -70,7 +72,7 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
         setIsPending(true);
         createBorrower?.();
       }}
-      disabled={isPending}
+      disabled={isPending || poolAddress === ''}
       className='mt-16'
     >
       Create
@@ -79,23 +81,19 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
 }
 
 export type NewSmartWalletModalProps = {
-  availablePoolOptions: DropdownOption<string>[];
-  defaultOption: DropdownOption<string>;
+  availablePools: Map<string, UniswapPoolInfo>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
-  const { availablePoolOptions, defaultOption, isOpen, setIsOpen, setPendingTxn } = props;
+  const { availablePools, isOpen, setIsOpen, setPendingTxn } = props;
 
-  const [selectedPoolOption, setSelectedPoolOption] = useState<DropdownOption<string>>(defaultOption);
+  const [selectedPool, setSelectedPool] = useState<string | null>(null);
 
+  const { activeChain } = useContext(ChainContext);
   const { address: userAddress } = useAccount();
-
-  const resetModal = () => {
-    setSelectedPoolOption(defaultOption);
-  };
 
   if (!userAddress || !isOpen) {
     return null;
@@ -107,27 +105,32 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
       title='Create a new smart wallet'
       setIsOpen={(open: boolean) => {
         setIsOpen(open);
-        if (!open) {
-          resetModal();
-        }
+        if (!open) setSelectedPool(null);
       }}
-      maxHeight='650px'
+      maxHeight='400px'
+      maxWidth='600px'
     >
-      <div className='w-full'>
+      <div className='w-[550px]'>
         <div className='flex flex-col gap-4'>
           <Text size='M' weight='medium'>
             Select a pool to borrow from
           </Text>
-          <Dropdown
-            options={availablePoolOptions}
-            onSelect={(option: DropdownOption<string>) => {
-              setSelectedPoolOption(option);
-            }}
-            selectedOption={selectedPoolOption}
-          />
+          <div className='grid grid-cols-2 gap-2'>
+            {Array.from(availablePools.entries()).map(([poolAddress, poolInfo]) => (
+              <SmartWalletButton
+                token0={getToken(activeChain.id, poolInfo.token0)}
+                token1={getToken(activeChain.id, poolInfo.token1)}
+                isActive={poolAddress === selectedPool}
+                onClick={() => {
+                  setSelectedPool(poolAddress);
+                }}
+                key={poolAddress}
+              />
+            ))}
+          </div>
         </div>
         <CreateSmartWalletButton
-          poolAddress={selectedPoolOption.value}
+          poolAddress={selectedPool ?? ''}
           userAddress={userAddress}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxn}
