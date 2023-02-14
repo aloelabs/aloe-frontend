@@ -61,12 +61,8 @@ const MetricsGridUpper = styled.div`
 
 const MetricsGridLower = styled.div`
   display: grid;
-  grid-template-columns: 1fr; //repeat(2, 1fr) 1.5fr;
+  grid-template-columns: 1fr;
   grid-gap: 16px;
-
-  // @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-  //   grid-template-columns: 1fr;
-  // }
 `;
 
 function getHealthColor(health: number) {
@@ -124,13 +120,12 @@ function HealthMetricCard(props: { health: number }) {
 
 export type BorrowMetricsProps = {
   marginAccountPreview?: MarginAccountPreview;
-  iv: number;
   dailyInterest0: number;
   dailyInterest1: number;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccountPreview, iv, dailyInterest0, dailyInterest1 } = props;
+  const { marginAccountPreview, dailyInterest0, dailyInterest1 } = props;
   if (!marginAccountPreview) {
     return null;
   }
