@@ -39,9 +39,9 @@ import {
   MarginAccountPreview,
   MarketInfo,
 } from '../data/MarginAccount';
-import { makeEtherscanRequest } from '../util/Etherscan';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
+import { makeEtherscanRequest } from '../util/Etherscan';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
