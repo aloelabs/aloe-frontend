@@ -15,9 +15,9 @@ import {
   calculateHypotheticalStates,
   UniswapPosition,
 } from '../../data/actions/Actions';
+import { Balances } from '../../data/Balances';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { isSolvent, MarginAccount, MarketInfo } from '../../data/MarginAccount';
-import { UserBalances } from '../../data/UserBalances';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
@@ -157,27 +157,32 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
-  const userBalances: UserBalances = useMemo(
+  const userBalances: Balances = useMemo(
     () => ({
-      amount0Asset: Number(userBalance0Asset?.formatted ?? 0) || 0,
-      amount1Asset: Number(userBalance1Asset?.formatted ?? 0) || 0,
+      amount0: Number(userBalance0Asset?.formatted ?? 0) || 0,
+      amount1: Number(userBalance1Asset?.formatted ?? 0) || 0,
     }),
     [userBalance0Asset, userBalance1Asset]
   );
+
+  const lenderBalances: Balances = useMemo(() => {
+    return {
+      amount0: marketInfo?.lender0AvailableAssets.div(10 ** token0.decimals).toNumber() ?? 0,
+      amount1: marketInfo?.lender1AvailableAssets.div(10 ** token1.decimals).toNumber() ?? 0,
+    };
+  }, [marketInfo, token0, token1]);
 
   const initialState: AccountState = useMemo(
     () => ({
       assets: marginAccount.assets,
       liabilities: marginAccount.liabilities,
       uniswapPositions: uniswapPositions,
-      availableBalances: userBalances,
-      requiredAllowances: {
-        amount0Asset: 0,
-        amount1Asset: 0,
-      },
+      availableForDeposit: userBalances,
+      availableForBorrow: lenderBalances,
+      requiredAllowances: { amount0: 0, amount1: 0 },
       claimedFeeUniswapKeys: [],
     }),
-    [marginAccount, uniswapPositions, userBalances]
+    [marginAccount, uniswapPositions, userBalances, lenderBalances]
   );
 
   useEffect(() => {

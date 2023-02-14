@@ -43,6 +43,7 @@ import {
   MarketInfo,
   sumAssetsPerToken,
 } from '../data/MarginAccount';
+import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 import {
   ComputeLiquidationThresholdsRequest,
   stringifyMarginAccount,
@@ -477,6 +478,25 @@ export default function BorrowActionsPage() {
 
   const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
 
+  // hypothetical interest rates
+  let utilization0 = marketInfo?.lender0Utilization;
+  let utilization1 = marketInfo?.lender1Utilization;
+  if (marketInfo && isShowingHypothetical) {
+    utilization0 =
+      1 -
+      hypotheticalState.availableForBorrow.amount0 /
+        marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber();
+    utilization1 =
+      1 -
+      hypotheticalState.availableForBorrow.amount1 /
+        marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber();
+  }
+  const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 ?? 0));
+  const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 ?? 0));
+
+  console.log(apr0 - (marketInfo?.borrowerAPR0 ?? 0));
+  console.log(apr1 - (marketInfo?.borrowerAPR1 ?? 0));
+
   return (
     <BodyWrapper>
       <HeaderBarContainer>
@@ -587,13 +607,13 @@ export default function BorrowActionsPage() {
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token0.ticker} Utilization`}
-                  value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(utilization0! * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
                   label={`${token0.ticker} APR`}
-                  value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(apr0 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
               </div>
               <AccountStatsCard
@@ -608,13 +628,13 @@ export default function BorrowActionsPage() {
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token1.ticker} Utilization`}
-                  value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(utilization1! * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
                   label={`${token1.ticker} APR`}
-                  value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(apr1 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
               </div>
             </MarketStatsGrid>
