@@ -64,6 +64,8 @@ export type MarketInfo = {
   lender1Utilization: number;
   lender0TotalSupply: Big;
   lender1TotalSupply: Big;
+  lender0TotalBorrows: Big;
+  lender1TotalBorrows: Big;
 };
 
 export type LiquidationThresholds = {
@@ -196,6 +198,8 @@ export async function fetchMarketInfoFor(
   const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
   const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
   const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
+  const lender0TotalBorrows = new Big(lender0Basics.totalBorrows.toString());
+  const lender1TotalBorrows = new Big(lender1Basics.totalBorrows.toString());
   return {
     lender0,
     lender1,
@@ -205,6 +209,8 @@ export async function fetchMarketInfoFor(
     lender1Utilization: lender1Utilization,
     lender0TotalSupply: lender0TotalSupply,
     lender1TotalSupply: lender1TotalSupply,
+    lender0TotalBorrows: lender0TotalBorrows,
+    lender1TotalBorrows: lender1TotalBorrows,
   };
 }
 
