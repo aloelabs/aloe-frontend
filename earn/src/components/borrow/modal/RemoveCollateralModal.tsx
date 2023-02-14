@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount } from 'wagmi';
 
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, roundPercentage, truncateDecimals } from '../../../util/Numbers';
+import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -21,7 +22,7 @@ export type RemoveCollateralModalProps = {
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { marginAccount, marketInfo, isOpen, setIsOpen } = props;
+  const { marginAccount, isOpen, setIsOpen } = props;
 
   const [collateralAmount, setCollateralAmount] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
@@ -34,12 +35,29 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     return [marginAccount.token0, marginAccount.token1];
   }, [marginAccount.token0, marginAccount.token1]);
 
-  const collateralTokenAPR = useMemo(() => {
-    return (
-      (collateralToken.address === marginAccount.token0.address ? marketInfo.borrowerAPR0 : marketInfo.borrowerAPR1) *
-      100
-    );
-  }, [collateralToken.address, marginAccount.token0.address, marketInfo.borrowerAPR0, marketInfo.borrowerAPR1]);
+  const existingCollateral =
+    collateralToken.address === marginAccount.token0.address
+      ? marginAccount.assets.token0Raw
+      : marginAccount.assets.token1Raw;
+
+  const numericCollateralAmount = Number(collateralAmount) || 0;
+
+  const existingCollateralBig = useMemo(
+    () => new Big(existingCollateral).mul(10 ** collateralToken.decimals),
+    [collateralToken.decimals, existingCollateral]
+  );
+  const numericCollateralAmountBig = useMemo(
+    () => new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals),
+    [collateralToken.decimals, numericCollateralAmount]
+  );
+
+  const newCollateralAmount = Math.max(
+    existingCollateralBig
+      .sub(numericCollateralAmountBig)
+      .div(10 ** collateralToken.decimals)
+      .toNumber(),
+    0
+  );
 
   if (!userAddress || !isOpen) {
     return null;
@@ -81,10 +99,22 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
         </div>
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
-            Current Interest Rate
+            Summary
           </Text>
-          <Text size='L' weight='bold' color={SECONDARY_COLOR}>
-            {roundPercentage(collateralTokenAPR, 4)}% APR
+          <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+            You're removing{' '}
+            <strong>
+              {collateralAmount || '0.00'} {collateralToken.ticker}
+            </strong>{' '}
+            collateral from the{' '}
+            <strong>
+              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
+            </strong>{' '}
+            pair. Your total collateral for this token in this pair will be{' '}
+            <strong>
+              {truncateDecimals(newCollateralAmount.toString(), collateralToken.decimals)} {collateralToken.ticker}
+            </strong>
+            .
           </Text>
         </div>
       </div>

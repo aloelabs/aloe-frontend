@@ -11,7 +11,7 @@ import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
+import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -42,14 +42,14 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 type AddCollateralButtonProps = {
   marginAccount: MarginAccount;
   collateralToken: Token;
-  collateralAmount: string;
+  collateralAmountBig: Big;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function AddCollateralButton(props: AddCollateralButtonProps) {
-  const { marginAccount, collateralToken, collateralAmount, userAddress, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, collateralToken, collateralAmountBig, userAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
@@ -60,20 +60,18 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
     chainId: activeChain.id,
   });
 
-  const collateralAmountBig = useMemo(
-    () => new Big(collateralAmount).mul(String1E(collateralToken.decimals)),
-    [collateralAmount, collateralToken.decimals]
-  );
-
   const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
-  const numericCollateralAmount = Number(collateralAmount) || 0;
+  const userBalanceBig = useMemo(
+    () => new Big(numericUserBalance).mul(10 ** collateralToken.decimals),
+    [collateralToken.decimals, numericUserBalance]
+  );
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: collateralToken.address,
     abi: ERC20ABI,
     functionName: 'transfer',
     args: [marginAccount.address, collateralAmountBig.toFixed()],
-    enabled: !!collateralAmountBig && numericCollateralAmount <= numericUserBalance,
+    enabled: !!collateralAmountBig && !!userBalanceBig && collateralAmountBig.lte(userBalanceBig),
     chainId: activeChain.id,
   });
   const contractWriteConfigUpdatedRequest = useMemo(() => {
@@ -119,7 +117,7 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (numericCollateralAmount > numericUserBalance) {
+  if (collateralAmountBig.gt(userBalanceBig)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
@@ -169,16 +167,26 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     return [marginAccount.token0, marginAccount.token1];
   }, [marginAccount.token0, marginAccount.token1]);
 
-  if (!userAddress || !isOpen) {
-    return null;
-  }
-
   const existingCollateral =
     collateralToken.address === marginAccount.token0.address
       ? marginAccount.assets.token0Raw
       : marginAccount.assets.token1Raw;
 
   const numericCollateralAmount = Number(collateralAmount) || 0;
+
+  const collateralAmountBig = useMemo(() => {
+    return new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
+  }, [collateralToken.decimals, numericCollateralAmount]);
+
+  const existingCollateralBig = useMemo(() => {
+    return new Big(existingCollateral).mul(10 ** collateralToken.decimals);
+  }, [collateralToken.decimals, existingCollateral]);
+
+  if (!userAddress || !isOpen) {
+    return null;
+  }
+
+  const newCollateralBig = existingCollateralBig.add(collateralAmountBig).div(10 ** collateralToken.decimals);
 
   return (
     <Modal
@@ -229,7 +237,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
             </strong>{' '}
             pair. Your total collateral for this token in this pair will be{' '}
             <strong>
-              {numericCollateralAmount + existingCollateral} {collateralToken.ticker}
+              {truncateDecimals(newCollateralBig.toString(), collateralToken.decimals)} {collateralToken.ticker}
             </strong>
             .
           </Text>
@@ -237,7 +245,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
         <AddCollateralButton
           marginAccount={marginAccount}
           collateralToken={collateralToken}
-          collateralAmount={collateralAmount || '0.00'}
+          collateralAmountBig={collateralAmountBig}
           userAddress={userAddress}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxn}
