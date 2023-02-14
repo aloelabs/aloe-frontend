@@ -12,7 +12,8 @@ import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapC
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapActionCard';
 import { Balances } from '../Balances';
-import { Assets, Liabilities, MarginAccount, MarketInfo } from '../MarginAccount';
+import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
+import { MarketInfo } from '../MarketInfo';
 import { ActionID } from './ActionID';
 import { runWithChecks } from './Utils';
 
