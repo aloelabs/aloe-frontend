@@ -6,6 +6,7 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
+import styled from 'styled-components';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -17,6 +18,14 @@ import SmartWalletButton from '../SmartWalletButton';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const ITEMS_PER_PAGE = 5;
+
+const SmartWalletOptionsPage = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  // The height of 5 buttons + gap between them
+  min-height: 304px;
+`;
 
 type CreateSmartWalletButtonProps = {
   poolAddress: string;
@@ -164,11 +173,11 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
       <div className='w-full'>
         <div className='flex flex-col gap-4 mb-8'>
           <Text size='M' weight='medium'>
-            Select a pool to borrow from
+            Select a pair to borrow from
           </Text>
           <SquareInputWithIcon
             Icon={<SearchIcon />}
-            placeholder='Search for a pool or token'
+            placeholder='Search for a pair or token'
             size='M'
             onChange={(e) => {
               setFilterInput(e.target.value);
@@ -178,7 +187,7 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
             leadingIcon={true}
             fullWidth={true}
           />
-          <div className='flex flex-col gap-4 min-h-[304px]'>
+          <SmartWalletOptionsPage>
             {filteredPages[currentPage - 1].map((poolOption: [string, UniswapPoolInfo]) => {
               return (
                 <SmartWalletButton
@@ -192,7 +201,12 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
                 />
               );
             })}
-          </div>
+            {filteredPages[currentPage - 1].length === 0 && (
+              <Text size='M' className='text-center'>
+                No matching pairs found.
+              </Text>
+            )}
+          </SmartWalletOptionsPage>
           <Pagination
             itemsPerPage={ITEMS_PER_PAGE}
             currentPage={currentPage}
