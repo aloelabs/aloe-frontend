@@ -2,28 +2,32 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
+import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import FactoryABI from '../../../assets/abis/Factory.json';
+import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
 import { ALOE_II_FACTORY_ADDRESS } from '../../../data/constants/Addresses';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
-import { getToken } from '../../../data/TokenData';
 import SmartWalletButton from '../SmartWalletButton';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
+const ITEMS_PER_PAGE = 5;
 
 type CreateSmartWalletButtonProps = {
   poolAddress: string;
+  uniswapPoolInfo: UniswapPoolInfo;
   userAddress: string;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
-  const { poolAddress, userAddress, setIsOpen, setPendingTxn } = props;
+  const { poolAddress, uniswapPoolInfo, userAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
@@ -64,6 +68,8 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
     }
   }, [createBorrowerData, isLoadingCreateBorrower, setIsOpen, setPendingTxn, successfullyCreatedBorrower]);
 
+  const pairLabel = `${uniswapPoolInfo.token0.ticker}/${uniswapPoolInfo.token1.ticker}`;
+
   return (
     <FilledStylizedButton
       size='M'
@@ -73,31 +79,75 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
         createBorrower?.();
       }}
       disabled={isPending || poolAddress === ''}
-      className='mt-16'
     >
-      Create
+      Create {pairLabel} Smart Wallet
     </FilledStylizedButton>
   );
 }
 
 export type NewSmartWalletModalProps = {
   availablePools: Map<string, UniswapPoolInfo>;
+  defaultPool: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
-  const { availablePools, isOpen, setIsOpen, setPendingTxn } = props;
+  const { availablePools, defaultPool, isOpen, setIsOpen, setPendingTxn } = props;
 
-  const [selectedPool, setSelectedPool] = useState<string | null>(null);
+  const [selectedPool, setSelectedPool] = useState<string>(defaultPool);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filterInput, setFilterInput] = useState('');
 
-  const { activeChain } = useContext(ChainContext);
   const { address: userAddress } = useAccount();
+
+  const resetModal = () => {
+    setSelectedPool(defaultPool);
+    setCurrentPage(1);
+    setFilterInput('');
+  };
+
+  const filteredAvailablePools = useMemo(() => {
+    const filteredPools = new Map<string, UniswapPoolInfo>();
+    Array.from(availablePools.entries()).forEach(([poolAddress, poolInfo]) => {
+      if (
+        poolInfo.token0.ticker.toLowerCase().includes(filterInput.toLowerCase()) ||
+        poolInfo.token1.ticker.toLowerCase().includes(filterInput.toLowerCase()) ||
+        poolAddress.toLowerCase().includes(filterInput.toLowerCase())
+      ) {
+        filteredPools.set(poolAddress, poolInfo);
+      }
+    });
+    return filteredPools;
+  }, [availablePools, filterInput]);
+
+  const filteredPages: [string, UniswapPoolInfo][][] = useMemo(() => {
+    const pages: [string, UniswapPoolInfo][][] = [];
+    let page: [string, UniswapPoolInfo][] = [];
+    Array.from(filteredAvailablePools.entries()).forEach((pair, i) => {
+      if (i % ITEMS_PER_PAGE === 0 && i !== 0) {
+        pages.push(page);
+        page = [];
+      }
+      page.push(pair);
+    });
+    pages.push(page);
+    return pages;
+  }, [filteredAvailablePools]);
+
+  // If the current page is greater than the number of pages, reset the current page to 1
+  // We also want to return null here so that the rest of the modal doesn't render until the current page is reset
+  if (currentPage > filteredPages.length) {
+    setCurrentPage(1);
+    return null;
+  }
 
   if (!userAddress || !isOpen) {
     return null;
   }
+
+  const selectedPoolInfo = availablePools.get(selectedPool);
 
   return (
     <Modal
@@ -105,36 +155,64 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
       title='Create a new smart wallet'
       setIsOpen={(open: boolean) => {
         setIsOpen(open);
-        if (!open) setSelectedPool(null);
+        if (!open) {
+          resetModal();
+        }
       }}
-      maxHeight='400px'
-      maxWidth='600px'
+      maxHeight='750px'
     >
-      <div className='w-[550px]'>
-        <div className='flex flex-col gap-4'>
+      <div className='w-full'>
+        <div className='flex flex-col gap-4 mb-8'>
           <Text size='M' weight='medium'>
             Select a pool to borrow from
           </Text>
-          <div className='grid grid-cols-2 gap-2'>
-            {Array.from(availablePools.entries()).map(([poolAddress, poolInfo]) => (
-              <SmartWalletButton
-                token0={getToken(activeChain.id, poolInfo.token0)}
-                token1={getToken(activeChain.id, poolInfo.token1)}
-                isActive={poolAddress === selectedPool}
-                onClick={() => {
-                  setSelectedPool(poolAddress);
-                }}
-                key={poolAddress}
-              />
-            ))}
+          <SquareInputWithIcon
+            Icon={<SearchIcon />}
+            placeholder='Search for a pool or token'
+            size='M'
+            onChange={(e) => {
+              setFilterInput(e.target.value);
+            }}
+            svgColorType='stroke'
+            value={filterInput}
+            leadingIcon={true}
+            fullWidth={true}
+          />
+          <div className='flex flex-col gap-4 min-h-[304px]'>
+            {filteredPages[currentPage - 1].map((poolOption: [string, UniswapPoolInfo]) => {
+              return (
+                <SmartWalletButton
+                  isActive={selectedPool === poolOption[0]}
+                  token0={poolOption[1].token0}
+                  token1={poolOption[1].token1}
+                  onClick={() => {
+                    setSelectedPool(poolOption[0]);
+                  }}
+                  key={poolOption[0]}
+                />
+              );
+            })}
           </div>
+          <Pagination
+            itemsPerPage={ITEMS_PER_PAGE}
+            currentPage={currentPage}
+            loading={false}
+            totalItems={filteredAvailablePools.size}
+            onPageChange={(newPage: number) => {
+              setCurrentPage(newPage);
+            }}
+            hidePageRange={true}
+          />
         </div>
-        <CreateSmartWalletButton
-          poolAddress={selectedPool ?? ''}
-          userAddress={userAddress}
-          setIsOpen={setIsOpen}
-          setPendingTxn={setPendingTxn}
-        />
+        {selectedPoolInfo && (
+          <CreateSmartWalletButton
+            poolAddress={selectedPool || ''}
+            uniswapPoolInfo={selectedPoolInfo}
+            userAddress={userAddress}
+            setIsOpen={setIsOpen}
+            setPendingTxn={setPendingTxn}
+          />
+        )}
       </div>
     </Modal>
   );

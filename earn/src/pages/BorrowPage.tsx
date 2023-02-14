@@ -40,6 +40,8 @@ import {
   MarketInfo,
 } from '../data/MarginAccount';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { Token } from '../data/Token';
+import { getToken } from '../data/TokenData';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
@@ -126,8 +128,8 @@ const MetricsContainer = styled.div`
 `;
 
 export type UniswapPoolInfo = {
-  token0: Address;
-  token1: Address;
+  token0: Token;
+  token1: Token;
   fee: number;
 };
 
@@ -188,8 +190,8 @@ export default function BorrowPage() {
               return [
                 addr.toLowerCase(),
                 {
-                  token0: poolInfoTuples[i][0] as Address,
-                  token1: poolInfoTuples[i][1] as Address,
+                  token0: getToken(activeChain.id, poolInfoTuples[i][0] as Address),
+                  token1: getToken(activeChain.id, poolInfoTuples[i][1] as Address),
                   fee: poolInfoTuples[i][2] as number,
                 },
               ];
@@ -351,6 +353,8 @@ export default function BorrowPage() {
     };
   }, [pendingTxn]);
 
+  const defaultPool = availablePools.keys().next().value;
+
   const selectedMarginAccountIV = (selectedMarginAccount?.iv || 0) * Math.sqrt(365) * 100;
   const dailyInterest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
@@ -423,6 +427,7 @@ export default function BorrowPage() {
       {availablePools.size > 0 && (
         <NewSmartWalletModal
           availablePools={availablePools}
+          defaultPool={defaultPool}
           isOpen={newSmartWalletModalOpen}
           setIsOpen={setNewSmartWalletModalOpen}
           setPendingTxn={setPendingTxn}
