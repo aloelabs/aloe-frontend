@@ -366,7 +366,6 @@ export default function BorrowPage() {
     [availablePools, activeChain]
   );
 
-  const selectedMarginAccountIV = (selectedMarginAccount?.iv || 0) * Math.sqrt(365) * 100;
   const dailyInterest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
   const dailyInterest1 =
@@ -425,7 +424,6 @@ export default function BorrowPage() {
           <MetricsContainer>
             <BorrowMetrics
               marginAccountPreview={selectedMarginAccountPreview}
-              iv={selectedMarginAccountIV}
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
             />

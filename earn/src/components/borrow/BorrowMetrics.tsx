@@ -1,12 +1,12 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccountPreview } from '../../data/MarginAccount';
-import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
+import { formatTokenAmount } from '../../util/Numbers';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
-const MAX_HEALTH = 3;
+const MAX_HEALTH = 10;
 const HEALTH_GREEN = 'rgba(0, 193, 67, 1)';
 const HEALTH_YELLOW = 'rgba(242, 201, 76, 1)';
 const HEALTH_RED = 'rgba(235, 87, 87, 1)';
@@ -47,26 +47,26 @@ const MetricsGrid = styled.div`
 
 const MetricsGridUpper = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   grid-gap: 16px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     grid-template-columns: repeat(2, 1fr);
   }
-`;
 
-const MetricsGridLower = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr) 1.5fr;
-  grid-gap: 16px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
     grid-template-columns: 1fr;
   }
 `;
 
+const MetricsGridLower = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 16px;
+`;
+
 function getHealthColor(health: number) {
-  if (health <= 1.05) {
+  if (health <= 1.02) {
     return HEALTH_RED;
   } else if (health <= 1.25) {
     return HEALTH_YELLOW;
@@ -120,13 +120,12 @@ function HealthMetricCard(props: { health: number }) {
 
 export type BorrowMetricsProps = {
   marginAccountPreview?: MarginAccountPreview;
-  iv: number;
   dailyInterest0: number;
   dailyInterest1: number;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccountPreview, iv, dailyInterest0, dailyInterest1 } = props;
+  const { marginAccountPreview, dailyInterest0, dailyInterest1 } = props;
   if (!marginAccountPreview) {
     return null;
   }
@@ -149,14 +148,13 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
           label={`${marginAccountPreview.token1.ticker} Borrows`}
           value={formatTokenAmount(marginAccountPreview.liabilities.amount1 || 0, 3)}
         />
-        <MetricCard label='IV' value={`${roundPercentage(iv, 2).toString()}%`} />
       </MetricsGridUpper>
       <MetricsGridLower>
         <HealthMetricCard health={marginAccountPreview.health || 0} />
         <HorizontalMetricCard label='Liquidation Distance' value='±1020' />
         <HorizontalMetricCard
           label='Daily Interest'
-          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccountPreview.token0.ticker}, ${formatTokenAmount(
+          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccountPreview.token0.ticker} + ${formatTokenAmount(
             dailyInterest1,
             2
           )} ${marginAccountPreview.token1.ticker}`}
