@@ -1,16 +1,148 @@
-import { useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { Address, SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
+import { ChainContext } from '../../../App';
+import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, roundPercentage, truncateDecimals } from '../../../util/Numbers';
+import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
+const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
+
+enum ConfirmButtonState {
+  INSUFFICIENT_ASSET,
+  PENDING,
+  READY,
+}
+
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
+  switch (state) {
+    case ConfirmButtonState.INSUFFICIENT_ASSET:
+      return {
+        text: `Insufficient ${token.ticker}`,
+        enabled: false,
+      };
+    case ConfirmButtonState.PENDING:
+      return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.READY:
+      return { text: 'Confirm', enabled: true };
+    default:
+      return { text: 'Confirm', enabled: false };
+  }
+}
+
+type AddCollateralButtonProps = {
+  marginAccount: MarginAccount;
+  collateralToken: Token;
+  collateralAmount: string;
+  userAddress: Address;
+  setIsOpen: (open: boolean) => void;
+  setPendingTxn: (result: SendTransactionResult | null) => void;
+};
+
+function AddCollateralButton(props: AddCollateralButtonProps) {
+  const { marginAccount, collateralToken, collateralAmount, userAddress, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
+
+  const [isPending, setIsPending] = useState(false);
+
+  const { refetch: refetchBalance, data: userBalance } = useBalance({
+    address: userAddress,
+    token: collateralToken.address,
+    chainId: activeChain.id,
+  });
+
+  const collateralAmountBig = useMemo(
+    () => new Big(collateralAmount).mul(String1E(collateralToken.decimals)),
+    [collateralAmount, collateralToken.decimals]
+  );
+
+  const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
+  const numericCollateralAmount = Number(collateralAmount) || 0;
+
+  const { config: contractWriteConfig } = usePrepareContractWrite({
+    address: collateralToken.address,
+    abi: ERC20ABI,
+    functionName: 'transfer',
+    args: [marginAccount.address, collateralAmountBig.toFixed()],
+    enabled: !!collateralAmountBig && numericCollateralAmount <= numericUserBalance,
+    chainId: activeChain.id,
+  });
+  const contractWriteConfigUpdatedRequest = useMemo(() => {
+    if (contractWriteConfig.request) {
+      return {
+        ...contractWriteConfig.request,
+        gasLimit: contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [contractWriteConfig.request]);
+  const {
+    write: contractWrite,
+    data: contractData,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+  } = useContractWrite({
+    ...contractWriteConfig,
+    request: contractWriteConfigUpdatedRequest,
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    interval = setInterval(() => {
+      refetchBalance();
+    }, 13_000);
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [refetchBalance]);
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+
+  let confirmButtonState = ConfirmButtonState.READY;
+
+  if (numericCollateralAmount > numericUserBalance) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else if (isPending) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  }
+
+  const confirmButton = getConfirmButton(confirmButtonState, collateralToken);
+
+  return (
+    <FilledStylizedButton
+      size='M'
+      fillWidth={true}
+      disabled={!confirmButton.enabled}
+      onClick={() => {
+        if (confirmButtonState === ConfirmButtonState.READY) {
+          setIsPending(true);
+          contractWrite?.();
+        }
+      }}
+    >
+      {confirmButton.text}
+    </FilledStylizedButton>
+  );
+}
 
 export type AddCollateralModalProps = {
   marginAccount: MarginAccount;
@@ -21,29 +153,32 @@ export type AddCollateralModalProps = {
 };
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
-  const { marginAccount, marketInfo, isOpen, setIsOpen } = props;
+  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmount, setCollateralAmount] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
 
-  const resetModal = () => {};
+  const resetModal = () => {
+    setCollateralAmount('');
+    setCollateralToken(marginAccount.token0);
+  };
 
   const tokenOptions = useMemo(() => {
     return [marginAccount.token0, marginAccount.token1];
   }, [marginAccount.token0, marginAccount.token1]);
 
-  const collateralTokenAPR = useMemo(() => {
-    return (
-      (collateralToken.address === marginAccount.token0.address ? marketInfo.borrowerAPR0 : marketInfo.borrowerAPR1) *
-      100
-    );
-  }, [collateralToken.address, marginAccount.token0.address, marketInfo.borrowerAPR0, marketInfo.borrowerAPR1]);
-
   if (!userAddress || !isOpen) {
     return null;
   }
+
+  const existingCollateral =
+    collateralToken.address === marginAccount.token0.address
+      ? marginAccount.assets.token0Raw
+      : marginAccount.assets.token1Raw;
+
+  const numericCollateralAmount = Number(collateralAmount) || 0;
 
   return (
     <Modal
@@ -81,12 +216,32 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
         </div>
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
-            Current Interest Rate
+            Summary
           </Text>
-          <Text size='L' weight='bold' color={SECONDARY_COLOR}>
-            {roundPercentage(collateralTokenAPR, 4)}% APR
+          <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+            You're adding{' '}
+            <strong>
+              {collateralAmount || '0.00'} {collateralToken.ticker}
+            </strong>{' '}
+            as collateral to the{' '}
+            <strong>
+              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
+            </strong>{' '}
+            pair. Your total collateral for this token in this pair will be{' '}
+            <strong>
+              {numericCollateralAmount + existingCollateral} {collateralToken.ticker}
+            </strong>
+            .
           </Text>
         </div>
+        <AddCollateralButton
+          marginAccount={marginAccount}
+          collateralToken={collateralToken}
+          collateralAmount={collateralAmount || '0.00'}
+          userAddress={userAddress}
+          setIsOpen={setIsOpen}
+          setPendingTxn={setPendingTxn}
+        />
       </div>
     </Modal>
   );
