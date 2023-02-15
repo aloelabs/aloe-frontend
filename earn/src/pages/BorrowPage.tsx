@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useContext } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
@@ -6,7 +6,6 @@ import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider } from 'wagmi';
@@ -40,6 +39,7 @@ import {
   MarginAccountPreview,
   MarketInfo,
 } from '../data/MarginAccount';
+import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
 
@@ -128,8 +128,8 @@ const MetricsContainer = styled.div`
 `;
 
 export type UniswapPoolInfo = {
-  token0: Address;
-  token1: Address;
+  token0: Token;
+  token1: Token;
   fee: number;
 };
 
@@ -190,8 +190,8 @@ export default function BorrowPage() {
               return [
                 addr.toLowerCase(),
                 {
-                  token0: poolInfoTuples[i][0] as Address,
-                  token1: poolInfoTuples[i][1] as Address,
+                  token0: getToken(activeChain.id, poolInfoTuples[i][0] as Address),
+                  token1: getToken(activeChain.id, poolInfoTuples[i][1] as Address),
                   fee: poolInfoTuples[i][2] as number,
                 },
               ];
@@ -353,18 +353,7 @@ export default function BorrowPage() {
     };
   }, [pendingTxn]);
 
-  const availablePoolOptions: DropdownOption<string>[] = useMemo(
-    () =>
-      Array.from(availablePools.entries()).map(([poolAddress, poolInfo]) => {
-        const token0 = getToken(activeChain.id, poolInfo.token0);
-        const token1 = getToken(activeChain.id, poolInfo.token1);
-        return {
-          label: token0.ticker + '/' + token1.ticker,
-          value: poolAddress,
-        };
-      }),
-    [availablePools, activeChain]
-  );
+  const defaultPool = availablePools.keys().next().value;
 
   const dailyInterest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
@@ -433,10 +422,10 @@ export default function BorrowPage() {
           </StatsContainer>
         </PageGrid>
       </Container>
-      {availablePoolOptions.length > 0 && (
+      {availablePools.size > 0 && (
         <NewSmartWalletModal
-          availablePoolOptions={availablePoolOptions}
-          defaultOption={availablePoolOptions[0]}
+          availablePools={availablePools}
+          defaultPool={defaultPool}
           isOpen={newSmartWalletModalOpen}
           setIsOpen={setNewSmartWalletModalOpen}
           setPendingTxn={setPendingTxn}

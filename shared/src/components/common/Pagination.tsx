@@ -10,18 +10,17 @@ const Wrapper = styled.div`
   width: 100%;
   display: flex;
   justify-content: space-between;
-  margin-top: 42px;
-  margin-bottom: 34px;
 `;
 
 const PaginationRangeText = styled.span`
   font-size: 14px;
   white-space: nowrap;
+  color: #ffffff;
 `;
 
-const PaginationContainer = styled.div`
+const PaginationContainer = styled.div.attrs((props: { centerHorizontally: boolean }) => props)`
   display: flex;
-  justify-content: flex-end;
+  justify-content: ${(props) => (props.centerHorizontally ? 'center' : 'flex-end')};
   align-items: center;
   flex-wrap: wrap;
   width: 100%;
@@ -73,7 +72,7 @@ const EllipsisWrapper = styled.span`
   height: 40px;
 `;
 
-export type ItemsPerPage = 10 | 20 | 50 | 100;
+export type ItemsPerPage = 5 | 10 | 20 | 50 | 100;
 
 const ItemsPerPageToOption = (itemsPerPage: ItemsPerPage) => {
   return {
@@ -88,11 +87,12 @@ export type PaginationProps = {
   currentPage: number;
   loading: boolean;
   onPageChange: (page: number) => void;
-  onItemsPerPageChange: (itemsPerPage: ItemsPerPage) => void;
+  onItemsPerPageChange?: (itemsPerPage: ItemsPerPage) => void;
+  hidePageRange?: boolean;
 };
 
 export default function Pagination(props: PaginationProps) {
-  const { totalItems, itemsPerPage, currentPage, loading, onPageChange, onItemsPerPageChange } = props;
+  const { totalItems, itemsPerPage, currentPage, loading, onPageChange, onItemsPerPageChange, hidePageRange } = props;
   const itemsPerPageValues: ItemsPerPage[] = [10, 20, 50, 100];
   const itemsPerPageOptions = itemsPerPageValues.map((value) => ({
     label: `${value.toString()} Results`,
@@ -131,18 +131,22 @@ export default function Pagination(props: PaginationProps) {
   return (
     <Wrapper>
       <div className='flex items-center gap-4'>
-        <Dropdown
-          options={itemsPerPageOptions}
-          selectedOption={itemsPerPageOption}
-          onSelect={(updatedOption) => onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)}
-          placeAbove={true}
-          small={true}
-        />
-        <PaginationRangeText>
-          {startItem} - {endItem} of {totalItems}
-        </PaginationRangeText>
+        {onItemsPerPageChange && (
+          <Dropdown
+            options={itemsPerPageOptions}
+            selectedOption={itemsPerPageOption}
+            onSelect={(updatedOption) => onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)}
+            placeAbove={true}
+            small={true}
+          />
+        )}
+        {!hidePageRange && (
+          <PaginationRangeText>
+            {startItem} - {endItem} of {totalItems}
+          </PaginationRangeText>
+        )}
       </div>
-      <PaginationContainer>
+      <PaginationContainer centerHorizontally={hidePageRange}>
         <ChevronButton onClick={prevPage} disabled={currentPage === firstPage}>
           <ChevronLeft />
         </ChevronButton>

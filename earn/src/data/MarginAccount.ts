@@ -104,8 +104,8 @@ export async function getMarginAccountsForUser(
 }
 
 export type UniswapPoolInfo = {
-  token0: Address;
-  token1: Address;
+  token0: Token;
+  token1: Token;
   fee: number;
 };
 
@@ -123,8 +123,8 @@ export async function fetchMarginAccountPreviews(
 
       if (uniswapPoolInfo === null) return null;
 
-      const token0 = getToken(chain.id, uniswapPoolInfo.token0);
-      const token1 = getToken(chain.id, uniswapPoolInfo.token1);
+      const token0 = uniswapPoolInfo.token0;
+      const token1 = uniswapPoolInfo.token1;
       const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
 
       if (!token0 || !token1) return null;

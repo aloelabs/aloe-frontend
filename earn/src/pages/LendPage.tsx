@@ -374,18 +374,20 @@ export default function LendPage() {
             ))}
           </LendCards>
           {filteredLendingPairs.length > 0 && (
-            <Pagination
-              totalItems={filteredLendingPairs.length}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              loading={isLoading}
-              onPageChange={(page: number) => {
-                setCurrentPage(page);
-              }}
-              onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
-                setItemsPerPage(itemsPerPage);
-              }}
-            />
+            <div className='mt-[42px] mb-[34px]'>
+              <Pagination
+                totalItems={filteredLendingPairs.length}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                loading={isLoading}
+                onPageChange={(page: number) => {
+                  setCurrentPage(page);
+                }}
+                onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
+                  setItemsPerPage(itemsPerPage);
+                }}
+              />
+            </div>
           )}
           {filteredLendingPairs.length === 0 && (
             <div className='flex flex-col items-center gap-2'>
