@@ -209,7 +209,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && account.address !== undefined && isOpen,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
@@ -218,7 +218,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && account.address !== undefined && isOpen,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,
