@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { Address, useAccount, useContract, useProvider, useSigner } from 'wagmi';
+import { Address, useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
