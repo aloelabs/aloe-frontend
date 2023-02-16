@@ -12,7 +12,7 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { convertBigNumbers } from '../util/Multicall';
+import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig } from '../util/Numbers';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -175,7 +175,7 @@ export async function fetchMarginAccountPreviews(
 
   Object.values(results).forEach((value) => {
     const contractResults = value.callsReturnContext;
-    const updatedReturnContext = convertBigNumbers(contractResults);
+    const updatedReturnContext = convertBigNumbersForReturnContexts(contractResults);
     const { feeTier, token0, token1, accountAddress, uniswapPool } = value.originalContractCallContext.context;
     const assetsData = updatedReturnContext[0].returnValues;
     const liabilitiesData = updatedReturnContext[1].returnValues;
@@ -246,7 +246,7 @@ export async function fetchMarketInfoFor(
   ];
 
   const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbers(results['readBasics'].callsReturnContext);
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['readBasics'].callsReturnContext);
   const lender0Basics = updatedReturnContext[0].returnValues;
   const lender1Basics = updatedReturnContext[1].returnValues;
 
@@ -312,7 +312,7 @@ export async function fetchMarginAccount(
   const results: ContractCallResults = await multicall.call(contractCallContext);
   const marginAccountContractResults = results.results['marginAccountContract'].callsReturnContext;
   const marginAccountLensContractResults = results.results['marginAccountLensContract'].callsReturnContext;
-  const updatedLensReturnContext = convertBigNumbers(marginAccountLensContractResults);
+  const updatedLensReturnContext = convertBigNumbersForReturnContexts(marginAccountLensContractResults);
   const token0 = getToken(chain.id, marginAccountContractResults[0].returnValues[0]);
   const token1 = getToken(chain.id, marginAccountContractResults[1].returnValues[0]);
   const lender0 = marginAccountContractResults[2].returnValues[0];

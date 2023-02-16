@@ -1,7 +1,7 @@
 import { CallReturnContext } from 'ethereum-multicall';
 import { BigNumber } from 'ethers';
 
-export function convertBigNumbers(callReturnContext: CallReturnContext[]): CallReturnContext[] {
+export function convertBigNumbersForReturnContexts(callReturnContext: CallReturnContext[]): CallReturnContext[] {
   return Object.values(callReturnContext).map((value) => {
     value.returnValues = Object.values(value.returnValues).map((returnValue) => {
       if (returnValue?.type === 'BigNumber') {

@@ -1,5 +1,6 @@
 import { AxiosResponse } from 'axios';
 import Big from 'big.js';
+import { CallReturnContext, ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
@@ -10,6 +11,7 @@ import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
@@ -55,6 +57,7 @@ export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
+  const multicall = new Multicall({ ethersProvider: provider });
   let etherscanResult: AxiosResponse<any, any> | null = null;
   try {
     etherscanResult = await makeEtherscanRequest(
@@ -77,79 +80,153 @@ export async function getAvailableLendingPairs(
     };
   });
 
-  const kittyLens = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensABI, provider);
-  const oracle = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
+  const contractCallContexts: ContractCallContext[] = [];
 
-  const unfilteredPairs: Array<LendingPair | null> = await Promise.all(
-    addresses.map(async (market) => {
-      const uniswapPool = new ethers.Contract(market.pool, UniswapV3PoolABI, provider);
+  addresses.forEach((market) => {
+    contractCallContexts.push({
+      reference: `basics0-${market.pool}`,
+      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
+      abi: KittyLensABI,
+      calls: [
+        {
+          reference: `basics0-${market.pool}`,
+          methodName: 'readBasics',
+          methodParameters: [market.kitty0],
+        },
+      ],
+      context: { kitty0Address: market.kitty0 },
+    });
 
-      const [basics0, basics1, feeTier, oracleResult] = await Promise.all([
-        kittyLens.readBasics(market.kitty0),
-        kittyLens.readBasics(market.kitty1),
-        uniswapPool.fee(),
-        oracle.consult(market.pool),
-      ]);
+    contractCallContexts.push({
+      reference: `basics1-${market.pool}`,
+      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
+      abi: KittyLensABI,
+      calls: [
+        {
+          reference: `basics1-${market.pool}`,
+          methodName: 'readBasics',
+          methodParameters: [market.kitty1],
+        },
+      ],
+      context: { kitty1Address: market.kitty1 },
+    });
 
-      const token0 = getToken(chain.id, basics0.asset);
-      const token1 = getToken(chain.id, basics1.asset);
-      if (token0 == null || token1 == null) return null;
-      const kitty0 = new Kitty(
-        chain.id,
-        market.kitty0 as Address,
-        token0.decimals,
-        `${token0.ticker}+`,
-        `Aloe II ${token0.name}`,
-        token0.iconPath,
-        token0
-      );
-      const kitty1 = new Kitty(
-        chain.id,
-        market.kitty1 as Address,
-        token1.decimals,
-        `${token1.ticker}+`,
-        `Aloe II ${token1.name}`,
-        token1.iconPath,
-        token1
-      );
+    contractCallContexts.push({
+      reference: `feeTier-${market.pool}`,
+      contractAddress: market.pool,
+      abi: UniswapV3PoolABI,
+      calls: [
+        {
+          reference: `feeTier-${market.pool}`,
+          methodName: 'fee',
+          methodParameters: [],
+        },
+      ],
+    });
 
-      const utilization0 = new Big(basics0.utilization.toString()).div(10 ** 18).toNumber();
-      const utilization1 = new Big(basics1.utilization.toString()).div(10 ** 18).toNumber();
+    contractCallContexts.push({
+      reference: `oracleResult-${market.pool}`,
+      contractAddress: ALOE_II_ORACLE,
+      abi: VolatilityOracleABI,
+      calls: [
+        {
+          reference: `oracleResult-${market.pool}`,
+          methodName: 'consult',
+          methodParameters: [market.pool],
+        },
+      ],
+    });
+  });
 
-      const interestRate0 = new Big(basics0.interestRate.toString());
-      const interestRate1 = new Big(basics1.interestRate.toString());
-      // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
-      const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
-      const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+  const results = await multicall.call(contractCallContexts);
 
-      let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
-      // Annualize it
-      IV *= Math.sqrt(365);
+  let lendingPairReturnContexts: Map<string, [CallReturnContext, any][]> = new Map();
+  let lendingPairs: LendingPair[] = [];
+  Object.values(results.results).forEach((result) => {
+    const returnContext = convertBigNumbersForReturnContexts(result.callsReturnContext)[0];
+    const refId = returnContext.reference.split('-')[1];
+    if (lendingPairReturnContexts.has(refId)) {
+      lendingPairReturnContexts.get(refId)?.push([returnContext, result.originalContractCallContext?.context]);
+    } else {
+      lendingPairReturnContexts.set(refId, [[returnContext, result.originalContractCallContext?.context]]);
+    }
+  });
 
-      return new LendingPair(
+  Array.from(lendingPairReturnContexts.values()).forEach((returnContexts) => {
+    const basics0 = returnContexts[0][0].returnValues;
+    const basics1 = returnContexts[1][0].returnValues;
+    const feeTier = returnContexts[2][0].returnValues;
+    const oracleResult = returnContexts[3][0].returnValues;
+    const { kitty0Address } = returnContexts[0][1];
+    const { kitty1Address } = returnContexts[1][1];
+
+    const token0 = getToken(chain.id, basics0[0]);
+    const token1 = getToken(chain.id, basics1[0]);
+    if (token0 == null || token1 == null) return;
+    const kitty0 = new Kitty(
+      chain.id,
+      kitty0Address as Address,
+      token0.decimals,
+      `${token0.ticker}+`,
+      `Aloe II ${token0.name}`,
+      token0.iconPath,
+      token0
+    );
+    const kitty1 = new Kitty(
+      chain.id,
+      kitty1Address as Address,
+      token1.decimals,
+      `${token1.ticker}+`,
+      `Aloe II ${token1.name}`,
+      token1.iconPath,
+      token1
+    );
+
+    const interestRate0 = new Big(basics0[1].toString());
+    const interestRate1 = new Big(basics1[1].toString());
+
+    const utilization0 = new Big(basics0[2].toString()).div(10 ** 18).toNumber();
+    const utilization1 = new Big(basics1[2].toString()).div(10 ** 18).toNumber();
+
+    const inventory0 = new Big(basics0[3].toString()).div(10 ** 18).toNumber();
+    const inventory1 = new Big(basics1[3].toString()).div(10 ** 18).toNumber();
+
+    const totalSupply0 = new Big(basics0[5].toString()).div(10 ** 18).toNumber();
+    const totalSupply1 = new Big(basics1[5].toString()).div(10 ** 18).toNumber();
+
+    // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
+    const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+    const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+
+    let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
+    // Annualize it
+    IV *= Math.sqrt(365);
+
+    lendingPairs.push(
+      new LendingPair(
         token0,
         token1,
         kitty0,
         kitty1,
         {
-          apy: APY0 * 100, // percentage
-          inventory: new Big(basics0.inventory.toString()).div(10 ** token0.decimals).toNumber(),
-          totalSupply: new Big(basics0.totalSupply.toString()).div(10 ** kitty0.decimals).toNumber(),
+          apy: APY0 * 100, // Percentage
+          inventory: inventory0,
+          totalSupply: totalSupply0,
           utilization: utilization0 * 100.0, // Percentage
         },
         {
-          apy: APY1 * 100, // percentage
-          inventory: new Big(basics1.inventory.toString()).div(10 ** token1.decimals).toNumber(),
-          totalSupply: new Big(basics1.totalSupply.toString()).div(10 ** kitty1.decimals).toNumber(),
+          apy: APY1 * 100, // Percentage
+          inventory: inventory1,
+          totalSupply: totalSupply1,
           utilization: utilization1 * 100.0, // Percentage
         },
-        NumericFeeTierToEnum(feeTier),
+        NumericFeeTierToEnum(feeTier[0]),
         IV * 100
-      );
-    })
-  );
-  const filteredPairs = unfilteredPairs.filter((pair) => pair != null) as LendingPair[];
-  return filteredPairs;
+      )
+    );
+  });
+
+  return lendingPairs;
 }
 
 export async function getLendingPairBalances(
