@@ -12,7 +12,6 @@ import { Address, useAccount, useContract, useProvider, useSigner } from 'wagmi'
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
@@ -213,7 +212,6 @@ export default function BorrowPage() {
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const marginAccountPreviews = await fetchMarginAccountPreviews(
         activeChain,
-        borrowerLensContract,
         provider,
         userAddress,
         availablePools
@@ -244,16 +242,12 @@ export default function BorrowPage() {
     }
     async function fetch() {
       if (selectedMarginAccountPreview == null || borrowerLensContract == null) return;
-      const borrowerContract = new ethers.Contract(selectedMarginAccountPreview.address, MarginAccountABI, provider);
       const result = await fetchMarginAccount(
         selectedMarginAccountPreview.address,
         activeChain,
-        borrowerContract,
-        borrowerLensContract,
         provider,
         selectedMarginAccountPreview.address
       );
-      console.log(result);
       if (mounted) {
         setCachedMarginAccounts((prev) => {
           return new Map(prev).set(selectedMarginAccountPreview.address, result.marginAccount);

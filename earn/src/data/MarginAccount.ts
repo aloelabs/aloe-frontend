@@ -1,18 +1,25 @@
 import Big from 'big.js';
 import { secondsInYear } from 'date-fns';
 import { ContractCallContext, ContractCallResults, Multicall } from 'ethereum-multicall';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
 
+import KittyLensABI from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { convertBigNumbers } from '../util/Multicall';
 import { toBig } from '../util/Numbers';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
+import {
+  ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_ORACLE,
+  ALOE_II_KITTY_LENS_ADDRESS,
+} from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { BIGQ96 } from './constants/Values';
 import { Token } from './Token';
@@ -112,7 +119,6 @@ export type UniswapPoolInfo = {
 
 export async function fetchMarginAccountPreviews(
   chain: Chain,
-  borrowerLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string,
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
@@ -169,32 +175,33 @@ export async function fetchMarginAccountPreviews(
 
   Object.values(results).forEach((value) => {
     const contractResults = value.callsReturnContext;
+    const updatedReturnContext = convertBigNumbers(contractResults);
     const { feeTier, token0, token1, accountAddress, uniswapPool } = value.originalContractCallContext.context;
-    const assetsData = contractResults[0].returnValues;
-    const liabilitiesData = contractResults[1].returnValues;
-    const healthData = contractResults[2].returnValues;
-    const healthData0 = Big(BigNumber.from(healthData[0].hex).toString());
-    const healthData1 = Big(BigNumber.from(healthData[1].hex).toString());
+    const assetsData = updatedReturnContext[0].returnValues;
+    const liabilitiesData = updatedReturnContext[1].returnValues;
+    const healthData = updatedReturnContext[2].returnValues;
+    const healthData0 = Big(healthData[0].toString());
+    const healthData1 = Big(healthData[1].toString());
     const health = healthData0.lt(healthData1) ? healthData0 : healthData1;
     const assets: Assets = {
-      token0Raw: Big(BigNumber.from(assetsData[0].hex).toString())
+      token0Raw: Big(assetsData[0].toString())
         .div(10 ** token0.decimals)
         .toNumber(),
-      token1Raw: Big(BigNumber.from(assetsData[1].hex).toString())
+      token1Raw: Big(assetsData[1].toString())
         .div(10 ** token1.decimals)
         .toNumber(),
-      uni0: Big(BigNumber.from(assetsData[4].hex).toString())
+      uni0: Big(assetsData[4].toString())
         .div(10 ** token0.decimals)
         .toNumber(),
-      uni1: Big(BigNumber.from(assetsData[5].hex).toString())
+      uni1: Big(assetsData[5].toString())
         .div(10 ** token1.decimals)
         .toNumber(),
     };
     const liabilities: Liabilities = {
-      amount0: Big(BigNumber.from(liabilitiesData[0].hex).toString())
+      amount0: Big(liabilitiesData[0].toString())
         .div(10 ** token0.decimals)
         .toNumber(),
-      amount1: Big(BigNumber.from(liabilitiesData[1].hex).toString())
+      amount1: Big(liabilitiesData[1].toString())
         .div(10 ** token1.decimals)
         .toNumber(),
     };
@@ -217,21 +224,42 @@ export async function fetchMarketInfoFor(
   lender0: Address,
   lender1: Address
 ): Promise<MarketInfo> {
-  const [lender0Basics, lender1Basics] = await Promise.all([
-    lenderLensContract.readBasics(lender0),
-    lenderLensContract.readBasics(lender1),
-  ]);
+  const multicall = new Multicall({ ethersProvider: lenderLensContract.provider, tryAggregate: true });
+  const contractCallContext: ContractCallContext[] = [
+    {
+      reference: 'readBasics',
+      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
+      abi: KittyLensABI,
+      calls: [
+        {
+          reference: 'lender0',
+          methodName: 'readBasics',
+          methodParameters: [lender0],
+        },
+        {
+          reference: 'lender1',
+          methodName: 'readBasics',
+          methodParameters: [lender1],
+        },
+      ],
+    },
+  ];
 
-  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const results = (await multicall.call(contractCallContext)).results;
+  const updatedReturnContext = convertBigNumbers(results['readBasics'].callsReturnContext);
+  const lender0Basics = updatedReturnContext[0].returnValues;
+  const lender1Basics = updatedReturnContext[1].returnValues;
+
+  const interestRate0 = new Big(lender0Basics[1].toString());
   const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const interestRate1 = new Big(lender1Basics[1].toString());
   const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender0TotalSupply = new Big(lender0Basics.totalSupply.toString());
-  const lender1TotalSupply = new Big(lender1Basics.totalSupply.toString());
-  const lender0TotalBorrows = new Big(lender0Basics.totalBorrows.toString());
-  const lender1TotalBorrows = new Big(lender1Basics.totalBorrows.toString());
+  const lender0Utilization = new Big(lender0Basics[2].toString()).div(10 ** 18).toNumber();
+  const lender1Utilization = new Big(lender1Basics[2].toString()).div(10 ** 18).toNumber();
+  const lender0TotalSupply = new Big(lender0Basics[3].toString());
+  const lender1TotalSupply = new Big(lender1Basics[3].toString());
+  const lender0TotalBorrows = new Big(lender0Basics[4].toString());
+  const lender1TotalBorrows = new Big(lender1Basics[4].toString());
   return {
     lender0,
     lender1,
@@ -249,8 +277,6 @@ export async function fetchMarketInfoFor(
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
-  marginAccountContract: ethers.Contract,
-  marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   marginAccountAddress: string
 ): Promise<{
@@ -286,14 +312,15 @@ export async function fetchMarginAccount(
   const results: ContractCallResults = await multicall.call(contractCallContext);
   const marginAccountContractResults = results.results['marginAccountContract'].callsReturnContext;
   const marginAccountLensContractResults = results.results['marginAccountLensContract'].callsReturnContext;
+  const updatedLensReturnContext = convertBigNumbers(marginAccountLensContractResults);
   const token0 = getToken(chain.id, marginAccountContractResults[0].returnValues[0]);
   const token1 = getToken(chain.id, marginAccountContractResults[1].returnValues[0]);
   const lender0 = marginAccountContractResults[2].returnValues[0];
   const lender1 = marginAccountContractResults[3].returnValues[0];
   const uniswapPool = marginAccountContractResults[4].returnValues[0];
-  const assetsData = marginAccountLensContractResults[0].returnValues;
-  const liabilitiesData = marginAccountLensContractResults[1].returnValues;
-  const healthData = marginAccountLensContractResults[2].returnValues;
+  const assetsData = updatedLensReturnContext[0].returnValues;
+  const liabilitiesData = updatedLensReturnContext[1].returnValues;
+  const healthData = updatedLensReturnContext[2].returnValues;
 
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
   const volatilityOracleContract = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
@@ -303,30 +330,30 @@ export async function fetchMarginAccount(
   ]);
 
   const assets: Assets = {
-    token0Raw: Big(BigNumber.from(assetsData[0].hex).toString())
+    token0Raw: Big(assetsData[0].toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    token1Raw: Big(BigNumber.from(assetsData[1].hex).toString())
+    token1Raw: Big(assetsData[1].toString())
       .div(10 ** token1.decimals)
       .toNumber(),
-    uni0: Big(BigNumber.from(assetsData[4].hex).toString())
+    uni0: Big(assetsData[4].toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    uni1: Big(BigNumber.from(assetsData[5].hex).toString())
+    uni1: Big(assetsData[5].toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
   const liabilities: Liabilities = {
-    amount0: Big(BigNumber.from(liabilitiesData[0].hex).toString())
+    amount0: Big(liabilitiesData[0].toString())
       .div(10 ** token0.decimals)
       .toNumber(),
-    amount1: Big(BigNumber.from(liabilitiesData[1].hex).toString())
+    amount1: Big(liabilitiesData[1].toString())
       .div(10 ** token1.decimals)
       .toNumber(),
   };
 
-  const healthData0 = Big(BigNumber.from(healthData[0].hex).toString());
-  const healthData1 = Big(BigNumber.from(healthData[1].hex).toString());
+  const healthData0 = Big(healthData[0].toString());
+  const healthData1 = Big(healthData[1].toString());
   const health = healthData0.lt(healthData1) ? healthData0 : healthData1;
 
   return {
