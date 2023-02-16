@@ -164,7 +164,6 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
 
   useEffect(() => {
     let mounted = true;
-    console.log('fetching number of users', selectedLendingPair);
     const cachedResult = cachedData.get(selectedOption.label);
     if (cachedResult) {
       setNumberOfUsers(cachedResult);
