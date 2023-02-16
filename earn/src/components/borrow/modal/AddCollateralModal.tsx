@@ -1,8 +1,9 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { Address, SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -42,36 +43,24 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 type AddCollateralButtonProps = {
   marginAccount: MarginAccount;
   collateralToken: Token;
-  collateralAmountBig: Big;
-  userAddress: Address;
+  collateralAmount: Big;
+  userBalance: Big;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function AddCollateralButton(props: AddCollateralButtonProps) {
-  const { marginAccount, collateralToken, collateralAmountBig, userAddress, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-
-  const { refetch: refetchBalance, data: userBalance } = useBalance({
-    address: userAddress,
-    token: collateralToken.address,
-    chainId: activeChain.id,
-  });
-
-  const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
-  const userBalanceBig = useMemo(
-    () => new Big(numericUserBalance).mul(10 ** collateralToken.decimals),
-    [collateralToken.decimals, numericUserBalance]
-  );
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: collateralToken.address,
     abi: ERC20ABI,
     functionName: 'transfer',
-    args: [marginAccount.address, collateralAmountBig.toFixed()],
-    enabled: !!collateralAmountBig && !!userBalanceBig && collateralAmountBig.lte(userBalanceBig),
+    args: [marginAccount.address, collateralAmount.toFixed()],
+    enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
   const contractWriteConfigUpdatedRequest = useMemo(() => {
@@ -94,18 +83,6 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => {
-      refetchBalance();
-    }, 13_000);
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
-  }, [refetchBalance]);
-
-  useEffect(() => {
     if (contractDidSucceed && contractData) {
       setPendingTxn(contractData);
       setIsPending(false);
@@ -117,7 +94,7 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (collateralAmountBig.gt(userBalanceBig)) {
+  if (collateralAmount.gt(userBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
@@ -152,11 +129,35 @@ export type AddCollateralModalProps = {
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
   const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
 
   const [collateralAmount, setCollateralAmount] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
+
+  const { refetch: refetchBalance, data: userBalance } = useBalance({
+    address: userAddress,
+    token: collateralToken.address,
+    chainId: activeChain.id,
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+    if (isOpen) {
+      interval = setInterval(() => {
+        refetchBalance();
+      }, 13_000);
+    }
+    if (!isOpen && interval != null) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval != null) {
+        clearInterval(interval);
+      }
+    };
+  }, [isOpen, refetchBalance]);
 
   const resetModal = () => {
     setCollateralAmount('');
@@ -182,6 +183,12 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     return new Big(existingCollateral).mul(10 ** collateralToken.decimals);
   }, [collateralToken.decimals, existingCollateral]);
 
+  const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
+  const userBalanceBig = useMemo(
+    () => new Big(numericUserBalance).mul(10 ** collateralToken.decimals),
+    [collateralToken.decimals, numericUserBalance]
+  );
+
   if (!userAddress || !isOpen) {
     return null;
   }
@@ -202,9 +209,21 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     >
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Collateral Amount
-          </Text>
+          <div className='flex flex-row justify-between mb-1'>
+            <Text size='M' weight='bold'>
+              Collateral Amount
+            </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                if (userBalance != null) {
+                  setCollateralAmount(userBalance?.formatted);
+                }
+              }}
+            >
+              MAX
+            </BaseMaxButton>
+          </div>
           <TokenAmountSelectInput
             inputValue={collateralAmount}
             onChange={(value) => {
@@ -245,8 +264,8 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
         <AddCollateralButton
           marginAccount={marginAccount}
           collateralToken={collateralToken}
-          collateralAmountBig={collateralAmountBig}
-          userAddress={userAddress}
+          collateralAmount={collateralAmountBig}
+          userBalance={userBalanceBig}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxn}
         />
