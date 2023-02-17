@@ -605,6 +605,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
+    enabled: isOpen,
   });
 
   useEffect(() => {

@@ -184,6 +184,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
+    enabled: isOpen,
   });
 
   useEffect(() => {
