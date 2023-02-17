@@ -238,7 +238,7 @@ export default function BorrowPage() {
   useEffect(() => {
     let mounted = true;
     const cachedMarginAccount = cachedMarginAccounts.get(selectedMarginAccountPreview?.address ?? '');
-    if (cachedMarginAccount != null) {
+    if (cachedMarginAccount !== undefined) {
       setSelectedMarginAccount(cachedMarginAccount);
       return;
     }
@@ -270,7 +270,7 @@ export default function BorrowPage() {
   useEffect(() => {
     let mounted = true;
     const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
-    if (cachedMarketInfo != null) {
+    if (cachedMarketInfo !== undefined) {
       setSelectedMarketInfo(cachedMarketInfo);
       return;
     }
