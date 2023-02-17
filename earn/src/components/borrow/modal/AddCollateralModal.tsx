@@ -164,9 +164,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     setCollateralToken(marginAccount.token0);
   };
 
-  const tokenOptions = useMemo(() => {
-    return [marginAccount.token0, marginAccount.token1];
-  }, [marginAccount.token0, marginAccount.token1]);
+  const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
   const existingCollateral =
     collateralToken.address === marginAccount.token0.address
@@ -175,19 +173,12 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
 
   const numericCollateralAmount = Number(collateralAmount) || 0;
 
-  const collateralAmountBig = useMemo(() => {
-    return new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
-  }, [collateralToken.decimals, numericCollateralAmount]);
+  const collateralAmountBig = new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
 
-  const existingCollateralBig = useMemo(() => {
-    return new Big(existingCollateral).mul(10 ** collateralToken.decimals);
-  }, [collateralToken.decimals, existingCollateral]);
+  const existingCollateralBig = new Big(existingCollateral).mul(10 ** collateralToken.decimals);
 
   const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
-  const userBalanceBig = useMemo(
-    () => new Big(numericUserBalance).mul(10 ** collateralToken.decimals),
-    [collateralToken.decimals, numericUserBalance]
-  );
+  const userBalanceBig = new Big(numericUserBalance).mul(10 ** collateralToken.decimals);
 
   if (!userAddress || !isOpen) {
     return null;

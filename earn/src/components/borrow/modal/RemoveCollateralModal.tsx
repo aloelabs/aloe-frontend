@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -31,9 +31,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
 
   const resetModal = () => {};
 
-  const tokenOptions = useMemo(() => {
-    return [marginAccount.token0, marginAccount.token1];
-  }, [marginAccount.token0, marginAccount.token1]);
+  const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
   const existingCollateral =
     collateralToken.address === marginAccount.token0.address
@@ -42,14 +40,8 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
 
   const numericCollateralAmount = Number(collateralAmount) || 0;
 
-  const existingCollateralBig = useMemo(
-    () => new Big(existingCollateral).mul(10 ** collateralToken.decimals),
-    [collateralToken.decimals, existingCollateral]
-  );
-  const numericCollateralAmountBig = useMemo(
-    () => new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals),
-    [collateralToken.decimals, numericCollateralAmount]
-  );
+  const existingCollateralBig = new Big(existingCollateral).mul(10 ** collateralToken.decimals);
+  const numericCollateralAmountBig = new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
 
   const newCollateralAmount = Math.max(
     existingCollateralBig
