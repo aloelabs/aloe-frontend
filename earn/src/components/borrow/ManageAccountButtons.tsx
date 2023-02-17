@@ -5,13 +5,21 @@ import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 
-export default function ManageAccountButtons() {
+export type ManageAccountButtonsProps = {
+  onAddCollateral: () => void;
+  onRemoveCollateral: () => void;
+  onBorrow: () => void;
+  onRepay: () => void;
+};
+
+export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
+  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay } = props;
   return (
     <div className='flex flex-col gap-3 w-max'>
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onAddCollateral}
         size='S'
         svgColorType='stroke'
       >
@@ -20,7 +28,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<MinusIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onRemoveCollateral}
         size='S'
         svgColorType='stroke'
       >
@@ -29,7 +37,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<PercentIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onBorrow}
         size='S'
         svgColorType='stroke'
       >
@@ -38,7 +46,7 @@ export default function ManageAccountButtons() {
       <OutlinedWhiteButtonWithIcon
         Icon={<ZapIcon />}
         position='leading'
-        onClick={() => {}}
+        onClick={onRepay}
         size='S'
         svgColorType='stroke'
       >

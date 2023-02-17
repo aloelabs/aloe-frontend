@@ -19,7 +19,11 @@ import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
 import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
 import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
+import AddCollateralModal from '../components/borrow/modal/AddCollateralModal';
+import BorrowModal from '../components/borrow/modal/BorrowModal';
 import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
+import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralModal';
+import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -148,6 +152,10 @@ export default function BorrowPage() {
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
+  const [isAddCollateralModalOpen, setIsAddCollateralModalOpen] = useState(false);
+  const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
+  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+  const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -393,7 +401,20 @@ export default function BorrowPage() {
               <p>Monitor and manage</p>
               <p>your smart wallet</p>
             </Text>
-            <ManageAccountButtons />
+            <ManageAccountButtons
+              onAddCollateral={() => {
+                setIsAddCollateralModalOpen(true);
+              }}
+              onRemoveCollateral={() => {
+                setIsRemoveCollateralModalOpen(true);
+              }}
+              onBorrow={() => {
+                setIsBorrowModalOpen(true);
+              }}
+              onRepay={() => {
+                setIsRepayModalOpen(true);
+              }}
+            />
           </MonitorContainer>
           <GraphContainer>
             {graphData && graphData.length > 0 ? (
@@ -431,6 +452,26 @@ export default function BorrowPage() {
           setPendingTxn={setPendingTxn}
         />
       )}
+      {selectedMarginAccount && selectedMarketInfo && (
+        <>
+          <AddCollateralModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isAddCollateralModalOpen}
+            setIsOpen={setIsAddCollateralModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <RemoveCollateralModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isRemoveCollateralModalOpen}
+            setIsOpen={setIsRemoveCollateralModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+        </>
+      )}
+      <BorrowModal isOpen={isBorrowModalOpen} setIsOpen={setIsBorrowModalOpen} setPendingTxn={setPendingTxn} />
+      <RepayModal isOpen={isRepayModalOpen} setIsOpen={setIsRepayModalOpen} setPendingTxn={setPendingTxn} />
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
         setIsOpen={(isOpen: boolean) => {
