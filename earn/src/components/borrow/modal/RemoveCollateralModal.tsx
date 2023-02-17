@@ -98,11 +98,11 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             <strong>
               {collateralAmount || '0.00'} {collateralToken.ticker}
             </strong>{' '}
-            collateral from the{' '}
+            collateral from this{' '}
             <strong>
               {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
             </strong>{' '}
-            pair. Your total collateral for this token in this pair will be{' '}
+            smart wallet. Your total collateral for this token in this smart wallet will be{' '}
             <strong>
               {truncateDecimals(newCollateralAmount.toString(), collateralToken.decimals)} {collateralToken.ticker}
             </strong>

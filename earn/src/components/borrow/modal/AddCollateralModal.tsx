@@ -241,11 +241,11 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
             <strong>
               {collateralAmount || '0.00'} {collateralToken.ticker}
             </strong>{' '}
-            as collateral to the{' '}
+            as collateral to this{' '}
             <strong>
               {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
             </strong>{' '}
-            pair. Your total collateral for this token in this pair will be{' '}
+            smart wallet. Your total collateral for this token in this smart wallet will be{' '}
             <strong>
               {truncateDecimals(newCollateralBig.toString(), collateralToken.decimals)} {collateralToken.ticker}
             </strong>
