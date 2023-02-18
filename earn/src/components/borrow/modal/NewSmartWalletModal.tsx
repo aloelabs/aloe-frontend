@@ -18,6 +18,7 @@ import SmartWalletButton from '../SmartWalletButton';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const ITEMS_PER_PAGE = 5;
+const TERTIARY_COLOR = '#4b6980';
 
 const SmartWalletOptionsPage = styled.div`
   display: flex;
@@ -219,13 +220,23 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
           />
         </div>
         {selectedPoolInfo && (
-          <CreateSmartWalletButton
-            poolAddress={selectedPool || ''}
-            uniswapPoolInfo={selectedPoolInfo}
-            userAddress={userAddress}
-            setIsOpen={setIsOpen}
-            setPendingTxn={setPendingTxn}
-          />
+          <div>
+            <CreateSmartWalletButton
+              poolAddress={selectedPool || ''}
+              uniswapPoolInfo={selectedPoolInfo}
+              userAddress={userAddress}
+              setIsOpen={setIsOpen}
+              setPendingTxn={setPendingTxn}
+            />
+            <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+              By using our service, you agree to our{' '}
+              <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+                Terms of Service
+              </a>{' '}
+              and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur.
+              It is your duty to educate yourself and be aware of the risks.
+            </Text>
+          </div>
         )}
       </div>
     </Modal>

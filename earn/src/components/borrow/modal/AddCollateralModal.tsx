@@ -15,8 +15,9 @@ import { Token } from '../../../data/Token';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
-const SECONDARY_COLOR = '#CCDFED';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
+const SECONDARY_COLOR = '#CCDFED';
+const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -252,14 +253,24 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
             .
           </Text>
         </div>
-        <AddCollateralButton
-          marginAccount={marginAccount}
-          collateralToken={collateralToken}
-          collateralAmount={collateralAmountBig}
-          userBalance={userBalanceBig}
-          setIsOpen={setIsOpen}
-          setPendingTxn={setPendingTxn}
-        />
+        <div className='w-full'>
+          <AddCollateralButton
+            marginAccount={marginAccount}
+            collateralToken={collateralToken}
+            collateralAmount={collateralAmountBig}
+            userBalance={userBalanceBig}
+            setIsOpen={setIsOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+            By using our service, you agree to our{' '}
+            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+              Terms of Service
+            </a>{' '}
+            and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It
+            is your duty to educate yourself and be aware of the risks.
+          </Text>
+        </div>
       </div>
     </Modal>
   );
