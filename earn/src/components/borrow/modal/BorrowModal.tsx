@@ -76,7 +76,7 @@ function BorrowButton(props: BorrowButtonProps) {
     abi: MarginAccountABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER, encodedData, [false, false]],
-    overrides: { value: shouldProvideAnte ? ANTE + 1 : ANTE + 1 },
+    overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
     enabled: !!userAddress && borrowAmount.gt(0),
     chainId: activeChain.id,
   });
