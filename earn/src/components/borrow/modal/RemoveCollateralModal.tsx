@@ -151,7 +151,10 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
 
   const { address: userAddress } = useAccount();
 
-  const resetModal = () => {};
+  const resetModal = () => {
+    setCollateralAmount('');
+    setCollateralToken(marginAccount.token0);
+  };
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
