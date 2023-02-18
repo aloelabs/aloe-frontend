@@ -477,7 +477,6 @@ export default function BorrowPage() {
           />
           <RepayModal
             marginAccount={selectedMarginAccount}
-            marketInfo={selectedMarketInfo}
             isOpen={isRepayModalOpen}
             setIsOpen={setIsRepayModalOpen}
             setPendingTxn={setPendingTxn}

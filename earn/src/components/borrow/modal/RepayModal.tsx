@@ -12,7 +12,7 @@ import { useAccount, usePrepareContractWrite, useContractWrite } from 'wagmi';
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
-import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
+import { MarginAccount } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -145,7 +145,6 @@ function RepayButton(props: RepayButtonProps) {
 
 export type RepayModalProps = {
   marginAccount: MarginAccount;
-  marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
