@@ -169,16 +169,17 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
       setNumberOfUsers(cachedResult);
       return;
     }
+    // TODO: move this to a hook
     async function fetchNumberOfUsers() {
       const etherscanRequestLender0 = makeEtherscanRequest(
-        7537163,
+        0,
         selectedLendingPair.kitty0.address,
         ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
         true,
         activeChain
       );
       const etherscanRequestLender1 = makeEtherscanRequest(
-        7537163,
+        0,
         selectedLendingPair.kitty1.address,
         ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
         true,
