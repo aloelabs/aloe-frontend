@@ -59,10 +59,10 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
-  const isToken0Collateral = borrowToken.address === marginAccount.token0.address;
+  const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
-  const amount0Big = isToken0Collateral ? borrowAmount : new Big(0);
-  const amount1Big = isToken0Collateral ? new Big(0) : borrowAmount;
+  const amount0Big = isBorrowingToken0 ? borrowAmount : new Big(0);
+  const amount1Big = isBorrowingToken0 ? new Big(0) : borrowAmount;
 
   const marginAccountInterface = new ethers.utils.Interface(MarginAccountABI);
   const encodedData = marginAccountInterface.encodeFunctionData('borrow', [
