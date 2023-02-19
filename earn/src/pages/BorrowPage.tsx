@@ -433,7 +433,7 @@ export default function BorrowPage() {
           </GraphContainer>
           <MetricsContainer>
             <BorrowMetrics
-              marginAccountPreview={selectedMarginAccountPreview}
+              marginAccount={selectedMarginAccount}
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
             />
