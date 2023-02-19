@@ -239,7 +239,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           {shouldProvideAnte && (
             <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
               You will need to provide an additional {formattedAnte} ETH to cover the gas fees in the event that you are
-              liquidated. If you successfully repay your loan, you will be refunded the ETH.
+              liquidated.
             </Text>
           )}
         </div>
