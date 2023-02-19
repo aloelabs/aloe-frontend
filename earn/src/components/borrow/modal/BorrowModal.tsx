@@ -22,18 +22,12 @@ const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
-  UNABLE_TO_BORROW,
   PENDING,
   READY,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
-    case ConfirmButtonState.UNABLE_TO_BORROW:
-      return {
-        text: `Unable to borrow ${token.ticker}`,
-        enabled: false,
-      };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
@@ -109,13 +103,7 @@ function BorrowButton(props: BorrowButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  let confirmButtonState = ConfirmButtonState.READY;
-
-  if (false) {
-    confirmButtonState = ConfirmButtonState.UNABLE_TO_BORROW;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  }
+  let confirmButtonState = isPending ? ConfirmButtonState.PENDING : ConfirmButtonState.READY;
 
   const confirmButton = getConfirmButton(confirmButtonState, borrowToken);
 
