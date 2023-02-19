@@ -468,9 +468,16 @@ export default function BorrowPage() {
             setIsOpen={setIsRemoveCollateralModalOpen}
             setPendingTxn={setPendingTxn}
           />
+          <BorrowModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isBorrowModalOpen}
+            setIsOpen={setIsBorrowModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
         </>
       )}
-      <BorrowModal isOpen={isBorrowModalOpen} setIsOpen={setIsBorrowModalOpen} setPendingTxn={setPendingTxn} />
+
       <RepayModal isOpen={isRepayModalOpen} setIsOpen={setIsRepayModalOpen} setPendingTxn={setPendingTxn} />
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
