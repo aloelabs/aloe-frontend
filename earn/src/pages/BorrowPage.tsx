@@ -475,10 +475,14 @@ export default function BorrowPage() {
             setIsOpen={setIsBorrowModalOpen}
             setPendingTxn={setPendingTxn}
           />
+          <RepayModal
+            marginAccount={selectedMarginAccount}
+            isOpen={isRepayModalOpen}
+            setIsOpen={setIsRepayModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
         </>
       )}
-
-      <RepayModal isOpen={isRepayModalOpen} setIsOpen={setIsRepayModalOpen} setPendingTxn={setPendingTxn} />
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
         setIsOpen={(isOpen: boolean) => {
