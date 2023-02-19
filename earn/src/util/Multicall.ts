@@ -8,8 +8,8 @@ export function convertBigNumbers(callReturnContext: CallReturnContext[]): CallR
       if (returnValue?.type === 'BigNumber' && returnValue?.hex) {
         returnValue = BigNumber.from(returnValue.hex);
       }
-      return returnValue as any[];
+      return returnValue;
     });
-    return value as CallReturnContext;
+    return value;
   });
 }
