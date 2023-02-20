@@ -1,6 +1,6 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult, FetchBalanceResult } from '@wagmi/core';
 import { ethers, BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
@@ -12,6 +12,7 @@ import {
   useContractWrite,
   useBalance,
   Address,
+  Chain,
   useSigner,
   useProvider,
 } from 'wagmi';
@@ -75,19 +76,30 @@ type PermitData = {
 };
 
 type RepayButtonProps = {
+  activeChain: Chain;
   marginAccount: MarginAccount;
   userAddress: Address;
   lender: Address;
   repayAmount: string;
   repayToken: Token;
+  repayTokenBalance: FetchBalanceResult | undefined;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function RepayButton(props: RepayButtonProps) {
-  const { marginAccount, userAddress, lender, repayAmount, repayToken, setIsOpen, setPendingTxn } = props;
+  const {
+    activeChain,
+    marginAccount,
+    userAddress,
+    lender,
+    repayAmount,
+    repayToken,
+    repayTokenBalance,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
 
-  const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
   const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
   const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
@@ -122,15 +134,7 @@ function RepayButton(props: RepayButtonProps) {
   );
   const writeRouterAllowanceMax = useAllowanceWrite(activeChain, repayToken, ALOE_II_ROUTER_ADDRESS);
 
-  // MARK: Fetching and preparing data that's necessary to figure out button state ------------------------------------
-  // --> How much `repayToken` does user have in their wallet?
-  const { data: repayTokenBalance } = useBalance({
-    address: userAddress,
-    chainId: activeChain.id,
-    token: repayToken.address,
-    watch: false,
-  });
-  // --> Other...
+  // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
   const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
   const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
   const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
@@ -298,10 +302,18 @@ export type RepayModalProps = {
 export default function RepayModal(props: RepayModalProps) {
   const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
 
+  const { activeChain } = useContext(ChainContext);
   const [repayAmount, setRepayAmount] = useState('');
   const [repayToken, setRepayToken] = useState<Token>(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
+  const { data: repayTokenBalance } = useBalance({
+    address: userAddress,
+    chainId: activeChain.id,
+    token: repayToken.address,
+    watch: false,
+  });
+  const bigTokenBalance = repayTokenBalance?.value ?? BigNumber.from('0');
 
   const resetModal = () => {
     setRepayAmount('');
@@ -315,6 +327,8 @@ export default function RepayModal(props: RepayModalProps) {
   const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
   const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
   const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
+
+  const maxRepay = bigExistingLiability.lte(bigTokenBalance) ? bigExistingLiability : bigTokenBalance;
 
   if (!userAddress || !isOpen) {
     return null;
@@ -336,12 +350,12 @@ export default function RepayModal(props: RepayModalProps) {
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Repay Amount
+              Amount
             </Text>
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setRepayAmount(existingLiability.toString());
+                setRepayAmount(ethers.utils.formatUnits(maxRepay, repayToken.decimals));
               }}
             >
               MAX
@@ -371,22 +385,24 @@ export default function RepayModal(props: RepayModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're repaying{' '}
             <strong>
-              {repayAmount || '0.00'} {repayToken.ticker}
+              {repayAmount || '0'} {repayToken.ticker}
             </strong>
             . This will increase your smart wallet's health and bring remaining borrows down to{' '}
             <strong>
-              {truncateDecimals(bigRemainingLiability.toString(), repayToken.decimals)} {repayToken.ticker}
+              {ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals)} {repayToken.ticker}
             </strong>
             .
           </Text>
         </div>
         <div className='w-full'>
           <RepayButton
+            activeChain={activeChain}
             marginAccount={marginAccount}
             userAddress={userAddress}
             lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
             repayAmount={repayAmount}
             repayToken={repayToken}
+            repayTokenBalance={repayTokenBalance}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />
