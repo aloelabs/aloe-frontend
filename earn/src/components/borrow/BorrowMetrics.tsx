@@ -133,7 +133,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
   const maxSafeCollateralFall = useMemo(() => {
     if (!marginAccount) return null;
 
-    const { lowerSqrtRatio, upperSqrtRatio } = computeLiquidationThresholds(
+    const { lowerSqrtRatio, upperSqrtRatio, minSqrtRatio, maxSqrtRatio } = computeLiquidationThresholds(
       marginAccount.assets,
       marginAccount.liabilities,
       [], // TODO: We should actually fetch Uniswap positions
@@ -143,11 +143,11 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
       marginAccount.token1.decimals
     );
 
+    if (lowerSqrtRatio.eq(minSqrtRatio) && upperSqrtRatio.eq(maxSqrtRatio)) return Number.POSITIVE_INFINITY;
+
     const [current, lower, upper] = [marginAccount.sqrtPriceX96, lowerSqrtRatio, upperSqrtRatio].map((sp) =>
       sqrtRatioToPrice(sp, marginAccount.token0.decimals, marginAccount.token1.decimals)
     );
-
-    if (lower < Number.EPSILON && upper > 1e30) return Number.POSITIVE_INFINITY;
 
     const assets = getAssets(
       marginAccount.assets,

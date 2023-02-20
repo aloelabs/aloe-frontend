@@ -229,6 +229,8 @@ export function maxBorrows(
 export type LiquidationThresholds = {
   lowerSqrtRatio: Big;
   upperSqrtRatio: Big;
+  minSqrtRatio: Big;
+  maxSqrtRatio: Big;
 };
 
 export function computeLiquidationThresholds(
@@ -242,13 +244,15 @@ export function computeLiquidationThresholds(
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
+  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
+  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(1.23);
+
   let result: LiquidationThresholds = {
     lowerSqrtRatio: new Big('0'),
     upperSqrtRatio: new Big('0'),
+    minSqrtRatio: MINPRICE,
+    maxSqrtRatio: MAXPRICE,
   };
-
-  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
-  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(1.23);
 
   // Find lower liquidation threshold
   const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, MINPRICE, iv, token0Decimals, token1Decimals);
