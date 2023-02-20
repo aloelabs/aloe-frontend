@@ -22,7 +22,7 @@ import RouterABI from '../../../assets/abis/Router.json';
 import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../../assets/svg/loader.svg';
-import { ALOE_II_ROUTER_ADDRESS, ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { MarginAccount } from '../../../data/MarginAccount';
@@ -136,11 +136,9 @@ function RepayButton(props: RepayButtonProps) {
     token: repayToken.address,
     watch: false,
   });
-  const numericRepayTokenBalance = parseFloat(repayTokenBalance?.formatted ?? '0') || 0;
-  // --> Are they trying to repay more than their total liability?
-  const numericRepayAmount = parseFloat(repayAmount) || 0;
-  const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
   // --> Other...
+  const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
+  const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
   const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
 
   // MARK: Determining button state -----------------------------------------------------------------------------------
@@ -148,9 +146,9 @@ function RepayButton(props: RepayButtonProps) {
 
   if (repayAmount === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
-  } else if (numericRepayAmount > numericRepayTokenBalance) {
+  } else if (bigRepayAmount.gt(repayTokenBalance?.value ?? BigNumber.from('0'))) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
-  } else if (numericRepayAmount > existingLiability) {
+  } else if (bigRepayAmount.gt(bigExistingLiability)) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
   } else if (permitDomain !== null) {
     if (!permitData) {
@@ -255,7 +253,6 @@ function RepayButton(props: RepayButtonProps) {
             setIsPending(false);
           });
         break;
-
       case ConfirmButtonState.PERMIT_ASSET:
         setIsPending(true);
 
@@ -271,7 +268,6 @@ function RepayButton(props: RepayButtonProps) {
           setIsPending(false);
         });
         break;
-
       case ConfirmButtonState.READY_VIA_APPROVE:
         setIsPending(true);
         if (!repayWithApprovalConfig.request) {
@@ -279,7 +275,6 @@ function RepayButton(props: RepayButtonProps) {
           refetchRepayWithApprovalConfig();
         } else repayWithApproval?.();
         break;
-
       case ConfirmButtonState.READY_VIA_PERMIT:
         setIsPending(true);
         if (!repayWithPermitConfig.request) {
@@ -287,7 +282,6 @@ function RepayButton(props: RepayButtonProps) {
           refetchRepayWithPermitConfig();
         } else repayWithPermit?.();
         break;
-
       default:
         break;
     }
@@ -320,12 +314,13 @@ export default function RepayModal(props: RepayModalProps) {
     setRepayToken(marginAccount.token0);
   };
 
-  const numericRepayAmount = parseFloat(repayAmount) || 0;
   const existingLiability =
     repayToken.address === marginAccount.token0.address
       ? marginAccount.liabilities.amount0
       : marginAccount.liabilities.amount1;
-  const remainingLiability = existingLiability - numericRepayAmount;
+  const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
+  const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
+  const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
 
   if (!userAddress || !isOpen) {
     return null;
@@ -386,7 +381,7 @@ export default function RepayModal(props: RepayModalProps) {
             </strong>
             . This will increase your smart wallet's health and bring remaining borrows down to{' '}
             <strong>
-              {truncateDecimals(remainingLiability.toString(), repayToken.decimals)} {repayToken.ticker}
+              {truncateDecimals(bigRemainingLiability.toString(), repayToken.decimals)} {repayToken.ticker}
             </strong>
             .
           </Text>
