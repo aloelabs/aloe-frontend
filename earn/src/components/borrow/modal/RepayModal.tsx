@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useState, useMemo, useEffect } from 'react';
+import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers, BigNumber } from 'ethers';
@@ -19,9 +19,6 @@ import {
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import RouterABI from '../../../assets/abis/Router.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
-import { ReactComponent as LoaderIcon } from '../../../assets/svg/loader.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
@@ -46,27 +43,24 @@ enum ConfirmButtonState {
   DISABLED,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token
-): { text: string; icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_FUNDS:
-      return { text: `Insufficient ${token.ticker}`, icon: <AlertTriangleIcon />, enabled: false };
+      return { text: `Insufficient ${token.ticker}`, enabled: false };
     case ConfirmButtonState.REPAYING_TOO_MUCH:
-      return { text: 'Repaying too much', icon: <AlertTriangleIcon />, enabled: false };
+      return { text: 'Repaying too much', enabled: false };
     case ConfirmButtonState.PERMIT_ASSET:
-      return { text: `Permit ${token.ticker}`, icon: <CheckIcon />, enabled: true };
+      return { text: `Permit ${token.ticker}`, enabled: true };
     case ConfirmButtonState.APPROVE_ASSET:
-      return { text: `Approve ${token.ticker}`, icon: <CheckIcon />, enabled: true };
+      return { text: `Approve ${token.ticker}`, enabled: true };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', icon: <LoaderIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY_VIA_PERMIT:
     case ConfirmButtonState.READY_VIA_APPROVE:
-      return { text: 'Confirm', icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.DISABLED:
     default:
-      return { text: 'Confirm', icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
