@@ -146,10 +146,12 @@ export default function BorrowModal(props: BorrowModalProps) {
     chainId: activeChain.id,
   });
 
-  const resetModal = () => {
+  // Reset borrow amount and token when modal is opened/closed
+  // or when the margin account token0 changes
+  useEffect(() => {
     setBorrowAmount('');
     setBorrowToken(marginAccount.token0);
-  };
+  }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
@@ -172,17 +174,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      title='Borrow'
-      setIsOpen={(open: boolean) => {
-        setIsOpen(open);
-        if (!open) {
-          resetModal();
-        }
-      }}
-      maxHeight='650px'
-    >
+    <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>

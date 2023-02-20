@@ -158,10 +158,11 @@ export default function RepayModal(props: RepayModalProps) {
 
   const { address: userAddress } = useAccount();
 
-  const resetModal = () => {
+  // Reset repay amount and token when modal is opened/closed or when the margin account token0 changes
+  useEffect(() => {
     setRepayAmount('');
     setRepayToken(marginAccount.token0);
-  };
+  }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
@@ -188,17 +189,7 @@ export default function RepayModal(props: RepayModalProps) {
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      title='Repay'
-      setIsOpen={(open: boolean) => {
-        setIsOpen(open);
-        if (!open) {
-          resetModal();
-        }
-      }}
-      maxHeight='650px'
-    >
+    <Modal isOpen={isOpen} title='Repay' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between mb-1'>
