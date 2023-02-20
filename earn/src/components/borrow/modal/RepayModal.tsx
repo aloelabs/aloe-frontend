@@ -144,6 +144,8 @@ function RepayButton(props: RepayButtonProps) {
 
   if (repayAmount === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
+  } else if (isPending) {
+    confirmButtonState = ConfirmButtonState.PENDING;
   } else if (bigRepayAmount.gt(repayTokenBalance?.value ?? BigNumber.from('0'))) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
   } else if (bigRepayAmount.gt(bigExistingLiability)) {
@@ -160,8 +162,6 @@ function RepayButton(props: RepayButtonProps) {
     } else {
       confirmButtonState = ConfirmButtonState.READY_VIA_APPROVE;
     }
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
   } else {
     console.error('Unexpected confirm button state!');
     confirmButtonState = ConfirmButtonState.DISABLED;
