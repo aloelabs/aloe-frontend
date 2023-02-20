@@ -218,7 +218,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             <strong>
               {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
             </strong>{' '}
-            smart wallet. Your total liabilities for this token in this smart wallet will be{' '}
+            smart wallet. Your total borrows for this token in this smart wallet will be{' '}
             <strong>
               {truncateDecimals(newLiability.toString(), borrowToken.decimals)} {borrowToken.ticker}
             </strong>
