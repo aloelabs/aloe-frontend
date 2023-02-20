@@ -21,7 +21,6 @@ import {
   ALOE_II_KITTY_LENS_ADDRESS,
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { BIGQ96 } from './constants/Values';
 import { Token } from './Token';
 import { getToken } from './TokenData';
 
@@ -74,11 +73,6 @@ export type MarketInfo = {
   lender1TotalSupply: Big;
   lender0TotalBorrows: Big;
   lender1TotalBorrows: Big;
-};
-
-export type LiquidationThresholds = {
-  lower: number;
-  upper: number;
 };
 
 /**
@@ -372,24 +366,4 @@ export async function fetchMarginAccount(
       iv: oracleResult[1].div(1e9).toNumber() / 1e9,
     },
   };
-}
-
-export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, token1Decimals: number): number {
-  return sqrtPriceX96
-    .mul(sqrtPriceX96)
-    .div(BIGQ96)
-    .div(BIGQ96)
-    .mul(10 ** (token0Decimals - token1Decimals))
-    .toNumber();
-}
-
-export function priceToSqrtRatio(price: number, token0Decimals: number, token1Decimals: number): Big {
-  return new Big(price)
-    .mul(10 ** (token1Decimals - token0Decimals))
-    .sqrt()
-    .mul(BIGQ96);
-}
-
-export function sumAssetsPerToken(assets: Assets): [number, number] {
-  return [assets.token0Raw + assets.uni0, assets.token1Raw + assets.uni1];
 }
