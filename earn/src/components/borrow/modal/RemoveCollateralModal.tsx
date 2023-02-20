@@ -71,8 +71,8 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     args: [
       ALOE_II_WITHDRAW_MANAGER_ADDRESS,
       ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'address', 'bytes'],
-        [amount0Big.toFixed(), amount1Big.toFixed(), userAddress, '0x']
+        ['uint256', 'uint256', 'address'],
+        [amount0Big.toFixed(), amount1Big.toFixed(), userAddress]
       ),
       [isToken0Collateral, !isToken0Collateral],
     ],
