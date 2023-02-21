@@ -15,9 +15,11 @@ import {
   calculateHypotheticalStates,
   UniswapPosition,
 } from '../../data/actions/Actions';
+import { Balances } from '../../data/Balances';
+import { isSolvent } from '../../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
-import { UserBalances } from '../../data/UserBalances';
+import { MarketInfo } from '../../data/MarketInfo';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
@@ -109,17 +111,16 @@ const ActionCardWrapper = styled.div`
 `;
 
 export type ManageAccountWidgetProps = {
+  marketInfo: MarketInfo | null;
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   updateHypotheticalState: (state: AccountState | null) => void;
   onAddFirstAction: () => void;
-  hypotheticalMarginAccount: MarginAccount;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction, hypotheticalMarginAccount } =
-    props;
+  const { marketInfo, marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
   const { activeChain } = useContext(ChainContext);
@@ -158,27 +159,32 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
-  const userBalances: UserBalances = useMemo(
+  const userBalances: Balances = useMemo(
     () => ({
-      amount0Asset: Number(userBalance0Asset?.formatted ?? 0) || 0,
-      amount1Asset: Number(userBalance1Asset?.formatted ?? 0) || 0,
+      amount0: Number(userBalance0Asset?.formatted ?? 0) || 0,
+      amount1: Number(userBalance1Asset?.formatted ?? 0) || 0,
     }),
     [userBalance0Asset, userBalance1Asset]
   );
+
+  const lenderBalances: Balances = useMemo(() => {
+    return {
+      amount0: marketInfo?.lender0AvailableAssets.div(10 ** token0.decimals).toNumber() ?? 0,
+      amount1: marketInfo?.lender1AvailableAssets.div(10 ** token1.decimals).toNumber() ?? 0,
+    };
+  }, [marketInfo, token0, token1]);
 
   const initialState: AccountState = useMemo(
     () => ({
       assets: marginAccount.assets,
       liabilities: marginAccount.liabilities,
       uniswapPositions: uniswapPositions,
-      availableBalances: userBalances,
-      requiredAllowances: {
-        amount0Asset: 0,
-        amount1Asset: 0,
-      },
+      availableForDeposit: userBalances,
+      availableForBorrow: lenderBalances,
+      requiredAllowances: { amount0: 0, amount1: 0 },
       claimedFeeUniswapKeys: [],
     }),
-    [marginAccount, uniswapPositions, userBalances]
+    [marginAccount, uniswapPositions, userBalances, lenderBalances]
   );
 
   useEffect(() => {
@@ -190,6 +196,18 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
+
+  const { health } = isSolvent(
+    finalState.assets,
+    finalState.liabilities,
+    finalState.uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    token0.decimals,
+    token1.decimals
+  );
+
+  if (marketInfo === null) return null;
 
   //TODO: add some sort of error message when !transactionIsViable
   return (
@@ -213,6 +231,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
               </ActionItemCount>
               <ActionCardWrapper>
                 <action.actionCard
+                  marketInfo={marketInfo}
                   marginAccount={marginAccount}
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}
@@ -263,7 +282,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
-        <HealthBar health={hypotheticalMarginAccount?.health || marginAccount.health} />
+        <HealthBar health={health} />
         <div className='flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}

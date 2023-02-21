@@ -19,14 +19,9 @@ import tw from 'twin.macro';
 
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
+import { getAssets, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/BalanceSheet';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
-import {
-  getAssets,
-  LiquidationThresholds,
-  MarginAccount,
-  priceToSqrtRatio,
-  sqrtRatioToPrice,
-} from '../../data/MarginAccount';
+import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
 import Tooltip from '../common/Tooltip';
@@ -80,7 +75,15 @@ function calculatePnL1(
   initialValue = 0
 ): number {
   const sqrtPriceX96 = priceToSqrtRatio(price, marginAccount.token0.decimals, marginAccount.token1.decimals);
-  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  const assets = getAssets(
+    marginAccount.assets,
+    uniswapPositions,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
   return (
     (assets.fixed0 + assets.fluid0C) * price +
     assets.fixed1 +
@@ -97,7 +100,15 @@ function calculatePnL0(
 ): number {
   const invertedPrice = 1 / price;
   const sqrtPriceX96 = priceToSqrtRatio(invertedPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
-  const assets = getAssets(marginAccount, uniswapPositions, sqrtPriceX96, sqrtPriceX96, sqrtPriceX96);
+  const assets = getAssets(
+    marginAccount.assets,
+    uniswapPositions,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    sqrtPriceX96,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
   return (
     (assets.fixed1 + assets.fluid1C) * price +
     assets.fixed0 +

@@ -277,6 +277,20 @@ export default function LendPage() {
     );
   }, [lendingPairs, selectedOptions]);
 
+  const filteredPages: LendingPair[][] = useMemo(() => {
+    const pages: LendingPair[][] = [];
+    let page: LendingPair[] = [];
+    filteredLendingPairs.forEach((pair, i) => {
+      if (i % itemsPerPage === 0 && i !== 0) {
+        pages.push(page);
+        page = [];
+      }
+      page.push(pair);
+    });
+    pages.push(page);
+    return pages;
+  }, [filteredLendingPairs, itemsPerPage]);
+
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
@@ -342,15 +356,15 @@ export default function LendPage() {
               buttonSize='M'
               buttonText=''
               content={`With lending pairs, you can pick which assets borrowers can post as collateral.${' '}
-              For example, when you deposit to the USDC/WETH lending pair,${' '}
-              borrowers can only use your funds if they post USDC or WETH as collateral.${' '}
+              For example, when you deposit to the WETH/USDC lending pair,${' '}
+              borrowers can only use your funds if they post WETH or USDC as collateral.${' '}
               Never deposit to a pair that includes unknown/untrustworthy token(s).`}
               position='top-center'
               filled={true}
             />
           </div>
           <LendCards>
-            {filteredLendingPairs.map((lendPair, i) => (
+            {filteredPages[currentPage - 1].map((lendPair, i) => (
               <LendPairCard
                 key={`${lendPair.token0.address}${lendPair.token1.address}${lendPair.uniswapFeeTier}`}
                 pair={lendPair}
@@ -360,18 +374,20 @@ export default function LendPage() {
             ))}
           </LendCards>
           {filteredLendingPairs.length > 0 && (
-            <Pagination
-              totalItems={filteredLendingPairs.length}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              loading={isLoading}
-              onPageChange={(page: number) => {
-                setCurrentPage(page);
-              }}
-              onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
-                setItemsPerPage(itemsPerPage);
-              }}
-            />
+            <div className='mt-[42px] mb-[34px]'>
+              <Pagination
+                totalItems={filteredLendingPairs.length}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                loading={isLoading}
+                onPageChange={(page: number) => {
+                  setCurrentPage(page);
+                }}
+                onItemsPerPageChange={(itemsPerPage: ItemsPerPage) => {
+                  setItemsPerPage(itemsPerPage);
+                }}
+              />
+            </div>
           )}
           {filteredLendingPairs.length === 0 && (
             <div className='flex flex-col items-center gap-2'>

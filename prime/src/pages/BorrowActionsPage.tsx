@@ -27,6 +27,7 @@ import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsT
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
+import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
@@ -34,15 +35,9 @@ import {
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import {
-  fetchMarginAccount,
-  fetchMarketInfoFor,
-  isSolvent,
-  LiquidationThresholds,
-  MarginAccount,
-  MarketInfo,
-  sumAssetsPerToken,
-} from '../data/MarginAccount';
+import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
+import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
+import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 import {
   ComputeLiquidationThresholdsRequest,
   stringifyMarginAccount,
@@ -52,6 +47,7 @@ import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
+const SUPPLY_SIGNIFICANT_DIGITS = 4;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
@@ -463,10 +459,37 @@ export default function BorrowActionsPage() {
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
-  const { health } = isSolvent(displayedMarginAccount, displayedUniswapPositions, displayedMarginAccount.sqrtPriceX96);
+  const { health } = isSolvent(
+    displayedMarginAccount.assets,
+    displayedMarginAccount.liabilities,
+    displayedUniswapPositions,
+    displayedMarginAccount.sqrtPriceX96,
+    displayedMarginAccount.iv,
+    token0.decimals,
+    token1.decimals
+  );
   displayedMarginAccount.health = health;
 
   const isShowingHypothetical = userWantsHypothetical && hypotheticalState !== null;
+
+  // hypothetical interest rates
+  let utilization0 = marketInfo?.lender0Utilization;
+  let utilization1 = marketInfo?.lender1Utilization;
+  if (marketInfo && isShowingHypothetical) {
+    utilization0 =
+      1 -
+      hypotheticalState.availableForBorrow.amount0 /
+        marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber();
+    utilization1 =
+      1 -
+      hypotheticalState.availableForBorrow.amount1 /
+        marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber();
+  }
+  const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 ?? 0));
+  const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 ?? 0));
+
+  console.log(apr0 - (marketInfo?.borrowerAPR0 ?? 0));
+  console.log(apr1 - (marketInfo?.borrowerAPR1 ?? 0));
 
   return (
     <BodyWrapper>
@@ -481,11 +504,11 @@ export default function BorrowActionsPage() {
       </HeaderBarContainer>
       <GridExpandingDiv>
         <ManageAccountWidget
+          marketInfo={marketInfo}
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
           updateHypotheticalState={updateHypotheticalState}
           onAddFirstAction={() => setUserWantsHypothetical(true)}
-          hypotheticalMarginAccount={displayedMarginAccount}
         />
       </GridExpandingDiv>
       <div className='w-full flex flex-col justify-between'>
@@ -568,38 +591,44 @@ export default function BorrowActionsPage() {
             <MarketStatsGrid>
               <AccountStatsCard
                 label={`${token0.ticker} Supply`}
-                value={formatTokenAmount(marketInfo.lender0TotalSupply.div(10 ** token0.decimals).toNumber(), 2)}
+                value={formatTokenAmount(
+                  marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
+                  SUPPLY_SIGNIFICANT_DIGITS
+                )}
                 denomination={token0.ticker}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token0.ticker} Utilization`}
-                  value={`${(marketInfo.lender0Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(utilization0! * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
                   label={`${token0.ticker} APR`}
-                  value={`${(marketInfo.borrowerAPR0 * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(apr0 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
-                value={formatTokenAmount(marketInfo.lender1TotalSupply.div(10 ** token1.decimals).toNumber(), 2)}
+                value={formatTokenAmount(
+                  marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
+                  SUPPLY_SIGNIFICANT_DIGITS
+                )}
                 denomination={token1.ticker}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
                   label={`${token1.ticker} Utilization`}
-                  value={`${(marketInfo.lender1Utilization * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(utilization1! * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
                   label={`${token1.ticker} APR`}
-                  value={`${(marketInfo.borrowerAPR1 * 100).toFixed(2)}%`}
-                  showAsterisk={false /*TODO*/}
+                  value={`${(apr1 * 100).toFixed(2)}%`}
+                  showAsterisk={isShowingHypothetical}
                 />
               </div>
             </MarketStatsGrid>

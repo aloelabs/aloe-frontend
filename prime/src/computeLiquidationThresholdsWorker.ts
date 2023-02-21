@@ -1,4 +1,4 @@
-import { computeLiquidationThresholds } from './data/MarginAccount';
+import { computeLiquidationThresholds } from './data/BalanceSheet';
 import {
   ComputeLiquidationThresholdsRequest,
   parseMarginAccountParams,
@@ -12,7 +12,17 @@ self.onmessage = (e: MessageEvent<ComputeLiquidationThresholdsRequest>) => {
     const { marginAccountParams, uniswapPositionParams, iterations, precision } = request;
     const marginAccount = parseMarginAccountParams(marginAccountParams);
     const uniswapPositions = parseUniswapPositionParams(uniswapPositionParams);
-    const liquidationThresholds = computeLiquidationThresholds(marginAccount, uniswapPositions, iterations, precision);
+    const liquidationThresholds = computeLiquidationThresholds(
+      marginAccount.assets,
+      marginAccount.liabilities,
+      uniswapPositions,
+      marginAccount.sqrtPriceX96,
+      marginAccount.iv,
+      marginAccount.token0.decimals,
+      marginAccount.token1.decimals,
+      iterations,
+      precision
+    );
     self.postMessage(JSON.stringify(liquidationThresholds));
   } catch (e) {
     console.error(e);

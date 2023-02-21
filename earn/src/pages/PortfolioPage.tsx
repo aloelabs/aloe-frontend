@@ -20,15 +20,16 @@ import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
 import { ReactComponent as UsersIcon } from '../assets/svg/users.svg';
+import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
-import PendingTxnModal, { PendingTxnModalStatus } from '../components/portfolio/modal/PendingTxnModal';
 import ReferralModal from '../components/portfolio/modal/ReferralModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
+import PortfolioBalance from '../components/portfolio/PortfolioBalance';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
@@ -43,7 +44,6 @@ import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { Token } from '../data/Token';
 import { getToken, getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
-import { formatUSD } from '../util/Numbers';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -365,6 +365,12 @@ export default function PortfolioPage() {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
   }, [combinedBalances]);
 
+  const apyWeightedAverage = useMemo(() => {
+    if (totalBalanceUSD === 0) return 0;
+    const acc = combinedBalances.reduce((acc, balance) => acc + balance.apy * balance.balanceUSD, 0);
+    return acc / totalBalanceUSD;
+  }, [combinedBalances, totalBalanceUSD]);
+
   const filteredLendingPairs = useMemo(() => {
     if (activeAsset == null) {
       return [];
@@ -387,9 +393,11 @@ export default function PortfolioPage() {
           <Text size='L' weight='bold' color='rgba(130, 160, 182, 1)'>
             YOUR PORTFOLIO
           </Text>
-          <Display size='L' weight='semibold'>
-            {errorLoadingPrices ? '$□□□' : formatUSD(totalBalanceUSD)}
-          </Display>
+          <PortfolioBalance
+            errorLoadingPrices={errorLoadingPrices}
+            totalUsd={totalBalanceUSD}
+            weightedAvgApy={apyWeightedAverage}
+          />
         </div>
 
         <div className='h-16'>

@@ -62,7 +62,7 @@ const TooltipContainer = styled.div.attrs(
     }
   }}
   padding: 16px;
-  z-index: 30;
+  z-index: 6;
   border-radius: 8px;
   width: 240px;
   background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
@@ -94,13 +94,15 @@ const TooltipContainer = styled.div.attrs(
     border-radius: 0 4px 0 0;
     background-color: ${(props) => (props.filled ? 'rgba(26, 41, 52, 1);' : 'rgba(7, 14, 18, 1);')};
     ${(props) =>
-      !props.filled && props.position.startsWith('top')
+      !props.filled &&
+      (props.position.startsWith('top')
         ? 'border-left: 1px solid rgba(43, 64, 80, 1);'
-        : 'border-right: 1px solid rgba(43, 64, 80, 1);'};
+        : 'border-right: 1px solid rgba(43, 64, 80, 1);')};
     ${(props) =>
-      !props.filled && props.position.startsWith('top')
+      !props.filled &&
+      (props.position.startsWith('top')
         ? 'border-bottom: 1px solid rgba(43, 64, 80, 1);'
-        : 'border-top: 1px solid rgba(43, 64, 80, 1);'};
+        : 'border-top: 1px solid rgba(43, 64, 80, 1);')};
   }
 `;
 

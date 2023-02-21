@@ -5,33 +5,74 @@
         "internalType": "contract Borrower",
         "name": "account",
         "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "includeUniswapFees",
-        "type": "bool"
       }
     ],
     "name": "getAssets",
     "outputs": [
       {
-        "internalType": "uint256",
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "fixed0",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fixed1",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fluid1A",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fluid1B",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fluid0C",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fluid1C",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Assets",
         "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract Borrower",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "previewInterest",
+        "type": "bool"
+      }
+    ],
+    "name": "getHealth",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "healthA",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
+        "name": "healthB",
         "type": "uint256"
       }
     ],
@@ -44,6 +85,11 @@
         "internalType": "contract Borrower",
         "name": "account",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "previewInterest",
+        "type": "bool"
       }
     ],
     "name": "getLiabilities",
@@ -70,7 +116,7 @@
         "type": "address"
       }
     ],
-    "name": "getUniswapPositions",
+    "name": "getUniswapFees",
     "outputs": [
       {
         "internalType": "bytes32[]",

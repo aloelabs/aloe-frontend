@@ -6,26 +6,26 @@ import { AccountState, TokenType } from './Actions';
 
 export function transferInOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   const assets = { ...operand.assets };
-  const availableBalances = { ...operand.availableBalances };
+  const availableForDeposit = { ...operand.availableForDeposit };
   const requiredAllowances = { ...operand.requiredAllowances };
 
   switch (token) {
     case TokenType.ASSET0:
       assets.token0Raw += amount;
-      availableBalances.amount0Asset -= amount;
-      requiredAllowances.amount0Asset += amount;
+      availableForDeposit.amount0 -= amount;
+      requiredAllowances.amount0 += amount;
       break;
     case TokenType.ASSET1:
       assets.token1Raw += amount;
-      availableBalances.amount1Asset -= amount;
-      requiredAllowances.amount1Asset += amount;
+      availableForDeposit.amount1 -= amount;
+      requiredAllowances.amount1 += amount;
       break;
   }
 
   return {
     ...operand,
     assets,
-    availableBalances,
+    availableForDeposit,
     requiredAllowances,
   };
 }
@@ -53,16 +53,24 @@ export function burnOperator(operand: AccountState, token: TokenType, amount: nu
 export function borrowOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
   const assets = { ...operand.assets };
   const liabilities = { ...operand.liabilities };
+  const availableForBorrow = { ...operand.availableForBorrow };
 
   if (token === TokenType.ASSET0) {
     assets.token0Raw += amount;
     liabilities.amount0 += amount;
+    availableForBorrow.amount0 -= amount;
   } else {
     assets.token1Raw += amount;
     liabilities.amount1 += amount;
+    availableForBorrow.amount1 -= amount;
   }
 
-  return { ...operand, assets, liabilities };
+  return {
+    ...operand,
+    assets,
+    liabilities,
+    availableForBorrow,
+  };
 }
 
 export function repayOperator(operand: AccountState, token: TokenType, amount: number): AccountState {

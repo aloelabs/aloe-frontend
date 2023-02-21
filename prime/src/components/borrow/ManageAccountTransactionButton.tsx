@@ -13,10 +13,10 @@ import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
 import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
+import { Balances } from '../../data/Balances';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { UINT256_MAX } from '../../data/constants/Values';
 import { Token } from '../../data/Token';
-import { UserBalances } from '../../data/UserBalances';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
@@ -102,7 +102,7 @@ export type ManageAccountTransactionButtonProps = {
   accountAddress: Address;
   token0: Token;
   token1: Token;
-  userBalances: UserBalances;
+  userBalances: Balances;
   accountState: AccountState;
   actionOutputs: ActionCardOutput[];
   transactionWillFail: boolean;
@@ -178,11 +178,8 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
 
-  const requiredBalances = [accountState.requiredAllowances.amount0Asset, accountState.requiredAllowances.amount1Asset];
-  const insufficient = [
-    requiredBalances[0] > userBalances.amount0Asset,
-    requiredBalances[1] > userBalances.amount1Asset,
-  ];
+  const requiredBalances = [accountState.requiredAllowances.amount0, accountState.requiredAllowances.amount1];
+  const insufficient = [requiredBalances[0] > userBalances.amount0, requiredBalances[1] > userBalances.amount1];
   const loadingApprovals = [
     requiredBalances[0] > 0 && !userAllowance0Asset,
     requiredBalances[1] > 0 && !userAllowance1Asset,

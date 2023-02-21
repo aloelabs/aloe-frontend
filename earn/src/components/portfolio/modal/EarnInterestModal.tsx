@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -21,9 +21,6 @@ import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import KittyABI from '../../../assets/abis/Kitty.json';
 import RouterABI from '../../../assets/abis/Router.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
-import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
@@ -53,48 +50,40 @@ enum ConfirmButtonState {
   PERMIT_COURIER,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token
-): { text: string; Icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
         text: `Insufficient ${token.ticker}`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.PERMIT_COURIER_REFERRAL:
       return {
         text: 'Use Referral Discount',
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.PERMIT_COURIER:
       return {
         text: 'Allow Frontend Fee',
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.PERMIT_ASSET:
       return {
         text: `Permit ${token.ticker}`,
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
         text: `Approve ${token.ticker}`,
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
     default:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
@@ -207,8 +196,8 @@ function DepositButton(props: DepositButtonProps) {
   }, [depositWithApprovalConfig.request]);
   const {
     write: depositUsingApprovalFlow,
+    isError: isErrorApprovalFlow,
     isSuccess: successfullyDepositedWithApproval,
-    isLoading: isLoadingApprovalFlow,
     data: approvalFlowData,
   } = useContractWrite({
     ...depositWithApprovalConfig,
@@ -250,8 +239,8 @@ function DepositButton(props: DepositButtonProps) {
   }, [depositUsingApprovalWithCourierConfig.request]);
   const {
     write: depositUsingApprovalFlowWithCourier,
+    isError: isErrorApprovalFlowWithCourier,
     isSuccess: successfullyDepositedWithApprovalWithCourier,
-    isLoading: isLoadingApprovalFlowWithCourier,
     data: approvalFlowDataWithCourier,
   } = useContractWrite({
     ...depositUsingApprovalWithCourierConfig,
@@ -291,8 +280,8 @@ function DepositButton(props: DepositButtonProps) {
   }, [depositWithPermitConfig.request]);
   const {
     write: depositUsingPermitFlow,
+    isError: isErrorPermitFlow,
     isSuccess: successfullyDepositedWithPermit,
-    isLoading: isLoadingPermitFlow,
     data: permitFlowData,
   } = useContractWrite({
     ...depositWithPermitConfig,
@@ -339,8 +328,8 @@ function DepositButton(props: DepositButtonProps) {
   }, [depositWithPermitCourierConfig.request]);
   const {
     write: depositUsingPermitFlowWithCourier,
+    isError: isErrorPermitFlowWithCourier,
     isSuccess: successfullyDepositedWithPermitWithCourier,
-    isLoading: isLoadingPermitFlowWithCourier,
     data: permitFlowDataWithCourier,
   } = useContractWrite({
     ...depositWithPermitCourierConfig,
@@ -382,14 +371,14 @@ function DepositButton(props: DepositButtonProps) {
     };
   }, [erc20Contract, activeChain.id]);
 
+  const contractDidError =
+    isErrorApprovalFlow || isErrorPermitFlow || isErrorPermitFlowWithCourier || isErrorApprovalFlowWithCourier;
   const contractDidSucceed =
     successfullyDepositedWithApproval ||
     successfullyDepositedWithPermit ||
     successfullyDepositedWithPermitWithCourier ||
     successfullyDepositedWithApprovalWithCourier;
   const contractData = approvalFlowData ?? permitFlowData ?? permitFlowDataWithCourier ?? approvalFlowDataWithCourier;
-  const contractIsLoading =
-    isLoadingApprovalFlow || isLoadingPermitFlow || isLoadingPermitFlowWithCourier || isLoadingApprovalFlowWithCourier;
 
   useEffect(() => {
     // Reset permit data when token changes
@@ -403,15 +392,17 @@ function DepositButton(props: DepositButtonProps) {
       setPendingTxn(contractData);
       setIsPending(false);
       setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
+    } else if (contractDidError) {
       setIsPending(false);
     }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
 
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (permitDomain !== null) {
-    if (numericDepositAmount > numericDepositBalance) {
+    if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    } else if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
     } else if (needsToPermitCourier && referralCourierId !== null) {
       confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
@@ -419,11 +410,11 @@ function DepositButton(props: DepositButtonProps) {
       confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
     } else if (!permitData) {
       confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
-    } else if (isPending) {
-      confirmButtonState = ConfirmButtonState.PENDING;
     }
   } else {
-    if (numericDepositAmount > numericDepositBalance) {
+    if (isPending) {
+      confirmButtonState = ConfirmButtonState.PENDING;
+    } else if (numericDepositAmount > numericDepositBalance) {
       confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
     } else if (loadingApproval) {
       confirmButtonState = ConfirmButtonState.LOADING;
@@ -435,8 +426,6 @@ function DepositButton(props: DepositButtonProps) {
       confirmButtonState = ConfirmButtonState.PENDING;
     } else if (needsApproval) {
       confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-    } else if (isPending) {
-      confirmButtonState = ConfirmButtonState.PENDING;
     }
   }
 
@@ -469,10 +458,13 @@ function DepositButton(props: DepositButtonProps) {
         };
         const deadline = courierPermitData?.deadline ?? (Date.now() / 1000 + 60 * 5).toFixed(0);
 
-        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline).then((signature) => {
-          setPermitData({ signature, approve, deadline });
-          setIsPending(false);
-        });
+        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline)
+          .then((signature) => {
+            setPermitData({ signature, approve, deadline });
+          })
+          .finally(() => {
+            setIsPending(false);
+          });
 
         break;
       case ConfirmButtonState.PERMIT_COURIER:
@@ -485,17 +477,21 @@ function DepositButton(props: DepositButtonProps) {
         };
         const deadlineWithCourier = (Date.now() / 1000 + 60 * 5).toFixed(0);
 
-        attemptToInferPermitDomain(kittyContract, activeChain.id).then((kittyDomain) => {
-          if (kittyDomain === null) {
-            console.error('This should never happen. We know that Lender domains exist.');
-          }
-          getErc2612Signature(signer!, kittyContract, kittyDomain!, approveWithCourier, deadlineWithCourier).then(
-            (signature) => {
-              setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
-              setIsPending(false);
+        attemptToInferPermitDomain(kittyContract, activeChain.id)
+          .then((kittyDomain) => {
+            if (kittyDomain === null) {
+              console.error('This should never happen. We know that Lender domains exist.');
             }
-          );
-        });
+            getErc2612Signature(signer!, kittyContract, kittyDomain!, approveWithCourier, deadlineWithCourier).then(
+              (signature) => {
+                setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
+                setIsPending(false);
+              }
+            );
+          })
+          .catch((error) => {
+            setIsPending(false);
+          });
 
         break;
       case ConfirmButtonState.READY:
@@ -605,6 +601,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
+    enabled: isOpen,
   });
 
   useEffect(() => {

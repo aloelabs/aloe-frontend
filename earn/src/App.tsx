@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -13,6 +13,7 @@ import { Chain, useAccount, useNetwork } from 'wagmi';
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import WagmiProvider from './connector/WagmiProvider';
+import BorrowPage from './pages/BorrowPage';
 import LendPage from './pages/LendPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
@@ -60,6 +61,7 @@ function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
   const account = useAccount();
   const network = useNetwork();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -82,6 +84,7 @@ function AppBodyWrapper() {
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<LendPage />} />
+          <Route path='/borrow' element={<BorrowPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
@@ -94,6 +97,7 @@ function AppBodyWrapper() {
         account={account}
         setIsOpen={() => setIsWelcomeModalOpen(false)}
         onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+        onSkip={() => navigate('/markets')}
       />
     </AppBody>
   );

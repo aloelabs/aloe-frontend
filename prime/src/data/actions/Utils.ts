@@ -1,5 +1,6 @@
+import { isSolvent } from '../BalanceSheet';
 import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
-import { MarginAccount, isSolvent } from '../MarginAccount';
+import { MarginAccount } from '../MarginAccount';
 import { AccountState } from './Actions';
 
 export function runWithChecks(
@@ -11,15 +12,16 @@ export function runWithChecks(
   const updatedOperand = operator(operand);
   if (updatedOperand == null) return null;
 
-  const { assets, liabilities, uniswapPositions, availableBalances } = updatedOperand;
+  const { assets, liabilities, uniswapPositions, availableForDeposit, availableForBorrow } = updatedOperand;
 
   // if any assets or liabilities are < 0, we have an issue!
   if (
     Object.values(assets).find((x) => x < 0) ||
     Object.values(liabilities).find((x) => x < 0) ||
-    Object.values(availableBalances).find((x) => x < 0)
+    Object.values(availableForDeposit).find((x) => x < 0) ||
+    Object.values(availableForBorrow).find((x) => x < 0)
   ) {
-    console.log('Margin Account or EOA balance dropped below 0!');
+    console.log('Margin Account, EOA, or Lender balance dropped below 0!');
     return null;
   }
 
@@ -31,12 +33,15 @@ export function runWithChecks(
   //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
   //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
   // TLDR: It's simpler to check solvency inside this for loop
-  const updatedMarginAccount = {
-    ...marginAccount,
+  const solvency = isSolvent(
     assets,
     liabilities,
-  };
-  const solvency = isSolvent(updatedMarginAccount, uniswapPositions, marginAccount.sqrtPriceX96);
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
   if (!solvency.atA || !solvency.atB) {
     console.log('Margin Account not solvent!');
     console.log(solvency);

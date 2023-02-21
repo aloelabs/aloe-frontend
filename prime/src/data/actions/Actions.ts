@@ -11,8 +11,9 @@ import UniswapAddLiquidityActionCard from '../../components/borrow/actions/Unisw
 import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapClaimFeesActionCard';
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapActionCard';
+import { Balances } from '../Balances';
 import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
-import { UserBalances } from '../UserBalances';
+import { MarketInfo } from '../MarketInfo';
 import { ActionID } from './ActionID';
 import { runWithChecks } from './Utils';
 
@@ -33,8 +34,9 @@ export interface AccountState {
   readonly assets: Assets;
   readonly liabilities: Liabilities;
   readonly uniswapPositions: readonly UniswapPosition[];
-  readonly availableBalances: UserBalances;
-  readonly requiredAllowances: UserBalances;
+  readonly availableForDeposit: Balances;
+  readonly availableForBorrow: Balances;
+  readonly requiredAllowances: Balances;
   readonly claimedFeeUniswapKeys: readonly string[];
 }
 
@@ -47,6 +49,8 @@ export type ActionCardOutput = {
 };
 
 export type ActionCardProps = {
+  /** properties of the market as a whole, not specific to the margin account */
+  marketInfo: MarketInfo;
   /** holds values that don't change across actions, like account address and token data */
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>;
   /** holds values that do change across actions, like assets and liabilities */
