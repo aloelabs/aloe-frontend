@@ -472,9 +472,8 @@ function DepositButton(props: DepositButtonProps) {
         getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline)
           .then((signature) => {
             setPermitData({ signature, approve, deadline });
-            setIsPending(false);
           })
-          .catch((error) => {
+          .finally(() => {
             setIsPending(false);
           });
 
