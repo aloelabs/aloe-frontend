@@ -34,6 +34,7 @@ import {
 } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
+import { PRIME_URL } from '../data/constants/Values';
 import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
@@ -363,6 +364,12 @@ export default function BorrowPage() {
               }}
               onRepay={() => {
                 setIsRepayModalOpen(true);
+              }}
+              onGetLeverage={() => {
+                if (selectedMarginAccount != null) {
+                  const primeAccountUrl = `${PRIME_URL}/borrow/account/${selectedMarginAccount.address}`;
+                  window.open(primeAccountUrl, '_blank');
+                }
               }}
             />
           </MonitorContainer>
