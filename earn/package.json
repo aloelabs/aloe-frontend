@@ -27,6 +27,7 @@
     "big.js": "^6.1.1",
     "color.js": "^1.2.0",
     "date-fns": "^2.28.0",
+    "ethereum-multicall": "^2.15.0",
     "ethers": "^5.7.0",
     "graphql": "^16.5.0",
     "graphql-tag": "^2.12.6",

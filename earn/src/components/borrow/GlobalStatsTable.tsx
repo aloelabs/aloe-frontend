@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { MarginAccountPreview, MarketInfo } from '../../data/MarginAccount';
-import { roundPercentage } from '../../util/Numbers';
+import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 
 const STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const STAT_VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -59,6 +59,8 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
   const { token0, token1 } = marginAccountPreview;
   const lender0TotalSupply = marketInfo.lender0TotalSupply.div(10 ** token0.decimals);
   const lender1TotalSupply = marketInfo.lender1TotalSupply.div(10 ** token1.decimals);
+  const lender0TotalBorrows = marketInfo.lender0TotalBorrows.div(10 ** token0.decimals);
+  const lender1TotalBorrows = marketInfo.lender1TotalBorrows.div(10 ** token1.decimals);
   return (
     <Wrapper>
       <Text size='M'>Pair Stats</Text>
@@ -68,7 +70,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token0.ticker} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {lender0TotalSupply.toFixed(2)}
+            {formatTokenAmount(lender0TotalSupply.toNumber(), 4)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -76,7 +78,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token1.ticker} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {lender1TotalSupply.toFixed(2)}
+            {formatTokenAmount(lender1TotalSupply.toNumber(), 4)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -84,7 +86,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token0.ticker} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            TODO
+            {formatTokenAmount(lender0TotalBorrows.toNumber(), 4)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -92,7 +94,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token1.ticker} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            TODO
+            {formatTokenAmount(lender1TotalBorrows.toNumber(), 4)}
           </Display>
         </StatContainer>
         <StatContainer>
