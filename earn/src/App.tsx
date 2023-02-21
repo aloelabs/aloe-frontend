@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -61,6 +61,7 @@ function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
   const account = useAccount();
   const network = useNetwork();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -96,6 +97,7 @@ function AppBodyWrapper() {
         account={account}
         setIsOpen={() => setIsWelcomeModalOpen(false)}
         onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+        onSkip={() => navigate('/markets')}
       />
     </AppBody>
   );
