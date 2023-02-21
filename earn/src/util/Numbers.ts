@@ -226,11 +226,3 @@ export function getDecimalPlaces(value: string): number {
   }
   return value.length - decimalIndex - 1;
 }
-
-export function removeScientificNotation(value: string, maxDecimals: number): string {
-  if (value.indexOf('e') === -1) {
-    return value;
-  }
-  const asNumber = Number(value);
-  return truncateDecimals(asNumber.toFixed(maxDecimals), maxDecimals);
-}

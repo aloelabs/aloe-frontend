@@ -1,6 +1,7 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { SendTransactionResult, FetchBalanceResult } from '@wagmi/core';
+import Big from 'big.js';
 import { ethers, BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
@@ -25,7 +26,7 @@ import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { MarginAccount } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, removeScientificNotation, truncateDecimals } from '../../../util/Numbers';
+import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -136,10 +137,7 @@ function RepayButton(props: RepayButtonProps) {
 
   // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
   const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
-  const bigExistingLiability = ethers.utils.parseUnits(
-    removeScientificNotation(existingLiability.toString(), repayToken.decimals),
-    repayToken.decimals
-  );
+  const bigExistingLiability = BigNumber.from(new Big(existingLiability).mul(10 ** repayToken.decimals).toFixed(0));
   const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
 
   // MARK: Determining button state -----------------------------------------------------------------------------------
@@ -327,10 +325,7 @@ export default function RepayModal(props: RepayModalProps) {
     repayToken.address === marginAccount.token0.address
       ? marginAccount.liabilities.amount0
       : marginAccount.liabilities.amount1;
-  const bigExistingLiability = ethers.utils.parseUnits(
-    removeScientificNotation(existingLiability.toString(), repayToken.decimals),
-    repayToken.decimals
-  );
+  const bigExistingLiability = BigNumber.from(new Big(existingLiability).mul(10 ** repayToken.decimals).toFixed(0));
   const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
   const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
 
