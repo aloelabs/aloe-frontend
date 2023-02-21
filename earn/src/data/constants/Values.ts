@@ -8,6 +8,7 @@ export const BLOCKS_TO_WAIT = 1;
 export const WETH_GAS_RESERVE = new Big('200000000000000000');
 export const DEFAULT_RATIO_CHANGE = '5.0';
 export const RATIO_CHANGE_CUTOFF = 0;
+export const PRIME_URL = 'https://prime.aloe.capital';
 export const API_URL = 'https://api.aloe.capital';
 export const API_GEO_FENCING_URL = 'https://geo-fencing.aloe.capital/v1/verify';
 export const GAS_ESTIMATION_SCALING = 1.1;
