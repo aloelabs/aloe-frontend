@@ -11,7 +11,7 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import { maxBorrows } from '../../../data/MarginAccount';
+import { maxBorrows } from '../../../data/BalanceSheet';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
