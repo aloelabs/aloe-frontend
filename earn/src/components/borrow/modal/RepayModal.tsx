@@ -1,20 +1,32 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
-import { ethers } from 'ethers';
+import { SendTransactionResult, FetchBalanceResult } from '@wagmi/core';
+import { ethers, BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, usePrepareContractWrite, useContractWrite } from 'wagmi';
+import {
+  useAccount,
+  usePrepareContractWrite,
+  useContractWrite,
+  useBalance,
+  Address,
+  Chain,
+  useSigner,
+  useProvider,
+} from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
-import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
+import ERC20ABI from '../../../assets/abis/ERC20.json';
+import RouterABI from '../../../assets/abis/Router.json';
+import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
+import useAllowance from '../../../data/hooks/UseAllowance';
+import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { MarginAccount } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
+import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
@@ -22,88 +34,194 @@ const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
-  INSUFFICIENT_COLLATERAL,
+  INSUFFICIENT_FUNDS,
   REPAYING_TOO_MUCH,
+  PERMIT_ASSET,
+  APPROVE_ASSET,
   PENDING,
-  READY,
+  READY_VIA_PERMIT,
+  READY_VIA_APPROVE,
+  DISABLED,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
-    case ConfirmButtonState.INSUFFICIENT_COLLATERAL:
-      return {
-        text: `Insufficient ${token.ticker} collateral`,
-        enabled: false,
-      };
+    case ConfirmButtonState.INSUFFICIENT_FUNDS:
+      return { text: `Insufficient ${token.ticker}`, enabled: false };
     case ConfirmButtonState.REPAYING_TOO_MUCH:
-      return {
-        text: 'Repaying too much',
-        enabled: false,
-      };
+      return { text: 'Repaying too much', enabled: false };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return { text: `Permit ${token.ticker}`, enabled: true };
+    case ConfirmButtonState.APPROVE_ASSET:
+      return { text: `Approve ${token.ticker}`, enabled: true };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
-    case ConfirmButtonState.READY:
+    case ConfirmButtonState.READY_VIA_PERMIT:
+    case ConfirmButtonState.READY_VIA_APPROVE:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
   }
 }
 
+type PermitData = {
+  signature: ethers.Signature;
+  approve: {
+    owner: string;
+    spender: string;
+    value: BigNumber;
+  };
+  deadline: string;
+};
+
 type RepayButtonProps = {
+  activeChain: Chain;
   marginAccount: MarginAccount;
-  userAddress: string;
+  userAddress: Address;
+  lender: Address;
+  repayAmount: string;
   repayToken: Token;
-  repayAmount: Big;
-  collateralAmount: Big;
+  repayTokenBalance: FetchBalanceResult | undefined;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function RepayButton(props: RepayButtonProps) {
-  const { marginAccount, userAddress, repayToken, repayAmount, collateralAmount, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const {
+    activeChain,
+    marginAccount,
+    userAddress,
+    lender,
+    repayAmount,
+    repayToken,
+    repayTokenBalance,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
 
   const [isPending, setIsPending] = useState(false);
+  const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
+  const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
 
-  const isRepayingToken0 = repayToken.address === marginAccount.token0.address;
+  // MARK: wagmi basics -----------------------------------------------------------------------------------------------
+  const { data: signer } = useSigner({ chainId: activeChain.id });
+  const provider = useProvider({ chainId: activeChain.id });
+  const erc20Contract = useMemo(
+    () => new ethers.Contract(repayToken.address, ERC20ABI, provider),
+    [repayToken, provider]
+  );
 
-  const amount0Big = isRepayingToken0 ? repayAmount : new Big(0);
-  const amount1Big = isRepayingToken0 ? new Big(0) : repayAmount;
-
-  const liabilityAmount = isRepayingToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
-  const liabilityAmountBig = new Big(liabilityAmount.toString()).mul(10 ** repayToken.decimals);
-
-  const marginAccountInterface = new ethers.utils.Interface(MarginAccountABI);
-  const encodedData = marginAccountInterface.encodeFunctionData('repay', [amount0Big.toFixed(), amount1Big.toFixed()]);
-
-  const { config: removeCollateralConfig } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: MarginAccountABI,
-    functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER, encodedData, [false, false]],
-    enabled:
-      !!userAddress && repayAmount.gt(0) && repayAmount.lte(liabilityAmountBig) && repayAmount.lte(collateralAmount),
-    chainId: activeChain.id,
-  });
-  const removeCollateralUpdatedRequest = useMemo(() => {
-    if (removeCollateralConfig.request) {
-      return {
-        ...removeCollateralConfig.request,
-        gasLimit: removeCollateralConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
+  // MARK: Infer EIP2612 domain ---------------------------------------------------------------------------------------
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      const result = await attemptToInferPermitDomain(erc20Contract, activeChain.id);
+      if (mounted) setPermitDomain(result);
     }
-    return undefined;
-  }, [removeCollateralConfig.request]);
-  const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
-  } = useContractWrite({
-    ...removeCollateralConfig,
-    request: removeCollateralUpdatedRequest,
-  });
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [erc20Contract, activeChain.id]);
 
+  // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
+  const { refetch: refetchRouterAllowance, data: routerAllowance } = useAllowance(
+    activeChain,
+    repayToken,
+    userAddress,
+    ALOE_II_ROUTER_ADDRESS
+  );
+  const writeRouterAllowanceMax = useAllowanceWrite(activeChain, repayToken, ALOE_II_ROUTER_ADDRESS);
+
+  // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
+  const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
+  const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
+  const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
+
+  // MARK: Determining button state -----------------------------------------------------------------------------------
+  let confirmButtonState: ConfirmButtonState;
+
+  if (repayAmount === '') {
+    confirmButtonState = ConfirmButtonState.DISABLED;
+  } else if (isPending) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (bigRepayAmount.gt(repayTokenBalance?.value ?? BigNumber.from('0'))) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
+  } else if (bigRepayAmount.gt(bigExistingLiability)) {
+    confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
+  } else if (permitDomain !== null) {
+    if (!permitData) {
+      confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
+    } else {
+      confirmButtonState = ConfirmButtonState.READY_VIA_PERMIT;
+    }
+  } else if (permitDomain === null && routerAllowance) {
+    if (routerAllowance.lt(bigRepayAmount)) {
+      confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
+    } else {
+      confirmButtonState = ConfirmButtonState.READY_VIA_APPROVE;
+    }
+  } else {
+    console.error('Unexpected confirm button state!');
+    confirmButtonState = ConfirmButtonState.DISABLED;
+  }
+
+  // MARK: Prepare contract write for approval flow -------------------------------------------------------------------
+  const { config: repayWithApprovalConfig, refetch: refetchRepayWithApprovalConfig } = usePrepareContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    functionName: 'repay(address,uint256,address)',
+    args: [lender, bigRepayAmount, marginAccount.address],
+    chainId: activeChain.id,
+    enabled: confirmButtonState === ConfirmButtonState.READY_VIA_APPROVE,
+  });
+  if (repayWithApprovalConfig.request) {
+    repayWithApprovalConfig.request.gasLimit = repayWithApprovalConfig.request.gasLimit
+      .mul(GAS_ESTIMATE_WIGGLE_ROOM)
+      .div(100);
+  }
+  const {
+    write: repayWithApproval,
+    isSuccess: repayWithApprovalDidSucceed,
+    isLoading: repayWithApprovalIsLoading,
+    data: repayWithApprovalData,
+  } = useContractWrite(repayWithApprovalConfig);
+
+  // MARK: Prepare contract write for permit flow ---------------------------------------------------------------------
+  const { config: repayWithPermitConfig, refetch: refetchRepayWithPermitConfig } = usePrepareContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    functionName: 'repayWithPermit(address,uint256,address,uint256,uint256,uint8,bytes32,bytes32)',
+    args: [
+      lender,
+      bigRepayAmount,
+      marginAccount.address,
+      permitData?.approve.value,
+      permitData?.deadline,
+      permitData?.signature.v,
+      permitData?.signature.r,
+      permitData?.signature.s,
+    ],
+    chainId: activeChain.id,
+    enabled: confirmButtonState === ConfirmButtonState.READY_VIA_PERMIT,
+  });
+  if (repayWithPermitConfig.request) {
+    repayWithPermitConfig.request.gasLimit = repayWithPermitConfig.request.gasLimit
+      .mul(GAS_ESTIMATE_WIGGLE_ROOM)
+      .div(100);
+  }
+  const {
+    write: repayWithPermit,
+    isSuccess: repayWithPermitDidSucceed,
+    isLoading: repayWithPermitIsLoading,
+    data: repayWithPermitData,
+  } = useContractWrite(repayWithPermitConfig);
+
+  // MARK: Respond to repay txn successes/failures --------------------------------------------------------------------
+  const contractDidSucceed = repayWithApprovalDidSucceed || repayWithPermitDidSucceed;
+  const contractIsLoading = repayWithApprovalIsLoading || repayWithPermitIsLoading;
+  const contractData = repayWithApprovalData ?? repayWithPermitData;
   useEffect(() => {
     if (contractDidSucceed && contractData) {
       setPendingTxn(contractData);
@@ -114,30 +232,61 @@ function RepayButton(props: RepayButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  let confirmButtonState = ConfirmButtonState.READY;
-
-  if (repayAmount.gt(collateralAmount)) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_COLLATERAL;
-  } else if (repayAmount.gt(liabilityAmountBig)) {
-    confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  }
-
+  // MARK: Get the button itself --------------------------------------------------------------------------------------
+  // --> UI
   const confirmButton = getConfirmButton(confirmButtonState, repayToken);
+  // --> action
+  const confirmButtonAction = () => {
+    switch (confirmButtonState) {
+      case ConfirmButtonState.APPROVE_ASSET:
+        setIsPending(true);
+        writeRouterAllowanceMax
+          .writeAsync?.()
+          .then((txnResult) =>
+            txnResult.wait(1).then(() => {
+              refetchRouterAllowance();
+            })
+          )
+          .finally(() => {
+            setIsPending(false);
+          });
+        break;
+      case ConfirmButtonState.PERMIT_ASSET:
+        setIsPending(true);
+
+        const approve = {
+          owner: userAddress,
+          spender: ALOE_II_ROUTER_ADDRESS,
+          value: bigRepayAmount.add(1),
+        };
+        const deadline = (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline).then((signature) => {
+          setPermitData({ signature, approve, deadline });
+          setIsPending(false);
+        });
+        break;
+      case ConfirmButtonState.READY_VIA_APPROVE:
+        setIsPending(true);
+        if (!repayWithApprovalConfig.request) {
+          console.error('Reached READY state before approval config was ready');
+          refetchRepayWithApprovalConfig();
+        } else repayWithApproval?.();
+        break;
+      case ConfirmButtonState.READY_VIA_PERMIT:
+        setIsPending(true);
+        if (!repayWithPermitConfig.request) {
+          console.error('Reached READY state before permit config was ready');
+          refetchRepayWithPermitConfig();
+        } else repayWithPermit?.();
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      disabled={!confirmButton.enabled}
-      onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
-          setIsPending(true);
-          contractWrite?.();
-        }
-      }}
-    >
+    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={confirmButtonAction}>
       {confirmButton.text}
     </FilledStylizedButton>
   );
@@ -153,35 +302,33 @@ export type RepayModalProps = {
 export default function RepayModal(props: RepayModalProps) {
   const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
 
+  const { activeChain } = useContext(ChainContext);
   const [repayAmount, setRepayAmount] = useState('');
   const [repayToken, setRepayToken] = useState<Token>(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
+  const { data: repayTokenBalance } = useBalance({
+    address: userAddress,
+    chainId: activeChain.id,
+    token: repayToken.address,
+    watch: false,
+  });
+  const bigTokenBalance = repayTokenBalance?.value ?? BigNumber.from('0');
 
   const resetModal = () => {
     setRepayAmount('');
     setRepayToken(marginAccount.token0);
   };
 
-  const tokenOptions = [marginAccount.token0, marginAccount.token1];
-
-  const numericBorrowAmount = Number(repayAmount) || 0;
-  const numericExistingLiability =
+  const existingLiability =
     repayToken.address === marginAccount.token0.address
       ? marginAccount.liabilities.amount0
       : marginAccount.liabilities.amount1;
-  const numericCollateralAmount =
-    repayToken.address === marginAccount.token0.address
-      ? marginAccount.assets.token0Raw
-      : marginAccount.assets.token1Raw;
-  const repayAmountBig = new Big(numericBorrowAmount).mul(10 ** repayToken.decimals);
-  const existingLiabilityBig = new Big(numericExistingLiability).mul(10 ** repayToken.decimals);
-  const collateralAmountBig = new Big(numericCollateralAmount).mul(10 ** repayToken.decimals);
+  const bigExistingLiability = ethers.utils.parseUnits(existingLiability.toString(), repayToken.decimals);
+  const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
+  const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
 
-  const newLiability = existingLiabilityBig.minus(repayAmountBig).div(10 ** repayToken.decimals);
-  const newCollateral = collateralAmountBig.minus(repayAmountBig).div(10 ** repayToken.decimals);
-
-  const maxRepayAmount = Math.min(numericExistingLiability, numericCollateralAmount);
+  const maxRepay = bigExistingLiability.lte(bigTokenBalance) ? bigExistingLiability : bigTokenBalance;
 
   if (!userAddress || !isOpen) {
     return null;
@@ -203,12 +350,12 @@ export default function RepayModal(props: RepayModalProps) {
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between mb-1'>
             <Text size='M' weight='bold'>
-              Repay Amount
+              Amount
             </Text>
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setRepayAmount(maxRepayAmount.toString());
+                setRepayAmount(ethers.utils.formatUnits(maxRepay, repayToken.decimals));
               }}
             >
               MAX
@@ -227,7 +374,7 @@ export default function RepayModal(props: RepayModalProps) {
               setRepayAmount('');
               setRepayToken(option);
             }}
-            options={tokenOptions}
+            options={[marginAccount.token0, marginAccount.token1]}
             selectedOption={repayToken}
           />
         </div>
@@ -238,31 +385,24 @@ export default function RepayModal(props: RepayModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're repaying{' '}
             <strong>
-              {repayAmount || '0.00'} {repayToken.ticker}
-            </strong>{' '}
-            worth of liabilities in your{' '}
-            <strong>
-              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
-            </strong>{' '}
-            smart wallet using your collateral. Your total liabilities for this token in this smart wallet will be
-            reduced to{' '}
-            <strong>
-              {truncateDecimals(newLiability.toString(), repayToken.decimals)} {repayToken.ticker}
+              {repayAmount || '0'} {repayToken.ticker}
             </strong>
-            , and your collateral will be reduced to{' '}
+            . This will increase your smart wallet's health and bring remaining borrows down to{' '}
             <strong>
-              {truncateDecimals(newCollateral.toString(), repayToken.decimals)} {repayToken.ticker}
+              {ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals)} {repayToken.ticker}
             </strong>
             .
           </Text>
         </div>
         <div className='w-full'>
           <RepayButton
+            activeChain={activeChain}
             marginAccount={marginAccount}
             userAddress={userAddress}
+            lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
+            repayAmount={repayAmount}
             repayToken={repayToken}
-            repayAmount={repayAmountBig}
-            collateralAmount={collateralAmountBig}
+            repayTokenBalance={repayTokenBalance}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />
