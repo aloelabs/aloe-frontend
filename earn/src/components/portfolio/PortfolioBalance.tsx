@@ -26,7 +26,9 @@ export default function PortfolioBalance(props: PortfolioBalanceProps) {
   let displayDigits = 2;
   if (totalUsdPlusYield > 0) {
     const smallestIncrement = totalUsd * (1 + weightedAvgApy / 100) ** (INTERVAL / 1000 / SECONDS_PER_YEAR) - totalUsd;
-    displayDigits = Math.max(2, Math.ceil(-Math.log10(smallestIncrement)) - 1);
+    if (smallestIncrement > 0) {
+      displayDigits = Math.max(2, Math.ceil(-Math.log10(smallestIncrement)) - 1);
+    }
   }
   const localeArgs = {
     style: 'currency',
