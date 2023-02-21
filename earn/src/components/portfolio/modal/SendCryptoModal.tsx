@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -11,9 +11,6 @@ import { useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
-import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { Token } from '../../../data/Token';
 import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -29,30 +26,25 @@ enum ConfirmButtonState {
   READY,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token
-): { text: string; Icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INVALID_ADDRESS:
       return {
         text: `Invalid Address`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
         text: `Insufficient ${token.ticker}`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
     default:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
@@ -232,7 +224,9 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             size='L'
             value={addressInputValue}
             inputClassName={addressInputValue !== '' ? 'active' : ''}
-            onChange={(e) => setAddressInputValue(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setAddressInputValue(e.target.value);
+            }}
             fullWidth={true}
             paddingRightOverride='24px'
             placeholder='Enter address'
