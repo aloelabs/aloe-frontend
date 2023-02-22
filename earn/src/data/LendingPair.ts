@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import Big from 'big.js';
-import { CallReturnContext, ContractCallContext, Multicall } from 'ethereum-multicall';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
@@ -11,7 +11,7 @@ import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
@@ -84,40 +84,31 @@ export async function getAvailableLendingPairs(
 
   addresses.forEach((market) => {
     contractCallContexts.push({
-      reference: `basics0-${market.pool}`,
+      reference: `${market.pool}-basics`,
       contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
       abi: KittyLensABI,
       calls: [
         {
-          reference: `basics0-${market.pool}`,
+          reference: `${market.pool}-basics0`,
           methodName: 'readBasics',
           methodParameters: [market.kitty0],
         },
-      ],
-      context: { kitty0Address: market.kitty0 },
-    });
-
-    contractCallContexts.push({
-      reference: `basics1-${market.pool}`,
-      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
-      abi: KittyLensABI,
-      calls: [
         {
-          reference: `basics1-${market.pool}`,
+          reference: `${market.pool}-basics1`,
           methodName: 'readBasics',
           methodParameters: [market.kitty1],
         },
       ],
-      context: { kitty1Address: market.kitty1 },
+      context: { kitty0Address: market.kitty0, kitty1Address: market.kitty1 },
     });
 
     contractCallContexts.push({
-      reference: `feeTier-${market.pool}`,
+      reference: `${market.pool}-feeTier`,
       contractAddress: market.pool,
       abi: UniswapV3PoolABI,
       calls: [
         {
-          reference: `feeTier-${market.pool}`,
+          reference: `${market.pool}-feeTier`,
           methodName: 'fee',
           methodParameters: [],
         },
@@ -125,12 +116,12 @@ export async function getAvailableLendingPairs(
     });
 
     contractCallContexts.push({
-      reference: `oracleResult-${market.pool}`,
+      reference: `${market.pool}-oracle`,
       contractAddress: ALOE_II_ORACLE,
       abi: VolatilityOracleABI,
       calls: [
         {
-          reference: `oracleResult-${market.pool}`,
+          reference: `${market.pool}-oracle`,
           methodName: 'consult',
           methodParameters: [market.pool],
         },
@@ -138,28 +129,35 @@ export async function getAvailableLendingPairs(
     });
   });
 
-  const results = await multicall.call(contractCallContexts);
+  const lendingPairResults = (await multicall.call(contractCallContexts)).results;
 
-  let lendingPairReturnContexts: Map<string, [CallReturnContext, any][]> = new Map();
-  let lendingPairs: LendingPair[] = [];
-  Object.values(results.results).forEach((result) => {
-    const returnContext = convertBigNumbersForReturnContexts(result.callsReturnContext)[0];
-    const refId = returnContext.reference.split('-')[1];
-    if (lendingPairReturnContexts.has(refId)) {
-      lendingPairReturnContexts.get(refId)?.push([returnContext, result.originalContractCallContext?.context]);
+  const correspondingLendingPairResults: Map<string, ContractCallReturnContextEntries> = new Map();
+  // Convert the results into a map of account address to the results
+  Object.entries(lendingPairResults).forEach(([key, value]) => {
+    const entryAccountAddress = key.split('-')[0];
+    const entryType = key.split('-')[1];
+    const existingValue = correspondingLendingPairResults.get(entryAccountAddress);
+    if (existingValue) {
+      existingValue[entryType] = value;
+      correspondingLendingPairResults.set(entryAccountAddress, existingValue);
     } else {
-      lendingPairReturnContexts.set(refId, [[returnContext, result.originalContractCallContext?.context]]);
+      correspondingLendingPairResults.set(entryAccountAddress, { [entryType]: value });
     }
   });
 
-  Array.from(lendingPairReturnContexts.values()).forEach((returnContexts) => {
-    const basics0 = returnContexts[0][0].returnValues;
-    const basics1 = returnContexts[1][0].returnValues;
-    const feeTier = returnContexts[2][0].returnValues;
-    const oracleResult = returnContexts[3][0].returnValues;
-    const { kitty0Address } = returnContexts[0][1];
-    const { kitty1Address } = returnContexts[1][1];
+  const lendingPairs: LendingPair[] = [];
 
+  correspondingLendingPairResults.forEach((value) => {
+    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults } = value;
+    const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
+    const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
+    const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
+    const { kitty0Address, kitty1Address } = basicsResults.originalContractCallContext.context;
+
+    const basics0 = basicsReturnContexts[0].returnValues;
+    const basics1 = basicsReturnContexts[1].returnValues;
+    const feeTier = feeTierReturnContexts[0].returnValues;
+    const oracleResult = oracleReturnContexts[0].returnValues;
     const token0 = getToken(chain.id, basics0[0]);
     const token1 = getToken(chain.id, basics1[0]);
     if (token0 == null || token1 == null) return;
