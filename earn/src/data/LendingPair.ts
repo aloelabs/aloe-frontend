@@ -188,11 +188,11 @@ export async function getAvailableLendingPairs(
     const utilization0 = new Big(basics0[2].toString()).div(10 ** 18).toNumber();
     const utilization1 = new Big(basics1[2].toString()).div(10 ** 18).toNumber();
 
-    const inventory0 = new Big(basics0[3].toString()).div(10 ** 18).toNumber();
-    const inventory1 = new Big(basics1[3].toString()).div(10 ** 18).toNumber();
+    const inventory0 = new Big(basics0[3].toString()).div(10 ** token0.decimals).toNumber();
+    const inventory1 = new Big(basics1[3].toString()).div(10 ** token1.decimals).toNumber();
 
-    const totalSupply0 = new Big(basics0[5].toString()).div(10 ** 18).toNumber();
-    const totalSupply1 = new Big(basics1[5].toString()).div(10 ** 18).toNumber();
+    const totalSupply0 = new Big(basics0[5].toString()).div(10 ** kitty0.decimals).toNumber();
+    const totalSupply1 = new Big(basics1[5].toString()).div(10 ** kitty1.decimals).toNumber();
 
     // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
     const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
