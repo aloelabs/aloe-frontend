@@ -488,9 +488,6 @@ export default function BorrowActionsPage() {
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 ?? 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 ?? 0));
 
-  console.log(apr0 - (marketInfo?.borrowerAPR0 ?? 0));
-  console.log(apr1 - (marketInfo?.borrowerAPR1 ?? 0));
-
   return (
     <BodyWrapper>
       <HeaderBarContainer>

@@ -238,7 +238,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   isCausingError={index >= numValidActions && userInputFields.at(index) !== undefined}
                   forceOutput={actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
-                    console.log('OUTPUT', index, output, userInputs);
                     setUserInputFields([
                       ...userInputFields.slice(0, index),
                       userInputs,
