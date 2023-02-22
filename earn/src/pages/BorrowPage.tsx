@@ -8,10 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { Address, useAccount, useContract, useProvider } from 'wagmi';
+import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
+import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
@@ -39,6 +40,7 @@ import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } fr
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { UniswapPosition } from '../data/Uniswap';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
@@ -134,10 +136,12 @@ export default function BorrowPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
+
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccount[] | null>(null);
   const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
+  const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
@@ -155,6 +159,18 @@ export default function BorrowPage() {
     abi: MarginAccountLensABI,
     address: ALOE_II_BORROWER_LENS_ADDRESS,
     signerOrProvider: provider,
+  });
+  // const borrowerContract = useContract({
+  //   address: selectedMarginAccount?.address ?? '0x', // TODO better optional resolution
+  //   abi: MarginAccountABI,
+  //   signerOrProvider: provider,
+  // });
+  const { data: uniswapPositionTicks } = useContractRead({
+    address: selectedMarginAccount?.address ?? '0x',
+    abi: MarginAccountABI,
+    functionName: 'getUniswapPositions',
+    chainId: activeChain.id,
+    enabled: !!selectedMarginAccount,
   });
 
   // MARK: Fetch available pools
@@ -292,6 +308,23 @@ export default function BorrowPage() {
       mounted = false;
     };
   }, [activeChain, selectedMarginAccount]);
+
+  // MARK: Fetch Uniswap positions for this MarginAccount
+  // NOTE/TODO: This could be cached, and also made more efficient with multicall
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      if (!Array.isArray(uniswapPositionTicks)) return;
+
+      if (mounted) {
+        setUniswapPositions([]);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
