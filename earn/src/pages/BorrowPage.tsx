@@ -36,14 +36,16 @@ import {
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { PRIME_URL } from '../data/constants/Values';
+import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
+import { fetchUniswapPositions, UniswapPosition, UniswapPositionPrior } from '../data/Uniswap';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { UniswapPosition } from '../data/Uniswap';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
+const FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS = 500;
 
 const Container = styled.div`
   display: flex;
@@ -117,13 +119,13 @@ const GraphContainer = styled.div`
   margin-bottom: 64px;
 `;
 
-const StatsContainer = styled.div`
-  grid-area: stats;
-`;
-
 const MetricsContainer = styled.div`
   grid-area: metrics;
   margin-bottom: 64px;
+`;
+
+const StatsContainer = styled.div`
+  grid-area: stats;
 `;
 
 export type UniswapPoolInfo = {
@@ -141,6 +143,9 @@ export default function BorrowPage() {
   const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccount[] | null>(null);
   const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
+  const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useState<Map<string, readonly UniswapPosition[]>>(
+    new Map()
+  );
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
@@ -160,11 +165,6 @@ export default function BorrowPage() {
     address: ALOE_II_BORROWER_LENS_ADDRESS,
     signerOrProvider: provider,
   });
-  // const borrowerContract = useContract({
-  //   address: selectedMarginAccount?.address ?? '0x', // TODO better optional resolution
-  //   abi: MarginAccountABI,
-  //   signerOrProvider: provider,
-  // });
   const { data: uniswapPositionTicks } = useContractRead({
     address: selectedMarginAccount?.address ?? '0x',
     abi: MarginAccountABI,
@@ -309,22 +309,56 @@ export default function BorrowPage() {
     };
   }, [activeChain, selectedMarginAccount]);
 
-  // MARK: Fetch Uniswap positions for this MarginAccount
-  // NOTE/TODO: This could be cached, and also made more efficient with multicall
-  useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      if (!Array.isArray(uniswapPositionTicks)) return;
-
-      if (mounted) {
-        setUniswapPositions([]);
+  // MARK: Fetch Uniswap positions for this MarginAccount (debounced to avoid double-fetching)
+  useDebouncedEffect(
+    () => {
+      let mounted = true;
+      const cachedUniswapPositions = cachedUniswapPositionsMap.get(selectedMarginAccount?.address ?? '');
+      if (cachedUniswapPositions !== undefined) {
+        // If we have cached positions, set them and return (no need to fetch)
+        setUniswapPositions(cachedUniswapPositions);
+        return;
       }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      async function fetch() {
+        if (!Array.isArray(uniswapPositionTicks)) return;
+
+        // Convert the ticks into UniswapPositionPriors
+        const uniswapPositionPriors: UniswapPositionPrior[] = [];
+        for (let i = 0; i < uniswapPositionTicks.length; i += 2) {
+          uniswapPositionPriors.push({
+            lower: uniswapPositionTicks[i] as number,
+            upper: uniswapPositionTicks[i + 1] as number,
+          });
+        }
+        if (uniswapPositionPriors.length === 0 || selectedMarginAccount === undefined) return;
+
+        // Fetch the positions
+        const fetchedUniswapPositionsMap = await fetchUniswapPositions(
+          uniswapPositionPriors,
+          selectedMarginAccount.address,
+          selectedMarginAccount.uniswapPool,
+          provider
+        );
+        // We only want the values, not the keys
+        const fetchedUniswapPositions = Array.from(fetchedUniswapPositionsMap.values());
+
+        if (mounted) {
+          // Cache the positions
+          setCachedUniswapPositionsMap((prev) => {
+            return new Map(prev).set(selectedMarginAccount.address, fetchedUniswapPositions);
+          });
+          // Set the positions
+          setUniswapPositions(fetchedUniswapPositions);
+        }
+      }
+      fetch();
+      return () => {
+        mounted = false;
+      };
+    },
+    FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS,
+    [uniswapPositionTicks]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -366,8 +400,11 @@ export default function BorrowPage() {
                 token1={account.token1}
                 isActive={selectedMarginAccount?.address === account.address}
                 onClick={() => {
+                  // When a new account is selected, we need to update the
+                  // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
                   setSelectedMarginAccount(account);
                   setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
+                  setUniswapPositions(cachedUniswapPositionsMap.get(account.address) ?? []);
                 }}
                 key={account.address}
               />

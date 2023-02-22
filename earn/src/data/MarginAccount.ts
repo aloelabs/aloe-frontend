@@ -20,9 +20,6 @@ import {
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
-import { UniswapPosition } from './Uniswap';
-
-export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
 
 export type Assets = {
   token0Raw: number;
