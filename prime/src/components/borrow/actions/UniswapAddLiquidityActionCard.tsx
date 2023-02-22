@@ -259,6 +259,13 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     );
   }
 
+  let max0 = accountState.assets.token0Raw;
+  let max1 = accountState.assets.token1Raw;
+  // If token1 is selected, we need to swap the max amounts
+  if (!isToken0Selected) [max0, max1] = [max1, max0];
+  const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
+  const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
+
   const ticksAreDefined = previousLower != null && previousUpper != null && currentTick != null;
   const tickIncrement = (tickInfo && (isToken0Selected ? tickInfo.tickSpacing : -tickInfo.tickSpacing)) ?? null;
 
@@ -364,12 +371,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     />
   );
 
-  const maxes = [accountState.assets.token0Raw, accountState.assets.token1Raw];
-  const max0 = maxes[isToken0Selected ? 0 : 1];
-  const max1 = maxes[isToken0Selected ? 1 : 0];
-  const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
-  const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
-  // Not to be confused with token0Amount and token1Amount, these are the amounts associated with the inputs
+  // We need to swap the token amounts if token1 is selected
   const tokenAmount0 = localTokenAmounts[isToken0Selected ? 0 : 1];
   const tokenAmount1 = localTokenAmounts[isToken0Selected ? 1 : 0];
 
