@@ -6,7 +6,8 @@ import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { MarginAccountPreview, sumAssetsPerToken } from '../../data/MarginAccount';
+import { sumAssetsPerToken } from '../../data/BalanceSheet';
+import { MarginAccountPreview } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
 import { getHealthColor } from '../../util/Health';

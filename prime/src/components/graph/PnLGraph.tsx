@@ -19,14 +19,9 @@ import tw from 'twin.macro';
 
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
+import { getAssets, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/BalanceSheet';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
-import {
-  getAssets,
-  LiquidationThresholds,
-  MarginAccount,
-  priceToSqrtRatio,
-  sqrtRatioToPrice,
-} from '../../data/MarginAccount';
+import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { formatNumberInput } from '../../util/Numbers';
 import Tooltip from '../common/Tooltip';

@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
@@ -11,9 +11,6 @@ import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
-import { ReactComponent as AlertTriangleIcon } from '../../../assets/svg/alert_triangle.svg';
-import { ReactComponent as CheckIcon } from '../../../assets/svg/check_black.svg';
-import { ReactComponent as MoreIcon } from '../../../assets/svg/more_ellipses.svg';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
@@ -33,30 +30,25 @@ enum ConfirmButtonState {
   READY,
 }
 
-function getConfirmButton(
-  state: ConfirmButtonState,
-  token: Token
-): { text: string; Icon: ReactElement; enabled: boolean } {
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
         text: `Insufficient ${token.ticker}`,
-        Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
         text: `Approve ${token.ticker}`,
-        Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.PENDING:
-      return { text: 'Pending', Icon: <MoreIcon />, enabled: false };
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: true };
+      return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
     default:
-      return { text: 'Confirm', Icon: <CheckIcon />, enabled: false };
+      return { text: 'Confirm', enabled: false };
   }
 }
 
@@ -209,7 +201,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && account.address !== undefined && isOpen,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
@@ -218,7 +210,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
     abi: KittyABI,
-    enabled: activeKitty != null,
+    enabled: activeKitty != null && account.address !== undefined && isOpen,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,

@@ -18,7 +18,11 @@ import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
 import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
 import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
+import AddCollateralModal from '../components/borrow/modal/AddCollateralModal';
+import BorrowModal from '../components/borrow/modal/BorrowModal';
 import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
+import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralModal';
+import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -30,14 +34,8 @@ import {
 } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
-import {
-  fetchMarginAccount,
-  fetchMarginAccountPreviews,
-  fetchMarketInfoFor,
-  MarginAccount,
-  MarginAccountPreview,
-  MarketInfo,
-} from '../data/MarginAccount';
+import { PRIME_URL } from '../data/constants/Values';
+import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
@@ -138,15 +136,15 @@ export default function BorrowPage() {
   const { address: userAddress } = useAccount();
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
-  const [marginAccountPreviews, setMarginAccountPreviews] = useState<MarginAccountPreview[] | null>(null);
-  const [selectedMarginAccountPreview, setSelectedMarginAccountPreview] = useState<MarginAccountPreview | undefined>(
-    undefined
-  );
-  const [cachedMarginAccounts, setCachedMarginAccounts] = useState<Map<string, MarginAccount>>(new Map());
+  const [marginAccounts, setMarginAccounts] = useState<MarginAccount[] | null>(null);
   const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
+  const [isAddCollateralModalOpen, setIsAddCollateralModalOpen] = useState(false);
+  const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
+  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+  const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -205,19 +203,14 @@ export default function BorrowPage() {
     };
   }, [activeChain, provider]);
 
-  // MARK: Fetch margin account previews
+  // MARK: Fetch margin accounts
   useEffect(() => {
     let mounted = true;
     async function fetch() {
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
-      const marginAccountPreviews = await fetchMarginAccountPreviews(
-        activeChain,
-        provider,
-        userAddress,
-        availablePools
-      );
+      const marginAccounts = await fetchMarginAccounts(activeChain, provider, userAddress, availablePools);
       if (mounted) {
-        setMarginAccountPreviews(marginAccountPreviews);
+        setMarginAccounts(marginAccounts);
       }
     }
     fetch();
@@ -226,46 +219,18 @@ export default function BorrowPage() {
     };
   }, [userAddress, activeChain, borrowerLensContract, provider, availablePools]);
 
+  // If no margin account is selected, select the first one
   useEffect(() => {
-    if (selectedMarginAccountPreview == null && marginAccountPreviews?.length) {
-      setSelectedMarginAccountPreview(marginAccountPreviews[0]);
+    if (selectedMarginAccount == null && marginAccounts?.length) {
+      setSelectedMarginAccount(marginAccounts[0]);
     }
-  }, [marginAccountPreviews, selectedMarginAccountPreview]);
-
-  // MARK: Fetch margin account
-  useEffect(() => {
-    let mounted = true;
-    const cachedMarginAccount = cachedMarginAccounts.get(selectedMarginAccountPreview?.address ?? '');
-    if (cachedMarginAccount != null) {
-      setSelectedMarginAccount(cachedMarginAccount);
-      return;
-    }
-    async function fetch() {
-      if (selectedMarginAccountPreview == null || borrowerLensContract == null) return;
-      const result = await fetchMarginAccount(
-        selectedMarginAccountPreview.address,
-        activeChain,
-        provider,
-        selectedMarginAccountPreview.address
-      );
-      if (mounted) {
-        setCachedMarginAccounts((prev) => {
-          return new Map(prev).set(selectedMarginAccountPreview.address, result.marginAccount);
-        });
-        setSelectedMarginAccount(result.marginAccount);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedMarginAccountPreview, activeChain, borrowerLensContract, provider, userAddress, cachedMarginAccounts]);
+  }, [marginAccounts, selectedMarginAccount]);
 
   // MARK: Fetch market info
   useEffect(() => {
     let mounted = true;
     const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
-    if (cachedMarketInfo != null) {
+    if (cachedMarketInfo !== undefined) {
       setSelectedMarketInfo(cachedMarketInfo);
       return;
     }
@@ -295,12 +260,12 @@ export default function BorrowPage() {
     let mounted = true;
     async function fetch() {
       let etherscanResult: AxiosResponse<any, any> | null = null;
-      if (selectedMarginAccountPreview == null) return;
+      if (selectedMarginAccount == null) return;
       try {
         etherscanResult = await makeEtherscanRequest(
           0,
           ALOE_II_ORACLE,
-          [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccountPreview?.uniswapPool}`],
+          [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
           true,
           activeChain
         );
@@ -326,7 +291,7 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, selectedMarginAccountPreview]);
+  }, [activeChain, selectedMarginAccount]);
 
   useEffect(() => {
     let mounted = true;
@@ -351,9 +316,9 @@ export default function BorrowPage() {
   const defaultPool = availablePools.keys().next().value;
 
   const dailyInterest0 =
-    ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount0 || 0);
+    ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
   const dailyInterest1 =
-    ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccountPreview?.liabilities.amount1 || 0);
+    ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
   return (
     <AppPage>
       <Container>
@@ -362,17 +327,16 @@ export default function BorrowPage() {
             Smart Wallets
           </Text>
           <SmartWalletsList>
-            {marginAccountPreviews?.map((preview) => (
+            {marginAccounts?.map((account) => (
               <SmartWalletButton
-                token0={preview.token0}
-                token1={preview.token1}
-                isActive={selectedMarginAccountPreview?.address === preview.address}
+                token0={account.token0}
+                token1={account.token1}
+                isActive={selectedMarginAccount?.address === account.address}
                 onClick={() => {
-                  setSelectedMarginAccountPreview(preview);
-                  setSelectedMarginAccount(cachedMarginAccounts.get(preview.address) ?? undefined);
-                  setSelectedMarketInfo(cachedMarketInfos.get(preview.address) ?? undefined);
+                  setSelectedMarginAccount(account);
+                  setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
                 }}
-                key={preview.address}
+                key={account.address}
               />
             ))}
             <NewSmartWalletButton
@@ -388,7 +352,26 @@ export default function BorrowPage() {
               <p>Monitor and manage</p>
               <p>your smart wallet</p>
             </Text>
-            <ManageAccountButtons />
+            <ManageAccountButtons
+              onAddCollateral={() => {
+                setIsAddCollateralModalOpen(true);
+              }}
+              onRemoveCollateral={() => {
+                setIsRemoveCollateralModalOpen(true);
+              }}
+              onBorrow={() => {
+                setIsBorrowModalOpen(true);
+              }}
+              onRepay={() => {
+                setIsRepayModalOpen(true);
+              }}
+              onGetLeverage={() => {
+                if (selectedMarginAccount != null) {
+                  const primeAccountUrl = `${PRIME_URL}/borrow/account/${selectedMarginAccount.address}`;
+                  window.open(primeAccountUrl, '_blank');
+                }
+              }}
+            />
           </MonitorContainer>
           <GraphContainer>
             {graphData && graphData.length > 0 ? (
@@ -407,13 +390,13 @@ export default function BorrowPage() {
           </GraphContainer>
           <MetricsContainer>
             <BorrowMetrics
-              marginAccountPreview={selectedMarginAccountPreview}
+              marginAccount={selectedMarginAccount}
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
             />
           </MetricsContainer>
           <StatsContainer>
-            <GlobalStatsTable marginAccountPreview={selectedMarginAccountPreview} marketInfo={selectedMarketInfo} />
+            <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
           </StatsContainer>
         </PageGrid>
       </Container>
@@ -425,6 +408,37 @@ export default function BorrowPage() {
           setIsOpen={setNewSmartWalletModalOpen}
           setPendingTxn={setPendingTxn}
         />
+      )}
+      {selectedMarginAccount && selectedMarketInfo && (
+        <>
+          <AddCollateralModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isAddCollateralModalOpen}
+            setIsOpen={setIsAddCollateralModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <RemoveCollateralModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isRemoveCollateralModalOpen}
+            setIsOpen={setIsRemoveCollateralModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <BorrowModal
+            marginAccount={selectedMarginAccount}
+            marketInfo={selectedMarketInfo}
+            isOpen={isBorrowModalOpen}
+            setIsOpen={setIsBorrowModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <RepayModal
+            marginAccount={selectedMarginAccount}
+            isOpen={isRepayModalOpen}
+            setIsOpen={setIsRepayModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+        </>
       )}
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}

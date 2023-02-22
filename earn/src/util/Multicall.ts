@@ -1,5 +1,9 @@
-import { CallReturnContext } from 'ethereum-multicall';
+import { CallReturnContext, ContractCallReturnContext } from 'ethereum-multicall';
 import { BigNumber } from 'ethers';
+
+export type ContractCallReturnContextEntries = {
+  [key: string]: ContractCallReturnContext;
+};
 
 export function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
   return callReturnContexts.map((callReturnContext) => {

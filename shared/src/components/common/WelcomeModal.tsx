@@ -17,10 +17,11 @@ export type WelcomeModalProps = {
   account?: GetAccountResult<Provider>;
   setIsOpen: (open: boolean) => void;
   onAcknowledged: () => void;
+  onSkip?: () => void;
 };
 
 export default function WelcomeModal(props: WelcomeModalProps) {
-  const { isOpen, activeChain, checkboxes, account, setIsOpen, onAcknowledged } = props;
+  const { isOpen, activeChain, checkboxes, account, setIsOpen, onAcknowledged, onSkip } = props;
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Welcome!'>
@@ -39,6 +40,7 @@ export default function WelcomeModal(props: WelcomeModalProps) {
             onClick={() => {
               onAcknowledged();
               setIsOpen(false);
+              onSkip?.();
             }}
           >
             Skip for now

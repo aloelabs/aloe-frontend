@@ -142,6 +142,9 @@ export type LendingPairPeerCardProps = {
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeAsset, lendingPairs } = props;
   const { activeChain } = useContext(ChainContext);
+
+  const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
+
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
       return {
@@ -161,16 +164,22 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
 
   useEffect(() => {
     let mounted = true;
+    const cachedResult = cachedData.get(selectedOption.label);
+    if (cachedResult) {
+      setNumberOfUsers(cachedResult);
+      return;
+    }
+    // TODO: move this to a hook
     async function fetchNumberOfUsers() {
       const etherscanRequestLender0 = makeEtherscanRequest(
-        7537163,
+        0,
         selectedLendingPair.kitty0.address,
         ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
         true,
         activeChain
       );
       const etherscanRequestLender1 = makeEtherscanRequest(
-        7537163,
+        0,
         selectedLendingPair.kitty1.address,
         ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
         true,
@@ -202,13 +211,17 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
       });
       if (mounted) {
         setNumberOfUsers(uniqueUsers.size);
+        setCachedData((cachedData) => {
+          // TODO: Make this into a custom hook (and make it more efficient)
+          return new Map(cachedData).set(selectedOption.label, uniqueUsers.size);
+        });
       }
     }
     fetchNumberOfUsers();
     return () => {
       mounted = false;
     };
-  }, [selectedLendingPair, activeChain]);
+  }, [selectedLendingPair, activeChain, cachedData, selectedOption.label]);
 
   const [activeUtilization, activeTotalSupply] = getActiveUtilizationAndTotalSupply(activeAsset, selectedLendingPair);
 

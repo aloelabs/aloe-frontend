@@ -1,6 +1,6 @@
 import Big from 'big.js';
 import { secondsInYear } from 'date-fns';
-import { ContractCallContext, ContractCallResults, Multicall } from 'ethereum-multicall';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
@@ -9,10 +9,9 @@ import { Address, Chain } from 'wagmi';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig } from '../util/Numbers';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -21,9 +20,7 @@ import {
   ALOE_II_KITTY_LENS_ADDRESS,
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { BIGQ96 } from './constants/Values';
 import { Token } from './Token';
-import { getToken } from './TokenData';
 
 export type UniswapPosition = {
   lower: number;
@@ -76,11 +73,6 @@ export type MarketInfo = {
   lender1TotalBorrows: Big;
 };
 
-export type LiquidationThresholds = {
-  lower: number;
-  upper: number;
-};
-
 /**
  * For the use-cases that may not require all of the data
  * (When we don't want to fetch more than we need)
@@ -117,16 +109,17 @@ export type UniswapPoolInfo = {
   fee: number;
 };
 
-export async function fetchMarginAccountPreviews(
+export async function fetchMarginAccounts(
   chain: Chain,
   provider: ethers.providers.BaseProvider,
   userAddress: string,
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
-): Promise<MarginAccountPreview[]> {
+): Promise<MarginAccount[]> {
   const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
   const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
-  let contractCallContext: ContractCallContext[] = [];
+  const marginAccountCallContext: ContractCallContext[] = [];
 
+  // Fetch all the data for the margin accounts
   marginAccountsAddresses.forEach(({ address: accountAddress, uniswapPool }) => {
     const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
 
@@ -137,9 +130,38 @@ export async function fetchMarginAccountPreviews(
     const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
 
     if (!token0 || !token1) return;
-
-    contractCallContext.push({
-      reference: accountAddress,
+    // Fetching the data for the margin account using three contracts
+    marginAccountCallContext.push({
+      reference: `${accountAddress}-account`,
+      contractAddress: accountAddress,
+      abi: MarginAccountABI,
+      calls: [
+        {
+          reference: 'lender0',
+          methodName: 'LENDER0',
+          methodParameters: [],
+        },
+        {
+          reference: 'lender1',
+          methodName: 'LENDER1',
+          methodParameters: [],
+        },
+      ],
+    });
+    marginAccountCallContext.push({
+      reference: `${accountAddress}-oracle`,
+      contractAddress: ALOE_II_ORACLE,
+      abi: VolatilityOracleABI,
+      calls: [
+        {
+          reference: 'consult',
+          methodName: 'consult',
+          methodParameters: [uniswapPool],
+        },
+      ],
+    });
+    marginAccountCallContext.push({
+      reference: `${accountAddress}-lens`,
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS,
       abi: MarginAccountLensABI,
       calls: [
@@ -169,17 +191,32 @@ export async function fetchMarginAccountPreviews(
     });
   });
 
-  const results = (await multicall.call(contractCallContext)).results;
+  const marginAccountResults = (await multicall.call(marginAccountCallContext)).results;
 
-  let marginAccounts: MarginAccountPreview[] = [];
+  const correspondingMarginAccountResults: Map<string, ContractCallReturnContextEntries> = new Map();
 
-  Object.values(results).forEach((value) => {
-    const contractResults = value.callsReturnContext;
-    const updatedReturnContext = convertBigNumbersForReturnContexts(contractResults);
-    const { feeTier, token0, token1, accountAddress, uniswapPool } = value.originalContractCallContext.context;
-    const assetsData = updatedReturnContext[0].returnValues;
-    const liabilitiesData = updatedReturnContext[1].returnValues;
-    const healthData = updatedReturnContext[2].returnValues;
+  // Convert the results into a map of account address to the results
+  Object.entries(marginAccountResults).forEach(([key, value]) => {
+    const entryAccountAddress = key.split('-')[0];
+    const entryType = key.split('-')[1];
+    const existingValue = correspondingMarginAccountResults.get(entryAccountAddress);
+    if (existingValue) {
+      existingValue[entryType] = value;
+      correspondingMarginAccountResults.set(entryAccountAddress, existingValue);
+    } else {
+      correspondingMarginAccountResults.set(entryAccountAddress, { [entryType]: value });
+    }
+  });
+
+  const marginAccounts: MarginAccount[] = [];
+
+  correspondingMarginAccountResults.forEach((value) => {
+    const { lens: lensResults, account: accountResults, oracle: oracleResults } = value;
+    const lensReturnContexts = convertBigNumbersForReturnContexts(lensResults.callsReturnContext);
+    const { feeTier, token0, token1, accountAddress, uniswapPool } = lensResults.originalContractCallContext.context;
+    const assetsData = lensReturnContexts[0].returnValues;
+    const liabilitiesData = lensReturnContexts[1].returnValues;
+    const healthData = lensReturnContexts[2].returnValues;
     const healthData0 = Big(healthData[0].toString());
     const healthData1 = Big(healthData[1].toString());
     const health = healthData0.lt(healthData1) ? healthData0 : healthData1;
@@ -205,17 +242,26 @@ export async function fetchMarginAccountPreviews(
         .div(10 ** token1.decimals)
         .toNumber(),
     };
-    marginAccounts.push({
+    const lender0 = accountResults.callsReturnContext[0].returnValues[0];
+    const lender1 = accountResults.callsReturnContext[1].returnValues[0];
+    const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
+    const marginAccount: MarginAccount = {
       address: accountAddress,
-      uniswapPool,
-      token0,
-      token1,
-      feeTier,
-      assets,
-      liabilities,
-      health: health.div(1e9).toNumber() / 1e9,
-    });
+      uniswapPool: uniswapPool,
+      feeTier: feeTier,
+      assets: assets,
+      liabilities: liabilities,
+      health: health.toNumber(),
+      token0: token0,
+      token1: token1,
+      lender0: lender0,
+      lender1: lender1,
+      sqrtPriceX96: toBig(oracleReturnValues[0]),
+      iv: oracleReturnValues[1].div(1e9).toNumber() / 1e9,
+    };
+    marginAccounts.push(marginAccount);
   });
+
   return marginAccounts;
 }
 
@@ -272,124 +318,4 @@ export async function fetchMarketInfoFor(
     lender0TotalBorrows: lender0TotalBorrows,
     lender1TotalBorrows: lender1TotalBorrows,
   };
-}
-
-export async function fetchMarginAccount(
-  accountAddress: string,
-  chain: Chain,
-  provider: ethers.providers.BaseProvider,
-  marginAccountAddress: string
-): Promise<{
-  marginAccount: MarginAccount;
-}> {
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
-
-  const contractCallContext: ContractCallContext[] = [
-    {
-      reference: 'marginAccountContract',
-      contractAddress: marginAccountAddress,
-      abi: MarginAccountABI,
-      calls: [
-        { reference: 'token0', methodName: 'TOKEN0', methodParameters: [] },
-        { reference: 'token1', methodName: 'TOKEN1', methodParameters: [] },
-        { reference: 'lender0', methodName: 'LENDER0', methodParameters: [] },
-        { reference: 'lender1', methodName: 'LENDER1', methodParameters: [] },
-        { reference: 'uniswapPool', methodName: 'UNISWAP_POOL', methodParameters: [] },
-      ],
-    },
-    {
-      reference: 'marginAccountLensContract',
-      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS,
-      abi: MarginAccountLensABI,
-      calls: [
-        { reference: 'assets', methodName: 'getAssets', methodParameters: [marginAccountAddress] },
-        { reference: 'liabilities', methodName: 'getLiabilities', methodParameters: [marginAccountAddress, true] },
-        { reference: 'health', methodName: 'getHealth', methodParameters: [accountAddress, true] },
-      ],
-    },
-  ];
-
-  const results: ContractCallResults = await multicall.call(contractCallContext);
-  const marginAccountContractResults = results.results['marginAccountContract'].callsReturnContext;
-  const marginAccountLensContractResults = results.results['marginAccountLensContract'].callsReturnContext;
-  const updatedLensReturnContext = convertBigNumbersForReturnContexts(marginAccountLensContractResults);
-  const token0 = getToken(chain.id, marginAccountContractResults[0].returnValues[0]);
-  const token1 = getToken(chain.id, marginAccountContractResults[1].returnValues[0]);
-  const lender0 = marginAccountContractResults[2].returnValues[0];
-  const lender1 = marginAccountContractResults[3].returnValues[0];
-  const uniswapPool = marginAccountContractResults[4].returnValues[0];
-  const assetsData = updatedLensReturnContext[0].returnValues;
-  const liabilitiesData = updatedLensReturnContext[1].returnValues;
-  const healthData = updatedLensReturnContext[2].returnValues;
-
-  const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
-  const volatilityOracleContract = new ethers.Contract(ALOE_II_ORACLE, VolatilityOracleABI, provider);
-  const [feeTier, oracleResult] = await Promise.all([
-    uniswapPoolContract.fee(),
-    volatilityOracleContract.consult(uniswapPool),
-  ]);
-
-  const assets: Assets = {
-    token0Raw: Big(assetsData[0].toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    token1Raw: Big(assetsData[1].toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
-    uni0: Big(assetsData[4].toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    uni1: Big(assetsData[5].toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
-  };
-  const liabilities: Liabilities = {
-    amount0: Big(liabilitiesData[0].toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    amount1: Big(liabilitiesData[1].toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
-  };
-
-  const healthData0 = Big(healthData[0].toString());
-  const healthData1 = Big(healthData[1].toString());
-  const health = healthData0.lt(healthData1) ? healthData0 : healthData1;
-
-  return {
-    marginAccount: {
-      address: marginAccountAddress,
-      uniswapPool: uniswapPool,
-      token0: token0,
-      token1: token1,
-      feeTier: NumericFeeTierToEnum(feeTier),
-      assets: assets,
-      liabilities: liabilities,
-      sqrtPriceX96: toBig(oracleResult[0]),
-      health: health.div(1e9).toNumber() / 1e9,
-      lender0: lender0,
-      lender1: lender1,
-      iv: oracleResult[1].div(1e9).toNumber() / 1e9,
-    },
-  };
-}
-
-export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, token1Decimals: number): number {
-  return sqrtPriceX96
-    .mul(sqrtPriceX96)
-    .div(BIGQ96)
-    .div(BIGQ96)
-    .mul(10 ** (token0Decimals - token1Decimals))
-    .toNumber();
-}
-
-export function priceToSqrtRatio(price: number, token0Decimals: number, token1Decimals: number): Big {
-  return new Big(price)
-    .mul(10 ** (token1Decimals - token0Decimals))
-    .sqrt()
-    .mul(BIGQ96);
-}
-
-export function sumAssetsPerToken(assets: Assets): [number, number] {
-  return [assets.token0Raw + assets.uni0, assets.token1Raw + assets.uni1];
 }

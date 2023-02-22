@@ -27,6 +27,7 @@ import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsT
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
+import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
@@ -34,15 +35,8 @@ import {
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import {
-  fetchMarginAccount,
-  fetchMarketInfoFor,
-  isSolvent,
-  LiquidationThresholds,
-  MarginAccount,
-  MarketInfo,
-  sumAssetsPerToken,
-} from '../data/MarginAccount';
+import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
+import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 import {
   ComputeLiquidationThresholdsRequest,

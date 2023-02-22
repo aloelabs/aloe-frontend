@@ -16,8 +16,10 @@ import {
   UniswapPosition,
 } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
+import { isSolvent } from '../../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
-import { isSolvent, MarginAccount, MarketInfo } from '../../data/MarginAccount';
+import { MarginAccount } from '../../data/MarginAccount';
+import { MarketInfo } from '../../data/MarketInfo';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
