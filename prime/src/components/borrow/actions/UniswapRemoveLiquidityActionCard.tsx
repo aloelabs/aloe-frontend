@@ -53,7 +53,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     }
     // TODO: refactor this to have exhaustive dependency list
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountState]);
+  }, [accountState, userInputFields]);
 
   let selectedOption: DropdownOption<number> | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
