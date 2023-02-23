@@ -5,7 +5,7 @@ export type ContractCallReturnContextEntries = {
   [key: string]: ContractCallReturnContext;
 };
 
-export function convertBigNumbers(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
+export function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
   return callReturnContexts.map((callReturnContext) => {
     callReturnContext.returnValues = callReturnContext.returnValues.map((returnValue) => {
       // If the return value is a BigNumber, convert it to an ethers BigNumber

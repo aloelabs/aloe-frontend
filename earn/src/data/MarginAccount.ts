@@ -11,7 +11,7 @@ import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { ContractCallReturnContextEntries, convertBigNumbers } from '../util/Multicall';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig } from '../util/Numbers';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -212,7 +212,7 @@ export async function fetchMarginAccounts(
 
   correspondingMarginAccountResults.forEach((value) => {
     const { lens: lensResults, account: accountResults, oracle: oracleResults } = value;
-    const lensReturnContexts = convertBigNumbers(lensResults.callsReturnContext);
+    const lensReturnContexts = convertBigNumbersForReturnContexts(lensResults.callsReturnContext);
     const { feeTier, token0, token1, accountAddress, uniswapPool } = lensResults.originalContractCallContext.context;
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
@@ -244,7 +244,7 @@ export async function fetchMarginAccounts(
     };
     const lender0 = accountResults.callsReturnContext[0].returnValues[0];
     const lender1 = accountResults.callsReturnContext[1].returnValues[0];
-    const oracleReturnValues = convertBigNumbers(oracleResults.callsReturnContext)[0].returnValues;
+    const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,
       uniswapPool: uniswapPool,
@@ -292,7 +292,7 @@ export async function fetchMarketInfoFor(
   ];
 
   const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbers(results['readBasics'].callsReturnContext);
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['readBasics'].callsReturnContext);
   const lender0Basics = updatedReturnContext[0].returnValues;
   const lender1Basics = updatedReturnContext[1].returnValues;
 
