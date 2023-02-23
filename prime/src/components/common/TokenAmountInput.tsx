@@ -75,9 +75,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         inputClassName={props.value !== '' ? 'active' : ''}
         placeholder='0.00'
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-          console.log(event.target.value);
           const output = formatNumberInput(event.target.value);
-          console.log(output);
           if (output !== null) {
             const truncatedOutput = truncateDecimals(output, props.token.decimals);
             props.onChange(truncatedOutput);

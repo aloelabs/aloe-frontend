@@ -31,6 +31,5 @@ export class RateModel {
 }
 
 export function yieldPerSecondToAPR(yieldPerSecond: JSBI): number {
-  console.log(yieldPerSecond.toString(10));
   return (JSBI.toNumber(yieldPerSecond) / 1e12 - 1.0) * SECONDS_PER_YEAR;
 }
