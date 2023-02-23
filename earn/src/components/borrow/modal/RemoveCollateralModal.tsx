@@ -10,6 +10,7 @@ import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
+import { maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
@@ -158,11 +159,9 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  const isToken0 = collateralToken.address === marginAccount.token0.address;
 
-  const existingCollateral =
-    collateralToken.address === marginAccount.token0.address
-      ? marginAccount.assets.token0Raw
-      : marginAccount.assets.token1Raw;
+  const existingCollateral = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
 
   const numericCollateralAmount = Number(collateralAmount) || 0;
 
@@ -180,6 +179,17 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   if (!userAddress || !isOpen) {
     return null;
   }
+
+  const maxWithdrawBasedOnHealth = maxWithdraws(
+    marginAccount.assets,
+    marginAccount.liabilities,
+    [], // TODO: use real Uniswap positions
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  )[isToken0 ? 0 : 1];
+  const max = Math.min(existingCollateral, maxWithdrawBasedOnHealth);
 
   return (
     <Modal isOpen={isOpen} title='Remove Collateral' setIsOpen={setIsOpen} maxHeight='650px'>

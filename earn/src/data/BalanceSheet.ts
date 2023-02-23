@@ -226,6 +226,58 @@ export function maxBorrows(
   return [maxNewBorrows0, maxNewBorrows1];
 }
 
+export function maxWithdraws(
+  assets: Assets,
+  liabilities: Liabilities,
+  uniswapPositions: readonly UniswapPosition[],
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number
+) {
+  const priceC = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
+  const {
+    priceA,
+    priceB,
+    mem,
+    liquidationIncentive: initLiqIncent,
+  } = _computeSolvencyBasics(assets, liabilities, uniswapPositions, sqrtPriceX96, iv, token0Decimals, token1Decimals);
+
+  const liabilities0 = liabilities.amount0 * (1 + 1 / ALOE_II_MAX_LEVERAGE);
+  const liabilities1 = liabilities.amount1 * (1 + 1 / ALOE_II_MAX_LEVERAGE) + initLiqIncent;
+
+  const liabilitiesA = liabilities1 + liabilities0 * priceA;
+  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+  const liabilitiesB = liabilities1 + liabilities0 * priceB;
+  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
+
+  let maxWithdrawA1 = assetsA - liabilitiesA;
+  if (liabilities.amount0 <= mem.fixed0 + mem.fluid0C) {
+    maxWithdrawA1 /= 1 + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+  }
+  let maxWithdrawA0 = assetsA - liabilitiesA;
+  if (liabilities.amount1 <= mem.fixed1 + mem.fluid1C) {
+    maxWithdrawA0 /= priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+  } else {
+    maxWithdrawA0 /= priceA;
+  }
+
+  let maxWithdrawB1 = assetsB - liabilitiesB;
+  if (liabilities.amount0 <= mem.fixed0 + mem.fluid0C) {
+    maxWithdrawB1 /= 1 + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+  }
+  let maxWithdrawB0 = assetsB - liabilitiesB;
+  if (liabilities.amount1 <= mem.fixed1 + mem.fluid1C) {
+    maxWithdrawB0 /= priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+  } else {
+    maxWithdrawB0 /= priceB;
+  }
+
+  const maxNewWithdraws0 = Math.min(maxWithdrawA0, maxWithdrawB0, assets.token0Raw);
+  const maxNewWithdraws1 = Math.min(maxWithdrawA1, maxWithdrawB1, assets.token1Raw);
+  return [maxNewWithdraws0, maxNewWithdraws1];
+}
+
 export type LiquidationThresholds = {
   lowerSqrtRatio: Big;
   upperSqrtRatio: Big;

@@ -10,6 +10,7 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
+import { maxBorrows } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
@@ -133,7 +134,7 @@ export type BorrowModalProps = {
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -156,24 +157,39 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  const isToken0 = borrowToken.address === marginAccount.token0.address;
 
   const numericBorrowAmount = Number(borrowAmount) || 0;
-  const numericExistingLiability =
-    borrowToken.address === marginAccount.token0.address
-      ? marginAccount.liabilities.amount0
-      : marginAccount.liabilities.amount1;
+  const numericExistingLiability = isToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
   const borrowAmountBig = new Big(numericBorrowAmount).mul(10 ** borrowToken.decimals);
   const existingLiabilityBig = new Big(numericExistingLiability).mul(10 ** borrowToken.decimals);
 
   const newLiability = existingLiabilityBig.plus(borrowAmountBig).div(10 ** borrowToken.decimals);
 
-  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toString())) || false;
+  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toFixed(0))) || false;
 
   const formattedAnte = new Big(ANTE).div(10 ** 18).toFixed(4);
 
   if (!userAddress || !isOpen) {
     return null;
   }
+
+  const totalSupply = isToken0 ? marketInfo.lender0TotalSupply : marketInfo.lender1TotalSupply;
+  const totalBorrow = isToken0 ? marketInfo.lender0TotalBorrows : marketInfo.lender1TotalBorrows;
+  const maxBorrowsBasedOnMarket = totalSupply
+    .sub(totalBorrow)
+    .div(10 ** borrowToken.decimals)
+    .toNumber();
+  const maxBorrowsBasedOnHealth = maxBorrows(
+    marginAccount.assets,
+    marginAccount.liabilities,
+    [], // TODO: use actual Uniswap positions once we fetch them
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  )[isToken0 ? 0 : 1];
+  const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
