@@ -141,6 +141,8 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     address: userAddress,
     token: collateralToken.address,
     chainId: activeChain.id,
+    watch: false,
+    enabled: isOpen,
   });
 
   useEffect(() => {

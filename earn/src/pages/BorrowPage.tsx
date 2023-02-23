@@ -135,6 +135,7 @@ export default function BorrowPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
+  const [cachedGraphDatas, setCachedGraphDatas] = useState<Map<string, BorrowGraphData[]>>(new Map());
   const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
   const [marginAccounts, setMarginAccounts] = useState<MarginAccount[] | null>(null);
   const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
@@ -258,10 +259,16 @@ export default function BorrowPage() {
   // MARK: Fetch GraphData
   useEffect(() => {
     let mounted = true;
+    const cachedGraphData = cachedGraphDatas.get(selectedMarginAccount?.address ?? '');
+    if (cachedGraphData !== undefined) {
+      setGraphData(cachedGraphData);
+      return;
+    }
     async function fetch() {
       let etherscanResult: AxiosResponse<any, any> | null = null;
       if (selectedMarginAccount == null) return;
       try {
+        // TODO: make this into a dedicated function
         etherscanResult = await makeEtherscanRequest(
           0,
           ALOE_II_ORACLE,
@@ -274,6 +281,7 @@ export default function BorrowPage() {
       }
       if (etherscanResult == null || !Array.isArray(etherscanResult.data.result)) return [];
       const results = etherscanResult.data.result.map((result: any) => {
+        // TODO: abstract this out
         const { data, timeStamp } = result;
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
         const iv = ethers.BigNumber.from(decoded[1]).div(1e9).toNumber() / 1e9;
@@ -285,13 +293,18 @@ export default function BorrowPage() {
         };
         return resultData;
       });
-      if (mounted) setGraphData(results);
+      if (mounted) {
+        setCachedGraphDatas((prev) => {
+          return new Map(prev).set(selectedMarginAccount.address, results);
+        });
+        setGraphData(results);
+      }
     }
     fetch();
     return () => {
       mounted = false;
     };
-  }, [activeChain, selectedMarginAccount]);
+  }, [activeChain, cachedGraphDatas, selectedMarginAccount]);
 
   useEffect(() => {
     let mounted = true;

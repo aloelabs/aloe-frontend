@@ -144,6 +144,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { data: accountEtherBalance } = useBalance({
     address: marginAccount.address as Address,
     chainId: activeChain.id,
+    watch: false,
+    enabled: isOpen,
   });
 
   // Reset borrow amount and token when modal is opened/closed
