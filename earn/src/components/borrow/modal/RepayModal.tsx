@@ -313,6 +313,7 @@ export default function RepayModal(props: RepayModalProps) {
     chainId: activeChain.id,
     token: repayToken.address,
     watch: false,
+    enabled: isOpen,
   });
   const bigTokenBalance = repayTokenBalance?.value ?? BigNumber.from('0');
 
