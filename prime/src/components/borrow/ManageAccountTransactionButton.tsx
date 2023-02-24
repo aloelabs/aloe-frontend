@@ -106,6 +106,7 @@ export type ManageAccountTransactionButtonProps = {
   accountState: AccountState;
   actionOutputs: ActionCardOutput[];
   transactionWillFail: boolean;
+  enabled: boolean;
   onSuccessReceipt: () => void;
 };
 
@@ -121,6 +122,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     accountState,
     actionOutputs,
     transactionWillFail,
+    enabled,
     onSuccessReceipt,
   } = props;
   const { activeChain } = useContext(ChainContext);
@@ -158,7 +160,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const { data: accountEtherBalance } = useBalance({
     address: accountAddress,
     chainId: activeChain.id,
-    enabled: shouldEnableWagmiHooks,
+    enabled: shouldEnableWagmiHooks && enabled,
   });
 
   const { data: userAllowance0Asset } = useAllowance(
@@ -166,14 +168,14 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     token0,
     userAddress ?? '0x',
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
-    shouldEnableWagmiHooks
+    shouldEnableWagmiHooks && enabled
   );
   const { data: userAllowance1Asset } = useAllowance(
     activeChain,
     token1,
     userAddress ?? '0x',
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
-    shouldEnableWagmiHooks
+    shouldEnableWagmiHooks && enabled
   );
   const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
   const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
