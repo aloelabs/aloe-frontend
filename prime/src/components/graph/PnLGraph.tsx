@@ -181,7 +181,7 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
             </div>
             <SquareInput
               value={borrowInterestInputValue}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 // formatting negative input
                 const output = formatNumberInput(e.target.value, true);
                 if (output !== null) setBorrowInterestInputValue(output);
@@ -309,19 +309,24 @@ export default function PnLGraph(props: PnLGraphProps) {
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
-  let price = priceAtLastUpdate || currentPrice;
+  let previousPrice = priceAtLastUpdate || currentPrice;
+
+  // If we're showing hypothetical, we want to use the current price as the price at the last update
+  if (isShowingHypothetical) previousPrice = currentPrice;
+
   if (inTermsOfToken0) {
     currentPrice = 1 / currentPrice;
-    price = 1 / price;
+    previousPrice = 1 / previousPrice;
   }
-  const priceA = price / PLOT_X_SCALE;
-  const priceB = price * PLOT_X_SCALE;
+  const priceA = previousPrice / PLOT_X_SCALE;
+  const priceB = previousPrice * PLOT_X_SCALE;
 
   const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
   const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
   const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
   // Offset the initial value by the borrowInterest and swapFees
-  const initialValue = calculatePnL(marginAccount, uniswapPositions, price) - numericBorrowInterest - numericSwapFees;
+  const initialValue =
+    calculatePnL(marginAccount, uniswapPositions, previousPrice) - numericBorrowInterest - numericSwapFees;
 
   function calculateGraphData(): Array<PnLEntry> {
     let P = priceA;
