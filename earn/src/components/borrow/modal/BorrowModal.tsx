@@ -2,8 +2,9 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -190,14 +191,27 @@ export default function BorrowModal(props: BorrowModalProps) {
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
   const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket);
+  // Mitigate the case when the number is represented in scientific notation
+  const bigMax = BigNumber.from(new Big(max).mul(10 ** borrowToken.decimals).toFixed(0));
+  const maxString = ethers.utils.formatUnits(bigMax, borrowToken.decimals);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Borrow Amount
-          </Text>
+          <div className='flex flex-row justify-between mb-1'>
+            <Text size='M' weight='bold'>
+              Borrow Amount
+            </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                setBorrowAmount(maxString);
+              }}
+            >
+              MAX
+            </BaseMaxButton>
+          </div>
           <TokenAmountSelectInput
             inputValue={borrowAmount}
             onChange={(value) => {
