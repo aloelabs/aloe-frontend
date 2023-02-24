@@ -236,7 +236,7 @@ export type LiquidationThresholds = {
 export function computeLiquidationThresholds(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   token0Decimals: number,

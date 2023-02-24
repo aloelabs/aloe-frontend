@@ -6,7 +6,7 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { convertBigNumbers } from '../util/Multicall';
+import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig } from '../util/Numbers';
 import { BIGQ96, Q96 } from './constants/Values';
 
@@ -179,7 +179,7 @@ export async function fetchUniswapPositions(
     });
   });
   const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbers(results['uniswapV3Pool'].callsReturnContext);
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['uniswapV3Pool'].callsReturnContext);
 
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
   priors.forEach((prior, i) => {
@@ -212,7 +212,7 @@ export async function fetchUniswapPoolBasics(
   ];
 
   const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbers(results['uniswapV3Pool'].callsReturnContext);
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['uniswapV3Pool'].callsReturnContext);
   const slot0 = updatedReturnContext[0].returnValues;
   const tickSpacing = updatedReturnContext[1].returnValues;
 
