@@ -476,6 +476,7 @@ export default function BorrowPage() {
               marginAccount={selectedMarginAccount}
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
+              uniswapPositions={uniswapPositions}
             />
           </MetricsContainer>
           <StatsContainer>
