@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
+import { AxiosResponse } from 'axios';
+import { BigNumber, ethers } from 'ethers';
 import {
   Area,
   AreaChart,
@@ -17,13 +19,18 @@ import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
 import { getAssets, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/BalanceSheet';
+import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
+import { TOPIC0_MODIFY_EVENT } from '../../data/constants/Signatures';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
+import { makeEtherscanRequest } from '../../util/Etherscan';
 import { formatNumberInput } from '../../util/Numbers';
+import { tickToPrice } from '../../util/Uniswap';
 import Tooltip from '../common/Tooltip';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
@@ -208,7 +215,7 @@ function PnLGraphSettings(props: PnLGraphSettingsProps) {
             </div>
             <SquareInput
               value={swapFeeInputValue}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const output = formatNumberInput(e.target.value);
                 if (output !== null) setSwapFeesInputValue(output);
               }}
@@ -252,15 +259,61 @@ export default function PnLGraph(props: PnLGraphProps) {
     setBorrowInterestInputValue,
     setSwapFeesInputValue,
   } = props;
+  const { activeChain } = useContext(ChainContext);
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
+  const [priceAtLastUpdate, setPriceAtLastUpdate] = useState<number | null>(null);
 
-  let price = sqrtRatioToPrice(
+  useEffect(() => {
+    let mounted = true;
+    async function fetch() {
+      let etherscanResult: AxiosResponse<any, any> | null = null;
+      try {
+        etherscanResult = await makeEtherscanRequest(
+          0,
+          ALOE_II_FRONTEND_MANAGER_ADDRESS,
+          [TOPIC0_MODIFY_EVENT, `0x000000000000000000000000${marginAccount.address.slice(2)}`],
+          true,
+          activeChain
+        );
+      } catch (e) {
+        console.error(e);
+      }
+      if (etherscanResult == null || !Array.isArray(etherscanResult.data.result)) return [];
+      if (etherscanResult.data.result.length === 0) return [];
+      const mostRecentEvent = etherscanResult.data.result[0];
+      const mostRecentEventData: BigNumber = ethers.utils.defaultAbiCoder.decode(['uint256'], mostRecentEvent.data)[0];
+      const mostRecentPrice = tickToPrice(
+        mostRecentEventData.toNumber(),
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
+      );
+      if (mounted) {
+        setPriceAtLastUpdate(mostRecentPrice);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [
+    activeChain,
+    activeChain.id,
+    marginAccount.address,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals,
+  ]);
+
+  let currentPrice = sqrtRatioToPrice(
     marginAccount.sqrtPriceX96,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
-  if (inTermsOfToken0) price = 1 / price;
+  let price = priceAtLastUpdate || currentPrice;
+  if (inTermsOfToken0) {
+    currentPrice = 1 / currentPrice;
+    price = 1 / price;
+  }
   const priceA = price / PLOT_X_SCALE;
   const priceB = price * PLOT_X_SCALE;
 
@@ -370,7 +423,7 @@ export default function PnLGraph(props: PnLGraphProps) {
               />
               <YAxis stroke={SECONDARY_COLOR} fontSize='14px' />
               <ReferenceLine y={0} stroke={SECONDARY_COLOR} />
-              <ReferenceLine x={price} stroke={SECONDARY_COLOR} strokeWidth={2} />
+              <ReferenceLine x={currentPrice} stroke={SECONDARY_COLOR} strokeWidth={2} />
               <ReferenceLine x={liquidationLower} stroke='rgb(114, 167, 246)' strokeWidth={2} />
               <ReferenceArea x1={data[0].x} x2={liquidationLower} fill='rgba(114, 167, 246, 0.5)' />
               <ReferenceLine x={liquidationUpper} stroke='rgb(114, 167, 246)' strokeWidth={2} />
