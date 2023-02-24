@@ -2,7 +2,6 @@ import Big from 'big.js';
 import { secondsInYear } from 'date-fns';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
-import JSBI from 'jsbi';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
 
@@ -21,14 +20,6 @@ import {
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
-
-export type UniswapPosition = {
-  lower: number;
-  upper: number;
-  liquidity: JSBI;
-};
-
-export type UniswapPositionPrior = Omit<UniswapPosition, 'amount0' | 'amount1' | 'liquidity'>;
 
 export type Assets = {
   token0Raw: number;

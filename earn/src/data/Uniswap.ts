@@ -1,14 +1,37 @@
 import { TickMath } from '@uniswap/v3-sdk';
+import { Provider } from '@wagmi/core';
 import Big from 'big.js';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 
-import { Q96 } from './constants/Values';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { convertBigNumbers } from '../util/Multicall';
+import { toBig } from '../util/Numbers';
+import { BIGQ96, Q96 } from './constants/Values';
 
 export type UniswapPosition = {
   lower: number;
   upper: number;
   liquidity: JSBI;
 };
+
+export type UniswapPositionPrior = Omit<UniswapPosition, 'liquidity'>;
+
+export interface UniswapV3PoolSlot0 {
+  sqrtPriceX96: ethers.BigNumber;
+  tick: number;
+  observationIndex: number;
+  observationCardinality: number;
+  observationCardinalityNext: number;
+  feeProtocol: number;
+}
+
+export interface UniswapV3PoolBasics {
+  slot0: UniswapV3PoolSlot0;
+  tickSpacing: number;
+  token1OverToken0: Big;
+}
 
 function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
@@ -97,4 +120,112 @@ export function getValueOfLiquidity(position: UniswapPosition, currentTick: numb
   const value = JSBI.add(value0, value1);
 
   return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+}
+
+export function uniswapPositionKey(owner: string, lower: number, upper: number): string {
+  return ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, lower, upper]);
+}
+
+export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
+  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
+  return toBig(priceX96).div(BIGQ96);
+}
+
+export function tickToPrice(
+  tick: number,
+  token0Decimals: number,
+  token1Decimals: number,
+  isInTermsOfToken0 = true
+): number {
+  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
+  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
+
+  const priceX96Big = new Big(priceX96.toString(10));
+
+  const decimalDiff = token0Decimals - token1Decimals;
+  const price0In1 = priceX96Big
+    .mul(10 ** decimalDiff)
+    .div(BIGQ96)
+    .toNumber();
+  const price1In0 = 1.0 / price0In1;
+  return isInTermsOfToken0 ? price0In1 : price1In0;
+}
+
+export async function fetchUniswapPositions(
+  priors: UniswapPositionPrior[],
+  marginAccountAddress: string,
+  uniswapV3PoolAddress: string,
+  provider: Provider
+) {
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+  });
+  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+  const contractCallContext: ContractCallContext[] = [];
+  keys.forEach((key) => {
+    contractCallContext.push({
+      reference: 'uniswapV3Pool',
+      contractAddress: uniswapV3PoolAddress,
+      abi: UniswapV3PoolABI,
+      calls: [
+        {
+          reference: 'positions',
+          methodName: 'positions',
+          methodParameters: [key],
+        },
+      ],
+    });
+  });
+  const results = (await multicall.call(contractCallContext)).results;
+  const updatedReturnContext = convertBigNumbers(results['uniswapV3Pool'].callsReturnContext);
+
+  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+  priors.forEach((prior, i) => {
+    const liquidity = JSBI.BigInt(updatedReturnContext[0].returnValues[0].toString());
+    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
+  });
+
+  return fetchedUniswapPositions;
+}
+
+/**
+ *
+ * @returns the current tick for a given Uniswap pool
+ */
+export async function fetchUniswapPoolBasics(
+  uniswapPoolAddress: string,
+  provider: ethers.providers.BaseProvider
+): Promise<UniswapV3PoolBasics> {
+  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const contractCallContext: ContractCallContext[] = [
+    {
+      reference: 'uniswapV3Pool',
+      contractAddress: uniswapPoolAddress,
+      abi: UniswapV3PoolABI,
+      calls: [
+        { reference: 'slot0', methodName: 'slot0', methodParameters: [] },
+        { reference: 'tickSpacing', methodName: 'tickSpacing', methodParameters: [] },
+      ],
+    },
+  ];
+
+  const results = (await multicall.call(contractCallContext)).results;
+  const updatedReturnContext = convertBigNumbers(results['uniswapV3Pool'].callsReturnContext);
+  const slot0 = updatedReturnContext[0].returnValues;
+  const tickSpacing = updatedReturnContext[1].returnValues;
+
+  return {
+    slot0: {
+      sqrtPriceX96: slot0[0],
+      tick: slot0[1],
+      observationIndex: slot0[2],
+      observationCardinality: slot0[3],
+      observationCardinalityNext: slot0[4],
+      feeProtocol: slot0[5],
+    },
+    tickSpacing: tickSpacing[0],
+    token1OverToken0: convertSqrtPriceX96(slot0[0]),
+  };
 }
