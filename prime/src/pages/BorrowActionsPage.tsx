@@ -10,7 +10,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
 
-import { ChainContext } from '../App';
+import { ChainContext, useGeoFencing } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -178,6 +178,7 @@ async function fetchUniswapPositions(
 
 export default function BorrowActionsPage() {
   const { activeChain } = useContext(ChainContext);
+  const isAllowedToInteract = useGeoFencing(activeChain);
 
   const navigate = useNavigate();
   const params = useParams<AccountParams>();
@@ -504,6 +505,7 @@ export default function BorrowActionsPage() {
           marketInfo={marketInfo}
           marginAccount={marginAccount}
           uniswapPositions={uniswapPositions}
+          enabled={isAllowedToInteract}
           updateHypotheticalState={updateHypotheticalState}
           onAddFirstAction={() => setUserWantsHypothetical(true)}
         />

@@ -44,6 +44,7 @@ const Wrapper = styled.div`
     border-radius: 8px;
     padding: 1.5px 1.5px 1.5px 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -114,13 +115,14 @@ export type ManageAccountWidgetProps = {
   marketInfo: MarketInfo | null;
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
+  enabled: boolean;
   updateHypotheticalState: (state: AccountState | null) => void;
   onAddFirstAction: () => void;
 };
 
 export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: component props
-  const { marketInfo, marginAccount, uniswapPositions, updateHypotheticalState, onAddFirstAction } = props;
+  const { marketInfo, marginAccount, uniswapPositions, enabled, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
   const { activeChain } = useContext(ChainContext);
@@ -273,8 +275,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 size='S'
                 svgColorType='stroke'
                 onClick={() => {
-                  setShowAddActionModal(true);
+                  if (enabled) {
+                    setShowAddActionModal(true);
+                  }
                 }}
+                disabled={!enabled}
               >
                 Add Action
               </FilledGradientButtonWithIcon>
@@ -292,6 +297,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             accountState={finalState}
             actionOutputs={actionOutputs}
             transactionWillFail={activeActions.length > numValidActions}
+            enabled={enabled}
             onSuccessReceipt={() => {
               setActionOutputs([]);
               setUserInputFields([]);
@@ -301,7 +307,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
         </div>
       </div>
       <BorrowSelectActionModal
-        isOpen={showAddActionModal}
+        isOpen={showAddActionModal && enabled}
         setIsOpen={setShowAddActionModal}
         handleAddAction={(action: Action) => {
           if (activeActions.length === 0) onAddFirstAction();
