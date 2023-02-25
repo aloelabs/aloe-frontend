@@ -302,8 +302,12 @@ export default function BorrowActionsPage() {
     let mounted = true;
     async function fetchMarketInfo() {
       if (!lenderLensContract || !marginAccount) return;
-      const marketInfo = await fetchMarketInfoFor(lenderLensContract, marginAccount.lender0, marginAccount.lender1);
-      if (mounted) setMarketInfo(marketInfo);
+      const fetchedMarketInfo = await fetchMarketInfoFor(
+        lenderLensContract,
+        marginAccount.lender0,
+        marginAccount.lender1
+      );
+      if (mounted) setMarketInfo(fetchedMarketInfo);
     }
     fetchMarketInfo();
     return () => {
@@ -479,15 +483,15 @@ export default function BorrowActionsPage() {
   if (marketInfo && isShowingHypothetical) {
     utilization0 =
       1 -
-      hypotheticalState.availableForBorrow.amount0 /
-        marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber();
+        hypotheticalState.availableForBorrow.amount0 /
+          marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber() || 0;
     utilization1 =
       1 -
-      hypotheticalState.availableForBorrow.amount1 /
-        marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber();
+        hypotheticalState.availableForBorrow.amount1 /
+          marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber() || 0;
   }
-  const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 ?? 0));
-  const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 ?? 0));
+  const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
+  const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));
 
   return (
     <BodyWrapper>
