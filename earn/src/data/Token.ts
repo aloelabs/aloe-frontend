@@ -20,4 +20,12 @@ export class Token {
   get underlying(): Token {
     return this;
   }
+
+  equals(other: Token): boolean {
+    return (
+      this.chainId === other.chainId &&
+      this.address.toLowerCase() === other.address.toLowerCase() &&
+      this.decimals === other.decimals
+    );
+  }
 }

@@ -20,6 +20,7 @@ import {
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
+import { getToken } from './TokenData';
 
 export type Assets = {
   token0Raw: number;
@@ -118,7 +119,7 @@ export async function fetchMarginAccounts(
 
     const token0 = uniswapPoolInfo.token0;
     const token1 = uniswapPoolInfo.token1;
-    const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
+    const fee = uniswapPoolInfo.fee;
 
     if (!token0 || !token1) return;
     // Fetching the data for the margin account using three contracts
@@ -173,9 +174,10 @@ export async function fetchMarginAccounts(
         },
       ],
       context: {
-        feeTier: feeTier,
-        token0: token0,
-        token1: token1,
+        fee: fee,
+        token0Address: token0.address,
+        token1Address: token1.address,
+        chainId: chain.id,
         accountAddress: accountAddress,
         uniswapPool: uniswapPool,
       },
@@ -204,7 +206,12 @@ export async function fetchMarginAccounts(
   correspondingMarginAccountResults.forEach((value) => {
     const { lens: lensResults, account: accountResults, oracle: oracleResults } = value;
     const lensReturnContexts = convertBigNumbersForReturnContexts(lensResults.callsReturnContext);
-    const { feeTier, token0, token1, accountAddress, uniswapPool } = lensResults.originalContractCallContext.context;
+    const { fee, token0Address, token1Address, chainId, accountAddress, uniswapPool } =
+      lensResults.originalContractCallContext.context;
+    // Reconstruct the objects (since we can't transfer them as is through the context)
+    const feeTier = NumericFeeTierToEnum(fee);
+    const token0 = getToken(chainId, token0Address);
+    const token1 = getToken(chainId, token1Address);
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
     const healthData = lensReturnContexts[2].returnValues;
