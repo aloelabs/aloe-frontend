@@ -226,17 +226,17 @@ export async function fetchMarginAccounts(
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,
-      uniswapPool: uniswapPool,
-      feeTier: feeTier,
-      assets: assets,
-      liabilities: liabilities,
-      health: health,
-      token0: token0,
-      token1: token1,
-      lender0: lender0,
-      lender1: lender1,
       sqrtPriceX96: toBig(oracleReturnValues[0]),
       iv: toImpreciseNumber(oracleReturnValues[1], 18),
+      uniswapPool,
+      feeTier,
+      assets,
+      liabilities,
+      health,
+      token0,
+      token1,
+      lender0,
+      lender1,
     };
     marginAccounts.push(marginAccount);
   });
@@ -276,9 +276,9 @@ export async function fetchMarketInfoFor(
   const lender1Basics = updatedReturnContext[1].returnValues;
 
   const interestRate0 = toBig(lender0Basics[1]);
-  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const borrowerAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const interestRate1 = toBig(lender1Basics[1]);
-  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const borrowerAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const lender0Utilization = toImpreciseNumber(lender0Basics[2], 18);
   const lender1Utilization = toImpreciseNumber(lender1Basics[2], 18);
   const lender0TotalSupply = toBig(lender0Basics[3]);
@@ -288,13 +288,13 @@ export async function fetchMarketInfoFor(
   return {
     lender0,
     lender1,
-    borrowerAPR0: borrowAPR0,
-    borrowerAPR1: borrowAPR1,
-    lender0Utilization: lender0Utilization,
-    lender1Utilization: lender1Utilization,
-    lender0TotalSupply: lender0TotalSupply,
-    lender1TotalSupply: lender1TotalSupply,
-    lender0TotalBorrows: lender0TotalBorrows,
-    lender1TotalBorrows: lender1TotalBorrows,
+    borrowerAPR0,
+    borrowerAPR1,
+    lender0Utilization,
+    lender1Utilization,
+    lender0TotalSupply,
+    lender1TotalSupply,
+    lender0TotalBorrows,
+    lender1TotalBorrows,
   };
 }

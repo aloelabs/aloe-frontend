@@ -191,21 +191,22 @@ export async function fetchMarginAccount(
 
   const healthData = results[7];
   const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
+  const iv = toImpreciseNumber(oracleResult[1], 18);
 
   return {
     marginAccount: {
       address: marginAccountAddress,
-      uniswapPool: uniswapPool,
-      token0: token0,
-      token1: token1,
       feeTier: NumericFeeTierToEnum(feeTier),
-      assets: assets,
-      liabilities: liabilities,
       sqrtPriceX96: toBig(oracleResult[0]),
-      health: health,
-      lender0: lender0,
-      lender1: lender1,
-      iv: toImpreciseNumber(oracleResult[1], 18),
+      uniswapPool,
+      token0,
+      token1,
+      assets,
+      liabilities,
+      health,
+      lender0,
+      lender1,
+      iv,
     },
   };
 }
