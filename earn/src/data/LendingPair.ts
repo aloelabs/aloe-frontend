@@ -1,5 +1,4 @@
 import { AxiosResponse } from 'axios';
-import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
@@ -12,6 +11,7 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { toImpreciseNumber } from '../util/Numbers';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
@@ -180,21 +180,21 @@ export async function getAvailableLendingPairs(
       token1
     );
 
-    const interestRate0 = new Big(basics0[1].toString());
-    const interestRate1 = new Big(basics1[1].toString());
+    const interestRate0 = toImpreciseNumber(basics0[1], 12);
+    const interestRate1 = toImpreciseNumber(basics1[1], 12);
 
-    const utilization0 = new Big(basics0[2].toString()).div(10 ** 18).toNumber();
-    const utilization1 = new Big(basics1[2].toString()).div(10 ** 18).toNumber();
+    const utilization0 = toImpreciseNumber(basics0[2], 18);
+    const utilization1 = toImpreciseNumber(basics1[2], 18);
 
-    const inventory0 = new Big(basics0[3].toString()).div(10 ** token0.decimals).toNumber();
-    const inventory1 = new Big(basics1[3].toString()).div(10 ** token1.decimals).toNumber();
+    const inventory0 = toImpreciseNumber(basics0[3], token0.decimals);
+    const inventory1 = toImpreciseNumber(basics1[3], token1.decimals);
 
-    const totalSupply0 = new Big(basics0[5].toString()).div(10 ** kitty0.decimals).toNumber();
-    const totalSupply1 = new Big(basics1[5].toString()).div(10 ** kitty1.decimals).toNumber();
+    const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
+    const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
     // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
-    const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
-    const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1.div(10 ** 12).toNumber() ** (365 * 24 * 60 * 60) - 1.0);
+    const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0 ** (365 * 24 * 60 * 60) - 1.0);
+    const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1 ** (365 * 24 * 60 * 60) - 1.0);
 
     let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
     // Annualize it
@@ -244,10 +244,10 @@ export async function getLendingPairBalances(
     kitty0Contract.underlyingBalance(userAddress),
     kitty1Contract.underlyingBalance(userAddress),
   ]);
-  const token0Balance = new Big(token0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const token1Balance = new Big(token1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
-  const kitty0Balance = new Big(kitty0BalanceBig.toString()).div(10 ** token0.decimals).toNumber();
-  const kitty1Balance = new Big(kitty1BalanceBig.toString()).div(10 ** token1.decimals).toNumber();
+  const token0Balance = toImpreciseNumber(token0BalanceBig, token0.decimals);
+  const token1Balance = toImpreciseNumber(token1BalanceBig, token1.decimals);
+  const kitty0Balance = toImpreciseNumber(kitty0BalanceBig, token0.decimals);
+  const kitty1Balance = toImpreciseNumber(kitty1BalanceBig, token1.decimals);
   return {
     token0Balance,
     token1Balance,

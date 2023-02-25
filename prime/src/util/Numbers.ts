@@ -14,6 +14,18 @@ export function toBig(value: ethers.BigNumber | ethers.utils.Result): Big {
   return new Big(value.toString());
 }
 
+/**
+ * Converts a BigNumber (ethers type) to a standard Javascript number, but may lose precision in the decimal
+ * places (because floats be like that)
+ * @param value Source value in fixed point
+ * @param decimals Number of decimals in the source
+ * @returns Javascript number, approximately equal to `value`
+ */
+export function toImpreciseNumber(value: ethers.BigNumber | ethers.utils.Result, decimals: number): number {
+  const big = toBig(value);
+  return big.div(10 ** decimals).toNumber();
+}
+
 export function String1E(decimals: number): string {
   return `1${'0'.repeat(decimals)}`;
 }
