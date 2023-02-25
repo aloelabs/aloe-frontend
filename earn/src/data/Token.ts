@@ -22,10 +22,6 @@ export class Token {
   }
 
   equals(other: Token): boolean {
-    return (
-      this.chainId === other.chainId &&
-      this.address.toLowerCase() === other.address.toLowerCase() &&
-      this.decimals === other.decimals
-    );
+    return this.chainId === other.chainId && this.address.toLowerCase() === other.address.toLowerCase();
   }
 }
