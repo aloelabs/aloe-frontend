@@ -11,7 +11,7 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
-import { maxBorrows } from '../../../data/BalanceSheet';
+import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
@@ -181,7 +181,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     .sub(totalBorrow)
     .div(10 ** borrowToken.decimals)
     .toNumber();
-  const maxBorrowsBasedOnHealth = maxBorrows(
+  const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     marginAccount.assets,
     marginAccount.liabilities,
     [], // TODO: use actual Uniswap positions once we fetch them
