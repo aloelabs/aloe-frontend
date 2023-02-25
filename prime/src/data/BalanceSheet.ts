@@ -236,7 +236,8 @@ export function maxWithdraws(
   sqrtPriceX96: Big,
   iv: number,
   token0Decimals: number,
-  token1Decimals: number
+  token1Decimals: number,
+  coeff = 1
 ) {
   const { priceA, priceB, mem, surplusA, surplusB } = _computeSolvencyBasics(
     assets,
@@ -249,27 +250,72 @@ export function maxWithdraws(
   );
   const priceC = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
 
+  const surplus0C = mem.fixed0 + mem.fluid0C - liabilities.amount0;
+  const surplus1C = mem.fixed1 + mem.fluid1C - liabilities.amount1;
+
   let maxWithdrawA1 = surplusA;
-  if (liabilities.amount0 <= mem.fixed0 + mem.fluid0C) {
-    maxWithdrawA1 /= 1 + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+  let denom = coeff;
+  // Withdrawing token1 can only impact liquidation incentive if there's surplus token0
+  if (surplus0C >= 0) {
+    // `surplus1C <= 0` means there's no padding to absorb the new withdrawal, so it starts increasing the
+    // liquidation incentive right away
+    if (surplus1C <= 0) {
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+    // In this case, `surplus1C` is big enough to absorb part of the new withdrawal, but not all of it. The
+    // portion that's *not* absorbed will increase the liquidation incentive
+    else if (surplus1C < maxWithdrawA1) {
+      maxWithdrawA1 += surplus1C;
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
   }
+  maxWithdrawA1 /= denom;
+
   let maxWithdrawA0 = surplusA;
-  if (liabilities.amount1 <= mem.fixed1 + mem.fluid1C) {
-    maxWithdrawA0 /= priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
-  } else {
-    maxWithdrawA0 /= priceA;
+  denom = coeff * priceA;
+  // Withdrawing token0 can only impact liquidation incentive if there's surplus token1
+  if (surplus1C >= 0) {
+    // `surplus0C <= 0` means there's no padding to absorb the new withdrawal, so it starts increasing the
+    // liquidation incentive right away
+    if (surplus0C <= 0) {
+      denom = coeff * priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+    // In this case, `surplus0C` is big enough to absorb part of the new withdrawal, but not all of it. The
+    // portion that's *not* absorbed will increase the liquidation incentive
+    else if (surplus0C < maxWithdrawA0 / priceA) {
+      maxWithdrawA0 += surplus0C * priceC;
+      denom = coeff * priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
   }
+  maxWithdrawA0 /= denom;
+
+  // REPEAT AT PRICE B FOR TOKEN1
 
   let maxWithdrawB1 = surplusB;
-  if (liabilities.amount0 <= mem.fixed0 + mem.fluid0C) {
-    maxWithdrawB1 /= 1 + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+  denom = coeff;
+  if (surplus0C >= 0) {
+    if (surplus1C <= 0) {
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    } else if (surplus1C < maxWithdrawB1) {
+      maxWithdrawB1 += surplus1C;
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
   }
+  maxWithdrawB1 /= denom;
+
+  // REPEAT AT PRICE B FOR TOKEN0
+
   let maxWithdrawB0 = surplusB;
-  if (liabilities.amount1 <= mem.fixed1 + mem.fluid1C) {
-    maxWithdrawB0 /= priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
-  } else {
-    maxWithdrawB0 /= priceB;
+  denom = coeff * priceB;
+  if (surplus1C >= 0) {
+    if (surplus0C <= 0) {
+      denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    } else if (surplus0C < maxWithdrawB0 / priceB) {
+      maxWithdrawB0 += surplus0C * priceC;
+      denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
   }
+  maxWithdrawB0 /= denom;
 
   const maxNewWithdraws0 = Math.min(maxWithdrawA0, maxWithdrawB0, assets.token0Raw);
   const maxNewWithdraws1 = Math.min(maxWithdrawA1, maxWithdrawB1, assets.token1Raw);
