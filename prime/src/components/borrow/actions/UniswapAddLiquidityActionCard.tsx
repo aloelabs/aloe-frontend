@@ -92,8 +92,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   } else if (tickInfo != null && currentTick != null) {
     // If user hasn't entered their own lower and upper bounds, initialize them with a reasonable default.
     // Note that we can't do this until we've fetched tick info.
-    previousLower = roundDownToNearestN(currentTick - 100, tickInfo.tickSpacing);
-    previousUpper = roundUpToNearestN(currentTick + 100, tickInfo.tickSpacing);
+    previousLower = roundDownToNearestN(currentTick - 10 * tickInfo.tickSpacing, tickInfo.tickSpacing);
+    previousUpper = roundUpToNearestN(currentTick + 10 * tickInfo.tickSpacing, tickInfo.tickSpacing);
   }
   // --> disabled status
   let isInput0Disabled = true;
