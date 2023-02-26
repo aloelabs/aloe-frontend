@@ -11,7 +11,7 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { toBig } from '../util/Numbers';
+import { toBig, toImpreciseNumber } from '../util/Numbers';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
@@ -215,47 +215,35 @@ export async function fetchMarginAccounts(
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
     const healthData = lensReturnContexts[2].returnValues;
-    const healthData0 = Big(healthData[0].toString());
-    const healthData1 = Big(healthData[1].toString());
-    const health = healthData0.lt(healthData1) ? healthData0 : healthData1;
+
+    const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
     const assets: Assets = {
-      token0Raw: Big(assetsData[0].toString())
-        .div(10 ** token0.decimals)
-        .toNumber(),
-      token1Raw: Big(assetsData[1].toString())
-        .div(10 ** token1.decimals)
-        .toNumber(),
-      uni0: Big(assetsData[4].toString())
-        .div(10 ** token0.decimals)
-        .toNumber(),
-      uni1: Big(assetsData[5].toString())
-        .div(10 ** token1.decimals)
-        .toNumber(),
+      token0Raw: toImpreciseNumber(assetsData[0], token0.decimals),
+      token1Raw: toImpreciseNumber(assetsData[1], token1.decimals),
+      uni0: toImpreciseNumber(assetsData[4], token0.decimals),
+      uni1: toImpreciseNumber(assetsData[5], token1.decimals),
     };
     const liabilities: Liabilities = {
-      amount0: Big(liabilitiesData[0].toString())
-        .div(10 ** token0.decimals)
-        .toNumber(),
-      amount1: Big(liabilitiesData[1].toString())
-        .div(10 ** token1.decimals)
-        .toNumber(),
+      amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
+      amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
     };
+
     const lender0 = accountResults.callsReturnContext[0].returnValues[0];
     const lender1 = accountResults.callsReturnContext[1].returnValues[0];
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,
-      uniswapPool: uniswapPool,
-      feeTier: feeTier,
-      assets: assets,
-      liabilities: liabilities,
-      health: health.toNumber(),
-      token0: token0,
-      token1: token1,
-      lender0: lender0,
-      lender1: lender1,
       sqrtPriceX96: toBig(oracleReturnValues[0]),
-      iv: oracleReturnValues[1].div(1e9).toNumber() / 1e9,
+      iv: toImpreciseNumber(oracleReturnValues[1], 18),
+      uniswapPool,
+      feeTier,
+      assets,
+      liabilities,
+      health,
+      token0,
+      token1,
+      lender0,
+      lender1,
     };
     marginAccounts.push(marginAccount);
   });
@@ -294,26 +282,26 @@ export async function fetchMarketInfoFor(
   const lender0Basics = updatedReturnContext[0].returnValues;
   const lender1Basics = updatedReturnContext[1].returnValues;
 
-  const interestRate0 = new Big(lender0Basics[1].toString());
-  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const interestRate1 = new Big(lender1Basics[1].toString());
-  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const lender0Utilization = new Big(lender0Basics[2].toString()).div(10 ** 18).toNumber();
-  const lender1Utilization = new Big(lender1Basics[2].toString()).div(10 ** 18).toNumber();
-  const lender0TotalSupply = new Big(lender0Basics[3].toString());
-  const lender1TotalSupply = new Big(lender1Basics[3].toString());
-  const lender0TotalBorrows = new Big(lender0Basics[4].toString());
-  const lender1TotalBorrows = new Big(lender1Basics[4].toString());
+  const interestRate0 = toBig(lender0Basics[1]);
+  const borrowerAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const interestRate1 = toBig(lender1Basics[1]);
+  const borrowerAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
+  const lender0Utilization = toImpreciseNumber(lender0Basics[2], 18);
+  const lender1Utilization = toImpreciseNumber(lender1Basics[2], 18);
+  const lender0TotalSupply = toBig(lender0Basics[3]);
+  const lender1TotalSupply = toBig(lender1Basics[3]);
+  const lender0TotalBorrows = toBig(lender0Basics[4]);
+  const lender1TotalBorrows = toBig(lender1Basics[4]);
   return {
     lender0,
     lender1,
-    borrowerAPR0: borrowAPR0,
-    borrowerAPR1: borrowAPR1,
-    lender0Utilization: lender0Utilization,
-    lender1Utilization: lender1Utilization,
-    lender0TotalSupply: lender0TotalSupply,
-    lender1TotalSupply: lender1TotalSupply,
-    lender0TotalBorrows: lender0TotalBorrows,
-    lender1TotalBorrows: lender1TotalBorrows,
+    borrowerAPR0,
+    borrowerAPR1,
+    lender0Utilization,
+    lender1Utilization,
+    lender0TotalSupply,
+    lender1TotalSupply,
+    lender0TotalBorrows,
+    lender1TotalBorrows,
   };
 }

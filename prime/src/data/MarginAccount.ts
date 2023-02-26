@@ -6,7 +6,7 @@ import { Address, Chain } from 'wagmi';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { toBig } from '../util/Numbers';
+import { toBig, toImpreciseNumber } from '../util/Numbers';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
@@ -116,28 +116,16 @@ export async function fetchMarginAccountPreviews(
         return null;
       }
 
-      const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+      const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
       const assets: Assets = {
-        token0Raw: Big(assetsData.fixed0.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        token1Raw: Big(assetsData.fixed1.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
-        uni0: Big(assetsData.fluid0C.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        uni1: Big(assetsData.fluid1C.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
+        token0Raw: toImpreciseNumber(assetsData.fixed0, token0.decimals),
+        token1Raw: toImpreciseNumber(assetsData.fixed1, token1.decimals),
+        uni0: toImpreciseNumber(assetsData.fluid0C, token0.decimals),
+        uni1: toImpreciseNumber(assetsData.fluid1C, token1.decimals),
       };
       const liabilities: Liabilities = {
-        amount0: Big(liabilitiesData.amount0.toString())
-          .div(10 ** token0.decimals)
-          .toNumber(),
-        amount1: Big(liabilitiesData.amount1.toString())
-          .div(10 ** token1.decimals)
-          .toNumber(),
+        amount0: toImpreciseNumber(liabilitiesData.amount0, token0.decimals),
+        amount1: toImpreciseNumber(liabilitiesData.amount1, token1.decimals),
       };
       return {
         address: accountAddress,
@@ -147,7 +135,7 @@ export async function fetchMarginAccountPreviews(
         feeTier,
         assets,
         liabilities,
-        health: health.div(1e9).toNumber() / 1e9,
+        health: health,
       };
     }
   );
@@ -191,45 +179,34 @@ export async function fetchMarginAccount(
   ]);
 
   const assets: Assets = {
-    token0Raw: Big(assetsData.fixed0.toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    token1Raw: Big(assetsData.fixed1.toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
-    uni0: Big(assetsData.fluid0C.toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    uni1: Big(assetsData.fluid1C.toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
+    token0Raw: toImpreciseNumber(assetsData.fixed0, token0.decimals),
+    token1Raw: toImpreciseNumber(assetsData.fixed1, token1.decimals),
+    uni0: toImpreciseNumber(assetsData.fluid0C, token0.decimals),
+    uni1: toImpreciseNumber(assetsData.fluid1C, token1.decimals),
   };
   const liabilities: Liabilities = {
-    amount0: Big(liabilitiesData.amount0.toString())
-      .div(10 ** token0.decimals)
-      .toNumber(),
-    amount1: Big(liabilitiesData.amount1.toString())
-      .div(10 ** token1.decimals)
-      .toNumber(),
+    amount0: toImpreciseNumber(liabilitiesData.amount0, token0.decimals),
+    amount1: toImpreciseNumber(liabilitiesData.amount1, token1.decimals),
   };
 
   const healthData = results[7];
-  const health = healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1];
+  const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
+  const iv = toImpreciseNumber(oracleResult[1], 18);
 
   return {
     marginAccount: {
       address: marginAccountAddress,
-      uniswapPool: uniswapPool,
-      token0: token0,
-      token1: token1,
       feeTier: NumericFeeTierToEnum(feeTier),
-      assets: assets,
-      liabilities: liabilities,
       sqrtPriceX96: toBig(oracleResult[0]),
-      health: health.div(1e9).toNumber() / 1e9,
-      lender0: lender0,
-      lender1: lender1,
-      iv: oracleResult[1].div(1e9).toNumber() / 1e9,
+      uniswapPool,
+      token0,
+      token1,
+      assets,
+      liabilities,
+      health,
+      lender0,
+      lender1,
+      iv,
     },
   };
 }
