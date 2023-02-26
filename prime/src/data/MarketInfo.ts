@@ -3,6 +3,8 @@ import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
 import { Address } from 'wagmi';
 
+import { toBig, toImpreciseNumber } from '../util/Numbers';
+
 export type MarketInfo = {
   lender0: Address;
   lender1: Address;
@@ -26,16 +28,16 @@ export async function fetchMarketInfoFor(
     lenderLensContract.readBasics(lender1),
   ]);
 
-  const interestRate0 = new Big(lender0Basics.interestRate.toString());
+  const interestRate0 = toBig(lender0Basics.interestRate);
   const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const interestRate1 = new Big(lender1Basics.interestRate.toString());
+  const interestRate1 = toBig(lender1Basics.interestRate);
   const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const lender0Utilization = new Big(lender0Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender1Utilization = new Big(lender1Basics.utilization.toString()).div(10 ** 18).toNumber();
-  const lender0Inventory = new Big(lender0Basics.inventory.toString());
-  const lender1Inventory = new Big(lender1Basics.inventory.toString());
-  const lender0TotalBorrows = new Big(lender0Basics.totalBorrows.toString());
-  const lender1TotalBorrows = new Big(lender1Basics.totalBorrows.toString());
+  const lender0Utilization = toImpreciseNumber(lender0Basics.utilization, 18);
+  const lender1Utilization = toImpreciseNumber(lender1Basics.utilization, 18);
+  const lender0Inventory = toBig(lender0Basics.inventory);
+  const lender1Inventory = toBig(lender1Basics.inventory);
+  const lender0TotalBorrows = toBig(lender0Basics.totalBorrows);
+  const lender1TotalBorrows = toBig(lender1Basics.totalBorrows);
   return {
     lender0,
     lender1,

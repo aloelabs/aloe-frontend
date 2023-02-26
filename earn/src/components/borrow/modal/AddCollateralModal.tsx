@@ -12,6 +12,7 @@ import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapNFTPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -123,6 +124,7 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 export type AddCollateralModalProps = {
   marginAccount: MarginAccount;
   marketInfo: MarketInfo;
+  uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;

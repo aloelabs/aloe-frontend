@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useContext } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
 
@@ -40,7 +41,13 @@ import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
-import { fetchUniswapPositions, UniswapPosition, UniswapPositionPrior } from '../data/Uniswap';
+import {
+  fetchUniswapNFTPositions,
+  fetchUniswapPositions,
+  UniswapNFTPosition,
+  UniswapPosition,
+  UniswapPositionPrior,
+} from '../data/Uniswap';
 import { makeEtherscanRequest } from '../util/Etherscan';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -148,6 +155,7 @@ export default function BorrowPage() {
     new Map()
   );
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
+  const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
   const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
@@ -375,6 +383,21 @@ export default function BorrowPage() {
 
   useEffect(() => {
     let mounted = true;
+    async function fetch() {
+      if (userAddress === undefined) return;
+      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      if (mounted) {
+        setUniswapNFTPositions(fetchedUniswapNFTPositions);
+      }
+    }
+    fetch();
+    return () => {
+      mounted = false;
+    };
+  }, [activeChain, provider, userAddress]);
+
+  useEffect(() => {
+    let mounted = true;
     async function waitForTxn() {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
@@ -392,6 +415,21 @@ export default function BorrowPage() {
       mounted = false;
     };
   }, [pendingTxn]);
+
+  const filteredUniswapNFTPositions = useMemo(() => {
+    const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
+    if (selectedMarginAccount == null) return filteredPositions;
+    uniswapNFTPositions.forEach((position, tokenId) => {
+      if (
+        selectedMarginAccount.token0.equals(position.token0) &&
+        selectedMarginAccount.token1.equals(position.token1) &&
+        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee
+      ) {
+        filteredPositions.set(tokenId, position);
+      }
+    });
+    return filteredPositions;
+  }, [selectedMarginAccount, uniswapNFTPositions]);
 
   const defaultPool = availablePools.keys().next().value;
 
@@ -498,6 +536,7 @@ export default function BorrowPage() {
           <AddCollateralModal
             marginAccount={selectedMarginAccount}
             marketInfo={selectedMarketInfo}
+            uniswapNFTPositions={filteredUniswapNFTPositions}
             isOpen={isAddCollateralModalOpen}
             setIsOpen={setIsAddCollateralModalOpen}
             setPendingTxn={setPendingTxn}
