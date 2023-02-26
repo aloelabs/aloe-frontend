@@ -15,6 +15,7 @@ import { maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -139,6 +140,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
 export type RemoveCollateralModalProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -146,7 +148,7 @@ export type RemoveCollateralModalProps = {
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmount, setCollateralAmount] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
@@ -184,7 +186,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const maxWithdrawBasedOnHealth = maxWithdraws(
     marginAccount.assets,
     marginAccount.liabilities,
-    [], // TODO: use real Uniswap positions
+    uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
     marginAccount.token0.decimals,

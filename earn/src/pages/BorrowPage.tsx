@@ -504,6 +504,7 @@ export default function BorrowPage() {
           />
           <RemoveCollateralModal
             marginAccount={selectedMarginAccount}
+            uniswapPositions={uniswapPositions}
             marketInfo={selectedMarketInfo}
             isOpen={isRemoveCollateralModalOpen}
             setIsOpen={setIsRemoveCollateralModalOpen}
@@ -511,6 +512,7 @@ export default function BorrowPage() {
           />
           <BorrowModal
             marginAccount={selectedMarginAccount}
+            uniswapPositions={uniswapPositions}
             marketInfo={selectedMarketInfo}
             isOpen={isBorrowModalOpen}
             setIsOpen={setIsBorrowModalOpen}
