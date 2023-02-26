@@ -103,6 +103,11 @@ export function priceToSqrtRatio(price: number, token0Decimals: number, token1De
     .mul(BIGQ96);
 }
 
+export function sqrtRatioToTick(sqrtRatioX96: Big): number {
+  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+  return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
+}
+
 export function getAssets(
   assets: Assets,
   uniswapPositions: readonly UniswapPosition[],

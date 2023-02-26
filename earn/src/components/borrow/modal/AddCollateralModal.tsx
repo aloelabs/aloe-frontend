@@ -1,124 +1,57 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
+// import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
-import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { BaseMaxButton } from 'shared/lib/components/common/Input';
+import { FilledGradientButton, FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+// import styled from 'styled-components';
 
-import { ChainContext } from '../../../App';
-import ERC20ABI from '../../../assets/abis/ERC20.json';
+import { ReactComponent as BackArrow } from '../../../assets/svg/back_arrow.svg';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
-import { Token } from '../../../data/Token';
 import { UniswapNFTPosition } from '../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
-import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
+import { AddCollateralTab } from './tab/AddCollateralTab';
+import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
-const SECONDARY_COLOR = '#CCDFED';
-const TERTIARY_COLOR = '#4b6980';
-
-enum ConfirmButtonState {
-  INSUFFICIENT_ASSET,
-  PENDING,
-  READY,
+enum AddCollateralModalState {
+  SELECT_COLLATERAL_TYPE = 'SELECT_COLLATERAL_TYPE',
+  TOKENS = 'TOKENS',
+  UNISWAP_NFTS = 'UNISWAP_NFTS',
 }
 
-function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
-  switch (state) {
-    case ConfirmButtonState.INSUFFICIENT_ASSET:
-      return {
-        text: `Insufficient ${token.ticker}`,
-        enabled: false,
-      };
-    case ConfirmButtonState.PENDING:
-      return { text: 'Pending', enabled: false };
-    case ConfirmButtonState.READY:
-      return { text: 'Confirm', enabled: true };
+// const TabsWrapper = styled.div`
+//   width: 100%;
+//   display: flex;
+//   flex-direction: row;
+//   padding: 4px;
+//   border-radius: 8px;
+//   border: 1px solid rgba(26, 41, 52, 1);
+// `;
+
+// const TabButton = styled.button`
+//   width: 100%;
+//   padding: 8px;
+//   border-radius: 8px;
+//   background-color: transparent;
+//   &.selected {
+//     background-color: rgba(26, 41, 52);
+//   }
+// `;
+
+export enum CollateralType {
+  NORMAL = 'NORMAL',
+  UNISWAP_NFT = 'UNISWAP_NFT',
+}
+
+export function getCollateralTypeValue(type: CollateralType): string {
+  switch (type) {
+    case CollateralType.NORMAL:
+      return 'Normal';
+    case CollateralType.UNISWAP_NFT:
+      return 'Uniswap NFT';
     default:
-      return { text: 'Confirm', enabled: false };
+      return '';
   }
-}
-
-type AddCollateralButtonProps = {
-  marginAccount: MarginAccount;
-  collateralToken: Token;
-  collateralAmount: Big;
-  userBalance: Big;
-  setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
-};
-
-function AddCollateralButton(props: AddCollateralButtonProps) {
-  const { marginAccount, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
-
-  const [isPending, setIsPending] = useState(false);
-
-  const { config: contractWriteConfig } = usePrepareContractWrite({
-    address: collateralToken.address,
-    abi: ERC20ABI,
-    functionName: 'transfer',
-    args: [marginAccount.address, collateralAmount.toFixed()],
-    enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
-    chainId: activeChain.id,
-  });
-  const contractWriteConfigUpdatedRequest = useMemo(() => {
-    if (contractWriteConfig.request) {
-      return {
-        ...contractWriteConfig.request,
-        gasLimit: contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [contractWriteConfig.request]);
-  const {
-    write: contractWrite,
-    data: contractData,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-  } = useContractWrite({
-    ...contractWriteConfig,
-    request: contractWriteConfigUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
-
-  let confirmButtonState = ConfirmButtonState.READY;
-
-  if (collateralAmount.gt(userBalance)) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  }
-
-  const confirmButton = getConfirmButton(confirmButtonState, collateralToken);
-
-  return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      disabled={!confirmButton.enabled}
-      onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
-          setIsPending(true);
-          contractWrite?.();
-        }
-      }}
-    >
-      {confirmButton.text}
-    </FilledStylizedButton>
-  );
 }
 
 export type AddCollateralModalProps = {
@@ -131,142 +64,123 @@ export type AddCollateralModalProps = {
 };
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
-
-  const [collateralAmount, setCollateralAmount] = useState('');
-  const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
-
-  const { address: userAddress } = useAccount();
-
-  const { refetch: refetchBalance, data: userBalance } = useBalance({
-    address: userAddress,
-    token: collateralToken.address,
-    chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen,
+  const { marginAccount, uniswapNFTPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  // const [collateralType, setCollateralType] = useState(CollateralType.NORMAL);
+  const [modalState, setModalState] = useState(() => {
+    if (uniswapNFTPositions.size > 0) {
+      return AddCollateralModalState.SELECT_COLLATERAL_TYPE;
+    }
+    return AddCollateralModalState.TOKENS;
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
     if (isOpen) {
-      interval = setInterval(() => {
-        refetchBalance();
-      }, 13_000);
+      setModalState(() => {
+        if (uniswapNFTPositions.size > 0) {
+          return AddCollateralModalState.SELECT_COLLATERAL_TYPE;
+        }
+        return AddCollateralModalState.TOKENS;
+      });
     }
-    if (!isOpen && interval != null) {
-      clearInterval(interval);
-    }
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
-  }, [isOpen, refetchBalance]);
+  }, [isOpen, uniswapNFTPositions.size]);
 
-  // Reset collateral amount and token when modal is opened/closed or when the margin account token0 changes
-  useEffect(() => {
-    setCollateralAmount('');
-    setCollateralToken(marginAccount.token0);
-  }, [isOpen, marginAccount.token0]);
-
-  const tokenOptions = [marginAccount.token0, marginAccount.token1];
-
-  const existingCollateral =
-    collateralToken.address === marginAccount.token0.address
-      ? marginAccount.assets.token0Raw
-      : marginAccount.assets.token1Raw;
-
-  const numericCollateralAmount = Number(collateralAmount) || 0;
-
-  const collateralAmountBig = new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
-
-  const existingCollateralBig = new Big(existingCollateral).mul(10 ** collateralToken.decimals);
-
-  const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
-  const userBalanceBig = new Big(numericUserBalance).mul(10 ** collateralToken.decimals);
-
-  if (!userAddress || !isOpen) {
-    return null;
+  const collateralTypes = [CollateralType.NORMAL];
+  if (uniswapNFTPositions.size > 0) {
+    collateralTypes.push(CollateralType.UNISWAP_NFT);
   }
 
-  const newCollateralBig = existingCollateralBig.add(collateralAmountBig).div(10 ** collateralToken.decimals);
+  const hasMultipleTypesOfCollateral = uniswapNFTPositions.size > 0;
+
+  const defaultUniswapNFTPosition = uniswapNFTPositions.size > 0 ? Array.from(uniswapNFTPositions.entries())[0] : null;
 
   return (
     <Modal isOpen={isOpen} title='Add Collateral' setIsOpen={setIsOpen} maxHeight='650px'>
-      <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
-        <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between mb-1'>
-            <Text size='M' weight='bold'>
-              Collateral Amount
-            </Text>
-            <BaseMaxButton
+      {hasMultipleTypesOfCollateral && modalState !== AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
+        <div className='flex justify-start w-full'>
+          <FilledGreyButtonWithIcon
+            size='S'
+            Icon={<BackArrow />}
+            svgColorType='stroke'
+            position='leading'
+            onClick={() => {
+              setModalState(AddCollateralModalState.SELECT_COLLATERAL_TYPE);
+            }}
+          >
+            Back
+          </FilledGreyButtonWithIcon>
+        </div>
+      )}
+      {modalState === AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
+        <div className='flex flex-col gap-4'>
+          <Text size='L'>What type of collateral would you like to add?</Text>
+          <div className='flex flex-col gap-4 p-4'>
+            <FilledGradientButton
               size='L'
-              onClick={() => {
-                if (userBalance != null) {
-                  setCollateralAmount(userBalance?.formatted);
-                }
-              }}
+              fillWidth={true}
+              onClick={() => setModalState(AddCollateralModalState.TOKENS)}
             >
-              MAX
-            </BaseMaxButton>
+              Tokens
+            </FilledGradientButton>
+            <FilledGradientButton
+              size='L'
+              fillWidth={true}
+              onClick={() => setModalState(AddCollateralModalState.UNISWAP_NFTS)}
+            >
+              Uniswap NFTs
+            </FilledGradientButton>
           </div>
-          <TokenAmountSelectInput
-            inputValue={collateralAmount}
-            onChange={(value) => {
-              const output = formatNumberInput(value);
-              if (output != null) {
-                const truncatedOutput = truncateDecimals(output, collateralToken.decimals);
-                setCollateralAmount(truncatedOutput);
-              }
-            }}
-            onSelect={(option: Token) => {
-              setCollateralAmount('');
-              setCollateralToken(option);
-            }}
-            options={tokenOptions}
-            selectedOption={collateralToken}
-          />
         </div>
-        <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Summary
-          </Text>
-          <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're adding{' '}
-            <strong>
-              {collateralAmount || '0.00'} {collateralToken.ticker}
-            </strong>{' '}
-            as collateral to this{' '}
-            <strong>
-              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
-            </strong>{' '}
-            smart wallet. Your total collateral for this token in this smart wallet will be{' '}
-            <strong>
-              {truncateDecimals(newCollateralBig.toString(), collateralToken.decimals)} {collateralToken.ticker}
-            </strong>
-            .
-          </Text>
-        </div>
-        <div className='w-full'>
-          <AddCollateralButton
-            marginAccount={marginAccount}
-            collateralToken={collateralToken}
-            collateralAmount={collateralAmountBig}
-            userBalance={userBalanceBig}
-            setIsOpen={setIsOpen}
-            setPendingTxn={setPendingTxn}
-          />
-          <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
-              Terms of Service
-            </a>{' '}
-            and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It
-            is your duty to educate yourself and be aware of the risks.
-          </Text>
-        </div>
-      </div>
+      )}
+      {modalState === AddCollateralModalState.TOKENS && (
+        <>
+          <AddCollateralTab marginAccount={marginAccount} setPendingTxn={setPendingTxn} setIsOpen={setIsOpen} />
+        </>
+      )}
+      {modalState === AddCollateralModalState.UNISWAP_NFTS && defaultUniswapNFTPosition != null && (
+        <AddUniswapNFTAsCollateralTab
+          marginAccount={marginAccount}
+          uniswapNFTPositions={uniswapNFTPositions}
+          defaultUniswapNFTPosition={defaultUniswapNFTPosition}
+          setPendingTxn={setPendingTxn}
+          setIsOpen={setIsOpen}
+        />
+      )}
+      {/* <Tab.Group>
+        <Tab.List className='w-full flex rounded-md mb-6'>
+          <TabsWrapper>
+            {collateralTypes.map((type: string, index: number) => (
+              <Tab as={Fragment} key={index}>
+                {({ selected }) => (
+                  <TabButton
+                    className={selected ? 'selected' : ''}
+                    onClick={() => setCollateralType(type as CollateralType)}
+                  >
+                    <Text size='M' weight='bold' color='rgb(255, 255, 255)'>
+                      {getCollateralTypeValue(type as CollateralType)}
+                    </Text>
+                  </TabButton>
+                )}
+              </Tab>
+            ))}
+          </TabsWrapper>
+        </Tab.List>
+        <Tab.Panels as={Fragment}>
+          <Tab.Panel className='w-full px-2'>
+            <AddCollateralTab marginAccount={marginAccount} setPendingTxn={setPendingTxn} setIsOpen={setIsOpen} />
+          </Tab.Panel>
+          <Tab.Panel className='w-full px-2'>
+            {defaultUniswapNFTPosition !== null && (
+              <AddUniswapNFTAsCollateralTab
+                marginAccount={marginAccount}
+                uniswapNFTPositions={uniswapNFTPositions}
+                defaultUniswapNFTPosition={defaultUniswapNFTPosition}
+                setPendingTxn={setPendingTxn}
+                setIsOpen={setIsOpen}
+              />
+            )}
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group> */}
     </Modal>
   );
 }
