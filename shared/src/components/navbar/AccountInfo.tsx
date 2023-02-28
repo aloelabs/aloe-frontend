@@ -4,7 +4,7 @@ import { Popover } from '@headlessui/react';
 import { GetAccountResult, Provider } from '@wagmi/core';
 import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
-import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
 import { Chain, useConnect, useEnsName, chain as wagmiChain } from 'wagmi';
 
@@ -50,7 +50,7 @@ const ButtonTextContainer = styled.div`
   flex-direction: row;
   align-items: center;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     display: none;
   }
 `;
