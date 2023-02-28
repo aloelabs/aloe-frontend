@@ -1,11 +1,9 @@
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-// import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGradientButton, FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-// import styled from 'styled-components';
 
 import { ReactComponent as BackArrow } from '../../../assets/svg/back_arrow.svg';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
@@ -18,25 +16,6 @@ enum AddCollateralModalState {
   TOKENS = 'TOKENS',
   UNISWAP_NFTS = 'UNISWAP_NFTS',
 }
-
-// const TabsWrapper = styled.div`
-//   width: 100%;
-//   display: flex;
-//   flex-direction: row;
-//   padding: 4px;
-//   border-radius: 8px;
-//   border: 1px solid rgba(26, 41, 52, 1);
-// `;
-
-// const TabButton = styled.button`
-//   width: 100%;
-//   padding: 8px;
-//   border-radius: 8px;
-//   background-color: transparent;
-//   &.selected {
-//     background-color: rgba(26, 41, 52);
-//   }
-// `;
 
 export enum CollateralType {
   NORMAL = 'NORMAL',
@@ -145,42 +124,6 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
           setIsOpen={setIsOpen}
         />
       )}
-      {/* <Tab.Group>
-        <Tab.List className='w-full flex rounded-md mb-6'>
-          <TabsWrapper>
-            {collateralTypes.map((type: string, index: number) => (
-              <Tab as={Fragment} key={index}>
-                {({ selected }) => (
-                  <TabButton
-                    className={selected ? 'selected' : ''}
-                    onClick={() => setCollateralType(type as CollateralType)}
-                  >
-                    <Text size='M' weight='bold' color='rgb(255, 255, 255)'>
-                      {getCollateralTypeValue(type as CollateralType)}
-                    </Text>
-                  </TabButton>
-                )}
-              </Tab>
-            ))}
-          </TabsWrapper>
-        </Tab.List>
-        <Tab.Panels as={Fragment}>
-          <Tab.Panel className='w-full px-2'>
-            <AddCollateralTab marginAccount={marginAccount} setPendingTxn={setPendingTxn} setIsOpen={setIsOpen} />
-          </Tab.Panel>
-          <Tab.Panel className='w-full px-2'>
-            {defaultUniswapNFTPosition !== null && (
-              <AddUniswapNFTAsCollateralTab
-                marginAccount={marginAccount}
-                uniswapNFTPositions={uniswapNFTPositions}
-                defaultUniswapNFTPosition={defaultUniswapNFTPosition}
-                setPendingTxn={setPendingTxn}
-                setIsOpen={setIsOpen}
-              />
-            )}
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group> */}
     </Modal>
   );
 }

@@ -27,7 +27,10 @@ const ITEMS_PER_PAGE = 2;
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 const UniswapNFTPositionsPage = styled.div`
-  min-height: 272px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 280px;
 `;
 
 enum ConfirmButtonState {
@@ -66,6 +69,7 @@ export const UniswapNFTPositionButtonWrapper = styled.button.attrs((props: { act
   opacity: ${(props) => (props.active ? 1 : 0.25)};
   filter: ${(props) => (props.active ? 'none' : 'grayscale(100%)')};
   cursor: pointer;
+  background-color: rgba(26, 41, 52, 1);
 
   &:hover {
     filter: none;
@@ -192,7 +196,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       uniswapNFTPosition[0],
       uniswapNFTPosition[1].tickLower,
       uniswapNFTPosition[1].tickUpper,
-      (-uniswapNFTPosition[1].liquidity).toString(),
+      `-${uniswapNFTPosition[1].liquidity.toString()}`,
       '0',
     ]
   );

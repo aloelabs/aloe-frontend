@@ -292,6 +292,7 @@ export async function fetchUniswapNFTPositions(
   const positionsResults = (await multicall.call(positionsCallContext)).results['uniswapNFTManager'];
   const callsReturnContext = convertBigNumbersForReturnContexts(positionsResults.callsReturnContext);
   const result: Map<number, UniswapNFTPosition> = new Map();
+
   for (let i = 0; i < tokenIds.length; i++) {
     const position = callsReturnContext[i].returnValues;
     const uniswapPosition: UniswapNFTPosition = {
