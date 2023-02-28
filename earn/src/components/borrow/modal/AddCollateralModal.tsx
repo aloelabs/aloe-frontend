@@ -94,7 +94,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
   const defaultUniswapNFTPosition = uniswapNFTPositions.size > 0 ? Array.from(uniswapNFTPositions.entries())[0] : null;
 
   return (
-    <Modal isOpen={isOpen} title='Add Collateral' setIsOpen={setIsOpen} maxHeight='650px'>
+    <Modal isOpen={isOpen} title='Add Collateral' setIsOpen={setIsOpen} maxHeight='650px' maxWidth='500px'>
       {hasMultipleTypesOfCollateral && modalState !== AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
         <div className='flex justify-start w-full'>
           <FilledGreyButtonWithIcon
@@ -113,16 +113,16 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
       {modalState === AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
         <div className='flex flex-col gap-4'>
           <Text size='L'>What type of collateral would you like to add?</Text>
-          <div className='flex flex-col gap-4 p-4'>
+          <div className='flex flex-col gap-4'>
             <FilledGradientButton
-              size='L'
+              size='M'
               fillWidth={true}
               onClick={() => setModalState(AddCollateralModalState.TOKENS)}
             >
               Tokens
             </FilledGradientButton>
             <FilledGradientButton
-              size='L'
+              size='M'
               fillWidth={true}
               onClick={() => setModalState(AddCollateralModalState.UNISWAP_NFTS)}
             >

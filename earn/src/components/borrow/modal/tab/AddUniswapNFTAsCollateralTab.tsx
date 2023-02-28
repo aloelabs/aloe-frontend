@@ -1,19 +1,22 @@
 import { useContext, useEffect, useState, useMemo } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
+import { erc721ABI, SendTransactionResult } from '@wagmi/core';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import MarginAccountABI from '../../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
-import { ALOE_II_UNISWAP_NFT_MANAGER } from '../../../../data/constants/Addresses';
+import {
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+  UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+} from '../../../../data/constants/Addresses';
 import { MarginAccount } from '../../../../data/MarginAccount';
-import { getAmountsForLiquidity, tickToPrice, UniswapNFTPosition } from '../../../../data/Uniswap';
+import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition } from '../../../../data/Uniswap';
 import { truncateDecimals } from '../../../../util/Numbers';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
@@ -23,15 +26,28 @@ const ITEMS_PER_PAGE = 2;
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
+const UniswapNFTPositionsPage = styled.div`
+  min-height: 272px;
+`;
+
 enum ConfirmButtonState {
+  APPROVE_NFT_MANAGER,
+  APPROVING,
   PENDING,
+  LOADING,
   READY,
 }
 
 function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: boolean } {
   switch (state) {
+    case ConfirmButtonState.APPROVE_NFT_MANAGER:
+      return { text: 'Approve', enabled: true };
+    case ConfirmButtonState.APPROVING:
+      return { text: 'Approving', enabled: false };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.LOADING:
+      return { text: 'Loading', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     default:
@@ -69,30 +85,44 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 
   const { token0, token1 } = uniswapNFTPosition;
 
-  const minPrice = tickToPrice(
+  const [minPrice, maxPrice] = useMemo(() => {
+    const min = tickToPrice(
+      uniswapNFTPosition.tickLower,
+      uniswapNFTPosition.token0.decimals,
+      uniswapNFTPosition.token1.decimals,
+      true
+    );
+    const max = tickToPrice(
+      uniswapNFTPosition.tickUpper,
+      uniswapNFTPosition.token0.decimals,
+      uniswapNFTPosition.token1.decimals,
+      true
+    );
+    return [min, max];
+  }, [
     uniswapNFTPosition.tickLower,
-    uniswapNFTPosition.token0.decimals,
-    uniswapNFTPosition.token1.decimals,
-    true
-  );
-
-  const maxPrice = tickToPrice(
     uniswapNFTPosition.tickUpper,
     uniswapNFTPosition.token0.decimals,
     uniswapNFTPosition.token1.decimals,
-    true
-  );
+  ]);
 
-  const [amount0] = getAmountsForLiquidity(
-    {
-      lower: uniswapNFTPosition.tickLower,
-      upper: uniswapNFTPosition.tickUpper,
-      liquidity: uniswapNFTPosition.liquidity,
-    },
-    sqrtRatioToTick(marginAccount.sqrtPriceX96),
-    token0.decimals,
-    token1.decimals
-  );
+  const liquidityAmount = useMemo(() => {
+    return getValueOfLiquidity(
+      {
+        lower: uniswapNFTPosition.tickLower,
+        upper: uniswapNFTPosition.tickUpper,
+        liquidity: uniswapNFTPosition.liquidity,
+      },
+      sqrtRatioToTick(marginAccount.sqrtPriceX96),
+      uniswapNFTPosition.token1.decimals
+    );
+  }, [
+    uniswapNFTPosition.tickLower,
+    uniswapNFTPosition.tickUpper,
+    uniswapNFTPosition.liquidity,
+    marginAccount.sqrtPriceX96,
+    uniswapNFTPosition.token1.decimals,
+  ]);
 
   return (
     <UniswapNFTPositionButtonWrapper onClick={onClick} active={isActive}>
@@ -107,15 +137,18 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
           {token0.ticker} / {token1.ticker}
         </Display>
       </div>
-      <div>
+      <div className='flex flex-col items-start gap-1'>
+        <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+          Total Liquidity:
+        </Text>
         <Display size='S' weight='semibold'>
-          {truncateDecimals(amount0.toString(), 6)} {token0.ticker}
+          {truncateDecimals(liquidityAmount.toString(), 6)} {token1.ticker}
         </Display>
       </div>
       <div className='flex items-center gap-4'>
         <Text size='S' color={SECONDARY_COLOR}>
-          Min: {truncateDecimals(minPrice.toString(), 3)} {token0.ticker} per {token1.ticker} - Max:{' '}
-          {truncateDecimals(maxPrice.toString(), 3)} {token0.ticker} per {token1.ticker}
+          Min: {truncateDecimals(minPrice.toString(), 3)} {token1.ticker} per {token0.ticker} - Max:{' '}
+          {truncateDecimals(maxPrice.toString(), 3)} {token1.ticker} per {token0.ticker}
         </Text>
       </div>
     </UniswapNFTPositionButtonWrapper>
@@ -125,6 +158,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 type AddUniswapNFTAsCollateralButtonProps = {
   marginAccount: MarginAccount;
   uniswapNFTPosition: [number, UniswapNFTPosition];
+  userAddress: string;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
@@ -134,48 +168,51 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [approvingTxn, setApprovingTxn] = useState<SendTransactionResult | null>(null);
 
-  console.log('uniswapNFTPosition', uniswapNFTPosition[1].liquidity.toString());
+  // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
+  const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    abi: erc721ABI,
+    functionName: 'getApproved',
+    args: [BigNumber.from(uniswapNFTPosition[0].toFixed(0))] as const,
+    chainId: activeChain.id,
+  });
+  const { writeAsync: writeApproveAsync } = useContractWrite({
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    abi: erc721ABI,
+    functionName: 'approve',
+    mode: 'recklesslyUnprepared',
+    chainId: activeChain.id,
+  });
+
   const data = ethers.utils.defaultAbiCoder.encode(
     ['uint256', 'int24', 'int24', 'int128', 'uint144'],
     [
       uniswapNFTPosition[0],
       uniswapNFTPosition[1].tickLower,
       uniswapNFTPosition[1].tickUpper,
-      uniswapNFTPosition[1].liquidity.toString(),
+      (-uniswapNFTPosition[1].liquidity).toString(),
       '0',
     ]
   );
-  console.log('data', data);
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER, data, [true, true]],
-    // enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS, data, [true, true]],
+    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
     chainId: activeChain.id,
   });
-  console.log('contractWriteConfig', contractWriteConfig);
-  const contractWriteConfigUpdatedRequest = useMemo(() => {
-    if (contractWriteConfig.request) {
-      return {
-        ...contractWriteConfig.request,
-        gasLimit: contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [contractWriteConfig.request]);
+  if (contractWriteConfig.request) {
+    contractWriteConfig.request.gasLimit = contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  }
   const {
     write: contractWrite,
     data: contractData,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
-  } = useContractWrite({
-    ...contractWriteConfig,
-    request: contractWriteConfigUpdatedRequest,
-  });
-
-  console.log(contractWriteConfigUpdatedRequest);
+  } = useContractWrite(contractWriteConfig);
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -189,8 +226,14 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (isPending) {
+  if (approvingTxn !== null) {
+    confirmButtonState = ConfirmButtonState.APPROVING;
+  } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (getApprovedData !== ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS) {
+    confirmButtonState = ConfirmButtonState.APPROVE_NFT_MANAGER;
+  } else if (contractWriteConfig && contractWriteConfig.request === undefined) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState);
@@ -201,7 +244,32 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
+        if (confirmButtonState === ConfirmButtonState.APPROVE_NFT_MANAGER) {
+          setIsPending(true);
+          writeApproveAsync?.({
+            recklesslySetUnpreparedArgs: [
+              ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+              BigNumber.from(uniswapNFTPosition[0].toFixed(0)),
+            ],
+            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from(100000) },
+          })
+            .then((txnResult) => {
+              setApprovingTxn(txnResult);
+              txnResult
+                .wait(1)
+                .then(() => {
+                  refetchGetApprovedData();
+                })
+                .finally(() => {
+                  setApprovingTxn(null);
+                  setIsPending(false);
+                });
+            })
+            .catch((_err) => {
+              setApprovingTxn(null);
+              setIsPending(false);
+            });
+        } else if (confirmButtonState === ConfirmButtonState.READY) {
           setIsPending(true);
           contractWrite?.();
         }
@@ -225,6 +293,8 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTokenId, setSelectedTokenId] = useState<number>(defaultUniswapNFTPosition[0]);
 
+  const { address: userAddress } = useAccount();
+
   const filteredPages: [number, UniswapNFTPosition][][] = useMemo(() => {
     const pages: [number, UniswapNFTPosition][][] = [];
     let page: [number, UniswapNFTPosition][] = [];
@@ -246,14 +316,18 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
     return null;
   }
 
+  if (!userAddress) {
+    return null;
+  }
+
   return (
     <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
       <div className='flex flex-col gap-1 w-full'>
         <Text size='M' weight='bold'>
           Uniswap NFT Positions
         </Text>
-        <div>
-          <div>
+        <div className='flex flex-col gap-4'>
+          <UniswapNFTPositionsPage>
             {filteredPages[currentPage - 1].map(([tokenId, position]) => (
               <UniswapNFTPositionButton
                 key={tokenId}
@@ -268,7 +342,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
                 No Uniswap NFT Positions found
               </Text>
             )}
-          </div>
+          </UniswapNFTPositionsPage>
           <Pagination
             itemsPerPage={ITEMS_PER_PAGE}
             currentPage={currentPage}
@@ -285,6 +359,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
         <AddUniswapNFTAsCollateralButton
           marginAccount={marginAccount}
           uniswapNFTPosition={[selectedTokenId, uniswapNFTPositions.get(selectedTokenId)!]}
+          userAddress={userAddress}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxn}
         />

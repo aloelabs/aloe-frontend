@@ -416,14 +416,15 @@ export default function BorrowPage() {
     };
   }, [pendingTxn]);
 
-  const filteredUniswapNFTPositions = useMemo(() => {
+  const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
     uniswapNFTPositions.forEach((position, tokenId) => {
       if (
         selectedMarginAccount.token0.equals(position.token0) &&
         selectedMarginAccount.token1.equals(position.token1) &&
-        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee
+        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee &&
+        position.liquidity.toString() !== '0'
       ) {
         filteredPositions.set(tokenId, position);
       }
@@ -536,7 +537,7 @@ export default function BorrowPage() {
           <AddCollateralModal
             marginAccount={selectedMarginAccount}
             marketInfo={selectedMarketInfo}
-            uniswapNFTPositions={filteredUniswapNFTPositions}
+            uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
             isOpen={isAddCollateralModalOpen}
             setIsOpen={setIsAddCollateralModalOpen}
             setPendingTxn={setPendingTxn}
