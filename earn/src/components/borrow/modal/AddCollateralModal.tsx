@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { FilledGradientButton, FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
-import { ReactComponent as BackArrow } from '../../../assets/svg/back_arrow.svg';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { UniswapNFTPosition } from '../../../data/Uniswap';
 import { AddCollateralTab } from './tab/AddCollateralTab';
@@ -15,22 +14,6 @@ enum AddCollateralModalState {
   SELECT_COLLATERAL_TYPE = 'SELECT_COLLATERAL_TYPE',
   TOKENS = 'TOKENS',
   UNISWAP_NFTS = 'UNISWAP_NFTS',
-}
-
-export enum CollateralType {
-  NORMAL = 'NORMAL',
-  UNISWAP_NFT = 'UNISWAP_NFT',
-}
-
-export function getCollateralTypeValue(type: CollateralType): string {
-  switch (type) {
-    case CollateralType.NORMAL:
-      return 'Normal';
-    case CollateralType.UNISWAP_NFT:
-      return 'Uniswap NFT';
-    default:
-      return '';
-  }
 }
 
 export type AddCollateralModalProps = {
@@ -63,32 +46,10 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     }
   }, [isOpen, uniswapNFTPositions.size]);
 
-  const collateralTypes = [CollateralType.NORMAL];
-  if (uniswapNFTPositions.size > 0) {
-    collateralTypes.push(CollateralType.UNISWAP_NFT);
-  }
-
-  const hasMultipleTypesOfCollateral = uniswapNFTPositions.size > 0;
-
   const defaultUniswapNFTPosition = uniswapNFTPositions.size > 0 ? Array.from(uniswapNFTPositions.entries())[0] : null;
 
   return (
     <Modal isOpen={isOpen} title='Add Collateral' setIsOpen={setIsOpen} maxHeight='650px' maxWidth='500px'>
-      {hasMultipleTypesOfCollateral && modalState !== AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
-        <div className='flex justify-start w-full'>
-          <FilledGreyButtonWithIcon
-            size='S'
-            Icon={<BackArrow />}
-            svgColorType='stroke'
-            position='leading'
-            onClick={() => {
-              setModalState(AddCollateralModalState.SELECT_COLLATERAL_TYPE);
-            }}
-          >
-            Back
-          </FilledGreyButtonWithIcon>
-        </div>
-      )}
       {modalState === AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
         <div className='flex flex-col gap-4'>
           <Text size='L'>What type of collateral would you like to add?</Text>
