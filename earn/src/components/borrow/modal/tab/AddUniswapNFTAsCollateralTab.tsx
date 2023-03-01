@@ -89,44 +89,29 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 
   const { token0, token1 } = uniswapNFTPosition;
 
-  const [minPrice, maxPrice] = useMemo(() => {
-    const min = tickToPrice(
-      uniswapNFTPosition.tickLower,
-      uniswapNFTPosition.token0.decimals,
-      uniswapNFTPosition.token1.decimals,
-      true
-    );
-    const max = tickToPrice(
-      uniswapNFTPosition.tickUpper,
-      uniswapNFTPosition.token0.decimals,
-      uniswapNFTPosition.token1.decimals,
-      true
-    );
-    return [min, max];
-  }, [
+  const minPrice = tickToPrice(
     uniswapNFTPosition.tickLower,
+    uniswapNFTPosition.token0.decimals,
+    uniswapNFTPosition.token1.decimals,
+    true
+  );
+
+  const maxPrice = tickToPrice(
     uniswapNFTPosition.tickUpper,
     uniswapNFTPosition.token0.decimals,
     uniswapNFTPosition.token1.decimals,
-  ]);
+    true
+  );
 
-  const liquidityAmount = useMemo(() => {
-    return getValueOfLiquidity(
-      {
-        lower: uniswapNFTPosition.tickLower,
-        upper: uniswapNFTPosition.tickUpper,
-        liquidity: uniswapNFTPosition.liquidity,
-      },
-      sqrtRatioToTick(marginAccount.sqrtPriceX96),
-      uniswapNFTPosition.token1.decimals
-    );
-  }, [
-    uniswapNFTPosition.tickLower,
-    uniswapNFTPosition.tickUpper,
-    uniswapNFTPosition.liquidity,
-    marginAccount.sqrtPriceX96,
-    uniswapNFTPosition.token1.decimals,
-  ]);
+  const liquidityAmount = getValueOfLiquidity(
+    {
+      lower: uniswapNFTPosition.tickLower,
+      upper: uniswapNFTPosition.tickUpper,
+      liquidity: uniswapNFTPosition.liquidity,
+    },
+    sqrtRatioToTick(marginAccount.sqrtPriceX96),
+    uniswapNFTPosition.token1.decimals
+  );
 
   return (
     <UniswapNFTPositionButtonWrapper onClick={onClick} active={isActive}>
@@ -196,7 +181,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       uniswapNFTPosition[0],
       uniswapNFTPosition[1].tickLower,
       uniswapNFTPosition[1].tickUpper,
-      `-${uniswapNFTPosition[1].liquidity.toString()}`,
+      `-${uniswapNFTPosition[1].liquidity.toString(10)}`,
       '0',
     ]
   );
@@ -261,9 +246,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
               setApprovingTxn(txnResult);
               txnResult
                 .wait(1)
-                .then(() => {
-                  refetchGetApprovedData();
-                })
+                .then(() => refetchGetApprovedData())
                 .finally(() => {
                   setApprovingTxn(null);
                   setIsPending(false);
