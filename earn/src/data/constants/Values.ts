@@ -27,4 +27,5 @@ export const ALOE_II_MAX_LEVERAGE = 200;
 export const API_PRICE_RELAY_LATEST_URL = 'https://api-price.aloe.capital/price-relay/v1/latest';
 export const API_PRICE_RELAY_HISTORICAL_URL = 'https://api-price.aloe.capital/price-relay/v1/historical';
 export const API_PRICE_RELAY_CONSOLIDATED_URL = 'https://api-price.aloe.capital/price-relay/v1/consolidated';
+export const API_REDEEM_REWARD_URL = 'https://claim.aloe.capital/v1/claim';
 export const ANTE = 0.001e18;
