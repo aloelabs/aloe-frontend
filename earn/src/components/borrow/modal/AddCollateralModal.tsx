@@ -10,6 +10,8 @@ import { UniswapNFTPosition } from '../../../data/Uniswap';
 import { AddCollateralTab } from './tab/AddCollateralTab';
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
+const SECONDARY_COLOR = '#CCDFED';
+
 enum AddCollateralModalState {
   SELECT_COLLATERAL_TYPE = 'SELECT_COLLATERAL_TYPE',
   TOKENS = 'TOKENS',
@@ -51,7 +53,9 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
     <Modal isOpen={isOpen} title='Add Collateral' setIsOpen={setIsOpen} maxHeight='650px' maxWidth='500px'>
       {modalState === AddCollateralModalState.SELECT_COLLATERAL_TYPE && (
         <div className='flex flex-col gap-4'>
-          <Text size='L'>What type of collateral would you like to add?</Text>
+          <Text size='M' color={SECONDARY_COLOR}>
+            What type of collateral would you like to add?
+          </Text>
           <div className='flex flex-col gap-4'>
             <FilledGradientButton
               size='M'
