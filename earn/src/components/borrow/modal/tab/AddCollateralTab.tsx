@@ -146,12 +146,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => {
-      refetchBalance();
-    }, 13_000);
-    if (!interval != null) {
-      clearInterval(interval);
-    }
+    interval = setInterval(() => refetchBalance(), 13_000);
     return () => {
       if (interval != null) {
         clearInterval(interval);

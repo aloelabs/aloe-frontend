@@ -27,7 +27,6 @@ export type AddCollateralModalProps = {
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
   const { marginAccount, uniswapNFTPositions, isOpen, setIsOpen, setPendingTxn } = props;
-  // const [collateralType, setCollateralType] = useState(CollateralType.NORMAL);
   const [modalState, setModalState] = useState(() => {
     if (uniswapNFTPositions.size > 0) {
       return AddCollateralModalState.SELECT_COLLATERAL_TYPE;
