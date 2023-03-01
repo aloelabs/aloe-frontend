@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -424,7 +425,7 @@ export default function BorrowPage() {
         selectedMarginAccount.token0.equals(position.token0) &&
         selectedMarginAccount.token1.equals(position.token1) &&
         GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee &&
-        position.liquidity.toString() !== '0'
+        JSBI.greaterThan(position.liquidity, JSBI.BigInt('0'))
       ) {
         filteredPositions.set(tokenId, position);
       }
