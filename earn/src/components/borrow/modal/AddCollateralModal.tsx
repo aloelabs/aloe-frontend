@@ -65,7 +65,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
               fillWidth={true}
               onClick={() => setModalState(AddCollateralModalState.UNISWAP_NFTS)}
             >
-              Uniswap NFTs
+              Uniswap NFT
             </FilledGradientButton>
           </div>
         </div>
