@@ -122,12 +122,13 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
 export type AddCollateralTabProps = {
   marginAccount: MarginAccount;
+  isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function AddCollateralTab(props: AddCollateralTabProps) {
-  const { marginAccount, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [collateralAmount, setCollateralAmount] = useState('');
@@ -140,7 +141,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
     token: collateralToken.address,
     chainId: activeChain.id,
     watch: false,
-    // enabled: isOpen,
+    enabled: isOpen,
   });
 
   useEffect(() => {
