@@ -30,7 +30,6 @@ const Container = styled.div`
 `;
 
 const InnerContainer = styled.div`
-  max-width: 500px;
   width: 100%;
   display: flex;
   flex-direction: column;
