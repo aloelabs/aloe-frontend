@@ -33,6 +33,8 @@ const UniswapNFTPositionsPage = styled.div`
   min-height: 280px;
 `;
 
+type UniswapNFTPositionEntry = [number, UniswapNFTPosition];
+
 enum ConfirmButtonState {
   APPROVE_NFT_MANAGER,
   APPROVING,
@@ -146,7 +148,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 
 type AddUniswapNFTAsCollateralButtonProps = {
   marginAccount: MarginAccount;
-  uniswapNFTPosition: [number, UniswapNFTPosition];
+  uniswapNFTPosition: UniswapNFTPositionEntry;
   userAddress: string;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
@@ -282,9 +284,9 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
 
   const { address: userAddress } = useAccount();
 
-  const filteredPages: [number, UniswapNFTPosition][][] = useMemo(() => {
-    const pages: [number, UniswapNFTPosition][][] = [];
-    let page: [number, UniswapNFTPosition][] = [];
+  const filteredPages: UniswapNFTPositionEntry[][] = useMemo(() => {
+    const pages: UniswapNFTPositionEntry[][] = [];
+    let page: UniswapNFTPositionEntry[] = [];
     Array.from(uniswapNFTPositions.entries()).forEach((pair, i) => {
       if (i % ITEMS_PER_PAGE === 0 && i !== 0) {
         pages.push(page);
