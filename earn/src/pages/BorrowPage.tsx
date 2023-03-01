@@ -155,6 +155,7 @@ export default function BorrowPage() {
   const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useState<Map<string, readonly UniswapPosition[]>>(
     new Map()
   );
+  const [isLoadingUniswapPositions, setIsLoadingUniswapPositions] = useState(true);
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
@@ -335,10 +336,12 @@ export default function BorrowPage() {
   useDebouncedEffect(
     () => {
       let mounted = true;
+      setIsLoadingUniswapPositions(true);
       const cachedUniswapPositions = cachedUniswapPositionsMap.get(selectedMarginAccount?.address ?? '');
       if (cachedUniswapPositions !== undefined) {
         // If we have cached positions, set them and return (no need to fetch)
         setUniswapPositions(cachedUniswapPositions);
+        setIsLoadingUniswapPositions(false);
         return;
       }
       async function fetch() {
@@ -371,6 +374,7 @@ export default function BorrowPage() {
           });
           // Set the positions
           setUniswapPositions(fetchedUniswapPositions);
+          setIsLoadingUniswapPositions(false);
         }
       }
       fetch();
@@ -538,6 +542,8 @@ export default function BorrowPage() {
           <AddCollateralModal
             marginAccount={selectedMarginAccount}
             marketInfo={selectedMarketInfo}
+            isLoadingUniswapPositions={isLoadingUniswapPositions}
+            existingUniswapPositions={uniswapPositions}
             uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
             isOpen={isAddCollateralModalOpen}
             setIsOpen={setIsAddCollateralModalOpen}

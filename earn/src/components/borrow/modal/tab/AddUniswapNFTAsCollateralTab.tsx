@@ -16,7 +16,7 @@ import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from '../../../../data/constants/Addresses';
 import { MarginAccount } from '../../../../data/MarginAccount';
-import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition } from '../../../../data/Uniswap';
+import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
 import { truncateDecimals } from '../../../../util/Numbers';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
@@ -148,6 +148,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 
 type AddUniswapNFTAsCollateralButtonProps = {
   marginAccount: MarginAccount;
+  existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPosition: UniswapNFTPositionEntry;
   userAddress: string;
   setIsOpen: (open: boolean) => void;
@@ -155,7 +156,7 @@ type AddUniswapNFTAsCollateralButtonProps = {
 };
 
 function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonProps) {
-  const { marginAccount, uniswapNFTPosition, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, existingUniswapPositions, uniswapNFTPosition, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
@@ -184,7 +185,14 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       uniswapNFTPosition[1].tickLower,
       uniswapNFTPosition[1].tickUpper,
       `-${uniswapNFTPosition[1].liquidity.toString(10)}`,
-      '0',
+      zip([
+        ...existingUniswapPositions,
+        {
+          lower: uniswapNFTPosition[1].tickLower,
+          upper: uniswapNFTPosition[1].tickUpper,
+          liquidity: uniswapNFTPosition[1].liquidity,
+        },
+      ]),
     ]
   );
   const { config: contractWriteConfig } = usePrepareContractWrite({
@@ -271,6 +279,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 
 export type AddUniswapNFTAsCollateralTabProps = {
   marginAccount: MarginAccount;
+  existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   defaultUniswapNFTPosition: [number, UniswapNFTPosition];
   setIsOpen: (open: boolean) => void;
@@ -278,7 +287,14 @@ export type AddUniswapNFTAsCollateralTabProps = {
 };
 
 export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTabProps) {
-  const { marginAccount, uniswapNFTPositions, defaultUniswapNFTPosition, setIsOpen, setPendingTxn } = props;
+  const {
+    marginAccount,
+    existingUniswapPositions,
+    uniswapNFTPositions,
+    defaultUniswapNFTPosition,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTokenId, setSelectedTokenId] = useState<number>(defaultUniswapNFTPosition[0]);
 
@@ -347,6 +363,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
       <div className='w-full'>
         <AddUniswapNFTAsCollateralButton
           marginAccount={marginAccount}
+          existingUniswapPositions={existingUniswapPositions}
           uniswapNFTPosition={[selectedTokenId, uniswapNFTPositions.get(selectedTokenId)!]}
           userAddress={userAddress}
           setIsOpen={setIsOpen}

@@ -5,8 +5,9 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
+import { MAX_UNISWAP_POSITIONS } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
-import { UniswapNFTPosition } from '../../../data/Uniswap';
+import { UniswapNFTPosition, UniswapPosition } from '../../../data/Uniswap';
 import { AddCollateralTab } from './tab/AddCollateralTab';
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
@@ -21,6 +22,8 @@ enum AddCollateralModalState {
 export type AddCollateralModalProps = {
   marginAccount: MarginAccount;
   marketInfo: MarketInfo;
+  isLoadingUniswapPositions: boolean;
+  existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -28,9 +31,23 @@ export type AddCollateralModalProps = {
 };
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
-  const { marginAccount, uniswapNFTPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const {
+    marginAccount,
+    isLoadingUniswapPositions,
+    existingUniswapPositions,
+    uniswapNFTPositions,
+    isOpen,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const [modalState, setModalState] = useState(() => {
-    if (uniswapNFTPositions.size > 0) {
+    // Only show the select collateral type modal if there are uniswap NFT positions and the user has not already
+    // added the maximum number of uniswap positions.
+    if (
+      uniswapNFTPositions.size > 0 &&
+      existingUniswapPositions.length < MAX_UNISWAP_POSITIONS &&
+      !isLoadingUniswapPositions
+    ) {
       return AddCollateralModalState.SELECT_COLLATERAL_TYPE;
     }
     return AddCollateralModalState.TOKENS;
@@ -39,13 +56,19 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
   useEffect(() => {
     if (isOpen) {
       setModalState(() => {
-        if (uniswapNFTPositions.size > 0) {
+        // Only show the select collateral type modal if there are uniswap NFT positions and the user has not already
+        // added the maximum number of uniswap positions.
+        if (
+          uniswapNFTPositions.size > 0 &&
+          existingUniswapPositions.length < MAX_UNISWAP_POSITIONS &&
+          !isLoadingUniswapPositions
+        ) {
           return AddCollateralModalState.SELECT_COLLATERAL_TYPE;
         }
         return AddCollateralModalState.TOKENS;
       });
     }
-  }, [isOpen, uniswapNFTPositions.size]);
+  }, [existingUniswapPositions.length, isLoadingUniswapPositions, isOpen, uniswapNFTPositions.size]);
 
   const defaultUniswapNFTPosition = uniswapNFTPositions.size > 0 ? Array.from(uniswapNFTPositions.entries())[0] : null;
 
@@ -85,6 +108,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
       {modalState === AddCollateralModalState.UNISWAP_NFTS && defaultUniswapNFTPosition != null && (
         <AddUniswapNFTAsCollateralTab
           marginAccount={marginAccount}
+          existingUniswapPositions={existingUniswapPositions}
           uniswapNFTPositions={uniswapNFTPositions}
           defaultUniswapNFTPosition={defaultUniswapNFTPosition}
           setPendingTxn={setPendingTxn}
