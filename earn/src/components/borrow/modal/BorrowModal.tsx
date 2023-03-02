@@ -16,6 +16,7 @@ import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -128,6 +129,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
 export type BorrowModalProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -135,7 +137,7 @@ export type BorrowModalProps = {
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -184,7 +186,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     marginAccount.assets,
     marginAccount.liabilities,
-    [], // TODO: use actual Uniswap positions once we fetch them
+    uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
     marginAccount.token0.decimals,

@@ -16,8 +16,7 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
-  const { marketInfo, marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } =
-    prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
@@ -71,8 +70,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
     token0.decimals,
     token1.decimals
   );
-  const available0 = marketInfo.lender0AvailableAssets.div(10 ** marginAccount.token0.decimals).toNumber();
-  const available1 = marketInfo.lender1AvailableAssets.div(10 ** marginAccount.token1.decimals).toNumber();
+  const available0 = accountState.availableForBorrow.amount0;
+  const available1 = accountState.availableForBorrow.amount1;
 
   const max =
     selectedTokenOption.value === TokenType.ASSET0 ? Math.min(allowed0, available0) : Math.min(allowed1, available1);
