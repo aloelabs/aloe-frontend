@@ -72,7 +72,7 @@ const EllipsisWrapper = styled.span`
   height: 40px;
 `;
 
-export type ItemsPerPage = 5 | 10 | 20 | 50 | 100;
+export type ItemsPerPage = 2 | 3 | 5 | 10 | 20 | 50 | 100;
 
 const ItemsPerPageToOption = (itemsPerPage: ItemsPerPage) => {
   return {

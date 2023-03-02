@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -154,6 +155,7 @@ export default function BorrowPage() {
   const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useState<Map<string, readonly UniswapPosition[]>>(
     new Map()
   );
+  const [isLoadingUniswapPositions, setIsLoadingUniswapPositions] = useState(true);
   const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
@@ -334,10 +336,12 @@ export default function BorrowPage() {
   useDebouncedEffect(
     () => {
       let mounted = true;
+      setIsLoadingUniswapPositions(true);
       const cachedUniswapPositions = cachedUniswapPositionsMap.get(selectedMarginAccount?.address ?? '');
       if (cachedUniswapPositions !== undefined) {
         // If we have cached positions, set them and return (no need to fetch)
         setUniswapPositions(cachedUniswapPositions);
+        setIsLoadingUniswapPositions(false);
         return;
       }
       async function fetch() {
@@ -370,6 +374,7 @@ export default function BorrowPage() {
           });
           // Set the positions
           setUniswapPositions(fetchedUniswapPositions);
+          setIsLoadingUniswapPositions(false);
         }
       }
       fetch();
@@ -416,14 +421,15 @@ export default function BorrowPage() {
     };
   }, [pendingTxn]);
 
-  const filteredUniswapNFTPositions = useMemo(() => {
+  const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
     uniswapNFTPositions.forEach((position, tokenId) => {
       if (
         selectedMarginAccount.token0.equals(position.token0) &&
         selectedMarginAccount.token1.equals(position.token1) &&
-        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee
+        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee &&
+        JSBI.greaterThan(position.liquidity, JSBI.BigInt('0'))
       ) {
         filteredPositions.set(tokenId, position);
       }
@@ -536,7 +542,9 @@ export default function BorrowPage() {
           <AddCollateralModal
             marginAccount={selectedMarginAccount}
             marketInfo={selectedMarketInfo}
-            uniswapNFTPositions={filteredUniswapNFTPositions}
+            isLoadingUniswapPositions={isLoadingUniswapPositions}
+            existingUniswapPositions={uniswapPositions}
+            uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
             isOpen={isAddCollateralModalOpen}
             setIsOpen={setIsAddCollateralModalOpen}
             setPendingTxn={setPendingTxn}

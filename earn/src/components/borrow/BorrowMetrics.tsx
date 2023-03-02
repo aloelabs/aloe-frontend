@@ -199,16 +199,19 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     else liquidationDistanceText = `${(maxSafeCollateralFall * 100).toPrecision(2)}% drop in collateral value`;
   }
 
+  const token0Collateral = marginAccount.assets.token0Raw + marginAccount.assets.uni0;
+  const token1Collateral = marginAccount.assets.token1Raw + marginAccount.assets.uni1;
+
   return (
     <MetricsGrid>
       <MetricsGridUpper>
         <MetricCard
           label={`${marginAccount.token0.ticker} Collateral`}
-          value={formatTokenAmount(marginAccount.assets.token0Raw || 0, 3)}
+          value={formatTokenAmount(token0Collateral, 3)}
         />
         <MetricCard
           label={`${marginAccount.token1.ticker} Collateral`}
-          value={formatTokenAmount(marginAccount.assets.token1Raw || 0, 3)}
+          value={formatTokenAmount(token1Collateral, 3)}
         />
         <MetricCard
           label={`${marginAccount.token0.ticker} Borrows`}

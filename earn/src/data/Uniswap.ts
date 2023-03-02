@@ -292,6 +292,7 @@ export async function fetchUniswapNFTPositions(
   const positionsResults = (await multicall.call(positionsCallContext)).results['uniswapNFTManager'];
   const callsReturnContext = convertBigNumbersForReturnContexts(positionsResults.callsReturnContext);
   const result: Map<number, UniswapNFTPosition> = new Map();
+
   for (let i = 0; i < tokenIds.length; i++) {
     const position = callsReturnContext[i].returnValues;
     const uniswapPosition: UniswapNFTPosition = {
@@ -306,4 +307,33 @@ export async function fetchUniswapNFTPositions(
     result.set(tokenIds[i], uniswapPosition);
   }
   return result;
+}
+
+function modQ24(value: number) {
+  return value & 0b00000000111111111111111111111111;
+}
+
+export function zip(uniswapPositions: readonly UniswapPosition[]) {
+  const positions: number[] = [];
+  uniswapPositions.forEach((position) => {
+    if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
+      positions.push(position.lower);
+      positions.push(position.upper);
+    }
+  });
+  while (positions.length < 6) {
+    positions.push(0xdead);
+  }
+
+  const Q24 = 1 << 24;
+  for (let i = 0; i < positions.length; i++) {
+    if (positions[i] >= 0) continue;
+    positions[i] = modQ24(Q24 + positions[i]);
+  }
+
+  const zipped = positions.reduce((prev, curr, i) => {
+    return JSBI.add(prev, JSBI.leftShift(JSBI.BigInt(curr), JSBI.BigInt(24 * i)));
+  }, JSBI.BigInt(0));
+
+  return zipped.toString(10);
 }
