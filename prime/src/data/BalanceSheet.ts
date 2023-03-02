@@ -265,7 +265,7 @@ export function maxWithdraws(
     // In this case, `surplus1C` is big enough to absorb part of the new withdrawal, but not all of it. The
     // portion that's *not* absorbed will increase the liquidation incentive
     else if (surplus1C < maxWithdrawA1) {
-      maxWithdrawA1 += surplus1C;
+      maxWithdrawA1 += surplus1C / ALOE_II_LIQUIDATION_INCENTIVE;
       denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
     }
   }
@@ -283,7 +283,7 @@ export function maxWithdraws(
     // In this case, `surplus0C` is big enough to absorb part of the new withdrawal, but not all of it. The
     // portion that's *not* absorbed will increase the liquidation incentive
     else if (surplus0C < maxWithdrawA0 / priceA) {
-      maxWithdrawA0 += surplus0C * priceC;
+      maxWithdrawA0 += (surplus0C * priceC) / ALOE_II_LIQUIDATION_INCENTIVE;
       denom = coeff * priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
     }
   }
@@ -297,7 +297,7 @@ export function maxWithdraws(
     if (surplus1C <= 0) {
       denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
     } else if (surplus1C < maxWithdrawB1) {
-      maxWithdrawB1 += surplus1C;
+      maxWithdrawB1 += surplus1C / ALOE_II_LIQUIDATION_INCENTIVE;
       denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
     }
   }
@@ -311,7 +311,7 @@ export function maxWithdraws(
     if (surplus0C <= 0) {
       denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
     } else if (surplus0C < maxWithdrawB0 / priceB) {
-      maxWithdrawB0 += surplus0C * priceC;
+      maxWithdrawB0 += (surplus0C * priceC) / ALOE_II_LIQUIDATION_INCENTIVE;
       denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
     }
   }
