@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGradientButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton, OutlinedWhiteButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import usdcPlusGraphic from '../assets/png/10USDCPlus.png';
 import { ReactComponent as ErrorIcon } from '../assets/svg/error.svg';
 import { ReactComponent as SuccessIcon } from '../assets/svg/success.svg';
 import { API_REDEEM_REWARD_URL } from '../data/constants/Values';
@@ -38,6 +39,14 @@ const InnerContainer = styled.div`
   margin: 0 auto;
 `;
 
+const BusinessCardContainer = styled.div`
+  min-width: 300px;
+  width: 40%;
+  border-radius: 24px;
+  box-shadow: 0px 0px 30px 5px rgba(214, 214, 213, 0.6);
+  margin-bottom: 24px;
+`;
+
 async function claimReward(redemptionCode: string, redemptionAddress: string) {
   const axiosResponse: AxiosResponse<RedeemRewardResponse> = await axios.post(
     `${API_REDEEM_REWARD_URL}/${redemptionCode}`,
@@ -63,15 +72,15 @@ function SuccessModal(props: SuccessModalProps) {
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen}>
-      <div className='w-full flex flex-col items-center'>
-        <SuccessIcon />
+      <div className='w-full flex flex-col items-center gap-4'>
+        <SuccessIcon width={75} height={75} />
         <Display size='XL' weight='semibold'>
-          10 USDC
+          10 USDC+
         </Display>
         <Text size='L' weight='bold'>
           has been sent to your wallet.
         </Text>
-        <FilledGradientButton size='M' onClick={() => navigate('/portfolio')} className='mt-4'>
+        <FilledGradientButton size='M' onClick={() => navigate('/portfolio')}>
           Go To Portfolio
         </FilledGradientButton>
       </div>
@@ -90,12 +99,12 @@ function ErrorModal(props: ErrorModalProps) {
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen}>
-      <div className='w-full flex flex-col items-center'>
-        <ErrorIcon width={100} height={100} />
+      <div className='w-full flex flex-col items-center gap-4'>
+        <ErrorIcon width={75} height={75} />
         <Text size='L' weight='bold' className='text-center'>
           {message}
         </Text>
-        <FilledGreyButton size='M' onClick={() => setIsOpen(false)} className='mt-4'>
+        <FilledGreyButton size='M' onClick={() => setIsOpen(false)}>
           Close
         </FilledGreyButton>
       </div>
@@ -122,30 +131,25 @@ export default function ClaimPage() {
     <AppPage>
       <Container>
         <InnerContainer>
-          <div className='w-full flex flex-col items-center'>
-            <Text size='L' weight='bold'>
-              Claim your
-            </Text>
-            <Display size='XL' weight='semibold'>
-              10 USDC
-            </Display>
-          </div>
+          <BusinessCardContainer>
+            <img src={usdcPlusGraphic} alt={'10 USDC+ Business Card'}></img>
+          </BusinessCardContainer>
           <SquareInput
-            size='L'
+            size='M'
             value={redemptionCode}
             onChange={(e) => setRedemptionCode(e.target.value)}
             placeholder='Redemption Code'
             paddingRightOverride='24px'
           />
           <SquareInput
-            size='L'
+            size='M'
             value={redemptionAddress}
             onChange={(e) => setRedemptionAddress(e.target.value)}
-            placeholder='Redemption Address'
+            placeholder='Recipient'
             paddingRightOverride='24px'
           />
-          <FilledGradientButton
-            size='L'
+          <OutlinedWhiteButton
+            size='M'
             onClick={() => {
               setModalMessage('');
               if (!validAddressFormRegex.test(redemptionAddress)) {
@@ -173,8 +177,8 @@ export default function ClaimPage() {
                 });
             }}
           >
-            Claim Reward
-          </FilledGradientButton>
+            Claim
+          </OutlinedWhiteButton>
         </InnerContainer>
       </Container>
       <SuccessModal isOpen={isSuccessModalOpen} setIsOpen={setIsSuccessModalOpen} />
