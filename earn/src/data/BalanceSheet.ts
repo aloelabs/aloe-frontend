@@ -79,11 +79,23 @@ function _computeSolvencyBasics(
     sqrtPriceX96
   );
 
+  const coeff = 1 + 1 / ALOE_II_MAX_LEVERAGE;
+  const liabilities0 = liabilities.amount0 * coeff;
+  const liabilities1 = liabilities.amount1 * coeff + liquidationIncentive;
+
+  const liabilitiesA = liabilities1 + liabilities0 * priceA;
+  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
+  const liabilitiesB = liabilities1 + liabilities0 * priceB;
+  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
+
   return {
     priceA,
     priceB,
     mem,
     liquidationIncentive,
+    coeff,
+    surplusA: assetsA - liabilitiesA,
+    surplusB: assetsB - liabilitiesB,
   };
 }
 
@@ -101,6 +113,11 @@ export function priceToSqrtRatio(price: number, token0Decimals: number, token1De
     .mul(10 ** (token1Decimals - token0Decimals))
     .sqrt()
     .mul(BIGQ96);
+}
+
+export function sqrtRatioToTick(sqrtRatioX96: Big): number {
+  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+  return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
 }
 
 export function getAssets(
@@ -156,7 +173,7 @@ export function isSolvent(
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const { priceA, priceB, mem, liquidationIncentive } = _computeSolvencyBasics(
+  const { priceA, priceB, mem, liquidationIncentive, coeff } = _computeSolvencyBasics(
     assets,
     liabilities,
     uniswapPositions,
@@ -166,8 +183,8 @@ export function isSolvent(
     token1Decimals
   );
 
-  const liabilities0 = liabilities.amount0 * (1 + 1 / ALOE_II_MAX_LEVERAGE);
-  const liabilities1 = liabilities.amount1 * (1 + 1 / ALOE_II_MAX_LEVERAGE) + liquidationIncentive;
+  const liabilities0 = liabilities.amount0 * coeff;
+  const liabilities1 = liabilities.amount1 * coeff + liquidationIncentive;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
@@ -199,7 +216,7 @@ export function maxBorrows(
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const { priceA, priceB, mem, liquidationIncentive } = _computeSolvencyBasics(
+  const { priceA, priceB, surplusA, surplusB } = _computeSolvencyBasics(
     assets,
     liabilities,
     uniswapPositions,
@@ -209,21 +226,148 @@ export function maxBorrows(
     token1Decimals
   );
 
-  const liabilities0 = liabilities.amount0;
-  const liabilities1 = liabilities.amount1;
-
-  const liabilitiesA = liabilities1 + liabilities0 * priceA;
-  const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
-  const liabilitiesB = liabilities1 + liabilities0 * priceB;
-  const assetsB = mem.fluid1B + mem.fixed1 + mem.fixed0 * priceB;
-
-  const coeff = 1 + 1 / ALOE_II_MAX_LEVERAGE;
-  const maxNewBorrowsA = (assetsA - liquidationIncentive - coeff * liabilitiesA) * ALOE_II_MAX_LEVERAGE;
-  const maxNewBorrowsB = (assetsB - liquidationIncentive - coeff * liabilitiesB) * ALOE_II_MAX_LEVERAGE;
+  const maxNewBorrowsA = surplusA * ALOE_II_MAX_LEVERAGE;
+  const maxNewBorrowsB = surplusB * ALOE_II_MAX_LEVERAGE;
 
   const maxNewBorrows0 = Math.min(maxNewBorrowsA / priceA, maxNewBorrowsB / priceB);
   const maxNewBorrows1 = Math.min(maxNewBorrowsA, maxNewBorrowsB);
   return [maxNewBorrows0, maxNewBorrows1];
+}
+
+function _maxWithdraws(
+  assets: Assets,
+  liabilities: Liabilities,
+  uniswapPositions: readonly UniswapPosition[],
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number,
+  coeff = 1
+) {
+  const { priceA, priceB, mem, surplusA, surplusB } = _computeSolvencyBasics(
+    assets,
+    liabilities,
+    uniswapPositions,
+    sqrtPriceX96,
+    iv,
+    token0Decimals,
+    token1Decimals
+  );
+  const priceC = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
+
+  const surplus0C = mem.fixed0 + mem.fluid0C - liabilities.amount0;
+  const surplus1C = mem.fixed1 + mem.fluid1C - liabilities.amount1;
+
+  let maxWithdrawA1 = surplusA;
+  let denom = coeff;
+  // Withdrawing token1 can only impact liquidation incentive if there's surplus token0
+  if (surplus0C >= 0) {
+    // `surplus1C <= 0` means there's no padding to absorb the new withdrawal, so it starts increasing the
+    // liquidation incentive right away
+    if (surplus1C <= 0) {
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+    // In this case, `surplus1C` is big enough to absorb part of the new withdrawal, but not all of it. The
+    // portion that's *not* absorbed will increase the liquidation incentive
+    else if (surplus1C < maxWithdrawA1) {
+      maxWithdrawA1 += surplus1C / ALOE_II_LIQUIDATION_INCENTIVE;
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+  }
+  maxWithdrawA1 /= denom;
+
+  let maxWithdrawA0 = surplusA;
+  denom = coeff * priceA;
+  // Withdrawing token0 can only impact liquidation incentive if there's surplus token1
+  if (surplus1C >= 0) {
+    // `surplus0C <= 0` means there's no padding to absorb the new withdrawal, so it starts increasing the
+    // liquidation incentive right away
+    if (surplus0C <= 0) {
+      denom = coeff * priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+    // In this case, `surplus0C` is big enough to absorb part of the new withdrawal, but not all of it. The
+    // portion that's *not* absorbed will increase the liquidation incentive
+    else if (surplus0C < maxWithdrawA0 / priceA) {
+      maxWithdrawA0 += (surplus0C * priceC) / ALOE_II_LIQUIDATION_INCENTIVE;
+      denom = coeff * priceA + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+  }
+  maxWithdrawA0 /= denom;
+
+  // REPEAT AT PRICE B FOR TOKEN1
+
+  let maxWithdrawB1 = surplusB;
+  denom = coeff;
+  if (surplus0C >= 0) {
+    if (surplus1C <= 0) {
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    } else if (surplus1C < maxWithdrawB1) {
+      maxWithdrawB1 += surplus1C / ALOE_II_LIQUIDATION_INCENTIVE;
+      denom = coeff + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+  }
+  maxWithdrawB1 /= denom;
+
+  // REPEAT AT PRICE B FOR TOKEN0
+
+  let maxWithdrawB0 = surplusB;
+  denom = coeff * priceB;
+  if (surplus1C >= 0) {
+    if (surplus0C <= 0) {
+      denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    } else if (surplus0C < maxWithdrawB0 / priceB) {
+      maxWithdrawB0 += (surplus0C * priceC) / ALOE_II_LIQUIDATION_INCENTIVE;
+      denom = coeff * priceB + priceC / ALOE_II_LIQUIDATION_INCENTIVE;
+    }
+  }
+  maxWithdrawB0 /= denom;
+
+  const maxNewWithdraws0 = Math.min(maxWithdrawA0, maxWithdrawB0);
+  const maxNewWithdraws1 = Math.min(maxWithdrawA1, maxWithdrawB1);
+  return [maxNewWithdraws0, maxNewWithdraws1];
+}
+
+export function maxWithdraws(
+  assets: Assets,
+  liabilities: Liabilities,
+  uniswapPositions: readonly UniswapPosition[],
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number
+) {
+  const [maxNewWithdraws0, maxNewWithdraws1] = _maxWithdraws(
+    assets,
+    liabilities,
+    uniswapPositions,
+    sqrtPriceX96,
+    iv,
+    token0Decimals,
+    token1Decimals,
+    1
+  );
+  return [Math.min(maxNewWithdraws0, assets.token0Raw), Math.min(maxNewWithdraws1, assets.token1Raw)];
+}
+
+export function maxBorrowAndWithdraw(
+  assets: Assets,
+  liabilities: Liabilities,
+  uniswapPositions: readonly UniswapPosition[],
+  sqrtPriceX96: Big,
+  iv: number,
+  token0Decimals: number,
+  token1Decimals: number
+) {
+  return _maxWithdraws(
+    assets,
+    liabilities,
+    uniswapPositions,
+    sqrtPriceX96,
+    iv,
+    token0Decimals,
+    token1Decimals,
+    1 + 1 / ALOE_II_MAX_LEVERAGE
+  );
 }
 
 export type LiquidationThresholds = {
@@ -236,7 +380,7 @@ export type LiquidationThresholds = {
 export function computeLiquidationThresholds(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: UniswapPosition[],
+  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   token0Decimals: number,

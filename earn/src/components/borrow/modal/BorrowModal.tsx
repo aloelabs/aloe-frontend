@@ -2,18 +2,21 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
+import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -126,6 +129,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
 export type BorrowModalProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -133,7 +137,7 @@ export type BorrowModalProps = {
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -144,6 +148,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { data: accountEtherBalance } = useBalance({
     address: marginAccount.address as Address,
     chainId: activeChain.id,
+    watch: false,
+    enabled: isOpen,
   });
 
   // Reset borrow amount and token when modal is opened/closed
@@ -154,18 +160,16 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  const isToken0 = borrowToken.address === marginAccount.token0.address;
 
   const numericBorrowAmount = Number(borrowAmount) || 0;
-  const numericExistingLiability =
-    borrowToken.address === marginAccount.token0.address
-      ? marginAccount.liabilities.amount0
-      : marginAccount.liabilities.amount1;
+  const numericExistingLiability = isToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
   const borrowAmountBig = new Big(numericBorrowAmount).mul(10 ** borrowToken.decimals);
   const existingLiabilityBig = new Big(numericExistingLiability).mul(10 ** borrowToken.decimals);
 
   const newLiability = existingLiabilityBig.plus(borrowAmountBig).div(10 ** borrowToken.decimals);
 
-  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toString())) || false;
+  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toFixed(0))) || false;
 
   const formattedAnte = new Big(ANTE).div(10 ** 18).toFixed(4);
 
@@ -173,13 +177,43 @@ export default function BorrowModal(props: BorrowModalProps) {
     return null;
   }
 
+  const totalSupply = isToken0 ? marketInfo.lender0TotalSupply : marketInfo.lender1TotalSupply;
+  const totalBorrow = isToken0 ? marketInfo.lender0TotalBorrows : marketInfo.lender1TotalBorrows;
+  const maxBorrowsBasedOnMarket = totalSupply
+    .sub(totalBorrow)
+    .div(10 ** borrowToken.decimals)
+    .toNumber();
+  const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
+    marginAccount.assets,
+    marginAccount.liabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  )[isToken0 ? 0 : 1];
+  const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket);
+  // Mitigate the case when the number is represented in scientific notation
+  const bigMax = BigNumber.from(new Big(max).mul(10 ** borrowToken.decimals).toFixed(0));
+  const maxString = ethers.utils.formatUnits(bigMax, borrowToken.decimals);
+
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Borrow Amount
-          </Text>
+          <div className='flex flex-row justify-between mb-1'>
+            <Text size='M' weight='bold'>
+              Borrow Amount
+            </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                setBorrowAmount(maxString);
+              }}
+            >
+              MAX
+            </BaseMaxButton>
+          </div>
           <TokenAmountSelectInput
             inputValue={borrowAmount}
             onChange={(value) => {

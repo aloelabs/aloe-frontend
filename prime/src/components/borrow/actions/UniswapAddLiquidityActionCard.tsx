@@ -49,7 +49,7 @@ function fromFields(fields: string[] | undefined): PreviousState {
     amount1Str: fields?.at(1) ?? '',
     lowerStr: fields?.at(2) ?? '',
     upperStr: fields?.at(3) ?? '',
-    isToken0Selected: fields?.at(4) === 'true',
+    isToken0Selected: fields?.at(4) !== 'false',
   };
 }
 
@@ -92,8 +92,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   } else if (tickInfo != null && currentTick != null) {
     // If user hasn't entered their own lower and upper bounds, initialize them with a reasonable default.
     // Note that we can't do this until we've fetched tick info.
-    previousLower = roundDownToNearestN(currentTick - 100, tickInfo.tickSpacing);
-    previousUpper = roundUpToNearestN(currentTick + 100, tickInfo.tickSpacing);
+    previousLower = roundDownToNearestN(currentTick - 10 * tickInfo.tickSpacing, tickInfo.tickSpacing);
+    previousUpper = roundUpToNearestN(currentTick + 10 * tickInfo.tickSpacing, tickInfo.tickSpacing);
   }
   // --> disabled status
   let isInput0Disabled = true;
@@ -259,8 +259,10 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     );
   }
 
-  const max0 = accountState.assets.token0Raw;
-  const max1 = accountState.assets.token1Raw;
+  let max0 = accountState.assets.token0Raw;
+  let max1 = accountState.assets.token1Raw;
+  // If token1 is selected, we need to swap the max amounts
+  if (!isToken0Selected) [max0, max1] = [max1, max0];
   const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
   const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
 
@@ -369,8 +371,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     />
   );
 
-  const input0MaxString = isToken0Selected ? maxString0 : maxString1;
-  const input1MaxString = isToken0Selected ? maxString1 : maxString0;
+  // We need to swap the token amounts if token1 is selected
+  const tokenAmount0 = localTokenAmounts[isToken0Selected ? 0 : 1];
+  const tokenAmount1 = localTokenAmounts[isToken0Selected ? 1 : 0];
 
   return (
     <BaseActionCard
@@ -408,26 +411,26 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       <div className='w-full flex flex-col gap-4'>
         <TokenAmountInput
           token={isToken0Selected ? token0 : token1}
-          value={isInput0Disabled ? '' : localTokenAmounts[0]}
+          value={isInput0Disabled ? '' : tokenAmount0}
           onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
           disabled={isInput0Disabled}
-          max={input0MaxString}
-          maxed={localTokenAmounts[0] === input0MaxString}
+          max={maxString0}
+          maxed={tokenAmount0 === maxString0}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            updateAmount(maxValue, true, previousLower, previousUpper);
+            updateAmount(maxValue, isToken0Selected, previousLower, previousUpper);
           }}
         />
         <TokenAmountInput
           token={isToken0Selected ? token1 : token0}
-          value={isInput1Disabled ? '' : localTokenAmounts[1]}
+          value={isInput1Disabled ? '' : tokenAmount1}
           onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
           disabled={isInput1Disabled}
-          max={input1MaxString}
-          maxed={localTokenAmounts[1] === input1MaxString}
+          max={maxString1}
+          maxed={tokenAmount1 === maxString1}
           onMax={(maxValue: string) => {
             //When max is clicked, we want to forcefully update the amount inputs so we handle it ourselves
-            updateAmount(maxValue, false, previousLower, previousUpper);
+            updateAmount(maxValue, !isToken0Selected, previousLower, previousUpper);
           }}
         />
       </div>

@@ -2,17 +2,20 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
+import { maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -137,6 +140,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
 export type RemoveCollateralModalProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -144,7 +148,7 @@ export type RemoveCollateralModalProps = {
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmount, setCollateralAmount] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
@@ -158,11 +162,9 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  const isToken0 = collateralToken.address === marginAccount.token0.address;
 
-  const existingCollateral =
-    collateralToken.address === marginAccount.token0.address
-      ? marginAccount.assets.token0Raw
-      : marginAccount.assets.token1Raw;
+  const existingCollateral = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
 
   const numericCollateralAmount = Number(collateralAmount) || 0;
 
@@ -181,13 +183,37 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     return null;
   }
 
+  const maxWithdrawBasedOnHealth = maxWithdraws(
+    marginAccount.assets,
+    marginAccount.liabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  )[isToken0 ? 0 : 1];
+  const max = Math.min(existingCollateral, maxWithdrawBasedOnHealth);
+  // Mitigate the case when the number is represented in scientific notation
+  const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
+  const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
+
   return (
     <Modal isOpen={isOpen} title='Remove Collateral' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <Text size='M' weight='bold'>
-            Collateral Amount
-          </Text>
+          <div className='flex flex-row justify-between mb-1'>
+            <Text size='M' weight='bold'>
+              Collateral Amount
+            </Text>
+            <BaseMaxButton
+              size='L'
+              onClick={() => {
+                setCollateralAmount(maxString);
+              }}
+            >
+              MAX
+            </BaseMaxButton>
+          </div>
           <TokenAmountSelectInput
             inputValue={collateralAmount}
             onChange={(value) => {

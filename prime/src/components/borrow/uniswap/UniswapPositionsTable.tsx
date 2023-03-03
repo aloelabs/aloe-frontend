@@ -218,10 +218,10 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
       const earnedFeesMap: UniswapPositionEarnedFees = {};
       earnedFees[0].forEach((positionId, index) => {
         earnedFeesMap[positionId] = {
-          token0FeesEarned: toBig(earnedFees[1][index])
+          token0FeesEarned: toBig(earnedFees[1][index * 2])
             .div(10 ** marginAccount.token0.decimals)
             .toNumber(),
-          token1FeesEarned: toBig(earnedFees[1][index + 1])
+          token1FeesEarned: toBig(earnedFees[1][index * 2 + 1])
             .div(10 ** marginAccount.token1.decimals)
             .toNumber(),
         };

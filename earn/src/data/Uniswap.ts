@@ -1,14 +1,52 @@
 import { TickMath } from '@uniswap/v3-sdk';
+import { Chain, Provider } from '@wagmi/core';
 import Big from 'big.js';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
+import { CallContext } from 'ethereum-multicall/dist/esm/models';
+import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 
-import { Q96 } from './constants/Values';
+import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { toBig } from '../util/Numbers';
+import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
+import { BIGQ96, Q96 } from './constants/Values';
+import { Token } from './Token';
+import { getToken } from './TokenData';
 
 export type UniswapPosition = {
   lower: number;
   upper: number;
   liquidity: JSBI;
 };
+
+export type UniswapPositionPrior = Omit<UniswapPosition, 'liquidity'>;
+
+export type UniswapNFTPosition = {
+  operator: string;
+  token0: Token;
+  token1: Token;
+  fee: number;
+  tickLower: number;
+  tickUpper: number;
+  liquidity: JSBI;
+};
+
+export interface UniswapV3PoolSlot0 {
+  sqrtPriceX96: ethers.BigNumber;
+  tick: number;
+  observationIndex: number;
+  observationCardinality: number;
+  observationCardinalityNext: number;
+  feeProtocol: number;
+}
+
+export interface UniswapV3PoolBasics {
+  slot0: UniswapV3PoolSlot0;
+  tickSpacing: number;
+  token1OverToken0: Big;
+}
 
 function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
@@ -97,4 +135,205 @@ export function getValueOfLiquidity(position: UniswapPosition, currentTick: numb
   const value = JSBI.add(value0, value1);
 
   return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+}
+
+export function uniswapPositionKey(owner: string, lower: number, upper: number): string {
+  return ethers.utils.solidityKeccak256(['address', 'int24', 'int24'], [owner, lower, upper]);
+}
+
+export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
+  const priceX96 = sqrtPriceX96.mul(sqrtPriceX96).div(Q96);
+  return toBig(priceX96).div(BIGQ96);
+}
+
+export function tickToPrice(
+  tick: number,
+  token0Decimals: number,
+  token1Decimals: number,
+  isInTermsOfToken0 = true
+): number {
+  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
+  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
+
+  const priceX96Big = new Big(priceX96.toString(10));
+
+  const decimalDiff = token0Decimals - token1Decimals;
+  const price0In1 = priceX96Big
+    .mul(10 ** decimalDiff)
+    .div(BIGQ96)
+    .toNumber();
+  const price1In0 = 1.0 / price0In1;
+  return isInTermsOfToken0 ? price0In1 : price1In0;
+}
+
+export async function fetchUniswapPositions(
+  priors: UniswapPositionPrior[],
+  marginAccountAddress: string,
+  uniswapV3PoolAddress: string,
+  provider: Provider
+) {
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+  });
+  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
+  const contractCallContext: ContractCallContext[] = [];
+  keys.forEach((key) => {
+    contractCallContext.push({
+      reference: 'uniswapV3Pool',
+      contractAddress: uniswapV3PoolAddress,
+      abi: UniswapV3PoolABI,
+      calls: [
+        {
+          reference: 'positions',
+          methodName: 'positions',
+          methodParameters: [key],
+        },
+      ],
+    });
+  });
+  const results = (await multicall.call(contractCallContext)).results;
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['uniswapV3Pool'].callsReturnContext);
+
+  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
+  priors.forEach((prior, i) => {
+    const liquidity = JSBI.BigInt(updatedReturnContext[0].returnValues[0].toString());
+    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
+  });
+
+  return fetchedUniswapPositions;
+}
+
+/**
+ *
+ * @returns the current tick for a given Uniswap pool
+ */
+export async function fetchUniswapPoolBasics(
+  uniswapPoolAddress: string,
+  provider: ethers.providers.BaseProvider
+): Promise<UniswapV3PoolBasics> {
+  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const contractCallContext: ContractCallContext[] = [
+    {
+      reference: 'uniswapV3Pool',
+      contractAddress: uniswapPoolAddress,
+      abi: UniswapV3PoolABI,
+      calls: [
+        { reference: 'slot0', methodName: 'slot0', methodParameters: [] },
+        { reference: 'tickSpacing', methodName: 'tickSpacing', methodParameters: [] },
+      ],
+    },
+  ];
+
+  const results = (await multicall.call(contractCallContext)).results;
+  const updatedReturnContext = convertBigNumbersForReturnContexts(results['uniswapV3Pool'].callsReturnContext);
+  const slot0 = updatedReturnContext[0].returnValues;
+  const tickSpacing = updatedReturnContext[1].returnValues;
+
+  return {
+    slot0: {
+      sqrtPriceX96: slot0[0],
+      tick: slot0[1],
+      observationIndex: slot0[2],
+      observationCardinality: slot0[3],
+      observationCardinalityNext: slot0[4],
+      feeProtocol: slot0[5],
+    },
+    tickSpacing: tickSpacing[0],
+    token1OverToken0: convertSqrtPriceX96(slot0[0]),
+  };
+}
+
+export async function fetchUniswapNFTPositions(
+  userAddress: string,
+  provider: Provider,
+  chain: Chain
+): Promise<Map<number, UniswapNFTPosition>> {
+  const nftManager = new ethers.Contract(UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS, UniswapNFTManagerABI, provider);
+  const numPositions: BigNumber = await nftManager.balanceOf(userAddress);
+  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const tokenIdCallContexts: CallContext[] = [];
+  for (let i = 0; i < numPositions.toNumber(); i++) {
+    tokenIdCallContexts.push({
+      reference: `tokenOfOwnerByIndex-${i}`,
+      methodName: 'tokenOfOwnerByIndex',
+      methodParameters: [userAddress, i],
+    });
+  }
+  const tokenIdCallContext: ContractCallContext[] = [
+    {
+      reference: 'uniswapNFTManager',
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+      abi: UniswapNFTManagerABI,
+      calls: tokenIdCallContexts,
+    },
+  ];
+  const tokenIdResults = (await multicall.call(tokenIdCallContext)).results['uniswapNFTManager'];
+  const tokenIdReturnContexts = convertBigNumbersForReturnContexts(tokenIdResults.callsReturnContext);
+  const tokenIds = tokenIdReturnContexts.map((context) => context.returnValues[0].toNumber());
+
+  const positionsCallContexts: CallContext[] = [];
+  for (let i = 0; i < tokenIds.length; i++) {
+    positionsCallContexts.push({
+      reference: `positions-${tokenIds[i]}}`,
+      methodName: 'positions',
+      methodParameters: [tokenIds[i]],
+    });
+  }
+  const positionsCallContext: ContractCallContext[] = [
+    {
+      reference: 'uniswapNFTManager',
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+      abi: UniswapNFTManagerABI,
+      calls: positionsCallContexts,
+    },
+  ];
+  const positionsResults = (await multicall.call(positionsCallContext)).results['uniswapNFTManager'];
+  const callsReturnContext = convertBigNumbersForReturnContexts(positionsResults.callsReturnContext);
+  const result: Map<number, UniswapNFTPosition> = new Map();
+
+  for (let i = 0; i < tokenIds.length; i++) {
+    const position = callsReturnContext[i].returnValues;
+    const uniswapPosition: UniswapNFTPosition = {
+      operator: position[1],
+      token0: getToken(chain.id, position[2]),
+      token1: getToken(chain.id, position[3]),
+      fee: position[4],
+      tickLower: position[5],
+      tickUpper: position[6],
+      liquidity: JSBI.BigInt(position[7].toString()),
+    };
+    result.set(tokenIds[i], uniswapPosition);
+  }
+  return result;
+}
+
+function modQ24(value: number) {
+  return value & 0b00000000111111111111111111111111;
+}
+
+export function zip(uniswapPositions: readonly UniswapPosition[]) {
+  const positions: number[] = [];
+  uniswapPositions.forEach((position) => {
+    if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
+      positions.push(position.lower);
+      positions.push(position.upper);
+    }
+  });
+  while (positions.length < 6) {
+    positions.push(0xdead);
+  }
+
+  const Q24 = 1 << 24;
+  for (let i = 0; i < positions.length; i++) {
+    if (positions[i] >= 0) continue;
+    positions[i] = modQ24(Q24 + positions[i]);
+  }
+
+  const zipped = positions.reduce((prev, curr, i) => {
+    return JSBI.add(prev, JSBI.leftShift(JSBI.BigInt(curr), JSBI.BigInt(24 * i)));
+  }, JSBI.BigInt(0));
+
+  return zipped.toString(10);
 }
