@@ -14,6 +14,7 @@ import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import WagmiProvider from './connector/WagmiProvider';
 import BorrowPage from './pages/BorrowPage';
+import ClaimPage from './pages/ClaimPage';
 import LendPage from './pages/LendPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ScrollToTop from './util/ScrollToTop';
@@ -85,6 +86,7 @@ function AppBodyWrapper() {
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<LendPage />} />
           <Route path='/borrow' element={<BorrowPage />} />
+          <Route path='/claim' element={<ClaimPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
