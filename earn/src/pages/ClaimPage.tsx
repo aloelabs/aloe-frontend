@@ -3,14 +3,13 @@ import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { FilledGradientButton, OutlinedWhiteButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
-import usdcPlusGraphic from '../assets/png/10USDCPlus.png';
 import { ReactComponent as ErrorIcon } from '../assets/svg/error.svg';
 import { ReactComponent as SuccessIcon } from '../assets/svg/success.svg';
 import { API_REDEEM_REWARD_URL } from '../data/constants/Values';
@@ -37,14 +36,6 @@ const InnerContainer = styled.div`
   align-items: center;
   gap: 16px;
   margin: 0 auto;
-`;
-
-const BusinessCardContainer = styled.div`
-  min-width: 300px;
-  width: 40%;
-  border-radius: 24px;
-  box-shadow: 0px 0px 30px 5px rgba(214, 214, 213, 0.6);
-  margin-bottom: 24px;
 `;
 
 async function claimReward(redemptionCode: string, redemptionAddress: string) {
@@ -131,24 +122,29 @@ export default function ClaimPage() {
     <AppPage>
       <Container>
         <InnerContainer>
-          <BusinessCardContainer>
-            <img src={usdcPlusGraphic} alt={'10 USDC+ Business Card'}></img>
-          </BusinessCardContainer>
+          <div className='w-full flex flex-col items-center'>
+            <Text size='L' weight='bold'>
+              Claim your
+            </Text>
+            <Display size='XL' weight='semibold'>
+              10 USDC+
+            </Display>
+          </div>
           <SquareInput
-            size='M'
+            size='L'
             value={redemptionCode}
             onChange={(e) => setRedemptionCode(e.target.value)}
             placeholder='Redemption Code'
             paddingRightOverride='24px'
           />
           <SquareInput
-            size='M'
+            size='L'
             value={redemptionAddress}
             onChange={(e) => setRedemptionAddress(e.target.value)}
             placeholder='Recipient'
             paddingRightOverride='24px'
           />
-          <OutlinedWhiteButton
+          <FilledGradientButton
             size='M'
             onClick={() => {
               setModalMessage('');
@@ -178,7 +174,7 @@ export default function ClaimPage() {
             }}
           >
             Claim
-          </OutlinedWhiteButton>
+          </FilledGradientButton>
         </InnerContainer>
       </Container>
       <SuccessModal isOpen={isSuccessModalOpen} setIsOpen={setIsSuccessModalOpen} />
