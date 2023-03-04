@@ -96,7 +96,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
       uniswapNFTPosition[0],
       uniswapNFTPosition[1].tickLower,
       uniswapNFTPosition[1].tickUpper,
-      `${uniswapPosition.liquidity.toString(10)}`,
+      uniswapPosition.liquidity.toString(10),
       zip(
         existingUniswapPositions.filter((position) => {
           return position.lower !== uniswapPosition.lower || position.upper !== uniswapPosition.upper;
