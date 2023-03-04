@@ -2,7 +2,7 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { Chain, Provider } from '@wagmi/core';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { CallContext } from 'ethereum-multicall/dist/esm/models';
+import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 
@@ -32,6 +32,8 @@ export type UniswapNFTPosition = {
   tickUpper: number;
   liquidity: JSBI;
 };
+
+export type UniswapNFTPositionEntry = [number, UniswapNFTPosition];
 
 export interface UniswapV3PoolSlot0 {
   sqrtPriceX96: ethers.BigNumber;
@@ -181,7 +183,7 @@ export async function fetchUniswapPositions(
   const contractCallContext: ContractCallContext[] = [];
   keys.forEach((key) => {
     contractCallContext.push({
-      reference: 'uniswapV3Pool',
+      reference: key,
       contractAddress: uniswapV3PoolAddress,
       abi: UniswapV3PoolABI,
       calls: [
@@ -194,11 +196,14 @@ export async function fetchUniswapPositions(
     });
   });
   const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbersForReturnContexts(results['uniswapV3Pool'].callsReturnContext);
+  const updatedReturnContexts: CallReturnContext[][] = [];
+  for (const key in results) {
+    updatedReturnContexts.push(convertBigNumbersForReturnContexts(results[key].callsReturnContext));
+  }
 
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
   priors.forEach((prior, i) => {
-    const liquidity = JSBI.BigInt(updatedReturnContext[0].returnValues[0].toString());
+    const liquidity = JSBI.BigInt(updatedReturnContexts[i][0].returnValues[0].toString());
     fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
   });
 
