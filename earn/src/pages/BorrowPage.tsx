@@ -27,6 +27,7 @@ import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal'
 import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralModal';
 import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
+import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import {
@@ -80,6 +81,7 @@ const PageGrid = styled.div`
   grid-template-areas:
     'monitor graph'
     'metrics metrics'
+    'uniswap uniswap'
     'stats stats';
   flex-grow: 1;
   margin-top: 26px;
@@ -92,6 +94,7 @@ const PageGrid = styled.div`
       'monitor'
       'graph'
       'metrics'
+      'uniswap'
       'stats';
   }
 `;
@@ -129,6 +132,11 @@ const GraphContainer = styled.div`
 
 const MetricsContainer = styled.div`
   grid-area: metrics;
+  margin-bottom: 64px;
+`;
+
+const UniswapPositionsContainer = styled.div`
+  grid-area: uniswap;
   margin-bottom: 64px;
 `;
 
@@ -345,7 +353,13 @@ export default function BorrowPage() {
         return;
       }
       async function fetch() {
-        if (!Array.isArray(uniswapPositionTicks)) return;
+        if (!Array.isArray(uniswapPositionTicks)) {
+          setCachedUniswapPositionsMap((prev) => {
+            return new Map(prev).set(selectedMarginAccount?.address ?? '', []);
+          });
+          setIsLoadingUniswapPositions(false);
+          return;
+        }
 
         // Convert the ticks into UniswapPositionPriors
         const uniswapPositionPriors: UniswapPositionPrior[] = [];
@@ -355,7 +369,13 @@ export default function BorrowPage() {
             upper: uniswapPositionTicks[i + 1] as number,
           });
         }
-        if (uniswapPositionPriors.length === 0 || selectedMarginAccount === undefined) return;
+        if (uniswapPositionPriors.length === 0 || selectedMarginAccount === undefined) {
+          setCachedUniswapPositionsMap((prev) => {
+            return new Map(prev).set(selectedMarginAccount?.address ?? '', []);
+          });
+          setIsLoadingUniswapPositions(false);
+          return;
+        }
 
         // Fetch the positions
         const fetchedUniswapPositionsMap = await fetchUniswapPositions(
@@ -436,6 +456,21 @@ export default function BorrowPage() {
     });
     return filteredPositions;
   }, [selectedMarginAccount, uniswapNFTPositions]);
+
+  const withdrawableUniswapNFTPositions = useMemo(() => {
+    const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
+    if (selectedMarginAccount == null) return filteredPositions;
+    uniswapPositions.forEach((uniswapPosition) => {
+      const isNonZero = JSBI.greaterThan(uniswapPosition.liquidity, JSBI.BigInt('0'));
+      const matchingNFTPosition = Array.from(uniswapNFTPositions.entries()).find(([, position]) => {
+        return position.tickLower === uniswapPosition.lower && position.tickUpper === uniswapPosition.upper;
+      });
+      if (matchingNFTPosition !== undefined && isNonZero) {
+        filteredPositions.set(matchingNFTPosition[0], matchingNFTPosition[1]);
+      }
+    });
+    return filteredPositions;
+  }, [selectedMarginAccount, uniswapPositions, uniswapNFTPositions]);
 
   const defaultPool = availablePools.keys().next().value;
 
@@ -523,6 +558,14 @@ export default function BorrowPage() {
               uniswapPositions={uniswapPositions}
             />
           </MetricsContainer>
+          <UniswapPositionsContainer>
+            <UniswapPositionList
+              marginAccount={selectedMarginAccount}
+              uniswapPositions={uniswapPositions}
+              withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
+              setPendingTxn={setPendingTxn}
+            />
+          </UniswapPositionsContainer>
           <StatsContainer>
             <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
           </StatsContainer>
