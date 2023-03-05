@@ -4,7 +4,7 @@ import { Address, SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { Text, Display } from 'shared/lib/components/common/Typography';
+import { Text } from 'shared/lib/components/common/Typography';
 import {
   getSessionStorageInteger,
   getSessionStorageString,
