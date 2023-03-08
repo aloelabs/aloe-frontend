@@ -15,8 +15,8 @@ import { toBig, toImpreciseNumber } from '../util/Numbers';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_ORACLE,
-  ALOE_II_KITTY_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
 } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
@@ -142,7 +142,7 @@ export async function fetchMarginAccounts(
     });
     marginAccountCallContext.push({
       reference: `${accountAddress}-oracle`,
-      contractAddress: ALOE_II_ORACLE,
+      contractAddress: ALOE_II_ORACLE_ADDRESS,
       abi: VolatilityOracleABI,
       calls: [
         {
@@ -260,7 +260,7 @@ export async function fetchMarketInfoFor(
   const contractCallContext: ContractCallContext[] = [
     {
       reference: 'readBasics',
-      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
       abi: KittyLensABI,
       calls: [
         {

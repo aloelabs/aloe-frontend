@@ -3,11 +3,15 @@ import { Address, chain } from 'wagmi';
 import {
   DaiLogo,
   FraxLogo,
+  GmxLogo,
   LyraLogo,
+  MagicLogo,
+  MimLogo,
   OpLogo,
   PerpLogo,
   UniLogo,
   UsdcLogo,
+  UsdtLogo,
   VeloLogo,
   WbtcLogo,
   WethLogo,
@@ -177,6 +181,15 @@ const DAI_OPTIMISM = new Token(
   DaiLogo
 );
 
+const DAI_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+  18,
+  'DAI',
+  'Dai Stablecoin',
+  DaiLogo
+);
+
 const OP_OPTIMISM = new Token(
   chain.optimism.id,
   '0x4200000000000000000000000000000000000042',
@@ -193,6 +206,42 @@ const WSTETH_OPTIMISM = new Token(
   'wstETH',
   'Wrapped Liquid Staked Ether 2.0',
   WstEthLogo
+);
+
+const GMX_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a',
+  18,
+  'GMX',
+  'GMX',
+  GmxLogo
+);
+
+const TETHER_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+  6,
+  'USDT',
+  'Tether USD',
+  UsdtLogo
+);
+
+const MAGIC_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0x539bde0d7dbd336b79148aa742883198bbf60342',
+  18,
+  'MAGIC',
+  'MAGIC',
+  MagicLogo
+);
+
+const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a',
+  18,
+  'MIM',
+  'Magic Internet Money',
+  MimLogo
 );
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
@@ -223,6 +272,11 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
+    [DAI_ARBITRUM.address]: DAI_ARBITRUM,
+    [GMX_ARBITRUM.address]: GMX_ARBITRUM,
+    [TETHER_ARBITRUM.address]: TETHER_ARBITRUM,
+    [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
+    [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
   },
 };
 
