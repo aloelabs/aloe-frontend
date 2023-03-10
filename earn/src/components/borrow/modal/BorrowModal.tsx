@@ -12,7 +12,7 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { ALOE_II_SIMPLE_MANAGER } from '../../../data/constants/Addresses';
+import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
 import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
@@ -72,7 +72,7 @@ function BorrowButton(props: BorrowButtonProps) {
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER, encodedData, [false, false]],
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData, [false, false]],
     overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
     enabled: !!userAddress && borrowAmount.gt(0),
     chainId: activeChain.id,

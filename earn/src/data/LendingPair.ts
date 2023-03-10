@@ -12,7 +12,7 @@ import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toImpreciseNumber } from '../util/Numbers';
-import { ALOE_II_FACTORY_ADDRESS, ALOE_II_KITTY_LENS_ADDRESS, ALOE_II_ORACLE } from './constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
@@ -85,7 +85,7 @@ export async function getAvailableLendingPairs(
   addresses.forEach((market) => {
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_KITTY_LENS_ADDRESS,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
       abi: KittyLensABI,
       calls: [
         {
@@ -117,7 +117,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE,
+      contractAddress: ALOE_II_ORACLE_ADDRESS,
       abi: VolatilityOracleABI,
       calls: [
         {
