@@ -285,9 +285,9 @@ export default function PnLGraph(props: PnLGraphProps) {
       const mostRecentEvent = events.reduce((prev: { timeStamp: string }, curr: { timeStamp: string }) => {
         return parseInt(curr.timeStamp, 16) > parseInt(prev.timeStamp, 16) ? curr : prev;
       });
-      const mostRecentEventData: BigNumber = ethers.utils.defaultAbiCoder.decode(['uint256'], mostRecentEvent.data)[0];
+      const mostRecentEventData: number = ethers.utils.defaultAbiCoder.decode(['int24'], mostRecentEvent.data)[0];
       const mostRecentPrice = tickToPrice(
-        mostRecentEventData.toNumber(),
+        mostRecentEventData,
         marginAccount.token0.decimals,
         marginAccount.token1.decimals
       );
