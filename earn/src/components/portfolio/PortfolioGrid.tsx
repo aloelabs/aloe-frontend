@@ -58,6 +58,7 @@ export const PieChartContainer = styled(BaseGridItem)`
 export const BalanceContainer = styled(BaseGridItem)`
   grid-area: balance;
   position: relative;
+  text-align: center;
   @media (min-width: ${RESPONSIVE_BREAKPOINT_SM}) {
     &.active::before {
       content: '';
@@ -75,6 +76,7 @@ export const BalanceContainer = styled(BaseGridItem)`
 export const APYContainer = styled(BaseGridItem)`
   grid-area: apy;
   position: relative;
+  text-align: center;
   @media (min-width: ${RESPONSIVE_BREAKPOINT_SM}) {
     &.active::before {
       content: '';
