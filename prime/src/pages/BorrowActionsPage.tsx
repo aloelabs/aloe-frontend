@@ -260,42 +260,39 @@ export default function BorrowActionsPage() {
   }, [isToken0Selected]);
 
   // MARK: fetch margin account
-  useEffect(() => {
-    let mounted = true;
-    // Ensure we have non-null values
-    async function fetch(
-      marginAccountAddress: string,
-      lenderLensContract: Contract,
-      marginAccountContract: Contract,
-      marginAccountLensContract: Contract
-    ) {
-      const result = await fetchMarginAccount(
-        accountAddressParam ?? '0x', // TODO better optional resolution
-        activeChain,
-        lenderLensContract,
-        marginAccountContract,
-        marginAccountLensContract,
-        provider,
-        marginAccountAddress
-      );
-      if (mounted) {
-        setMarginAccount(result.marginAccount);
+  useDebouncedEffect(
+    () => {
+      let mounted = true;
+      // Ensure we have non-null values
+      async function fetch(
+        marginAccountAddress: string,
+        lenderLensContract: Contract,
+        marginAccountContract: Contract,
+        marginAccountLensContract: Contract
+      ) {
+        const result = await fetchMarginAccount(
+          accountAddressParam ?? '0x', // TODO better optional resolution
+          activeChain,
+          lenderLensContract,
+          marginAccountContract,
+          marginAccountLensContract,
+          provider,
+          marginAccountAddress
+        );
+        if (mounted) {
+          setMarginAccount(result.marginAccount);
+        }
       }
-    }
-    if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
-      fetch(accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract);
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [
-    accountAddressParam,
-    lenderLensContract,
-    marginAccountContract,
-    marginAccountLensContract,
-    provider,
-    activeChain,
-  ]);
+      if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
+        fetch(accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract);
+      }
+      return () => {
+        mounted = false;
+      };
+    },
+    250,
+    [accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract, provider, activeChain]
+  );
 
   // MARK: fetch MarketInfo
   useEffect(() => {
