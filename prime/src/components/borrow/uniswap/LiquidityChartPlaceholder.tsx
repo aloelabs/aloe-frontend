@@ -1,8 +1,10 @@
 import styled from 'styled-components';
 import tw from 'twin.macro';
+
 export const LiquidityChartPlaceholder = styled.div`
   ${tw`flex flex-col items-start justify-evenly`}
-  width: 350px;
+  max-width: 350px;
+  width: 100%;
   height: 227px;
   margin-top: 3px;
   margin-bottom: 20px;
@@ -11,13 +13,11 @@ export const LiquidityChartPlaceholder = styled.div`
   background-repeat: no-repeat;
   background-size: 900px 300px;
   display: inline-block;
-  animation: blendGraphShimmer 1s forwards linear infinite;
+  animation: liquidityGraphShimmer 1s forwards linear infinite;
   overflow: hidden;
   position: relative;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
 
-  @keyframes blendGraphShimmer {
+  @keyframes liquidityGraphShimmer {
     0% {
       background-position: -900px 0;
     }

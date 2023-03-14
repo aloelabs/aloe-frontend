@@ -8,7 +8,12 @@ import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { chain } from 'wagmi';
 
-import { theGraphUniswapV3Client, theGraphUniswapV3GoerliClient, theGraphUniswapV3OptimismClient } from '../App';
+import {
+  theGraphUniswapV3ArbitrumClient,
+  theGraphUniswapV3Client,
+  theGraphUniswapV3GoerliClient,
+  theGraphUniswapV3OptimismClient,
+} from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
 import { Token } from '../data/Token';
@@ -119,6 +124,9 @@ export async function calculateTickData(
 
   let theGraphClient = theGraphUniswapV3Client;
   switch (chainId) {
+    case chain.arbitrum.id:
+      theGraphClient = theGraphUniswapV3ArbitrumClient;
+      break;
     case chain.optimism.id:
       theGraphClient = theGraphUniswapV3OptimismClient;
       break;
