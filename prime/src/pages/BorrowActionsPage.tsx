@@ -254,31 +254,27 @@ export default function BorrowActionsPage() {
   }, [isToken0Selected]);
 
   // MARK: fetch margin account
-  useDebouncedEffect(
-    () => {
-      let mounted = true;
-      // Ensure we have non-null values
-      async function fetch(marginAccountAddress: string) {
-        const result = await fetchMarginAccount(
-          accountAddressParam ?? '0x', // TODO better optional resolution
-          activeChain,
-          provider,
-          marginAccountAddress
-        );
-        if (mounted) {
-          setMarginAccount(result.marginAccount);
-        }
+  useEffect(() => {
+    let mounted = true;
+    // Ensure we have non-null values
+    async function fetch(marginAccountAddress: string) {
+      const result = await fetchMarginAccount(
+        accountAddressParam ?? '0x', // TODO better optional resolution
+        activeChain,
+        provider,
+        marginAccountAddress
+      );
+      if (mounted) {
+        setMarginAccount(result.marginAccount);
       }
-      if (accountAddressParam) {
-        fetch(accountAddressParam);
-      }
-      return () => {
-        mounted = false;
-      };
-    },
-    250,
-    [accountAddressParam, provider, activeChain]
-  );
+    }
+    if (accountAddressParam) {
+      fetch(accountAddressParam);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [accountAddressParam, provider, activeChain]);
 
   // MARK: fetch MarketInfo
   useEffect(() => {
