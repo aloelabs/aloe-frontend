@@ -1,7 +1,6 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
-import { Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
@@ -227,11 +226,6 @@ export default function BorrowActionsPage() {
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
-  const marginAccountContract = useContract({
-    address: accountAddressParam ?? '0x', // TODO better optional resolution
-    abi: MarginAccountABI,
-    signerOrProvider: provider,
-  });
   const marginAccountLensContract = useContract({
     address: ALOE_II_BORROWER_LENS_ADDRESS,
     abi: MarginAccountLensABI,
@@ -264,18 +258,10 @@ export default function BorrowActionsPage() {
     () => {
       let mounted = true;
       // Ensure we have non-null values
-      async function fetch(
-        marginAccountAddress: string,
-        lenderLensContract: Contract,
-        marginAccountContract: Contract,
-        marginAccountLensContract: Contract
-      ) {
+      async function fetch(marginAccountAddress: string) {
         const result = await fetchMarginAccount(
           accountAddressParam ?? '0x', // TODO better optional resolution
           activeChain,
-          lenderLensContract,
-          marginAccountContract,
-          marginAccountLensContract,
           provider,
           marginAccountAddress
         );
@@ -283,15 +269,15 @@ export default function BorrowActionsPage() {
           setMarginAccount(result.marginAccount);
         }
       }
-      if (accountAddressParam && lenderLensContract && marginAccountContract && marginAccountLensContract) {
-        fetch(accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract);
+      if (accountAddressParam) {
+        fetch(accountAddressParam);
       }
       return () => {
         mounted = false;
       };
     },
     250,
-    [accountAddressParam, lenderLensContract, marginAccountContract, marginAccountLensContract, provider, activeChain]
+    [accountAddressParam, provider, activeChain]
   );
 
   // MARK: fetch MarketInfo

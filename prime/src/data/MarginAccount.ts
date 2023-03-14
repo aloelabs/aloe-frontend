@@ -203,9 +203,6 @@ export async function fetchMarginAccountPreviews(
 export async function fetchMarginAccount(
   accountAddress: string,
   chain: Chain,
-  lenderLensContract: ethers.Contract,
-  marginAccountContract: ethers.Contract,
-  marginAccountLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   marginAccountAddress: string
 ): Promise<{

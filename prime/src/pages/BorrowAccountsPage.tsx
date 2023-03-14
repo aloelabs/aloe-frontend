@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { ContractReceipt, ethers } from 'ethers';
+import { ContractReceipt } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
@@ -9,10 +9,9 @@ import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { useAccount, useContract, useProvider, useSigner, Address } from 'wagmi';
+import { useAccount, useProvider, useSigner, Address } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
@@ -21,7 +20,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
