@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
 import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
-import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINT_TABLET } from '../../data/constants/Breakpoints';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
@@ -26,7 +26,7 @@ const StyledFooter = styled.footer`
   padding-right: 180px;
   z-index: 40;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     display: none;
   }
 `;

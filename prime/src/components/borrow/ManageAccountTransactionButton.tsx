@@ -1,9 +1,17 @@
 import { ReactElement, useContext, useEffect, useState } from 'react';
 
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { Address, Chain, erc20ABI, useBalance, useContractRead, useContractWrite } from 'wagmi';
+import {
+  Address,
+  Chain,
+  erc20ABI,
+  useBalance,
+  useContractRead,
+  useContractWrite,
+  usePrepareContractWrite,
+} from 'wagmi';
 
 import { ChainContext } from '../../App';
 import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
@@ -15,12 +23,13 @@ import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
-import { UINT256_MAX } from '../../data/constants/Values';
 import { Token } from '../../data/Token';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
+
+const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET0,
@@ -86,7 +95,7 @@ function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Add
   });
 }
 
-function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
+function useAllowanceWrite(onChain: Chain, token: Token, spender: Address, onSuccess?: () => void) {
   return useContractWrite({
     address: token.address,
     abi: erc20ABI,
@@ -94,6 +103,7 @@ function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
     args: [spender, ethers.constants.MaxUint256],
+    onSuccess: onSuccess,
   });
 }
 
@@ -136,17 +146,6 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
   const navigate = useNavigate();
 
-  const contract = useContractWrite({
-    address: accountAddress,
-    abi: MarginAccountAbi,
-    mode: 'recklesslyUnprepared',
-    functionName: 'modify',
-    onSuccess: () => {
-      setShowPendingModal(true);
-    },
-    chainId: activeChain.id,
-  });
-
   const { data: accountEtherBalance, refetch: refetchEtherBalance } = useBalance({
     address: accountAddress,
     chainId: activeChain.id,
@@ -167,8 +166,18 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
     enabled
   );
-  const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
-  const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+  const writeAsset0Allowance = useAllowanceWrite(
+    activeChain,
+    token0,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    refetchAllowance0
+  );
+  const writeAsset1Allowance = useAllowanceWrite(
+    activeChain,
+    token1,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    refetchAllowance1
+  );
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
@@ -197,10 +206,92 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
   if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
   if (writeAsset1Allowance.isError) writeAsset1Allowance.reset();
-  if (contract.isError || contract.isSuccess) setTimeout(contract.reset, 500);
 
   // check whether we're prepared to send a transaction (independent of whether transaction will succeed/fail)
   const canConstructTransaction = actionOutputs.findIndex((o) => o.actionArgs === undefined) === -1;
+
+  const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
+  const actionArgs = actionOutputs.map((o) => o.actionArgs!);
+  let positions = '0';
+
+  // if Uniswap positions are being changed, make sure to send an updated array of positions
+  if (actionIds.includes(4) || actionIds.includes(5)) {
+    positions = zip(accountState.uniswapPositions);
+  }
+
+  // provide ante if necessary
+  const shouldProvideAnte =
+    accountEtherBalance &&
+    accountEtherBalance.value.toNumber() < ANTE &&
+    (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
+
+  const isRemovingToken0Collateral = actionIds.some((id, idx) => {
+    if (id === 1) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token0.address;
+    }
+    return false;
+  });
+  const isSwappingToken0ForToken1 = actionIds.some((id, idx) => {
+    if (id === 6) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token0.address;
+    }
+    return false;
+  });
+
+  const isRemovingToken1Collateral = actionIds.some((id, idx) => {
+    if (id === 1) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token1.address;
+    }
+    return false;
+  });
+  const isSwappingToken1ForToken0 = actionIds.some((id, idx) => {
+    if (id === 6) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token1.address;
+    }
+    return false;
+  });
+
+  const calldata = canConstructTransaction
+    ? ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]', 'uint144'], [actionIds, actionArgs, positions])
+    : null;
+
+  const { config: contractConfig } = usePrepareContractWrite({
+    address: accountAddress,
+    abi: MarginAccountAbi,
+    functionName: 'modify',
+    chainId: activeChain.id,
+    args: [
+      ALOE_II_FRONTEND_MANAGER_ADDRESS,
+      calldata,
+      [
+        isRemovingToken0Collateral || isSwappingToken0ForToken1,
+        isRemovingToken1Collateral || isSwappingToken1ForToken0,
+      ],
+    ],
+    overrides: { value: shouldProvideAnte ? ANTE : undefined },
+    enabled: canConstructTransaction && enabled && !transactionWillFail && !needsApproval[0] && !needsApproval[1],
+  });
+  const contract = useContractWrite({
+    ...contractConfig,
+    request: {
+      ...contractConfig.request,
+      gasLimit: contractConfig?.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+    },
+  });
+
+  if (contract.isError || contract.isSuccess) setTimeout(contract.reset, 500);
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (actionOutputs.length === 0) {
@@ -240,26 +331,6 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
             return;
           }
 
-          const actionIds = actionOutputs.map((o) => getFrontendManagerCodeFor(o.actionId));
-          const actionArgs = actionOutputs.map((o) => o.actionArgs!);
-          let positions = '0';
-
-          // if Uniswap positions are being changed, make sure to send an updated array of positions
-          if (actionIds.includes(4) || actionIds.includes(5)) {
-            positions = zip(accountState.uniswapPositions);
-          }
-
-          // provide ante if necessary
-          const shouldProvideAnte =
-            accountEtherBalance &&
-            accountEtherBalance.value.toNumber() < ANTE &&
-            (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
-
-          const calldata = ethers.utils.defaultAbiCoder.encode(
-            ['uint8[]', 'bytes[]', 'uint144'],
-            [actionIds, actionArgs, positions]
-          );
-
           switch (confirmButtonState) {
             case ConfirmButtonState.APPROVE_ASSET0:
               writeAsset0Allowance.write?.();
@@ -268,24 +339,16 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
               writeAsset1Allowance.write?.();
               break;
             case ConfirmButtonState.READY:
-              contract
-                .writeAsync?.({
-                  recklesslySetUnpreparedArgs: [ALOE_II_FRONTEND_MANAGER_ADDRESS, calldata, [UINT256_MAX, UINT256_MAX]],
-                  recklesslySetUnpreparedOverrides: {
-                    // TODO gas estimation was occassionally causing errors. To fix this,
-                    // we should probably work with the underlying ethers.Contract, but for now
-                    // we just provide hard-coded overrides.
-                    gasLimit: BigNumber.from((300000 + 200000 * actionIds.length).toFixed(0)),
-                    value: shouldProvideAnte ? ANTE + 1 : undefined,
-                  },
-                })
-                .then((txnResult) => {
-                  // In this callback, we have a txnResult. This means that the transaction has been submitted
-                  // to the blockchain and/or the user rejected it entirely. These states correspond to
-                  // contract.isError and contract.isSuccess, which we deal with elsewhere.
-                  setPendingTxnHash(txnResult.hash);
+              contract.writeAsync?.().then((txnResult) => {
+                setShowPendingModal(true);
+                // In this callback, we have a txnResult. This means that the transaction has been submitted
+                // to the blockchain and/or the user rejected it entirely. These states correspond to
+                // contract.isError and contract.isSuccess, which we deal with elsewhere.
+                setPendingTxnHash(txnResult.hash);
 
-                  txnResult.wait(1).then((txnReceipt) => {
+                txnResult
+                  .wait(1)
+                  .then((txnReceipt) => {
                     // In this callback, the transaction has been included on the blockchain and at least 1 block
                     // has been built on top of it.
                     setShowPendingModal(false);
@@ -302,8 +365,14 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
                       if (txnReceipt.status === 1) setShowSuccessModal(true);
                       else setShowFailedModal(true);
                     }, 500);
+                  })
+                  .catch((e) => {
+                    console.error(e);
+                    setShowPendingModal(false);
+                    setPendingTxnHash(undefined);
+                    setShowFailedModal(true);
                   });
-                });
+              });
               break;
             default:
               break;
