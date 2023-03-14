@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ContractReceipt, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -26,7 +27,6 @@ import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { ContractCallContext, Multicall } from 'ethereum-multicall';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -111,9 +111,9 @@ export default function BorrowAccountsPage() {
         });
       });
 
-      const test = await multicall.call(marginAccountCallContext);
+      const results = (await multicall.call(marginAccountCallContext)).results;
       const availablePools = new Map<string, UniswapPoolInfo>();
-      Object.entries(test.results).forEach(([poolAddress, result]) => {
+      Object.entries(results).forEach(([poolAddress, result]) => {
         const token0 = result.callsReturnContext[0].returnValues[0] as Address;
         const token1 = result.callsReturnContext[1].returnValues[0] as Address;
         const fee = result.callsReturnContext[2].returnValues[0];
