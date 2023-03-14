@@ -123,7 +123,9 @@ export default function BorrowAccountsPage() {
           fee: fee,
         });
       });
-      setAvailablePools(availablePools);
+      if (mounted) {
+        setAvailablePools(availablePools);
+      }
     }
 
     fetchAvailablePools();
