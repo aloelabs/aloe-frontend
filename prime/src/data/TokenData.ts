@@ -278,6 +278,16 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
   },
+  [chain.arbitrum.id]: {
+    [USDC_ARBITRUM.address]: USDC_ARBITRUM,
+    [WETH_ARBITRUM.address]: WETH_ARBITRUM,
+    [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
+    [DAI_ARBITRUM.address]: DAI_ARBITRUM,
+    [GMX_ARBITRUM.address]: GMX_ARBITRUM,
+    [TETHER_ARBITRUM.address]: TETHER_ARBITRUM,
+    [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
+    [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
+  },
 };
 
 export function getTokens(chainId: number): Token[] {

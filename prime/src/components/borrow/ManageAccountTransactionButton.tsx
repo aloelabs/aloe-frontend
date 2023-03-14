@@ -23,7 +23,6 @@ import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
-import { UINT256_MAX } from '../../data/constants/Values';
 import { Token } from '../../data/Token';
 import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
@@ -96,7 +95,7 @@ function useAllowance(onChain: Chain, token: Token, owner: Address, spender: Add
   });
 }
 
-function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
+function useAllowanceWrite(onChain: Chain, token: Token, spender: Address, onSuccess?: () => void) {
   return useContractWrite({
     address: token.address,
     abi: erc20ABI,
@@ -104,6 +103,7 @@ function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
     mode: 'recklesslyUnprepared',
     functionName: 'approve',
     args: [spender, ethers.constants.MaxUint256],
+    onSuccess: onSuccess,
   });
 }
 
@@ -166,8 +166,18 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     ALOE_II_FRONTEND_MANAGER_ADDRESS,
     enabled
   );
-  const writeAsset0Allowance = useAllowanceWrite(activeChain, token0, ALOE_II_FRONTEND_MANAGER_ADDRESS);
-  const writeAsset1Allowance = useAllowanceWrite(activeChain, token1, ALOE_II_FRONTEND_MANAGER_ADDRESS);
+  const writeAsset0Allowance = useAllowanceWrite(
+    activeChain,
+    token0,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    refetchAllowance0
+  );
+  const writeAsset1Allowance = useAllowanceWrite(
+    activeChain,
+    token1,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    refetchAllowance1
+  );
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
@@ -215,6 +225,44 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     accountEtherBalance.value.toNumber() < ANTE &&
     (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
 
+  const isRemovingToken0Collateral = actionIds.some((id, idx) => {
+    if (id === 1) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token0.address;
+    }
+    return false;
+  });
+  const isSwappingToken0ForToken1 = actionIds.some((id, idx) => {
+    if (id === 6) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token0.address;
+    }
+    return false;
+  });
+
+  const isRemovingToken1Collateral = actionIds.some((id, idx) => {
+    if (id === 1) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token1.address;
+    }
+    return false;
+  });
+  const isSwappingToken1ForToken0 = actionIds.some((id, idx) => {
+    if (id === 6) {
+      const actionArg: string = actionArgs[idx];
+      if (!actionArg) return false;
+      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
+      return firstArg === token1.address;
+    }
+    return false;
+  });
+
   const calldata = canConstructTransaction
     ? ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]', 'uint144'], [actionIds, actionArgs, positions])
     : null;
@@ -224,9 +272,16 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     abi: MarginAccountAbi,
     functionName: 'modify',
     chainId: activeChain.id,
-    args: [ALOE_II_FRONTEND_MANAGER_ADDRESS, calldata, [UINT256_MAX, UINT256_MAX]],
+    args: [
+      ALOE_II_FRONTEND_MANAGER_ADDRESS,
+      calldata,
+      [
+        isRemovingToken0Collateral || isSwappingToken0ForToken1,
+        isRemovingToken1Collateral || isSwappingToken1ForToken0,
+      ],
+    ],
     overrides: { value: shouldProvideAnte ? ANTE : undefined },
-    enabled: canConstructTransaction && enabled && !transactionWillFail,
+    enabled: canConstructTransaction && enabled && !transactionWillFail && !needsApproval[0] && !needsApproval[1],
   });
   const contract = useContractWrite({
     ...contractConfig,
