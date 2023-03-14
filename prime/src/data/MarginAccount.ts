@@ -9,7 +9,7 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
-import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig, toImpreciseNumber } from '../util/Numbers';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
@@ -89,61 +89,115 @@ export async function getMarginAccountsForUser(
 
 export async function fetchMarginAccountPreviews(
   chain: Chain,
-  borrowerLensContract: ethers.Contract,
   provider: ethers.providers.BaseProvider,
   userAddress: string,
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccountPreview[]> {
+  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
   const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
-  const marginAccounts: Promise<MarginAccountPreview | null>[] = marginAccountsAddresses.map(
-    async ({ address: accountAddress, uniswapPool }) => {
-      const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
+  const marginAccountCallContext: ContractCallContext[] = [];
 
-      if (uniswapPoolInfo === null) return null;
+  // Fetch all the data for the margin accounts
+  marginAccountsAddresses.forEach(({ address: accountAddress, uniswapPool }) => {
+    const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
 
-      const token0 = getToken(chain.id, uniswapPoolInfo.token0);
-      const token1 = getToken(chain.id, uniswapPoolInfo.token1);
-      const feeTier = NumericFeeTierToEnum(uniswapPoolInfo.fee);
+    if (uniswapPoolInfo === null) return;
 
-      if (!token0 || !token1) return null;
+    const token0 = uniswapPoolInfo.token0;
+    const token1 = uniswapPoolInfo.token1;
+    const fee = uniswapPoolInfo.fee;
 
-      let assetsData = null;
-      let liabilitiesData = null;
-      let healthData = null;
+    if (!token0 || !token1) return;
+    // Fetching the data for the margin account using three contracts
+    marginAccountCallContext.push({
+      reference: `${accountAddress}-lens`,
+      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS,
+      abi: MarginAccountLensABI,
+      calls: [
+        {
+          reference: 'getAssets',
+          methodName: 'getAssets',
+          methodParameters: [accountAddress],
+        },
+        {
+          reference: 'getLiabilities',
+          methodName: 'getLiabilities',
+          methodParameters: [accountAddress, true],
+        },
+        {
+          reference: 'getHealth',
+          methodName: 'getHealth',
+          methodParameters: [accountAddress, true],
+        },
+      ],
+      context: {
+        fee: fee,
+        token0Address: token0,
+        token1Address: token1,
+        chainId: chain.id,
+        accountAddress: accountAddress,
+        uniswapPool: uniswapPool,
+      },
+    });
+  });
 
-      try {
-        assetsData = await borrowerLensContract.getAssets(accountAddress);
-        liabilitiesData = await borrowerLensContract.getLiabilities(accountAddress, true);
-        healthData = await borrowerLensContract.getHealth(accountAddress, true);
-      } catch (e) {
-        console.error(`borrowerLens.getAssets failed for account ${accountAddress} in pool ${uniswapPool}`, e);
-        return null;
-      }
+  const marginAccountResults = (await multicall.call(marginAccountCallContext)).results;
 
-      const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
-      const assets: Assets = {
-        token0Raw: toImpreciseNumber(assetsData.fixed0, token0.decimals),
-        token1Raw: toImpreciseNumber(assetsData.fixed1, token1.decimals),
-        uni0: toImpreciseNumber(assetsData.fluid0C, token0.decimals),
-        uni1: toImpreciseNumber(assetsData.fluid1C, token1.decimals),
-      };
-      const liabilities: Liabilities = {
-        amount0: toImpreciseNumber(liabilitiesData.amount0, token0.decimals),
-        amount1: toImpreciseNumber(liabilitiesData.amount1, token1.decimals),
-      };
-      return {
-        address: accountAddress,
-        uniswapPool,
-        token0,
-        token1,
-        feeTier,
-        assets,
-        liabilities,
-        health: health,
-      };
+  const correspondingMarginAccountResults: Map<string, ContractCallReturnContextEntries> = new Map();
+
+  // Convert the results into a map of account address to the results
+  Object.entries(marginAccountResults).forEach(([key, value]) => {
+    const entryAccountAddress = key.split('-')[0];
+    const entryType = key.split('-')[1];
+    const existingValue = correspondingMarginAccountResults.get(entryAccountAddress);
+    if (existingValue) {
+      existingValue[entryType] = value;
+      correspondingMarginAccountResults.set(entryAccountAddress, existingValue);
+    } else {
+      correspondingMarginAccountResults.set(entryAccountAddress, { [entryType]: value });
     }
-  );
-  return (await Promise.all(marginAccounts)).filter((account) => account !== null) as MarginAccountPreview[];
+  });
+
+  const marginAccountPreviews: MarginAccountPreview[] = [];
+
+  correspondingMarginAccountResults.forEach((value) => {
+    const { lens: lensResults } = value;
+    const lensReturnContexts = convertBigNumbersForReturnContexts(lensResults.callsReturnContext);
+    const { fee, token0Address, token1Address, chainId, accountAddress, uniswapPool } =
+      lensResults.originalContractCallContext.context;
+    // Reconstruct the objects (since we can't transfer them as is through the context)
+    const feeTier = NumericFeeTierToEnum(fee);
+    const token0 = getToken(chainId, token0Address);
+    const token1 = getToken(chainId, token1Address);
+    const assetsData = lensReturnContexts[0].returnValues;
+    const liabilitiesData = lensReturnContexts[1].returnValues;
+    const healthData = lensReturnContexts[2].returnValues;
+
+    const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
+    const assets: Assets = {
+      token0Raw: toImpreciseNumber(assetsData[0], token0.decimals),
+      token1Raw: toImpreciseNumber(assetsData[1], token1.decimals),
+      uni0: toImpreciseNumber(assetsData[4], token0.decimals),
+      uni1: toImpreciseNumber(assetsData[5], token1.decimals),
+    };
+    const liabilities: Liabilities = {
+      amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
+      amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
+    };
+    const marginAccountPreview: MarginAccountPreview = {
+      address: accountAddress,
+      uniswapPool,
+      token0,
+      token1,
+      feeTier,
+      assets,
+      liabilities,
+      health: health,
+    };
+    marginAccountPreviews.push(marginAccountPreview);
+  });
+
+  return marginAccountPreviews;
 }
 
 export async function fetchMarginAccount(

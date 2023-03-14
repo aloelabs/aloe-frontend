@@ -26,6 +26,7 @@ import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 import { getToken } from '../data/TokenData';
 import { makeEtherscanRequest } from '../util/Etherscan';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -50,12 +51,6 @@ export default function BorrowAccountsPage() {
 
   // MARK: react router hooks
   const navigate = useNavigate();
-
-  const borrowerLensContract = useContract({
-    address: ALOE_II_BORROWER_LENS_ADDRESS,
-    abi: MarginAccountLensABI,
-    signerOrProvider: provider,
-  });
 
   useEffectOnce(() => {
     let mounted = true;
@@ -87,29 +82,48 @@ export default function BorrowAccountsPage() {
 
       if (!Array.isArray(createMarketEvents)) return;
 
-      const poolAddresses = createMarketEvents.map((e) => `0x${e.topics[1].slice(-40)}`);
-      const poolInfoTuples = await Promise.all(
-        poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
-          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
-        })
-      );
+      const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+      const marginAccountCallContext: ContractCallContext[] = [];
 
-      if (mounted)
-        setAvailablePools(
-          new Map(
-            poolAddresses.map((addr, i) => {
-              return [
-                addr.toLowerCase(),
-                {
-                  token0: poolInfoTuples[i][0] as Address,
-                  token1: poolInfoTuples[i][1] as Address,
-                  fee: poolInfoTuples[i][2] as number,
-                },
-              ];
-            })
-          )
-        );
+      createMarketEvents.forEach((e) => {
+        const poolAddress = `0x${e.topics[1].slice(-40)}`;
+        marginAccountCallContext.push({
+          reference: poolAddress,
+          contractAddress: poolAddress,
+          abi: UniswapV3PoolABI,
+          calls: [
+            {
+              reference: 'token0',
+              methodName: 'token0',
+              methodParameters: [],
+            },
+            {
+              reference: 'token1',
+              methodName: 'token1',
+              methodParameters: [],
+            },
+            {
+              reference: 'fee',
+              methodName: 'fee',
+              methodParameters: [],
+            },
+          ],
+        });
+      });
+
+      const test = await multicall.call(marginAccountCallContext);
+      const availablePools = new Map<string, UniswapPoolInfo>();
+      Object.entries(test.results).forEach(([poolAddress, result]) => {
+        const token0 = result.callsReturnContext[0].returnValues[0] as Address;
+        const token1 = result.callsReturnContext[1].returnValues[0] as Address;
+        const fee = result.callsReturnContext[2].returnValues[0];
+        availablePools.set(poolAddress.toLowerCase(), {
+          token0: token0,
+          token1: token1,
+          fee: fee,
+        });
+      });
+      setAvailablePools(availablePools);
     }
 
     fetchAvailablePools();
@@ -123,14 +137,13 @@ export default function BorrowAccountsPage() {
 
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
-      if (!borrowerLensContract || !isAllowedToInteract) {
+      if (!isAllowedToInteract) {
         setMarginAccounts([]);
         return;
       }
       try {
         const updatedMarginAccounts = await fetchMarginAccountPreviews(
           activeChain,
-          borrowerLensContract,
           provider,
           userAddress,
           availablePools
@@ -154,7 +167,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, refetchCount, availablePools]);
+  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools]);
 
   function onCommencement() {
     setIsTxnPending(false);
