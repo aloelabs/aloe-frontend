@@ -11,7 +11,7 @@ const ETHERSCAN_DOMAINS_BY_CHAIN_ID = {
 const ETHERSCAN_API_KEYS = {
   [wagmiChain.mainnet.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
   [wagmiChain.goerli.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
-  [wagmiChain.optimism.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
+  [wagmiChain.optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
   [wagmiChain.arbitrum.id]: process.env.REACT_APP_ARBISCAN_API_KEY,
 };
 
