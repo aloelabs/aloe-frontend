@@ -280,7 +280,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
         isRemovingToken1Collateral || isSwappingToken1ForToken0,
       ],
     ],
-    overrides: { value: shouldProvideAnte ? ANTE : undefined },
+    overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
     enabled: canConstructTransaction && enabled && !transactionWillFail && !needsApproval[0] && !needsApproval[1],
   });
   const contract = useContractWrite({

@@ -47,6 +47,11 @@ export const theGraphUniswapV3Client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal' }),
+  cache: new InMemoryCache(),
+});
+
 export const theGraphUniswapV3OptimismClient = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
   cache: new InMemoryCache(),
