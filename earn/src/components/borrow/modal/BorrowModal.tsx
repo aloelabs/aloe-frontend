@@ -43,7 +43,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.UNHEALTHY:
       return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.NOT_ENOUGH_SUPPLY:
-      return { text: `Not enough ${token.ticker} supply`, enabled: false };
+      return { text: `Not Enough ${token.ticker} Supply`, enabled: false };
     case ConfirmButtonState.LOADING:
       return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.DISABLED:
