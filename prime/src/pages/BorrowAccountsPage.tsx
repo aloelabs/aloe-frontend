@@ -20,7 +20,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
@@ -86,6 +86,9 @@ export default function BorrowAccountsPage() {
 
       createMarketEvents.forEach((e) => {
         const poolAddress = `0x${e.topics[1].slice(-40)}`;
+
+        if (UNISWAP_POOL_DENYLIST.includes(poolAddress.toLowerCase())) return;
+
         marginAccountCallContext.push({
           reference: poolAddress,
           contractAddress: poolAddress,

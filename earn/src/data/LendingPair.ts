@@ -12,7 +12,12 @@ import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toImpreciseNumber } from '../util/Numbers';
-import { ALOE_II_FACTORY_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  UNISWAP_POOL_DENYLIST,
+} from './constants/Addresses';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
@@ -83,6 +88,10 @@ export async function getAvailableLendingPairs(
   const contractCallContexts: ContractCallContext[] = [];
 
   addresses.forEach((market) => {
+    if (UNISWAP_POOL_DENYLIST.includes(`0x${market.pool.toLowerCase()}`)) {
+      return;
+    }
+
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
       contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
