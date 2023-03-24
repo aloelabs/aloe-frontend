@@ -28,17 +28,11 @@ const client = createClient({
     }),
     new WalletConnectConnector({
       chains,
-      options: {
-        qrcode: true,
-        rpc: { 1: 'TODO' },
-      },
+      options: { qrcode: true },
     }),
     new CoinbaseWalletConnector({
       chains,
-      options: {
-        appName: 'Aloe II',
-        jsonRpcUrl: 'TODO',
-      },
+      options: { appName: 'Aloe II' },
     }),
   ],
   provider,

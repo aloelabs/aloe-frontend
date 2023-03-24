@@ -47,6 +47,11 @@ export const theGraphUniswapV3Client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal' }),
+  cache: new InMemoryCache(),
+});
+
 export const theGraphUniswapV3OptimismClient = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
   cache: new InMemoryCache(),
@@ -64,7 +69,9 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
 
 export const ChainContext = React.createContext({
   activeChain: DEFAULT_CHAIN,
+  isChainLoading: true,
   setActiveChain: (chain: Chain) => {},
+  setIsChainLoading: (isLoading: boolean) => {},
 });
 
 export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
@@ -76,7 +83,7 @@ export function useGeoFencing(activeChain: Chain) {
 
 function AppBodyWrapper() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
-  const { activeChain, setActiveChain } = useContext(ChainContext);
+  const { activeChain, isChainLoading, setActiveChain, setIsChainLoading } = useContext(ChainContext);
   const account = useAccount();
   const network = useNetwork();
 
@@ -90,21 +97,30 @@ function AppBodyWrapper() {
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
       setActiveChain(network.chain);
+      setIsChainLoading(false);
     }
-  }, [activeChain, network.chain, setActiveChain]);
+  }, [activeChain, network.chain, setActiveChain, setIsChainLoading]);
+
+  useEffect(() => {
+    if (account?.isDisconnected && !account?.isConnecting && isChainLoading) {
+      setIsChainLoading(false);
+    }
+  }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
 
   return (
     <AppBody>
       <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
       <BetaBanner />
-      <main className='flex-grow'>
-        <Routes>
-          <Route path='/borrow' element={<BorrowAccountsPage />} />
-          <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-          <Route path='/' element={<Navigate replace to='/borrow' />} />
-          <Route path='*' element={<Navigate to='/' />} />
-        </Routes>
-      </main>
+      {!isChainLoading && (
+        <main className='flex-grow'>
+          <Routes>
+            <Route path='/borrow' element={<BorrowAccountsPage />} />
+            <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+            <Route path='/' element={<Navigate replace to='/borrow' />} />
+            <Route path='*' element={<Navigate to='/' />} />
+          </Routes>
+        </main>
+      )}
       <Footer />
       <WelcomeModal
         isOpen={isWelcomeModalOpen}
@@ -120,6 +136,7 @@ function AppBodyWrapper() {
 
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
+  const [isChainLoading, setIsChainLoading] = React.useState(true);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
   const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
 
@@ -139,7 +156,13 @@ function App() {
     };
   });
 
-  const value = { activeChain, setActiveChain };
+  const value = {
+    activeChain,
+    isChainLoading,
+    setActiveChain,
+    setIsChainLoading,
+  };
+
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {

@@ -257,6 +257,9 @@ export async function fetchUniswapNFTPositions(
 ): Promise<Map<number, UniswapNFTPosition>> {
   const nftManager = new ethers.Contract(UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS, UniswapNFTManagerABI, provider);
   const numPositions: BigNumber = await nftManager.balanceOf(userAddress);
+  if (numPositions.isZero()) {
+    return new Map();
+  }
   const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
   const tokenIdCallContexts: CallContext[] = [];
   for (let i = 0; i < numPositions.toNumber(); i++) {

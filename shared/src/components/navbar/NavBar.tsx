@@ -19,7 +19,7 @@ import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
 import {
   RESPONSIVE_BREAKPOINTS,
-  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_TABLET,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
@@ -31,7 +31,7 @@ const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
   height: 40px;
   margin-right: 32px;
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     display: none;
   }
 `;
@@ -40,7 +40,7 @@ const MobileLogo = styled(AloeMobileLogo)`
   width: 40px;
   height: 40px;
   margin-right: 32px;
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     display: none;
   }
 `;
@@ -68,7 +68,7 @@ const TabletBottomNav = styled.div`
   border-top: 1px solid rgba(26, 41, 52, 1);
   padding: 8px 16px;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     display: none;
   }
 
@@ -99,7 +99,7 @@ const VerticalDivider = styled.div`
   height: 64px;
   background-color: rgba(26, 41, 52, 1);
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     width: 100%;
     height: 1px;
   }
@@ -134,7 +134,7 @@ const ExternalFooterLinkWithIcon = styled.a`
 const DesktopNavLinks = styled.div`
   display: flex;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     display: none;
   }
 `;
@@ -157,7 +157,7 @@ const DesktopNavLink = styled(NavLink)`
     border-bottom: 1px solid rgba(26, 41, 52, 1);
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     width: 100%;
     padding: 12px 0px;
   }
@@ -181,7 +181,7 @@ const ExternalDesktopLink = styled.a`
     border-bottom: 1px solid rgba(26, 41, 52, 1);
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     width: 100%;
     padding: 12px 0px;
   }

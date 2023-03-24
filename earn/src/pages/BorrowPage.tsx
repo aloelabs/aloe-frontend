@@ -33,8 +33,8 @@ import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/Pen
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_KITTY_LENS_ADDRESS,
-  ALOE_II_ORACLE,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
 } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
@@ -215,21 +215,15 @@ export default function BorrowPage() {
         })
       );
 
-      if (mounted)
-        setAvailablePools(
-          new Map(
-            poolAddresses.map((addr, i) => {
-              return [
-                addr.toLowerCase(),
-                {
-                  token0: getToken(activeChain.id, poolInfoTuples[i][0] as Address),
-                  token1: getToken(activeChain.id, poolInfoTuples[i][1] as Address),
-                  fee: poolInfoTuples[i][2] as number,
-                },
-              ];
-            })
-          )
-        );
+      const poolInfoMap = new Map<string, UniswapPoolInfo>();
+      poolAddresses.forEach((addr, i) => {
+        const token0 = getToken(activeChain.id, poolInfoTuples[i][0] as Address);
+        const token1 = getToken(activeChain.id, poolInfoTuples[i][1] as Address);
+        const fee = poolInfoTuples[i][2] as number;
+        if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
+      });
+
+      if (mounted) setAvailablePools(poolInfoMap);
     }
 
     fetchAvailablePools();
@@ -271,7 +265,7 @@ export default function BorrowPage() {
     }
     async function fetch() {
       if (selectedMarginAccount == null) return;
-      const lenderLensContract = new ethers.Contract(ALOE_II_KITTY_LENS_ADDRESS, KittyLensAbi, provider);
+      const lenderLensContract = new ethers.Contract(ALOE_II_LENDER_LENS_ADDRESS, KittyLensAbi, provider);
       const result = await fetchMarketInfoFor(
         lenderLensContract,
         selectedMarginAccount.lender0,
@@ -305,7 +299,7 @@ export default function BorrowPage() {
         // TODO: make this into a dedicated function
         etherscanResult = await makeEtherscanRequest(
           0,
-          ALOE_II_ORACLE,
+          ALOE_II_ORACLE_ADDRESS,
           [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
           true,
           activeChain
@@ -472,7 +466,7 @@ export default function BorrowPage() {
     return filteredPositions;
   }, [selectedMarginAccount, uniswapPositions, uniswapNFTPositions]);
 
-  const defaultPool = availablePools.keys().next().value;
+  const defaultPool = Array.from(availablePools.keys())[0];
 
   const dailyInterest0 =
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);

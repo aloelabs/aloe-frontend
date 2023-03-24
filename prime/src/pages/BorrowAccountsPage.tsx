@@ -1,16 +1,17 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { ContractReceipt, ethers } from 'ethers';
+import { ContractCallContext, Multicall } from 'ethereum-multicall';
+import { ContractReceipt } from 'ethers';
+import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { useAccount, useContract, useProvider, useSigner, Address } from 'wagmi';
+import { useAccount, useProvider, useSigner, Address } from 'wagmi';
 
 import { ChainContext, useGeoFencing } from '../App';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
@@ -19,7 +20,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
+import { ALOE_II_FACTORY_ADDRESS, UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
@@ -47,11 +48,8 @@ export default function BorrowAccountsPage() {
   const { address: accountAddress } = useAccount();
   const { data: signer } = useSigner({ chainId: activeChain.id });
 
-  const borrowerLensContract = useContract({
-    address: ALOE_II_BORROWER_LENS_ADDRESS,
-    abi: MarginAccountLensABI,
-    signerOrProvider: provider,
-  });
+  // MARK: react router hooks
+  const navigate = useNavigate();
 
   useEffectOnce(() => {
     let mounted = true;
@@ -83,29 +81,53 @@ export default function BorrowAccountsPage() {
 
       if (!Array.isArray(createMarketEvents)) return;
 
-      const poolAddresses = createMarketEvents.map((e) => `0x${e.topics[1].slice(-40)}`);
-      const poolInfoTuples = await Promise.all(
-        poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
-          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
-        })
-      );
+      const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+      const marginAccountCallContext: ContractCallContext[] = [];
 
-      if (mounted)
-        setAvailablePools(
-          new Map(
-            poolAddresses.map((addr, i) => {
-              return [
-                addr.toLowerCase(),
-                {
-                  token0: poolInfoTuples[i][0] as Address,
-                  token1: poolInfoTuples[i][1] as Address,
-                  fee: poolInfoTuples[i][2] as number,
-                },
-              ];
-            })
-          )
-        );
+      createMarketEvents.forEach((e) => {
+        const poolAddress = `0x${e.topics[1].slice(-40)}`;
+
+        if (UNISWAP_POOL_DENYLIST.includes(poolAddress.toLowerCase())) return;
+
+        marginAccountCallContext.push({
+          reference: poolAddress,
+          contractAddress: poolAddress,
+          abi: UniswapV3PoolABI,
+          calls: [
+            {
+              reference: 'token0',
+              methodName: 'token0',
+              methodParameters: [],
+            },
+            {
+              reference: 'token1',
+              methodName: 'token1',
+              methodParameters: [],
+            },
+            {
+              reference: 'fee',
+              methodName: 'fee',
+              methodParameters: [],
+            },
+          ],
+        });
+      });
+
+      const results = (await multicall.call(marginAccountCallContext)).results;
+      const availablePools = new Map<string, UniswapPoolInfo>();
+      Object.entries(results).forEach(([poolAddress, result]) => {
+        const token0 = result.callsReturnContext[0].returnValues[0] as Address;
+        const token1 = result.callsReturnContext[1].returnValues[0] as Address;
+        const fee = result.callsReturnContext[2].returnValues[0];
+        availablePools.set(poolAddress.toLowerCase(), {
+          token0: token0,
+          token1: token1,
+          fee: fee,
+        });
+      });
+      if (mounted) {
+        setAvailablePools(availablePools);
+      }
     }
 
     fetchAvailablePools();
@@ -119,14 +141,13 @@ export default function BorrowAccountsPage() {
 
     async function fetch(userAddress: string) {
       // Guard clause: if the margin account lens contract is null, don't fetch
-      if (!borrowerLensContract || !isAllowedToInteract) {
+      if (!isAllowedToInteract) {
         setMarginAccounts([]);
         return;
       }
       try {
         const updatedMarginAccounts = await fetchMarginAccountPreviews(
           activeChain,
-          borrowerLensContract,
           provider,
           userAddress,
           availablePools
@@ -150,7 +171,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, accountAddress, isAllowedToInteract, borrowerLensContract, provider, refetchCount, availablePools]);
+  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools]);
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -246,6 +267,7 @@ export default function BorrowAccountsPage() {
         setIsOpen={setShowSuccessModal}
         onConfirm={() => {
           setShowSuccessModal(false);
+          navigate(0);
         }}
       />
       <FailedTxnModal open={showFailedModal} setOpen={setShowFailedModal} />
