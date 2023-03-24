@@ -211,7 +211,7 @@ export default function BorrowPage() {
       const poolAddresses = createMarketEvents
         .map((e) => `0x${e.topics[1].slice(-40)}`)
         .filter((addr) => {
-          return UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase()) === false;
+          return !UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase());
         });
       const poolInfoTuples = await Promise.all(
         poolAddresses.map((addr) => {
