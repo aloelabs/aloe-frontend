@@ -1,3 +1,4 @@
+import ArbLogo from './arb.svg';
 import DaiLogo from './dai.svg';
 import FraxLogo from './frax.svg';
 import GmxLogo from './gmx.svg';
@@ -19,6 +20,7 @@ import WethLogo from './weth.svg';
 import WstEthLogo from './wsteth.svg';
 
 export {
+  ArbLogo,
   DaiLogo,
   FraxLogo,
   LyraLogo,

@@ -1,6 +1,7 @@
 import { Address, chain } from 'wagmi';
 
 import {
+  ArbLogo,
   DaiLogo,
   FraxLogo,
   GmxLogo,
@@ -244,6 +245,15 @@ const WETH_ARBITRUM = new Token(
   WethLogo
 );
 
+const ARB_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0x912ce59144191c1204e64559fe8253a0e49e6548',
+  18,
+  'ARB',
+  'Arbitrum',
+  ArbLogo
+);
+
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [chain.mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
@@ -269,6 +279,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
   },
   [chain.arbitrum.id]: {
+    [ARB_ARBITRUM.address]: ARB_ARBITRUM,
     [DAI_ARBITRUM.address]: DAI_ARBITRUM,
     [GMX_ARBITRUM.address]: GMX_ARBITRUM,
     [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
@@ -277,16 +288,6 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
-  },
-  [chain.arbitrum.id]: {
-    [USDC_ARBITRUM.address]: USDC_ARBITRUM,
-    [WETH_ARBITRUM.address]: WETH_ARBITRUM,
-    [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
-    [DAI_ARBITRUM.address]: DAI_ARBITRUM,
-    [GMX_ARBITRUM.address]: GMX_ARBITRUM,
-    [TETHER_ARBITRUM.address]: TETHER_ARBITRUM,
-    [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
-    [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
   },
 };
 
