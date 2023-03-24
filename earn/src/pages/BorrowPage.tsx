@@ -35,6 +35,7 @@ import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
+  UNISWAP_POOL_DENYLIST,
 } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
@@ -207,7 +208,11 @@ export default function BorrowPage() {
 
       if (!Array.isArray(createMarketEvents)) return;
 
-      const poolAddresses = createMarketEvents.map((e) => `0x${e.topics[1].slice(-40)}`);
+      const poolAddresses = createMarketEvents
+        .map((e) => `0x${e.topics[1].slice(-40)}`)
+        .filter((addr) => {
+          return UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase()) === false;
+        });
       const poolInfoTuples = await Promise.all(
         poolAddresses.map((addr) => {
           const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
