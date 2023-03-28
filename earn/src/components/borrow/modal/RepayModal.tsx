@@ -172,22 +172,29 @@ function RepayButton(props: RepayButtonProps) {
   const { config: repayWithApprovalConfig, refetch: refetchRepayWithApprovalConfig } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
-    functionName: 'repay(address,uint256,address)',
+    functionName: 'repayWithApprove(address,uint256,address)',
     args: [lender, bigRepayAmount, marginAccount.address],
     chainId: activeChain.id,
     enabled: confirmButtonState === ConfirmButtonState.READY_VIA_APPROVE,
   });
-  if (repayWithApprovalConfig.request) {
-    repayWithApprovalConfig.request.gasLimit = repayWithApprovalConfig.request.gasLimit
-      .mul(GAS_ESTIMATE_WIGGLE_ROOM)
-      .div(100);
-  }
+  const repayWithApprovalUpdatedRequest = useMemo(() => {
+    if (repayWithApprovalConfig.request) {
+      return {
+        ...repayWithApprovalConfig.request,
+        gasLimit: repayWithApprovalConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [repayWithApprovalConfig.request]);
   const {
     write: repayWithApproval,
     isSuccess: repayWithApprovalDidSucceed,
     isLoading: repayWithApprovalIsLoading,
     data: repayWithApprovalData,
-  } = useContractWrite(repayWithApprovalConfig);
+  } = useContractWrite({
+    ...repayWithApprovalConfig,
+    request: repayWithApprovalUpdatedRequest,
+  });
 
   // MARK: Prepare contract write for permit flow ---------------------------------------------------------------------
   const { config: repayWithPermitConfig, refetch: refetchRepayWithPermitConfig } = usePrepareContractWrite({
@@ -207,17 +214,24 @@ function RepayButton(props: RepayButtonProps) {
     chainId: activeChain.id,
     enabled: confirmButtonState === ConfirmButtonState.READY_VIA_PERMIT,
   });
-  if (repayWithPermitConfig.request) {
-    repayWithPermitConfig.request.gasLimit = repayWithPermitConfig.request.gasLimit
-      .mul(GAS_ESTIMATE_WIGGLE_ROOM)
-      .div(100);
-  }
+  const repayWithPermitUpdatedRequest = useMemo(() => {
+    if (repayWithPermitConfig.request) {
+      return {
+        ...repayWithPermitConfig.request,
+        gasLimit: repayWithPermitConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [repayWithPermitConfig.request]);
   const {
     write: repayWithPermit,
     isSuccess: repayWithPermitDidSucceed,
     isLoading: repayWithPermitIsLoading,
     data: repayWithPermitData,
-  } = useContractWrite(repayWithPermitConfig);
+  } = useContractWrite({
+    ...repayWithPermitConfig,
+    request: repayWithPermitUpdatedRequest,
+  });
 
   // MARK: Respond to repay txn successes/failures --------------------------------------------------------------------
   const contractDidSucceed = repayWithApprovalDidSucceed || repayWithPermitDidSucceed;
