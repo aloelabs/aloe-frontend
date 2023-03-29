@@ -208,7 +208,7 @@
         "type": "address"
       }
     ],
-    "name": "repay",
+    "name": "repayWithApprove",
     "outputs": [
       {
         "internalType": "uint256",
