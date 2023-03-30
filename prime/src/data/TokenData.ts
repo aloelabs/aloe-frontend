@@ -137,6 +137,15 @@ const USDC_OPTIMISM = new Token(
   UsdcLogo
 );
 
+const USDT_OPTIMISM = new Token(
+  chain.optimism.id,
+  '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58',
+  6,
+  'USDT',
+  'Tether USD',
+  UsdtLogo
+);
+
 const VELO_OPTIMISM = new Token(
   chain.optimism.id,
   '0x3c8b650257cfb5f272f799f5e2b4e65093a11a05',
@@ -209,15 +218,6 @@ const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
   MimLogo
 );
 
-const TETHER_ARBITRUM = new Token(
-  chain.arbitrum.id,
-  '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
-  6,
-  'USDT',
-  'Tether USD',
-  UsdtLogo
-);
-
 const USDC_ARBITRUM = new Token(
   chain.arbitrum.id,
   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
@@ -225,6 +225,15 @@ const USDC_ARBITRUM = new Token(
   'USDC',
   'USD Coin',
   UsdcLogo
+);
+
+const USDT_ARBITRUM = new Token(
+  chain.arbitrum.id,
+  '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+  6,
+  'USDT',
+  'Tether USD',
+  UsdtLogo
 );
 
 const WBTC_ARBITRUM = new Token(
@@ -273,6 +282,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [PERP_OPTIMISM.address]: PERP_OPTIMISM,
     [UNI_OPTIMISM.address]: UNI_OPTIMISM,
     [USDC_OPTIMISM.address]: USDC_OPTIMISM,
+    [USDT_OPTIMISM.address]: USDT_OPTIMISM,
     [VELO_OPTIMISM.address]: VELO_OPTIMISM,
     [WBTC_OPTIMISM.address]: WBTC_OPTIMISM,
     [WETH_OPTIMISM.address]: WETH_OPTIMISM,
@@ -284,8 +294,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [GMX_ARBITRUM.address]: GMX_ARBITRUM,
     [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
     [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
-    [TETHER_ARBITRUM.address]: TETHER_ARBITRUM,
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
+    [USDT_ARBITRUM.address]: USDT_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
   },
