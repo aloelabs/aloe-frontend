@@ -237,6 +237,8 @@ export function formatAmountWithUnit(amount: number, unit: string, maxLength = 1
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     })} ${unit}`;
+  } else if (amount === 0) {
+    return `0 ${unit}`;
   } else if (amount < Math.pow(10, -4)) {
     // Use scientific notation for small numbers
     return `${amount.toLocaleString('en-US', {
