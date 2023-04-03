@@ -140,20 +140,20 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       notation: 'compact',
       compactDisplay: 'short',
       maximumSignificantDigits: sigDigs,
-      minimumSignificantDigits: 2,
+      minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else if (amount > 1e-5 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: sigDigs,
-      minimumSignificantDigits: 2,
+      minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else if (amount > 1e-10) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'scientific',
       maximumSignificantDigits: sigDigs,
-      minimumSignificantDigits: 2,
+      minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else {
     // If amount <= 10e-10, we want to show no more than 2 sigdigs
@@ -217,6 +217,39 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
   } else {
     return '0';
   }
+}
+
+/**
+ * Formats an amount with a unit, abbreviating large numbers and using scientific notation for small numbers.
+ * Note: This function may not work properly if the unit close to or longer than the maximum length.
+ * @param amount the amount to format
+ * @param unit the unit to append to the amount
+ * @param maxLength the maximum length of the formatted string
+ * @returns the formatted string
+ */
+export function formatAmountWithUnit(amount: number, unit: string, maxLength = 10): string {
+  const maxLengthOfAmount = maxLength - unit.length - 1;
+  if (amount > 10_000) {
+    // Abbreviate large numbers
+    return `${amount.toLocaleString('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })} ${unit}`;
+  } else if (amount < Math.pow(10, -4)) {
+    // Use scientific notation for small numbers
+    return `${amount.toLocaleString('en-US', {
+      notation: 'scientific',
+      compactDisplay: 'short',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })} ${unit}`;
+  }
+  // Otherwise, truncate decimals
+  const numDigits = Math.max(Math.floor(Math.log10(Math.abs(amount))), 0);
+  const numDecimals = Math.max(maxLengthOfAmount - numDigits, 0);
+  return `${truncateDecimals(amount.toString(), numDecimals)} ${unit}`;
 }
 
 export function areWithinNSigDigs(a: Big, b: Big, n: number): boolean {
