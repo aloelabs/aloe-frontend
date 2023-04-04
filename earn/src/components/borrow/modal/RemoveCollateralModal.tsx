@@ -11,13 +11,14 @@ import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
-import { maxWithdraws } from '../../../data/BalanceSheet';
+import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
-import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
+import { Assets, MarginAccount, MarketInfo } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
+import HealthBar from '../HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
@@ -197,6 +198,23 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
   const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
 
+  const newAssets: Assets = {
+    token0Raw: isToken0 ? newCollateralAmount : marginAccount.assets.token0Raw,
+    token1Raw: isToken0 ? marginAccount.assets.token1Raw : newCollateralAmount,
+    uni0: marginAccount.assets.uni0,
+    uni1: marginAccount.assets.uni1,
+  };
+
+  const { health: newHealth } = isSolvent(
+    newAssets,
+    marginAccount.liabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
+
   return (
     <Modal isOpen={isOpen} title='Remove Collateral' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
@@ -250,6 +268,9 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             </strong>
             .
           </Text>
+          <div className='mt-2'>
+            <HealthBar health={newHealth} />
+          </div>
         </div>
         <div className='w-full'>
           <RemoveCollateralButton
