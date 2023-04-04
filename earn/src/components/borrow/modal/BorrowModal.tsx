@@ -6,7 +6,7 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -14,7 +14,9 @@ import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
-import { Liabilities, MarginAccount, MarketInfo } from '../../../data/MarginAccount';
+import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
+import { MarketInfo } from '../../../data/MarketInfo';
+import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
@@ -212,9 +214,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     return null;
   }
 
-  const totalSupply = isToken0 ? marketInfo.lender0TotalSupply : marketInfo.lender1TotalSupply;
-  const totalBorrow = isToken0 ? marketInfo.lender0TotalBorrows : marketInfo.lender1TotalBorrows;
-  const maxBorrowsBasedOnMarketBig = totalSupply.sub(totalBorrow);
+  const maxBorrowsBasedOnMarketBig = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
   const maxBorrowsBasedOnMarket = maxBorrowsBasedOnMarketBig.div(10 ** borrowToken.decimals).toNumber();
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     marginAccount.assets,
@@ -244,6 +244,13 @@ export default function BorrowModal(props: BorrowModalProps) {
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
+
+  const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
+  const remainingAvailableAssets = availableAssets.sub(borrowAmountBig);
+
+  const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
+  const newUtilization = 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber();
+  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
 
   // A user is considered unhealthy if their health is less than 1
   const isUnhealthy = newHealth < 1;
@@ -309,6 +316,10 @@ export default function BorrowModal(props: BorrowModalProps) {
               liquidated.
             </Text>
           )}
+          <div className='flex gap-2 mt-2'>
+            <Text size='S'>APR:</Text>
+            <Display size='XS'>{apr.toFixed(2)}%</Display>
+          </div>
           <div className='mt-2'>
             <HealthBar health={newHealth} />
           </div>
