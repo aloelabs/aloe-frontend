@@ -309,8 +309,10 @@ export default function BorrowModal(props: BorrowModalProps) {
               liquidated.
             </Text>
           )}
+          <div className='mt-2'>
+            <HealthBar health={newHealth} />
+          </div>
         </div>
-        <HealthBar health={newHealth} />
         <div className='w-full'>
           <BorrowButton
             marginAccount={marginAccount}

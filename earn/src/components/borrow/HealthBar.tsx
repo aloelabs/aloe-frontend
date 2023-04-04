@@ -8,7 +8,7 @@ const MIN_HEALTH = 0.5;
 
 const HealthBarContainer = styled.div`
   width: 100%;
-  height: 32px;
+  height: 16px;
   background: rgb(235, 87, 87);
   background: linear-gradient(
     90deg,
@@ -18,7 +18,7 @@ const HealthBarContainer = styled.div`
     rgba(0, 193, 67, 1) 70%,
     rgba(0, 193, 67, 1) 100%
   );
-  border-radius: 8px;
+  border-radius: 4px;
   position: relative;
 `;
 
@@ -26,12 +26,12 @@ const HealthBarDial = styled.div.attrs((props: { healthPercent: number }) => pro
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 10px 10px 0 10px;
+  border-width: 5px 5px 0 5px;
   border-color: #ffffff transparent transparent transparent;
   position: absolute;
   left: ${(props) => props.healthPercent}%;
   transform: translateX(-50%);
-  top: -4.325px;
+  top: -2.325px;
 `;
 
 export type HealthBarProps = {
@@ -57,10 +57,10 @@ export default function HealthBar(props: HealthBarProps) {
               If your health is at or below 1.0, your account may be liquidated.`}
           position='top-left'
         />
-        <Text size='M' weight='medium'>
+        <Text size='S' weight='medium'>
           Account Health:
         </Text>
-        <Display size='S' weight='medium' className='text-center'>
+        <Display size='XS' weight='medium' className='text-center'>
           {healthLabel}
         </Display>
       </div>
