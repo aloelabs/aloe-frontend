@@ -48,7 +48,7 @@ export default function HealthBar(props: HealthBarProps) {
     ((Math.max(Math.min(health, MAX_HEALTH), MIN_HEALTH) - MIN_HEALTH) / (MAX_HEALTH - MIN_HEALTH)) * 100;
   const healthLabel = health > MAX_HEALTH ? `${MAX_HEALTH}+` : health.toFixed(2);
   return (
-    <div className='w-full flex flex-col align-middle mb-8 mt-8'>
+    <div className='w-full flex flex-col align-middle'>
       <div className='flex gap-2 items-center mb-4'>
         <Tooltip
           buttonSize='S'
