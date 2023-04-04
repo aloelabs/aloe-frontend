@@ -32,7 +32,7 @@ const TokenAPYWrapper = styled.div`
 
 const CustomBodySubContainer = styled(BodySubContainer)`
   position: relative;
-  padding-right: 80px;
+  padding-right: 40px;
 `;
 
 const CardActionButton = styled.button`
