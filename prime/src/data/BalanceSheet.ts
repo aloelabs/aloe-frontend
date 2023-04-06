@@ -224,8 +224,12 @@ export function maxBorrows(
   const maxNewBorrowsA = surplusA * ALOE_II_MAX_LEVERAGE;
   const maxNewBorrowsB = surplusB * ALOE_II_MAX_LEVERAGE;
 
-  const maxNewBorrows0 = Math.min(maxNewBorrowsA / priceA, maxNewBorrowsB / priceB);
-  const maxNewBorrows1 = Math.min(maxNewBorrowsA, maxNewBorrowsB);
+  // If the account is liquidatable, the math will yield negative numbers. Clamp them to 0.
+  // Examples when this may happen:
+  // - local price is less than the on-chain price (thus liquidation hasn't happened yet)
+  // - account has been warned, but not actually liquidated yet
+  const maxNewBorrows0 = Math.max(Math.min(maxNewBorrowsA / priceA, maxNewBorrowsB / priceB), 0);
+  const maxNewBorrows1 = Math.max(Math.min(maxNewBorrowsA, maxNewBorrowsB), 0);
   return [maxNewBorrows0, maxNewBorrows1];
 }
 
@@ -317,8 +321,12 @@ export function maxWithdraws(
   }
   maxWithdrawB0 /= denom;
 
-  const maxNewWithdraws0 = Math.min(maxWithdrawA0, maxWithdrawB0, assets.token0Raw);
-  const maxNewWithdraws1 = Math.min(maxWithdrawA1, maxWithdrawB1, assets.token1Raw);
+  // If the account is liquidatable, the math will yield negative numbers. Clamp them to 0.
+  // Examples when this may happen:
+  // - local price is less than the on-chain price (thus liquidation hasn't happened yet)
+  // - account has been warned, but not actually liquidated yet
+  const maxNewWithdraws0 = Math.max(Math.min(maxWithdrawA0, maxWithdrawB0, assets.token0Raw), 0);
+  const maxNewWithdraws1 = Math.max(Math.min(maxWithdrawA1, maxWithdrawB1, assets.token1Raw), 0);
   return [maxNewWithdraws0, maxNewWithdraws1];
 }
 
