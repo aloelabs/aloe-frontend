@@ -249,11 +249,11 @@ export default function BorrowModal(props: BorrowModalProps) {
   const remainingAvailableAssets = availableAssets.sub(borrowAmountBig);
 
   const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
-  const newUtilization = 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber();
+  const newUtilization = lenderTotalAssets.gt(0) ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber() : 0;
   const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
 
-  // A user is considered unhealthy if their health is less than 1
-  const isUnhealthy = newHealth < 1;
+  // A user is considered unhealthy if their health is 1 or less
+  const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
   const notEnoughSupply = maxBorrowsBasedOnMarketBig.lt(borrowAmountBig);
 
