@@ -610,6 +610,7 @@ export default function BorrowPage() {
           />
           <RepayModal
             marginAccount={selectedMarginAccount}
+            uniswapPositions={uniswapPositions}
             isOpen={isRepayModalOpen}
             setIsOpen={setIsRepayModalOpen}
             setPendingTxn={setPendingTxn}

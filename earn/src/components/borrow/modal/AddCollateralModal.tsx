@@ -101,6 +101,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
       {modalState === AddCollateralModalState.TOKENS && (
         <AddCollateralTab
           marginAccount={marginAccount}
+          uniswapPositions={existingUniswapPositions}
           isOpen={isOpen}
           setPendingTxn={setPendingTxn}
           setIsOpen={setIsOpen}

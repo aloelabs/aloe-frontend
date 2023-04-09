@@ -9,10 +9,13 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 
 import { ChainContext } from '../../../../App';
 import ERC20ABI from '../../../../assets/abis/ERC20.json';
-import { MarginAccount } from '../../../../data/MarginAccount';
+import { isSolvent } from '../../../../data/BalanceSheet';
+import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import { Token } from '../../../../data/Token';
+import { UniswapPosition } from '../../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../../util/Numbers';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
+import HealthBar from '../../HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -122,13 +125,14 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
 export type AddCollateralTabProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function AddCollateralTab(props: AddCollateralTabProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [collateralAmount, setCollateralAmount] = useState('');
@@ -175,6 +179,35 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
 
   const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
   const userBalanceBig = new Big(numericUserBalance).mul(10 ** collateralToken.decimals);
+
+  const newAssets: Assets = {
+    token0Raw:
+      collateralToken.address === marginAccount.token0.address
+        ? existingCollateralBig
+            .add(collateralAmountBig)
+            .div(10 ** collateralToken.decimals)
+            .toNumber()
+        : existingCollateral,
+    token1Raw:
+      collateralToken.address === marginAccount.token1.address
+        ? existingCollateralBig
+            .add(collateralAmountBig)
+            .div(10 ** collateralToken.decimals)
+            .toNumber()
+        : existingCollateral,
+    uni0: marginAccount.assets.uni0,
+    uni1: marginAccount.assets.uni1,
+  };
+
+  const { health: newHealth } = isSolvent(
+    newAssets,
+    marginAccount.liabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
 
   if (!userAddress) {
     return null;
@@ -236,6 +269,9 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
           </strong>
           .
         </Text>
+        <div className='mt-2'>
+          <HealthBar health={newHealth} />
+        </div>
       </div>
       <div className='w-full'>
         <AddCollateralButton
