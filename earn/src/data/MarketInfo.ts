@@ -5,8 +5,6 @@ import { Address } from 'wagmi';
 
 import { toBig, toImpreciseNumber } from '../util/Numbers';
 
-const RESERVE_FACTOR = 0.825; // (1 - 1/8)
-
 export type MarketInfo = {
   lender0: Address;
   lender1: Address;
@@ -33,13 +31,9 @@ export async function fetchMarketInfoFor(
   ]);
 
   const interestRate0 = toBig(lender0Basics.interestRate);
-  const borrowAPR0 = interestRate0.eq('0')
-    ? 0
-    : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear * RESERVE_FACTOR;
+  const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const interestRate1 = toBig(lender1Basics.interestRate);
-  const borrowAPR1 = interestRate1.eq('0')
-    ? 0
-    : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear * RESERVE_FACTOR;
+  const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const lender0Utilization = toImpreciseNumber(lender0Basics.utilization, 18);
   const lender1Utilization = toImpreciseNumber(lender1Basics.utilization, 18);
   const lender0Inventory = toBig(lender0Basics.inventory);
