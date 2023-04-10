@@ -1,23 +1,16 @@
 import Big from 'big.js';
-import { secondsInYear } from 'date-fns';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Address, Chain } from 'wagmi';
 
-import KittyLensABI from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { toBig, toImpreciseNumber } from '../util/Numbers';
-import {
-  ALOE_II_BORROWER_LENS_ADDRESS,
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-} from './constants/Addresses';
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 import { Token } from './Token';
 import { getToken } from './TokenData';
@@ -50,19 +43,6 @@ export type MarginAccount = {
   lender0: Address;
   lender1: Address;
   iv: number;
-};
-
-export type MarketInfo = {
-  lender0: Address;
-  lender1: Address;
-  borrowerAPR0: number;
-  borrowerAPR1: number;
-  lender0Utilization: number;
-  lender1Utilization: number;
-  lender0TotalSupply: Big;
-  lender1TotalSupply: Big;
-  lender0TotalBorrows: Big;
-  lender1TotalBorrows: Big;
 };
 
 /**
@@ -249,59 +229,4 @@ export async function fetchMarginAccounts(
   });
 
   return marginAccounts;
-}
-
-export async function fetchMarketInfoFor(
-  lenderLensContract: ethers.Contract,
-  lender0: Address,
-  lender1: Address
-): Promise<MarketInfo> {
-  const multicall = new Multicall({ ethersProvider: lenderLensContract.provider, tryAggregate: true });
-  const contractCallContext: ContractCallContext[] = [
-    {
-      reference: 'readBasics',
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
-      abi: KittyLensABI,
-      calls: [
-        {
-          reference: 'lender0',
-          methodName: 'readBasics',
-          methodParameters: [lender0],
-        },
-        {
-          reference: 'lender1',
-          methodName: 'readBasics',
-          methodParameters: [lender1],
-        },
-      ],
-    },
-  ];
-
-  const results = (await multicall.call(contractCallContext)).results;
-  const updatedReturnContext = convertBigNumbersForReturnContexts(results['readBasics'].callsReturnContext);
-  const lender0Basics = updatedReturnContext[0].returnValues;
-  const lender1Basics = updatedReturnContext[1].returnValues;
-
-  const interestRate0 = toBig(lender0Basics[1]);
-  const borrowerAPR0 = interestRate0.eq('0') ? 0 : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const interestRate1 = toBig(lender1Basics[1]);
-  const borrowerAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
-  const lender0Utilization = toImpreciseNumber(lender0Basics[2], 18);
-  const lender1Utilization = toImpreciseNumber(lender1Basics[2], 18);
-  const lender0TotalSupply = toBig(lender0Basics[3]);
-  const lender1TotalSupply = toBig(lender1Basics[3]);
-  const lender0TotalBorrows = toBig(lender0Basics[4]);
-  const lender1TotalBorrows = toBig(lender1Basics[4]);
-  return {
-    lender0,
-    lender1,
-    borrowerAPR0,
-    borrowerAPR1,
-    lender0Utilization,
-    lender1Utilization,
-    lender0TotalSupply,
-    lender1TotalSupply,
-    lender0TotalBorrows,
-    lender1TotalBorrows,
-  };
 }

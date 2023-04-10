@@ -6,7 +6,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
 import { MAX_UNISWAP_POSITIONS } from '../../../data/constants/Values';
-import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
+import { MarginAccount } from '../../../data/MarginAccount';
+import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapNFTPosition, UniswapPosition } from '../../../data/Uniswap';
 import { AddCollateralTab } from './tab/AddCollateralTab';
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
