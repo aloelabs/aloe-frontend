@@ -14,12 +14,31 @@ import BorrowGraphTooltip from './BorrowGraphTooltip';
 const TEXT_COLOR = '#82a0b6';
 const GREEN_COLOR = '#82ca9d';
 const PURPLE_COLOR = '#8884d8';
-const MILLIS_PER_WEEK = 10 * 24 * 60 * 60 * 1000;
+const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+const DAYS_TO_SHOW = 60;
+const NUM_DATA_POINTS = 100;
 
 export type BorrowGraphData = {
   IV: number;
   'Collateral Factor': number;
   x: Date;
+};
+
+const interp = (a: BorrowGraphData, b: BorrowGraphData, x: number): BorrowGraphData => {
+  const interpolated: BorrowGraphData = { x: new Date(x), IV: NaN, 'Collateral Factor': NaN };
+  const dx = b.x.getTime() - a.x.getTime();
+
+  if (x < a.x.getTime() - Number.EPSILON || x > b.x.getTime() + Number.EPSILON) {
+    throw new Error('extrap not interp');
+  }
+
+  const mIV = (b.IV - a.IV) / dx;
+  interpolated.IV = mIV * (x - a.x.getTime()) + a.IV;
+
+  const mCF = (b['Collateral Factor'] - a['Collateral Factor']) / dx;
+  interpolated['Collateral Factor'] = mCF * (x - a.x.getTime()) + a['Collateral Factor'];
+
+  return interpolated;
 };
 
 const Container = styled.div`
@@ -90,11 +109,31 @@ export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
 
   const now = Date.now();
-  const filteredGraphData = graphData
-    .filter((item) => now - item.x.getTime() <= MILLIS_PER_WEEK)
-    .map((item) => {
-      return { ...item, x: item.x.toISOString() };
-    });
+
+  const sortedGraphData = graphData.sort((item) => item.x.getTime());
+  const startIdx = sortedGraphData.findIndex((item) => now - item.x.getTime() <= MILLIS_PER_DAY * DAYS_TO_SHOW);
+
+  const t0 = sortedGraphData[startIdx].x.getTime();
+  const t1 = sortedGraphData[sortedGraphData.length - 1].x.getTime();
+  const dt = (t1 - t0) / NUM_DATA_POINTS;
+
+  const interpGraphData: BorrowGraphData[] = [];
+
+  let i = startIdx;
+  for (let t = t0; interpGraphData.length < NUM_DATA_POINTS - 1; t += dt) {
+    let b = sortedGraphData[i + 1];
+    while (t > b.x.getTime()) {
+      i += 1;
+      b = sortedGraphData[i + 1];
+    }
+    const a = sortedGraphData[i];
+
+    interpGraphData.push(interp(a, b, t));
+  }
+
+  interpGraphData.push(sortedGraphData[sortedGraphData.length - 1]);
+
+  const displayedGraphData = interpGraphData.map((item) => ({ ...item, x: item.x.toISOString() }));
 
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
   return (
@@ -129,7 +168,7 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         ]}
         showLegend={true}
         LegendContent={<GraphLegend />}
-        data={filteredGraphData}
+        data={displayedGraphData}
         hideTicks={!isBiggerThanMobile}
         containerHeight={380}
         tickTextColor={LABEL_TEXT_COLOR}

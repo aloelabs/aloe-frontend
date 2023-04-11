@@ -318,12 +318,12 @@ export default function BorrowPage() {
         // TODO: abstract this out
         const { data, timeStamp } = result;
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
-        const iv = ethers.BigNumber.from(decoded[1]).div(1e9).toNumber() / 1e9;
+        const iv = ethers.BigNumber.from(decoded[1]).div(1e12).toNumber() / 1e6;
         const collateralFactor = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005));
         const resultData: BorrowGraphData = {
           IV: iv * Math.sqrt(365) * 100,
           'Collateral Factor': collateralFactor * 100,
-          x: new Date(parseInt(timeStamp.toString()) * 1000),
+          x: new Date(parseInt(timeStamp.toString(), 16) * 1000),
         };
         return resultData;
       });
