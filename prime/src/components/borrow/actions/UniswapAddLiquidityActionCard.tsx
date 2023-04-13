@@ -29,7 +29,6 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import { BaseActionCard } from '../BaseActionCard';
 import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
-import LiquidityChartNotAvailable from '../uniswap/LiquidityChartNotAvailable';
 import { LiquidityChartPlaceholder } from '../uniswap/LiquidityChartPlaceholder';
 import SteppedInput from '../uniswap/SteppedInput';
 
@@ -397,9 +396,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           />
         )}
       </div>
-      {chartData.length === 0 && !chartLoading ? (
-        <LiquidityChartNotAvailable />
-      ) : chartData.length === 0 || !ticksAreDefined ? (
+      {chartData.length === 0 && !chartLoading ? null : chartData.length === 0 || !ticksAreDefined ? (
         <LiquidityChartPlaceholder />
       ) : (
         <LiquidityChart
