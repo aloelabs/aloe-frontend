@@ -24,22 +24,25 @@ export type BorrowGraphData = {
   x: Date;
 };
 
-const interp = (a: BorrowGraphData, b: BorrowGraphData, x: number): BorrowGraphData => {
+/**
+ * Linearly interpolates between two `BorrowGraphData` points to generate a new point with timestamp `x`
+ * @param a One point that's close to the `x` value through which we're trying to interpolate
+ * @param b Another point that's close to the `x` value through which we're trying to interpolate
+ * @param x The timestamp (in millis) of the desired point
+ * @returns A new point with x.getTime == x, IV between that of a and b, and collateral factor between that of a and b
+ */
+function interpolate(a: BorrowGraphData, b: BorrowGraphData, x: number) {
   const interpolated: BorrowGraphData = { x: new Date(x), IV: NaN, 'Collateral Factor': NaN };
-  const dx = b.x.getTime() - a.x.getTime();
+  const deltaX = b.x.getTime() - a.x.getTime();
 
-  if (x < a.x.getTime() - Number.EPSILON || x > b.x.getTime() + Number.EPSILON) {
-    throw new Error('extrap not interp');
-  }
+  const slopeIV = (b.IV - a.IV) / deltaX;
+  interpolated.IV = slopeIV * (x - a.x.getTime()) + a.IV;
 
-  const mIV = (b.IV - a.IV) / dx;
-  interpolated.IV = mIV * (x - a.x.getTime()) + a.IV;
-
-  const mCF = (b['Collateral Factor'] - a['Collateral Factor']) / dx;
-  interpolated['Collateral Factor'] = mCF * (x - a.x.getTime()) + a['Collateral Factor'];
+  const slopeCF = (b['Collateral Factor'] - a['Collateral Factor']) / deltaX;
+  interpolated['Collateral Factor'] = slopeCF * (x - a.x.getTime()) + a['Collateral Factor'];
 
   return interpolated;
-};
+}
 
 const Container = styled.div`
   height: 380px;
@@ -107,20 +110,27 @@ export type BorrowGraphProps = {
 
 export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
+  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
 
   const now = Date.now();
 
   const sortedGraphData = graphData.sort((item) => item.x.getTime());
   const startIdx = sortedGraphData.findIndex((item) => now - item.x.getTime() <= MILLIS_PER_DAY * DAYS_TO_SHOW);
+  const endIdx = sortedGraphData.length - 1;
 
+  if (startIdx === -1 || startIdx === endIdx) return null;
+
+  // Timestamp of the first data point on the graph
   const t0 = sortedGraphData[startIdx].x.getTime();
-  const t1 = sortedGraphData[sortedGraphData.length - 1].x.getTime();
+  // Timestamp of the last data point on the graph
+  const t1 = sortedGraphData[endIdx].x.getTime();
+  // Time between consecutive points that's required to give us `NUM_DATA_POINTS` between `t0` and `t1`
   const dt = (t1 - t0) / NUM_DATA_POINTS;
 
   const interpGraphData: BorrowGraphData[] = [];
 
   let i = startIdx;
-  for (let t = t0; interpGraphData.length < NUM_DATA_POINTS - 1; t += dt) {
+  for (let t = t0; t < t1; t += dt) {
     let b = sortedGraphData[i + 1];
     while (t > b.x.getTime()) {
       i += 1;
@@ -128,14 +138,11 @@ export default function BorrowGraph(props: BorrowGraphProps) {
     }
     const a = sortedGraphData[i];
 
-    interpGraphData.push(interp(a, b, t));
+    interpGraphData.push(interpolate(a, b, t));
   }
-
-  interpGraphData.push(sortedGraphData[sortedGraphData.length - 1]);
 
   const displayedGraphData = interpGraphData.map((item) => ({ ...item, x: item.x.toISOString() }));
 
-  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
   return (
     <Container>
       <Graph
