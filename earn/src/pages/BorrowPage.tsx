@@ -41,7 +41,8 @@ import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/cons
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { PRIME_URL } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
+import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
+import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import {
@@ -609,6 +610,7 @@ export default function BorrowPage() {
           />
           <RepayModal
             marginAccount={selectedMarginAccount}
+            uniswapPositions={uniswapPositions}
             isOpen={isRepayModalOpen}
             setIsOpen={setIsRepayModalOpen}
             setPendingTxn={setPendingTxn}

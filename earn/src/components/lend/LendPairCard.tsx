@@ -14,12 +14,14 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
+import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { LendingPair } from '../../data/LendingPair';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { roundPercentage } from '../../util/Numbers';
 import TokenPairIcons from '../common/TokenPairIcons';
 import LendTokenInfo from './LendTokenInfo';
+import ContractLinksModal from './modal/ContractLinksModal';
 import EditPositionModal from './modal/EditPositionModal';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';
@@ -68,6 +70,7 @@ export default function LendPairCard(props: LendPairCardProps) {
   const { token0, token1, kitty0, kitty1, kitty0Info, kitty1Info, uniswapFeeTier } = props.pair;
   const [isEditToken0PositionModalOpen, setIsEditToken0PositionModalOpen] = useState<boolean>(false);
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] = useState<boolean>(false);
+  const [isContractLinksModalOpen, setIsContractLinksModalOpen] = useState<boolean>(false);
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
@@ -114,9 +117,14 @@ export default function LendPairCard(props: LendPairCardProps) {
         }}
       >
         <CardTitleWrapper backgroundGradient={cardTitleBackgroundGradient}>
-          <Display size='M' weight='semibold'>
-            {token0.ticker} / {token1.ticker}
-          </Display>
+          <div className='flex items-center gap-2'>
+            <Display size='M' weight='semibold'>
+              {token0.ticker} / {token1.ticker}
+            </Display>
+            <button onClick={() => setIsContractLinksModalOpen(true)}>
+              <MoreIcon width={20} height={20} />
+            </button>
+          </div>
           <CardSubTitleWrapper>
             <TokenPairIcons
               token0IconPath={token0.iconPath}
@@ -188,6 +196,14 @@ export default function LendPairCard(props: LendPairCardProps) {
         setIsOpen={(open: boolean) => {
           setIsEditToken1PositionModalOpen(open);
         }}
+      />
+      <ContractLinksModal
+        token0={token0}
+        token1={token1}
+        kitty0={kitty0}
+        kitty1={kitty1}
+        isOpen={isContractLinksModalOpen}
+        setIsOpen={setIsContractLinksModalOpen}
       />
     </div>
   );
