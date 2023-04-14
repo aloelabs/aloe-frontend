@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
+import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
 
@@ -17,6 +19,8 @@ import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
+import { ReactComponent as OpenIcon } from '../assets/svg/open.svg';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
 import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
@@ -37,7 +41,11 @@ import {
   ALOE_II_ORACLE_ADDRESS,
   UNISWAP_POOL_DENYLIST,
 } from '../data/constants/Addresses';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINTS,
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_SM,
+} from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { PRIME_URL } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
@@ -52,6 +60,7 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Uniswap';
+import { truncateAddress } from '../util/Addresses';
 import { makeEtherscanRequest } from '../util/Etherscan';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -98,6 +107,25 @@ const PageGrid = styled.div`
       'metrics'
       'uniswap'
       'stats';
+  }
+`;
+
+const StyledExternalLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const StyledOpenIcon = styled(OpenIcon)`
+  path {
+    stroke: ${LABEL_TEXT_COLOR};
   }
 `;
 
@@ -441,6 +469,8 @@ export default function BorrowPage() {
     };
   }, [pendingTxn]);
 
+  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
+
   const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
@@ -478,6 +508,9 @@ export default function BorrowPage() {
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
   const dailyInterest1 =
     ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
+
+  const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
+  const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
   return (
     <AppPage>
       <Container>
@@ -571,6 +604,27 @@ export default function BorrowPage() {
           </StatsContainer>
         </PageGrid>
       </Container>
+      {selectedMarginAccount &&
+        (isBiggerThanMobile ? (
+          <div className='flex justify-center items-center gap-1 overflow-clip'>
+            <InfoIcon width={16} height={16} />
+            <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+              View this account on Etherscan:{' '}
+              <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                {selectedMarginAccountEtherscanUrl}
+              </StyledExternalLink>
+            </Text>
+          </div>
+        ) : (
+          <div className='flex justify-center items-center gap-1'>
+            <Text size='S' color={LABEL_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+              <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                {truncateAddress(selectedMarginAccount.address, 32)}
+              </StyledExternalLink>
+            </Text>
+            <StyledOpenIcon width={16} height={16} />
+          </div>
+        ))}
       {availablePools.size > 0 && (
         <NewSmartWalletModal
           availablePools={availablePools}
