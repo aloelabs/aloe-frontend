@@ -14,13 +14,35 @@ import BorrowGraphTooltip from './BorrowGraphTooltip';
 const TEXT_COLOR = '#82a0b6';
 const GREEN_COLOR = '#82ca9d';
 const PURPLE_COLOR = '#8884d8';
-const MILLIS_PER_WEEK = 10 * 24 * 60 * 60 * 1000;
+const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+const DAYS_TO_SHOW = 60;
+const NUM_DATA_POINTS = 100;
 
 export type BorrowGraphData = {
   IV: number;
   'Collateral Factor': number;
   x: Date;
 };
+
+/**
+ * Linearly interpolates between two `BorrowGraphData` points to generate a new point with timestamp `x`
+ * @param a One point that's close to the `x` value through which we're trying to interpolate
+ * @param b Another point that's close to the `x` value through which we're trying to interpolate
+ * @param x The timestamp (in millis) of the desired point
+ * @returns A new point with x.getTime == x, IV between that of a and b, and collateral factor between that of a and b
+ */
+function interpolate(a: BorrowGraphData, b: BorrowGraphData, x: number) {
+  const interpolated: BorrowGraphData = { x: new Date(x), IV: NaN, 'Collateral Factor': NaN };
+  const deltaX = b.x.getTime() - a.x.getTime();
+
+  const slopeIV = (b.IV - a.IV) / deltaX;
+  interpolated.IV = slopeIV * (x - a.x.getTime()) + a.IV;
+
+  const slopeCF = (b['Collateral Factor'] - a['Collateral Factor']) / deltaX;
+  interpolated['Collateral Factor'] = slopeCF * (x - a.x.getTime()) + a['Collateral Factor'];
+
+  return interpolated;
+}
 
 const Container = styled.div`
   height: 380px;
@@ -88,15 +110,39 @@ export type BorrowGraphProps = {
 
 export default function BorrowGraph(props: BorrowGraphProps) {
   const { graphData } = props;
+  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
 
   const now = Date.now();
-  const filteredGraphData = graphData
-    .filter((item) => now - item.x.getTime() <= MILLIS_PER_WEEK)
-    .map((item) => {
-      return { ...item, x: item.x.toISOString() };
-    });
 
-  const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS['SM']);
+  const sortedGraphData = graphData.sort((item) => item.x.getTime());
+  const startIdx = sortedGraphData.findIndex((item) => now - item.x.getTime() <= MILLIS_PER_DAY * DAYS_TO_SHOW);
+  const endIdx = sortedGraphData.length - 1;
+
+  if (startIdx === -1 || startIdx === endIdx) return null;
+
+  // Timestamp of the first data point on the graph
+  const t0 = sortedGraphData[startIdx].x.getTime();
+  // Timestamp of the last data point on the graph
+  const t1 = sortedGraphData[endIdx].x.getTime();
+  // Time between consecutive points that's required to give us `NUM_DATA_POINTS` between `t0` and `t1`
+  const dt = (t1 - t0) / NUM_DATA_POINTS;
+
+  const interpGraphData: BorrowGraphData[] = [];
+
+  let i = startIdx;
+  for (let t = t0; t < t1; t += dt) {
+    let b = sortedGraphData[i + 1];
+    while (t > b.x.getTime()) {
+      i += 1;
+      b = sortedGraphData[i + 1];
+    }
+    const a = sortedGraphData[i];
+
+    interpGraphData.push(interpolate(a, b, t));
+  }
+
+  const displayedGraphData = interpGraphData.map((item) => ({ ...item, x: item.x.toISOString() }));
+
   return (
     <Container>
       <Graph
@@ -129,7 +175,7 @@ export default function BorrowGraph(props: BorrowGraphProps) {
         ]}
         showLegend={true}
         LegendContent={<GraphLegend />}
-        data={filteredGraphData}
+        data={displayedGraphData}
         hideTicks={!isBiggerThanMobile}
         containerHeight={380}
         tickTextColor={LABEL_TEXT_COLOR}
