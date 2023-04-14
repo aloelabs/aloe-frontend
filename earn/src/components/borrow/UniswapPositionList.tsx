@@ -148,8 +148,8 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
   const amount0InTermsOfToken1 = amount0 * token0PerToken1;
   const totalValue = amount0InTermsOfToken1 + amount1;
 
-  const amount0Percent = (amount0InTermsOfToken1 / totalValue) * 100;
-  const amount1Percent = (amount1 / totalValue) * 100;
+  const amount0Percent = totalValue > 0 ? (amount0InTermsOfToken1 / totalValue) * 100 : 0;
+  const amount1Percent = totalValue > 0 ? (amount1 / totalValue) * 100 : 0;
 
   const currentTick = sqrtRatioToTick(sqrtPriceX96);
 
