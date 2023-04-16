@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Big from 'big.js';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
@@ -65,7 +66,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         value={value}
         onMaxClick={() => {
           if (max) {
-            onMax ? onMax(max) : onChange(max.toString());
+            onMax ? onMax(max) : onChange(new Big(max.toString()).toFixed());
           }
         }}
         maxDisabled={maxed}
