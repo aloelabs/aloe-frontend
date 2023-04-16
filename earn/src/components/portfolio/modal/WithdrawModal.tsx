@@ -246,7 +246,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     };
   }, [refetchMaxWithdraw, refetchMaxRedeem, isOpen]);
 
-  const bigWithdrawAmount = inputValue ? new Big(inputValue) : new Big(0);
+  const bigWithdrawAmount = inputValue ? new Big(inputValue).mul(10 ** selectedOption.decimals) : new Big(0);
   const bigMaxWithdraw: Big = maxWithdraw ? new Big(maxWithdraw.toString()) : new Big(0);
   const bigMaxRedeem: Big = maxRedeem ? new Big(maxRedeem.toString()) : new Big(0);
 
