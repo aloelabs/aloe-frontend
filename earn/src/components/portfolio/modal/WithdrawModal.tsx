@@ -14,7 +14,7 @@ import KittyABI from '../../../assets/abis/Kitty.json';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
+import { formatNumberInput, toBig, truncateDecimals } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -84,20 +84,17 @@ function WithdrawButton(props: WithdrawButtonProps) {
     functionName: 'convertToShares',
     args: [ethers.utils.parseUnits(withdrawAmount.toFixed(token.decimals), token.decimals)],
     chainId: activeChain.id,
-  });
+  }) as { data: BigNumber | undefined; isLoading: boolean };
 
-  const numericRequestedShares = requestedShares ? BigNumber.from(requestedShares.toString()) : BigNumber.from(0);
-  const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance.toFixed());
+  const bigRequestedShares = requestedShares ? toBig(requestedShares) : new Big(0);
   // Being extra careful here to make sure we don't withdraw more than the user has
-  const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
-    ? numericMaxRedeemBalance
-    : numericRequestedShares;
+  const finalWithdrawAmount = bigRequestedShares.gt(maxRedeemBalance) ? maxRedeemBalance : bigRequestedShares;
 
   const { config: withdrawConfig } = usePrepareContractWrite({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'redeem',
-    args: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
+    args: [finalWithdrawAmount.toFixed(), accountAddress, accountAddress],
     chainId: activeChain.id,
     enabled: finalWithdrawAmount.gt(0) && !isPending,
   });
@@ -217,7 +214,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [account.address] as const,
-  });
+  }) as { refetch: () => void; data: BigNumber | undefined };
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: activeKitty?.address,
@@ -226,7 +223,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [account.address] as const,
-  });
+  }) as { refetch: () => void; data: BigNumber | undefined };
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
@@ -247,8 +244,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   }, [refetchMaxWithdraw, refetchMaxRedeem, isOpen]);
 
   const bigWithdrawAmount = inputValue ? new Big(inputValue).mul(10 ** selectedOption.decimals) : new Big(0);
-  const bigMaxWithdraw: Big = maxWithdraw ? new Big(maxWithdraw.toString()) : new Big(0);
-  const bigMaxRedeem: Big = maxRedeem ? new Big(maxRedeem.toString()) : new Big(0);
+  const bigMaxWithdraw: Big = maxWithdraw ? toBig(maxWithdraw) : new Big(0);
+  const bigMaxRedeem: Big = maxRedeem ? toBig(maxRedeem) : new Big(0);
 
   if (selectedPairOption == null || activeKitty == null) {
     return null;
