@@ -31,7 +31,7 @@ export type Liabilities = {
  * For the use-cases that require all of the data
  */
 export type MarginAccount = {
-  address: string;
+  address: Address;
   uniswapPool: string;
   token0: Token;
   token1: Token;
