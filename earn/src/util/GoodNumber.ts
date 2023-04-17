@@ -113,10 +113,18 @@ export class GN {
     return this.int.lte(other.int);
   }
 
+  /**
+   * Checks if the `GN` is equal to zero.
+   * @returns whether the `GN` is equal to zero.
+   */
   isZero() {
     return this.int.eq('0');
   }
 
+  /**
+   * Checks if the `GN` is greater than zero.
+   * @returns whether the `GN` is greater than zero.
+   */
   isGtZero() {
     return this.int.gt('0');
   }
