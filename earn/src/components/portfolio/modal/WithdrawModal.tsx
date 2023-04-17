@@ -88,15 +88,15 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const bigRequestedShares = requestedShares ? toBig(requestedShares) : new Big(0);
   // Being extra careful here to make sure we don't withdraw more than the user has
-  const finalRedeemAmount = bigRequestedShares.gt(maxRedeemBalance) ? maxRedeemBalance : bigRequestedShares;
+  const numberOfSharesToRedeem = bigRequestedShares.gt(maxRedeemBalance) ? maxRedeemBalance : bigRequestedShares;
 
   const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'redeem',
-    args: [finalRedeemAmount.toFixed(0), accountAddress, accountAddress],
+    args: [numberOfSharesToRedeem.toFixed(0), accountAddress, accountAddress],
     chainId: activeChain.id,
-    enabled: finalRedeemAmount.gt(0) && !isPending,
+    enabled: numberOfSharesToRedeem.gt(0) && !isPending,
   });
   const redeemUpdatedRequest = useMemo(() => {
     if (redeemConfig.request) {
@@ -133,7 +133,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (finalRedeemAmount.eq(0)) {
+  } else if (numberOfSharesToRedeem.eq(0)) {
     confirmButtonState = ConfirmButtonState.LOADING;
   }
 
