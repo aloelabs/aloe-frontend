@@ -88,33 +88,33 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const bigRequestedShares = requestedShares ? toBig(requestedShares) : new Big(0);
   // Being extra careful here to make sure we don't withdraw more than the user has
-  const finalWithdrawAmount = bigRequestedShares.gt(maxRedeemBalance) ? maxRedeemBalance : bigRequestedShares;
+  const finalRedeemAmount = bigRequestedShares.gt(maxRedeemBalance) ? maxRedeemBalance : bigRequestedShares;
 
-  const { config: withdrawConfig } = usePrepareContractWrite({
+  const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
     abi: KittyABI,
     functionName: 'redeem',
-    args: [finalWithdrawAmount.toFixed(), accountAddress, accountAddress],
+    args: [finalRedeemAmount.toFixed(0), accountAddress, accountAddress],
     chainId: activeChain.id,
-    enabled: finalWithdrawAmount.gt(0) && !isPending,
+    enabled: finalRedeemAmount.gt(0) && !isPending,
   });
-  const withdrawUpdatedRequest = useMemo(() => {
-    if (withdrawConfig.request) {
+  const redeemUpdatedRequest = useMemo(() => {
+    if (redeemConfig.request) {
       return {
-        ...withdrawConfig.request,
-        gasLimit: withdrawConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+        ...redeemConfig.request,
+        gasLimit: redeemConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
-  }, [withdrawConfig.request]);
+  }, [redeemConfig.request]);
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
   } = useContractWrite({
-    ...withdrawConfig,
-    request: withdrawUpdatedRequest,
+    ...redeemConfig,
+    request: redeemUpdatedRequest,
   });
 
   useEffect(() => {
@@ -133,7 +133,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (finalWithdrawAmount.eq(0)) {
+  } else if (finalRedeemAmount.eq(0)) {
     confirmButtonState = ConfirmButtonState.LOADING;
   }
 
