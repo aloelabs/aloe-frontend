@@ -218,7 +218,8 @@ export class GN {
    * const gn = GN.fromBigNumber(bn, decimals)
    * ```
    */
-  static fromBigNumber(int: BigNumber, decimals: number) {
+  static fromBigNumber(int: BigNumber | undefined, decimals: number) {
+    if (!int) return undefined;
     return new GN(int.toString(), decimals);
   }
 
