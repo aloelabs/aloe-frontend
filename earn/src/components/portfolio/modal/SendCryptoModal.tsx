@@ -1,13 +1,13 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useBalance, useContractWrite, useProvider } from 'wagmi';
+import { useAccount, useBalance, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
@@ -15,6 +15,7 @@ import { Token } from '../../../data/Token';
 import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
+const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -51,8 +52,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 type SendCryptoConfirmButtonProps = {
   sendAddress: string;
   isValidAddress: boolean;
-  sendAmount: string;
-  sendBalance: string;
+  sendAmount: Big;
+  sendBalance: Big;
   token: Token;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
@@ -64,8 +65,6 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const provider = useProvider({ chainId: activeChain.id });
-
-  const sendAmountBig = new Big(sendAmount).mul(String1E(token.decimals));
 
   useEffect(() => {
     let mounted = true;
@@ -86,17 +85,31 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     };
   }, [sendAddress, provider]);
 
+  const { config: sendCryptoConfig } = usePrepareContractWrite({
+    address: token.address,
+    abi: ERC20ABI,
+    functionName: 'transfer',
+    args: [resolvedAddress, sendAmount.toFixed()],
+    chainId: activeChain.id,
+    enabled: sendAmount.gt(0) && !isPending && resolvedAddress != null,
+  });
+  const sendCryptoUpdatedRequest = useMemo(() => {
+    if (sendCryptoConfig.request) {
+      return {
+        ...sendCryptoConfig.request,
+        gasLimit: sendCryptoConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [sendCryptoConfig.request]);
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
   } = useContractWrite({
-    address: token.address,
-    abi: ERC20ABI,
-    mode: 'recklesslyUnprepared',
-    functionName: 'transfer',
-    chainId: activeChain.id,
+    ...sendCryptoConfig,
+    request: sendCryptoUpdatedRequest,
   });
 
   useEffect(() => {
@@ -109,14 +122,11 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  const numericSendBalance = Number(sendBalance) || 0;
-  const numericSendAmount = Number(sendAmount) || 0;
-
   let confirmButtonState = ConfirmButtonState.READY;
 
   if (resolvedAddress == null) {
     confirmButtonState = ConfirmButtonState.INVALID_ADDRESS;
-  } else if (numericSendAmount > numericSendBalance) {
+  } else if (sendAmount.gt(sendBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
@@ -128,14 +138,11 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY) {
       setIsPending(true);
-      contractWrite?.({
-        recklesslySetUnpreparedArgs: [resolvedAddress, sendAmountBig.toFixed()],
-        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-      });
+      contractWrite?.();
     }
   }
 
-  const isDepositAmountValid = numericSendAmount > 0;
+  const isDepositAmountValid = sendAmount.gt(0);
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
@@ -199,6 +206,9 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   useEffect(() => {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
+
+  const bigSendAmount = new Big(sendAmountInputValue || 0).mul(String1E(selectedOption.decimals));
+  const bigSendBalance = new Big(depositBalance?.formatted ?? 0).mul(String1E(selectedOption.decimals));
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
@@ -274,8 +284,8 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
           <SendCryptoConfirmButton
             sendAddress={addressInputValue}
             isValidAddress={isValidAddress}
-            sendAmount={sendAmountInputValue || '0.00'}
-            sendBalance={depositBalance?.formatted ?? '0.00'}
+            sendAmount={bigSendAmount}
+            sendBalance={bigSendBalance}
             token={selectedOption}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);

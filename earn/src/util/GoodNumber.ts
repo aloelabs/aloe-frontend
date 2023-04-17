@@ -205,6 +205,10 @@ export class GN {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
+  static zero(decimals: number) {
+    return new GN('0', decimals);
+  }
+
   /**
    * Converts a fixed-point integer (stored as a BigNumber) to a `GN`
    * @param int The fixed-point integer as a BigNumber
@@ -218,8 +222,7 @@ export class GN {
    * const gn = GN.fromBigNumber(bn, decimals)
    * ```
    */
-  static fromBigNumber(int: BigNumber | undefined, decimals: number) {
-    if (!int) return undefined;
+  static fromBigNumber(int: BigNumber, decimals: number) {
     return new GN(int.toString(), decimals);
   }
 
