@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
 import { ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
@@ -12,7 +11,8 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite, useP
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import { Token } from '../../../data/Token';
-import { formatNumberInput, String1E, truncateDecimals } from '../../../util/Numbers';
+import { GN, GNFormat } from '../../../util/GoodNumber';
+import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
@@ -52,8 +52,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 type SendCryptoConfirmButtonProps = {
   sendAddress: string;
   isValidAddress: boolean;
-  sendAmount: Big;
-  sendBalance: Big;
+  sendAmount: GN;
+  sendBalance: GN;
   token: Token;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
@@ -89,9 +89,9 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     address: token.address,
     abi: ERC20ABI,
     functionName: 'transfer',
-    args: [resolvedAddress, sendAmount.toFixed()],
+    args: [resolvedAddress, sendAmount.toString(GNFormat.INT)],
     chainId: activeChain.id,
-    enabled: sendAmount.gt(0) && !isPending && resolvedAddress != null,
+    enabled: sendAmount.isPositive() && !isPending && resolvedAddress != null,
   });
   const sendCryptoUpdatedRequest = useMemo(() => {
     if (sendCryptoConfig.request) {
@@ -142,7 +142,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     }
   }
 
-  const isDepositAmountValid = sendAmount.gt(0);
+  const isDepositAmountValid = sendAmount.isPositive();
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
@@ -207,8 +207,12 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
 
-  const bigSendAmount = new Big(sendAmountInputValue || 0).mul(String1E(selectedOption.decimals));
-  const bigSendBalance = new Big(depositBalance?.formatted ?? 0).mul(String1E(selectedOption.decimals));
+  const gnSendAmount = sendAmountInputValue
+    ? GN.fromDecimalString(sendAmountInputValue, selectedOption.decimals)
+    : GN.fromDecimalString('0', selectedOption.decimals);
+  const gnSendBalance =
+    GN.fromBigNumber(depositBalance?.value, selectedOption.decimals) ??
+    GN.fromDecimalString('0', selectedOption.decimals);
 
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
@@ -284,8 +288,8 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
           <SendCryptoConfirmButton
             sendAddress={addressInputValue}
             isValidAddress={isValidAddress}
-            sendAmount={bigSendAmount}
-            sendBalance={bigSendBalance}
+            sendAmount={gnSendAmount}
+            sendBalance={gnSendBalance}
             token={selectedOption}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);

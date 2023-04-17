@@ -113,6 +113,14 @@ export class GN {
     return this.int.lte(other.int);
   }
 
+  isZero() {
+    return this.int.eq('0');
+  }
+
+  isPositive() {
+    return this.int.gt('0');
+  }
+
   static max(a: GN, b: GN) {
     return a.gt(b) ? a : b;
   }
