@@ -1,4 +1,4 @@
-import Big, { BigConstructor } from 'big.js';
+import Big, { BigConstructor, BigSource } from 'big.js';
 import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 
@@ -6,6 +6,10 @@ import { formatTokenAmount, formatTokenAmountCompact } from './Numbers';
 
 function scalerFor(decimals: number) {
   return `1${'0'.repeat(decimals)}`;
+}
+
+function isInteger(x: Big) {
+  return x.round(0, Big.roundDown).eq(x);
 }
 
 export enum GNFormat {
@@ -46,7 +50,7 @@ export class GN {
     this.scaler = scalerFor(this.decimals);
     this.int = new this.Int(int);
 
-    if (!this.int.round(0, Big.roundDown).eq(this.int)) {
+    if (!isInteger(this.int)) {
       throw new Error('Tried to construct `GN` with non-integer string');
     }
   }
@@ -141,6 +145,22 @@ export class GN {
 
   sqrt() {
     return GN.fromDecimalBig(this.x().sqrt(), this.decimals);
+  }
+
+  recklessMul(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.times(other).toFixed(0), this.decimals);
+  }
+
+  recklessDiv(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.div(other).toFixed(0), this.decimals);
   }
 
   /*//////////////////////////////////////////////////////////////
