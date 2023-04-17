@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -55,7 +55,7 @@ type WithdrawButtonProps = {
 };
 
 function WithdrawButton(props: WithdrawButtonProps) {
-  const { withdrawAmount, maxWithdrawBalance, maxRedeemBalance, token, kitty, accountAddress, setPendingTxn } = props;
+  const { withdrawAmount, maxWithdrawBalance, maxRedeemBalance, kitty, accountAddress, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
@@ -64,7 +64,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     address: kitty.address,
     abi: KittyABI,
     functionName: 'convertToShares',
-    args: [ethers.utils.parseUnits(withdrawAmount.toFixed(token.decimals), token.decimals)],
+    args: [withdrawAmount.toFixed(0)],
     chainId: activeChain.id,
   }) as { data: BigNumber | undefined; isLoading: boolean };
 
