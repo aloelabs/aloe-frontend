@@ -55,7 +55,6 @@ export class GN {
     const Decimal = Big();
     Decimal.DP = this.decimals;
     Decimal.RM = Big.roundDown;
-    Decimal.strict = true;
 
     return new Decimal(this.int.toFixed(0)).div(this.scaler);
   }
@@ -163,26 +162,75 @@ export class GN {
     }
   }
 
+  /**
+   * Converts to `BigNumber` without loss of precision.
+   * @returns Equivalent `BigNumber`
+   */
   toBigNumber() {
     return BigNumber.from(this.toString(GNFormat.LOSSLESS_INT));
   }
 
+  /**
+   * Converts to `JSBI.BigInt` without loss of precision.
+   * @returns Equivalent `JSBI.BigInt`
+   */
   toJSBI() {
     return JSBI.BigInt(this.toString(GNFormat.LOSSLESS_INT));
   }
 
+  /**
+   * Converts a fixed-point integer (stored as a BigNumber) to a `GN`
+   * @param int The fixed-point integer as a BigNumber
+   * @param decimals The power of 10 used to compute the fixed-point scaling factor
+   * @returns Equivalent `GN`
+   *
+   * @example
+   * ```
+   * const bn = await erc20.balanceOf(userAddress);
+   * const decimals = await erc20.decimals();
+   * const gn = GN.fromBigNumber(bn, decimals)
+   * ```
+   */
   static fromBigNumber(int: BigNumber, decimals: number) {
     return new GN(int.toString(), decimals);
   }
 
+  /**
+   * Converts a fixed-point integer (stored as a BigInt) to a `GN`
+   * @param int The fixed-point integer as a JSBI.BigInt
+   * @param decimals The power of 10 used to compute the fixed-point scaling factor
+   * @returns Equivalent `GN`
+   *
+   * @example
+   * ```
+   * const amount = GN.fromJSBI(JSBI.BigInt('1000001'), 6);
+   * amount.toString(GNFormat.LOSSLESS_DECIMAL); // 1.000001
+   * ```
+   */
   static fromJSBI(int: JSBI, decimals: number) {
     return new GN(int.toString(10), decimals);
   }
 
+  /**
+   * Converts a decimal number (stored as a Big) to a `GN`
+   * @param x The decimal number as a Big. Decimal places beyond `decimals` will be cut off.
+   * @param decimals The number's precision, i.e. the number of decimal places that should be printed
+   * when expressing the number in standard notation.
+   * @returns Equivalent `GN`
+   */
   static fromDecimalBig(x: Big, decimals: number) {
     return new GN(x.mul(scalerFor(decimals)).toFixed(0), decimals);
   }
 
+  /**
+   * Converts a decimal number (stored as a string) to a `GN`. Useful for handling user input in text fields, e.g.
+   * when they enter a token amount.
+   * @param x The decimal number as a string. May be in standard or scientific notation. Decimal places
+   * beyond `decimals` will be cut off.
+   * @param decimals The number's precision, i.e. the number of decimal places that should be printed
+   * when expressing the number in standard notation.
+   * @returns Equivalent `GN`
+   */
   static fromDecimalString(x: string, decimals: number) {
     return GN.fromDecimalBig(new Big(x), decimals);
   }
