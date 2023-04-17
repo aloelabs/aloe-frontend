@@ -115,16 +115,17 @@ function DepositButton(props: DepositButtonProps) {
     args: [
       kitty.address,
       permit2Result.amount.toBigNumber(),
-      permit2Result?.nonce,
-      permit2Result?.deadline,
-      permit2Result?.signature,
+      permit2Result.nonce,
+      permit2Result.deadline,
+      permit2Result.signature,
     ],
     chainId: activeChain.id,
     enabled:
       // TODO: utlize isGtZero once it's added
       depositAmount.gt(GN.fromDecimalString('0', token.decimals)) &&
       depositAmount.lte(depositBalance) &&
-      permit2Result !== undefined,
+      permit2Result.nonce !== null &&
+      permit2Result.signature !== undefined,
   });
   const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
     if (depsitWithPermit2Config.request) {

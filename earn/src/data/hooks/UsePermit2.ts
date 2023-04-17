@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { BigNumber, ethers } from 'ethers';
 import {
@@ -12,7 +12,7 @@ import {
 } from 'wagmi';
 
 import { permit2ABI } from '../../abis/Permit2';
-import { firstZeroBitIn } from '../../util/Bitmap';
+import { bigNumberToBinary } from '../../util/Bitmap';
 import { GN, GNFormat } from '../../util/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
@@ -145,7 +145,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
       enabled: !shouldApprove,
     });
 
-    if (computeDomainSeparator(domain) !== domainSeparator && domainSeparator !== undefined) {
+    if (domainSeparator && domainSeparator !== computeDomainSeparator(domain)) {
       console.log('domain', domain, 'domainSeparator', domainSeparator);
       throw new Error(`Permit2 on ${chain.name} is reporting an unexpected DOMAIN_SEPARATOR`);
     }
@@ -175,7 +175,8 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
       return;
     }
 
-    const nonceBitPos = `0x${firstZeroBitIn(nonceBitmap).toString(16)}`;
+    const nonceBitmapStr = bigNumberToBinary(nonceBitmap).padStart(256, '0');
+    const nonceBitPos = 255 - nonceBitmapStr.lastIndexOf('0');
     const nonce = nonceWordPos.shl(8).add(nonceBitPos);
 
     setNonce(nonce.toString());
@@ -210,25 +211,32 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
                               SIGNING
   //////////////////////////////////////////////////////////////*/
 
-  const permitTransferFrom: PermitTransferFrom = {
-    permitted: {
-      token: token.address,
-      amount: amount.toString(GNFormat.INT),
-    },
-    spender: spender,
-    nonce: nonce ?? '0',
-    deadline: deadline,
-  };
+  const permitTransferFrom: PermitTransferFrom = useMemo(() => {
+    return {
+      permitted: {
+        token: token.address,
+        amount: amount.toString(GNFormat.INT),
+      },
+      spender: spender,
+      nonce: nonce ?? '0',
+      deadline: deadline,
+    };
+  }, [token, amount, spender, nonce, deadline]);
 
   const {
     signTypedData,
     isLoading: isLoading1,
     data: signature,
+    reset: resetSignature,
   } = useSignTypedData({
     domain,
     types: PERMIT2_MESSAGE_TYPES,
     value: permitTransferFrom,
   });
+
+  useEffect(() => {
+    resetSignature();
+  }, [resetSignature, permitTransferFrom]);
 
   const steps = [writeAllowance, signTypedData] as const;
   const nextStep = shouldApprove ? 0 : 1;
