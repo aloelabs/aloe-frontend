@@ -18,6 +18,7 @@ function isInteger(x: Big) {
 export enum GNFormat {
   INT,
   DECIMAL,
+  DECIMAL_WITH_TRAILING_ZEROS,
   LOSSY_HUMAN,
   LOSSY_HUMAN_COMPACT,
 }
@@ -170,11 +171,13 @@ export class GN {
                               CONVERSION
   //////////////////////////////////////////////////////////////*/
 
-  toString(format: GNFormat) {
+  toString(format = GNFormat.INT) {
     switch (format) {
       case GNFormat.INT:
         return this.int.toFixed(0);
       case GNFormat.DECIMAL:
+        return this.x().toFixed();
+      case GNFormat.DECIMAL_WITH_TRAILING_ZEROS:
         return this.x().toFixed(this.decimals);
       case GNFormat.LOSSY_HUMAN:
         // TODO: Bring logic in here instead of calling formatTokenAmount
