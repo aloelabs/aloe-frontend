@@ -158,7 +158,7 @@ function DepositButton(props: DepositButtonProps) {
     GN.fromDecimalString(depositAmount !== '' ? depositAmount : '0', token.decimals)
   );
 
-  console.log(permit2Result);
+  console.log(permit2Result, steps, isLoading);
 
   const {
     refetch: refetchKittyBalance,
@@ -185,173 +185,204 @@ function DepositButton(props: DepositButtonProps) {
   // TODO: Temporarily disabled (we should add feature flags)
   const courierId = referralCourierId; // || FRONTEND_COURIER_ID;
 
-  const needsToPermitCourier =
-    courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
-
-  // Approval flow
-  const { config: depositWithApprovalConfig, refetch: refetchDepositWithApproval } = usePrepareContractWrite({
+  const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
-    functionName: 'depositWithApprove(address,uint256)',
-    args: [kitty.address, parsedDepositAmount],
+    functionName: 'depositWithPermit2(address,uint256,uint256,uint256,bytes)',
+    args: [kitty.address, parsedDepositAmount, permit2Result?.nonce, permit2Result?.deadline, permit2Result?.signature],
     chainId: activeChain.id,
     enabled:
       depositAmount !== '' &&
       numericDepositAmount <= numericDepositBalance &&
       numericDepositAmount > 0 &&
-      !needsApproval &&
-      permitDomain === null,
+      permit2Result !== undefined,
   });
-  const depositWithApprovalConfigUpdatedRequest = useMemo(() => {
-    if (depositWithApprovalConfig.request) {
+  const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
+    if (depsitWithPermit2Config.request) {
       return {
-        ...depositWithApprovalConfig.request,
-        gasLimit: depositWithApprovalConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+        ...depsitWithPermit2Config.request,
+        gasLimit: depsitWithPermit2Config.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
-  }, [depositWithApprovalConfig.request]);
+  }, [depsitWithPermit2Config.request]);
   const {
-    write: depositUsingApprovalFlow,
-    isError: isErrorApprovalFlow,
-    isSuccess: successfullyDepositedWithApproval,
-    data: approvalFlowData,
+    write: depositWithPermit2,
+    isError: contractDidError,
+    isSuccess: contractDidSucceed,
+    data: contractData,
   } = useContractWrite({
-    ...depositWithApprovalConfig,
-    request: depositWithApprovalConfigUpdatedRequest,
+    ...depsitWithPermit2Config,
+    request: depositWithPermit2ConfigUpdatedRequest,
   });
 
-  // Approval flow with courier
-  const { config: depositUsingApprovalWithCourierConfig, refetch: refetchDepositUsingApprovalWithCourier } =
-    usePrepareContractWrite({
-      address: ALOE_II_ROUTER_ADDRESS,
-      abi: RouterABI,
-      functionName: 'depositWithApprove(address,uint256,uint32,uint256,uint8,bytes32,bytes32)',
-      args: [
-        kitty.address,
-        parsedDepositAmount,
-        courierId,
-        courierPermitData?.deadline,
-        courierPermitData?.signature.v,
-        courierPermitData?.signature.r,
-        courierPermitData?.signature.s,
-      ],
-      chainId: activeChain.id,
-      enabled:
-        depositAmount !== '' &&
-        numericDepositAmount <= numericDepositBalance &&
-        numericDepositAmount > 0 &&
-        courierId !== null &&
-        !needsApproval &&
-        !permitDomain,
-    });
-  const depositUsingApprovalWithCourierConfigUpdatedRequest = useMemo(() => {
-    if (depositUsingApprovalWithCourierConfig.request) {
-      return {
-        ...depositUsingApprovalWithCourierConfig.request,
-        gasLimit: depositUsingApprovalWithCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [depositUsingApprovalWithCourierConfig.request]);
-  const {
-    write: depositUsingApprovalFlowWithCourier,
-    isError: isErrorApprovalFlowWithCourier,
-    isSuccess: successfullyDepositedWithApprovalWithCourier,
-    data: approvalFlowDataWithCourier,
-  } = useContractWrite({
-    ...depositUsingApprovalWithCourierConfig,
-    request: depositUsingApprovalWithCourierConfigUpdatedRequest,
-  });
+  // const needsToPermitCourier =
+  //   courierId != null && numericKittyBalance != null && numericKittyBalance.eq(0) && !courierPermitData;
 
-  // Permit flow
-  const { config: depositWithPermitConfig, refetch: refetchDepositWithPermit } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName: 'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32)',
-    args: [
-      kitty.address,
-      parsedDepositAmount,
-      permitData?.approve.value,
-      permitData?.deadline,
-      permitData?.signature.v,
-      permitData?.signature.r,
-      permitData?.signature.s,
-    ],
-    chainId: activeChain.id,
-    enabled:
-      depositAmount !== '' &&
-      numericDepositAmount <= numericDepositBalance &&
-      numericDepositAmount > 0 &&
-      permitDomain !== null &&
-      permitData !== undefined,
-  });
-  const depositWithPermitConfigUpdatedRequest = useMemo(() => {
-    if (depositWithPermitConfig.request) {
-      return {
-        ...depositWithPermitConfig.request,
-        gasLimit: depositWithPermitConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [depositWithPermitConfig.request]);
-  const {
-    write: depositUsingPermitFlow,
-    isError: isErrorPermitFlow,
-    isSuccess: successfullyDepositedWithPermit,
-    data: permitFlowData,
-  } = useContractWrite({
-    ...depositWithPermitConfig,
-    request: depositWithPermitConfigUpdatedRequest,
-  });
+  // // Approval flow
+  // const { config: depositWithApprovalConfig, refetch: refetchDepositWithApproval } = usePrepareContractWrite({
+  //   address: ALOE_II_ROUTER_ADDRESS,
+  //   abi: RouterABI,
+  //   functionName: 'depositWithApprove(address,uint256)',
+  //   args: [kitty.address, parsedDepositAmount],
+  //   chainId: activeChain.id,
+  //   enabled:
+  //     depositAmount !== '' &&
+  //     numericDepositAmount <= numericDepositBalance &&
+  //     numericDepositAmount > 0 &&
+  //     !needsApproval &&
+  //     permitDomain === null,
+  // });
+  // const depositWithApprovalConfigUpdatedRequest = useMemo(() => {
+  //   if (depositWithApprovalConfig.request) {
+  //     return {
+  //       ...depositWithApprovalConfig.request,
+  //       gasLimit: depositWithApprovalConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+  //     };
+  //   }
+  //   return undefined;
+  // }, [depositWithApprovalConfig.request]);
+  // const {
+  //   write: depositUsingApprovalFlow,
+  //   isError: isErrorApprovalFlow,
+  //   isSuccess: successfullyDepositedWithApproval,
+  //   data: approvalFlowData,
+  // } = useContractWrite({
+  //   ...depositWithApprovalConfig,
+  //   request: depositWithApprovalConfigUpdatedRequest,
+  // });
 
-  // Permit flow with courier
-  const { config: depositWithPermitCourierConfig, refetch: refetchDepositWithPermitCourier } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName:
-      'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32,uint32,uint8,bytes32,bytes32)',
-    args: [
-      kitty.address,
-      parsedDepositAmount,
-      permitData?.approve.value,
-      permitData?.deadline,
-      permitData?.signature.v,
-      permitData?.signature.r,
-      permitData?.signature.s,
-      courierId,
-      courierPermitData?.signature.v,
-      courierPermitData?.signature.r,
-      courierPermitData?.signature.s,
-    ],
-    chainId: activeChain.id,
-    enabled:
-      depositAmount !== '' &&
-      numericDepositAmount <= numericDepositBalance &&
-      numericDepositAmount > 0 &&
-      permitData !== undefined &&
-      permitDomain !== null &&
-      courierId !== 0 &&
-      courierPermitData !== undefined,
-  });
-  const depositWithPermitCourierConfigUpdatedRequest = useMemo(() => {
-    if (depositWithPermitCourierConfig.request) {
-      return {
-        ...depositWithPermitCourierConfig.request,
-        gasLimit: depositWithPermitCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [depositWithPermitCourierConfig.request]);
-  const {
-    write: depositUsingPermitFlowWithCourier,
-    isError: isErrorPermitFlowWithCourier,
-    isSuccess: successfullyDepositedWithPermitWithCourier,
-    data: permitFlowDataWithCourier,
-  } = useContractWrite({
-    ...depositWithPermitCourierConfig,
-    request: depositWithPermitCourierConfigUpdatedRequest,
-  });
+  // // Approval flow with courier
+  // const { config: depositUsingApprovalWithCourierConfig, refetch: refetchDepositUsingApprovalWithCourier } =
+  //   usePrepareContractWrite({
+  //     address: ALOE_II_ROUTER_ADDRESS,
+  //     abi: RouterABI,
+  //     functionName: 'depositWithApprove(address,uint256,uint32,uint256,uint8,bytes32,bytes32)',
+  //     args: [
+  //       kitty.address,
+  //       parsedDepositAmount,
+  //       courierId,
+  //       courierPermitData?.deadline,
+  //       courierPermitData?.signature.v,
+  //       courierPermitData?.signature.r,
+  //       courierPermitData?.signature.s,
+  //     ],
+  //     chainId: activeChain.id,
+  //     enabled:
+  //       depositAmount !== '' &&
+  //       numericDepositAmount <= numericDepositBalance &&
+  //       numericDepositAmount > 0 &&
+  //       courierId !== null &&
+  //       !needsApproval &&
+  //       !permitDomain,
+  //   });
+  // const depositUsingApprovalWithCourierConfigUpdatedRequest = useMemo(() => {
+  //   if (depositUsingApprovalWithCourierConfig.request) {
+  //     return {
+  //       ...depositUsingApprovalWithCourierConfig.request,
+  //       gasLimit: depositUsingApprovalWithCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+  //     };
+  //   }
+  //   return undefined;
+  // }, [depositUsingApprovalWithCourierConfig.request]);
+  // const {
+  //   write: depositUsingApprovalFlowWithCourier,
+  //   isError: isErrorApprovalFlowWithCourier,
+  //   isSuccess: successfullyDepositedWithApprovalWithCourier,
+  //   data: approvalFlowDataWithCourier,
+  // } = useContractWrite({
+  //   ...depositUsingApprovalWithCourierConfig,
+  //   request: depositUsingApprovalWithCourierConfigUpdatedRequest,
+  // });
+
+  // // Permit flow
+  // const { config: depositWithPermitConfig, refetch: refetchDepositWithPermit } = usePrepareContractWrite({
+  //   address: ALOE_II_ROUTER_ADDRESS,
+  //   abi: RouterABI,
+  //   functionName: 'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32)',
+  //   args: [
+  //     kitty.address,
+  //     parsedDepositAmount,
+  //     permitData?.approve.value,
+  //     permitData?.deadline,
+  //     permitData?.signature.v,
+  //     permitData?.signature.r,
+  //     permitData?.signature.s,
+  //   ],
+  //   chainId: activeChain.id,
+  //   enabled:
+  //     depositAmount !== '' &&
+  //     numericDepositAmount <= numericDepositBalance &&
+  //     numericDepositAmount > 0 &&
+  //     permitDomain !== null &&
+  //     permitData !== undefined,
+  // });
+  // const depositWithPermitConfigUpdatedRequest = useMemo(() => {
+  //   if (depositWithPermitConfig.request) {
+  //     return {
+  //       ...depositWithPermitConfig.request,
+  //       gasLimit: depositWithPermitConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+  //     };
+  //   }
+  //   return undefined;
+  // }, [depositWithPermitConfig.request]);
+  // const {
+  //   write: depositUsingPermitFlow,
+  //   isError: isErrorPermitFlow,
+  //   isSuccess: successfullyDepositedWithPermit,
+  //   data: permitFlowData,
+  // } = useContractWrite({
+  //   ...depositWithPermitConfig,
+  //   request: depositWithPermitConfigUpdatedRequest,
+  // });
+
+  // // Permit flow with courier
+  // const { config: depositWithPermitCourierConfig, refetch: refetchDepositWithPermitCourier } = usePrepareContractWrite({
+  //   address: ALOE_II_ROUTER_ADDRESS,
+  //   abi: RouterABI,
+  //   functionName:
+  //     'depositWithPermit(address,uint256,uint256,uint256,uint8,bytes32,bytes32,uint32,uint8,bytes32,bytes32)',
+  //   args: [
+  //     kitty.address,
+  //     parsedDepositAmount,
+  //     permitData?.approve.value,
+  //     permitData?.deadline,
+  //     permitData?.signature.v,
+  //     permitData?.signature.r,
+  //     permitData?.signature.s,
+  //     courierId,
+  //     courierPermitData?.signature.v,
+  //     courierPermitData?.signature.r,
+  //     courierPermitData?.signature.s,
+  //   ],
+  //   chainId: activeChain.id,
+  //   enabled:
+  //     depositAmount !== '' &&
+  //     numericDepositAmount <= numericDepositBalance &&
+  //     numericDepositAmount > 0 &&
+  //     permitData !== undefined &&
+  //     permitDomain !== null &&
+  //     courierId !== 0 &&
+  //     courierPermitData !== undefined,
+  // });
+  // const depositWithPermitCourierConfigUpdatedRequest = useMemo(() => {
+  //   if (depositWithPermitCourierConfig.request) {
+  //     return {
+  //       ...depositWithPermitCourierConfig.request,
+  //       gasLimit: depositWithPermitCourierConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+  //     };
+  //   }
+  //   return undefined;
+  // }, [depositWithPermitCourierConfig.request]);
+  // const {
+  //   write: depositUsingPermitFlowWithCourier,
+  //   isError: isErrorPermitFlowWithCourier,
+  //   isSuccess: successfullyDepositedWithPermitWithCourier,
+  //   data: permitFlowDataWithCourier,
+  // } = useContractWrite({
+  //   ...depositWithPermitCourierConfig,
+  //   request: depositWithPermitCourierConfigUpdatedRequest,
+  // });
 
   const erc20Contract = useMemo(() => new ethers.Contract(token.address, ERC20ABI, provider), [token, provider]);
   const kittyContract = useMemo(() => new ethers.Contract(kitty.address, KittyABI, provider), [kitty, provider]);
@@ -388,14 +419,14 @@ function DepositButton(props: DepositButtonProps) {
     };
   }, [erc20Contract, activeChain.id]);
 
-  const contractDidError =
-    isErrorApprovalFlow || isErrorPermitFlow || isErrorPermitFlowWithCourier || isErrorApprovalFlowWithCourier;
-  const contractDidSucceed =
-    successfullyDepositedWithApproval ||
-    successfullyDepositedWithPermit ||
-    successfullyDepositedWithPermitWithCourier ||
-    successfullyDepositedWithApprovalWithCourier;
-  const contractData = approvalFlowData ?? permitFlowData ?? permitFlowDataWithCourier ?? approvalFlowDataWithCourier;
+  // const contractDidError =
+  //   isErrorApprovalFlow || isErrorPermitFlow || isErrorPermitFlowWithCourier || isErrorApprovalFlowWithCourier;
+  // const contractDidSucceed =
+  //   successfullyDepositedWithApproval ||
+  //   successfullyDepositedWithPermit ||
+  //   successfullyDepositedWithPermitWithCourier ||
+  //   successfullyDepositedWithApprovalWithCourier;
+  // const contractData = approvalFlowData ?? permitFlowData ?? permitFlowDataWithCourier ?? approvalFlowDataWithCourier;
 
   useEffect(() => {
     // Reset permit data when token changes
@@ -416,164 +447,180 @@ function DepositButton(props: DepositButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (permitDomain !== null) {
-    if (isPending) {
-      confirmButtonState = ConfirmButtonState.PENDING;
-    } else if (numericDepositAmount > numericDepositBalance) {
-      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-    } else if (needsToPermitCourier && referralCourierId !== null) {
-      confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
-    } else if (needsToPermitCourier) {
-      confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
-    } else if (!permitData) {
-      confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
-    }
-  } else {
-    if (isPending) {
-      confirmButtonState = ConfirmButtonState.PENDING;
-    } else if (numericDepositAmount > numericDepositBalance) {
-      confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-    } else if (loadingApproval) {
-      confirmButtonState = ConfirmButtonState.LOADING;
-    } else if (needsToPermitCourier && referralCourierId !== null) {
-      confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
-    } else if (needsToPermitCourier) {
-      confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
-    } else if (needsApproval && isPending) {
-      confirmButtonState = ConfirmButtonState.PENDING;
-    } else if (needsApproval) {
-      confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-    }
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (numericDepositAmount > numericDepositBalance) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else if (isLoading) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   }
+
+  // if (permitDomain !== null) {
+  //   if (isPending) {
+  //     confirmButtonState = ConfirmButtonState.PENDING;
+  //   } else if (numericDepositAmount > numericDepositBalance) {
+  //     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  //   } else if (needsToPermitCourier && referralCourierId !== null) {
+  //     confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
+  //   } else if (needsToPermitCourier) {
+  //     confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
+  //   } else if (!permitData) {
+  //     confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
+  //   }
+  // } else {
+  //   if (isPending) {
+  //     confirmButtonState = ConfirmButtonState.PENDING;
+  //   } else if (numericDepositAmount > numericDepositBalance) {
+  //     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  //   } else if (loadingApproval) {
+  //     confirmButtonState = ConfirmButtonState.LOADING;
+  //   } else if (needsToPermitCourier && referralCourierId !== null) {
+  //     confirmButtonState = ConfirmButtonState.PERMIT_COURIER_REFERRAL;
+  //   } else if (needsToPermitCourier) {
+  //     confirmButtonState = ConfirmButtonState.PERMIT_COURIER;
+  //   } else if (needsApproval && isPending) {
+  //     confirmButtonState = ConfirmButtonState.PENDING;
+  //   } else if (needsApproval) {
+  //     confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
+  //   }
+  // }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
     console.log('HERE');
     const step = steps[nextStep];
+    console.log('step', nextStep);
     if (step && !permit2Result.signature) {
       console.log('THERE');
       step();
       return;
     }
-
-    // TODO: Do not use setStates in async functions outside of useEffect
-    switch (confirmButtonState) {
-      case ConfirmButtonState.APPROVE_ASSET:
-        setIsPending(true);
-        writeAllowanceToken
-          .writeAsync?.()
-          .then((txnResult) => {
-            txnResult.wait(1).then(() => {
-              setIsPending(false);
-              refetchUserAllowance();
-            });
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
-        break;
-      case ConfirmButtonState.PERMIT_ASSET:
-        setIsPending(true);
-
-        const approve = {
-          owner: accountAddress,
-          spender: ALOE_II_ROUTER_ADDRESS,
-          value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
-        };
-        const deadline = courierPermitData?.deadline ?? (Date.now() / 1000 + 60 * 5).toFixed(0);
-
-        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline)
-          .then((signature) => {
-            setPermitData({ signature, approve, deadline });
-          })
-          .finally(() => {
-            setIsPending(false);
-          });
-
-        break;
-      case ConfirmButtonState.PERMIT_COURIER:
-        setIsPending(true);
-
-        const approveWithCourier = {
-          owner: accountAddress,
-          spender: ALOE_II_ROUTER_ADDRESS,
-          value: 1,
-        };
-        const deadlineWithCourier = (Date.now() / 1000 + 60 * 5).toFixed(0);
-
-        attemptToInferPermitDomain(kittyContract, activeChain.id)
-          .then((kittyDomain) => {
-            if (kittyDomain === null) {
-              console.error('This should never happen. We know that Lender domains exist.');
-            }
-            getErc2612Signature(signer!, kittyContract, kittyDomain!, approveWithCourier, deadlineWithCourier).then(
-              (signature) => {
-                setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
-                setIsPending(false);
-              }
-            );
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
-
-        break;
-      case ConfirmButtonState.READY:
-        setIsPending(true);
-
-        if (permitData && courierPermitData && courierId) {
-          if (!depositWithPermitCourierConfig.request) {
-            console.error('Cannot deposit with undefined request');
-            refetchDepositWithPermitCourier().then((result) => {
-              if (result) {
-                console.log('depositWithPermitCourierConfig.request', depositWithPermitCourierConfig.request, result);
-                depositUsingPermitFlowWithCourier?.();
-              }
-            });
-          }
-          depositUsingPermitFlowWithCourier?.();
-        } else if (permitData) {
-          if (!depositWithPermitConfig.request) {
-            console.error('Cannot deposit with undefined request');
-            refetchDepositWithPermit().then((result) => {
-              if (result) {
-                depositUsingPermitFlow?.();
-              }
-            });
-            break;
-          }
-          depositUsingPermitFlow?.();
-        } else if (!permitData && courierPermitData && courierId) {
-          if (!depositUsingApprovalWithCourierConfig.request) {
-            console.error('Cannot deposit with undefined request');
-            refetchDepositUsingApprovalWithCourier().then((result) => {
-              if (result) {
-                depositUsingApprovalFlowWithCourier?.();
-              }
-            });
-          }
-          depositUsingApprovalFlowWithCourier?.();
-        } else {
-          if (!depositWithApprovalConfig.request) {
-            console.error('Cannot deposit with undefined request');
-            refetchDepositWithApproval().then((result) => {
-              if (result) {
-                depositUsingApprovalFlow?.();
-              }
-            });
-          }
-          depositUsingApprovalFlow?.();
-        }
-        break;
-      default:
-        break;
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (depsitWithPermit2Config.request) {
+        depositWithPermit2?.();
+      } else {
+        refetchDepositWithPermit2();
+      }
     }
+
+    //   // TODO: Do not use setStates in async functions outside of useEffect
+    //   switch (confirmButtonState) {
+    //     case ConfirmButtonState.APPROVE_ASSET:
+    //       setIsPending(true);
+    //       writeAllowanceToken
+    //         .writeAsync?.()
+    //         .then((txnResult) => {
+    //           txnResult.wait(1).then(() => {
+    //             setIsPending(false);
+    //             refetchUserAllowance();
+    //           });
+    //         })
+    //         .catch((error) => {
+    //           setIsPending(false);
+    //         });
+    //       break;
+    //     case ConfirmButtonState.PERMIT_ASSET:
+    //       setIsPending(true);
+
+    //       const approve = {
+    //         owner: accountAddress,
+    //         spender: ALOE_II_ROUTER_ADDRESS,
+    //         value: ethers.utils.parseUnits(depositAmount, token.decimals).add(1),
+    //       };
+    //       const deadline = courierPermitData?.deadline ?? (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+    //       getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline)
+    //         .then((signature) => {
+    //           setPermitData({ signature, approve, deadline });
+    //         })
+    //         .finally(() => {
+    //           setIsPending(false);
+    //         });
+
+    //       break;
+    //     case ConfirmButtonState.PERMIT_COURIER:
+    //       setIsPending(true);
+
+    //       const approveWithCourier = {
+    //         owner: accountAddress,
+    //         spender: ALOE_II_ROUTER_ADDRESS,
+    //         value: 1,
+    //       };
+    //       const deadlineWithCourier = (Date.now() / 1000 + 60 * 5).toFixed(0);
+
+    //       attemptToInferPermitDomain(kittyContract, activeChain.id)
+    //         .then((kittyDomain) => {
+    //           if (kittyDomain === null) {
+    //             console.error('This should never happen. We know that Lender domains exist.');
+    //           }
+    //           getErc2612Signature(signer!, kittyContract, kittyDomain!, approveWithCourier, deadlineWithCourier).then(
+    //             (signature) => {
+    //               setCourierPermitData({ signature, approve: approveWithCourier, deadline: deadlineWithCourier });
+    //               setIsPending(false);
+    //             }
+    //           );
+    //         })
+    //         .catch((error) => {
+    //           setIsPending(false);
+    //         });
+
+    //       break;
+    //     case ConfirmButtonState.READY:
+    //       setIsPending(true);
+
+    //       if (permitData && courierPermitData && courierId) {
+    //         if (!depositWithPermitCourierConfig.request) {
+    //           console.error('Cannot deposit with undefined request');
+    //           refetchDepositWithPermitCourier().then((result) => {
+    //             if (result) {
+    //               console.log('depositWithPermitCourierConfig.request', depositWithPermitCourierConfig.request, result);
+    //               depositUsingPermitFlowWithCourier?.();
+    //             }
+    //           });
+    //         }
+    //         depositUsingPermitFlowWithCourier?.();
+    //       } else if (permitData) {
+    //         if (!depositWithPermitConfig.request) {
+    //           console.error('Cannot deposit with undefined request');
+    //           refetchDepositWithPermit().then((result) => {
+    //             if (result) {
+    //               depositUsingPermitFlow?.();
+    //             }
+    //           });
+    //           break;
+    //         }
+    //         depositUsingPermitFlow?.();
+    //       } else if (!permitData && courierPermitData && courierId) {
+    //         if (!depositUsingApprovalWithCourierConfig.request) {
+    //           console.error('Cannot deposit with undefined request');
+    //           refetchDepositUsingApprovalWithCourier().then((result) => {
+    //             if (result) {
+    //               depositUsingApprovalFlowWithCourier?.();
+    //             }
+    //           });
+    //         }
+    //         depositUsingApprovalFlowWithCourier?.();
+    //       } else {
+    //         if (!depositWithApprovalConfig.request) {
+    //           console.error('Cannot deposit with undefined request');
+    //           refetchDepositWithApproval().then((result) => {
+    //             if (result) {
+    //               depositUsingApprovalFlow?.();
+    //             }
+    //           });
+    //         }
+    //         depositUsingApprovalFlow?.();
+    //       }
+    //       break;
+    //     default:
+    //       break;
+    //   }
   }
 
   const isDepositAmountValid = numericDepositAmount > 0;
-  const shouldConfirmButtonBeDisabled =
-    !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
+  const shouldConfirmButtonBeDisabled = isPending || !isDepositAmountValid;
+  // !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
 
   return (
     <FilledStylizedButton

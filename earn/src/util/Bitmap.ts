@@ -14,7 +14,9 @@ function hexToBinary(hex: string) {
 }
 
 export function firstZeroBitIn(bitmap: BigNumber) {
+  console.log('toHexString', bitmap);
   const hex = bitmap.toHexString();
+  console.log('hex', hex);
   const bin = hexToBinary(hex);
   return bin.indexOf('0');
 }

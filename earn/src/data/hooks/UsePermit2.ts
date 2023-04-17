@@ -145,7 +145,8 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
       enabled: !shouldApprove,
     });
 
-    if (computeDomainSeparator(domain) !== domainSeparator) {
+    if (computeDomainSeparator(domain) !== domainSeparator && domainSeparator !== undefined) {
+      console.log('domain', domain, 'domainSeparator', domainSeparator);
       throw new Error(`Permit2 on ${chain.name} is reporting an unexpected DOMAIN_SEPARATOR`);
     }
   }

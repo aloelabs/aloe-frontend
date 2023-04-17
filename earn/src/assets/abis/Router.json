@@ -2,6 +2,30 @@
   {
     "inputs": [
       {
+        "internalType": "contract IPermit2",
+        "name": "permit2",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function",
+    "name": "PERMIT2",
+    "outputs": [
+      {
+        "internalType": "contract IPermit2",
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "inputs": [
+      {
         "internalType": "contract Lender",
         "name": "lender",
         "type": "address"
@@ -37,6 +61,8 @@
         "type": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "depositWithApprove",
     "outputs": [
       {
@@ -44,9 +70,7 @@
         "name": "shares",
         "type": "uint256"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    ]
   },
   {
     "inputs": [
@@ -61,6 +85,8 @@
         "type": "uint256"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "depositWithApprove",
     "outputs": [
       {
@@ -68,9 +94,7 @@
         "name": "shares",
         "type": "uint256"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    ]
   },
   {
     "inputs": [
@@ -130,6 +154,8 @@
         "type": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "depositWithPermit",
     "outputs": [
       {
@@ -137,9 +163,7 @@
         "name": "shares",
         "type": "uint256"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    ]
   },
   {
     "inputs": [
@@ -179,6 +203,8 @@
         "type": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "depositWithPermit",
     "outputs": [
       {
@@ -186,9 +212,46 @@
         "name": "shares",
         "type": "uint256"
       }
+    ]
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract Lender",
+        "name": "lender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
+    "type": "function",
+    "name": "depositWithPermit2",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ]
   },
   {
     "inputs": [
@@ -208,6 +271,8 @@
         "type": "address"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "repayWithApprove",
     "outputs": [
       {
@@ -215,9 +280,7 @@
         "name": "units",
         "type": "uint256"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    ]
   },
   {
     "inputs": [
@@ -262,6 +325,8 @@
         "type": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function",
     "name": "repayWithPermit",
     "outputs": [
       {
@@ -269,8 +334,6 @@
         "name": "units",
         "type": "uint256"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    ]
   }
 ]
