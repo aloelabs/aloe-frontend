@@ -24,10 +24,12 @@ import RouterABI from '../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
+import usePermit2 from '../../../data/hooks/UsePermit2';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
 import { ReferralData } from '../../../pages/PortfolioPage';
+import { GN } from '../../../util/GoodNumber';
 import { formatNumberInput, roundPercentage, toBig, truncateDecimals } from '../../../util/Numbers';
 import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import PairDropdown from '../../common/PairDropdown';
@@ -142,6 +144,21 @@ function DepositButton(props: DepositButtonProps) {
   const { data: signer } = useSigner({ chainId: activeChain.id });
 
   const provider = useProvider({ chainId: activeChain.id });
+
+  const {
+    steps,
+    nextStep,
+    isLoading,
+    result: permit2Result,
+  } = usePermit2(
+    activeChain,
+    token,
+    accountAddress,
+    ALOE_II_ROUTER_ADDRESS,
+    GN.fromDecimalString(depositAmount !== '' ? depositAmount : '0', token.decimals)
+  );
+
+  console.log(permit2Result);
 
   const {
     refetch: refetchKittyBalance,
@@ -432,6 +449,14 @@ function DepositButton(props: DepositButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
+    console.log('HERE');
+    const step = steps[nextStep];
+    if (step && !permit2Result.signature) {
+      console.log('THERE');
+      step();
+      return;
+    }
+
     // TODO: Do not use setStates in async functions outside of useEffect
     switch (confirmButtonState) {
       case ConfirmButtonState.APPROVE_ASSET:
