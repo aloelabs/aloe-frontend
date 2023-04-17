@@ -12,9 +12,12 @@ function isInteger(x: Big) {
   return x.round(0, Big.roundDown).eq(x);
 }
 
+/**
+ * @dev Any formatting option that results in loss of precision should be prefixed with "LOSSY"
+ */
 export enum GNFormat {
-  LOSSLESS_INT,
-  LOSSLESS_DECIMAL,
+  INT,
+  DECIMAL,
   LOSSY_HUMAN,
   LOSSY_HUMAN_COMPACT,
 }
@@ -169,9 +172,9 @@ export class GN {
 
   toString(format: GNFormat) {
     switch (format) {
-      case GNFormat.LOSSLESS_INT:
+      case GNFormat.INT:
         return this.int.toFixed(0);
-      case GNFormat.LOSSLESS_DECIMAL:
+      case GNFormat.DECIMAL:
         return this.x().toFixed(this.decimals);
       case GNFormat.LOSSY_HUMAN:
         // TODO: Bring logic in here instead of calling formatTokenAmount
@@ -179,6 +182,7 @@ export class GN {
       case GNFormat.LOSSY_HUMAN_COMPACT:
         // TODO: Bring logic in here instead of calling formatTokenAmountCompact
         return formatTokenAmountCompact(this.x().toNumber());
+      // TODO: Other formatting options from `Numbers.ts`
     }
   }
 
@@ -187,7 +191,7 @@ export class GN {
    * @returns Equivalent `BigNumber`
    */
   toBigNumber() {
-    return BigNumber.from(this.toString(GNFormat.LOSSLESS_INT));
+    return BigNumber.from(this.toString(GNFormat.INT));
   }
 
   /**
@@ -195,7 +199,7 @@ export class GN {
    * @returns Equivalent `JSBI.BigInt`
    */
   toJSBI() {
-    return JSBI.BigInt(this.toString(GNFormat.LOSSLESS_INT));
+    return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
   /**
