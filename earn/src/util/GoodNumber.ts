@@ -117,7 +117,7 @@ export class GN {
     return this.int.eq('0');
   }
 
-  isPositive() {
+  isGtZero() {
     return this.int.gt('0');
   }
 

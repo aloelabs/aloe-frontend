@@ -91,7 +91,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     functionName: 'transfer',
     args: [resolvedAddress, sendAmount.toString(GNFormat.INT)],
     chainId: activeChain.id,
-    enabled: sendAmount.isPositive() && !isPending && resolvedAddress != null,
+    enabled: sendAmount.isGtZero() && !isPending && resolvedAddress != null,
   });
   const sendCryptoUpdatedRequest = useMemo(() => {
     if (sendCryptoConfig.request) {
@@ -142,7 +142,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
     }
   }
 
-  const isDepositAmountValid = sendAmount.isPositive();
+  const isDepositAmountValid = sendAmount.isGtZero();
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (

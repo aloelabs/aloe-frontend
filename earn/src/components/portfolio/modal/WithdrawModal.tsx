@@ -147,7 +147,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     }
   }
 
-  const isDepositAmountValid = withdrawAmount.isPositive();
+  const isDepositAmountValid = withdrawAmount.isGtZero();
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
