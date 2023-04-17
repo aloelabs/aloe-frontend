@@ -86,8 +86,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     chainId: activeChain.id,
   }) as { data: BigNumber | undefined; isLoading: boolean };
 
-  const gnRequestedShares =
-    GN.fromBigNumber(requestedShares, token.decimals) || GN.fromDecimalString('0', token.decimals);
+  const gnRequestedShares = GN.fromBigNumber(requestedShares ?? BigNumber.from('0'), token.decimals);
   // Being extra careful here to make sure we don't withdraw more than the user has
   const numberOfSharesToRedeem = GN.min(gnRequestedShares, maxRedeemBalance);
 
@@ -244,13 +243,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     };
   }, [refetchMaxWithdraw, refetchMaxRedeem, isOpen]);
 
-  const gnWithdrawAmount = inputValue
-    ? GN.fromDecimalString(inputValue, selectedOption.decimals)
-    : GN.fromDecimalString('0', selectedOption.decimals);
-  const gnMaxWithdraw =
-    GN.fromBigNumber(maxWithdraw, selectedOption.decimals) ?? GN.fromDecimalString('0', selectedOption.decimals);
-  const gnMaxRedeem =
-    GN.fromBigNumber(maxRedeem, selectedOption.decimals) ?? GN.fromDecimalString('0', selectedOption.decimals);
+  const gnWithdrawAmount = GN.fromDecimalString(inputValue || '0', selectedOption.decimals);
+  const gnMaxWithdraw = GN.fromBigNumber(maxWithdraw ?? BigNumber.from('0'), selectedOption.decimals);
+  const gnMaxRedeem = GN.fromBigNumber(maxRedeem ?? BigNumber.from('0'), selectedOption.decimals);
 
   if (selectedPairOption == null || activeKitty == null) {
     return null;

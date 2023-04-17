@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -207,13 +207,8 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     setSelectedOption(defaultOption);
   }, [defaultOption]);
 
-  const gnSendAmount = sendAmountInputValue
-    ? GN.fromDecimalString(sendAmountInputValue, selectedOption.decimals)
-    : GN.fromDecimalString('0', selectedOption.decimals);
-  const gnSendBalance =
-    GN.fromBigNumber(depositBalance?.value, selectedOption.decimals) ??
-    GN.fromDecimalString('0', selectedOption.decimals);
-
+  const gnSendAmount = GN.fromDecimalString(sendAmountInputValue || '0', selectedOption.decimals);
+  const gnSendBalance = GN.fromBigNumber(depositBalance?.value ?? BigNumber.from('0'), selectedOption.decimals);
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
   return (
     <Modal
