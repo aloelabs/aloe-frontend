@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -82,7 +82,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
     address: kitty.address,
     abi: KittyABI,
     functionName: 'convertToShares',
-    args: [ethers.utils.parseUnits(withdrawAmount.toFixed(token.decimals), token.decimals)],
+    args: [withdrawAmount.toFixed(0)],
     chainId: activeChain.id,
   }) as { data: BigNumber | undefined; isLoading: boolean };
 
