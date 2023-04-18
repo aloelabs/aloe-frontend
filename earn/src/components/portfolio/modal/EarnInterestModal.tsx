@@ -154,6 +154,7 @@ function DepositButton(props: DepositButtonProps) {
     const step = steps[nextStep];
     switch (confirmButtonState) {
       case ConfirmButtonState.APPROVE_ASSET:
+        // TODO: this is a little bit janky, but it is the best way to do it for now
         step?.()
           ?.then((txnResult) => {
             setIsPending(true);
