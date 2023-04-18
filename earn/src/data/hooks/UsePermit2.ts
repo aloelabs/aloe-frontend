@@ -113,7 +113,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     chainId: chain.id,
     enabled: shouldApprove,
   });
-  const { write: writeAllowance, isLoading: isLoading0 } = useContractWrite(configWriteAllowance);
+  const { writeAsync: writeAllowanceAsync, isLoading: isLoading0 } = useContractWrite(configWriteAllowance);
 
   /*//////////////////////////////////////////////////////////////
                             PERMIT HOOKS
@@ -205,7 +205,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     return () => {
       clearInterval(interval);
     };
-  });
+  }, [refetchAllowance, refetchNonceBitmap]);
 
   /*//////////////////////////////////////////////////////////////
                               SIGNING
@@ -238,7 +238,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     resetSignature();
   }, [resetSignature, permitTransferFrom]);
 
-  const steps = [writeAllowance, signTypedData] as const;
+  const steps = [writeAllowanceAsync, signTypedData] as const;
   const nextStep = shouldApprove ? 0 : 1;
 
   return {

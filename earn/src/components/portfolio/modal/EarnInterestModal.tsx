@@ -24,7 +24,6 @@ import TokenAmountSelectInput from '../TokenAmountSelectInput';
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
-const FRONTEND_COURIER_ID = 1;
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -33,8 +32,6 @@ enum ConfirmButtonState {
   PENDING,
   LOADING,
   READY,
-  PERMIT_COURIER_REFERRAL,
-  PERMIT_COURIER,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
@@ -43,16 +40,6 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return {
         text: `Insufficient ${token.ticker}`,
         enabled: false,
-      };
-    case ConfirmButtonState.PERMIT_COURIER_REFERRAL:
-      return {
-        text: 'Use Referral Discount',
-        enabled: true,
-      };
-    case ConfirmButtonState.PERMIT_COURIER:
-      return {
-        text: 'Allow Frontend Fee',
-        enabled: true,
       };
     case ConfirmButtonState.PERMIT_ASSET:
       return {
@@ -80,24 +67,12 @@ type DepositButtonProps = {
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
-  referralCourierId: number | null;
-  isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const {
-    depositAmount,
-    depositBalance,
-    token,
-    kitty,
-    accountAddress,
-    referralCourierId,
-    isOpen,
-    setIsOpen,
-    setPendingTxn,
-  } = props;
+  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
@@ -176,20 +151,33 @@ function DepositButton(props: DepositButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    console.log('HERE');
     const step = steps[nextStep];
-    if (step && !permit2Result.signature) {
-      console.log('THERE');
-      step();
-      return;
-    }
-    if (confirmButtonState === ConfirmButtonState.READY) {
-      if (depsitWithPermit2Config.request) {
+    switch (confirmButtonState) {
+      case ConfirmButtonState.APPROVE_ASSET:
+        step?.()
+          ?.then((txnResult) => {
+            setIsPending(true);
+            txnResult.wait(1).then(() => {
+              setIsPending(false);
+            });
+          })
+          .catch((_error) => {
+            setIsPending(false);
+          });
+        break;
+      case ConfirmButtonState.PERMIT_ASSET:
+        step?.();
+        break;
+      case ConfirmButtonState.READY:
+        if (!depsitWithPermit2Config.request) {
+          refetchDepositWithPermit2();
+          break;
+        }
+        setIsPending(true);
         depositWithPermit2?.();
-      } else {
-        console.log('request not ready, refetching');
-        refetchDepositWithPermit2();
-      }
+        break;
+      default:
+        break;
     }
   }
 
@@ -399,8 +387,6 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
-            referralCourierId={referralData?.lender.address === activeKitty.address ? referralData.courierId : null}
-            isOpen={isOpen}
             setIsOpen={(open: boolean) => {
               setIsOpen(open);
               if (!open) {
