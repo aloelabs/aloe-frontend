@@ -69,6 +69,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
 
   // MARK: pre-compute some useful stuff
   const poolAddress = getPoolAddressFromTokens(token0, token1, feeTier, activeChain.id);
@@ -143,6 +144,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       return { price: isToken0Selected ? td.price0In1 : td.price1In0, liquidityDensity: td.totalValueIn0 };
     });
     setChartData(_chartData);
+    setChartLoading(false);
   }, [liquidityData, isToken0Selected]);
 
   /**
@@ -394,7 +396,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           />
         )}
       </div>
-      {chartData.length === 0 || !ticksAreDefined ? (
+      {chartData.length === 0 && !chartLoading ? null : chartData.length === 0 || !ticksAreDefined ? (
         <LiquidityChartPlaceholder />
       ) : (
         <LiquidityChart

@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import styled from 'styled-components';
 
-import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipses.svg';
+import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';

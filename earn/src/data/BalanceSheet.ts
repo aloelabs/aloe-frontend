@@ -322,8 +322,12 @@ function _maxWithdraws(
   }
   maxWithdrawB0 /= denom;
 
-  const maxNewWithdraws0 = Math.min(maxWithdrawA0, maxWithdrawB0);
-  const maxNewWithdraws1 = Math.min(maxWithdrawA1, maxWithdrawB1);
+  // If the account is liquidatable, the math will yield negative numbers. Clamp them to 0.
+  // Examples when this may happen:
+  // - local price is less than the on-chain price (thus liquidation hasn't happened yet)
+  // - account has been warned, but not actually liquidated yet
+  const maxNewWithdraws0 = Math.max(Math.min(maxWithdrawA0, maxWithdrawB0), 0);
+  const maxNewWithdraws1 = Math.max(Math.min(maxWithdrawA1, maxWithdrawB1), 0);
   return [maxNewWithdraws0, maxNewWithdraws1];
 }
 

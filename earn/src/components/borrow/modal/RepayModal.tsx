@@ -21,14 +21,17 @@ import {
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
 import RouterABI from '../../../assets/abis/Router.json';
+import { isSolvent } from '../../../data/BalanceSheet';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
-import { MarginAccount } from '../../../data/MarginAccount';
+import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { Token } from '../../../data/Token';
+import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
+import HealthBar from '../HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
@@ -309,13 +312,14 @@ function RepayButton(props: RepayButtonProps) {
 
 export type RepayModalProps = {
   marginAccount: MarginAccount;
+  uniswapPositions: readonly UniswapPosition[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function RepayModal(props: RepayModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
   const [repayAmount, setRepayAmount] = useState('');
@@ -346,6 +350,27 @@ export default function RepayModal(props: RepayModalProps) {
   const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
 
   const maxRepay = bigExistingLiability.lte(bigTokenBalance) ? bigExistingLiability : bigTokenBalance;
+
+  const newLiabilities: Liabilities = {
+    amount0:
+      repayToken.address === marginAccount.token0.address
+        ? parseFloat(ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals))
+        : marginAccount.liabilities.amount0,
+    amount1:
+      repayToken.address === marginAccount.token1.address
+        ? parseFloat(ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals))
+        : marginAccount.liabilities.amount1,
+  };
+
+  const { health: newHealth } = isSolvent(
+    marginAccount.assets,
+    newLiabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
 
   if (!userAddress || !isOpen) {
     return null;
@@ -400,6 +425,9 @@ export default function RepayModal(props: RepayModalProps) {
             </strong>
             .
           </Text>
+          <div className='mt-2'>
+            <HealthBar health={newHealth} />
+          </div>
         </div>
         <div className='w-full'>
           <RepayButton

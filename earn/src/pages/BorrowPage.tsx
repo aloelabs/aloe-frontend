@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
 
@@ -17,6 +18,7 @@ import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
 import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
@@ -41,7 +43,8 @@ import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/cons
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { PRIME_URL } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import { fetchMarginAccounts, fetchMarketInfoFor, MarginAccount, MarketInfo } from '../data/MarginAccount';
+import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
+import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import {
@@ -78,12 +81,13 @@ const Container = styled.div`
 const PageGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto auto auto auto;
   grid-template-areas:
     'monitor graph'
     'metrics metrics'
     'uniswap uniswap'
-    'stats stats';
+    'stats stats'
+    'link link';
   flex-grow: 1;
   margin-top: 26px;
 
@@ -96,7 +100,21 @@ const PageGrid = styled.div`
       'graph'
       'metrics'
       'uniswap'
-      'stats';
+      'stats'
+      'link';
+  }
+`;
+
+const StyledExternalLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
+  &:hover {
+    text-decoration: underline;
   }
 `;
 
@@ -143,6 +161,14 @@ const UniswapPositionsContainer = styled.div`
 
 const StatsContainer = styled.div`
   grid-area: stats;
+`;
+
+const LinkContainer = styled.div`
+  grid-area: link;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 `;
 
 export type UniswapPoolInfo = {
@@ -317,12 +343,12 @@ export default function BorrowPage() {
         // TODO: abstract this out
         const { data, timeStamp } = result;
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
-        const iv = ethers.BigNumber.from(decoded[1]).div(1e9).toNumber() / 1e9;
+        const iv = ethers.BigNumber.from(decoded[1]).div(1e12).toNumber() / 1e6;
         const collateralFactor = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005));
         const resultData: BorrowGraphData = {
           IV: iv * Math.sqrt(365) * 100,
           'Collateral Factor': collateralFactor * 100,
-          x: new Date(parseInt(timeStamp.toString()) * 1000),
+          x: new Date(parseInt(timeStamp.toString(), 16) * 1000),
         };
         return resultData;
       });
@@ -477,6 +503,9 @@ export default function BorrowPage() {
     ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
   const dailyInterest1 =
     ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
+
+  const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
+  const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
   return (
     <AppPage>
       <Container>
@@ -568,6 +597,14 @@ export default function BorrowPage() {
           <StatsContainer>
             <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
           </StatsContainer>
+          <LinkContainer>
+            <InfoIcon width={16} height={16} />
+            <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+              <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                View this account on Etherscan
+              </StyledExternalLink>
+            </Text>
+          </LinkContainer>
         </PageGrid>
       </Container>
       {availablePools.size > 0 && (
@@ -609,6 +646,7 @@ export default function BorrowPage() {
           />
           <RepayModal
             marginAccount={selectedMarginAccount}
+            uniswapPositions={uniswapPositions}
             isOpen={isRepayModalOpen}
             setIsOpen={setIsRepayModalOpen}
             setPendingTxn={setPendingTxn}

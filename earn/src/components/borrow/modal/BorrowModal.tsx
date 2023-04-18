@@ -6,19 +6,22 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
-import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
+import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { ANTE } from '../../../data/constants/Values';
-import { MarginAccount, MarketInfo } from '../../../data/MarginAccount';
+import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
+import { MarketInfo } from '../../../data/MarketInfo';
+import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
 import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
+import HealthBar from '../HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
@@ -27,6 +30,10 @@ const TERTIARY_COLOR = '#4b6980';
 enum ConfirmButtonState {
   PENDING,
   READY,
+  UNHEALTHY,
+  NOT_ENOUGH_SUPPLY,
+  LOADING,
+  DISABLED,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
@@ -35,6 +42,13 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.UNHEALTHY:
+      return { text: 'Insufficient Collateral', enabled: false };
+    case ConfirmButtonState.NOT_ENOUGH_SUPPLY:
+      return { text: `Not Enough ${token.ticker} Supply`, enabled: false };
+    case ConfirmButtonState.LOADING:
+      return { text: 'Loading...', enabled: false };
+    case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
   }
@@ -46,12 +60,24 @@ type BorrowButtonProps = {
   borrowToken: Token;
   borrowAmount: Big;
   shouldProvideAnte: boolean;
+  isUnhealthy: boolean;
+  notEnoughSupply: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function BorrowButton(props: BorrowButtonProps) {
-  const { marginAccount, userAddress, borrowToken, borrowAmount, shouldProvideAnte, setIsOpen, setPendingTxn } = props;
+  const {
+    marginAccount,
+    userAddress,
+    borrowToken,
+    borrowAmount,
+    shouldProvideAnte,
+    isUnhealthy,
+    notEnoughSupply,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
@@ -68,13 +94,13 @@ function BorrowButton(props: BorrowButtonProps) {
     userAddress,
   ]);
 
-  const { config: removeCollateralConfig } = usePrepareContractWrite({
+  const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData, [false, false]],
     overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
-    enabled: !!userAddress && borrowAmount.gt(0),
+    enabled: !!userAddress && borrowAmount.gt(0) && !isUnhealthy && !notEnoughSupply,
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -106,7 +132,18 @@ function BorrowButton(props: BorrowButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
 
-  let confirmButtonState = isPending ? ConfirmButtonState.PENDING : ConfirmButtonState.READY;
+  let confirmButtonState = ConfirmButtonState.READY;
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (isUnhealthy) {
+    confirmButtonState = ConfirmButtonState.UNHEALTHY;
+  } else if (notEnoughSupply) {
+    confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
+  } else if (prepareContractIsLoading && !removeCollateralConfig.request) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (!removeCollateralConfig.request) {
+    confirmButtonState = ConfirmButtonState.DISABLED;
+  }
 
   const confirmButton = getConfirmButton(confirmButtonState, borrowToken);
 
@@ -177,12 +214,8 @@ export default function BorrowModal(props: BorrowModalProps) {
     return null;
   }
 
-  const totalSupply = isToken0 ? marketInfo.lender0TotalSupply : marketInfo.lender1TotalSupply;
-  const totalBorrow = isToken0 ? marketInfo.lender0TotalBorrows : marketInfo.lender1TotalBorrows;
-  const maxBorrowsBasedOnMarket = totalSupply
-    .sub(totalBorrow)
-    .div(10 ** borrowToken.decimals)
-    .toNumber();
+  const maxBorrowsBasedOnMarketBig = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
+  const maxBorrowsBasedOnMarket = maxBorrowsBasedOnMarketBig.div(10 ** borrowToken.decimals).toNumber();
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     marginAccount.assets,
     marginAccount.liabilities,
@@ -196,6 +229,33 @@ export default function BorrowModal(props: BorrowModalProps) {
   // Mitigate the case when the number is represented in scientific notation
   const bigMax = BigNumber.from(new Big(max).mul(10 ** borrowToken.decimals).toFixed(0));
   const maxString = ethers.utils.formatUnits(bigMax, borrowToken.decimals);
+
+  const newLiabilities: Liabilities = {
+    amount0: isToken0 ? newLiability.toNumber() : marginAccount.liabilities.amount0,
+    amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
+  };
+
+  const { health: newHealth } = isSolvent(
+    marginAccount.assets,
+    newLiabilities,
+    uniswapPositions,
+    marginAccount.sqrtPriceX96,
+    marginAccount.iv,
+    marginAccount.token0.decimals,
+    marginAccount.token1.decimals
+  );
+
+  const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
+  const remainingAvailableAssets = availableAssets.sub(borrowAmountBig);
+
+  const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
+  const newUtilization = lenderTotalAssets.gt(0) ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber() : 0;
+  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
+
+  // A user is considered unhealthy if their health is 1 or less
+  const isUnhealthy = newHealth <= 1;
+  // A user cannot borrow more than the total supply of the market
+  const notEnoughSupply = maxBorrowsBasedOnMarketBig.lt(borrowAmountBig);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
@@ -256,6 +316,13 @@ export default function BorrowModal(props: BorrowModalProps) {
               liquidated.
             </Text>
           )}
+          <div className='flex gap-2 mt-2'>
+            <Text size='S'>APR:</Text>
+            <Display size='XS'>{apr.toFixed(2)}%</Display>
+          </div>
+          <div className='mt-2'>
+            <HealthBar health={newHealth} />
+          </div>
         </div>
         <div className='w-full'>
           <BorrowButton
@@ -264,6 +331,8 @@ export default function BorrowModal(props: BorrowModalProps) {
             borrowToken={borrowToken}
             borrowAmount={borrowAmountBig}
             shouldProvideAnte={shouldProvideAnte}
+            isUnhealthy={isUnhealthy}
+            notEnoughSupply={notEnoughSupply}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />
