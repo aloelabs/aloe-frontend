@@ -9,6 +9,7 @@ import {
   useContractWrite,
   usePrepareContractWrite,
   useSignTypedData,
+  useWaitForTransaction,
 } from 'wagmi';
 
 import { permit2ABI } from '../../abis/Permit2';
@@ -17,6 +18,16 @@ import { GN, GNFormat } from '../../util/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
 import { Token } from '../Token';
+
+export enum Permit2State {
+  FETCHING_DATA,
+  READY_TO_APPROVE,
+  ASKING_USER_TO_APPROVE,
+  WAITING_FOR_TRANSACTION,
+  READY_TO_SIGN,
+  ASKING_USER_TO_SIGN,
+  DONE,
+}
 
 type uint256 = string;
 type address = string;
@@ -92,7 +103,11 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
   //////////////////////////////////////////////////////////////*/
 
   // Fetch the user's `allowance`, i.e. how many tokens the Permit2 contract can spend on their behalf
-  const { data: allowance, refetch: refetchAllowance } = useContractRead({
+  const {
+    data: allowance,
+    refetch: refetchAllowance,
+    isFetching: isFetchingAllowance,
+  } = useContractRead({
     address: token.address,
     abi: erc20ABI,
     functionName: 'allowance',
@@ -113,7 +128,21 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     chainId: chain.id,
     enabled: shouldApprove,
   });
-  const { writeAsync: writeAllowanceAsync, isLoading: isLoading0 } = useContractWrite(configWriteAllowance);
+  const {
+    write: writeAllowance,
+    data: writeAllowanceTxn,
+    isLoading: isAskingUserToWriteAllowance,
+  } = useContractWrite(configWriteAllowance);
+
+  const { isLoading: isWritingAllowance } = useWaitForTransaction({
+    confirmations: 1,
+    hash: writeAllowanceTxn?.hash,
+    chainId: chain.id,
+    onSuccess(data) {
+      console.debug('writeAllowance transaction successful!', data);
+      refetchAllowance();
+    },
+  });
 
   /*//////////////////////////////////////////////////////////////
                             PERMIT HOOKS
@@ -142,23 +171,25 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
       abi: permit2ABI,
       functionName: 'DOMAIN_SEPARATOR',
       chainId: chain.id,
-      enabled: !shouldApprove,
     });
 
     if (domainSeparator && domainSeparator !== computeDomainSeparator(domain)) {
-      console.log('domain', domain, 'domainSeparator', domainSeparator);
+      console.debug('domain', domain, 'domainSeparator', domainSeparator);
       throw new Error(`Permit2 on ${chain.name} is reporting an unexpected DOMAIN_SEPARATOR`);
     }
   }
 
-  // Fetch one of the user's nonce bitmaps (only enabled if user has finished `approve`ing)
-  const { data: nonceBitmap, refetch: refetchNonceBitmap } = useContractRead({
+  // Fetch one of the user's nonce bitmaps
+  const {
+    data: nonceBitmap,
+    refetch: refetchNonceBitmap,
+    isFetching: isFetchingNonceBitmap,
+  } = useContractRead({
     address: UNISWAP_PERMIT2_ADDRESS,
     abi: permit2ABI,
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
     chainId: chain.id,
-    enabled: !shouldApprove,
   });
 
   // Search through `nonceBitmap` for valid nonces. If there aren't any, jump forward to the
@@ -193,39 +224,42 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     const interval = setInterval(() => {
       refetchAllowance();
       refetchNonceBitmap();
-      setDeadline((prev) => {
-        const remainingShelfLife = Number(prev) - Date.now() / 1000;
-        if (remainingShelfLife < SIGNATURE_SHELF_LIFE / 2) {
-          return evmCurrentTimePlus(SIGNATURE_SHELF_LIFE);
-        }
-        return prev;
-      });
     }, REFETCH_INTERVAL);
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [refetchAllowance, refetchNonceBitmap]);
+    return () => clearInterval(interval);
+  });
+
+  // Keep deadline fresh
+  useEffect(() => {
+    const interval = setInterval(
+      () => setDeadline(evmCurrentTimePlus(SIGNATURE_SHELF_LIFE)),
+      (SIGNATURE_SHELF_LIFE * 1000) / 4
+    );
+
+    return () => clearInterval(interval);
+  });
 
   /*//////////////////////////////////////////////////////////////
                               SIGNING
   //////////////////////////////////////////////////////////////*/
 
-  const permitTransferFrom: PermitTransferFrom = useMemo(() => {
+  const amountStr = useMemo(() => amount.toString(GNFormat.INT), [amount]);
+  const permitTransferFrom: PermitTransferFrom | undefined = useMemo(() => {
+    if (!nonce) return undefined;
     return {
       permitted: {
         token: token.address,
-        amount: amount.toString(GNFormat.INT),
+        amount: amountStr,
       },
       spender: spender,
-      nonce: nonce ?? '0',
+      nonce: nonce,
       deadline: deadline,
     };
-  }, [token, amount, spender, nonce, deadline]);
+  }, [token.address, amountStr, spender, nonce, deadline]);
 
   const {
     signTypedData,
-    isLoading: isLoading1,
+    isLoading: isAskingUserToSign,
     data: signature,
     reset: resetSignature,
   } = useSignTypedData({
@@ -238,13 +272,35 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     resetSignature();
   }, [resetSignature, permitTransferFrom]);
 
-  const steps = [writeAllowanceAsync, signTypedData] as const;
-  const nextStep = shouldApprove ? 0 : 1;
+  let state: Permit2State;
+  let action: (() => void) | undefined;
+
+  if (isFetchingAllowance || isFetchingNonceBitmap) {
+    state = Permit2State.FETCHING_DATA;
+    action = undefined;
+  } else if (isWritingAllowance) {
+    state = Permit2State.WAITING_FOR_TRANSACTION;
+    action = undefined;
+  } else if (isAskingUserToWriteAllowance) {
+    state = Permit2State.ASKING_USER_TO_APPROVE;
+    action = undefined;
+  } else if (shouldApprove) {
+    state = Permit2State.READY_TO_APPROVE;
+    action = writeAllowance;
+  } else if (isAskingUserToSign) {
+    state = Permit2State.ASKING_USER_TO_SIGN;
+    action = undefined;
+  } else if (signature === undefined) {
+    state = Permit2State.READY_TO_SIGN;
+    action = signTypedData;
+  } else {
+    state = Permit2State.DONE;
+    action = undefined;
+  }
 
   return {
-    steps,
-    nextStep,
-    isLoading: isLoading0 || isLoading1,
+    state,
+    action,
     result: {
       amount,
       nonce,
