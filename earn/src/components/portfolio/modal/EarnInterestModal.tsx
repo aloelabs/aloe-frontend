@@ -10,7 +10,7 @@ import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWr
 import { ChainContext } from '../../../App';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import usePermit2 from '../../../data/hooks/UsePermit2';
+import usePermit2, { Permit2State } from '../../../data/hooks/UsePermit2';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
@@ -29,10 +29,21 @@ enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
   PERMIT_ASSET,
   APPROVE_ASSET,
-  PENDING,
+  WAITING_FOR_TRANSACTION,
+  WAITING_FOR_USER,
   LOADING,
   READY,
 }
+
+const permit2StateToButtonStateMap = {
+  [Permit2State.ASKING_USER_TO_APPROVE]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.DONE]: undefined,
+  [Permit2State.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [Permit2State.READY_TO_APPROVE]: ConfirmButtonState.APPROVE_ASSET,
+  [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
+  [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
+};
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
@@ -51,8 +62,10 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
         text: `Approve ${token.ticker}`,
         enabled: true,
       };
-    case ConfirmButtonState.PENDING:
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
       return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
@@ -77,9 +90,8 @@ function DepositButton(props: DepositButtonProps) {
   const [isPending, setIsPending] = useState(false);
 
   const {
-    steps,
-    nextStep,
-    isLoading,
+    state: permit2State,
+    action: permit2Action,
     result: permit2Result,
   } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
 
@@ -95,12 +107,7 @@ function DepositButton(props: DepositButtonProps) {
       permit2Result.signature,
     ],
     chainId: activeChain.id,
-    enabled:
-      // TODO: utlize isGtZero once it's added
-      depositAmount.gt(GN.fromDecimalString('0', token.decimals)) &&
-      depositAmount.lte(depositBalance) &&
-      permit2Result.nonce !== null &&
-      permit2Result.signature !== undefined,
+    enabled: permit2State === Permit2State.DONE,
   });
   const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
     if (depsitWithPermit2Config.request) {
@@ -131,54 +138,33 @@ function DepositButton(props: DepositButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
 
-  let confirmButtonState = ConfirmButtonState.READY;
-
+  let confirmButtonState: ConfirmButtonState;
   if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (depositAmount.eq(GN.fromDecimalString('0', token.decimals))) {
     // TODO: use isGtZero once it's added
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (depositAmount.gt(depositBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isLoading) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (nextStep === 0 && !permit2Result?.signature) {
-    confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-  } else if (nextStep === 1 && !permit2Result?.signature) {
-    confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
+  } else {
+    confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    const step = steps[nextStep];
-    switch (confirmButtonState) {
-      case ConfirmButtonState.APPROVE_ASSET:
-        // TODO: this is a little bit janky, but it is the best way to do it for now
-        step?.()
-          ?.then((txnResult) => {
-            setIsPending(true);
-            txnResult.wait(1).then(() => {
-              setIsPending(false);
-            });
-          })
-          .catch((_error) => {
-            setIsPending(false);
-          });
-        break;
-      case ConfirmButtonState.PERMIT_ASSET:
-        step?.();
-        break;
-      case ConfirmButtonState.READY:
-        if (!depsitWithPermit2Config.request) {
-          refetchDepositWithPermit2();
-          break;
-        }
-        setIsPending(true);
-        depositWithPermit2?.();
-        break;
-      default:
-        break;
+    if (permit2Action) {
+      permit2Action();
+      return;
+    }
+
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (!depsitWithPermit2Config.request) {
+        refetchDepositWithPermit2();
+        return;
+      }
+      setIsPending(true);
+      depositWithPermit2?.();
     }
   }
 
@@ -205,7 +191,7 @@ export type EarnInterestModalProps = {
 };
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, referralData, setIsOpen, setPendingTxn } = props;
+  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
