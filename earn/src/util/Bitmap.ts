@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 
-function hexToBinary(hex: string) {
+export function hexToBinary(hex: string) {
   if (hex.startsWith('0x')) hex = hex.slice(2);
 
   let result = '';
@@ -13,10 +13,8 @@ function hexToBinary(hex: string) {
   return result;
 }
 
-export function firstZeroBitIn(bitmap: BigNumber) {
-  const hex = bitmap.toHexString();
-  const bin = hexToBinary(hex);
-  return bin.indexOf('0');
+export function bigNumberToBinary(n: BigNumber) {
+  return hexToBinary(n.toHexString());
 }
 
 export function randomHexValue(bits: number) {
