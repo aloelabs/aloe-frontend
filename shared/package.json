@@ -2,7 +2,7 @@
   "name": "shared",
   "version": "0.1.0",
   "private": true,
-  "main": "lib/src/index.js",
+  "main": "./lib/index.js",
   "directories": {
     "lib": "lib"
   },
@@ -32,7 +32,6 @@
   "scripts": {
     "start": "yarn tsc -w",
     "clean": "rm -rf ./lib",
-    "prebuild": "yarn clean",
     "build": "tsc --build \"./tsconfig.json\"",
     "lint": "eslint --fix --ext .tsx,.ts ."
   }
