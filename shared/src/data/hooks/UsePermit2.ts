@@ -12,12 +12,9 @@ import {
   useWaitForTransaction,
 } from 'wagmi';
 
-import { permit2ABI } from '../../abis/Permit2';
+import { PERMIT2_ADDRESS, permit2ABI } from '../../abis/permit2ABI';
 import { bigNumberToBinary } from '../../util/Bitmap';
-import { GN, GNFormat } from '../../util/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
-import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
-import { Token } from '../Token';
 
 export enum Permit2State {
   FETCHING_DATA,
@@ -89,7 +86,7 @@ function evmCurrentTimePlus(secondsFromNow: number) {
   return (Date.now() / 1000 + secondsFromNow).toFixed(0);
 }
 
-export default function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
+export function usePermit2(chain: Chain, tokenAddress: Address, owner: Address, spender: Address, amount: BigNumber) {
   /*//////////////////////////////////////////////////////////////
                             REACT STATE
   //////////////////////////////////////////////////////////////*/
@@ -108,23 +105,23 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     refetch: refetchAllowance,
     isFetching: isFetchingAllowance,
   } = useContractRead({
-    address: token.address,
+    address: tokenAddress,
     abi: erc20ABI,
     functionName: 'allowance',
-    args: [owner, UNISWAP_PERMIT2_ADDRESS] as const,
+    args: [owner, PERMIT2_ADDRESS] as const,
     chainId: chain.id,
   });
 
   // Since Permit2 is going to be moving `amount` from the user into Aloe, `allowance` must be at least
   // as big as `amount`. If it's not, the user needs to `approve` more spending.
-  const shouldApprove = allowance !== undefined && allowance.lt(amount.toBigNumber());
+  const shouldApprove = allowance !== undefined && allowance.lt(amount);
 
   // Set up the `approve` transaction (only enabled if `shouldApprove` is true)
   const { config: configWriteAllowance } = usePrepareContractWrite({
-    address: token.address,
+    address: tokenAddress,
     abi: erc20ABI,
     functionName: 'approve',
-    args: [UNISWAP_PERMIT2_ADDRESS, ethers.constants.MaxUint256],
+    args: [PERMIT2_ADDRESS, ethers.constants.MaxUint256],
     chainId: chain.id,
     enabled: shouldApprove,
   });
@@ -160,14 +157,14 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
   const domain = {
     name: 'Permit2',
     chainId: chain.id,
-    verifyingContract: UNISWAP_PERMIT2_ADDRESS,
+    verifyingContract: PERMIT2_ADDRESS,
   } as const;
 
   // Verify that `domain` will produce the same domain separator that's stored in the contract.
   // This _should_ always be the case, but it's good to check our work.
   {
     const { data: domainSeparator } = useContractRead({
-      address: UNISWAP_PERMIT2_ADDRESS,
+      address: PERMIT2_ADDRESS,
       abi: permit2ABI,
       functionName: 'DOMAIN_SEPARATOR',
       chainId: chain.id,
@@ -185,7 +182,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     refetch: refetchNonceBitmap,
     isFetching: isFetchingNonceBitmap,
   } = useContractRead({
-    address: UNISWAP_PERMIT2_ADDRESS,
+    address: PERMIT2_ADDRESS,
     abi: permit2ABI,
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
@@ -243,19 +240,19 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
                               SIGNING
   //////////////////////////////////////////////////////////////*/
 
-  const amountStr = useMemo(() => amount.toString(GNFormat.INT), [amount]);
+  const amountStr = useMemo(() => amount.toString(), [amount]);
   const permitTransferFrom: PermitTransferFrom | undefined = useMemo(() => {
     if (!nonce) return undefined;
     return {
       permitted: {
-        token: token.address,
+        token: tokenAddress,
         amount: amountStr,
       },
       spender: spender,
       nonce: nonce,
       deadline: deadline,
     };
-  }, [token.address, amountStr, spender, nonce, deadline]);
+  }, [tokenAddress, amountStr, spender, nonce, deadline]);
 
   const {
     signTypedData,

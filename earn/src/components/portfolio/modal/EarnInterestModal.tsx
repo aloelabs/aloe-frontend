@@ -5,12 +5,12 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import RouterABI from '../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import usePermit2, { Permit2State } from '../../../data/hooks/UsePermit2';
 import { Kitty } from '../../../data/Kitty';
 import { LendingPair } from '../../../data/LendingPair';
 import { Token } from '../../../data/Token';
@@ -93,19 +93,13 @@ function DepositButton(props: DepositButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+  } = usePermit2(activeChain, token.address, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount.toBigNumber());
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: RouterABI,
     functionName: 'depositWithPermit2(address,uint256,uint256,uint256,bytes)',
-    args: [
-      kitty.address,
-      permit2Result.amount.toBigNumber(),
-      permit2Result.nonce,
-      permit2Result.deadline,
-      permit2Result.signature,
-    ],
+    args: [kitty.address, permit2Result.amount, permit2Result.nonce, permit2Result.deadline, permit2Result.signature],
     chainId: activeChain.id,
     enabled: permit2State === Permit2State.DONE,
   });
