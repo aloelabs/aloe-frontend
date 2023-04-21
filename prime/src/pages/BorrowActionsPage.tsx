@@ -1,6 +1,8 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
+import Big from 'big.js';
+import { BigNumber, Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
@@ -42,8 +44,8 @@ import {
   stringifyMarginAccount,
   stringifyUniswapPositions,
 } from '../util/ComputeLiquidationThresholdUtils';
-import { formatPriceRatio, formatTokenAmount } from '../util/Numbers';
-import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import { formatPriceRatio, formatTokenAmount, toBig } from '../util/Numbers';
+import { convertSqrtPriceX96, getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SUPPLY_SIGNIFICANT_DIGITS = 4;
@@ -154,6 +156,13 @@ const MarketStatsGrid = styled.div`
   max-width: 100%;
 `;
 
+export type UniswapPositionEarnedFees = {
+  [key: string]: {
+    token0FeesEarned: number;
+    token1FeesEarned: number;
+  };
+};
+
 type AccountParams = {
   account: string;
 };
@@ -200,6 +209,7 @@ export default function BorrowActionsPage() {
   const [liquidationThresholds, setLiquidationThresholds] = useState<LiquidationThresholds | null>(null);
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
+  const [uniswapPositionEarnedFees, setUniswapPositionEarnedFees] = useState<UniswapPositionEarnedFees>({});
 
   // MARK: worker message handling (for liquidation threshold calcs)
   useEffect(() => {
@@ -414,6 +424,61 @@ export default function BorrowActionsPage() {
     GENERAL_DEBOUNCE_DELAY_MS,
     [displayedMarginAccount, displayedUniswapPositions]
   );
+
+  // MARK: fetch uniswap fees earned
+  useEffect(() => {
+    let mounted = true;
+    if (marginAccount == null) {
+      return;
+    }
+    async function fetch(marginAccountLensContract: Contract, marginAccount: MarginAccount) {
+      const earnedFees: [string[], BigNumber[]] = await marginAccountLensContract.getUniswapFees(marginAccount.address);
+      const earnedFeesMap: UniswapPositionEarnedFees = {};
+      earnedFees[0].forEach((positionId, index) => {
+        earnedFeesMap[positionId] = {
+          token0FeesEarned: toBig(earnedFees[1][index * 2])
+            .div(10 ** marginAccount.token0.decimals)
+            .toNumber(),
+          token1FeesEarned: toBig(earnedFees[1][index * 2 + 1])
+            .div(10 ** marginAccount.token1.decimals)
+            .toNumber(),
+        };
+      });
+      if (mounted) {
+        setUniswapPositionEarnedFees(earnedFeesMap);
+      }
+    }
+    if (marginAccountLensContract && marginAccount) {
+      fetch(marginAccountLensContract, marginAccount);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [marginAccount, marginAccountLensContract]);
+
+  // MARK: compute uniswap fees earned
+  useEffect(() => {
+    if (!uniswapPositionEarnedFees || !displayedUniswapPositions || !marginAccount || !displayedMarginAccount) {
+      return;
+    }
+    const { token0, token1 } = marginAccount;
+    const earnedFeesValues = Object.values(uniswapPositionEarnedFees);
+    const token0FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p + c.token0FeesEarned, 0));
+    const token1FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p + c.token1FeesEarned, 0));
+    const token1OverToken0 = convertSqrtPriceX96(BigNumber.from(marginAccount.sqrtPriceX96.toFixed(0)));
+    const token0OverToken1 = token1OverToken0.pow(-1);
+    const tokenDecimalDifference = 10 ** (token1.decimals - token0.decimals);
+    const token1FeesEarnedInTermsOfToken0 = token0OverToken1.mul(token1FeesEarned).div(tokenDecimalDifference);
+    const token0FeesEarnedInTermsOfToken1 = token1OverToken0.mul(token0FeesEarned).div(tokenDecimalDifference);
+    const totalFeesEarned = isToken0Selected
+      ? token0FeesEarned.add(token1FeesEarnedInTermsOfToken0)
+      : token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
+    if (totalFeesEarned.gt(0)) {
+      const selectedTokenDecimals = isToken0Selected ? marginAccount.token0.decimals : marginAccount.token1.decimals;
+      setSwapFeesInputValue(totalFeesEarned.toFixed(selectedTokenDecimals));
+    }
+  }, [marginAccount, displayedMarginAccount, uniswapPositionEarnedFees, displayedUniswapPositions, isToken0Selected]);
 
   const updateHypotheticalState = useCallback((state: AccountState | null) => {
     setHypotheticalState(state);
@@ -666,9 +731,9 @@ export default function BorrowActionsPage() {
             <UniswapPositionTable
               accountAddress={accountAddressParam || ''}
               marginAccount={marginAccount}
-              marginAccountLensContract={marginAccountLensContract}
               provider={provider}
               uniswapPositions={displayedUniswapPositions}
+              uniswapPositionEarnedFees={uniswapPositionEarnedFees}
               isInTermsOfToken0={isToken0Selected}
               showAsterisk={isShowingHypothetical}
             />

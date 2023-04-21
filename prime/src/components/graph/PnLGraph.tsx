@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { AxiosResponse } from 'axios';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import {
   Area,
   AreaChart,
