@@ -7,7 +7,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { KittyABI } from '../../../../assets/abis/Kitty';
+import { LenderABI } from '../../../../assets/abis/Lender';
 import { Kitty } from '../../../../data/Kitty';
 import { Token } from '../../../../data/Token';
 import { GN, GNFormat } from '../../../../util/GoodNumber';
@@ -60,9 +60,9 @@ function WithdrawButton(props: WithdrawButtonProps) {
   // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'convertToShares',
-    args: [withdrawAmount.toBigNumber()] as const,
+    args: [withdrawAmount.toBigNumber()],
     chainId: activeChain.id,
   });
 
@@ -72,9 +72,9 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'redeem',
-    args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress] as const,
+    args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress],
     chainId: activeChain.id,
     enabled: !numberOfSharesToRedeem.isZero() && !isPending,
   });
@@ -159,19 +159,19 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
-    args: [accountAddress || '0x'] as const,
+    args: [accountAddress || '0x'],
     enabled: !!accountAddress,
   });
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
-    args: [accountAddress || '0x'] as const,
+    args: [accountAddress || '0x'],
     enabled: !!accountAddress,
   });
 

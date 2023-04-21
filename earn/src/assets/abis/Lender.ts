@@ -1,4 +1,4 @@
-export const KittyABI = [
+export const LenderABI = [
   {
     inputs: [{ internalType: 'address', name: 'reserve', type: 'address' }],
     stateMutability: 'nonpayable',
