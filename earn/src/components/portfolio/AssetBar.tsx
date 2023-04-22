@@ -50,8 +50,9 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
 const AssetIcon = styled.img`
   width: 32px;
   height: 32px;
-  border: 2px solid transparent;
+  border: 1px solid #000000;
   border-radius: 50%;
+  background-color: #ffffff;
 `;
 
 const StyledMoreIcon = styled(MoreIcon)`
