@@ -3,6 +3,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
+import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -10,10 +11,9 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { Assets, MarginAccount } from '../../../data/MarginAccount';
@@ -50,7 +50,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 type RemoveCollateralButtonProps = {
   marginAccount: MarginAccount;
-  userAddress: string;
+  userAddress: Address;
   collateralToken: Token;
   collateralAmount: GN;
   userBalance: GN;
@@ -72,14 +72,14 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: marginAccountABI,
     functionName: 'modify',
     args: [
       ALOE_II_WITHDRAW_MANAGER_ADDRESS,
       ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address'],
         [gnAmount0.toBigNumber(), gnAmount1.toBigNumber(), userAddress]
-      ),
+      ) as Address,
       [isToken0Collateral, !isToken0Collateral],
     ],
     enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),

@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { erc20ABI } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -10,7 +11,6 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import ERC20ABI from '../../../../assets/abis/ERC20.json';
 import { isSolvent } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import { UniswapPosition } from '../../../../data/Uniswap';
@@ -61,7 +61,7 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: collateralToken.address,
-    abi: ERC20ABI,
+    abi: erc20ABI,
     functionName: 'transfer',
     args: [marginAccount.address, collateralAmount.toBigNumber()],
     enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
