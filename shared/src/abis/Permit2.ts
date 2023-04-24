@@ -1,4 +1,4 @@
-export const Permit2ABI = [
+export const permit2ABI = [
   {
     inputs: [
       {

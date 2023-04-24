@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
+import { routerABI } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -10,7 +11,6 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
-import { routerABI } from '../../../../abis/Router';
 import { ChainContext } from '../../../../App';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
@@ -88,7 +88,7 @@ function DepositButton(props: DepositButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
 
-  const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
+  const { config: depositWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
     abi: routerABI,
     functionName: 'depositWithPermit2',
@@ -103,21 +103,21 @@ function DepositButton(props: DepositButtonProps) {
     enabled: permit2State === Permit2State.DONE,
   });
   const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
-    if (depsitWithPermit2Config.request) {
+    if (depositWithPermit2Config.request) {
       return {
-        ...depsitWithPermit2Config.request,
-        gasLimit: depsitWithPermit2Config.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+        ...depositWithPermit2Config.request,
+        gasLimit: depositWithPermit2Config.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
-  }, [depsitWithPermit2Config.request]);
+  }, [depositWithPermit2Config.request]);
   const {
     write: depositWithPermit2,
     isError: contractDidError,
     isSuccess: contractDidSucceed,
     data: contractData,
   } = useContractWrite({
-    ...depsitWithPermit2Config,
+    ...depositWithPermit2Config,
     request: depositWithPermit2ConfigUpdatedRequest,
   });
 
@@ -133,7 +133,7 @@ function DepositButton(props: DepositButtonProps) {
   let confirmButtonState: ConfirmButtonState;
   if (isPending) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
-  } else if (!depositAmount.isGtZero()) {
+  } else if (depositAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (depositAmount.gt(depositBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
@@ -150,7 +150,7 @@ function DepositButton(props: DepositButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!depsitWithPermit2Config.request) {
+      if (!depositWithPermit2Config.request) {
         refetchDepositWithPermit2();
         return;
       }
@@ -192,15 +192,8 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => {
-      refetchBalance();
-    }, 13_000);
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
+    const interval = setInterval(() => refetchBalance(), 13_000);
+    return () => clearInterval(interval);
   }, [refetchBalance]);
 
   const gnDepositAmount = GN.fromDecimalString(depositAmount || '0', token.decimals);

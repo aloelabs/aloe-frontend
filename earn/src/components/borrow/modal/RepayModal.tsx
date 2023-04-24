@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
+import { routerABI } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -12,7 +13,6 @@ import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
 
-import { routerABI } from '../../../abis/Router';
 import { ChainContext } from '../../../App';
 import { isSolvent } from '../../../data/BalanceSheet';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';

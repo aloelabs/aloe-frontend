@@ -12,7 +12,7 @@ import {
   useWaitForTransaction,
 } from 'wagmi';
 
-import { Permit2ABI } from '../../abis/Permit2';
+import { permit2ABI } from '../../abis/Permit2';
 import { bigNumberToBinary } from '../../util/Bitmap';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
@@ -168,7 +168,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   {
     const { data: domainSeparator } = useContractRead({
       address: UNISWAP_PERMIT2_ADDRESS,
-      abi: Permit2ABI,
+      abi: permit2ABI,
       functionName: 'DOMAIN_SEPARATOR',
       chainId: chain.id,
     });
@@ -186,7 +186,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     isFetching: isFetchingNonceBitmap,
   } = useContractRead({
     address: UNISWAP_PERMIT2_ADDRESS,
-    abi: Permit2ABI,
+    abi: permit2ABI,
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
     chainId: chain.id,
