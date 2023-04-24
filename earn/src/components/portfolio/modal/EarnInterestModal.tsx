@@ -141,8 +141,7 @@ function DepositButton(props: DepositButtonProps) {
   let confirmButtonState: ConfirmButtonState;
   if (isPending) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
-  } else if (depositAmount.eq(GN.fromDecimalString('0', token.decimals))) {
-    // TODO: use isGtZero once it's added
+  } else if (depositAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (depositAmount.gt(depositBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
