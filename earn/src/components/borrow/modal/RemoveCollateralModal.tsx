@@ -67,8 +67,8 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   const isToken0Collateral = collateralToken.address === marginAccount.token0.address;
 
-  const gnAmount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
-  const gnAmount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
+  const amount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
+  const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
@@ -78,7 +78,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
       ALOE_II_WITHDRAW_MANAGER_ADDRESS,
       ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address'],
-        [gnAmount0.toBigNumber(), gnAmount1.toBigNumber(), userAddress]
+        [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]
       ) as Address,
       [isToken0Collateral, !isToken0Collateral],
     ],
