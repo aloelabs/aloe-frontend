@@ -3,9 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import DropdownArrowDown from 'shared/lib/assets/svg/DropdownArrowDown';
 import DropdownArrowUp from 'shared/lib/assets/svg/DropdownArrowUp';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
-
-import { Token } from '../../data/Token';
 
 const UNKNOWN_TOKEN_ICON = '../../assets/svg/tokens/unknown_token.svg';
 const DEFAULT_BACKGROUND_COLOR = 'rgb(13, 23, 30)';

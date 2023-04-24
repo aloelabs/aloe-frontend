@@ -1,9 +1,8 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-
-import { Kitty } from '../data/Kitty';
-import { Token } from '../data/Token';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 
 export function getTransferInActionArgs(token: Token, amount: number): string {
   const address = token.address;

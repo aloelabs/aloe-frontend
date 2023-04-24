@@ -4,13 +4,13 @@ import { Address, SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { LenderABI } from '../../../../assets/abis/Lender';
-import { Kitty } from '../../../../data/Kitty';
-import { Token } from '../../../../data/Token';
-import { GN, GNFormat } from '../../../../util/GoodNumber';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 

@@ -2,7 +2,7 @@ import Big, { BigConstructor, BigSource } from 'big.js';
 import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 
-import { formatTokenAmount, formatTokenAmountCompact } from './Numbers';
+import { formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
 
 function scalerFor(decimals: number) {
   return `1${'0'.repeat(decimals)}`;

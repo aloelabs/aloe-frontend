@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import Big from 'big.js';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { useContractRead } from 'wagmi';
 
 import KittyABI from '../../assets/abis/Kitty.json';
-import { Kitty } from '../Kitty';
-import { Token } from '../Token';
 
 export function useAmountToShares(token: Token, kitty: Kitty, withdrawAmount: string) {
   const [state, setState] = useState<string | null>(null);

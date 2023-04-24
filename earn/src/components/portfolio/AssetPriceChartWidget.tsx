@@ -1,13 +1,13 @@
 import React from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
-import { Token } from '../../data/Token';
 import { PriceEntry } from '../../pages/PortfolioPage';
 import { fixTimestamp } from '../../util/Dates';
-import { formatUSD } from '../../util/Numbers';
 import Graph from '../graph/Graph';
 import AssetPriceChartTooltip from './AssetPriceChartTooltip';
 

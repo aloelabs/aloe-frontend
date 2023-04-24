@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
+import { Token } from 'shared/lib/data/Token';
 import { Chain, erc20ABI, useContractWrite, Address } from 'wagmi';
-
-import { Token } from '../Token';
 
 export default function useAllowanceWrite(onChain: Chain, token: Token, spender: Address) {
   return useContractWrite({

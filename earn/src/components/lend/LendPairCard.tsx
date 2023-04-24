@@ -10,6 +10,7 @@ import {
 } from 'shared/lib/components/common/Card';
 import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -18,7 +19,6 @@ import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import { LendingPair } from '../../data/LendingPair';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
-import { roundPercentage } from '../../util/Numbers';
 import TokenPairIcons from '../common/TokenPairIcons';
 import LendTokenInfo from './LendTokenInfo';
 import ContractLinksModal from './modal/ContractLinksModal';

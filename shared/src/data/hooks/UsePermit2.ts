@@ -14,7 +14,7 @@ import {
 
 import { permit2ABI } from '../../abis/Permit2';
 import { bigNumberToBinary } from '../../util/Bitmap';
-import { GN, GNFormat } from '../../util/GoodNumber';
+import { GN, GNFormat } from '../../data/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
 import { Token } from '../Token';
@@ -89,7 +89,7 @@ function evmCurrentTimePlus(secondsFromNow: number) {
   return (Date.now() / 1000 + secondsFromNow).toFixed(0);
 }
 
-export default function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
+export function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
   /*//////////////////////////////////////////////////////////////
                             REACT STATE
   //////////////////////////////////////////////////////////////*/

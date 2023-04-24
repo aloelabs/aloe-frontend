@@ -5,6 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
@@ -17,7 +18,6 @@ import {
 } from '../../../../data/constants/Addresses';
 import { MarginAccount } from '../../../../data/MarginAccount';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
-import { truncateDecimals } from '../../../../util/Numbers';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
 const SECONDARY_COLOR = '#CCDFED';
