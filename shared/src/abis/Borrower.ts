@@ -1,4 +1,4 @@
-export const marginAccountABI = [
+export const borrowerABI = [
   {
     inputs: [
       {

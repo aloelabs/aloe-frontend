@@ -3,7 +3,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -72,7 +72,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: marginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
     args: [
       ALOE_II_WITHDRAW_MANAGER_ADDRESS,
