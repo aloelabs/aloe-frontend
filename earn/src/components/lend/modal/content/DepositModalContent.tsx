@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -9,8 +10,8 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
+import { routerABI } from '../../../../abis/Router';
 import { ChainContext } from '../../../../App';
-import RouterABI from '../../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
@@ -89,14 +90,14 @@ function DepositButton(props: DepositButtonProps) {
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName: 'depositWithPermit2(address,uint256,uint256,uint256,bytes)',
+    abi: routerABI,
+    functionName: 'depositWithPermit2',
     args: [
       kitty.address,
       permit2Result.amount.toBigNumber(),
-      permit2Result.nonce,
-      permit2Result.deadline,
-      permit2Result.signature,
+      BigNumber.from(permit2Result.nonce ?? '0'),
+      BigNumber.from(permit2Result.deadline),
+      permit2Result.signature ?? '0x',
     ],
     chainId: activeChain.id,
     enabled: permit2State === Permit2State.DONE,
