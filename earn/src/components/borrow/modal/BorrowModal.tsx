@@ -2,7 +2,7 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
@@ -208,6 +208,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toFixed(0))) || false;
 
+  // TODO: use GN (this is an odd case where Big may make more sense)
   const formattedAnte = new Big(ANTE).div(10 ** 18).toFixed(4);
 
   if (!userAddress || !isOpen) {
@@ -228,9 +229,10 @@ export default function BorrowModal(props: BorrowModalProps) {
   // TODO: use GN
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
-  const bigMax = BigNumber.from(new Big(max).mul(10 ** borrowToken.decimals).toFixed(0));
-  const maxString = ethers.utils.formatUnits(bigMax, borrowToken.decimals);
+  const gnMax = GN.fromNumber(max, borrowToken.decimals);
+  const maxString = ethers.utils.formatUnits(gnMax.toBigNumber(), borrowToken.decimals);
 
+  // TODO: use GN
   const newLiabilities: Liabilities = {
     amount0: isToken0 ? newLiability.toNumber() : marginAccount.liabilities.amount0,
     amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
