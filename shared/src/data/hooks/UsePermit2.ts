@@ -208,9 +208,8 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
 
     const nonceBitmapStr = bigNumberToBinary(nonceBitmap).padStart(256, '0');
     const nonceBitPos = 255 - nonceBitmapStr.lastIndexOf('0');
-    const nonce = nonceWordPos.shl(8).add(nonceBitPos);
 
-    setNonce(nonce.toString());
+    setNonce(nonceWordPos.shl(8).add(nonceBitPos).toString());
   }, [nonceBitmap, nonceWordPos]);
 
   /*//////////////////////////////////////////////////////////////
@@ -305,7 +304,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
       amount,
       nonce,
       deadline,
-      signature,
+      signature: signature as `0x${string}` | undefined,
     },
   };
 }
