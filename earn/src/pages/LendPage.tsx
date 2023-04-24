@@ -32,7 +32,6 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getTokenByTicker, getTokens } from '../data/TokenData';
-
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`

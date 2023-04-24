@@ -3,7 +3,6 @@ import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
-
 const RESERVE_FACTOR = 0.825; // (1 - 1/8)
 
 export type MarketInfo = {

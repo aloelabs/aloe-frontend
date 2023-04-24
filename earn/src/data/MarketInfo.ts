@@ -3,7 +3,6 @@ import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
-
 export type MarketInfo = {
   lender0: Address;
   lender1: Address;
