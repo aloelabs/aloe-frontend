@@ -5,7 +5,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { BaseMaxButton } from 'shared/lib/components/common/Input';
+import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -229,8 +229,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   // TODO: use GN
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
-  const gnMax = GN.fromNumber(max, borrowToken.decimals);
-  const maxString = ethers.utils.formatUnits(gnMax.toBigNumber(), borrowToken.decimals);
+  const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
+  const maxString = ethers.utils.formatUnits(gnEightyPercentMax.toBigNumber(), borrowToken.decimals);
 
   // TODO: use GN
   const newLiabilities: Liabilities = {
@@ -267,18 +267,17 @@ export default function BorrowModal(props: BorrowModalProps) {
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between mb-1'>
+          <div className='flex flex-row justify-between items-center mb-1'>
             <Text size='M' weight='bold'>
               Borrow Amount
             </Text>
-            <BaseMaxButton
-              size='L'
+            <CustomMaxButton
               onClick={() => {
                 setBorrowAmount(maxString);
               }}
             >
-              MAX
-            </BaseMaxButton>
+              80% MAX
+            </CustomMaxButton>
           </div>
           <TokenAmountSelectInput
             inputValue={borrowAmount}
