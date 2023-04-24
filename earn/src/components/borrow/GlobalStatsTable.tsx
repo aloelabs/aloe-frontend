@@ -1,10 +1,10 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 import { MarketInfo } from '../../data/MarketInfo';
-import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 
 const STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const STAT_VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';

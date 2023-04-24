@@ -3,15 +3,15 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN } from 'shared/lib/data/GoodNumber';
+import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import RouterABI from '../../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
-import usePermit2, { Permit2State } from '../../../../data/hooks/UsePermit2';
-import { Kitty } from '../../../../data/Kitty';
-import { Token } from '../../../../data/Token';
-import { GN } from '../../../../util/GoodNumber';
 import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 

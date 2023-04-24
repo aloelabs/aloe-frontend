@@ -1,3 +1,4 @@
+import { Token } from 'shared/lib/data/Token';
 import { Address, chain } from 'wagmi';
 
 import {
@@ -18,7 +19,6 @@ import {
   WethLogo,
   WstEthLogo,
 } from '../assets/svg/tokens';
-import { Token } from './Token';
 
 const USDC_GOERLI = new Token(
   chain.goerli.id,

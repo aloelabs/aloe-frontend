@@ -14,6 +14,18 @@ export function toBig(value: ethers.BigNumber | ethers.utils.Result): Big {
   return new Big(value.toString());
 }
 
+/**
+ * Converts a BigNumber (ethers type) to a standard Javascript number, but may lose precision in the decimal
+ * places (because floats be like that)
+ * @param value Source value in fixed point
+ * @param decimals Number of decimals in the source
+ * @returns Javascript number, approximately equal to `value`
+ */
+export function toImpreciseNumber(value: ethers.BigNumber | ethers.utils.Result, decimals: number): number {
+  const big = toBig(value);
+  return big.div(10 ** decimals).toNumber();
+}
+
 export function String1E(decimals: number): string {
   return `1${'0'.repeat(decimals)}`;
 }
@@ -35,7 +47,20 @@ export function formatUSD(amount: number | null, placeholder = '-'): string {
   if (amount === null) {
     return placeholder;
   }
-  return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  if (amount < 0.1) {
+    return amount.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumSignificantDigits: 2,
+      maximumSignificantDigits: 2,
+    });
+  }
+  return amount.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /**
@@ -76,14 +101,13 @@ export function roundPercentage(percentage: number, precision?: number): number 
 }
 
 //TODO: refactor this to handle edge cases better
-export function formatNumberInput(input: string, negative?: boolean): string | null {
+export function formatNumberInput(input: string, negative?: boolean, maxDecimals?: number): string | null {
   if (input === '' || input === '-') {
     return '';
   } else if (input === '.') {
     return negative ? '-0.' : '0.';
   }
-
-  const re = new RegExp(`^${negative ? '-?' : ''}[0-9\b]+[.\b]?[0-9\b]{0,18}$`);
+  const re = new RegExp(`^${negative ? '-?' : ''}[0-9\b]+[.\b]?[0-9\b]{0,}$`);
 
   if (re.test(input)) {
     // if (max && new Big(input).gt(new Big(max))) {
@@ -116,19 +140,28 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       notation: 'compact',
       compactDisplay: 'short',
       maximumSignificantDigits: sigDigs,
-      minimumSignificantDigits: 2,
+      minimumSignificantDigits: Math.min(2, sigDigs),
     });
-  } else if (amount > 1e-8 || amount === 0) {
+  } else if (amount > 1e-5 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: sigDigs,
-      minimumSignificantDigits: 2,
+      minimumSignificantDigits: Math.min(2, sigDigs),
+    });
+  } else if (amount > 1e-10) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'scientific',
+      maximumSignificantDigits: sigDigs,
+      minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else {
+    // If amount <= 10e-10, we want to show no more than 2 sigdigs
     return amount.toLocaleString('en-US', {
       style: 'decimal',
-      notation: 'engineering',
-      maximumSignificantDigits: sigDigs,
+      notation: 'scientific',
+      maximumSignificantDigits: 2,
+      minimumSignificantDigits: 2,
     });
   }
 }
@@ -186,6 +219,57 @@ export function formatPriceRatio(x: number, sigDigs = 4): string {
   }
 }
 
+/**
+ * Formats an amount with a unit, abbreviating large numbers and using scientific notation for small numbers.
+ * Note: This function may not work properly if the unit close to or longer than the maximum length.
+ * @param amount the amount to format
+ * @param unit the unit to append to the amount
+ * @param maxLength the maximum length of the formatted string
+ * @returns the formatted string
+ */
+export function formatAmountWithUnit(amount: number, unit: string, maxLength = 10): string {
+  const maxLengthOfAmount = maxLength - unit.length - 1;
+  if (amount > 10_000) {
+    // Abbreviate large numbers
+    return `${amount.toLocaleString('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })} ${unit}`;
+  } else if (amount === 0) {
+    return `0 ${unit}`;
+  } else if (amount < Math.pow(10, -4)) {
+    // Use scientific notation for small numbers
+    return `${amount.toLocaleString('en-US', {
+      notation: 'scientific',
+      compactDisplay: 'short',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })} ${unit}`;
+  }
+  // Otherwise, truncate decimals
+  const numDigits = Math.max(Math.floor(Math.log10(Math.abs(amount))), 0);
+  const numDecimals = Math.max(maxLengthOfAmount - numDigits, 0);
+  return `${truncateDecimals(amount.toString(), numDecimals)} ${unit}`;
+}
+
 export function areWithinNSigDigs(a: Big, b: Big, n: number): boolean {
   return a.prec(n).eq(b.prec(n));
+}
+
+export function truncateDecimals(value: string, decimals: number): string {
+  const decimalIndex = value.indexOf('.');
+  if (decimalIndex === -1) {
+    return value;
+  }
+  return value.slice(0, decimalIndex + decimals + 1);
+}
+
+export function getDecimalPlaces(value: string): number {
+  const decimalIndex = value.indexOf('.');
+  if (decimalIndex === -1) {
+    return 0;
+  }
+  return value.length - decimalIndex - 1;
 }

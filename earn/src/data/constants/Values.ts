@@ -1,7 +1,6 @@
 import Big from 'big.js';
 import { BigNumber } from 'ethers';
-
-import { toBig } from '../../util/Numbers';
+import { toBig } from 'shared/lib/util/Numbers';
 
 export const UINT256_MAX = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 export const BLOCKS_TO_WAIT = 1;

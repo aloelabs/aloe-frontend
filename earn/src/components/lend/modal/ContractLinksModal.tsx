@@ -2,13 +2,13 @@ import { useContext } from 'react';
 
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 
 import { ChainContext } from '../../../App';
 import { ReactComponent as OpenIcon } from '../../../assets/svg/open.svg';
-import { Kitty } from '../../../data/Kitty';
-import { Token } from '../../../data/Token';
 import { truncateAddress } from '../../../util/Addresses';
 import TokenIcon from '../../common/TokenIcon';
 

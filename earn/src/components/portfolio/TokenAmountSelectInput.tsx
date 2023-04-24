@@ -1,9 +1,9 @@
 import { ChangeEvent } from 'react';
 
 import { InputBase } from 'shared/lib/components/common/Input';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
-import { Token } from '../../data/Token';
 import TokenDropdown from '../common/TokenDropdown';
 
 const SquareInputWrapper = styled.div`

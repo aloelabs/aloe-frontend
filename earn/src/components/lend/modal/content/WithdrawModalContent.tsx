@@ -5,13 +5,13 @@ import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractRead, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import KittyABI from '../../../../assets/abis/Kitty.json';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
-import { Kitty } from '../../../../data/Kitty';
-import { Token } from '../../../../data/Token';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 

@@ -6,6 +6,8 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { Token } from 'shared/lib/data/Token';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { chain } from 'wagmi';
 
 import {
@@ -16,8 +18,6 @@ import {
 } from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
-import { Token } from '../data/Token';
-import { roundDownToNearestN, roundUpToNearestN, toBig } from '../util/Numbers';
 import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;

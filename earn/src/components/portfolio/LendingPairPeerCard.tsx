@@ -3,14 +3,14 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { AxiosResponse } from 'axios';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { LendingPair } from '../../data/LendingPair';
-import { Token } from '../../data/Token';
 import { makeEtherscanRequest } from '../../util/Etherscan';
-import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 import Tooltip from '../common/Tooltip';
 
 const Container = styled.div`

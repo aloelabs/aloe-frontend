@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import useHover from 'shared/lib/data/hooks/UseHover';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
-import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { SearchBar } from './SearchBar';

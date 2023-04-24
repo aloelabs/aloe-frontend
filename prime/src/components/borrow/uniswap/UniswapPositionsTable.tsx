@@ -3,12 +3,12 @@ import { useMemo, useState } from 'react';
 import { Provider } from '@wagmi/core';
 import { BigNumber, Contract } from 'ethers';
 import { Text } from 'shared/lib/components/common/Typography';
+import { formatTokenAmount, toBig } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { MarginAccount } from '../../../data/MarginAccount';
-import { formatTokenAmount, toBig } from '../../../util/Numbers';
 import {
   getUniswapPoolBasics,
   UniswapV3PoolBasics,

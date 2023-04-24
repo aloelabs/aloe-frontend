@@ -7,6 +7,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -17,9 +19,7 @@ import { ANTE } from '../../../data/constants/Values';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
-import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../HealthBar';
 

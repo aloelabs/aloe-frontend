@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 
-import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgba } from '../../util/Colors';
-import { formatTokenAmount, roundPercentage } from '../../util/Numbers';
 import { APYContainer, BalanceContainer, PieChartContainer } from './PortfolioGrid';
 import PortfolioPieChartWidget, { PortfolioPieChartSlice } from './PortfolioPieChartWidget';
 

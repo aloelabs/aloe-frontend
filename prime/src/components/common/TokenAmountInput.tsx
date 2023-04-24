@@ -2,12 +2,12 @@ import React from 'react';
 
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import ErrorIcon from '../../assets/svg/interaction_error.svg';
-import { Token } from '../../data/Token';
-import { truncateDecimals } from '../../util/Numbers';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';

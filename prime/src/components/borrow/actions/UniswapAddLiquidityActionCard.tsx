@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
+import { roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -10,7 +11,6 @@ import { ActionID } from '../../../data/actions/ActionID';
 import { addLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
-import { roundDownToNearestN, roundUpToNearestN } from '../../../util/Numbers';
 import {
   calculateAmount0FromAmount1,
   calculateAmount1FromAmount0,

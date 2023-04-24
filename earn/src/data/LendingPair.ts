@@ -2,6 +2,9 @@ import { AxiosResponse } from 'axios';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
+import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
 import ERC20ABI from '../assets/abis/ERC20.json';
@@ -11,15 +14,12 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { toImpreciseNumber } from '../util/Numbers';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   UNISWAP_POOL_DENYLIST,
 } from './constants/Addresses';
-import { Kitty } from './Kitty';
-import { Token } from './Token';
 import { getToken } from './TokenData';
 
 export interface KittyInfo {

@@ -12,9 +12,9 @@ import {
   useWaitForTransaction,
 } from 'wagmi';
 
-import { permit2ABI } from '../../abis/Permit2';
+import { Permit2ABI } from '../../abis/Permit2';
 import { bigNumberToBinary } from '../../util/Bitmap';
-import { GN, GNFormat } from '../../util/GoodNumber';
+import { GN, GNFormat } from '../../data/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
 import { Token } from '../Token';
@@ -89,7 +89,7 @@ function evmCurrentTimePlus(secondsFromNow: number) {
   return (Date.now() / 1000 + secondsFromNow).toFixed(0);
 }
 
-export default function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
+export function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
   /*//////////////////////////////////////////////////////////////
                             REACT STATE
   //////////////////////////////////////////////////////////////*/
@@ -168,7 +168,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
   {
     const { data: domainSeparator } = useContractRead({
       address: UNISWAP_PERMIT2_ADDRESS,
-      abi: permit2ABI,
+      abi: Permit2ABI,
       functionName: 'DOMAIN_SEPARATOR',
       chainId: chain.id,
     });
@@ -186,7 +186,7 @@ export default function usePermit2(chain: Chain, token: Token, owner: Address, s
     isFetching: isFetchingNonceBitmap,
   } = useContractRead({
     address: UNISWAP_PERMIT2_ADDRESS,
-    abi: permit2ABI,
+    abi: Permit2ABI,
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
     chainId: chain.id,

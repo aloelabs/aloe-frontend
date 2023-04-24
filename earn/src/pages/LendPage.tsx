@@ -8,6 +8,8 @@ import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatUSD, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi';
@@ -29,9 +31,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-import { Token } from '../data/Token';
 import { getTokenByTicker, getTokens } from '../data/TokenData';
-import { formatUSD, roundPercentage } from '../util/Numbers';
 
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 

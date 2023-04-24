@@ -3,6 +3,7 @@ import React from 'react';
 import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
 import { Display } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -11,7 +12,6 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../../data/constants/Breakpoints';
-import { Token } from '../../data/Token';
 import { formatAddressStart } from '../../util/FormatAddress';
 
 const MarginPairContainer = styled.div`

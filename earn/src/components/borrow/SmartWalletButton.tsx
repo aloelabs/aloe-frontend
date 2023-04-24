@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 import { Display } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { Token } from '../../data/Token';
 import { getProminentColor, rgba } from '../../util/Colors';
 import TokenPairIcons from '../common/TokenPairIcons';
 

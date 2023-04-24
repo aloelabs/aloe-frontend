@@ -1,10 +1,10 @@
 import React from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { Token } from '../../../data/Token';
 import { formatNumberRelativeToSize } from '../PnLGraph';
 
 export const PORTFOLIO_TOOLTIP_WIDTH = 175;
