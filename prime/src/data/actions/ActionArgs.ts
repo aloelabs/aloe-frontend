@@ -1,8 +1,8 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { Token } from 'shared/lib/data/Token';
 
-import { Token } from '../Token';
 import { UniswapPosition } from './Actions';
 
 export function getTransferInActionArgs(token: Token, amount: number): string {

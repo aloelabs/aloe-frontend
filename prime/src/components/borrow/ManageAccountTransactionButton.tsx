@@ -3,6 +3,8 @@ import { ReactElement, useContext, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { Token } from 'shared/lib/data/Token';
+import { toBig } from 'shared/lib/util/Numbers';
 import {
   Address,
   Chain,
@@ -23,8 +25,6 @@ import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
-import { Token } from '../../data/Token';
-import { toBig } from '../../util/Numbers';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';

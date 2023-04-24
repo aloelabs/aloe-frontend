@@ -2,6 +2,8 @@ import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Token } from 'shared/lib/data/Token';
+import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
@@ -9,10 +11,8 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { toBig, toImpreciseNumber } from '../util/Numbers';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { Token } from './Token';
 import { getToken } from './TokenData';
 
 export type Assets = {

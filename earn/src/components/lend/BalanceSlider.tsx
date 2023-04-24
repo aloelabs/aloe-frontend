@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { TokenBalance } from '../../pages/LendPage';
-import { formatTokenAmount } from '../../util/Numbers';
 
 const Wrapper = styled.div`
   width: 300px;

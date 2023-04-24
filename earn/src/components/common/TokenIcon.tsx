@@ -1,6 +1,5 @@
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
-
-import { Token } from '../../data/Token';
 
 const StyledTokenIcon = styled.img.attrs((props: { width: number; height: number; borderRadius: string }) => props)`
   width: ${(props) => props.width}px;

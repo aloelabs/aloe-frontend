@@ -1,31 +1,42 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useBalance, useContractWrite } from 'wagmi';
+import { GN } from 'shared/lib/data/GoodNumber';
+import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
+import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import RouterABI from '../../../../assets/abis/Router.json';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
-import useAllowance from '../../../../data/hooks/UseAllowance';
-import useAllowanceWrite from '../../../../data/hooks/UseAllowanceWrite';
-import { Kitty } from '../../../../data/Kitty';
-import { Token } from '../../../../data/Token';
-import { toBig } from '../../../../util/Numbers';
-import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
+import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
 const TERTIARY_COLOR = '#4b6980';
+const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
+  PERMIT_ASSET,
   APPROVE_ASSET,
-  PENDING,
+  WAITING_FOR_TRANSACTION,
+  WAITING_FOR_USER,
   LOADING,
   READY,
 }
+
+const permit2StateToButtonStateMap = {
+  [Permit2State.ASKING_USER_TO_APPROVE]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.DONE]: undefined,
+  [Permit2State.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [Permit2State.READY_TO_APPROVE]: ConfirmButtonState.APPROVE_ASSET,
+  [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
+  [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
+};
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
@@ -34,26 +45,135 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
         text: `Insufficient ${token.ticker}`,
         enabled: false,
       };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return {
+        text: `Permit ${token.ticker}`,
+        enabled: true,
+      };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
         text: `Approve ${token.ticker}`,
         enabled: true,
       };
-    case ConfirmButtonState.LOADING:
-      return { text: 'Confirm', enabled: false };
-    case ConfirmButtonState.PENDING:
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
       return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.LOADING:
     default:
       return { text: 'Confirm', enabled: false };
   }
 }
 
+type DepositButtonProps = {
+  depositAmount: GN;
+  depositBalance: GN;
+  token: Token;
+  kitty: Kitty;
+  accountAddress: Address;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+};
+
+function DepositButton(props: DepositButtonProps) {
+  const { depositAmount, depositBalance, token, kitty, accountAddress, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
+  const [isPending, setIsPending] = useState(false);
+
+  const {
+    state: permit2State,
+    action: permit2Action,
+    result: permit2Result,
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+
+  const { config: depositWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS,
+    abi: RouterABI,
+    functionName: 'depositWithPermit2(address,uint256,uint256,uint256,bytes)',
+    args: [
+      kitty.address,
+      permit2Result.amount.toBigNumber(),
+      permit2Result.nonce,
+      permit2Result.deadline,
+      permit2Result.signature,
+    ],
+    chainId: activeChain.id,
+    enabled: permit2State === Permit2State.DONE,
+  });
+  const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
+    if (depositWithPermit2Config.request) {
+      return {
+        ...depositWithPermit2Config.request,
+        gasLimit: depositWithPermit2Config.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [depositWithPermit2Config.request]);
+  const {
+    write: depositWithPermit2,
+    isError: contractDidError,
+    isSuccess: contractDidSucceed,
+    data: contractData,
+  } = useContractWrite({
+    ...depositWithPermit2Config,
+    request: depositWithPermit2ConfigUpdatedRequest,
+  });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+    } else if (contractDidError) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn]);
+
+  let confirmButtonState: ConfirmButtonState;
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
+  } else if (depositAmount.isZero()) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (depositAmount.gt(depositBalance)) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else {
+    confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
+  }
+
+  const confirmButton = getConfirmButton(confirmButtonState, token);
+
+  function handleClickConfirm() {
+    if (permit2Action) {
+      permit2Action();
+      return;
+    }
+
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (!depositWithPermit2Config.request) {
+        refetchDepositWithPermit2();
+        return;
+      }
+      setIsPending(true);
+      depositWithPermit2?.();
+    }
+  }
+
+  return (
+    <FilledStylizedButton
+      size='M'
+      onClick={() => handleClickConfirm()}
+      fillWidth={true}
+      disabled={!confirmButton.enabled}
+    >
+      {confirmButton.text}
+    </FilledStylizedButton>
+  );
+}
+
 export type DepositModalContentProps = {
   token: Token;
   kitty: Kitty;
-  setPendingTxnResult: (result: SendTransactionResult) => void;
+  setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function DepositModalContent(props: DepositModalContentProps) {
@@ -61,7 +181,6 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [depositAmount, setDepositAmount] = useState('');
-  const [isPending, setIsPending] = useState(false);
   const account = useAccount();
 
   const { refetch: refetchBalance, data: depositBalance } = useBalance({
@@ -71,107 +190,13 @@ export default function DepositModalContent(props: DepositModalContentProps) {
     chainId: activeChain.id,
   });
 
-  const { refetch: refetchUserAllowance, data: userAllowanceToken } = useAllowance(
-    activeChain,
-    token,
-    account?.address ?? '0x',
-    ALOE_II_ROUTER_ADDRESS
-  );
-
-  const writeAllowanceToken = useAllowanceWrite(activeChain, token, ALOE_II_ROUTER_ADDRESS);
-
-  const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
-  } = useContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    mode: 'recklesslyUnprepared',
-    functionName: 'depositWithApprove(address,uint256)',
-    chainId: activeChain.id,
-  });
-
   useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => {
-      refetchBalance();
-      refetchUserAllowance();
-    }, 13_000);
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
-  }, [refetchBalance, refetchUserAllowance]);
+    const interval = setInterval(() => refetchBalance(), 13_000);
+    return () => clearInterval(interval);
+  }, [refetchBalance]);
 
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxnResult(contractData);
-      setIsPending(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setIsPending, setPendingTxnResult]);
-
-  const numericDepositBalance = Number(depositBalance?.formatted ?? 0) || 0;
-  const numericDepositAmount = Number(depositAmount) || 0;
-
-  const loadingApproval = numericDepositBalance > 0 && !userAllowanceToken;
-  const needsApproval =
-    userAllowanceToken && toBig(userAllowanceToken).div(token.decimals).toNumber() < numericDepositBalance;
-
-  let confirmButtonState = ConfirmButtonState.READY;
-
-  if (numericDepositAmount > numericDepositBalance) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (loadingApproval) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (needsApproval && isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (needsApproval) {
-    confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  }
-
-  const confirmButton = getConfirmButton(confirmButtonState, token);
-
-  function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
-    switch (confirmButtonState) {
-      case ConfirmButtonState.APPROVE_ASSET:
-        setIsPending(true);
-        writeAllowanceToken
-          .writeAsync?.()
-          .then((txnResult) => {
-            txnResult.wait(1).then(() => {
-              setIsPending(false);
-            });
-          })
-          .catch((error) => {
-            setIsPending(false);
-          });
-        break;
-      case ConfirmButtonState.READY:
-        setIsPending(true);
-        contractWrite?.({
-          recklesslySetUnpreparedArgs: [
-            kitty.address,
-            ethers.utils.parseUnits(depositAmount, token.decimals).toString(),
-          ],
-          recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-        });
-        break;
-      default:
-        break;
-    }
-  }
-
-  const isDepositAmountValid = numericDepositAmount > 0;
-  const shouldConfirmButtonBeDisabled =
-    !confirmButton.enabled || (confirmButtonState !== ConfirmButtonState.APPROVE_ASSET && !isDepositAmountValid);
+  const gnDepositAmount = GN.fromDecimalString(depositAmount || '0', token.decimals);
+  const gnDepositBalance = GN.fromDecimalString(depositBalance?.formatted ?? '0', token.decimals);
 
   return (
     <>
@@ -195,25 +220,24 @@ export default function DepositModalContent(props: DepositModalContentProps) {
           {depositAmount || 0} {token?.ticker}
         </Text>
       </div>
-      <div className='w-full ml-auto'>
-        <FilledStylizedButton
-          size='M'
-          fillWidth={true}
-          color={MODAL_BLACK_TEXT_COLOR}
-          onClick={handleClickConfirm}
-          disabled={shouldConfirmButtonBeDisabled}
-        >
-          {confirmButton.text}
-        </FilledStylizedButton>
+      <div className='w-full'>
+        <DepositButton
+          depositAmount={gnDepositAmount}
+          depositBalance={gnDepositBalance}
+          token={token}
+          kitty={kitty}
+          accountAddress={account.address ?? '0x'}
+          setPendingTxn={setPendingTxnResult}
+        />
+        <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+          By depositing, you agree to our{' '}
+          <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            Terms of Service
+          </a>{' '}
+          and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+          your duty to educate yourself and be aware of the risks.
+        </Text>
       </div>
-      <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-        By depositing, you agree to our{' '}
-        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
-          Terms of Service
-        </a>{' '}
-        and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
-        your duty to educate yourself and be aware of the risks.
-      </Text>
     </>
   );
 }

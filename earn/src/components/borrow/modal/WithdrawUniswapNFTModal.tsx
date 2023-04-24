@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { formatTokenAmount, roundPercentage, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
@@ -20,7 +21,6 @@ import {
   UniswapPosition,
   zip,
 } from '../../../data/Uniswap';
-import { formatTokenAmount, roundPercentage, truncateDecimals } from '../../../util/Numbers';
 import TokenPairIcons from '../../common/TokenPairIcons';
 import { InRangeBadge, OutOfRangeBadge } from '../UniswapPositionList';
 

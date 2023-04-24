@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as SearchIcon } from '../../assets/svg/search.svg';
-import { Token } from '../../data/Token';
 
 const SearchInputContainer = styled.div`
   position: relative;

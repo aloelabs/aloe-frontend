@@ -16,6 +16,7 @@ import {
 import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text } from 'shared/lib/components/common/Typography';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -29,7 +30,6 @@ import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
 import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { makeEtherscanRequest } from '../../util/Etherscan';
-import { formatNumberInput } from '../../util/Numbers';
 import { tickToPrice } from '../../util/Uniswap';
 import Tooltip from '../common/Tooltip';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';

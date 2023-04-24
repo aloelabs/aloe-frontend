@@ -5,11 +5,11 @@ import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate } from 'react-router-dom';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { Kitty } from '../../../data/Kitty';
-import { Token } from '../../../data/Token';
 import DepositModalContent from './content/DepositModalContent';
 import FailureModalContent from './content/FailureModalContent';
 import SuccessModalContent from './content/SuccessModalContent';

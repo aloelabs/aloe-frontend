@@ -1,20 +1,20 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { Address, SendTransactionResult } from '@wagmi/core';
+import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractRead, useContractWrite } from 'wagmi';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import KittyABI from '../../../../assets/abis/Kitty.json';
-import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
-import { Kitty } from '../../../../data/Kitty';
-import { Token } from '../../../../data/Token';
+import { LenderABI } from '../../../../assets/abis/Lender';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
+const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
@@ -43,12 +43,12 @@ function getConfirmButton(state: ConfirmButtonState, kitty: Kitty): { text: stri
 }
 
 type WithdrawButtonProps = {
-  withdrawAmount: string;
-  maxWithdrawBalance: string;
-  maxRedeemBalance: string;
+  withdrawAmount: GN;
+  maxWithdrawBalance: GN;
+  maxRedeemBalance: GN;
   token: Token;
   kitty: Kitty;
-  accountAddress: string;
+  accountAddress: Address;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
@@ -60,23 +60,41 @@ function WithdrawButton(props: WithdrawButtonProps) {
   // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'convertToShares',
-    args: [ethers.utils.parseUnits(withdrawAmount || '0.00', token.decimals).toString()],
+    args: [withdrawAmount.toBigNumber()],
     chainId: activeChain.id,
   });
 
+  const gnRequestedShares = GN.fromBigNumber(requestedShares ?? BigNumber.from('0'), token.decimals);
+  // Being extra careful here to make sure we don't withdraw more than the user has
+  const numberOfSharesToRedeem = GN.min(gnRequestedShares, maxRedeemBalance);
+
+  const { config: redeemConfig } = usePrepareContractWrite({
+    address: kitty.address,
+    abi: LenderABI,
+    functionName: 'redeem',
+    args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress],
+    chainId: activeChain.id,
+    enabled: !numberOfSharesToRedeem.isZero() && !isPending,
+  });
+  const redeemUpdatedRequest = useMemo(() => {
+    if (redeemConfig.request) {
+      return {
+        ...redeemConfig.request,
+        gasLimit: redeemConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      };
+    }
+    return undefined;
+  }, [redeemConfig.request]);
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
   } = useContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
-    mode: 'recklesslyUnprepared',
-    functionName: 'redeem',
-    chainId: activeChain.id,
+    ...redeemConfig,
+    request: redeemUpdatedRequest,
   });
 
   useEffect(() => {
@@ -88,15 +106,16 @@ function WithdrawButton(props: WithdrawButtonProps) {
     }
   }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn]);
 
-  const numericDepositBalance = Number(maxWithdrawBalance) || 0;
-  const numericDepositAmount = Number(withdrawAmount) || 0;
-
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (numericDepositAmount > numericDepositBalance) {
+  if (withdrawAmount.gt(maxWithdrawBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_KITTY;
   } else if (isPending || convertToSharesIsLoading) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (withdrawAmount.isZero()) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (!redeemConfig.request) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, kitty);
@@ -104,20 +123,11 @@ function WithdrawButton(props: WithdrawButtonProps) {
   function handleClickConfirm() {
     if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
       setIsPending(true);
-      const numericRequestedShares = BigNumber.from(requestedShares.toString());
-      const numericMaxRedeemBalance = BigNumber.from(maxRedeemBalance);
-      // Being extra careful here to make sure we don't withdraw more than the user has
-      const finalWithdrawAmount = numericRequestedShares.gt(numericMaxRedeemBalance)
-        ? numericMaxRedeemBalance
-        : numericRequestedShares;
-      contractWrite?.({
-        recklesslySetUnpreparedArgs: [finalWithdrawAmount.toString(), accountAddress, accountAddress],
-        recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from('600000') },
-      });
+      contractWrite?.();
     }
   }
 
-  const isDepositAmountValid = numericDepositAmount > 0;
+  const isDepositAmountValid = withdrawAmount.isGtZero();
   const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
 
   return (
@@ -149,37 +159,29 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
-    args: [accountAddress] as const,
+    args: [accountAddress || '0x'],
+    enabled: !!accountAddress,
   });
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
-    abi: KittyABI,
+    abi: LenderABI,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
-    args: [accountAddress] as const,
+    args: [accountAddress || '0x'],
+    enabled: !!accountAddress,
   });
 
-  const maxWithdrawBalance = useMemo(() => {
-    if (maxWithdraw) {
-      return new Big(maxWithdraw.toString()).div(10 ** token.decimals).toString();
-    }
-    return '0.00';
-  }, [maxWithdraw, token.decimals]);
-
-  const { refetch: refetchBalanceOfUnderlying, data: balanceOfUnderlying } = useBalanceOfUnderlying(
-    token,
-    kitty,
-    accountAddress || ''
-  );
+  const gnWithdrawAmount = GN.fromDecimalString(withdrawAmount || '0', token.decimals);
+  const gnMaxWithdraw = GN.fromBigNumber(maxWithdraw ?? BigNumber.from(0), token.decimals);
+  const gnMaxRedeem = GN.fromBigNumber(maxRedeem ?? BigNumber.from(0), token.decimals);
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
     interval = setInterval(() => {
-      refetchBalanceOfUnderlying();
       refetchMaxRedeem();
       refetchMaxWithdraw();
     }, 13_000);
@@ -188,9 +190,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         clearInterval(interval);
       }
     };
-  }, [refetchBalanceOfUnderlying, refetchMaxRedeem, refetchMaxWithdraw]);
-
-  const underlyingBalance = balanceOfUnderlying ?? '0';
+  }, [refetchMaxRedeem, refetchMaxWithdraw]);
 
   return (
     <>
@@ -201,8 +201,8 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
             setWithdrawAmount(updatedAmount);
           }}
           value={withdrawAmount}
-          max={underlyingBalance}
-          maxed={withdrawAmount === underlyingBalance}
+          max={gnMaxWithdraw.toString(GNFormat.DECIMAL)}
+          maxed={gnWithdrawAmount.eq(gnMaxWithdraw)}
         />
       </div>
       <div className='flex justify-between items-center mb-8'>
@@ -219,9 +219,9 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
           accountAddress={accountAddress || '0x'}
           token={token}
           kitty={kitty}
-          withdrawAmount={withdrawAmount}
-          maxRedeemBalance={maxRedeem ? maxRedeem.toString() : '0'}
-          maxWithdrawBalance={maxWithdrawBalance}
+          withdrawAmount={gnWithdrawAmount}
+          maxRedeemBalance={gnMaxRedeem}
+          maxWithdrawBalance={gnMaxWithdraw}
           setPendingTxn={setPendingTxnResult}
         />
       </div>

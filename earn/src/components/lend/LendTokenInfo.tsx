@@ -1,7 +1,6 @@
 import InfoFigure from 'shared/lib/components/common/InfoFigure';
-
-import { Token } from '../../data/Token';
-import { roundPercentage, formatUSDAuto, formatAmountWithUnit } from '../../util/Numbers';
+import { Token } from 'shared/lib/data/Token';
+import { roundPercentage, formatUSDAuto, formatAmountWithUnit } from 'shared/lib/util/Numbers';
 
 const FIGURE_COLOR = 'rgba(255, 255, 255, 0.6)';
 const MAX_CHARACTERS = 10;

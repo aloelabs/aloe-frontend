@@ -18,7 +18,7 @@ function getNonce(erc20Contract: Contract, owner: string) {
   return erc20Contract.nonces(owner);
 }
 
-function computeDomainSeparator(domain: EIP2612Domain) {
+export function computeDomainSeparator(domain: EIP2612Domain) {
   let params: string[] = [];
   let types: ('bytes32' | 'uint256' | 'address')[] = ['bytes32'];
   let args: any[] = [];

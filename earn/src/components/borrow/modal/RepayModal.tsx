@@ -7,6 +7,9 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from 'shared/lib/util/Permit';
 import {
   useAccount,
   usePrepareContractWrite,
@@ -26,10 +29,7 @@ import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import useAllowance from '../../../data/hooks/UseAllowance';
 import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
-import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
-import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../HealthBar';
 

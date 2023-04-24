@@ -5,15 +5,15 @@ import Big from 'big.js';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import ERC20ABI from '../../../../assets/abis/ERC20.json';
 import { isSolvent } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
-import { Token } from '../../../../data/Token';
 import { UniswapPosition } from '../../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../../util/Numbers';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../../HealthBar';
 
