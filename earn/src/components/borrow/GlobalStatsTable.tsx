@@ -1,5 +1,6 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
@@ -58,10 +59,6 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
     return null;
   }
   const { token0, token1 } = marginAccount;
-  const lender0TotalSupply = marketInfo.lender0TotalAssets.div(10 ** token0.decimals);
-  const lender1TotalSupply = marketInfo.lender1TotalAssets.div(10 ** token1.decimals);
-  const lender0TotalBorrows = marketInfo.lender0TotalBorrows.div(10 ** token0.decimals);
-  const lender1TotalBorrows = marketInfo.lender1TotalBorrows.div(10 ** token1.decimals);
   return (
     <Wrapper>
       <Text size='M'>Pair Stats</Text>
@@ -71,7 +68,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token0.ticker} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {formatTokenAmount(lender0TotalSupply.toNumber(), 4)}
+            {marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -79,7 +76,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token1.ticker} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {formatTokenAmount(lender1TotalSupply.toNumber(), 4)}
+            {marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -87,7 +84,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token0.ticker} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {formatTokenAmount(lender0TotalBorrows.toNumber(), 4)}
+            {marketInfo.lender0TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
           </Display>
         </StatContainer>
         <StatContainer>
@@ -95,7 +92,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
             {token1.ticker} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {formatTokenAmount(lender1TotalBorrows.toNumber(), 4)}
+            {marketInfo.lender1TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
           </Display>
         </StatContainer>
         <StatContainer>
