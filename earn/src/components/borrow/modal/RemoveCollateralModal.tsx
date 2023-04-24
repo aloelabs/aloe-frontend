@@ -153,26 +153,26 @@ export type RemoveCollateralModalProps = {
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
   const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
-  const [collateralAmount, setCollateralAmount] = useState('');
+  const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
 
   // Reset the collateral amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
-    setCollateralAmount('');
+    setCollateralAmountStr('');
     setCollateralToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
   const isToken0 = collateralToken.address === marginAccount.token0.address;
 
-  const existingCollateral = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
+  const existingCollateralRaw = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
 
-  const gnExistingCollateral = GN.fromNumber(existingCollateral, collateralToken.decimals);
-  const gnCollateralAmount = GN.fromDecimalString(collateralAmount || '0', collateralToken.decimals);
+  const existingCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals);
+  const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
 
-  const newCollateralAmount = GN.max(gnExistingCollateral.sub(gnCollateralAmount), GN.zero(collateralToken.decimals));
+  const newCollateralAmount = GN.max(existingCollateral.sub(collateralAmount), GN.zero(collateralToken.decimals));
 
   if (!userAddress || !isOpen) {
     return null;
@@ -187,7 +187,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
-  const max = Math.min(existingCollateral, maxWithdrawBasedOnHealth);
+  const max = Math.min(existingCollateralRaw, maxWithdrawBasedOnHealth);
   // Mitigate the case when the number is represented in scientific notation
   const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
   const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
@@ -221,23 +221,23 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setCollateralAmount(maxString);
+                setCollateralAmountStr(maxString);
               }}
             >
               MAX
             </BaseMaxButton>
           </div>
           <TokenAmountSelectInput
-            inputValue={collateralAmount}
+            inputValue={collateralAmountStr}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
                 const truncatedOutput = truncateDecimals(output, collateralToken.decimals);
-                setCollateralAmount(truncatedOutput);
+                setCollateralAmountStr(truncatedOutput);
               }
             }}
             onSelect={(option: Token) => {
-              setCollateralAmount('');
+              setCollateralAmountStr('');
               setCollateralToken(option);
             }}
             options={tokenOptions}
@@ -251,7 +251,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're removing{' '}
             <strong>
-              {collateralAmount || '0.00'} {collateralToken.ticker}
+              {collateralAmountStr || '0.00'} {collateralToken.ticker}
             </strong>{' '}
             collateral from this{' '}
             <strong>
@@ -272,8 +272,8 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             marginAccount={marginAccount}
             userAddress={userAddress}
             collateralToken={collateralToken}
-            collateralAmount={gnCollateralAmount}
-            userBalance={gnExistingCollateral}
+            collateralAmount={collateralAmount}
+            userBalance={existingCollateral}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />
