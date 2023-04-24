@@ -221,7 +221,13 @@ export class GN {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
+  /**
+   * Converts to `Number` with a potential loss of precision.
+   * @returns Equivalent `Number`
+   * @deprecated
+   */
   toNumber() {
+    console.warn('toNumber should be avoided whenever possible');
     return this.x().toNumber();
   }
 
