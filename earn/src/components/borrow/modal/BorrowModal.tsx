@@ -1,21 +1,21 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
-import { ANTE } from '../../../data/constants/Values';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
@@ -58,7 +58,7 @@ type BorrowButtonProps = {
   marginAccount: MarginAccount;
   userAddress: string;
   borrowToken: Token;
-  borrowAmount: Big;
+  borrowAmount: GN;
   shouldProvideAnte: boolean;
   isUnhealthy: boolean;
   notEnoughSupply: boolean;
@@ -82,25 +82,27 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
+  const ante = ANTES[activeChain.id];
+
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
-  const amount0Big = isBorrowingToken0 ? borrowAmount : new Big(0);
-  const amount1Big = isBorrowingToken0 ? new Big(0) : borrowAmount;
+  const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
+  const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const marginAccountInterface = new ethers.utils.Interface(MarginAccountABI);
-  const encodedData = marginAccountInterface.encodeFunctionData('borrow', [
-    amount0Big.toFixed(),
-    amount1Big.toFixed(),
+  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const encodedData = borrowerInterface.encodeFunctionData('borrow', [
+    amount0Big.toBigNumber(),
+    amount1Big.toBigNumber(),
     userAddress,
   ]);
 
   const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData, [false, false]],
-    overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
-    enabled: !!userAddress && borrowAmount.gt(0) && !isUnhealthy && !notEnoughSupply,
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData as Address, [false, false]],
+    overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
+    enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -199,23 +201,27 @@ export default function BorrowModal(props: BorrowModalProps) {
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
   const isToken0 = borrowToken.address === marginAccount.token0.address;
 
-  const numericBorrowAmount = Number(borrowAmount) || 0;
   const numericExistingLiability = isToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
-  const borrowAmountBig = new Big(numericBorrowAmount).mul(10 ** borrowToken.decimals);
-  const existingLiabilityBig = new Big(numericExistingLiability).mul(10 ** borrowToken.decimals);
+  const gnBorrowAmount = GN.fromDecimalString(borrowAmount || '0', borrowToken.decimals);
+  const gnExistingLiability = GN.fromNumber(numericExistingLiability, borrowToken.decimals);
 
-  const newLiability = existingLiabilityBig.plus(borrowAmountBig).div(10 ** borrowToken.decimals);
+  const newLiability = gnExistingLiability.add(gnBorrowAmount);
 
-  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toFixed(0))) || false;
+  const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
 
-  const formattedAnte = new Big(ANTE).div(10 ** 18).toFixed(4);
+  const ante = ANTES[activeChain.id];
+
+  const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
+
+  // TODO: use GN (this is an odd case where Big may make more sense)
+  const formattedAnte = ante.toString(GNFormat.DECIMAL);
 
   if (!userAddress || !isOpen) {
     return null;
   }
 
-  const maxBorrowsBasedOnMarketBig = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
-  const maxBorrowsBasedOnMarket = maxBorrowsBasedOnMarketBig.div(10 ** borrowToken.decimals).toNumber();
+  const gnMaxBorrowsBasedOnMarket = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
+  // TODO: use GN
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     marginAccount.assets,
     marginAccount.liabilities,
@@ -225,11 +231,13 @@ export default function BorrowModal(props: BorrowModalProps) {
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
-  const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket);
+  // TODO: use GN
+  const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
-  const bigMax = BigNumber.from(new Big(max).mul(10 ** borrowToken.decimals).toFixed(0));
-  const maxString = ethers.utils.formatUnits(bigMax, borrowToken.decimals);
+  const gnMax = GN.fromNumber(max, borrowToken.decimals);
+  const maxString = ethers.utils.formatUnits(gnMax.toBigNumber(), borrowToken.decimals);
 
+  // TODO: use GN
   const newLiabilities: Liabilities = {
     amount0: isToken0 ? newLiability.toNumber() : marginAccount.liabilities.amount0,
     amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
@@ -246,16 +254,19 @@ export default function BorrowModal(props: BorrowModalProps) {
   );
 
   const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
-  const remainingAvailableAssets = availableAssets.sub(borrowAmountBig);
+  const remainingAvailableAssets = availableAssets.sub(gnBorrowAmount);
 
   const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
-  const newUtilization = lenderTotalAssets.gt(0) ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber() : 0;
+  // TODO: use GN
+  const newUtilization = lenderTotalAssets.isGtZero()
+    ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
+    : 0;
   const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
 
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
-  const notEnoughSupply = maxBorrowsBasedOnMarketBig.lt(borrowAmountBig);
+  const notEnoughSupply = gnMaxBorrowsBasedOnMarket.lt(gnBorrowAmount);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
@@ -306,7 +317,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             </strong>{' '}
             smart wallet. Your total borrows for this token in this smart wallet will be{' '}
             <strong>
-              {truncateDecimals(newLiability.toString(), borrowToken.decimals)} {borrowToken.ticker}
+              {newLiability.toString(GNFormat.DECIMAL)} {borrowToken.ticker}
             </strong>
             .
           </Text>
@@ -329,7 +340,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             marginAccount={marginAccount}
             userAddress={userAddress}
             borrowToken={borrowToken}
-            borrowAmount={borrowAmountBig}
+            borrowAmount={gnBorrowAmount}
             shouldProvideAnte={shouldProvideAnte}
             isUnhealthy={isUnhealthy}
             notEnoughSupply={notEnoughSupply}

@@ -1,8 +1,9 @@
-import Big from 'big.js';
 import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
+
 export type MarketInfo = {
   lender0: Address;
   lender1: Address;
@@ -10,18 +11,20 @@ export type MarketInfo = {
   borrowerAPR1: number;
   lender0Utilization: number;
   lender1Utilization: number;
-  lender0TotalAssets: Big;
-  lender1TotalAssets: Big;
-  lender0TotalBorrows: Big;
-  lender1TotalBorrows: Big;
-  lender0AvailableAssets: Big;
-  lender1AvailableAssets: Big;
+  lender0TotalAssets: GN;
+  lender1TotalAssets: GN;
+  lender0TotalBorrows: GN;
+  lender1TotalBorrows: GN;
+  lender0AvailableAssets: GN;
+  lender1AvailableAssets: GN;
 };
 
 export async function fetchMarketInfoFor(
   lenderLensContract: ethers.Contract,
   lender0: Address,
-  lender1: Address
+  lender1: Address,
+  token0Decimals: number,
+  token1Decimals: number
 ): Promise<MarketInfo> {
   const [lender0Basics, lender1Basics] = await Promise.all([
     lenderLensContract.readBasics(lender0),
@@ -34,10 +37,10 @@ export async function fetchMarketInfoFor(
   const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear;
   const lender0Utilization = toImpreciseNumber(lender0Basics.utilization, 18);
   const lender1Utilization = toImpreciseNumber(lender1Basics.utilization, 18);
-  const lender0Inventory = toBig(lender0Basics.inventory);
-  const lender1Inventory = toBig(lender1Basics.inventory);
-  const lender0TotalBorrows = toBig(lender0Basics.totalBorrows);
-  const lender1TotalBorrows = toBig(lender1Basics.totalBorrows);
+  const lender0Inventory = GN.fromBigNumber(lender0Basics.inventory, token0Decimals);
+  const lender1Inventory = GN.fromBigNumber(lender1Basics.inventory, token1Decimals);
+  const lender0TotalBorrows = GN.fromBigNumber(lender0Basics.totalBorrows, token0Decimals);
+  const lender1TotalBorrows = GN.fromBigNumber(lender1Basics.totalBorrows, token1Decimals);
   return {
     lender0,
     lender1,
