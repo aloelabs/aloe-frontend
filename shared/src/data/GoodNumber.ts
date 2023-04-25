@@ -199,6 +199,22 @@ export class GN {
     return new GN(this.int.div(other).toFixed(0), this.resolution, this.base);
   }
 
+  recklessAdd(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessAdd by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.plus(other).toFixed(0), this.decimals);
+  }
+
+  recklessSub(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessSub by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.minus(other).toFixed(0), this.decimals);
+  }
+
   /*//////////////////////////////////////////////////////////////
                               CONVERSION
   //////////////////////////////////////////////////////////////*/
@@ -235,6 +251,16 @@ export class GN {
    */
   toJSBI() {
     return JSBI.BigInt(this.toString(GNFormat.INT));
+  }
+  
+  /**
+   * Converts to `Number` with a potential loss of precision.
+   * @returns Equivalent `Number`
+   * @deprecated
+   */
+  toNumber() {
+    console.warn('toNumber should be avoided whenever possible');
+    return this.x().toNumber();
   }
 
   setResolution(resolution: number) {
@@ -303,5 +329,17 @@ export class GN {
    */
   static fromDecimalString(x: string, decimals: number) {
     return GN.fromDecimalBig(new Big(x), decimals);
+  }
+
+  /**
+   * Converts a floating point JS number to a `GN`. NOT RECOMMENDED!!!
+   * @param x The number
+   * @param decimals The number's precision, i.e. the number of decimal places that should be printed
+   * when expressing the number in standard notation.
+   * @returns Equivalent `GN`
+   */
+  static fromNumber(x: number, decimals: number) {
+    console.warn('GN.fromNumber should be avoided as much as possible');
+    return GN.fromDecimalString(x.toFixed(decimals), decimals);
   }
 }
