@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
-import { BigNumber, Contract } from 'ethers';
 import { Text } from 'shared/lib/components/common/Typography';
-import { formatTokenAmount, toBig } from 'shared/lib/util/Numbers';
+import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { MarginAccount } from '../../../data/MarginAccount';
+import { UniswapPositionEarnedFees } from '../../../pages/BorrowActionsPage';
 import {
   getUniswapPoolBasics,
   UniswapV3PoolBasics,
@@ -108,13 +108,6 @@ const StyledTableRows = styled.tr`
   }
 `;
 
-type UniswapPositionEarnedFees = {
-  [key: string]: {
-    token0FeesEarned: number;
-    token1FeesEarned: number;
-  };
-};
-
 type UniswapPositionInfo = {
   value: number;
   feesEarned: number;
@@ -176,9 +169,9 @@ function calculateUniswapPositionInfo(
 export type UniswapPositionsTableProps = {
   accountAddress: string;
   marginAccount: MarginAccount;
-  marginAccountLensContract: Contract | null;
   provider: Provider;
   uniswapPositions: readonly UniswapPosition[];
+  uniswapPositionEarnedFees: UniswapPositionEarnedFees;
   isInTermsOfToken0: boolean;
   showAsterisk: boolean;
 };
@@ -187,14 +180,13 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
   const {
     accountAddress,
     marginAccount,
-    marginAccountLensContract,
     provider,
     uniswapPositions,
+    uniswapPositionEarnedFees,
     isInTermsOfToken0,
     showAsterisk,
   } = props;
   const [uniswapPoolBasics, setUniswapPoolBasics] = useState<UniswapV3PoolBasics | null>(null);
-  const [uniswapPositionEarnedFees, setUniswapPositionEarnedFees] = useState<UniswapPositionEarnedFees>({});
 
   useEffectOnce(() => {
     let mounted = true;
@@ -205,34 +197,6 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
       }
     }
     fetch();
-
-    return () => {
-      mounted = false;
-    };
-  });
-
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch(marginAccountLensContract: Contract) {
-      const earnedFees: [string[], BigNumber[]] = await marginAccountLensContract.getUniswapFees(marginAccount.address);
-      const earnedFeesMap: UniswapPositionEarnedFees = {};
-      earnedFees[0].forEach((positionId, index) => {
-        earnedFeesMap[positionId] = {
-          token0FeesEarned: toBig(earnedFees[1][index * 2])
-            .div(10 ** marginAccount.token0.decimals)
-            .toNumber(),
-          token1FeesEarned: toBig(earnedFees[1][index * 2 + 1])
-            .div(10 ** marginAccount.token1.decimals)
-            .toNumber(),
-        };
-      });
-      if (mounted) {
-        setUniswapPositionEarnedFees(earnedFeesMap);
-      }
-    }
-    if (marginAccountLensContract) {
-      fetch(marginAccountLensContract);
-    }
 
     return () => {
       mounted = false;
