@@ -221,6 +221,16 @@ export class GN {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
+  /**
+   * Converts to `Number` with a potential loss of precision.
+   * @returns Equivalent `Number`
+   * @deprecated
+   */
+  toNumber() {
+    console.warn('toNumber should be avoided whenever possible');
+    return this.x().toNumber();
+  }
+
   static zero(decimals: number) {
     return new GN('0', decimals);
   }
@@ -280,5 +290,17 @@ export class GN {
    */
   static fromDecimalString(x: string, decimals: number) {
     return GN.fromDecimalBig(new Big(x), decimals);
+  }
+
+  /**
+   * Converts a floating point JS number to a `GN`. NOT RECOMMENDED!!!
+   * @param x The number
+   * @param decimals The number's precision, i.e. the number of decimal places that should be printed
+   * when expressing the number in standard notation.
+   * @returns Equivalent `GN`
+   */
+  static fromNumber(x: number, decimals: number) {
+    console.warn('GN.fromNumber should be avoided as much as possible');
+    return GN.fromDecimalString(x.toFixed(decimals), decimals);
   }
 }

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
+import { lenderABI } from 'shared/lib/abis/Lender';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -10,7 +11,6 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { LenderABI } from '../../../../assets/abis/Lender';
 import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
@@ -60,7 +60,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
   // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
-    abi: LenderABI,
+    abi: lenderABI,
     functionName: 'convertToShares',
     args: [withdrawAmount.toBigNumber()],
     chainId: activeChain.id,
@@ -72,7 +72,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
-    abi: LenderABI,
+    abi: lenderABI,
     functionName: 'redeem',
     args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress],
     chainId: activeChain.id,
@@ -159,7 +159,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
-    abi: LenderABI,
+    abi: lenderABI,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
@@ -168,7 +168,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
-    abi: LenderABI,
+    abi: lenderABI,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
