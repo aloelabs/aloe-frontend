@@ -2,7 +2,7 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -89,8 +89,8 @@ function BorrowButton(props: BorrowButtonProps) {
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const marginAccountInterface = new ethers.utils.Interface(marginAccountABI);
-  const encodedData = marginAccountInterface.encodeFunctionData('borrow', [
+  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const encodedData = borrowerInterface.encodeFunctionData('borrow', [
     amount0Big.toBigNumber(),
     amount1Big.toBigNumber(),
     userAddress,
@@ -98,7 +98,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: marginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData as Address, [false, false]],
     overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },

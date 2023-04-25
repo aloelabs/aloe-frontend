@@ -191,6 +191,14 @@ export class GN {
     return new GN(this.int.plus(other).toFixed(0), this.decimals);
   }
 
+  recklessSub(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessSub by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.minus(other).toFixed(0), this.decimals);
+  }
+
   /*//////////////////////////////////////////////////////////////
                               CONVERSION
   //////////////////////////////////////////////////////////////*/
