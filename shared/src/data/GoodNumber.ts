@@ -204,7 +204,7 @@ export class GN {
     if (!isInteger(other)) {
       console.warn(`recklessAdd by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
     }
-    return new GN(this.int.plus(other).toFixed(0), this.decimals);
+    return new GN(this.int.plus(other).toFixed(0), this.resolution, this.base);
   }
 
   recklessSub(other: BigSource) {
@@ -212,7 +212,7 @@ export class GN {
     if (!isInteger(other)) {
       console.warn(`recklessSub by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
     }
-    return new GN(this.int.minus(other).toFixed(0), this.decimals);
+    return new GN(this.int.minus(other).toFixed(0), this.resolution, this.base);
   }
 
   /*//////////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ export class GN {
   toJSBI() {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
-  
+
   /**
    * Converts to `Number` with a potential loss of precision.
    * @returns Equivalent `Number`
