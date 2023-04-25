@@ -119,7 +119,7 @@ function RepayButton(props: RepayButtonProps) {
     enabled: permit2State === Permit2State.DONE,
   });
   // NOTE: Not using `useMemo` to update the request
-  const gasLimit = repayWithPermit2Config.request?.gasLimit ?? BigNumber.from('500000');
+  const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
     write: repayWithPermit2,
     isError: contractDidError,
@@ -129,7 +129,7 @@ function RepayButton(props: RepayButtonProps) {
     ...repayWithPermit2Config,
     request: {
       ...repayWithPermit2Config.request,
-      gasLimit: gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+      gasLimit,
     },
   });
 
