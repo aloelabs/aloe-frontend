@@ -4,7 +4,7 @@ import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { BaseMaxButton } from 'shared/lib/components/common/Input';
+import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
@@ -179,7 +179,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { marginAccount, uniswapPositions, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const [borrowAmount, setBorrowAmount] = useState('');
+  const [borrowAmountStr, setBorrowAmountStr] = useState('');
   const [borrowToken, setBorrowToken] = useState<Token>(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
@@ -194,7 +194,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   // Reset borrow amount and token when modal is opened/closed
   // or when the margin account token0 changes
   useEffect(() => {
-    setBorrowAmount('');
+    setBorrowAmountStr('');
     setBorrowToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
 
@@ -202,10 +202,10 @@ export default function BorrowModal(props: BorrowModalProps) {
   const isToken0 = borrowToken.address === marginAccount.token0.address;
 
   const numericExistingLiability = isToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
-  const gnBorrowAmount = GN.fromDecimalString(borrowAmount || '0', borrowToken.decimals);
-  const gnExistingLiability = GN.fromNumber(numericExistingLiability, borrowToken.decimals);
+  const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', borrowToken.decimals);
+  const existingLiability = GN.fromNumber(numericExistingLiability, borrowToken.decimals);
 
-  const newLiability = gnExistingLiability.add(gnBorrowAmount);
+  const newLiability = existingLiability.add(borrowAmount);
 
   const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
 
@@ -234,8 +234,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   // TODO: use GN
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
-  const gnMax = GN.fromNumber(max, borrowToken.decimals);
-  const maxString = ethers.utils.formatUnits(gnMax.toBigNumber(), borrowToken.decimals);
+  const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
+  const maxString = gnEightyPercentMax.toString(GNFormat.DECIMAL);
 
   // TODO: use GN
   const newLiabilities: Liabilities = {
@@ -254,7 +254,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   );
 
   const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
-  const remainingAvailableAssets = availableAssets.sub(gnBorrowAmount);
+  const remainingAvailableAssets = availableAssets.sub(borrowAmount);
 
   const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
   // TODO: use GN
@@ -266,36 +266,35 @@ export default function BorrowModal(props: BorrowModalProps) {
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
-  const notEnoughSupply = gnMaxBorrowsBasedOnMarket.lt(gnBorrowAmount);
+  const notEnoughSupply = gnMaxBorrowsBasedOnMarket.lt(borrowAmount);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between mb-1'>
+          <div className='flex flex-row justify-between items-center mb-1'>
             <Text size='M' weight='bold'>
               Borrow Amount
             </Text>
-            <BaseMaxButton
-              size='L'
+            <CustomMaxButton
               onClick={() => {
-                setBorrowAmount(maxString);
+                setBorrowAmountStr(maxString);
               }}
             >
-              MAX
-            </BaseMaxButton>
+              80% MAX
+            </CustomMaxButton>
           </div>
           <TokenAmountSelectInput
-            inputValue={borrowAmount}
+            inputValue={borrowAmountStr}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
                 const truncatedOutput = truncateDecimals(output, borrowToken.decimals);
-                setBorrowAmount(truncatedOutput);
+                setBorrowAmountStr(truncatedOutput);
               }
             }}
             onSelect={(option: Token) => {
-              setBorrowAmount('');
+              setBorrowAmountStr('');
               setBorrowToken(option);
             }}
             options={tokenOptions}
@@ -309,7 +308,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're borrowing{' '}
             <strong>
-              {borrowAmount || '0.00'} {borrowToken.ticker}
+              {borrowAmountStr || '0.00'} {borrowToken.ticker}
             </strong>{' '}
             using this{' '}
             <strong>
@@ -340,7 +339,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             marginAccount={marginAccount}
             userAddress={userAddress}
             borrowToken={borrowToken}
-            borrowAmount={gnBorrowAmount}
+            borrowAmount={borrowAmount}
             shouldProvideAnte={shouldProvideAnte}
             isUnhealthy={isUnhealthy}
             notEnoughSupply={notEnoughSupply}

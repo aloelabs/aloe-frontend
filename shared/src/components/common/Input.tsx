@@ -211,6 +211,21 @@ export const BaseMaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L'
   }
 `;
 
+export const CustomMaxButton = styled.button.attrs((props: { width?: string; height?: string }) => props)`
+  width: ${({ width }) => width || 'max-content'};
+  height: ${({ height }) => height || 'max-content'};
+  color: rgba(0, 193, 67, 1);
+  font-family: 'Satoshi-Variable';
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18.9px;
+  padding: 0px;
+
+  &:disabled {
+    color: rgba(75, 105, 128, 1);
+  }
+`;
+
 const MaxButton = styled(BaseMaxButton)`
   margin-left: 0.75rem;
   position: absolute;
