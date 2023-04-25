@@ -230,7 +230,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
   const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
-  const maxString = ethers.utils.formatUnits(gnEightyPercentMax.toBigNumber(), borrowToken.decimals);
+  const maxString = gnEightyPercentMax.toString(GNFormat.Decimal);
 
   // TODO: use GN
   const newLiabilities: Liabilities = {
