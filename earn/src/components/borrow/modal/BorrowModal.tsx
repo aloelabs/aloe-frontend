@@ -1,13 +1,13 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
 import { ethers } from 'ethers';
-import { marginAccountABI } from 'shared/lib/abis/MarginAccount';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -16,7 +16,6 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 import { ChainContext } from '../../../App';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
-import { ANTE } from '../../../data/constants/Values';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
@@ -83,13 +82,15 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
+  const ante = ANTES[activeChain.id];
+
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const marginAccountInterface = new ethers.utils.Interface(marginAccountABI);
-  const encodedData = marginAccountInterface.encodeFunctionData('borrow', [
+  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const encodedData = borrowerInterface.encodeFunctionData('borrow', [
     amount0Big.toBigNumber(),
     amount1Big.toBigNumber(),
     userAddress,
@@ -97,10 +98,10 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: marginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData as Address, [false, false]],
-    overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
+    overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
     enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
     chainId: activeChain.id,
   });
@@ -206,10 +207,14 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const newLiability = gnExistingLiability.add(gnBorrowAmount);
 
-  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.value.lt(ANTE.toFixed(0))) || false;
+  const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
+
+  const ante = ANTES[activeChain.id];
+
+  const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
 
   // TODO: use GN (this is an odd case where Big may make more sense)
-  const formattedAnte = new Big(ANTE).div(10 ** 18).toFixed(4);
+  const formattedAnte = ante.toString(GNFormat.DECIMAL);
 
   if (!userAddress || !isOpen) {
     return null;
@@ -230,7 +235,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
   // Mitigate the case when the number is represented in scientific notation
   const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
-  const maxString = gnEightyPercentMax.toString(GNFormat.Decimal);
+  const maxString = gnEightyPercentMax.toString(GNFormat.DECIMAL);
 
   // TODO: use GN
   const newLiabilities: Liabilities = {

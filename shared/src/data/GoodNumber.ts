@@ -183,6 +183,22 @@ export class GN {
     return new GN(this.int.div(other).toFixed(0), this.decimals);
   }
 
+  recklessAdd(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessAdd by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.plus(other).toFixed(0), this.decimals);
+  }
+
+  recklessSub(other: BigSource) {
+    other = new Big(other);
+    if (!isInteger(other)) {
+      console.warn(`recklessSub by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
+    }
+    return new GN(this.int.minus(other).toFixed(0), this.decimals);
+  }
+
   /*//////////////////////////////////////////////////////////////
                               CONVERSION
   //////////////////////////////////////////////////////////////*/
@@ -221,7 +237,13 @@ export class GN {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
+  /**
+   * Converts to `Number` with a potential loss of precision.
+   * @returns Equivalent `Number`
+   * @deprecated
+   */
   toNumber() {
+    console.warn('toNumber should be avoided whenever possible');
     return this.x().toNumber();
   }
 

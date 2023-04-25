@@ -9,7 +9,7 @@ import {
 import DropdownArrowDown from '../../assets/svg/DropdownArrowDown';
 import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
 import { Chain, useSwitchNetwork } from 'wagmi';
-import { CHAIN_LOGOS, SUPPORTED_CHAINS } from '../../data/constants/Chains';
+import { CHAIN_LOGOS, SUPPORTED_CHAINS } from '../../data/constants/ChainSpecific';
 import styled from 'styled-components';
 import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
