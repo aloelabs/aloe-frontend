@@ -36,6 +36,7 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
+import { BIGQ96 } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
@@ -45,7 +46,7 @@ import {
   stringifyMarginAccount,
   stringifyUniswapPositions,
 } from '../util/ComputeLiquidationThresholdUtils';
-import { convertSqrtPriceX96, getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
+import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SUPPLY_SIGNIFICANT_DIGITS = 4;
@@ -464,19 +465,22 @@ export default function BorrowActionsPage() {
     }
     const { token0, token1 } = marginAccount;
     const earnedFeesValues = Object.values(uniswapPositionEarnedFees);
-    const token0FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p + c.token0FeesEarned, 0));
-    const token1FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p + c.token1FeesEarned, 0));
-    const token1OverToken0 = convertSqrtPriceX96(BigNumber.from(marginAccount.sqrtPriceX96.toFixed(0)));
-    const token0OverToken1 = token1OverToken0.pow(-1);
-    const tokenDecimalDifference = 10 ** (token1.decimals - token0.decimals);
-    const token1FeesEarnedInTermsOfToken0 = token0OverToken1.mul(token1FeesEarned).div(tokenDecimalDifference);
-    const token0FeesEarnedInTermsOfToken1 = token1OverToken0.mul(token0FeesEarned).div(tokenDecimalDifference);
-    const totalFeesEarned = isToken0Selected
-      ? token0FeesEarned.add(token1FeesEarnedInTermsOfToken0)
-      : token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
-    if (totalFeesEarned.gt(0)) {
-      const selectedTokenDecimals = isToken0Selected ? marginAccount.token0.decimals : marginAccount.token1.decimals;
-      setSwapFeesInputValue(totalFeesEarned.toFixed(selectedTokenDecimals));
+    const priceX96 = marginAccount.sqrtPriceX96.mul(marginAccount.sqrtPriceX96).div(BIGQ96);
+    const token0FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), new Big(0))).mul(
+      10 ** token0.decimals
+    );
+    const token1FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), new Big(0))).mul(
+      10 ** token1.decimals
+    );
+    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).div(BIGQ96);
+    const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
+    if (totalFeesEarnedInTermsOfToken1.gt(0)) {
+      if (isToken0Selected) {
+        const totalFeesEarnedInTermsOfToken0 = totalFeesEarnedInTermsOfToken1.mul(BIGQ96).div(priceX96);
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken0.div(10 ** token0.decimals).toFixed(token0.decimals));
+      } else {
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken1.div(10 ** token1.decimals).toFixed(token1.decimals));
+      }
     }
   }, [marginAccount, displayedMarginAccount, uniswapPositionEarnedFees, displayedUniswapPositions, isToken0Selected]);
 
