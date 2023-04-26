@@ -2,6 +2,7 @@ import { Address, Chain, useContractReads, useSignTypedData } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
 import { erc20ABI } from '../../abis/ERC20';
 import { computeDomainSeparator } from '../../util/Permit';
+import { splitSignature } from 'ethers/lib/utils.js';
 
 export enum PermitState {
   FETCHING_DATA,
@@ -9,6 +10,7 @@ export enum PermitState {
   ASKING_USER_TO_SIGN,
   ERROR,
   DONE,
+  DISABLED,
 }
 
 type uint256 = string;
@@ -44,14 +46,19 @@ function attemptToInferDomain(
   verifyingContract: Address,
   domainSeparator: `0x${string}` | undefined
 ) {
-  let domain = { name, chainId, verifyingContract, version: '1' };
+  let domain: {
+    name?: string;
+    chainId: number;
+    verifyingContract: Address;
+    version: string;
+  } = { name, chainId, verifyingContract, version: '1' };
 
   if (domainSeparator) {
     for (const version of ['1', '2', '3']) {
       domain = { chainId, verifyingContract, version, name };
       if (computeDomainSeparator(domain) === domainSeparator) return { domain, success: true };
 
-      domain = { chainId, verifyingContract, version, name: undefined };
+      domain = { chainId, verifyingContract, version };
       if (computeDomainSeparator(domain) === domainSeparator) return { domain, success: true };
     }
   }
@@ -59,7 +66,14 @@ function attemptToInferDomain(
   return { domain, success: false };
 }
 
-export function usePermit(chain: Chain, token: Address, owner: Address, spender: Address, amount: string) {
+export function usePermit(
+  chain: Chain,
+  token: Address,
+  owner: Address,
+  spender: Address,
+  amount: string,
+  enabled = true
+) {
   /*//////////////////////////////////////////////////////////////
                             REACT STATE
   //////////////////////////////////////////////////////////////*/
@@ -78,6 +92,7 @@ export function usePermit(chain: Chain, token: Address, owner: Address, spender:
       { ...erc20, functionName: 'nonces', args: [owner] },
     ] as const,
     allowFailure: false,
+    enabled: enabled,
   });
 
   /*//////////////////////////////////////////////////////////////
@@ -131,7 +146,10 @@ export function usePermit(chain: Chain, token: Address, owner: Address, spender:
   let state: PermitState;
   let action: (() => void) | undefined;
 
-  if (isFetching) {
+  if (!enabled) {
+    state = PermitState.DISABLED;
+    action = undefined;
+  } else if (isFetching) {
     state = PermitState.FETCHING_DATA;
     action = undefined;
   } else if (isAskingUserToSign) {
@@ -152,10 +170,8 @@ export function usePermit(chain: Chain, token: Address, owner: Address, spender:
     state,
     action,
     result: {
-      amount,
-      nonce,
       deadline,
-      signature: signature as `0x${string}` | undefined,
+      signature: signature ? splitSignature(signature) : undefined,
     },
   };
 }
