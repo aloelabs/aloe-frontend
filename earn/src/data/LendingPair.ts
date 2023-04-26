@@ -201,9 +201,11 @@ export async function getAvailableLendingPairs(
     const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
-    // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
-    const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0 ** (365 * 24 * 60 * 60) - 1.0);
-    const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1 ** (365 * 24 * 60 * 60) - 1.0);
+    // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
+    const APR0 = utilization0 * (1 - 1 / 8) * (interestRate0 - 1.0);
+    const APR1 = utilization1 * (1 - 1 / 8) * (interestRate1 - 1.0);
+    const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
+    const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
     let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
     // Annualize it

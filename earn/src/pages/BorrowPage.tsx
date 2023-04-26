@@ -300,7 +300,9 @@ export default function BorrowPage() {
       const result = await fetchMarketInfoFor(
         lenderLensContract,
         selectedMarginAccount.lender0,
-        selectedMarginAccount.lender1
+        selectedMarginAccount.lender1,
+        selectedMarginAccount.token0.decimals,
+        selectedMarginAccount.token1.decimals
       );
       if (mounted) {
         setCachedMarketInfos((prev) => {
