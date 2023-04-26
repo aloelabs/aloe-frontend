@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
@@ -7,7 +7,6 @@ import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount } from 'wagmi';
@@ -62,86 +61,69 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 const Q112 = BigNumber.from('0x1000000000000000000000000000000');
 
+function doesContainToken(token: Token, pair: LendingPair) {
+  return pair.token0.equals(token) || pair.token1.equals(token);
+}
+
 export type WithdrawModalProps = {
   isOpen: boolean;
-  options: Token[];
-  defaultOption: Token;
+  tokens: Token[];
+  defaultToken: Token;
   lendingPairs: LendingPair[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, tokens, defaultToken, lendingPairs, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
 
-  const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
-  const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
-  const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
+  const [selectedToken, setSelectedToken] = useState(defaultToken);
+  const [selectedPairIdx, setSelectedPairIdx] = useState(0);
   const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]);
   const account = useAccount();
 
-  function resetModal() {
-    setSelectedOption(defaultOption);
-    setInputValue(['', false]);
-  }
-
-  useEffect(() => {
-    const activeCollateralOptions = lendingPairs.filter(
-      (pair) => pair.token0 === selectedOption || pair.token1 === selectedOption
-    );
-    setActivePairOptions(activeCollateralOptions);
-    setSelectedPairOption(activeCollateralOptions[0]);
-  }, [lendingPairs, selectedOption]);
-
-  useEffect(() => {
-    setSelectedOption(defaultOption);
-  }, [defaultOption]);
-
-  // Get the active kitty that corresponds to the selected token and is in
-  // the selected token / collateral token lending pair
-  let activeKitty: Kitty | null = useMemo(() => {
-    for (const lendingPair of lendingPairs) {
-      if (selectedPairOption?.equals(lendingPair)) {
-        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
-      }
-    }
-    return null;
-  }, [selectedPairOption, selectedOption, lendingPairs]);
-
-  const amount = GN.fromDecimalString(inputValue[0] || '0', selectedOption.decimals);
+  const filteredPairs = lendingPairs.filter((p) => doesContainToken(selectedToken, p));
+  if (filteredPairs.length === 0) throw new Error(`${selectedToken.ticker} isn't part of any lending pair`);
+  const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
+  const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
+  const amount = GN.fromDecimalString(inputValue[0] || '0', selectedToken.decimals);
 
   // TODO: debounce amount to avoid repeated network requests for `convertToShares`
   const {
     state: redeemState,
     action,
     txn,
-    maxAmount,
+    maxAmount: maxAmountBN,
   } = useRedeem(
-    activeChain,
-    activeKitty ?? lendingPairs[0].kitty0,
-    inputValue[1] ? GN.fromBigNumber(Q112, selectedOption.decimals) : amount,
+    activeChain.id,
+    lender.address,
+    inputValue[1] ? GN.fromBigNumber(Q112, selectedToken.decimals) : amount,
     isOpen && account.address ? account.address : '0x0000000000000000000000000000000000000000'
   );
+  const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
+
+  /*//////////////////////////////////////////////////////////////
+                              LIFECYCLE
+  //////////////////////////////////////////////////////////////*/
+
+  const resetUserInputs = useCallback(() => {
+    setSelectedToken(defaultToken);
+    setInputValue(['', false]);
+  }, [setSelectedToken, setInputValue, defaultToken]);
 
   useEffect(() => {
     if (txn === undefined) return;
     setPendingTxn(txn);
     setIsOpen(false);
-    resetModal(); // TODO: necessary? if so what do we do about missing dep?
-  }, [txn, setPendingTxn, setIsOpen]);
+    resetUserInputs();
+  }, [txn, setPendingTxn, setIsOpen, resetUserInputs]);
 
-  if (selectedPairOption == null || activeKitty == null) {
-    return null;
-  }
+  /*//////////////////////////////////////////////////////////////
+                            CONFIRM BUTTON
+  //////////////////////////////////////////////////////////////*/
 
-  const peerAsset: Token =
-    selectedOption.address === selectedPairOption.token0.address
-      ? selectedPairOption.token1
-      : selectedPairOption.token0;
-
-  // MARK: Determining button state -----------------------------------------------------------------------------------
   let confirmButtonState: ConfirmButtonState;
   if (txn) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
@@ -152,8 +134,11 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   } else {
     confirmButtonState = REDEEM_STATE_TO_BUTTON_STATE[redeemState];
   }
-  // MARK: Get the button itself --------------------------------------------------------------------------------------
-  const confirmButton = getConfirmButton(confirmButtonState, selectedOption);
+  const confirmButton = getConfirmButton(confirmButtonState, selectedToken);
+
+  /*//////////////////////////////////////////////////////////////
+                                HTML
+  //////////////////////////////////////////////////////////////*/
 
   return (
     <Modal
@@ -162,7 +147,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
       setIsOpen={(open: boolean) => {
         setIsOpen(open);
         if (!open) {
-          resetModal();
+          resetUserInputs();
         }
       }}
     >
@@ -183,16 +168,17 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           </div>
           <TokenAmountSelectInput
             inputValue={inputValue[0]}
-            options={options}
-            selectedOption={selectedOption}
+            options={tokens}
+            selectedOption={selectedToken}
             onSelect={(option) => {
-              setSelectedOption(option);
+              setSelectedToken(option);
               setInputValue(['', false]);
             }}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
-                const truncatedOutput = truncateDecimals(output, selectedOption.decimals);
+                console.log('wrote number');
+                const truncatedOutput = truncateDecimals(output, selectedToken.decimals);
                 setInputValue([truncatedOutput, false]);
               }
             }}
@@ -213,9 +199,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             />
           </div>
           <PairDropdown
-            options={activePairOptions}
-            onSelect={setSelectedPairOption}
-            selectedOption={selectedPairOption}
+            options={filteredPairs}
+            onSelect={(a) => setSelectedPairIdx(filteredPairs.findIndex((b) => a.equals(b)))}
+            selectedOption={selectedPair}
             size='L'
             compact={false}
           />
@@ -227,11 +213,11 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're withdrawing{' '}
             <strong>
-              {inputValue || '0.00'} {selectedOption.ticker}
+              {inputValue || '0.00'} {selectedToken.ticker}
             </strong>{' '}
             from the{' '}
             <strong>
-              {selectedOption.ticker}/{peerAsset.ticker}
+              {selectedPair.token0.ticker}/{selectedPair.token1.ticker}
             </strong>{' '}
             lending market.
           </Text>

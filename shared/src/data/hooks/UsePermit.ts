@@ -67,7 +67,7 @@ function attemptToInferDomain(
 }
 
 export function usePermit(
-  chain: Chain,
+  chainId: number,
   token: Address,
   owner: Address,
   spender: Address,
@@ -82,7 +82,7 @@ export function usePermit(
   const erc20 = {
     address: token,
     abi: erc20ABI,
-    chainId: chain.id,
+    chainId: chainId,
   };
 
   const { data, isFetching, isError } = useContractReads({

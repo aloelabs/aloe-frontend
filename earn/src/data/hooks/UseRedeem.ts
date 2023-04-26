@@ -2,10 +2,8 @@ import { BigNumber, Signature } from 'ethers';
 import { routerABI } from 'shared/lib/abis/Router';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { PermitState, usePermit } from 'shared/lib/data/hooks/UsePermit';
-import { Kitty } from 'shared/lib/data/Kitty';
 import {
   Address,
-  Chain,
   erc4626ABI,
   useContractRead,
   useContractReads,
@@ -35,19 +33,19 @@ const PERMIT_STATE_TO_REDEEM_STATE = {
 
 const BN0 = BigNumber.from('0');
 
-export function useRedeem(chain: Chain, lender: Kitty, amount: GN, owner: Address, recipient?: Address) {
+export function useRedeem(chainId: number, lender: Address, amount: GN, owner: Address, recipient?: Address) {
   if (!recipient) recipient = owner;
 
   const erc4626 = {
-    address: lender.address,
+    address: lender,
     abi: erc4626ABI,
-    chainId: chain.id,
+    chainId,
   };
 
   const router = {
     address: ALOE_II_ROUTER_ADDRESS,
     abi: routerABI,
-    chainId: chain.id,
+    chainId,
   };
 
   /*//////////////////////////////////////////////////////////////
@@ -58,7 +56,7 @@ export function useRedeem(chain: Chain, lender: Kitty, amount: GN, owner: Addres
     contracts: [
       { ...erc4626, functionName: 'maxWithdraw', args: [owner] },
       { ...erc4626, functionName: 'maxRedeem', args: [owner] },
-      { ...router, functionName: 'isMaxRedeemDynamic', args: [lender.address, owner] },
+      { ...router, functionName: 'isMaxRedeemDynamic', args: [lender, owner] },
     ] as const,
     allowFailure: false,
   });
@@ -106,7 +104,7 @@ export function useRedeem(chain: Chain, lender: Kitty, amount: GN, owner: Addres
     state: permitState,
     action: permitAction,
     result: permitResult,
-  } = usePermit(chain, lender.address, owner, ALOE_II_ROUTER_ADDRESS, shares.toString(), shouldUseChecks);
+  } = usePermit(chainId, lender, owner, ALOE_II_ROUTER_ADDRESS, shares.toString(), shouldUseChecks);
   const deadline = BigNumber.from(permitResult.deadline);
   const signature = permitResult.signature ?? ({ v: 0, r: '0x', s: '0x' } as Signature);
 
@@ -114,7 +112,7 @@ export function useRedeem(chain: Chain, lender: Kitty, amount: GN, owner: Addres
   const { config: configRedeemWithChecks } = usePrepareContractWrite({
     ...router,
     functionName: 'redeemWithChecks',
-    args: [lender.address, shares, deadline, signature.v, signature.r as `0x${string}`, signature.s as `0x${string}`],
+    args: [lender, shares, deadline, signature.v, signature.r as `0x${string}`, signature.s as `0x${string}`],
     enabled: shouldUseChecks && shares.gt(0) && permitResult.signature !== undefined,
   });
   const {
@@ -153,6 +151,6 @@ export function useRedeem(chain: Chain, lender: Kitty, amount: GN, owner: Addres
     state,
     action,
     txn: redeemTxn ?? redeemWithChecksTxn,
-    maxAmount: GN.fromBigNumber(maxAmount, lender.decimals), // lender.decimals matches underlying
+    maxAmount,
   };
 }

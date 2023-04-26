@@ -499,8 +499,8 @@ export default function PortfolioPage() {
             setPendingTxn={setPendingTxn}
           />
           <WithdrawModal
-            options={uniqueTokens}
-            defaultOption={activeAsset}
+            tokens={uniqueTokens}
+            defaultToken={activeAsset}
             lendingPairs={lendingPairs}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
