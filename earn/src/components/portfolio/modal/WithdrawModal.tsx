@@ -13,9 +13,8 @@ import { useAccount } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
-import { LendingPair } from '../../../data/LendingPair';
+import { LendingPair, LendingPairBalances } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
-import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -70,12 +69,13 @@ export type WithdrawModalProps = {
   tokens: Token[];
   defaultToken: Token;
   lendingPairs: LendingPair[];
+  lendingPairBalances: LendingPairBalances[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, tokens, defaultToken, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, tokens, defaultToken, lendingPairs, lendingPairBalances, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
 
@@ -84,7 +84,15 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]);
   const account = useAccount();
 
-  const filteredPairs = lendingPairs.filter((p) => doesContainToken(selectedToken, p));
+  const mergedPairData = lendingPairs.map((pair, i) => ({ pair, balances: lendingPairBalances[i] }));
+  const filteredPairs = mergedPairData
+    .filter((v) => doesContainToken(selectedToken, v.pair))
+    .sort((a, b) => {
+      const balanceA = a.balances[a.pair.token0.equals(selectedToken) ? 'kitty0Balance' : 'kitty1Balance'];
+      const balanceB = b.balances[b.pair.token0.equals(selectedToken) ? 'kitty0Balance' : 'kitty1Balance'];
+      return balanceB - balanceA;
+    })
+    .map((v) => v.pair);
   if (filteredPairs.length === 0) throw new Error(`${selectedToken.ticker} isn't part of any lending pair`);
   const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
   const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
@@ -184,19 +192,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           />
         </div>
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex items-center gap-2'>
-            <Text size='M' weight='bold'>
-              Lending Pair
-            </Text>
-            <Tooltip
-              buttonSize='S'
-              buttonText=''
-              content={`The lending pair is the combination of the asset you are withdrawing
-                and the collateral you are using to withdraw it.`}
-              position='top-center'
-              filled={true}
-            />
-          </div>
+          <Text size='M' weight='bold'>
+            Lending Pair
+          </Text>
           <PairDropdown
             options={filteredPairs}
             onSelect={(a) => setSelectedPairIdx(filteredPairs.findIndex((b) => a.equals(b)))}
