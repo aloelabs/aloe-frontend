@@ -1,7 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -12,12 +11,12 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount } from 'wagmi';
 
 import { ChainContext } from '../../../App';
+import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
-import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -60,8 +59,6 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   }
 }
 
-const Q112 = BigNumber.from('0x1000000000000000000000000000000');
-
 function doesLendingPairContainToken(pair: LendingPair, token: Token) {
   return pair.token0.equals(token) || pair.token1.equals(token);
 }
@@ -101,7 +98,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   } = useRedeem(
     activeChain.id,
     lender.address,
-    inputValue[1] ? GN.fromBigNumber(Q112, selectedToken.decimals) : amount,
+    inputValue[1] ? GN.Q(112) : amount,
     isOpen && account.address ? account.address : ZERO_ADDRESS
   );
   const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
