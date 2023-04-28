@@ -60,14 +60,14 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     ] as const,
     allowFailure: false,
   });
+  const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [BN0, BN0, false];
 
   const { data: sharesData, isFetching: isFetchingShares } = useContractRead({
     ...erc4626,
     functionName: 'convertToShares',
     args: [amount.toBigNumber()],
+    enabled: amount.toBigNumber().lte(maxAmount),
   });
-
-  const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [BN0, BN0, false];
   const shares = sharesData ?? BN0;
 
   const threshold = maxShares.mul(95).div(100);
@@ -77,11 +77,12 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
                             ERC4626 REDEEM
   //////////////////////////////////////////////////////////////*/
 
+  const redeemableShares = shares.lt(maxShares) ? shares : maxShares;
   const { config: configRedeem } = usePrepareContractWrite({
     ...erc4626,
     functionName: 'redeem',
-    args: [shares.lt(maxShares) ? shares : maxShares, owner, recipient],
-    enabled: !shouldUseChecks && shares.gt(0),
+    args: [redeemableShares, owner, recipient],
+    enabled: !shouldUseChecks && redeemableShares.gt(0),
   });
   const {
     write: redeem,
