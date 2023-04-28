@@ -271,6 +271,10 @@ export class GN {
     return new GN('0', decimals, base);
   }
 
+  static Q(resolution: number) {
+    return new GN(scalerFor(2, resolution), resolution, 2);
+  }
+
   /**
    * Converts a fixed-point integer (stored as a BigNumber) to a `GN`
    * @param int The fixed-point integer as a BigNumber
