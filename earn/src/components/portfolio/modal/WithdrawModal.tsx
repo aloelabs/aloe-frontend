@@ -17,6 +17,7 @@ import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
+import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -61,7 +62,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 const Q112 = BigNumber.from('0x1000000000000000000000000000000');
 
-function doesContainToken(token: Token, pair: LendingPair) {
+function doesLendingPairContainToken(pair: LendingPair, token: Token) {
   return pair.token0.equals(token) || pair.token1.equals(token);
 }
 
@@ -81,10 +82,10 @@ export default function WithdrawModal(props: WithdrawModalProps) {
 
   const [selectedToken, setSelectedToken] = useState(defaultToken);
   const [selectedPairIdx, setSelectedPairIdx] = useState(0);
-  const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]);
+  const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]); // [amountStr, isMaxed]
   const account = useAccount();
 
-  const filteredPairs = lendingPairs.filter((p) => doesContainToken(selectedToken, p));
+  const filteredPairs = lendingPairs.filter((p) => doesLendingPairContainToken(p, selectedToken));
   if (filteredPairs.length === 0) throw new Error(`${selectedToken.ticker} isn't part of any lending pair`);
   const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
   const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
@@ -101,7 +102,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     activeChain.id,
     lender.address,
     inputValue[1] ? GN.fromBigNumber(Q112, selectedToken.decimals) : amount,
-    isOpen && account.address ? account.address : '0x0000000000000000000000000000000000000000'
+    isOpen && account.address ? account.address : ZERO_ADDRESS
   );
   const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
 

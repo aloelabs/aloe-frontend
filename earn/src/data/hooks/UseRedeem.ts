@@ -32,6 +32,7 @@ const PERMIT_STATE_TO_REDEEM_STATE = {
 };
 
 const BN0 = BigNumber.from('0');
+const GAS_LIMIT_CUSHION = 110;
 
 export function useRedeem(chainId: number, lender: Address, amount: GN, owner: Address, recipient?: Address) {
   if (!recipient) recipient = owner;
@@ -94,7 +95,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     request: configRedeem.request
       ? {
           ...configRedeem.request,
-          gasLimit: configRedeem.request?.gasLimit.mul(110).div(100),
+          gasLimit: configRedeem.request?.gasLimit.mul(GAS_LIMIT_CUSHION).div(100),
         }
       : undefined,
   });
@@ -129,7 +130,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     request: configRedeemWithChecks.request
       ? {
           ...configRedeemWithChecks.request,
-          gasLimit: configRedeemWithChecks.request.gasLimit.mul(110).div(100),
+          gasLimit: configRedeemWithChecks.request.gasLimit.mul(GAS_LIMIT_CUSHION).div(100),
         }
       : undefined,
   });
