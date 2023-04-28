@@ -1,19 +1,19 @@
 import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import Big from 'big.js';
+import { erc20ABI } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import ERC20ABI from '../../../../assets/abis/ERC20.json';
 import { isSolvent } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
-import { Token } from '../../../../data/Token';
 import { UniswapPosition } from '../../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../../util/Numbers';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../../HealthBar';
 
@@ -47,8 +47,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 type AddCollateralButtonProps = {
   marginAccount: MarginAccount;
   collateralToken: Token;
-  collateralAmount: Big;
-  userBalance: Big;
+  collateralAmount: GN;
+  userBalance: GN;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
@@ -61,9 +61,9 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: collateralToken.address,
-    abi: ERC20ABI,
+    abi: erc20ABI,
     functionName: 'transfer',
-    args: [marginAccount.address, collateralAmount.toFixed()],
+    args: [marginAccount.address, collateralAmount.toBigNumber()],
     enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
@@ -135,12 +135,12 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
   const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const [collateralAmount, setCollateralAmount] = useState('');
+  const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
 
-  const { refetch: refetchBalance, data: userBalance } = useBalance({
+  const { refetch: refetchBalance, data: userBalanceResult } = useBalance({
     address: userAddress,
     token: collateralToken.address,
     chainId: activeChain.id,
@@ -160,41 +160,31 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
 
   // Reset collateral amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
-    setCollateralAmount('');
+    setCollateralAmountStr('');
     setCollateralToken(marginAccount.token0);
   }, [marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
 
-  const existingCollateral =
+  const existingCollateralRaw =
     collateralToken.address === marginAccount.token0.address
       ? marginAccount.assets.token0Raw
       : marginAccount.assets.token1Raw;
 
-  const numericCollateralAmount = Number(collateralAmount) || 0;
+  const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
+  const userBalance = GN.fromDecimalString(userBalanceResult?.formatted ?? '0', collateralToken.decimals);
+  const newCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals).add(collateralAmount);
 
-  const collateralAmountBig = new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
-
-  const existingCollateralBig = new Big(existingCollateral).mul(10 ** collateralToken.decimals);
-
-  const numericUserBalance = Number(userBalance?.formatted ?? 0) || 0;
-  const userBalanceBig = new Big(numericUserBalance).mul(10 ** collateralToken.decimals);
-
+  // TODO: Utilize GN for this
   const newAssets: Assets = {
     token0Raw:
       collateralToken.address === marginAccount.token0.address
-        ? existingCollateralBig
-            .add(collateralAmountBig)
-            .div(10 ** collateralToken.decimals)
-            .toNumber()
-        : existingCollateral,
+        ? existingCollateralRaw + collateralAmount.toNumber()
+        : marginAccount.assets.token0Raw,
     token1Raw:
       collateralToken.address === marginAccount.token1.address
-        ? existingCollateralBig
-            .add(collateralAmountBig)
-            .div(10 ** collateralToken.decimals)
-            .toNumber()
-        : existingCollateral,
+        ? existingCollateralRaw + collateralAmount.toNumber()
+        : marginAccount.assets.token1Raw,
     uni0: marginAccount.assets.uni0,
     uni1: marginAccount.assets.uni1,
   };
@@ -213,8 +203,6 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
     return null;
   }
 
-  const newCollateralBig = existingCollateralBig.add(collateralAmountBig).div(10 ** collateralToken.decimals);
-
   return (
     <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
       <div className='flex flex-col gap-1 w-full'>
@@ -226,7 +214,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
             size='L'
             onClick={() => {
               if (userBalance != null) {
-                setCollateralAmount(userBalance?.formatted);
+                setCollateralAmountStr(userBalance.toString(GNFormat.DECIMAL));
               }
             }}
           >
@@ -234,16 +222,16 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
           </BaseMaxButton>
         </div>
         <TokenAmountSelectInput
-          inputValue={collateralAmount}
+          inputValue={collateralAmountStr}
           onChange={(value) => {
             const output = formatNumberInput(value);
             if (output != null) {
               const truncatedOutput = truncateDecimals(output, collateralToken.decimals);
-              setCollateralAmount(truncatedOutput);
+              setCollateralAmountStr(truncatedOutput);
             }
           }}
           onSelect={(option: Token) => {
-            setCollateralAmount('');
+            setCollateralAmountStr('');
             setCollateralToken(option);
           }}
           options={tokenOptions}
@@ -257,7 +245,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
         <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
           You're adding{' '}
           <strong>
-            {collateralAmount || '0.00'} {collateralToken.ticker}
+            {collateralAmountStr || '0.00'} {collateralToken.ticker}
           </strong>{' '}
           as collateral to this{' '}
           <strong>
@@ -265,7 +253,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
           </strong>{' '}
           smart wallet. Your total collateral for this token in this smart wallet will be{' '}
           <strong>
-            {truncateDecimals(newCollateralBig.toString(), collateralToken.decimals)} {collateralToken.ticker}
+            {newCollateral.toString(GNFormat.DECIMAL)} {collateralToken.ticker}
           </strong>
           .
         </Text>
@@ -277,8 +265,8 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
         <AddCollateralButton
           marginAccount={marginAccount}
           collateralToken={collateralToken}
-          collateralAmount={collateralAmountBig}
-          userBalance={userBalanceBig}
+          collateralAmount={collateralAmount}
+          userBalance={userBalance}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxn}
         />

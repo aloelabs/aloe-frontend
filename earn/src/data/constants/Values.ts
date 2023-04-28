@@ -1,7 +1,6 @@
 import Big from 'big.js';
 import { BigNumber } from 'ethers';
-
-import { toBig } from '../../util/Numbers';
+import { toBig } from 'shared/lib/util/Numbers';
 
 export const UINT256_MAX = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 export const BLOCKS_TO_WAIT = 1;
@@ -28,4 +27,3 @@ export const API_PRICE_RELAY_LATEST_URL = 'https://api-price.aloe.capital/price-
 export const API_PRICE_RELAY_HISTORICAL_URL = 'https://api-price.aloe.capital/price-relay/v1/historical';
 export const API_PRICE_RELAY_CONSOLIDATED_URL = 'https://api-price.aloe.capital/price-relay/v1/consolidated';
 export const API_REDEEM_REWARD_URL = 'https://api-claim.aloe.capital/v1/claim';
-export const ANTE = 0.001e18;

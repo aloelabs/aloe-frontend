@@ -4,6 +4,7 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'wagmi';
 
@@ -13,7 +14,6 @@ import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
-import { formatNumberInput, formatTokenAmount } from '../../../util/Numbers';
 import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 

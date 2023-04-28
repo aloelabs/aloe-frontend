@@ -1,8 +1,8 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
+import { areWithinNSigDigs } from 'shared/lib/util/Numbers';
 
-import { areWithinNSigDigs } from '../util/Numbers';
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import {

@@ -1,35 +1,23 @@
-import { useContext, useState, useMemo, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 
-import { SendTransactionResult, FetchBalanceResult } from '@wagmi/core';
-import Big from 'big.js';
-import { ethers, BigNumber } from 'ethers';
+import { SendTransactionResult } from '@wagmi/core';
+import { BigNumber } from 'ethers';
+import { routerABI } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import {
-  useAccount,
-  usePrepareContractWrite,
-  useContractWrite,
-  useBalance,
-  Address,
-  Chain,
-  useSigner,
-  useProvider,
-} from 'wagmi';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import ERC20ABI from '../../../assets/abis/ERC20.json';
-import RouterABI from '../../../assets/abis/Router.json';
 import { isSolvent } from '../../../data/BalanceSheet';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
-import useAllowance from '../../../data/hooks/UseAllowance';
-import useAllowanceWrite from '../../../data/hooks/UseAllowanceWrite';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
-import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
-import { attemptToInferPermitDomain, EIP2612Domain, getErc2612Signature } from '../../../util/Permit';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../HealthBar';
 
@@ -42,11 +30,22 @@ enum ConfirmButtonState {
   REPAYING_TOO_MUCH,
   PERMIT_ASSET,
   APPROVE_ASSET,
-  PENDING,
-  READY_VIA_PERMIT,
-  READY_VIA_APPROVE,
+  WAITING_FOR_TRANSACTION,
+  WAITING_FOR_USER,
+  READY,
+  LOADING,
   DISABLED,
 }
+
+const permit2StateToButtonStateMap = {
+  [Permit2State.ASKING_USER_TO_APPROVE]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.DONE]: undefined,
+  [Permit2State.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [Permit2State.READY_TO_APPROVE]: ConfirmButtonState.APPROVE_ASSET,
+  [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
+  [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
+};
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
@@ -58,35 +57,27 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: `Permit ${token.ticker}`, enabled: true };
     case ConfirmButtonState.APPROVE_ASSET:
       return { text: `Approve ${token.ticker}`, enabled: true };
-    case ConfirmButtonState.PENDING:
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
       return { text: 'Pending', enabled: false };
-    case ConfirmButtonState.READY_VIA_PERMIT:
-    case ConfirmButtonState.READY_VIA_APPROVE:
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
+    case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.LOADING:
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
   }
 }
 
-type PermitData = {
-  signature: ethers.Signature;
-  approve: {
-    owner: string;
-    spender: string;
-    value: BigNumber;
-  };
-  deadline: string;
-};
-
 type RepayButtonProps = {
   activeChain: Chain;
   marginAccount: MarginAccount;
   userAddress: Address;
   lender: Address;
-  repayAmount: string;
+  repayAmount: GN;
   repayToken: Token;
-  repayTokenBalance: FetchBalanceResult | undefined;
+  repayTokenBalance: GN;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
@@ -105,201 +96,88 @@ function RepayButton(props: RepayButtonProps) {
   } = props;
 
   const [isPending, setIsPending] = useState(false);
-  const [permitDomain, setPermitDomain] = useState<EIP2612Domain | null>(null);
-  const [permitData, setPermitData] = useState<PermitData | undefined>(undefined);
 
-  // MARK: wagmi basics -----------------------------------------------------------------------------------------------
-  const { data: signer } = useSigner({ chainId: activeChain.id });
-  const provider = useProvider({ chainId: activeChain.id });
-  const erc20Contract = useMemo(
-    () => new ethers.Contract(repayToken.address, ERC20ABI, provider),
-    [repayToken, provider]
-  );
-
-  // MARK: Infer EIP2612 domain ---------------------------------------------------------------------------------------
-  useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      const result = await attemptToInferPermitDomain(erc20Contract, activeChain.id);
-      if (mounted) setPermitDomain(result);
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [erc20Contract, activeChain.id]);
-
-  // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
-  const { refetch: refetchRouterAllowance, data: routerAllowance } = useAllowance(
-    activeChain,
-    repayToken,
-    userAddress,
-    ALOE_II_ROUTER_ADDRESS
-  );
-  const writeRouterAllowanceMax = useAllowanceWrite(activeChain, repayToken, ALOE_II_ROUTER_ADDRESS);
-
-  // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
-  const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
-  const bigExistingLiability = BigNumber.from(new Big(existingLiability).mul(10 ** repayToken.decimals).toFixed(0));
-  const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
-
-  // MARK: Determining button state -----------------------------------------------------------------------------------
-  let confirmButtonState: ConfirmButtonState;
-
-  if (repayAmount === '') {
-    confirmButtonState = ConfirmButtonState.DISABLED;
-  } else if (isPending) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (bigRepayAmount.gt(repayTokenBalance?.value ?? BigNumber.from('0'))) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
-  } else if (bigRepayAmount.gt(bigExistingLiability)) {
-    confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
-  } else if (permitDomain !== null) {
-    if (!permitData) {
-      confirmButtonState = ConfirmButtonState.PERMIT_ASSET;
-    } else {
-      confirmButtonState = ConfirmButtonState.READY_VIA_PERMIT;
-    }
-  } else if (permitDomain === null && routerAllowance) {
-    if (routerAllowance.lt(bigRepayAmount)) {
-      confirmButtonState = ConfirmButtonState.APPROVE_ASSET;
-    } else {
-      confirmButtonState = ConfirmButtonState.READY_VIA_APPROVE;
-    }
-  } else {
-    console.error('Unexpected confirm button state!');
-    confirmButtonState = ConfirmButtonState.DISABLED;
-  }
-
-  // MARK: Prepare contract write for approval flow -------------------------------------------------------------------
-  const { config: repayWithApprovalConfig, refetch: refetchRepayWithApprovalConfig } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName: 'repayWithApprove(address,uint256,address)',
-    args: [lender, bigRepayAmount, marginAccount.address],
-    chainId: activeChain.id,
-    enabled: confirmButtonState === ConfirmButtonState.READY_VIA_APPROVE,
-  });
-  const repayWithApprovalUpdatedRequest = useMemo(() => {
-    if (repayWithApprovalConfig.request) {
-      return {
-        ...repayWithApprovalConfig.request,
-        gasLimit: repayWithApprovalConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [repayWithApprovalConfig.request]);
   const {
-    write: repayWithApproval,
-    isSuccess: repayWithApprovalDidSucceed,
-    isLoading: repayWithApprovalIsLoading,
-    data: repayWithApprovalData,
-  } = useContractWrite({
-    ...repayWithApprovalConfig,
-    request: repayWithApprovalUpdatedRequest,
-  });
+    state: permit2State,
+    action: permit2Action,
+    result: permit2Result,
+  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS, repayAmount);
 
-  // MARK: Prepare contract write for permit flow ---------------------------------------------------------------------
-  const { config: repayWithPermitConfig, refetch: refetchRepayWithPermitConfig } = usePrepareContractWrite({
+  const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS,
-    abi: RouterABI,
-    functionName: 'repayWithPermit(address,uint256,address,uint256,uint256,uint8,bytes32,bytes32)',
+    abi: routerABI,
+    functionName: 'repayWithPermit2',
     args: [
       lender,
-      bigRepayAmount,
+      permit2Result.amount.toBigNumber(),
       marginAccount.address,
-      permitData?.approve.value,
-      permitData?.deadline,
-      permitData?.signature.v,
-      permitData?.signature.r,
-      permitData?.signature.s,
+      BigNumber.from(permit2Result.nonce ?? '0'),
+      BigNumber.from(permit2Result.deadline),
+      permit2Result.signature ?? '0x',
     ],
     chainId: activeChain.id,
-    enabled: confirmButtonState === ConfirmButtonState.READY_VIA_PERMIT,
+    enabled: permit2State === Permit2State.DONE,
   });
-  const repayWithPermitUpdatedRequest = useMemo(() => {
-    if (repayWithPermitConfig.request) {
-      return {
-        ...repayWithPermitConfig.request,
-        gasLimit: repayWithPermitConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [repayWithPermitConfig.request]);
+  // NOTE: Not using `useMemo` to update the request
+  const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
-    write: repayWithPermit,
-    isSuccess: repayWithPermitDidSucceed,
-    isLoading: repayWithPermitIsLoading,
-    data: repayWithPermitData,
+    write: repayWithPermit2,
+    isError: contractDidError,
+    isSuccess: contractDidSucceed,
+    data: contractData,
   } = useContractWrite({
-    ...repayWithPermitConfig,
-    request: repayWithPermitUpdatedRequest,
+    ...repayWithPermit2Config,
+    request: {
+      ...repayWithPermit2Config.request,
+      gasLimit,
+    },
   });
 
-  // MARK: Respond to repay txn successes/failures --------------------------------------------------------------------
-  const contractDidSucceed = repayWithApprovalDidSucceed || repayWithPermitDidSucceed;
-  const contractIsLoading = repayWithApprovalIsLoading || repayWithPermitIsLoading;
-  const contractData = repayWithApprovalData ?? repayWithPermitData;
   useEffect(() => {
     if (contractDidSucceed && contractData) {
       setPendingTxn(contractData);
       setIsPending(false);
       setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
+    } else if (contractDidSucceed) {
       setIsPending(false);
     }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
+
+  // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
+  const existingLiability = marginAccount.liabilities[lender === marginAccount.lender0 ? 'amount0' : 'amount1'];
+  const existingLiabilityGN = GN.fromNumber(existingLiability, repayToken.decimals);
+
+  // MARK: Determining button state -----------------------------------------------------------------------------------
+  let confirmButtonState: ConfirmButtonState;
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
+  } else if (repayAmount.isZero()) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (repayAmount.gt(repayTokenBalance)) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
+  } else if (repayAmount.gt(existingLiabilityGN)) {
+    confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
+  } else {
+    confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
+  }
 
   // MARK: Get the button itself --------------------------------------------------------------------------------------
   // --> UI
   const confirmButton = getConfirmButton(confirmButtonState, repayToken);
   // --> action
   const confirmButtonAction = () => {
-    switch (confirmButtonState) {
-      case ConfirmButtonState.APPROVE_ASSET:
-        setIsPending(true);
-        writeRouterAllowanceMax
-          .writeAsync?.()
-          .then((txnResult) =>
-            txnResult.wait(1).then(() => {
-              refetchRouterAllowance();
-            })
-          )
-          .finally(() => {
-            setIsPending(false);
-          });
-        break;
-      case ConfirmButtonState.PERMIT_ASSET:
-        setIsPending(true);
+    if (permit2Action) {
+      permit2Action();
+      return;
+    }
 
-        const approve = {
-          owner: userAddress,
-          spender: ALOE_II_ROUTER_ADDRESS,
-          value: bigRepayAmount.add(1),
-        };
-        const deadline = (Date.now() / 1000 + 60 * 5).toFixed(0);
-
-        getErc2612Signature(signer!, erc20Contract, permitDomain!, approve, deadline).then((signature) => {
-          setPermitData({ signature, approve, deadline });
-          setIsPending(false);
-        });
-        break;
-      case ConfirmButtonState.READY_VIA_APPROVE:
-        setIsPending(true);
-        if (!repayWithApprovalConfig.request) {
-          console.error('Reached READY state before approval config was ready');
-          refetchRepayWithApprovalConfig();
-        } else repayWithApproval?.();
-        break;
-      case ConfirmButtonState.READY_VIA_PERMIT:
-        setIsPending(true);
-        if (!repayWithPermitConfig.request) {
-          console.error('Reached READY state before permit config was ready');
-          refetchRepayWithPermitConfig();
-        } else repayWithPermit?.();
-        break;
-      default:
-        break;
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (!repayWithPermit2) {
+        refetchRepayWithPermit2();
+        return;
+      }
+      setIsPending(true);
+      repayWithPermit2();
     }
   };
 
@@ -322,43 +200,43 @@ export default function RepayModal(props: RepayModalProps) {
   const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
-  const [repayAmount, setRepayAmount] = useState('');
+  const [repayAmountStr, setRepayAmountStr] = useState('');
   const [repayToken, setRepayToken] = useState<Token>(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
-  const { data: repayTokenBalance } = useBalance({
+  const { data: tokenBalanceFetch } = useBalance({
     address: userAddress,
     chainId: activeChain.id,
     token: repayToken.address,
     watch: false,
     enabled: isOpen,
   });
-  const bigTokenBalance = repayTokenBalance?.value ?? BigNumber.from('0');
+  const tokenBalance = GN.fromBigNumber(tokenBalanceFetch?.value ?? BigNumber.from('0'), repayToken.decimals);
 
   // Reset repay amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
-    setRepayAmount('');
+    setRepayAmountStr('');
     setRepayToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
 
-  const existingLiability =
+  const existingLiabilityNumber =
     repayToken.address === marginAccount.token0.address
       ? marginAccount.liabilities.amount0
       : marginAccount.liabilities.amount1;
-  const bigExistingLiability = BigNumber.from(new Big(existingLiability).mul(10 ** repayToken.decimals).toFixed(0));
-  const bigRepayAmount = ethers.utils.parseUnits(repayAmount === '' ? '0' : repayAmount, repayToken.decimals);
-  const bigRemainingLiability = bigExistingLiability.sub(bigRepayAmount);
+  const existingLiability = GN.fromNumber(existingLiabilityNumber, repayToken.decimals);
+  const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayToken.decimals);
+  const remainingLiability = existingLiability.sub(repayAmount);
 
-  const maxRepay = bigExistingLiability.lte(bigTokenBalance) ? bigExistingLiability : bigTokenBalance;
+  const maxRepay = GN.min(existingLiability, tokenBalance);
 
   const newLiabilities: Liabilities = {
     amount0:
       repayToken.address === marginAccount.token0.address
-        ? parseFloat(ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals))
+        ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL))
         : marginAccount.liabilities.amount0,
     amount1:
       repayToken.address === marginAccount.token1.address
-        ? parseFloat(ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals))
+        ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL))
         : marginAccount.liabilities.amount1,
   };
 
@@ -387,23 +265,23 @@ export default function RepayModal(props: RepayModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setRepayAmount(ethers.utils.formatUnits(maxRepay, repayToken.decimals));
+                setRepayAmountStr(maxRepay.toString(GNFormat.DECIMAL));
               }}
             >
               MAX
             </BaseMaxButton>
           </div>
           <TokenAmountSelectInput
-            inputValue={repayAmount}
+            inputValue={repayAmountStr}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
                 const truncatedOutput = truncateDecimals(output, repayToken.decimals);
-                setRepayAmount(truncatedOutput);
+                setRepayAmountStr(truncatedOutput);
               }
             }}
             onSelect={(option: Token) => {
-              setRepayAmount('');
+              setRepayAmountStr('');
               setRepayToken(option);
             }}
             options={[marginAccount.token0, marginAccount.token1]}
@@ -417,11 +295,11 @@ export default function RepayModal(props: RepayModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're repaying{' '}
             <strong>
-              {repayAmount || '0'} {repayToken.ticker}
+              {repayAmountStr || '0'} {repayToken.ticker}
             </strong>
             . This will increase your smart wallet's health and bring remaining borrows down to{' '}
             <strong>
-              {ethers.utils.formatUnits(bigRemainingLiability, repayToken.decimals)} {repayToken.ticker}
+              {remainingLiability.toString(GNFormat.DECIMAL)} {repayToken.ticker}
             </strong>
             .
           </Text>
@@ -437,7 +315,7 @@ export default function RepayModal(props: RepayModalProps) {
             lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
             repayAmount={repayAmount}
             repayToken={repayToken}
-            repayTokenBalance={repayTokenBalance}
+            repayTokenBalance={tokenBalance}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />

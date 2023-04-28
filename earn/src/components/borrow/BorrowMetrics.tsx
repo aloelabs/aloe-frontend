@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice } from '../../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 import { UniswapPosition } from '../../data/Uniswap';
-import { formatTokenAmount } from '../../util/Numbers';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;

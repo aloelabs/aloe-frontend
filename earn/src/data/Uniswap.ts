@@ -5,14 +5,14 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { Token } from 'shared/lib/data/Token';
+import { toBig } from 'shared/lib/util/Numbers';
 
 import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { toBig } from '../util/Numbers';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
 import { BIGQ96, Q96 } from './constants/Values';
-import { Token } from './Token';
 import { getToken } from './TokenData';
 
 export type UniswapPosition = {

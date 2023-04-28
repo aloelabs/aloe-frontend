@@ -1,11 +1,11 @@
 import { useMemo, useRef } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { Token } from '../../data/Token';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 

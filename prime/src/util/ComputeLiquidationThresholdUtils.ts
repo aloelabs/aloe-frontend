@@ -1,11 +1,11 @@
 import Big from 'big.js';
 import JSBI from 'jsbi';
 import { FeeTier } from 'shared/lib/data/FeeTier';
+import { Token } from 'shared/lib/data/Token';
 import { Address } from 'wagmi';
 
 import { UniswapPosition } from '../data/actions/Actions';
 import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
-import { Token } from '../data/Token';
 
 export type UniswapPositionParams = {
   lower: number;
