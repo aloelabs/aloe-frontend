@@ -88,6 +88,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     write: redeem,
     data: redeemTxn,
     isLoading: isAskingUserToRedeem,
+    reset: resetRedeemTxn,
   } = useContractWrite({
     ...configRedeem,
     request: configRedeem.request
@@ -122,6 +123,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     write: redeemWithChecks,
     data: redeemWithChecksTxn,
     isLoading: isAskingUserToRedeemWithChecks,
+    reset: resetRedeemWithChecksTxn,
   } = useContractWrite({
     ...configRedeemWithChecks,
     request: configRedeemWithChecks.request
@@ -156,6 +158,10 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     state,
     action,
     txn: redeemTxn ?? redeemWithChecksTxn,
+    resetTxn() {
+      resetRedeemTxn();
+      resetRedeemWithChecksTxn();
+    },
     maxAmount,
   };
 }

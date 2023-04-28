@@ -95,6 +95,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     state: redeemState,
     action,
     txn,
+    resetTxn,
     maxAmount: maxAmountBN,
   } = useRedeem(
     activeChain.id,
@@ -116,9 +117,10 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   useEffect(() => {
     if (txn === undefined) return;
     setPendingTxn(txn);
+    resetTxn();
     setIsOpen(false);
     resetUserInputs();
-  }, [txn, setPendingTxn, setIsOpen, resetUserInputs]);
+  }, [txn, setPendingTxn, resetTxn, setIsOpen, resetUserInputs]);
 
   /*//////////////////////////////////////////////////////////////
                             CONFIRM BUTTON
@@ -135,10 +137,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     confirmButtonState = REDEEM_STATE_TO_BUTTON_STATE[redeemState];
   }
   const confirmButton = getConfirmButton(confirmButtonState, selectedToken);
-
-  /*//////////////////////////////////////////////////////////////
-                                HTML
-  //////////////////////////////////////////////////////////////*/
 
   return (
     <Modal
