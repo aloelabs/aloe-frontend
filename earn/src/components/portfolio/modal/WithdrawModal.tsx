@@ -177,7 +177,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
-                console.log('wrote number');
                 const truncatedOutput = truncateDecimals(output, selectedToken.decimals);
                 setInputValue([truncatedOutput, false]);
               }
@@ -213,7 +212,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're withdrawing{' '}
             <strong>
-              {inputValue || '0.00'} {selectedToken.ticker}
+              {inputValue[0] || '0.00'} {selectedToken.ticker}
             </strong>{' '}
             from the{' '}
             <strong>

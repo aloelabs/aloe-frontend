@@ -80,7 +80,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
   const { config: configRedeem } = usePrepareContractWrite({
     ...erc4626,
     functionName: 'redeem',
-    args: [shares, owner, recipient],
+    args: [shares.lt(maxShares) ? shares : maxShares, owner, recipient],
     enabled: !shouldUseChecks && shares.gt(0),
   });
   const {
@@ -89,10 +89,12 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     isLoading: isAskingUserToRedeem,
   } = useContractWrite({
     ...configRedeem,
-    request: {
-      ...configRedeem.request,
-      gasLimit: configRedeem.request?.gasLimit.mul(110).div(100),
-    },
+    request: configRedeem.request
+      ? {
+          ...configRedeem.request,
+          gasLimit: configRedeem.request?.gasLimit.mul(110).div(100),
+        }
+      : undefined,
   });
 
   /*//////////////////////////////////////////////////////////////
@@ -121,10 +123,12 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     isLoading: isAskingUserToRedeemWithChecks,
   } = useContractWrite({
     ...configRedeemWithChecks,
-    request: {
-      ...configRedeemWithChecks.request,
-      gasLimit: configRedeemWithChecks.request?.gasLimit.mul(110).div(100),
-    },
+    request: configRedeemWithChecks.request
+      ? {
+          ...configRedeemWithChecks.request,
+          gasLimit: configRedeemWithChecks.request.gasLimit.mul(110).div(100),
+        }
+      : undefined,
   });
 
   let state: RedeemState;
