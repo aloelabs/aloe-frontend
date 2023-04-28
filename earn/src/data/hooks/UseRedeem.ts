@@ -67,7 +67,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     ...erc4626,
     functionName: 'convertToShares',
     args: [amount.toBigNumber()],
-    enabled: amount.toBigNumber().lte(maxAmount),
+    enabled: amount.toBigNumber().lte(maxAmount) || amount.eq(GN.Q(112)),
   });
   const shares = sharesData ?? BN0;
 
