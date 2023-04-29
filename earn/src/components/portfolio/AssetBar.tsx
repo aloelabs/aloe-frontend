@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { RESPONSIVE_BREAKPOINT_SM } from 'shared/lib/data/constants/Breakpoints';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -19,6 +20,7 @@ const Container = styled.div`
   position: relative;
   width: 100%;
   height: 56px;
+  display: flex;
 `;
 
 const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color: string }) => props)`
@@ -26,7 +28,7 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
   justify-content: center;
   align-items: center;
   width: ${(props) => props.percentage * 100}%;
-  height: 100%;
+  height: 56px;
   background-color: ${(props) => props.color};
   cursor: pointer;
   &:first-child {
@@ -53,6 +55,11 @@ const AssetIcon = styled.img`
   border: 1px solid rgb(7, 14, 18);
   border-radius: 50%;
   background-color: #ffffff;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    width: 24px;
+    height: 24px;
+  }
 `;
 
 const StyledMoreIcon = styled(MoreIcon)`
@@ -137,6 +144,10 @@ export function AssetBar(props: AssetBarProps) {
         event.preventDefault();
         event.stopPropagation();
         setSearchModeEnabled(true);
+      } else if (event.code === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setSearchModeEnabled(false);
       }
     };
     window.addEventListener('keydown', keyboardListener);

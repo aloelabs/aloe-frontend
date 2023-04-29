@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { RESPONSIVE_BREAKPOINT_TABLET } from 'shared/lib/data/constants/Breakpoints';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
@@ -31,6 +32,11 @@ const BackButton = styled.button`
     path {
       stroke: rgb(255, 255, 255);
     }
+  }
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+    top: -24px;
+    left: 0;
   }
 `;
 
