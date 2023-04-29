@@ -7,9 +7,9 @@ import { BrowserRouter as Router } from 'react-router-dom';
 
 import App from './App';
 
-if (process.env.REACT_APP_SENTRY_DSN) {
+if (process.env.REACT_APP_SENTRY_DSN_EARN) {
   Sentry.init({
-    dsn: process.env.REACT_APP_SENTRY_DSN,
+    dsn: process.env.REACT_APP_SENTRY_DSN_EARN,
     integrations: [new Sentry.BrowserTracing()],
     // TODO: Automate this
     release: '0.0.1',
