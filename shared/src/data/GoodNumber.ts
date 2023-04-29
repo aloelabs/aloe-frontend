@@ -4,7 +4,7 @@ import JSBI from 'jsbi';
 
 import { formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
 
-function scalerFor(base: 2 | 10, resolution: number) {
+export function scalerFor(base: 2 | 10, resolution: number) {
   if (base === 2) {
     if (resolution % 4 !== 0) throw new Error('Q number resolution must be a multiple of 4');
     return BigNumber.from(`0x1${'0'.repeat(resolution / 4)}`).toString();
