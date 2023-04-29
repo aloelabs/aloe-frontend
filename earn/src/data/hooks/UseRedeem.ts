@@ -63,11 +63,13 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
   });
   const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [BN0, BN0, false];
 
+  // If the user is trying to redeem more than they can, we'll just redeem the max.
+  // This means we won't refetch multiple times if the user enters a number greater than the max.
+  const amountToConvert = amount.toBigNumber().lte(maxAmount) ? amount : GN.Q(112);
   const { data: sharesData, isFetching: isFetchingShares } = useContractRead({
     ...erc4626,
     functionName: 'convertToShares',
-    args: [amount.toBigNumber()],
-    enabled: amount.toBigNumber().lte(maxAmount) || amount.eq(GN.Q(112)),
+    args: [amountToConvert.toBigNumber()],
   });
   const shares = sharesData ?? BN0;
 
