@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
-import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { AssetBarItem, AssetChunk } from './AssetBar';

@@ -6,6 +6,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import { useAccount, useContractWrite } from 'wagmi';
 
@@ -13,7 +14,6 @@ import { ChainContext } from '../../../App';
 import KittyABI from '../../../assets/abis/Kitty.json';
 import { TOPIC0_ENROLL_COURIER_EVENT } from '../../../data/constants/Signatures';
 import { LendingPair } from '../../../data/LendingPair';
-import { Token } from '../../../data/Token';
 import { makeEtherscanRequest } from '../../../util/Etherscan';
 import CopyToClipboard from '../../common/CopyToClipboard';
 import PairDropdown from '../../common/PairDropdown';

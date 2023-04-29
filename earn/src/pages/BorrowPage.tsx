@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
@@ -45,7 +46,6 @@ import { PRIME_URL } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
-import { Token } from '../data/Token';
 import { getToken } from '../data/TokenData';
 import {
   fetchUniswapNFTPositions,
@@ -300,7 +300,9 @@ export default function BorrowPage() {
       const result = await fetchMarketInfoFor(
         lenderLensContract,
         selectedMarginAccount.lender0,
-        selectedMarginAccount.lender1
+        selectedMarginAccount.lender1,
+        selectedMarginAccount.token0.decimals,
+        selectedMarginAccount.token1.decimals
       );
       if (mounted) {
         setCachedMarketInfos((prev) => {

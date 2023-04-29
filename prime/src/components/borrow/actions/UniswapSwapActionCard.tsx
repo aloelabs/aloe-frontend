@@ -1,15 +1,14 @@
-import { useContext, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import Big from 'big.js';
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
+import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { getSwapActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { swapOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, TokenType } from '../../../data/actions/Actions';
-import { truncateDecimals } from '../../../util/Numbers';
 import { getOutputForSwap } from '../../../util/Uniswap';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';

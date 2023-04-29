@@ -2,6 +2,9 @@ import { AxiosResponse } from 'axios';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
+import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
 import ERC20ABI from '../assets/abis/ERC20.json';
@@ -11,15 +14,12 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { toImpreciseNumber } from '../util/Numbers';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   UNISWAP_POOL_DENYLIST,
 } from './constants/Addresses';
-import { Kitty } from './Kitty';
-import { Token } from './Token';
 import { getToken } from './TokenData';
 
 export interface KittyInfo {
@@ -201,9 +201,11 @@ export async function getAvailableLendingPairs(
     const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
-    // SupplyAPY = Utilization * (1 - reservePercentage) * BorrowAPY
-    const APY0 = utilization0 * (1 - 1 / 8) * (interestRate0 ** (365 * 24 * 60 * 60) - 1.0);
-    const APY1 = utilization1 * (1 - 1 / 8) * (interestRate1 ** (365 * 24 * 60 * 60) - 1.0);
+    // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
+    const APR0 = utilization0 * (1 - 1 / 8) * (interestRate0 - 1.0);
+    const APR1 = utilization1 * (1 - 1 / 8) * (interestRate1 - 1.0);
+    const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
+    const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
     let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
     // Annualize it

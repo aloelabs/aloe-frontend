@@ -3,21 +3,22 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
 import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { Assets, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
-import { Token } from '../../../data/Token';
 import { UniswapPosition } from '../../../data/Uniswap';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 import HealthBar from '../HealthBar';
 
@@ -49,10 +50,10 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 type RemoveCollateralButtonProps = {
   marginAccount: MarginAccount;
-  userAddress: string;
+  userAddress: Address;
   collateralToken: Token;
-  collateralAmount: Big;
-  userBalance: Big;
+  collateralAmount: GN;
+  userBalance: GN;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
@@ -66,22 +67,22 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   const isToken0Collateral = collateralToken.address === marginAccount.token0.address;
 
-  const amount0Big = isToken0Collateral ? collateralAmount : new Big(0);
-  const amount1Big = isToken0Collateral ? new Big(0) : collateralAmount;
+  const amount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
+  const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
     args: [
       ALOE_II_WITHDRAW_MANAGER_ADDRESS,
       ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address'],
-        [amount0Big.toFixed(), amount1Big.toFixed(), userAddress]
-      ),
+        [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]
+      ) as Address,
       [isToken0Collateral, !isToken0Collateral],
     ],
-    enabled: !!userAddress && collateralAmount.gt(0) && collateralAmount.lte(userBalance),
+    enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -152,34 +153,26 @@ export type RemoveCollateralModalProps = {
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
   const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
-  const [collateralAmount, setCollateralAmount] = useState('');
+  const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
 
   // Reset the collateral amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
-    setCollateralAmount('');
+    setCollateralAmountStr('');
     setCollateralToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
   const isToken0 = collateralToken.address === marginAccount.token0.address;
 
-  const existingCollateral = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
+  const existingCollateralRaw = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
 
-  const numericCollateralAmount = Number(collateralAmount) || 0;
+  const existingCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals);
+  const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
 
-  const existingCollateralBig = new Big(existingCollateral).mul(10 ** collateralToken.decimals);
-  const numericCollateralAmountBig = new Big(numericCollateralAmount).mul(10 ** collateralToken.decimals);
-
-  const newCollateralAmount = Math.max(
-    existingCollateralBig
-      .sub(numericCollateralAmountBig)
-      .div(10 ** collateralToken.decimals)
-      .toNumber(),
-    0
-  );
+  const newCollateralAmount = GN.max(existingCollateral.sub(collateralAmount), GN.zero(collateralToken.decimals));
 
   if (!userAddress || !isOpen) {
     return null;
@@ -194,14 +187,15 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
-  const max = Math.min(existingCollateral, maxWithdrawBasedOnHealth);
+  const max = Math.min(existingCollateralRaw, maxWithdrawBasedOnHealth);
   // Mitigate the case when the number is represented in scientific notation
   const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
   const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
 
+  // TODO: Utilize GN for this
   const newAssets: Assets = {
-    token0Raw: isToken0 ? newCollateralAmount : marginAccount.assets.token0Raw,
-    token1Raw: isToken0 ? marginAccount.assets.token1Raw : newCollateralAmount,
+    token0Raw: isToken0 ? newCollateralAmount.toNumber() : marginAccount.assets.token0Raw,
+    token1Raw: isToken0 ? marginAccount.assets.token1Raw : newCollateralAmount.toNumber(),
     uni0: marginAccount.assets.uni0,
     uni1: marginAccount.assets.uni1,
   };
@@ -227,23 +221,23 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setCollateralAmount(maxString);
+                setCollateralAmountStr(maxString);
               }}
             >
               MAX
             </BaseMaxButton>
           </div>
           <TokenAmountSelectInput
-            inputValue={collateralAmount}
+            inputValue={collateralAmountStr}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
                 const truncatedOutput = truncateDecimals(output, collateralToken.decimals);
-                setCollateralAmount(truncatedOutput);
+                setCollateralAmountStr(truncatedOutput);
               }
             }}
             onSelect={(option: Token) => {
-              setCollateralAmount('');
+              setCollateralAmountStr('');
               setCollateralToken(option);
             }}
             options={tokenOptions}
@@ -257,7 +251,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're removing{' '}
             <strong>
-              {collateralAmount || '0.00'} {collateralToken.ticker}
+              {collateralAmountStr || '0.00'} {collateralToken.ticker}
             </strong>{' '}
             collateral from this{' '}
             <strong>
@@ -265,7 +259,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             </strong>{' '}
             smart wallet. Your total collateral for this token in this smart wallet will be{' '}
             <strong>
-              {truncateDecimals(newCollateralAmount.toString(), collateralToken.decimals)} {collateralToken.ticker}
+              {newCollateralAmount.toString(GNFormat.DECIMAL)} {collateralToken.ticker}
             </strong>
             .
           </Text>
@@ -278,8 +272,8 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             marginAccount={marginAccount}
             userAddress={userAddress}
             collateralToken={collateralToken}
-            collateralAmount={numericCollateralAmountBig}
-            userBalance={existingCollateralBig}
+            collateralAmount={collateralAmount}
+            userBalance={existingCollateral}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}
           />

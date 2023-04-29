@@ -10,11 +10,11 @@ import {
   ValueText,
 } from 'shared/lib/components/common/Card';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
+import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { Token } from '../../data/Token';
-import { roundPercentage } from '../../util/Numbers';
 import LendTokenInfo from './LendTokenInfo';
 import YieldTokenIcons from './YieldTokenIcons';
 

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import useHover from 'shared/lib/data/hooks/UseHover';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
-import { Token } from '../../data/Token';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import { SearchBar } from './SearchBar';
@@ -50,8 +50,9 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
 const AssetIcon = styled.img`
   width: 32px;
   height: 32px;
-  border: 2px solid transparent;
+  border: 1px solid rgb(7, 14, 18);
   border-radius: 50%;
+  background-color: #ffffff;
 `;
 
 const StyledMoreIcon = styled(MoreIcon)`

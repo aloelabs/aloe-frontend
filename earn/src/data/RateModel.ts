@@ -19,6 +19,7 @@ export class RateModel {
   }
 
   static computeYieldPerSecond(utilization: number): JSBI {
+    if (utilization > 1) utilization = 1;
     const u = JSBI.BigInt((utilization * 1e18).toFixed(0));
 
     if (JSBI.lessThan(u, JSBI.BigInt('990000000000000000'))) {

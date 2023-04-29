@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { Token } from 'shared/lib/data/Token';
 
 import { getTransferInActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -12,7 +13,6 @@ import {
   TokenType,
 } from '../../../data/actions/Actions';
 import { getBalanceFor } from '../../../data/Balances';
-import { Token } from '../../../data/Token';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 

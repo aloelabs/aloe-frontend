@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { formatTokenAmount, roundPercentage, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
@@ -14,7 +15,6 @@ import {
   UniswapNFTPositionEntry,
   UniswapPosition,
 } from '../../data/Uniswap';
-import { formatTokenAmount, roundPercentage, truncateDecimals } from '../../util/Numbers';
 import TokenPairIcons from '../common/TokenPairIcons';
 import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 

@@ -6,13 +6,13 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import ERC20ABI from '../../../assets/abis/ERC20.json';
-import { Token } from '../../../data/Token';
-import { GN, GNFormat } from '../../../util/GoodNumber';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room

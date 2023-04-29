@@ -1,8 +1,8 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
-import { Token } from '../../data/Token';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
 import AssetPriceChartWidget from './AssetPriceChartWidget';

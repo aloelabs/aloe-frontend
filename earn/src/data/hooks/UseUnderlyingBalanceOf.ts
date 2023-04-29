@@ -1,12 +1,12 @@
 import { useContext, useEffect, useState } from 'react';
 
 import Big from 'big.js';
+import { Kitty } from 'shared/lib/data/Kitty';
+import { Token } from 'shared/lib/data/Token';
 import { useContractRead } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import KittyABI from '../../assets/abis/Kitty.json';
-import { Kitty } from '../Kitty';
-import { Token } from '../Token';
 
 export function useBalanceOfUnderlying(
   token: Token,

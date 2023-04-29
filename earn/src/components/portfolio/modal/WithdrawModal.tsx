@@ -1,260 +1,140 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { useAccount } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import KittyABI from '../../../assets/abis/Kitty.json';
-import { Kitty } from '../../../data/Kitty';
+import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
+import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { LendingPair } from '../../../data/LendingPair';
-import { Token } from '../../../data/Token';
-import { GN, GNFormat } from '../../../util/GoodNumber';
-import { formatNumberInput, truncateDecimals } from '../../../util/Numbers';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
-  INSUFFICIENT_ASSET,
-  APPROVE_ASSET,
-  PENDING,
+  REDEEM_TOO_MUCH,
+  READY_TO_SIGN,
+  READY_TO_REDEEM,
+  WAITING_FOR_TRANSACTION,
+  WAITING_FOR_USER,
   LOADING,
-  READY,
+  DISABLED,
 }
+
+const REDEEM_STATE_TO_BUTTON_STATE = {
+  [RedeemState.WAITING_FOR_INPUT]: ConfirmButtonState.DISABLED,
+  [RedeemState.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [RedeemState.READY_TO_SIGN]: ConfirmButtonState.READY_TO_SIGN,
+  [RedeemState.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [RedeemState.READY_TO_REDEEM]: ConfirmButtonState.READY_TO_REDEEM,
+  [RedeemState.ASKING_USER_TO_REDEEM]: ConfirmButtonState.WAITING_FOR_USER,
+};
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
-    case ConfirmButtonState.INSUFFICIENT_ASSET:
-      return {
-        text: `Insufficient ${token.ticker}`,
-        enabled: false,
-      };
-    case ConfirmButtonState.APPROVE_ASSET:
-      return {
-        text: `Approve ${token.ticker}`,
-        enabled: true,
-      };
-    case ConfirmButtonState.PENDING:
-      return { text: 'Pending', enabled: false };
-    case ConfirmButtonState.READY:
+    case ConfirmButtonState.REDEEM_TOO_MUCH:
+      return { text: `Insufficient ${token.ticker}`, enabled: false };
+    case ConfirmButtonState.READY_TO_SIGN:
+      return { text: `Permit Router`, enabled: true };
+    case ConfirmButtonState.READY_TO_REDEEM:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
+      return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.LOADING:
+    case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
   }
 }
 
-type WithdrawButtonProps = {
-  withdrawAmount: GN;
-  maxWithdrawBalance: GN;
-  maxRedeemBalance: GN;
-  token: Token;
-  kitty: Kitty;
-  accountAddress: string;
-  setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
-};
-
-function WithdrawButton(props: WithdrawButtonProps) {
-  const {
-    withdrawAmount,
-    maxWithdrawBalance,
-    maxRedeemBalance,
-    token,
-    kitty,
-    accountAddress,
-    setIsOpen,
-    setPendingTxn,
-  } = props;
-  const { activeChain } = useContext(ChainContext);
-  const [isPending, setIsPending] = useState(false);
-
-  const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
-    address: kitty.address,
-    abi: KittyABI,
-    functionName: 'convertToShares',
-    args: [withdrawAmount.toString(GNFormat.INT)],
-    chainId: activeChain.id,
-  }) as { data: BigNumber | undefined; isLoading: boolean };
-
-  const gnRequestedShares = GN.fromBigNumber(requestedShares ?? BigNumber.from('0'), token.decimals);
-  // Being extra careful here to make sure we don't withdraw more than the user has
-  const numberOfSharesToRedeem = GN.min(gnRequestedShares, maxRedeemBalance);
-
-  const { config: redeemConfig } = usePrepareContractWrite({
-    address: kitty.address,
-    abi: KittyABI,
-    functionName: 'redeem',
-    args: [numberOfSharesToRedeem.toString(GNFormat.INT), accountAddress, accountAddress],
-    chainId: activeChain.id,
-    enabled: !numberOfSharesToRedeem.isZero() && !isPending,
-  });
-  const redeemUpdatedRequest = useMemo(() => {
-    if (redeemConfig.request) {
-      return {
-        ...redeemConfig.request,
-        gasLimit: redeemConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [redeemConfig.request]);
-  const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
-  } = useContractWrite({
-    ...redeemConfig,
-    request: redeemUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
-
-  let confirmButtonState = ConfirmButtonState.READY;
-
-  if (withdrawAmount.gt(maxWithdrawBalance)) {
-    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isPending || convertToSharesIsLoading) {
-    confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (numberOfSharesToRedeem.isZero()) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  }
-
-  const confirmButton = getConfirmButton(confirmButtonState, token);
-
-  function handleClickConfirm() {
-    if (confirmButtonState === ConfirmButtonState.READY && requestedShares) {
-      setIsPending(true);
-      contractWrite?.();
-    }
-  }
-
-  const isDepositAmountValid = withdrawAmount.isGtZero();
-  const shouldConfirmButtonBeDisabled = !(confirmButton.enabled && isDepositAmountValid);
-
-  return (
-    <FilledStylizedButton
-      size='M'
-      onClick={() => handleClickConfirm()}
-      fillWidth={true}
-      disabled={shouldConfirmButtonBeDisabled}
-    >
-      {confirmButton.text}
-    </FilledStylizedButton>
-  );
+function doesLendingPairContainToken(pair: LendingPair, token: Token) {
+  return pair.token0.equals(token) || pair.token1.equals(token);
 }
 
 export type WithdrawModalProps = {
   isOpen: boolean;
-  options: Token[];
-  defaultOption: Token;
+  tokens: Token[];
+  defaultToken: Token;
   lendingPairs: LendingPair[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, tokens, defaultToken, lendingPairs, setIsOpen, setPendingTxn } = props;
+
   const { activeChain } = useContext(ChainContext);
-  const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
-  const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
-  const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);
-  const [inputValue, setInputValue] = useState<string>('');
+
+  const [selectedToken, setSelectedToken] = useState(defaultToken);
+  const [selectedPairIdx, setSelectedPairIdx] = useState(0);
+  const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]); // [amountStr, isMaxed]
   const account = useAccount();
 
-  function resetModal() {
-    setSelectedOption(defaultOption);
-    setInputValue('');
+  const filteredPairs = lendingPairs.filter((p) => doesLendingPairContainToken(p, selectedToken));
+  if (filteredPairs.length === 0) throw new Error(`${selectedToken.ticker} isn't part of any lending pair`);
+  const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
+  const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
+  const amount = GN.fromDecimalString(inputValue[0] || '0', selectedToken.decimals);
+
+  // TODO: debounce amount to avoid repeated network requests for `convertToShares`
+  const {
+    state: redeemState,
+    action,
+    txn,
+    resetTxn,
+    maxAmount: maxAmountBN,
+  } = useRedeem(
+    activeChain.id,
+    lender.address,
+    inputValue[1] ? GN.Q(112) : amount,
+    isOpen && account.address ? account.address : ZERO_ADDRESS
+  );
+  const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
+
+  /*//////////////////////////////////////////////////////////////
+                              LIFECYCLE
+  //////////////////////////////////////////////////////////////*/
+
+  const resetUserInputs = useCallback(() => {
+    setSelectedToken(defaultToken);
+    setInputValue(['', false]);
+  }, [setSelectedToken, setInputValue, defaultToken]);
+
+  useEffect(() => {
+    if (txn === undefined) return;
+    setPendingTxn(txn);
+    resetTxn();
+    setIsOpen(false);
+    resetUserInputs();
+  }, [txn, setPendingTxn, resetTxn, setIsOpen, resetUserInputs]);
+
+  /*//////////////////////////////////////////////////////////////
+                            CONFIRM BUTTON
+  //////////////////////////////////////////////////////////////*/
+
+  let confirmButtonState: ConfirmButtonState;
+  if (txn) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
+  } else if (amount.isZero()) {
+    confirmButtonState = ConfirmButtonState.DISABLED;
+  } else if (redeemState !== RedeemState.FETCHING_DATA && amount.gt(maxAmount)) {
+    confirmButtonState = ConfirmButtonState.REDEEM_TOO_MUCH;
+  } else {
+    confirmButtonState = REDEEM_STATE_TO_BUTTON_STATE[redeemState];
   }
-
-  useEffect(() => {
-    const activeCollateralOptions = lendingPairs.filter(
-      (pair) => pair.token0 === selectedOption || pair.token1 === selectedOption
-    );
-    setActivePairOptions(activeCollateralOptions);
-    setSelectedPairOption(activeCollateralOptions[0]);
-  }, [lendingPairs, selectedOption]);
-
-  useEffect(() => {
-    setSelectedOption(defaultOption);
-  }, [defaultOption]);
-
-  // Get the active kitty that corresponds to the selected token and is in
-  // the selected token / collateral token lending pair
-  let activeKitty: Kitty | null = useMemo(() => {
-    for (const lendingPair of lendingPairs) {
-      if (selectedPairOption?.equals(lendingPair)) {
-        return lendingPair.token0.address === selectedOption.address ? lendingPair.kitty0 : lendingPair.kitty1;
-      }
-    }
-    return null;
-  }, [selectedPairOption, selectedOption, lendingPairs]);
-
-  const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
-    address: activeKitty?.address,
-    abi: KittyABI,
-    enabled: activeKitty != null && account.address !== undefined && isOpen,
-    functionName: 'maxWithdraw',
-    chainId: activeChain.id,
-    args: [account.address] as const,
-  }) as { refetch: () => void; data: BigNumber | undefined };
-
-  const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
-    address: activeKitty?.address,
-    abi: KittyABI,
-    enabled: activeKitty != null && account.address !== undefined && isOpen,
-    functionName: 'maxRedeem',
-    chainId: activeChain.id,
-    args: [account.address] as const,
-  }) as { refetch: () => void; data: BigNumber | undefined };
-
-  useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
-    if (isOpen) {
-      interval = setInterval(() => {
-        refetchMaxWithdraw();
-        refetchMaxRedeem();
-      }, 13_000);
-    }
-    if (!isOpen && interval != null) {
-      clearInterval(interval);
-    }
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
-  }, [refetchMaxWithdraw, refetchMaxRedeem, isOpen]);
-
-  const gnWithdrawAmount = GN.fromDecimalString(inputValue || '0', selectedOption.decimals);
-  const gnMaxWithdraw = GN.fromBigNumber(maxWithdraw ?? BigNumber.from('0'), selectedOption.decimals);
-  const gnMaxRedeem = GN.fromBigNumber(maxRedeem ?? BigNumber.from('0'), selectedOption.decimals);
-
-  if (selectedPairOption == null || activeKitty == null) {
-    return null;
-  }
-
-  const peerAsset: Token =
-    selectedOption.address === selectedPairOption.token0.address
-      ? selectedPairOption.token1
-      : selectedPairOption.token0;
+  const confirmButton = getConfirmButton(confirmButtonState, selectedToken);
 
   return (
     <Modal
@@ -263,7 +143,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
       setIsOpen={(open: boolean) => {
         setIsOpen(open);
         if (!open) {
-          resetModal();
+          resetUserInputs();
         }
       }}
     >
@@ -276,27 +156,25 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                if (maxWithdraw) {
-                  setInputValue(gnMaxWithdraw?.toString(GNFormat.DECIMAL) ?? '');
-                }
+                setInputValue([maxAmount.toString(GNFormat.DECIMAL), true]);
               }}
             >
               MAX
             </BaseMaxButton>
           </div>
           <TokenAmountSelectInput
-            inputValue={inputValue}
-            options={options}
-            selectedOption={selectedOption}
+            inputValue={inputValue[0]}
+            options={tokens}
+            selectedOption={selectedToken}
             onSelect={(option) => {
-              setSelectedOption(option);
-              setInputValue('');
+              setSelectedToken(option);
+              setInputValue(['', false]);
             }}
             onChange={(value) => {
               const output = formatNumberInput(value);
               if (output != null) {
-                const truncatedOutput = truncateDecimals(output, selectedOption.decimals);
-                setInputValue(truncatedOutput);
+                const truncatedOutput = truncateDecimals(output, selectedToken.decimals);
+                setInputValue([truncatedOutput, false]);
               }
             }}
           />
@@ -316,9 +194,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             />
           </div>
           <PairDropdown
-            options={activePairOptions}
-            onSelect={setSelectedPairOption}
-            selectedOption={selectedPairOption}
+            options={filteredPairs}
+            onSelect={(a) => setSelectedPairIdx(filteredPairs.findIndex((b) => a.equals(b)))}
+            selectedOption={selectedPair}
             size='L'
             compact={false}
           />
@@ -330,31 +208,19 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're withdrawing{' '}
             <strong>
-              {inputValue || '0.00'} {selectedOption.ticker}
+              {inputValue[0] || '0.00'} {selectedToken.ticker}
             </strong>{' '}
             from the{' '}
             <strong>
-              {selectedOption.ticker}/{peerAsset.ticker}
+              {selectedPair.token0.ticker}/{selectedPair.token1.ticker}
             </strong>{' '}
             lending market.
           </Text>
         </div>
         <div className='w-full'>
-          <WithdrawButton
-            withdrawAmount={gnWithdrawAmount}
-            maxWithdrawBalance={gnMaxWithdraw}
-            maxRedeemBalance={gnMaxRedeem}
-            token={selectedOption}
-            kitty={activeKitty}
-            accountAddress={account.address ?? '0x'}
-            setIsOpen={(open: boolean) => {
-              setIsOpen(open);
-              if (!open) {
-                resetModal();
-              }
-            }}
-            setPendingTxn={setPendingTxn}
-          />
+          <FilledStylizedButton size='M' onClick={() => action?.()} fillWidth={true} disabled={!confirmButton.enabled}>
+            {confirmButton.text}
+          </FilledStylizedButton>
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By withdrawing, you agree to our{' '}
             <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>

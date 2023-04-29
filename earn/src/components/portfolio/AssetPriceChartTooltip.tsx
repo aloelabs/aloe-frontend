@@ -2,10 +2,9 @@ import React from 'react';
 
 import { format, parseISO } from 'date-fns';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
-import { formatUSD } from '../../util/Numbers';
 
 const TOOLTIP_BG_COLOR = 'rgba(0, 0, 0, 0.4)';
 const TOOLTIP_BORDER_COLOR = 'rgba(255, 255, 255, 0.1)';
