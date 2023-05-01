@@ -9,7 +9,6 @@ import { Address, Chain } from 'wagmi';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
-import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
@@ -52,20 +51,23 @@ export type MarginAccount = {
 export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1' | 'iv'>;
 
 export async function getMarginAccountsForUser(
-  chain: Chain,
   userAddress: string,
   provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
-  const etherscanResult = await makeEtherscanRequest(
-    0,
-    ALOE_II_FACTORY_ADDRESS,
-    [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
-    true,
-    chain
-  );
-  if (!Array.isArray(etherscanResult.data.result)) return [];
+  let logs: ethers.providers.Log[] = [];
+  try {
+    logs = await provider.getLogs({
+      fromBlock: 0,
+      toBlock: 'latest',
+      address: ALOE_II_FACTORY_ADDRESS,
+      topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  if (logs.length === 0) return [];
 
-  const accounts: { address: string; uniswapPool: string }[] = etherscanResult.data.result.map((item: any) => {
+  const accounts: { address: string; uniswapPool: string }[] = logs.map((item: any) => {
     return {
       address: item.data.slice(0, 2) + item.data.slice(26),
       uniswapPool: item.topics[1].slice(26),
@@ -88,7 +90,7 @@ export async function fetchMarginAccounts(
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccount[]> {
   const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
-  const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
+  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
   const marginAccountCallContext: ContractCallContext[] = [];
 
   // Fetch all the data for the margin accounts

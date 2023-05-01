@@ -1,16 +1,16 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { AxiosResponse } from 'axios';
+import { ethers } from 'ethers';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { LendingPair } from '../../data/LendingPair';
-import { makeEtherscanRequest } from '../../util/Etherscan';
 import Tooltip from '../common/Tooltip';
 
 const Container = styled.div`
@@ -142,6 +142,7 @@ export type LendingPairPeerCardProps = {
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeAsset, lendingPairs } = props;
   const { activeChain } = useContext(ChainContext);
+  const provider = useProvider({ chainId: activeChain.id });
 
   const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
 
@@ -169,44 +170,38 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
       setNumberOfUsers(cachedResult);
       return;
     }
+    // Temporarily set the number of users to 0 while we fetch the number of users
+    setNumberOfUsers(0);
     // TODO: move this to a hook
     async function fetchNumberOfUsers() {
-      const etherscanRequestLender0 = makeEtherscanRequest(
-        0,
-        selectedLendingPair.kitty0.address,
-        ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
-        true,
-        activeChain
-      );
-      const etherscanRequestLender1 = makeEtherscanRequest(
-        0,
-        selectedLendingPair.kitty1.address,
-        ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
-        true,
-        activeChain
-      );
-      let etherscanResultLender0: AxiosResponse<any, any> | null = null;
-      let etherscanResultLender1: AxiosResponse<any, any> | null = null;
+      let lender0Logs: ethers.providers.Log[] = [];
+      let lender1Logs: ethers.providers.Log[] = [];
       try {
-        [etherscanResultLender0, etherscanResultLender1] = await Promise.all([
-          etherscanRequestLender0,
-          etherscanRequestLender1,
+        [lender0Logs, lender1Logs] = await Promise.all([
+          provider.getLogs({
+            fromBlock: 0,
+            toBlock: 'latest',
+            address: selectedLendingPair.kitty0.address,
+            topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
+          }),
+          provider.getLogs({
+            fromBlock: 0,
+            toBlock: 'latest',
+            address: selectedLendingPair.kitty1.address,
+            topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
+          }),
         ]);
       } catch (error) {
         console.error(error);
       }
-      if (
-        etherscanResultLender0 == null ||
-        !Array.isArray(etherscanResultLender0.data.result) ||
-        etherscanResultLender1 == null ||
-        !Array.isArray(etherscanResultLender1.data.result)
-      )
+      if (lender0Logs.length === 0 && lender1Logs.length === 0) {
         return;
+      }
       let uniqueUsers = new Set<string>();
-      const results = [...etherscanResultLender0.data.result, ...etherscanResultLender1.data.result];
-      results.forEach((result: any) => {
-        if (result.topics.length < 3) return;
-        const userAddress = `0x${result.topics[2].slice(26)}`;
+      const logs = [...lender0Logs, ...lender1Logs];
+      logs.forEach((log: ethers.providers.Log) => {
+        if (log.topics.length < 3) return;
+        const userAddress = `0x${log.topics[2].slice(26)}`;
         uniqueUsers.add(userAddress);
       });
       if (mounted) {
@@ -221,7 +216,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     return () => {
       mounted = false;
     };
-  }, [selectedLendingPair, activeChain, cachedData, selectedOption.label]);
+  }, [selectedLendingPair, activeChain, cachedData, selectedOption.label, provider]);
 
   const [activeUtilization, activeTotalSupply] = getActiveUtilizationAndTotalSupply(activeAsset, selectedLendingPair);
 
