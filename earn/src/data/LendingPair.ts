@@ -72,7 +72,7 @@ export async function getAvailableLendingPairs(
   } catch (e) {
     console.error(e);
   }
-  if (logs == null || !Array.isArray(logs)) return [];
+  if (logs.length === 0) return [];
 
   const addresses: { pool: string; kitty0: string; kitty1: string }[] = logs.map((item: any) => {
     return {

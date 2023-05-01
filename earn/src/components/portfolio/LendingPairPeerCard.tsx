@@ -178,13 +178,13 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
       let lender1Logs: ethers.providers.Log[] = [];
       try {
         [lender0Logs, lender1Logs] = await Promise.all([
-          await provider.getLogs({
+          provider.getLogs({
             fromBlock: 0,
             toBlock: 'latest',
             address: selectedLendingPair.kitty0.address,
             topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
           }),
-          await provider.getLogs({
+          provider.getLogs({
             fromBlock: 0,
             toBlock: 'latest',
             address: selectedLendingPair.kitty1.address,
@@ -194,8 +194,9 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
       } catch (error) {
         console.error(error);
       }
-      if (lender0Logs == null || !Array.isArray(lender0Logs) || lender1Logs == null || !Array.isArray(lender1Logs))
+      if (lender0Logs.length === 0 && lender1Logs.length === 0) {
         return;
+      }
       let uniqueUsers = new Set<string>();
       const logs = [...lender0Logs, ...lender1Logs];
       logs.forEach((log: ethers.providers.Log) => {

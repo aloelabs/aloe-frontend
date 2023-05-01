@@ -65,7 +65,7 @@ export async function getMarginAccountsForUser(
   } catch (e) {
     console.error(e);
   }
-  if (logs == null || !Array.isArray(logs)) return [];
+  if (logs.length === 0) return [];
 
   const accounts: { address: string; uniswapPool: string }[] = logs.map((item: any) => {
     return {

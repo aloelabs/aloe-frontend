@@ -234,7 +234,6 @@ export default function BorrowPage() {
       } catch (e) {
         console.error(e);
       }
-      if (logs == null || !Array.isArray(logs)) return;
 
       const poolAddresses = logs
         .map((e) => `0x${e.topics[1].slice(-40)}`)
