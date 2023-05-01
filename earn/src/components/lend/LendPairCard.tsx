@@ -13,6 +13,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { useAccount } from 'wagmi';
 
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
@@ -49,6 +50,10 @@ const CardActionButton = styled.button`
       stroke: rgba(51, 60, 66, 255);
     }
   }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 `;
 
 function EditPositionButton(props: { Icon: React.ReactChild; onClick?: () => void; disabled?: boolean }) {
@@ -74,6 +79,7 @@ export default function LendPairCard(props: LendPairCardProps) {
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
+  const { address: accountAddress } = useAccount();
   useEffect(() => {
     let mounted = true;
     getProminentColor(token0.iconPath || '').then((color) => {
@@ -154,6 +160,7 @@ export default function LendPairCard(props: LendPairCardProps) {
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
+                disabled={!accountAddress}
               />
             )}
           </CustomBodySubContainer>
@@ -176,6 +183,7 @@ export default function LendPairCard(props: LendPairCardProps) {
                 onClick={() => {
                   setIsEditToken1PositionModalOpen(true);
                 }}
+                disabled={!accountAddress}
               />
             )}
           </CustomBodySubContainer>
