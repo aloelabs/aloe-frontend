@@ -80,7 +80,6 @@ export default function BorrowAccountsPage() {
       } catch (e) {
         console.error(e);
       }
-      if (createMarketLogs == null || !Array.isArray(createMarketLogs)) return;
 
       const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
       const marginAccountCallContext: ContractCallContext[] = [];

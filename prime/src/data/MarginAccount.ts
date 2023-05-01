@@ -63,7 +63,6 @@ export type LiquidationThresholds = {
 export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1' | 'iv'>;
 
 export async function getMarginAccountsForUser(
-  chain: Chain,
   userAddress: string,
   provider: ethers.providers.Provider
 ): Promise<{ address: string; uniswapPool: string }[]> {
@@ -78,7 +77,7 @@ export async function getMarginAccountsForUser(
   } catch (e) {
     console.error(e);
   }
-  if (logs == null || !Array.isArray(logs)) return [];
+  if (logs.length === 0) return [];
 
   const accounts: { address: string; uniswapPool: string }[] = logs.map((item: any) => {
     return {
@@ -97,7 +96,7 @@ export async function fetchMarginAccountPreviews(
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccountPreview[]> {
   const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
-  const marginAccountsAddresses = await getMarginAccountsForUser(chain, userAddress, provider);
+  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
   const marginAccountCallContext: ContractCallContext[] = [];
 
   // Fetch all the data for the margin accounts
