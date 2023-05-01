@@ -181,16 +181,23 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => {
-      refetchMaxRedeem();
-      refetchMaxWithdraw();
-    }, 13_000);
+    // Only poll if the user is connected
+    if (accountAddress !== undefined) {
+      interval = setInterval(() => {
+        refetchMaxRedeem();
+        refetchMaxWithdraw();
+      }, 13_000);
+    }
+    // If the user disconnects, stop polling
+    if (accountAddress === undefined && interval != null) {
+      clearInterval(interval);
+    }
     return () => {
       if (interval != null) {
         clearInterval(interval);
       }
     };
-  }, [refetchMaxRedeem, refetchMaxWithdraw]);
+  }, [accountAddress, refetchMaxRedeem, refetchMaxWithdraw]);
 
   return (
     <>

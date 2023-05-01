@@ -113,6 +113,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     functionName: 'allowance',
     args: [owner, UNISWAP_PERMIT2_ADDRESS] as const,
     chainId: chain.id,
+    enabled: owner !== '0x',
   });
 
   // Since Permit2 is going to be moving `amount` from the user into Aloe, `allowance` must be at least
@@ -190,6 +191,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
     chainId: chain.id,
+    enabled: owner !== '0x',
   });
 
   // Search through `nonceBitmap` for valid nonces. If there aren't any, jump forward to the
@@ -220,12 +222,24 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   // detecting when an `approve` transaction goes through *and* when the user dirties a nonce on
   // another frontend (e.g. the Uniswap web app).
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetchAllowance();
-      refetchNonceBitmap();
-    }, REFETCH_INTERVAL);
+    let interval: NodeJS.Timeout | null = null;
+    // Only refresh if the user has an address
+    if (owner !== '0x') {
+      interval = setInterval(() => {
+        refetchAllowance();
+        refetchNonceBitmap();
+      }, REFETCH_INTERVAL);
+    }
+    // If the user disconnects, stop refreshing
+    if (owner === '0x' && interval) {
+      clearInterval(interval);
+    }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   });
 
   // Keep deadline fresh

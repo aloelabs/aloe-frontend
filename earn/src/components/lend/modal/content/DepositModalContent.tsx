@@ -5,7 +5,7 @@ import { BigNumber } from 'ethers';
 import { routerABI } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -192,9 +192,21 @@ export default function DepositModalContent(props: DepositModalContentProps) {
   });
 
   useEffect(() => {
-    const interval = setInterval(() => refetchBalance(), 13_000);
-    return () => clearInterval(interval);
-  }, [refetchBalance]);
+    let interval: NodeJS.Timeout | null = null;
+    // Only poll if the user is connected
+    if (account.address !== undefined) {
+      interval = setInterval(() => refetchBalance(), 13_000);
+    }
+    // If the user disconnects, stop polling
+    if (account.address === undefined && interval) {
+      clearInterval(interval);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [account.address, refetchBalance]);
 
   const gnDepositAmount = GN.fromDecimalString(depositAmount || '0', token.decimals);
   const gnDepositBalance = GN.fromDecimalString(depositBalance?.formatted ?? '0', token.decimals);
@@ -208,8 +220,8 @@ export default function DepositModalContent(props: DepositModalContentProps) {
             setDepositAmount(updatedAmount);
           }}
           value={depositAmount}
-          max={depositBalance?.formatted ?? '0'}
-          maxed={depositAmount === depositBalance?.formatted ?? '0'}
+          max={gnDepositBalance.toString(GNFormat.DECIMAL)}
+          maxed={gnDepositAmount.eq(gnDepositBalance)}
         />
       </div>
       <div className='flex justify-between items-center mb-8'>
