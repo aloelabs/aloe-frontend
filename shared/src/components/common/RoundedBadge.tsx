@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Text } from './Typography';
 
-const BADGE_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
+export const BADGE_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 
 const Wrapper = styled.div`
   display: flex;

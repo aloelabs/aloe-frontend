@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 
 import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
-import RoundedBadge from 'shared/lib/components/common/RoundedBadge';
+import RoundedBadge, { BADGE_TEXT_COLOR } from 'shared/lib/components/common/RoundedBadge';
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -70,6 +70,13 @@ const MarginAccountLink = styled.a`
   }
 `;
 
+const StyledOpenIcon = styled(OpenIcon)`
+  path {
+    // While it should have this color by default, it is worth explicitly setting it
+    stroke: ${BADGE_TEXT_COLOR};
+  }
+`;
+
 export type MarginAccountHeaderProps = {
   token0: Token;
   token1: Token;
@@ -104,10 +111,10 @@ export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
             href={`${baseEtherscanUrl}/address/${props.id}`}
             target='_blank'
             rel='noreferrer'
-            className='flex gap-1 items-top'
+            className='flex items-top gap-1'
           >
             <span>{formatAddressStart(props.id, 8)}</span>
-            <OpenIcon />
+            <StyledOpenIcon width={16} height={16} />
           </MarginAccountLink>
         </RoundedBadge>
       </MarginAccountBadges>
