@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { ContractReceipt } from 'ethers';
+import { ContractReceipt, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
@@ -25,7 +25,6 @@ import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 import { getToken } from '../data/TokenData';
-import { makeEtherscanRequest } from '../util/Etherscan';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -70,21 +69,22 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetchAvailablePools() {
-      const result = await makeEtherscanRequest(
-        0,
-        ALOE_II_FACTORY_ADDRESS,
-        [TOPIC0_CREATE_MARKET_EVENT],
-        false,
-        activeChain
-      );
-      const createMarketEvents = result.data.result;
-
-      if (!Array.isArray(createMarketEvents)) return;
+      let createMarketLogs: ethers.providers.Log[] = [];
+      try {
+        createMarketLogs = await provider.getLogs({
+          address: ALOE_II_FACTORY_ADDRESS,
+          fromBlock: 0,
+          toBlock: 'latest',
+          topics: [TOPIC0_CREATE_MARKET_EVENT],
+        });
+      } catch (e) {
+        console.error(e);
+      }
 
       const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
       const marginAccountCallContext: ContractCallContext[] = [];
 
-      createMarketEvents.forEach((e) => {
+      createMarketLogs.forEach((e) => {
         const poolAddress = `0x${e.topics[1].slice(-40)}`;
 
         if (UNISWAP_POOL_DENYLIST.includes(poolAddress.toLowerCase())) return;

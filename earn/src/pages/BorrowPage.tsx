@@ -223,18 +223,19 @@ export default function BorrowPage() {
   useEffect(() => {
     let mounted = true;
     async function fetchAvailablePools() {
-      const result = await makeEtherscanRequest(
-        0,
-        ALOE_II_FACTORY_ADDRESS,
-        [TOPIC0_CREATE_MARKET_EVENT],
-        false,
-        activeChain
-      );
-      const createMarketEvents = result.data.result;
+      let logs: ethers.providers.Log[] = [];
+      try {
+        logs = await provider.getLogs({
+          fromBlock: 0,
+          toBlock: 'latest',
+          address: ALOE_II_FACTORY_ADDRESS,
+          topics: [TOPIC0_CREATE_MARKET_EVENT],
+        });
+      } catch (e) {
+        console.error(e);
+      }
 
-      if (!Array.isArray(createMarketEvents)) return;
-
-      const poolAddresses = createMarketEvents
+      const poolAddresses = logs
         .map((e) => `0x${e.topics[1].slice(-40)}`)
         .filter((addr) => {
           return !UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase());
@@ -599,14 +600,16 @@ export default function BorrowPage() {
           <StatsContainer>
             <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
           </StatsContainer>
-          <LinkContainer>
-            <InfoIcon width={16} height={16} />
-            <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
-              <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
-                View this account on Etherscan
-              </StyledExternalLink>
-            </Text>
-          </LinkContainer>
+          {selectedMarginAccount && (
+            <LinkContainer>
+              <InfoIcon width={16} height={16} />
+              <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+                <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                  View this account on Etherscan
+                </StyledExternalLink>
+              </Text>
+            </LinkContainer>
+          )}
         </PageGrid>
       </Container>
       {availablePools.size > 0 && (

@@ -1,4 +1,3 @@
-import { AxiosResponse } from 'axios';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
@@ -12,7 +11,6 @@ import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
-import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import {
   ALOE_II_FACTORY_ADDRESS,
@@ -63,21 +61,20 @@ export async function getAvailableLendingPairs(
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
   const multicall = new Multicall({ ethersProvider: provider });
-  let etherscanResult: AxiosResponse<any, any> | null = null;
+  let logs: ethers.providers.Log[] = [];
   try {
-    etherscanResult = await makeEtherscanRequest(
-      7537163,
-      ALOE_II_FACTORY_ADDRESS,
-      ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
-      true,
-      chain
-    );
+    logs = await provider.getLogs({
+      fromBlock: 7537163,
+      toBlock: 'latest',
+      address: ALOE_II_FACTORY_ADDRESS,
+      topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+    });
   } catch (e) {
     console.error(e);
   }
-  if (etherscanResult == null || !Array.isArray(etherscanResult.data.result)) return [];
+  if (logs.length === 0) return [];
 
-  const addresses: { pool: string; kitty0: string; kitty1: string }[] = etherscanResult.data.result.map((item: any) => {
+  const addresses: { pool: string; kitty0: string; kitty1: string }[] = logs.map((item: any) => {
     return {
       pool: item.topics[1].slice(26),
       kitty0: `0x${item.data.slice(26, 66)}`,
