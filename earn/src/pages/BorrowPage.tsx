@@ -600,14 +600,16 @@ export default function BorrowPage() {
           <StatsContainer>
             <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
           </StatsContainer>
-          <LinkContainer>
-            <InfoIcon width={16} height={16} />
-            <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
-              <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
-                View this account on Etherscan
-              </StyledExternalLink>
-            </Text>
-          </LinkContainer>
+          {selectedMarginAccount && (
+            <LinkContainer>
+              <InfoIcon width={16} height={16} />
+              <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+                <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                  View this account on Etherscan
+                </StyledExternalLink>
+              </Text>
+            </LinkContainer>
+          )}
         </PageGrid>
       </Container>
       {availablePools.size > 0 && (
