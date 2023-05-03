@@ -141,12 +141,40 @@ export class GN {
     return this.int.gt('0');
   }
 
+  /**
+   * Checks if the `GN` is greater than or equal to zero.
+   * @returns whether the `GN` is greater than or equal to zero.
+   */
+  isGteZero() {
+    return this.int.gte('0');
+  }
+
+  /**
+   * Checks if the `GN` is less than zero.
+   * @returns whether the `GN` is less than zero.
+   */
+  isLtZero() {
+    return this.int.lt('0');
+  }
+
+  /**
+   * Checks if the `GN` is less than or equal to zero.
+   * @returns whether the `GN` is less than or equal to zero.
+   */
+  isLteZero() {
+    return this.int.lte('0');
+  }
+
   static max(a: GN, b: GN) {
     return a.gt(b) ? a : b;
   }
 
   static min(a: GN, b: GN) {
     return a.lt(b) ? a : b;
+  }
+
+  static areWithinNSigDigs(a: GN, b: GN, n: number): boolean {
+    return a.int.prec(n).eq(b.int.prec(n));
   }
 
   /*//////////////////////////////////////////////////////////////
@@ -271,6 +299,10 @@ export class GN {
     return new GN('0', decimals, base);
   }
 
+  static one(decimals: number, base: 2 | 10 = 10) {
+    return new GN('1', decimals, base);
+  }
+
   static Q(resolution: number) {
     return new GN(scalerFor(2, resolution), resolution, 2);
   }
@@ -317,8 +349,7 @@ export class GN {
    * when expressing the number in standard notation.
    * @returns Equivalent `GN`
    */
-  static fromDecimalBig(x: Big, decimals: number) {
-    const base = 10;
+  static fromDecimalBig(x: Big, decimals: number, base: 2 | 10 = 10) {
     return new GN(x.mul(scalerFor(base, decimals)).toFixed(0), decimals, base);
   }
 
@@ -331,8 +362,8 @@ export class GN {
    * when expressing the number in standard notation.
    * @returns Equivalent `GN`
    */
-  static fromDecimalString(x: string, decimals: number) {
-    return GN.fromDecimalBig(new Big(x), decimals);
+  static fromDecimalString(x: string, decimals: number, base: 2 | 10 = 10) {
+    return GN.fromDecimalBig(new Big(x), decimals, base);
   }
 
   /**
