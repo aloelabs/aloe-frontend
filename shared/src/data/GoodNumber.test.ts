@@ -123,9 +123,55 @@ describe('GoodNumber', () => {
     it('should return false for 0', () => {
       expect(GN.fromDecimalString('0', 18).isGtZero()).toBe(false);
     });
+    it('should return false for negative values', () => {
+      expect(GN.fromDecimalString('-1', 18).isGtZero()).toBe(false);
+      expect(GN.fromDecimalString('-0.000000000000000001', 18).isGtZero()).toBe(false);
+    });
     it('should return true for non-zero values', () => {
       expect(GN.fromDecimalString('1', 18).isGtZero()).toBe(true);
       expect(GN.fromDecimalString('0.000000000000000001', 18).isGtZero()).toBe(true);
+    });
+  });
+
+  describe('isGteZero', () => {
+    it('should return true for 0', () => {
+      expect(GN.fromDecimalString('0', 18).isGteZero()).toBe(true);
+    });
+    it('should return true for non-zero values', () => {
+      expect(GN.fromDecimalString('1', 18).isGteZero()).toBe(true);
+      expect(GN.fromDecimalString('0.000000000000000001', 18).isGteZero()).toBe(true);
+    });
+    it('should return false for negative values', () => {
+      expect(GN.fromDecimalString('-1', 18).isGteZero()).toBe(false);
+      expect(GN.fromDecimalString('-0.000000000000000001', 18).isGteZero()).toBe(false);
+    });
+  });
+
+  describe('isLtZero', () => {
+    it('should return false for 0', () => {
+      expect(GN.fromDecimalString('0', 18).isLtZero()).toBe(false);
+    });
+    it('should return false for non-zero values', () => {
+      expect(GN.fromDecimalString('1', 18).isLtZero()).toBe(false);
+      expect(GN.fromDecimalString('0.000000000000000001', 18).isLtZero()).toBe(false);
+    });
+    it('should return true for negative values', () => {
+      expect(GN.fromDecimalString('-1', 18).isLtZero()).toBe(true);
+      expect(GN.fromDecimalString('-0.000000000000000001', 18).isLtZero()).toBe(true);
+    });
+  });
+
+  describe('isLteZero', () => {
+    it('should return true for 0', () => {
+      expect(GN.fromDecimalString('0', 18).isLteZero()).toBe(true);
+    });
+    it('should return false for non-zero values', () => {
+      expect(GN.fromDecimalString('1', 18).isLteZero()).toBe(false);
+      expect(GN.fromDecimalString('0.000000000000000001', 18).isLteZero()).toBe(false);
+    });
+    it('should return true for negative values', () => {
+      expect(GN.fromDecimalString('-1', 18).isLteZero()).toBe(true);
+      expect(GN.fromDecimalString('-0.000000000000000001', 18).isLteZero()).toBe(true);
     });
   });
 
@@ -144,6 +190,25 @@ describe('GoodNumber', () => {
       const b = GN.fromDecimalString('2', 18);
       expect(GN.min(a, b)).toEqual(a);
       expect(GN.min(b, a)).toEqual(a);
+    });
+  });
+
+  describe('areWithinNSigDigs', () => {
+    it('should return true if two values are within N significant digits', () => {
+      const a = GN.fromDecimalString('1', 18);
+      const b = GN.fromDecimalString('1.000000000000000001', 18);
+      expect(GN.areWithinNSigDigs(a, b, 18)).toBe(true);
+      const c = GN.fromDecimalString('1.0235', 18);
+      const d = GN.fromDecimalString('1.02', 18);
+      expect(GN.areWithinNSigDigs(c, d, 3)).toBe(true);
+    });
+    it('should return false if two values are not within N significant digits', () => {
+      const a = GN.fromDecimalString('1', 18);
+      const b = GN.fromDecimalString('1.000000000000000001', 18);
+      expect(GN.areWithinNSigDigs(a, b, 19)).toBe(false);
+      const c = GN.fromDecimalString('1.0235', 18);
+      const d = GN.fromDecimalString('1.02', 18);
+      expect(GN.areWithinNSigDigs(c, d, 4)).toBe(false);
     });
   });
 
@@ -305,6 +370,28 @@ describe('GoodNumber', () => {
   describe('zero', () => {
     it('should return a zero value', () => {
       expect(GN.zero(18).toString(GNFormat.DECIMAL)).toEqual('0');
+    });
+  });
+
+  describe('one', () => {
+    it('should return a one value', () => {
+      expect(GN.one(18).toString(GNFormat.INT)).toEqual('1');
+    });
+  });
+
+  describe('Q', () => {
+    it('should return a value of 2^N', () => {
+      expect(GN.Q(4).toString(GNFormat.INT)).toEqual('16');
+      expect(GN.Q(8).toString(GNFormat.INT)).toEqual('256');
+      expect(GN.Q(12).toString(GNFormat.INT)).toEqual('4096');
+      expect(GN.Q(16).toString(GNFormat.INT)).toEqual('65536');
+      expect(GN.Q(96).toString(GNFormat.INT)).toEqual('79228162514264337593543950336');
+    });
+    it('should throw an error if N is not a multiple of 4', () => {
+      expect(() => GN.Q(1)).toThrow();
+      expect(() => GN.Q(2)).toThrow();
+      expect(() => GN.Q(3)).toThrow();
+      expect(() => GN.Q(97)).toThrow();
     });
   });
 
