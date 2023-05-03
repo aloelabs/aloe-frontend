@@ -349,7 +349,8 @@ export class GN {
    * when expressing the number in standard notation.
    * @returns Equivalent `GN`
    */
-  static fromDecimalBig(x: Big, decimals: number, base: 2 | 10 = 10) {
+  static fromDecimalBig(x: Big, decimals: number) {
+    const base = 10;
     return new GN(x.mul(scalerFor(base, decimals)).toFixed(0), decimals, base);
   }
 
@@ -362,8 +363,8 @@ export class GN {
    * when expressing the number in standard notation.
    * @returns Equivalent `GN`
    */
-  static fromDecimalString(x: string, decimals: number, base: 2 | 10 = 10) {
-    return GN.fromDecimalBig(new Big(x), decimals, base);
+  static fromDecimalString(x: string, decimals: number) {
+    return GN.fromDecimalBig(new Big(x), decimals);
   }
 
   /**
