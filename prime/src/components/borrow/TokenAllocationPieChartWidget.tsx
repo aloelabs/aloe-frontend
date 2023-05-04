@@ -224,32 +224,37 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
   };
 
   const price = sqrtPriceX96.square();
-  const totalAssets = assets.token0Raw
-    .add(assets.token1Raw.mul(price).setResolution(token0.decimals))
-    .add(assets.uni0.add(assets.uni1.mul(price).setResolution(token0.decimals)));
+  const sliceAmounts = [
+    assets.token0Raw.mul(price).setResolution(token1.decimals),
+    assets.uni0.mul(price).setResolution(token1.decimals),
+    assets.token1Raw,
+    assets.uni1,
+  ];
+
+  const totalAssets = sliceAmounts.reduce((a, b) => a.add(b));
 
   const slices: AllocationPieChartSlice[] = [
     {
       index: 0,
-      percent: assets.token0Raw.div(totalAssets).toNumber(),
+      percent: sliceAmounts[0].div(totalAssets).toNumber(),
       color: TOKEN0_COLOR_RAW,
       category: 'Raw',
     },
     {
       index: 1,
-      percent: assets.uni0.div(totalAssets).toNumber(),
+      percent: sliceAmounts[1].div(totalAssets).toNumber(),
       color: TOKEN0_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 2,
-      percent: assets.uni1.mul(price).setResolution(token0.decimals).div(totalAssets).toNumber(),
+      percent: sliceAmounts[2].div(totalAssets).toNumber(),
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 3,
-      percent: assets.token1Raw.div(price).setResolution(token0.decimals).div(totalAssets).toNumber(),
+      percent: sliceAmounts[3].div(totalAssets).toNumber(),
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
     },

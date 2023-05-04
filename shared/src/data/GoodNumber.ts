@@ -165,12 +165,12 @@ export class GN {
     return this.int.lte('0');
   }
 
-  static max(a: GN, b: GN) {
-    return a.gt(b) ? a : b;
+  static max(...gns: GN[]) {
+    return gns.reduce((p, c) => (p.gt(c) ? p : c));
   }
 
-  static min(a: GN, b: GN) {
-    return a.lt(b) ? a : b;
+  static min(...gns: GN[]) {
+    return gns.reduce((p, c) => (p.lt(c) ? p : c));
   }
 
   static firstNSigDigsMatch(a: GN, b: GN, n: number): boolean {

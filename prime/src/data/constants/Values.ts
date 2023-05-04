@@ -19,6 +19,6 @@ export const MAX_UNISWAP_POSITIONS = 3;
 
 export const ALOE_II_SIGMA_MIN = GN.fromDecimalString('0.01', 18);
 export const ALOE_II_SIGMA_MAX = GN.fromDecimalString('0.18', 18);
-export const ALOE_II_SIGMA_SCALER = GN.fromDecimalString('5', 0);
+export const ALOE_II_SIGMA_SCALER = 5;
 export const ALOE_II_LIQUIDATION_INCENTIVE = 20;
 export const ALOE_II_MAX_LEVERAGE = 200;
