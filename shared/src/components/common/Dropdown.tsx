@@ -37,7 +37,9 @@ export const DropdownHeader = styled.button.attrs((props: { small?: boolean }) =
   white-space: nowrap;
 `;
 
-export const DropdownList = styled.div.attrs((props: { small?: boolean; flipDirection?: boolean }) => props)`
+export const DropdownList = styled.div.attrs(
+  (props: { small?: boolean; flipDirection?: boolean; maxHeight?: number }) => props
+)`
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -50,6 +52,8 @@ export const DropdownList = styled.div.attrs((props: { small?: boolean; flipDire
   border-radius: 16px;
   border: 1px solid ${DROPDOWN_LIST_BORDER_COLOR};
   box-shadow: 0px 8px 32px 0px ${DROPDOWN_LIST_SHADOW_COLOR};
+  ${(props) => (props.maxHeight ? `max-height: ${props.maxHeight}px;` : '')}
+  overflow-y: auto;
 
   &:not(.inverted) {
     top: calc(100% + 10px);
@@ -308,6 +312,7 @@ type MultiDropdownBaseProps<T> = {
   setIsOpen: (isOpen: boolean) => void;
   /*Use this to flip the side the dropdown list expand towards*/
   flipDirection?: boolean;
+  maxHeight?: number;
   DropdownButton: React.FC;
   SearchInput?: React.FC<{
     searchTerm: string;
@@ -316,7 +321,17 @@ type MultiDropdownBaseProps<T> = {
 };
 
 function MultiDropdownBase<T>(props: MultiDropdownBaseProps<T>) {
-  const { options, activeOptions, handleChange, isOpen, setIsOpen, flipDirection, DropdownButton, SearchInput } = props;
+  const {
+    options,
+    activeOptions,
+    handleChange,
+    isOpen,
+    setIsOpen,
+    flipDirection,
+    maxHeight,
+    DropdownButton,
+    SearchInput,
+  } = props;
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   useClickOutside(
@@ -347,8 +362,27 @@ function MultiDropdownBase<T>(props: MultiDropdownBaseProps<T>) {
     <DropdownWrapper ref={dropdownRef}>
       <DropdownButton />
       {isOpen && (
-        <MultiDropdownList ref={dropdownRef} flipDirection={flipDirection}>
+        <MultiDropdownList ref={dropdownRef} flipDirection={flipDirection} maxHeight={maxHeight}>
           {SearchInput && <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />}
+          {searchTerm === '' && (
+            <MultiDropdownOptionContainer
+              className={activeOptions.length === options.length ? 'active' : ''}
+              onClick={() => {
+                if (activeOptions.length === options.length) {
+                  handleChange([]);
+                } else {
+                  handleChange(options);
+                }
+              }}
+            >
+              <div className='flex-grow h-6'>
+                <Text size='M'>Select All</Text>
+              </div>
+              <CheckContainer className={activeOptions.length === options.length ? 'active' : ''}>
+                {activeOptions.length === options.length && <CheckIcon color='black' className='w-5 h-5' />}
+              </CheckContainer>
+            </MultiDropdownOptionContainer>
+          )}
           {filteredOptions.map((option, index) => {
             const { label, icon } = option;
             const isActive = activeOptions.some((currentOption) => currentOption.value === option.value);
@@ -414,6 +448,7 @@ export type MultiDropdownButtonProps<T> = {
   activeOptions: MultiDropdownOption<T>[];
   handleChange: (options: MultiDropdownOption<T>[]) => void;
   flipDirection?: boolean;
+  maxHeight?: number;
   DropdownButton: React.FC<{
     onClick: () => void;
   }>;
@@ -424,7 +459,7 @@ export type MultiDropdownButtonProps<T> = {
 };
 
 export function MultiDropdownButton<T>(props: MultiDropdownButtonProps<T>) {
-  const { options, activeOptions, handleChange, flipDirection, DropdownButton, SearchInput } = props;
+  const { options, activeOptions, handleChange, flipDirection, maxHeight, DropdownButton, SearchInput } = props;
   const [isOpen, setIsOpen] = useState(false);
   return MultiDropdownBase({
     options,
@@ -433,6 +468,7 @@ export function MultiDropdownButton<T>(props: MultiDropdownButtonProps<T>) {
     isOpen,
     setIsOpen,
     flipDirection,
+    maxHeight,
     DropdownButton: () => <DropdownButton onClick={() => setIsOpen(!isOpen)} />,
     SearchInput,
   });
