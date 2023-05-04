@@ -375,7 +375,8 @@ describe('GoodNumber', () => {
 
   describe('one', () => {
     it('should return a one value', () => {
-      expect(GN.one(18).toString(GNFormat.INT)).toEqual('1');
+      expect(GN.one(18).toString(GNFormat.DECIMAL)).toEqual('1');
+      expect(GN.one(18).toString(GNFormat.INT)).toEqual('1000000000000000000');
     });
   });
 

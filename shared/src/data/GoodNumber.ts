@@ -300,7 +300,7 @@ export class GN {
   }
 
   static one(decimals: number, base: 2 | 10 = 10) {
-    return new GN('1', decimals, base);
+    return new GN(scalerFor(base, decimals), decimals, base);
   }
 
   static Q(resolution: number) {
