@@ -173,7 +173,7 @@ export class GN {
     return a.lt(b) ? a : b;
   }
 
-  static areWithinNSigDigs(a: GN, b: GN, n: number): boolean {
+  static firstNSigDigsMatch(a: GN, b: GN, n: number): boolean {
     return a.int.prec(n).eq(b.int.prec(n));
   }
 
@@ -300,7 +300,7 @@ export class GN {
   }
 
   static one(decimals: number, base: 2 | 10 = 10) {
-    return new GN('1', decimals, base);
+    return new GN(scalerFor(base, decimals), decimals, base);
   }
 
   static Q(resolution: number) {

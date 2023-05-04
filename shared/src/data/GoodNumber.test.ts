@@ -197,18 +197,18 @@ describe('GoodNumber', () => {
     it('should return true if two values are within N significant digits', () => {
       const a = GN.fromDecimalString('1', 18);
       const b = GN.fromDecimalString('1.000000000000000001', 18);
-      expect(GN.areWithinNSigDigs(a, b, 18)).toBe(true);
+      expect(GN.firstNSigDigsMatch(a, b, 18)).toBe(true);
       const c = GN.fromDecimalString('1.0235', 18);
       const d = GN.fromDecimalString('1.02', 18);
-      expect(GN.areWithinNSigDigs(c, d, 3)).toBe(true);
+      expect(GN.firstNSigDigsMatch(c, d, 3)).toBe(true);
     });
     it('should return false if two values are not within N significant digits', () => {
       const a = GN.fromDecimalString('1', 18);
       const b = GN.fromDecimalString('1.000000000000000001', 18);
-      expect(GN.areWithinNSigDigs(a, b, 19)).toBe(false);
+      expect(GN.firstNSigDigsMatch(a, b, 19)).toBe(false);
       const c = GN.fromDecimalString('1.0235', 18);
       const d = GN.fromDecimalString('1.02', 18);
-      expect(GN.areWithinNSigDigs(c, d, 4)).toBe(false);
+      expect(GN.firstNSigDigsMatch(c, d, 4)).toBe(false);
     });
   });
 
@@ -375,7 +375,8 @@ describe('GoodNumber', () => {
 
   describe('one', () => {
     it('should return a one value', () => {
-      expect(GN.one(18).toString(GNFormat.INT)).toEqual('1');
+      expect(GN.one(18).toString(GNFormat.DECIMAL)).toEqual('1');
+      expect(GN.one(18).toString(GNFormat.INT)).toEqual('1000000000000000000');
     });
   });
 
