@@ -33,8 +33,8 @@ const Wrapper = styled.div`
   background: rgba(13, 23, 30, 1);
   border-radius: 8px;
   position: sticky;
-  top: 160px;
-  max-height: calc(100vh - 280px);
+  top: 96px;
+  max-height: calc(100vh - 188px);
   overflow: hidden;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
@@ -71,6 +71,23 @@ const ScrollableContainer = styled.div`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 24px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #6f6f6f;
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #4b4b4b;
+  }
 `;
 
 const ActionsList = styled.ul`

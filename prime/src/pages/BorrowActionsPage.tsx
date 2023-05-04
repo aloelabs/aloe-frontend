@@ -100,7 +100,7 @@ const GridExpandingDiv = styled.div`
   grid-row: 1 / 4;
   grid-column: 2 / span 1;
   justify-self: center;
-  margin-top: 96px;
+  margin-top: 0px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     justify-self: start;
