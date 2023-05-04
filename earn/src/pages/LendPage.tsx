@@ -31,7 +31,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-import { getTokenByTicker, getTokens } from '../data/TokenData';
+import { getTokenByTicker } from '../data/TokenData';
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -95,18 +95,6 @@ export default function LendPage() {
     chainId: wagmiChain.mainnet.id,
   });
 
-  useEffect(() => {
-    const options: MultiDropdownOption<Token>[] = getTokens(activeChain.id).map((token) => {
-      return {
-        value: token,
-        label: token.ticker || '',
-        icon: token.iconPath,
-      };
-    });
-    setFilterOptions(options);
-    setSelectedOptions(options);
-  }, [activeChain]);
-
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
     lendingPairs.forEach((pair) => {
@@ -159,6 +147,23 @@ export default function LendPage() {
       mounted = false;
     };
   }, [provider, address, activeChain]);
+
+  useEffect(() => {
+    let uniqueTokens = new Set<Token>();
+    lendingPairs.forEach((pair) => {
+      uniqueTokens.add(pair.token0);
+      uniqueTokens.add(pair.token1);
+    });
+    const options: MultiDropdownOption<Token>[] = Array.from(uniqueTokens).map((token) => {
+      return {
+        value: token,
+        label: token.ticker || '',
+        icon: token.iconPath,
+      };
+    });
+    setFilterOptions(options);
+    setSelectedOptions(options);
+  }, [lendingPairs]);
 
   useEffect(() => {
     let mounted = true;
@@ -336,6 +341,7 @@ export default function LendPage() {
                   );
                 }}
                 flipDirection={true}
+                maxHeight={275}
               />
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
