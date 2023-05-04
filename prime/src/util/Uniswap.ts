@@ -6,6 +6,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { chain } from 'wagmi';
@@ -24,7 +25,7 @@ const BINS_TO_FETCH = 500;
 const ONE = new Big('1.0');
 
 export interface UniswapV3PoolSlot0 {
-  sqrtPriceX96: ethers.BigNumber;
+  sqrtPriceX96: GN;
   tick: number;
   observationIndex: number;
   observationCardinality: number;
@@ -35,7 +36,7 @@ export interface UniswapV3PoolSlot0 {
 export interface UniswapV3PoolBasics {
   slot0: UniswapV3PoolSlot0;
   tickSpacing: number;
-  token1OverToken0: Big;
+  token1OverToken0: GN;
 }
 
 export type TickInfo = {
@@ -43,18 +44,18 @@ export type TickInfo = {
   tickOffset: number;
   minTick: number;
   maxTick: number;
-  minPrice: number;
-  maxPrice: number;
+  minPrice: GN;
+  maxPrice: GN;
 };
 
 export type TickData = {
   tick: number;
-  liquidity: Big;
+  liquidity: GN;
   amount0: number;
   amount1: number;
-  price1In0: number;
-  price0In1: number;
-  totalValueIn0: number;
+  price1In0: GN;
+  price0In1: GN;
+  totalValueIn0: GN;
 };
 
 export type UniswapV3GraphQLTick = {
@@ -260,7 +261,7 @@ export function tickToPrice(
   token0Decimals: number,
   token1Decimals: number,
   isInTermsOfToken0 = true
-): number {
+): GN {
   const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
   const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
   const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
@@ -438,7 +439,7 @@ export function getAmountsForLiquidity(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): [number, number] {
+): [GN, GN] {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
   //lower price
@@ -460,10 +461,7 @@ export function getAmountsForLiquidity(
     amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
   }
 
-  return [
-    new Big(amount0.toString(10)).div(10 ** token0Decimals).toNumber(),
-    new Big(amount1.toString(10)).div(10 ** token1Decimals).toNumber(),
-  ];
+  return [GN.fromJSBI(amount0, token0Decimals), GN.fromJSBI(amount1, token1Decimals)];
 }
 
 export function getValueOfLiquidity(
@@ -472,7 +470,7 @@ export function getValueOfLiquidity(
   upperTick: number,
   currentTick: number,
   token1Decimals: number
-): number {
+): GN {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
   //lower price
@@ -505,7 +503,7 @@ export function getValueOfLiquidity(
 
   const value = JSBI.add(value0, value1);
 
-  return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+  return GN.fromJSBI(value, token1Decimals);
 }
 
 export function getOutputForSwap(

@@ -16,8 +16,8 @@ export function runWithChecks(
 
   // if any assets or liabilities are < 0, we have an issue!
   if (
-    Object.values(assets).find((x) => x < 0) ||
-    Object.values(liabilities).find((x) => x < 0) ||
+    Object.values(assets).find((x) => x.isLtZero()) ||
+    Object.values(liabilities).find((x) => x.isLtZero()) ||
     Object.values(availableForDeposit).find((x) => x < 0) ||
     Object.values(availableForBorrow).find((x) => x < 0)
   ) {

@@ -307,11 +307,7 @@ export default function PnLGraph(props: PnLGraphProps) {
     marginAccount.token1.decimals,
   ]);
 
-  let currentPrice = sqrtRatioToPrice(
-    marginAccount.sqrtPriceX96,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
-  );
+  let currentPrice = marginAccount.sqrtPriceX96.square();
   let previousPrice = priceAtLastUpdate || currentPrice;
 
   // If we're showing hypothetical, we want to use the current price as the price at the last update
