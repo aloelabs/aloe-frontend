@@ -458,9 +458,9 @@ export default function PortfolioPage() {
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}
           />
-          <BridgeModal isOpen={isBridgeModalOpen} setIsOpen={setIsBridgeModalOpen} />
         </>
       )}
+      <BridgeModal isOpen={isBridgeModalOpen} setIsOpen={setIsBridgeModalOpen} />
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
         txnHash={pendingTxn?.hash}
