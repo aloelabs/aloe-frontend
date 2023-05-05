@@ -50,13 +50,13 @@ const permit2StateToButtonStateMap = {
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_FUNDS:
-      return { text: `Insufficient ${token.ticker}`, enabled: false };
+      return { text: `Insufficient ${token.symbol}`, enabled: false };
     case ConfirmButtonState.REPAYING_TOO_MUCH:
       return { text: 'Repaying too much', enabled: false };
     case ConfirmButtonState.PERMIT_ASSET:
-      return { text: `Permit ${token.ticker}`, enabled: true };
+      return { text: `Permit ${token.symbol}`, enabled: true };
     case ConfirmButtonState.APPROVE_ASSET:
-      return { text: `Approve ${token.ticker}`, enabled: true };
+      return { text: `Approve ${token.symbol}`, enabled: true };
     case ConfirmButtonState.WAITING_FOR_TRANSACTION:
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.WAITING_FOR_USER:
@@ -295,11 +295,11 @@ export default function RepayModal(props: RepayModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're repaying{' '}
             <strong>
-              {repayAmountStr || '0'} {repayToken.ticker}
+              {repayAmountStr || '0'} {repayToken.symbol}
             </strong>
             . This will increase your smart wallet's health and bring remaining borrows down to{' '}
             <strong>
-              {remainingLiability.toString(GNFormat.DECIMAL)} {repayToken.ticker}
+              {remainingLiability.toString(GNFormat.DECIMAL)} {repayToken.symbol}
             </strong>
             .
           </Text>

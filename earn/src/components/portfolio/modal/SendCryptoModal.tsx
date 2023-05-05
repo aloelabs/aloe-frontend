@@ -36,7 +36,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
-        text: `Insufficient ${token.ticker}`,
+        text: `Insufficient ${token.symbol}`,
         enabled: false,
       };
     case ConfirmButtonState.PENDING:
@@ -276,7 +276,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're sending {sendAmountInputValue || '0.00'} {selectedOption.ticker} to {addressInputValue || '...'}
+            You're sending {sendAmountInputValue || '0.00'} {selectedOption.symbol} to {addressInputValue || '...'}
           </Text>
         </div>
         <div className='w-full'>

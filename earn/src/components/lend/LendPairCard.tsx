@@ -82,12 +82,12 @@ export default function LendPairCard(props: LendPairCardProps) {
   const { address: accountAddress } = useAccount();
   useEffect(() => {
     let mounted = true;
-    getProminentColor(token0.iconPath || '').then((color) => {
+    getProminentColor(token0.logoURI || '').then((color) => {
       if (mounted) {
         setToken0Color(color);
       }
     });
-    getProminentColor(token1.iconPath || '').then((color) => {
+    getProminentColor(token1.logoURI || '').then((color) => {
       if (mounted) {
         setToken1Color(color);
       }
@@ -125,7 +125,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         <CardTitleWrapper backgroundGradient={cardTitleBackgroundGradient}>
           <div className='flex items-center gap-2'>
             <Display size='M' weight='semibold'>
-              {token0.ticker} / {token1.ticker}
+              {token0.symbol} / {token1.symbol}
             </Display>
             <button onClick={() => setIsContractLinksModalOpen(true)}>
               <MoreIcon width={20} height={20} />
@@ -133,8 +133,8 @@ export default function LendPairCard(props: LendPairCardProps) {
           </div>
           <CardSubTitleWrapper>
             <TokenPairIcons
-              token0IconPath={token0.iconPath}
-              token1IconPath={token1.iconPath}
+              token0IconPath={token0.logoURI}
+              token1IconPath={token1.logoURI}
               token0AltText={`${token0.name}'s Icon`}
               token1AltText={`${token1.name}'s Icon`}
             />
@@ -145,7 +145,7 @@ export default function LendPairCard(props: LendPairCardProps) {
           <CustomBodySubContainer>
             <div className='flex items-center gap-3'>
               <Text size='M' weight='medium'>
-                {token0?.ticker}+
+                {token0?.symbol}+
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
@@ -168,7 +168,7 @@ export default function LendPairCard(props: LendPairCardProps) {
           <CustomBodySubContainer>
             <div className='flex items-center gap-3'>
               <Text size='M' weight='medium'>
-                {token1?.ticker}+
+                {token1?.symbol}+
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>

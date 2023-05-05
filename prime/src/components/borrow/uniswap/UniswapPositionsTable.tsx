@@ -240,14 +240,14 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
 
   const rows = uniswapPositionInfo.map((uniswapPositionInfo: UniswapPositionInfo) => {
     const fees = uniswapPositionEarnedFees[uniswapPositionInfo.positionKey];
-    const selectedTokenTicker = selectedToken?.ticker ?? '';
+    const selectedTokenSymbol = selectedToken?.symbol ?? '';
     const valueText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.value) + ' ' + selectedTokenTicker}
+        {formatTokenAmount(uniswapPositionInfo.value) + ' ' + selectedTokenSymbol}
       </Text>
     );
-    const token0FeesEarned = `${formatTokenAmount(fees?.token0FeesEarned || 0)} ${marginAccount.token0?.ticker || ''}`;
-    const token1FeesEarned = `${formatTokenAmount(fees?.token1FeesEarned || 0)} ${marginAccount.token1?.ticker || ''}`;
+    const token0FeesEarned = `${formatTokenAmount(fees?.token0FeesEarned || 0)} ${marginAccount.token0?.symbol || ''}`;
+    const token1FeesEarned = `${formatTokenAmount(fees?.token1FeesEarned || 0)} ${marginAccount.token1?.symbol || ''}`;
     const earnedFeesText = (
       <Text size='M' weight='medium'>
         {token0FeesEarned + ' ' + token1FeesEarned}
@@ -255,12 +255,12 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     );
     const lowerText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.lower) + ' ' + selectedTokenTicker}
+        {formatTokenAmount(uniswapPositionInfo.lower) + ' ' + selectedTokenSymbol}
       </Text>
     );
     const upperText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.upper) + ' ' + selectedTokenTicker}
+        {formatTokenAmount(uniswapPositionInfo.upper) + ' ' + selectedTokenSymbol}
       </Text>
     );
     const isInRange =
