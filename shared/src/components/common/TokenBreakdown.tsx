@@ -17,19 +17,19 @@ const TokenBreakdownWrapper = styled.div`
 `;
 
 export type TokenBreakdownProps = {
-  token0Ticker: string;
-  token1Ticker: string;
+  token0Symbol: string;
+  token1Symbol: string;
   token0Estimate: string;
   token1Estimate: string;
 };
 
 export default function TokenBreakdown(props: TokenBreakdownProps) {
-  const { token0Ticker, token1Ticker, token0Estimate, token1Estimate } = props;
+  const { token0Symbol, token1Symbol, token0Estimate, token1Estimate } = props;
   return (
     <div className='w-full grid grid-cols-2 gap-x-2'>
       <TokenBreakdownWrapper>
         <Text size='XS' weight='medium' color={LABEL_TEXT_COLOR}>
-          {token0Ticker}
+          {token0Symbol}
         </Text>
         <Text
           size='M'
@@ -43,7 +43,7 @@ export default function TokenBreakdown(props: TokenBreakdownProps) {
       </TokenBreakdownWrapper>
       <TokenBreakdownWrapper>
         <Text size='XS' weight='medium' color={LABEL_TEXT_COLOR}>
-          {token1Ticker}
+          {token1Symbol}
         </Text>
         <Text
           size='M'

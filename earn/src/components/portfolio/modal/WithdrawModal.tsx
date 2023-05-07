@@ -43,7 +43,7 @@ const REDEEM_STATE_TO_BUTTON_STATE = {
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.REDEEM_TOO_MUCH:
-      return { text: `Insufficient ${token.ticker}`, enabled: false };
+      return { text: `Insufficient ${token.symbol}`, enabled: false };
     case ConfirmButtonState.READY_TO_SIGN:
       return { text: `Permit Router`, enabled: true };
     case ConfirmButtonState.READY_TO_REDEEM:
@@ -83,7 +83,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const account = useAccount();
 
   const filteredPairs = lendingPairs.filter((p) => doesLendingPairContainToken(p, selectedToken));
-  if (filteredPairs.length === 0) throw new Error(`${selectedToken.ticker} isn't part of any lending pair`);
+  if (filteredPairs.length === 0) throw new Error(`${selectedToken.symbol} isn't part of any lending pair`);
   const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
   const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
   const amount = GN.fromDecimalString(inputValue[0] || '0', selectedToken.decimals);
@@ -208,11 +208,11 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're withdrawing{' '}
             <strong>
-              {inputValue[0] || '0.00'} {selectedToken.ticker}
+              {inputValue[0] || '0.00'} {selectedToken.symbol}
             </strong>{' '}
             from the{' '}
             <strong>
-              {selectedPair.token0.ticker}/{selectedPair.token1.ticker}
+              {selectedPair.token0.symbol}/{selectedPair.token1.symbol}
             </strong>{' '}
             lending market.
           </Text>

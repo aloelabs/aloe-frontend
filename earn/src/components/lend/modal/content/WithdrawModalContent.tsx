@@ -28,7 +28,7 @@ function getConfirmButton(state: ConfirmButtonState, kitty: Kitty): { text: stri
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_KITTY:
       return {
-        text: `Insufficient ${kitty.ticker}`,
+        text: `Insufficient ${kitty.symbol}`,
         enabled: false,
       };
     case ConfirmButtonState.LOADING:
@@ -211,7 +211,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {withdrawAmount || '0'} {token?.ticker}
+          {withdrawAmount || '0'} {token?.symbol}
         </Text>
       </div>
       <div className='w-full ml-auto'>

@@ -509,8 +509,8 @@ export default function BorrowActionsPage() {
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
   const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
   const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
-  const selectedTokenTicker = selectedToken?.ticker || '';
-  const unselectedTokenTicker = unselectedToken?.ticker || '';
+  const selectedTokenSymbol = selectedToken?.symbol || '';
+  const unselectedTokenSymbol = unselectedToken?.symbol || '';
 
   const { health } = isSolvent(
     displayedMarginAccount.assets,
@@ -587,28 +587,28 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum0, 4)}
-              denomination={token0.ticker ?? ''}
+              denomination={token0.symbol ?? ''}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
               value={formatTokenAmount(assetsSum1, 4)}
-              denomination={token1.ticker ?? ''}
+              denomination={token1.symbol ?? ''}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
-              denomination={token0.ticker ?? ''}
+              denomination={token0.symbol ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
-              denomination={token1.ticker ?? ''}
+              denomination={token1.symbol ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
@@ -618,7 +618,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+                displayedLiquidationThresholds ? `${selectedTokenSymbol}/${unselectedTokenSymbol}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />
@@ -628,7 +628,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+                displayedLiquidationThresholds ? `${selectedTokenSymbol}/${unselectedTokenSymbol}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />
@@ -641,43 +641,43 @@ export default function BorrowActionsPage() {
             </Text>
             <MarketStatsGrid>
               <AccountStatsCard
-                label={`${token0.ticker} Supply`}
+                label={`${token0.symbol} Supply`}
                 value={formatTokenAmount(
                   marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
                   SUPPLY_SIGNIFICANT_DIGITS
                 )}
-                denomination={token0.ticker}
+                denomination={token0.symbol}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
-                  label={`${token0.ticker} Utilization`}
+                  label={`${token0.symbol} Utilization`}
                   value={`${(utilization0! * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
-                  label={`${token0.ticker} APR`}
+                  label={`${token0.symbol} APR`}
                   value={`${(apr0 * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
               </div>
               <AccountStatsCard
-                label={`${token1.ticker} Supply`}
+                label={`${token1.symbol} Supply`}
                 value={formatTokenAmount(
                   marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
                   SUPPLY_SIGNIFICANT_DIGITS
                 )}
-                denomination={token1.ticker}
+                denomination={token1.symbol}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
-                  label={`${token1.ticker} Utilization`}
+                  label={`${token1.symbol} Utilization`}
                   value={`${(utilization1! * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
-                  label={`${token1.ticker} APR`}
+                  label={`${token1.symbol} APR`}
                   value={`${(apr1 * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />

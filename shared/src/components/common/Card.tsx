@@ -68,7 +68,7 @@ export const CardBodyWrapper = styled.div`
   }
 `;
 
-export const TokenPairTickers = styled.div`
+export const TokenPairSymbols = styled.div`
   font-size: 24px;
   font-weight: 600;
   line-height: 32px;
