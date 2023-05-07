@@ -36,7 +36,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
-import { getTokenByTicker } from '../data/TokenData';
+import { getTokenBySymbol } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
@@ -142,8 +142,8 @@ export default function PortfolioPage() {
     let mounted = true;
     async function fetch() {
       const symbols = uniqueTokens
-        .map((token) => token?.ticker)
-        .filter((ticker) => ticker !== undefined)
+        .map((token) => token?.symbol)
+        .filter((symbol) => symbol !== undefined)
         .join(',');
       if (symbols.length === 0) {
         return;
@@ -164,15 +164,15 @@ export default function PortfolioPage() {
       if (!latestPriceResponse || !historicalPriceResponse) {
         return;
       }
-      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
+      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenByTicker(activeChain.id, ticker),
+          token: getTokenBySymbol(activeChain.id, symbol),
           price: data.price,
         };
       });
-      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
+      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenByTicker(activeChain.id, ticker),
+          token: getTokenBySymbol(activeChain.id, symbol),
           priceEntries: data.prices,
         };
       });
@@ -192,7 +192,7 @@ export default function PortfolioPage() {
     let mounted = true;
     async function fetchTokenColors() {
       const tokenColorMap: Map<string, string> = new Map();
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.iconPath || ''));
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
       const colors = await Promise.all(colorPromises);
       uniqueTokens.forEach((token: Token, index: number) => {
         tokenColorMap.set(token.address, colors[index]);
@@ -264,7 +264,7 @@ export default function PortfolioPage() {
       const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
-      const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      const pairName: string = `${pair.token0.symbol}-${pair.token1.symbol}`;
       return [
         {
           token: pair.token0,

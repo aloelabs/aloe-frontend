@@ -17,7 +17,7 @@ export default function LendTokenInfo(props: LendTokenInfoProps) {
   return (
     <InfoFigure
       label0='Total Supply'
-      value0={token ? `${formatAmountWithUnit(totalSupply, token.ticker, MAX_CHARACTERS)}` : formatUSDAuto(totalSupply)}
+      value0={token ? `${formatAmountWithUnit(totalSupply, token.symbol, MAX_CHARACTERS)}` : formatUSDAuto(totalSupply)}
       label1='Utilization'
       value1={`${roundPercentage(utilization)}%`}
       figureColor={FIGURE_COLOR}

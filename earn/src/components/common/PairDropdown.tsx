@@ -125,13 +125,13 @@ export default function PairDropdown(props: PairDropdownProps) {
       >
         <div className='flex items-center gap-2'>
           <TokenPairIcons
-            token0IconPath={selectedOption.token0.iconPath}
-            token1IconPath={selectedOption.token1.iconPath}
+            token0IconPath={selectedOption.token0.logoURI}
+            token1IconPath={selectedOption.token1.logoURI}
             token0AltText={selectedOption.token0.name}
             token1AltText={selectedOption.token1.name}
           ></TokenPairIcons>
           <Text size='M' weight='bold'>
-            {selectedOption.token0.ticker} / {selectedOption.token1.ticker}
+            {selectedOption.token0.symbol} / {selectedOption.token1.symbol}
           </Text>
         </div>
         {isOpen ? (
@@ -155,13 +155,13 @@ export default function PairDropdown(props: PairDropdownProps) {
             >
               <div className='flex items-center gap-2'>
                 <TokenPairIcons
-                  token0IconPath={option.token0.iconPath}
-                  token1IconPath={option.token1.iconPath}
+                  token0IconPath={option.token0.logoURI}
+                  token1IconPath={option.token1.logoURI}
                   token0AltText={option.token0.name}
                   token1AltText={option.token1.name}
                 ></TokenPairIcons>
                 <Text size='M' weight='bold'>
-                  {option.token0.ticker} / {option.token1.ticker}
+                  {option.token0.symbol} / {option.token1.symbol}
                 </Text>
               </div>
             </DropdownListItem>

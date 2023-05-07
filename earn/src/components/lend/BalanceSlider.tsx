@@ -96,10 +96,10 @@ export default function BalanceSlider(props: BalanceSliderProps) {
         {tokenBalances.map((tokenBalance, index) => {
           return (
             <SliderItem key={index}>
-              <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
+              <TokenIcon src={tokenBalance.token.logoURI || ''} alt={tokenBalance.token.name} />
               {tokenBalance.token.name}
               {' - '}
-              {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.ticker}
+              {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.symbol}
             </SliderItem>
           );
         })}
@@ -107,10 +107,10 @@ export default function BalanceSlider(props: BalanceSliderProps) {
           tokenBalances.map((tokenBalance, index) => {
             return (
               <SliderItem key={index}>
-                <TokenIcon src={tokenBalance.token.iconPath || ''} alt={tokenBalance.token.name} />
+                <TokenIcon src={tokenBalance.token.logoURI || ''} alt={tokenBalance.token.name} />
                 {tokenBalance.token.name}
                 {' - '}
-                {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.ticker}
+                {formatTokenAmount(tokenBalance.balance)} {tokenBalance.token.symbol}
               </SliderItem>
             );
           })}

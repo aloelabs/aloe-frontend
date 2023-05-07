@@ -177,10 +177,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount0 || 0)} {token0?.ticker}
+                      {formatTokenAmount(amount0 || 0)} {token0?.symbol}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount1 || 0)} {token1?.ticker}
+                      {formatTokenAmount(amount1 || 0)} {token1?.symbol}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -192,11 +192,11 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                     </Text>
                     <Text size='M'>
                       {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount0 ?? 0))}{' '}
-                      {token0?.ticker}
+                      {token0?.symbol}
                     </Text>
                     <Text size='M'>
                       {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount1 ?? 0))}{' '}
-                      {token1?.ticker}
+                      {token1?.symbol}
                     </Text>
                   </div>
                 </div>

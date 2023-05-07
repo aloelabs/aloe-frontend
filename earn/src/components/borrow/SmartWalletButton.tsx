@@ -51,12 +51,12 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
   const [token1Color, setToken1Color] = useState<string>('');
   useEffect(() => {
     let mounted = true;
-    getProminentColor(token0.iconPath || '').then((color) => {
+    getProminentColor(token0.logoURI || '').then((color) => {
       if (mounted) {
         setToken0Color(color);
       }
     });
-    getProminentColor(token1.iconPath || '').then((color) => {
+    getProminentColor(token1.logoURI || '').then((color) => {
       if (mounted) {
         setToken1Color(color);
       }
@@ -75,13 +75,13 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
     <Container backgroundGradient={buttonBackgroundGradient} active={isActive} onClick={onClick}>
       <div className='flex items-center gap-4'>
         <TokenPairIcons
-          token0IconPath={token0.iconPath}
-          token1IconPath={token1.iconPath}
+          token0IconPath={token0.logoURI}
+          token1IconPath={token1.logoURI}
           token0AltText={`${token0.name}'s Icon`}
           token1AltText={`${token1.name}'s Icon`}
         />
         <Display size='S' weight='semibold'>
-          {token0.ticker} / {token1.ticker}
+          {token0.symbol} / {token1.symbol}
         </Display>
       </div>
     </Container>
