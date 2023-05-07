@@ -91,16 +91,16 @@ export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
     <Wrapper>
       <MarginPairContainer>
         <TokenIconsWrapper>
-          <TokenIcon src={props.token0.iconPath} alt={props.token0.name} />
-          <TokenIcon src={props.token1.iconPath} alt={props.token1.name} />
+          <TokenIcon src={props.token0.logoURI} alt={props.token0.name} />
+          <TokenIcon src={props.token1.logoURI} alt={props.token1.name} />
         </TokenIconsWrapper>
         <div className='flex justify-center items-center gap-4'>
           <Display size='L' weight='semibold'>
-            {props.token0.ticker}
+            {props.token0.symbol}
           </Display>
           <Dash />
           <Display size='L' weight='semibold'>
-            {props.token1.ticker}
+            {props.token1.symbol}
           </Display>
         </div>
       </MarginPairContainer>

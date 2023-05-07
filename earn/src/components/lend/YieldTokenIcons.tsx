@@ -50,7 +50,7 @@ export default function YieldTokenIcons(props: YieldTokenIconsProps) {
         return (
           <TokenIcon
             key={index}
-            src={token.iconPath}
+            src={token.logoURI}
             backgroundColor={omitBackground ? OMIT_TOKEN_BACKGROUND_COLOR : DEFAULT_TOKEN_BACKGROUND_COLOR}
             borderColor={iconBorderColor || DEFAULT_TOKEN_BORDER_COLOR}
             alt={token.name}
