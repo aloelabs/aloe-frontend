@@ -17,7 +17,6 @@ import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWr
 import { ChainContext } from '../../../App';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
-import { ReferralData } from '../../../pages/PortfolioPage';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -185,7 +184,6 @@ export type EarnInterestModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
-  referralData: ReferralData | null;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
