@@ -308,7 +308,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
         <TokenAllocationBreakdown>
           <div className='flex items-center gap-4 w-full'>
             <TokenLabel className={activeIndex !== -1 && activeIndex >= firstHalfOfSlices.length ? 'inactive' : ''}>
-              {token0?.ticker || ''}
+              {token0?.symbol || ''}
             </TokenLabel>
             <div className='flex flex-col'>
               {firstHalfOfSlices.map((slice, index) => {
@@ -352,7 +352,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
           </div>
           <div className='flex items-center gap-4'>
             <TokenLabel className={activeIndex !== -1 && activeIndex < firstHalfOfSlices.length ? 'inactive' : ''}>
-              {token1?.ticker || ''}
+              {token1?.symbol || ''}
             </TokenLabel>
             <div className='flex flex-col'>
               {secondHalfOfSlices.map((slice, index) => {

@@ -48,8 +48,8 @@ export type SmartWalletButtonProps = {
 
 export default function SmartWalletButton(props: SmartWalletButtonProps) {
   const { token0, token1, isActive, onClick } = props;
-  const token0Color = useProminentColor(token0.iconPath);
-  const token1Color = useProminentColor(token1.iconPath);
+  const token0Color = useProminentColor(token0.logoURI);
+  const token1Color = useProminentColor(token1.logoURI);
   // Create the variables for the gradients.
   const buttonBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
@@ -60,13 +60,13 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
     <Container backgroundGradient={buttonBackgroundGradient} active={isActive} onClick={onClick}>
       <div className='flex items-center gap-4'>
         <TokenPairIcons
-          token0IconPath={token0.iconPath}
-          token1IconPath={token1.iconPath}
+          token0IconPath={token0.logoURI}
+          token1IconPath={token1.logoURI}
           token0AltText={`${token0.name}'s Icon`}
           token1AltText={`${token1.name}'s Icon`}
         />
         <Display size='S' weight='semibold'>
-          {token0.ticker} / {token1.ticker}
+          {token0.symbol} / {token1.symbol}
         </Display>
       </div>
     </Container>

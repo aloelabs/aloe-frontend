@@ -65,7 +65,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
       <StatsWidgetGrid>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.ticker} Total Supply
+            {token0.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
@@ -73,7 +73,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.ticker} Total Supply
+            {token1.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
@@ -81,7 +81,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.ticker} Borrows
+            {token0.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {marketInfo.lender0TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
@@ -89,7 +89,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.ticker} Borrows
+            {token1.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {marketInfo.lender1TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
@@ -97,7 +97,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.ticker} Utilization
+            {token0.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {roundPercentage(marketInfo.lender0Utilization * 100, 2)}%
@@ -105,7 +105,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.ticker} Utilization
+            {token1.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {roundPercentage(marketInfo.lender1Utilization * 100, 2)}%
@@ -113,7 +113,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.ticker} Borrow APR
+            {token0.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {roundPercentage(marketInfo.borrowerAPR0 * 100, 2)}%
@@ -121,7 +121,7 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.ticker} Borrow APR
+            {token1.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
             {roundPercentage(marketInfo.borrowerAPR1 * 100, 2)}%

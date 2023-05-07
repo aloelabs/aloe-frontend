@@ -78,7 +78,7 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
     }
   }, [createBorrowerData, isLoadingCreateBorrower, setIsOpen, setPendingTxn, successfullyCreatedBorrower]);
 
-  const pairLabel = `${uniswapPoolInfo.token0.ticker}/${uniswapPoolInfo.token1.ticker}`;
+  const pairLabel = `${uniswapPoolInfo.token0.symbol}/${uniswapPoolInfo.token1.symbol}`;
 
   return (
     <FilledStylizedButton
@@ -122,8 +122,8 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
     const filteredPools = new Map<string, UniswapPoolInfo>();
     Array.from(availablePools.entries()).forEach(([poolAddress, poolInfo]) => {
       if (
-        poolInfo.token0.ticker.toLowerCase().includes(filterInput.toLowerCase()) ||
-        poolInfo.token1.ticker.toLowerCase().includes(filterInput.toLowerCase()) ||
+        poolInfo.token0.symbol.toLowerCase().includes(filterInput.toLowerCase()) ||
+        poolInfo.token1.symbol.toLowerCase().includes(filterInput.toLowerCase()) ||
         poolAddress.toLowerCase().includes(filterInput.toLowerCase())
       ) {
         filteredPools.set(poolAddress, poolInfo);

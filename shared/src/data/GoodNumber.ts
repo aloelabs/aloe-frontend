@@ -141,12 +141,40 @@ export class GN {
     return this.int.gt('0');
   }
 
+  /**
+   * Checks if the `GN` is greater than or equal to zero.
+   * @returns whether the `GN` is greater than or equal to zero.
+   */
+  isGteZero() {
+    return this.int.gte('0');
+  }
+
+  /**
+   * Checks if the `GN` is less than zero.
+   * @returns whether the `GN` is less than zero.
+   */
+  isLtZero() {
+    return this.int.lt('0');
+  }
+
+  /**
+   * Checks if the `GN` is less than or equal to zero.
+   * @returns whether the `GN` is less than or equal to zero.
+   */
+  isLteZero() {
+    return this.int.lte('0');
+  }
+
   static max(a: GN, b: GN) {
     return a.gt(b) ? a : b;
   }
 
   static min(a: GN, b: GN) {
     return a.lt(b) ? a : b;
+  }
+
+  static firstNSigDigsMatch(a: GN, b: GN, n: number): boolean {
+    return a.int.prec(n).eq(b.int.prec(n));
   }
 
   /*//////////////////////////////////////////////////////////////
@@ -269,6 +297,10 @@ export class GN {
 
   static zero(decimals: number, base: 2 | 10 = 10) {
     return new GN('0', decimals, base);
+  }
+
+  static one(decimals: number, base: 2 | 10 = 10) {
+    return new GN(scalerFor(base, decimals), decimals, base);
   }
 
   static Q(resolution: number) {

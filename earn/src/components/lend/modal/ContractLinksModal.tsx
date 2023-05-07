@@ -44,7 +44,7 @@ function TokenContractInfo(props: { token: Token; baseEtherscanUrl: string; cont
     <RowContainer gap={16} className={containerClassName}>
       <TokenIcon token={token} width={32} height={32} />
       <div>
-        <Text size='M'>{token.ticker}</Text>
+        <Text size='M'>{token.symbol}</Text>
         <RowContainer>
           <StyledExternalLink href={`${baseEtherscanUrl}/address/${token.address}`} target='_blank'>
             <Text color='#C2D1DD'>{truncateAddress(token.address, 16)}</Text>
