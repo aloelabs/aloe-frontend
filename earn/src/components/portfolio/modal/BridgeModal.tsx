@@ -1,24 +1,36 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { Bridge } from '@socket.tech/plugin';
 import { ethers } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific';
+import { Token } from 'shared/lib/data/Token';
+import { chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
+import { getTokens } from '../../../data/TokenData';
 
 export type BridgeModalProps = {
   isOpen: boolean;
+  selectedAsset: Token;
   setIsOpen: (isOpen: boolean) => void;
 };
 
 export default function BridgeModal(props: BridgeModalProps) {
-  const { isOpen, setIsOpen } = props;
+  const { isOpen, selectedAsset, setIsOpen } = props;
   const { activeChain } = useContext(ChainContext);
   const provider = new ethers.providers.Web3Provider(window.ethereum as any);
 
   const supportedChainIds = BRIDGE_SUPPORTED_CHAINS.map((chain) => chain.id);
-  const otherChainIds = supportedChainIds.filter((chainId) => chainId !== activeChain.id);
+  const tokens = useMemo(() => {
+    return supportedChainIds
+      .map((chainId) =>
+        getTokens(chainId).map((token) => {
+          return { ...token };
+        })
+      )
+      .flat();
+  }, [supportedChainIds]);
 
   if (!provider) {
     return null;
@@ -38,11 +50,12 @@ export default function BridgeModal(props: BridgeModalProps) {
           interactive: 'rgb(26, 41, 52)',
           fontFamily: 'Satoshi-Variable',
         }}
-        defaultSourceNetwork={activeChain.id}
-        defaultDestNetwork={otherChainIds[0]}
+        defaultSourceNetwork={chain.mainnet.id}
+        defaultDestNetwork={activeChain.id}
         sourceNetworks={supportedChainIds}
         destNetworks={supportedChainIds}
-        title='Bridge to Terabithia'
+        tokenList={tokens}
+        defaultDestToken={selectedAsset.address}
       />
     </Modal>
   );
