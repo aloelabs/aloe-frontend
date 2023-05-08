@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { getProminentColor } from '../../util/Colors';
 
-export default function useProminentColor(path: string) {
+export default function useProminentColor(iconPath: string) {
   const [prominentColor, setProminentColor] = useState<string>('0, 0, 0');
   useEffect(() => {
     let mounted = true;
     async function computeProminentColor() {
-      const computedProminentColor = await getProminentColor(path);
+      const computedProminentColor = await getProminentColor(iconPath);
       if (mounted) {
         setProminentColor(computedProminentColor);
       }
@@ -16,6 +16,6 @@ export default function useProminentColor(path: string) {
     return () => {
       mounted = false;
     };
-  }, [path]);
+  }, [iconPath]);
   return prominentColor;
 }
