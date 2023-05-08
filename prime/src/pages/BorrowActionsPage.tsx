@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
@@ -390,14 +391,14 @@ export default function BorrowActionsPage() {
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,
-        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token1Decimals)),
-        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token0Decimals) : numericSwapFees),
+        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token0Decimals)),
+        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token1Decimals) : numericSwapFees),
       };
       // Apply the user's inputted borrow interest to the displayed margin account's liabilities
       _marginAccount.liabilities = {
         ...liabilitiesF,
-        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token1Decimals)),
-        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token0Decimals) : numericBorrowInterest),
+        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token0Decimals)),
+        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token1Decimals) : numericBorrowInterest),
       };
     }
     setDisplayedMarginAccount(_marginAccount);
@@ -466,7 +467,7 @@ export default function BorrowActionsPage() {
     const priceX96 = marginAccount.sqrtPriceX96.square();
     const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
     const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
-    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).setResolution(token1.decimals);
+    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.mul(priceX96).setResolution(token1.decimals);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
     if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
@@ -493,8 +494,8 @@ export default function BorrowActionsPage() {
   let displayedLiquidationThresholds = liquidationThresholds;
   if (displayedLiquidationThresholds && isToken0Selected) {
     displayedLiquidationThresholds = {
-      lower: displayedLiquidationThresholds.upper.reciprocal(),
-      upper: displayedLiquidationThresholds.lower.reciprocal(),
+      lower: 1.0 / displayedLiquidationThresholds.upper,
+      upper: 1.0 / displayedLiquidationThresholds.lower,
     };
   }
 
@@ -611,9 +612,7 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Lower Liquidation Threshold'
               value={
-                displayedLiquidationThresholds
-                  ? `${displayedLiquidationThresholds.lower.toString(GNFormat.LOSSY_PRICE_RATIO)}`
-                  : '-'
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
@@ -623,9 +622,7 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Upper Liquidation Threshold'
               value={
-                displayedLiquidationThresholds
-                  ? `${displayedLiquidationThresholds.upper.toString(GNFormat.LOSSY_PRICE_RATIO)}`
-                  : '-'
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined

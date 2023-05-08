@@ -2,7 +2,7 @@ import Big, { BigConstructor, BigSource } from 'big.js';
 import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 
-import { formatPriceRatio, formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
+import { formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
 
 export function scalerFor(base: 2 | 10, resolution: number) {
   if (base === 2) {
@@ -27,7 +27,6 @@ export enum GNFormat {
   LOSSY_HUMAN,
   LOSSY_HUMAN_SHORT,
   LOSSY_HUMAN_COMPACT,
-  LOSSY_PRICE_RATIO,
 }
 
 export class GN {
@@ -213,15 +212,6 @@ export class GN {
     return this.mul(this);
   }
 
-  /**
-   *
-   * @returns
-   * @deprecated
-   */
-  reciprocal() {
-    return GN.one(this.resolution).div(this);
-  }
-
   neg() {
     return new GN(this.int.neg().toFixed(0), this.resolution, this.base);
   }
@@ -279,10 +269,16 @@ export class GN {
       case GNFormat.LOSSY_HUMAN_COMPACT:
         // TODO: Bring logic in here instead of calling formatTokenAmountCompact
         return formatTokenAmountCompact(this.x().toNumber());
-      case GNFormat.LOSSY_PRICE_RATIO:
-        return formatPriceRatio(this.x().toNumber());
       // TODO: Other formatting options from `Numbers.ts`
     }
+  }
+
+  /**
+   * Converts to a decimal number (stored as a `Big`). Use sparingly.
+   * @returns Equivalent `Big`
+   */
+  toDecimalBig() {
+    return this.x();
   }
 
   /**

@@ -92,23 +92,14 @@ export function calculateTickInfo(
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
-  const minPrice = tickToPrice(
-    isToken0Selected ? minTick : maxTick,
-    token0.decimals,
-    token1.decimals,
-    isToken0Selected
-  ).toNumber();
-  const maxPrice = tickToPrice(
-    isToken0Selected ? maxTick : minTick,
-    token0.decimals,
-    token1.decimals,
-    isToken0Selected
-  ).toNumber();
+  const scaler = 10 ** (token0.decimals - token1.decimals);
+  const minPrice = tickToPrice(minTick).toDecimalBig().mul(scaler).toNumber();
+  const maxPrice = tickToPrice(maxTick).toDecimalBig().mul(scaler).toNumber();
   return {
     minTick,
     maxTick,
-    minPrice,
-    maxPrice,
+    minPrice: isToken0Selected ? minPrice : 1 / maxPrice, // TODO: these ternaries may be flipped
+    maxPrice: isToken0Selected ? maxPrice : 1 / minPrice,
     tickSpacing,
     tickOffset,
   };
@@ -256,21 +247,8 @@ export async function getUniswapPoolBasics(
   };
 }
 
-export function tickToPrice(
-  tick: number,
-  token0Decimals: number,
-  token1Decimals: number,
-  isInTermsOfToken0 = true
-): GN {
-  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
-  const priceX96JSBI = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
-
-  const priceX96 = GN.fromJSBI(priceX96JSBI, 96, 2);
-
-  const price0In1 = priceX96;
-  const price1In0 = priceX96.reciprocal();
-  return isInTermsOfToken0 ? price0In1 : price1In0;
+export function tickToPrice(tick: number): GN {
+  return GN.fromJSBI(TickMath.getSqrtRatioAtTick(tick), 96, 2).square();
 }
 
 export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
