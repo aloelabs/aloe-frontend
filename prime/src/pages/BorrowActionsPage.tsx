@@ -1,13 +1,13 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
 import { BigNumber, Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { formatPriceRatio, formatTokenAmount, toBig } from 'shared/lib/util/Numbers';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
@@ -36,7 +36,6 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
-import { BIGQ96 } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
@@ -159,8 +158,8 @@ const MarketStatsGrid = styled.div`
 
 export type UniswapPositionEarnedFees = {
   [key: string]: {
-    token0FeesEarned: number;
-    token1FeesEarned: number;
+    token0FeesEarned: GN;
+    token1FeesEarned: GN;
   };
 };
 
@@ -331,19 +330,19 @@ export default function BorrowActionsPage() {
         // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
         // this is because one is computed on-chain and cached, while the other is computed locally.
         // if we've fetched both, prefer the uniswapPositions version (local & newer).
-        const i = { amount0: 0, amount1: 0 };
+        const i = { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) };
         const { amount0, amount1 } = _uniswapPositions.reduce((p, c) => {
           const [amount0, amount1] = getAmountsForLiquidity(
             c.liquidity,
             c.lower,
             c.upper,
-            TickMath.getTickAtSqrtRatio(JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0))),
+            TickMath.getTickAtSqrtRatio(marginAccount.sqrtPriceX96.toJSBI()),
             marginAccount.token0.decimals,
             marginAccount.token1.decimals
           );
           return {
-            amount0: p.amount0 + amount0,
-            amount1: p.amount1 + amount1,
+            amount0: p.amount0.add(amount0),
+            amount1: p.amount1.add(amount1),
           };
         }, i);
         setMarginAccount({
@@ -383,19 +382,22 @@ export default function BorrowActionsPage() {
     // tell React about our findings
     const _marginAccount = { ...marginAccount };
     if (userWantsHypothetical) {
-      const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
-      const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+      const token0Decimals = marginAccount.token0.decimals;
+      const token1Decimals = marginAccount.token1.decimals;
+      const selectedToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
+      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue ?? '0', selectedToken.decimals);
+      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue ?? '0', selectedToken.decimals);
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,
-        token0Raw: assetsF.token0Raw + (isToken0Selected ? numericSwapFees : 0),
-        token1Raw: assetsF.token1Raw + (isToken0Selected ? 0 : numericSwapFees),
+        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token1Decimals)),
+        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token0Decimals) : numericSwapFees),
       };
       // Apply the user's inputted borrow interest to the displayed margin account's liabilities
       _marginAccount.liabilities = {
         ...liabilitiesF,
-        amount0: liabilitiesF.amount0 - (isToken0Selected ? numericBorrowInterest : 0),
-        amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
+        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token1Decimals)),
+        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token0Decimals) : numericBorrowInterest),
       };
     }
     setDisplayedMarginAccount(_marginAccount);
@@ -437,12 +439,8 @@ export default function BorrowActionsPage() {
       const earnedFeesMap: UniswapPositionEarnedFees = {};
       earnedFees[0].forEach((positionId, index) => {
         earnedFeesMap[positionId] = {
-          token0FeesEarned: toBig(earnedFees[1][index * 2])
-            .div(10 ** marginAccount.token0.decimals)
-            .toNumber(),
-          token1FeesEarned: toBig(earnedFees[1][index * 2 + 1])
-            .div(10 ** marginAccount.token1.decimals)
-            .toNumber(),
+          token0FeesEarned: GN.fromBigNumber(earnedFees[1][index * 2], marginAccount.token0.decimals),
+          token1FeesEarned: GN.fromBigNumber(earnedFees[1][index * 2 + 1], marginAccount.token1.decimals),
         };
       });
       if (mounted) {
@@ -465,21 +463,19 @@ export default function BorrowActionsPage() {
     }
     const { token0, token1 } = marginAccount;
     const earnedFeesValues = Object.values(uniswapPositionEarnedFees);
-    const priceX96 = marginAccount.sqrtPriceX96.mul(marginAccount.sqrtPriceX96).div(BIGQ96);
-    const token0FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), new Big(0))).mul(
-      10 ** token0.decimals
-    );
-    const token1FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), new Big(0))).mul(
-      10 ** token1.decimals
-    );
-    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).div(BIGQ96);
+    const priceX96 = marginAccount.sqrtPriceX96.square();
+    const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
+    const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
+    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).setResolution(token1.decimals);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
-    if (totalFeesEarnedInTermsOfToken1.gt(0)) {
+    if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
-        const totalFeesEarnedInTermsOfToken0 = totalFeesEarnedInTermsOfToken1.mul(BIGQ96).div(priceX96);
-        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken0.div(10 ** token0.decimals).toFixed(token0.decimals));
+        const totalFeesEarnedInTermsOfToken0 = totalFeesEarnedInTermsOfToken1
+          .div(priceX96)
+          .setResolution(token0.decimals);
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken0.toString(GNFormat.DECIMAL));
       } else {
-        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken1.div(10 ** token1.decimals).toFixed(token1.decimals));
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken1.toString(GNFormat.DECIMAL));
       }
     }
   }, [marginAccount, displayedMarginAccount, uniswapPositionEarnedFees, displayedUniswapPositions, isToken0Selected]);
@@ -497,8 +493,8 @@ export default function BorrowActionsPage() {
   let displayedLiquidationThresholds = liquidationThresholds;
   if (displayedLiquidationThresholds && isToken0Selected) {
     displayedLiquidationThresholds = {
-      lower: 1.0 / displayedLiquidationThresholds.upper,
-      upper: 1.0 / displayedLiquidationThresholds.lower,
+      lower: displayedLiquidationThresholds.upper.reciprocal(),
+      upper: displayedLiquidationThresholds.lower.reciprocal(),
     };
   }
 
@@ -507,8 +503,8 @@ export default function BorrowActionsPage() {
   const token1 = marginAccount.token1;
   const [selectedToken, unselectedToken] = isToken0Selected ? [token0, token1] : [token1, token0];
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
-  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
-  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
+  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a.isZero());
+  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l.isZero());
   const selectedTokenTicker = selectedToken?.ticker || '';
   const unselectedTokenTicker = unselectedToken?.ticker || '';
 
@@ -586,28 +582,28 @@ export default function BorrowActionsPage() {
           <AccountStatsGrid>
             <AccountStatsCard
               label='Assets'
-              value={formatTokenAmount(assetsSum0, 4)}
+              value={assetsSum0.toString(GNFormat.LOSSY_HUMAN)}
               denomination={token0.ticker ?? ''}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
-              value={formatTokenAmount(assetsSum1, 4)}
+              value={assetsSum1.toString(GNFormat.LOSSY_HUMAN)}
               denomination={token1.ticker ?? ''}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
+              value={`-${displayedMarginAccount.liabilities.amount0.toString(GNFormat.LOSSY_HUMAN)}`}
               denomination={token0.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
+              value={`-${displayedMarginAccount.liabilities.amount1.toString(GNFormat.LOSSY_HUMAN)}`}
               denomination={token1.ticker ?? ''}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
@@ -615,7 +611,9 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Lower Liquidation Threshold'
               value={
-                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
+                displayedLiquidationThresholds
+                  ? `${displayedLiquidationThresholds.lower.toString(GNFormat.LOSSY_PRICE_RATIO)}`
+                  : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
@@ -625,7 +623,9 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Upper Liquidation Threshold'
               value={
-                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
+                displayedLiquidationThresholds
+                  ? `${displayedLiquidationThresholds.upper.toString(GNFormat.LOSSY_PRICE_RATIO)}`
+                  : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
