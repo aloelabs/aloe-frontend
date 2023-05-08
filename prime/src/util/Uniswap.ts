@@ -36,7 +36,7 @@ export interface UniswapV3PoolSlot0 {
 export interface UniswapV3PoolBasics {
   slot0: UniswapV3PoolSlot0;
   tickSpacing: number;
-  token1OverToken0: GN;
+  token1OverToken0: Big;
 }
 
 export type TickInfo = {
@@ -44,18 +44,18 @@ export type TickInfo = {
   tickOffset: number;
   minTick: number;
   maxTick: number;
-  minPrice: GN;
-  maxPrice: GN;
+  minPrice: number;
+  maxPrice: number;
 };
 
 export type TickData = {
   tick: number;
-  liquidity: GN;
+  liquidity: Big;
   amount0: number;
   amount1: number;
-  price1In0: GN;
-  price0In1: GN;
-  totalValueIn0: GN;
+  price1In0: number;
+  price0In1: number;
+  totalValueIn0: number;
 };
 
 export type UniswapV3GraphQLTick = {
@@ -97,13 +97,13 @@ export function calculateTickInfo(
     token0.decimals,
     token1.decimals,
     isToken0Selected
-  );
+  ).toNumber();
   const maxPrice = tickToPrice(
     isToken0Selected ? maxTick : minTick,
     token0.decimals,
     token1.decimals,
     isToken0Selected
-  );
+  ).toNumber();
   return {
     minTick,
     maxTick,
@@ -264,16 +264,12 @@ export function tickToPrice(
 ): GN {
   const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
   const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
-  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
+  const priceX96JSBI = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
 
-  const priceX96Big = new Big(priceX96.toString(10));
+  const priceX96 = GN.fromJSBI(priceX96JSBI, 96, 2);
 
-  const decimalDiff = token0Decimals - token1Decimals;
-  const price0In1 = priceX96Big
-    .mul(10 ** decimalDiff)
-    .div(BIGQ96)
-    .toNumber();
-  const price1In0 = 1.0 / price0In1;
+  const price0In1 = priceX96;
+  const price1In0 = priceX96.reciprocal();
   return isInTermsOfToken0 ? price0In1 : price1In0;
 }
 
@@ -286,8 +282,8 @@ export function priceToTick(price0In1: number, token0Decimals: number, token1Dec
   return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
 }
 
-export function sqrtRatioToTick(sqrtRatioX96: Big): number {
-  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+export function sqrtRatioToTick(sqrtRatioX96: GN): number {
+  const sqrtRatioX96JSBI = sqrtRatioX96.toJSBI();
   return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
 }
 

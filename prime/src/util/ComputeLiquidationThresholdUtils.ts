@@ -1,6 +1,6 @@
-import Big from 'big.js';
 import JSBI from 'jsbi';
 import { FeeTier } from 'shared/lib/data/FeeTier';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { Address } from 'wagmi';
 
@@ -25,7 +25,7 @@ export type MarginAccountParams = {
   health: number;
   lender0: Address;
   lender1: Address;
-  iv: number;
+  iv: string;
 };
 
 export type CalculateLiquidationThresholdsParams = {
@@ -45,14 +45,16 @@ export type ComputeLiquidationThresholdsRequest = {
 export function stringifyMarginAccount(marginAccount: MarginAccount): MarginAccountParams {
   return {
     ...marginAccount,
-    sqrtPriceX96: marginAccount.sqrtPriceX96.toString(),
+    sqrtPriceX96: marginAccount.sqrtPriceX96.toString(GNFormat.INT),
+    iv: marginAccount.iv.toString(GNFormat.INT),
   };
 }
 
 export function parseMarginAccountParams(marginAccount: MarginAccountParams): MarginAccount {
   return {
     ...marginAccount,
-    sqrtPriceX96: new Big(marginAccount.sqrtPriceX96),
+    sqrtPriceX96: new GN(marginAccount.sqrtPriceX96, 96, 2),
+    iv: new GN(marginAccount.iv, 18, 10),
   };
 }
 

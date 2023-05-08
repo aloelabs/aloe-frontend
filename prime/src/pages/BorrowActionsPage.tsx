@@ -7,7 +7,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
@@ -48,7 +47,6 @@ import {
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
-const SUPPLY_SIGNIFICANT_DIGITS = 4;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
@@ -294,7 +292,9 @@ export default function BorrowActionsPage() {
       const fetchedMarketInfo = await fetchMarketInfoFor(
         lenderLensContract,
         marginAccount.lender0,
-        marginAccount.lender1
+        marginAccount.lender1,
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
       );
       if (mounted) setMarketInfo(fetchedMarketInfo);
     }
@@ -526,13 +526,13 @@ export default function BorrowActionsPage() {
   let utilization1 = marketInfo?.lender1Utilization;
   if (marketInfo && isShowingHypothetical) {
     utilization0 =
-      1 -
-        hypotheticalState.availableForBorrow.amount0 /
-          marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber() || 0;
+      GN.one(token0.decimals)
+        .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
+        .toNumber() || 0;
     utilization1 =
-      1 -
-        hypotheticalState.availableForBorrow.amount1 /
-          marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber() || 0;
+      GN.one(token1.decimals)
+        .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
+        .toNumber() || 0;
   }
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));
@@ -642,10 +642,7 @@ export default function BorrowActionsPage() {
             <MarketStatsGrid>
               <AccountStatsCard
                 label={`${token0.ticker} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token0.ticker}
                 showAsterisk={false}
               />
@@ -663,10 +660,7 @@ export default function BorrowActionsPage() {
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token1.ticker}
                 showAsterisk={false}
               />

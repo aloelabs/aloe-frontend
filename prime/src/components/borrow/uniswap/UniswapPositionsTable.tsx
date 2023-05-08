@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
 import { Text } from 'shared/lib/components/common/Typography';
-import { formatTokenAmount } from 'shared/lib/util/Numbers';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 
 import { UniswapPosition } from '../../../data/actions/Actions';
@@ -109,11 +109,11 @@ const StyledTableRows = styled.tr`
 `;
 
 type UniswapPositionInfo = {
-  value: number;
-  feesEarned: number;
-  lower: number;
-  upper: number;
-  current: number;
+  value: GN;
+  feesEarned: GN;
+  lower: GN;
+  upper: GN;
+  current: GN;
   positionKey: string;
 };
 
@@ -126,12 +126,13 @@ function calculateUniswapPositionInfo(
   isInTermsOfToken0: boolean
 ): UniswapPositionInfo {
   if (uniswapPosition.lower == null || uniswapPosition.upper == null) {
+    // TODO: check this
     return {
-      value: 0,
-      feesEarned: 0,
-      lower: 0,
-      upper: 0,
-      current: 0,
+      value: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
+      feesEarned: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
+      lower: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
+      upper: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
+      current: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
       positionKey: '',
     };
   }
@@ -141,8 +142,8 @@ function calculateUniswapPositionInfo(
     tickToPrice(uniswapPosition.lower, token0Decimals, token1Decimals, !isInTermsOfToken0),
     tickToPrice(uniswapPosition.upper, token0Decimals, token1Decimals, !isInTermsOfToken0),
   ];
-  const lowerPrice = Math.min(...priceBounds);
-  const upperPrice = Math.max(...priceBounds);
+  const lowerPrice = GN.min(...priceBounds);
+  const upperPrice = GN.max(...priceBounds);
   const currentPrice = tickToPrice(currentTick, token0Decimals, token1Decimals, !isInTermsOfToken0);
 
   // Getting the overall value of the position (includes both amount0 and amount1)
@@ -157,8 +158,12 @@ function calculateUniswapPositionInfo(
   const tickBounds = [uniswapPosition.lower, uniswapPosition.upper];
   const positionKey = uniswapPositionKey(accountAddress, Math.min(...tickBounds), Math.max(...tickBounds));
   return {
-    value: isInTermsOfToken0 ? valueInTermsOfToken1 * currentPrice : valueInTermsOfToken1,
-    feesEarned: 0,
+    // TODO: check this
+    value: isInTermsOfToken0
+      ? valueInTermsOfToken1.mul(currentPrice).setResolution(token0Decimals)
+      : valueInTermsOfToken1,
+    // TODO: check this
+    feesEarned: GN.zero(isInTermsOfToken0 ? token0Decimals : token1Decimals),
     lower: lowerPrice,
     upper: upperPrice,
     current: currentPrice,
@@ -221,8 +226,10 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     // We need to combine the positions with the same position key
     intermediatePositions.forEach((position: UniswapPositionInfo) => {
       if (positionInfoDict[position.positionKey]) {
-        positionInfoDict[position.positionKey].value += position.value;
-        positionInfoDict[position.positionKey].feesEarned += position.feesEarned;
+        positionInfoDict[position.positionKey].value = positionInfoDict[position.positionKey].value.add(position.value);
+        positionInfoDict[position.positionKey].feesEarned = positionInfoDict[position.positionKey].feesEarned.add(
+          position.feesEarned
+        );
       } else {
         positionInfoDict[position.positionKey] = position;
       }
@@ -243,11 +250,15 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     const selectedTokenTicker = selectedToken?.ticker ?? '';
     const valueText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.value) + ' ' + selectedTokenTicker}
+        {uniswapPositionInfo.value.toString(GNFormat.LOSSY_HUMAN) + ' ' + selectedTokenTicker}
       </Text>
     );
-    const token0FeesEarned = `${formatTokenAmount(fees?.token0FeesEarned || 0)} ${marginAccount.token0?.ticker || ''}`;
-    const token1FeesEarned = `${formatTokenAmount(fees?.token1FeesEarned || 0)} ${marginAccount.token1?.ticker || ''}`;
+    const token0FeesEarned = `${fees.token0FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${
+      marginAccount.token0?.ticker || ''
+    }`;
+    const token1FeesEarned = `${fees.token1FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${
+      marginAccount.token1?.ticker || ''
+    }`;
     const earnedFeesText = (
       <Text size='M' weight='medium'>
         {token0FeesEarned + ' ' + token1FeesEarned}
@@ -255,12 +266,12 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     );
     const lowerText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.lower) + ' ' + selectedTokenTicker}
+        {uniswapPositionInfo.lower.toString(GNFormat.LOSSY_HUMAN) + ' ' + selectedTokenTicker}
       </Text>
     );
     const upperText = (
       <Text size='M' weight='medium'>
-        {formatTokenAmount(uniswapPositionInfo.upper) + ' ' + selectedTokenTicker}
+        {uniswapPositionInfo.upper.toString(GNFormat.LOSSY_HUMAN) + ' ' + selectedTokenTicker}
       </Text>
     );
     const isInRange =
