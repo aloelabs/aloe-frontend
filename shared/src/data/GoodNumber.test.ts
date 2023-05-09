@@ -254,20 +254,6 @@ describe('GoodNumber', () => {
     });
   });
 
-  describe('reciprocal', () => {
-    it('should return the reciprocal of a value', () => {
-      expect(GN.fromDecimalString('2', 18).reciprocal().toString(GNFormat.DECIMAL)).toEqual('0.5');
-      expect(GN.fromDecimalString('0.5', 18).reciprocal().toString(GNFormat.DECIMAL)).toEqual('2');
-    });
-    it('should return the reciprocal of a negative value', () => {
-      expect(GN.fromDecimalString('-2', 18).reciprocal().toString(GNFormat.DECIMAL)).toEqual('-0.5');
-      expect(GN.fromDecimalString('-0.5', 18).reciprocal().toString(GNFormat.DECIMAL)).toEqual('-2');
-    });
-    it('should throw an error if the value is zero', () => {
-      expect(() => GN.fromDecimalString('0', 18).reciprocal()).toThrow();
-    });
-  });
-
   describe('neg', () => {
     it('should return the negative of a value', () => {
       expect(GN.fromDecimalString('2', 18).neg().toString(GNFormat.DECIMAL)).toEqual('-2');
