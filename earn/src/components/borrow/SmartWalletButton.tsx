@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import { getProminentColor, rgba } from '../../util/Colors';
+import useProminentColor from '../../data/hooks/UseProminentColor';
+import { rgba } from '../../util/Colors';
 import TokenPairIcons from '../common/TokenPairIcons';
 
 export const Container = styled.button.attrs((props: { backgroundGradient: string; active: boolean }) => props)`
@@ -47,24 +48,8 @@ export type SmartWalletButtonProps = {
 
 export default function SmartWalletButton(props: SmartWalletButtonProps) {
   const { token0, token1, isActive, onClick } = props;
-  const [token0Color, setToken0Color] = useState<string>('');
-  const [token1Color, setToken1Color] = useState<string>('');
-  useEffect(() => {
-    let mounted = true;
-    getProminentColor(token0.logoURI || '').then((color) => {
-      if (mounted) {
-        setToken0Color(color);
-      }
-    });
-    getProminentColor(token1.logoURI || '').then((color) => {
-      if (mounted) {
-        setToken1Color(color);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  });
+  const token0Color = useProminentColor(token0.logoURI);
+  const token1Color = useProminentColor(token1.logoURI);
   // Create the variables for the gradients.
   const buttonBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
