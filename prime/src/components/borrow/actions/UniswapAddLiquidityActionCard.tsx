@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
 import { Address, useProvider } from 'wagmi';
 
@@ -265,27 +266,20 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let max1 = accountState.assets.token1Raw;
   // If token1 is selected, we need to swap the max amounts
   if (!isToken0Selected) [max0, max1] = [max1, max0];
-  const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
-  const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
+  const maxString0 = max0.toString(GNFormat.DECIMAL);
+  const maxString1 = max1.toString(GNFormat.DECIMAL);
 
   const ticksAreDefined = previousLower != null && previousUpper != null && currentTick != null;
   const tickIncrement = (tickInfo && (isToken0Selected ? tickInfo.tickSpacing : -tickInfo.tickSpacing)) ?? null;
 
-  let prices: number[] | null = null;
+  let prices: GN[] | null = null;
   if (ticksAreDefined) {
-    prices = [
-      tickToPrice(previousLower!, token0.decimals, token1.decimals, isToken0Selected),
-      tickToPrice(previousUpper!, token0.decimals, token1.decimals, isToken0Selected),
-    ].sort();
+    prices = [tickToPrice(previousLower!), tickToPrice(previousUpper!)].sort();
   }
 
   const lowerSteppedInput = (
     <SteppedInput
-      value={
-        previousLower == null
-          ? ''
-          : tickToPrice(previousLower, token0.decimals, token1.decimals, isToken0Selected).toString(10)
-      }
+      value={previousLower == null ? '' : tickToPrice(previousLower).toString(GNFormat.DECIMAL)}
       label={isToken0Selected ? 'Min Price' : 'Max Price'}
       token0={token0}
       token1={token1}
@@ -328,11 +322,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   const upperSteppedInput = (
     <SteppedInput
-      value={
-        previousUpper == null
-          ? ''
-          : tickToPrice(previousUpper, token0.decimals, token1.decimals, isToken0Selected).toString(10)
-      }
+      value={previousUpper == null ? '' : tickToPrice(previousUpper).toString(GNFormat.DECIMAL)}
       label={isToken0Selected ? 'Max Price' : 'Min Price'}
       token0={token0}
       token1={token1}
@@ -401,9 +391,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       ) : (
         <LiquidityChart
           data={chartData}
-          rangeStart={prices![0]}
-          rangeEnd={prices![1]}
-          currentPrice={tickToPrice(currentTick, token0.decimals, token1.decimals, isToken0Selected)}
+          rangeStart={prices![0].toNumber()}
+          rangeEnd={prices![1].toNumber()}
+          currentPrice={tickToPrice(currentTick).toNumber()}
         />
       )}
       <div className='flex flex-row gap-2 mb-4'>

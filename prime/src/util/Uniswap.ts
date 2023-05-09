@@ -481,8 +481,8 @@ export function getValueOfLiquidity(
 }
 
 export function getOutputForSwap(
-  priceX96: Big,
-  amount: string,
+  priceX96: GN,
+  amount: GN,
   isInputToken0: boolean,
   inputDecimals: number,
   outputDecimals: number,
