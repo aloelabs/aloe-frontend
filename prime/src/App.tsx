@@ -146,6 +146,10 @@ function App() {
     let mounted = true;
     async function fetch() {
       try {
+        if (process.env.REACT_APP_DISABLE_GEO_FENCING === 'true' && mounted) {
+          setGeoFencingResponse({ isAllowed: true });
+          return;
+        }
         const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
         if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
       } catch (error) {
