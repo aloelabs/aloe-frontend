@@ -1,5 +1,4 @@
 import { ethers } from 'ethers';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { WagmiConfig, chain, createClient, configureChains } from 'wagmi';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { InjectedConnector } from 'wagmi/connectors/injected';
@@ -7,6 +6,8 @@ import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
+
+import { DEFAULT_CHAIN } from '../data/constants/Values';
 
 function fallbackProvider({ chainId }: { chainId?: number }) {
   const targetChain = Object.values(chain).find((v) => v.id === chainId) || DEFAULT_CHAIN;
