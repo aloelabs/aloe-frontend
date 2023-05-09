@@ -37,12 +37,14 @@ const Container = styled.div`
 
 const PositionList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
+  justify-items: space-between;
 `;
 
 const UniswapPositionCardContainer = styled.div`
   width: 100%;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 8px;
