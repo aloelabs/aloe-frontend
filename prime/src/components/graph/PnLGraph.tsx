@@ -16,6 +16,7 @@ import {
 import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -23,7 +24,7 @@ import tw from 'twin.macro';
 import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
-import { getAssets, priceToSqrtRatio, sqrtRatioToPrice } from '../../data/BalanceSheet';
+import { getAssets } from '../../data/BalanceSheet';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { TOPIC0_MODIFY_EVENT } from '../../data/constants/Signatures';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
@@ -75,38 +76,19 @@ export function formatNumberRelativeToSize(value: number): string {
   return Math.abs(value) < 10 ? value.toFixed(6) : value.toFixed(2);
 }
 
-function calculatePnL1(
-  marginAccount: MarginAccount,
-  uniswapPositions: UniswapPosition[],
-  price: number,
-  initialValue = 0
-): number {
-  const sqrtPriceX96 = priceToSqrtRatio(price, marginAccount.token0.decimals, marginAccount.token1.decimals);
-  const assets = getAssets(
-    marginAccount.assets,
-    uniswapPositions,
-    sqrtPriceX96,
-    sqrtPriceX96,
-    sqrtPriceX96,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
-  );
-  return (
-    (assets.fixed0 + assets.fluid0C) * price +
-    assets.fixed1 +
-    assets.fluid1C -
-    (marginAccount.liabilities.amount0 * price + marginAccount.liabilities.amount1 + initialValue)
-  );
+function priceToNumber(price: GN, scaler: number, inTermsOfToken0 = false) {
+  const priceNumber = price.toBigNumber().mul(scaler).toNumber();
+  return inTermsOfToken0 ? 1 / priceNumber : priceNumber;
 }
 
-function calculatePnL0(
+function calculatePnL(
   marginAccount: MarginAccount,
   uniswapPositions: UniswapPosition[],
-  price: number,
+  priceX96: GN,
+  inTermsOfToken0: boolean,
   initialValue = 0
 ): number {
-  const invertedPrice = 1 / price;
-  const sqrtPriceX96 = priceToSqrtRatio(invertedPrice, marginAccount.token0.decimals, marginAccount.token1.decimals);
+  const sqrtPriceX96 = priceX96.sqrt();
   const assets = getAssets(
     marginAccount.assets,
     uniswapPositions,
@@ -116,12 +98,15 @@ function calculatePnL0(
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
-  return (
-    (assets.fixed1 + assets.fluid1C) * price +
-    assets.fixed0 +
-    assets.fluid0C -
-    (marginAccount.liabilities.amount1 * price + marginAccount.liabilities.amount0 + initialValue)
-  );
+
+  const assets0 = assets.fixed0.add(assets.fluid0C).sub(marginAccount.liabilities.amount0);
+  const assets1 = assets.fixed1.add(assets.fluid1C).sub(marginAccount.liabilities.amount1);
+
+  const value = inTermsOfToken0
+    ? assets0.add(assets1.setResolution(marginAccount.token0.decimals).div(priceX96))
+    : assets0.setResolution(marginAccount.token1.decimals).mul(priceX96).add(assets1);
+
+  return value.toNumber() - initialValue;
 }
 
 /**
@@ -262,7 +247,7 @@ export default function PnLGraph(props: PnLGraphProps) {
   const { activeChain } = useContext(ChainContext);
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
-  const [priceAtLastUpdate, setPriceAtLastUpdate] = useState<number | null>(null);
+  const [priceAtLastUpdate, setPriceAtLastUpdate] = useState<GN | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -286,11 +271,7 @@ export default function PnLGraph(props: PnLGraphProps) {
         return parseInt(curr.timeStamp, 16) > parseInt(prev.timeStamp, 16) ? curr : prev;
       });
       const mostRecentEventData: number = ethers.utils.defaultAbiCoder.decode(['int24'], mostRecentEvent.data)[0];
-      const mostRecentPrice = tickToPrice(
-        mostRecentEventData,
-        marginAccount.token0.decimals,
-        marginAccount.token1.decimals
-      );
+      const mostRecentPrice = tickToPrice(mostRecentEventData);
       if (mounted) {
         setPriceAtLastUpdate(mostRecentPrice);
       }
@@ -299,45 +280,37 @@ export default function PnLGraph(props: PnLGraphProps) {
     return () => {
       mounted = false;
     };
-  }, [
-    activeChain,
-    activeChain.id,
-    marginAccount.address,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals,
-  ]);
+  }, [activeChain, activeChain.id, marginAccount.address]);
 
-  let currentPrice = marginAccount.sqrtPriceX96.square();
-  let previousPrice = priceAtLastUpdate || currentPrice;
+  const scaler = 10 ** (marginAccount.token0.decimals - marginAccount.token1.decimals);
+  let currentPrice = marginAccount.sqrtPriceX96.square(); //.toDecimalBig().mul(scaler).toNumber();
+  let previousPrice = priceAtLastUpdate ?? currentPrice; //?.toDecimalBig().mul(scaler).toNumber() ?? currentPrice;
 
   // If we're showing hypothetical, we want to use the current price as the price at the last update
   if (isShowingHypothetical) previousPrice = currentPrice;
 
-  if (inTermsOfToken0) {
-    currentPrice = 1 / currentPrice;
-    previousPrice = 1 / previousPrice;
-  }
-  const priceA = Math.min(currentPrice, previousPrice) / PLOT_X_SCALE;
-  const priceB = Math.max(currentPrice, previousPrice) * PLOT_X_SCALE;
+  const priceA = GN.min(currentPrice, previousPrice).recklessDiv(PLOT_X_SCALE);
+  const priceB = GN.max(currentPrice, previousPrice).recklessMul(PLOT_X_SCALE);
 
-  const calculatePnL = inTermsOfToken0 ? calculatePnL0 : calculatePnL1;
   const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
   const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
   // Offset the initial value by the borrowInterest and swapFees
   const initialValue =
-    calculatePnL(marginAccount, uniswapPositions, previousPrice) - numericBorrowInterest - numericSwapFees;
+    calculatePnL(marginAccount, uniswapPositions, previousPrice, inTermsOfToken0) -
+    numericBorrowInterest -
+    numericSwapFees;
 
   function calculateGraphData(): Array<PnLEntry> {
     let P = priceA;
     let updatedData = [];
-    while (P < priceB) {
+    while (P.lt(priceB)) {
       updatedData.push({
-        x: P,
-        y: calculatePnL(marginAccount, uniswapPositions, P, initialValue),
+        x: priceToNumber(P, scaler, inTermsOfToken0),
+        y: calculatePnL(marginAccount, uniswapPositions, P, inTermsOfToken0, initialValue),
       });
-      P *= 1.005;
+      P = P.recklessMul(1.005);
     }
-    return updatedData;
+    return inTermsOfToken0 ? updatedData.reverse() : updatedData;
   }
 
   useDebouncedEffect(
@@ -362,10 +335,10 @@ export default function PnLGraph(props: PnLGraphProps) {
   const liquidationLower = liquidationThresholds?.lower ?? 0;
   const liquidationUpper = liquidationThresholds?.upper ?? Infinity;
 
-  const tickSpacing = (priceB - priceA) / NUM_TICKS;
-  const ticks = [priceA + tickSpacing / 2];
+  const tickSpacing = priceB.sub(priceA).recklessDiv(NUM_TICKS);
+  let ticks = [priceA.add(tickSpacing.recklessDiv(2))];
   for (let i = 1; i < NUM_TICKS; i += 1) {
-    ticks.push(ticks[i - 1] + tickSpacing);
+    ticks.push(ticks[i - 1].add(tickSpacing));
   }
 
   const gradientOffset = () => {
@@ -418,7 +391,7 @@ export default function PnLGraph(props: PnLGraphProps) {
                 tickLine={false}
                 tickCount={5}
                 interval={0}
-                ticks={ticks}
+                ticks={ticks.map((tick) => priceToNumber(tick, scaler, inTermsOfToken0))}
                 tickFormatter={(value: number) => {
                   return formatNumberRelativeToSize(value);
                 }}
@@ -462,8 +435,16 @@ export default function PnLGraph(props: PnLGraphProps) {
               <ReferenceArea x1={data[0].x} x2={liquidationLower} fill='rgba(114, 167, 246, 0.5)' />
               <ReferenceLine x={liquidationUpper} stroke='rgb(114, 167, 246)' strokeWidth={2} />
               <ReferenceArea x1={liquidationUpper} x2={data[data.length - 1].x} fill='rgba(114, 167, 246, 0.5)' />
-              <ReferenceLine x={currentPrice} stroke='rgb(255, 255, 255)' strokeWidth={2} />
-              <ReferenceLine x={previousPrice} stroke={SECONDARY_COLOR} strokeWidth={2} />
+              <ReferenceLine
+                x={priceToNumber(currentPrice, scaler, inTermsOfToken0)}
+                stroke='rgb(255, 255, 255)'
+                strokeWidth={2}
+              />
+              <ReferenceLine
+                x={priceToNumber(previousPrice, scaler, inTermsOfToken0)}
+                stroke={SECONDARY_COLOR}
+                strokeWidth={2}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </Container>

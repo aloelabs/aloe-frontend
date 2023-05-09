@@ -6,7 +6,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { chain } from 'wagmi';
@@ -484,23 +484,15 @@ export function getOutputForSwap(
   priceX96: GN,
   amount: GN,
   isInputToken0: boolean,
-  inputDecimals: number,
   outputDecimals: number,
-  slippage: number
+  slippage: string
 ): string {
-  return isInputToken0
-    ? new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(priceX96)
-        .div(2 ** 96)
-        .div(10 ** outputDecimals)
-        .toString()
-    : new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(2 ** 96)
-        .div(priceX96)
-        .div(10 ** outputDecimals)
-        .toString();
+  // We use resolution of 5 to get basis-points resolution
+  const slippageFactor = GN.one(5).sub(GN.fromDecimalString(slippage, 5));
+
+  if (isInputToken0) {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).mul(priceX96).toString(GNFormat.DECIMAL);
+  } else {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).div(priceX96).toString(GNFormat.DECIMAL);
+  }
 }

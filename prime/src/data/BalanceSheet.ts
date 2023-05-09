@@ -101,22 +101,6 @@ function _computeSolvencyBasics(
   };
 }
 
-export function sqrtRatioToPrice(sqrtPriceX96: Big, token0Decimals: number, token1Decimals: number): number {
-  return sqrtPriceX96
-    .mul(sqrtPriceX96)
-    .div(BIGQ96)
-    .div(BIGQ96)
-    .mul(10 ** (token0Decimals - token1Decimals))
-    .toNumber();
-}
-
-export function priceToSqrtRatio(price: number, token0Decimals: number, token1Decimals: number): Big {
-  return new Big(price)
-    .mul(10 ** (token1Decimals - token0Decimals))
-    .sqrt()
-    .mul(BIGQ96);
-}
-
 export function getAssets(
   assets: Assets,
   uniswapPositions: readonly UniswapPosition[],
