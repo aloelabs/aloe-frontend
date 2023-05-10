@@ -8,6 +8,7 @@ import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice } from '../..
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 import { UniswapPosition } from '../../data/Uniswap';
+import Tooltip from '../common/Tooltip';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;
@@ -109,9 +110,18 @@ function HealthMetricCard(props: { health: number }) {
   const healthColor = getHealthColor(health);
   return (
     <HorizontalMetricCardContainer>
-      <Text size='M' color={BORROW_TITLE_TEXT_COLOR}>
-        Health
-      </Text>
+      <div className='flex items-center gap-2'>
+        <Text size='M' color={BORROW_TITLE_TEXT_COLOR}>
+          Health
+        </Text>
+        <Tooltip
+          buttonSize='S'
+          content={`Health is a measure of how close your account is to being liquidated.
+              It is calculated by dividing your account's assets by its liabilities.
+              If your health is at or below 1.0, your account may be liquidated.`}
+          position='top-center'
+        />
+      </div>
       <div className='flex items-center gap-2'>
         <Display size='S' color={healthColor}>
           {healthLabel}
@@ -226,8 +236,8 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
         <HealthMetricCard health={marginAccount.health || 0} />
         <HorizontalMetricCard label='Liquidation Distance' value={liquidationDistanceText} />
         <HorizontalMetricCard
-          label='Daily Interest'
-          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.symbol} + ${formatTokenAmount(
+          label='Daily Interest (-)'
+          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.ticker} + ${formatTokenAmount(
             dailyInterest1,
             2
           )} ${marginAccount.token1.symbol}`}
