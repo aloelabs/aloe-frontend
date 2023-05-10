@@ -388,8 +388,8 @@ export default function BorrowActionsPage() {
       const token0Decimals = marginAccount.token0.decimals;
       const token1Decimals = marginAccount.token1.decimals;
       const selectedToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
-      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue ?? '0', selectedToken.decimals);
-      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue ?? '0', selectedToken.decimals);
+      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue || '0', selectedToken.decimals);
+      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue || '0', selectedToken.decimals);
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,

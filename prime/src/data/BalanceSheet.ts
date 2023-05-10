@@ -179,8 +179,8 @@ export function isSolvent(
     assetsB,
     liabilitiesA,
     liabilitiesB,
-    atA: assetsA >= liabilitiesA,
-    atB: assetsB >= liabilitiesB,
+    atA: assetsA.gte(liabilitiesA),
+    atB: assetsB.gte(liabilitiesB),
     health: Math.min(healthA, healthB),
   };
 }
