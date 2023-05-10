@@ -3,6 +3,8 @@ import { chain } from 'wagmi';
 import { ArbitrumLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
 
+export const BRIDGE_SUPPORTED_CHAINS = [chain.mainnet, chain.optimism, chain.arbitrum];
+
 export const SUPPORTED_CHAINS = [chain.goerli, chain.optimism, chain.arbitrum];
 
 export const CHAIN_LOGOS = {

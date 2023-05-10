@@ -171,18 +171,18 @@ export async function getAvailableLendingPairs(
       chain.id,
       kitty0Address as Address,
       token0.decimals,
-      `${token0.ticker}+`,
+      `${token0.symbol}+`,
       `Aloe II ${token0.name}`,
-      token0.iconPath,
+      token0.logoURI,
       token0
     );
     const kitty1 = new Kitty(
       chain.id,
       kitty1Address as Address,
       token1.decimals,
-      `${token1.ticker}+`,
+      `${token1.symbol}+`,
       `Aloe II ${token1.name}`,
-      token1.iconPath,
+      token1.logoURI,
       token1
     );
 

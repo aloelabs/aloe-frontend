@@ -149,7 +149,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
       return {
-        label: `${lendingPair.token0.ticker || ''}/${lendingPair.token1.ticker || ''}`,
+        label: `${lendingPair.token0.symbol || ''}/${lendingPair.token1.symbol || ''}`,
         value: lendingPair,
       };
     });
@@ -239,7 +239,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
                 {formatTokenAmount(activeTotalSupply)}
               </Display>
               <Display size='S' className='inline-block ml-0.5'>
-                {activeAsset?.ticker || ''}
+                {activeAsset?.symbol || ''}
               </Display>
             </div>
           </LargeCardBodyItem>

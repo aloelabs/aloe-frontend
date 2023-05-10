@@ -216,19 +216,19 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     <MetricsGrid>
       <MetricsGridUpper>
         <MetricCard
-          label={`${marginAccount.token0.ticker} Collateral`}
+          label={`${marginAccount.token0.symbol} Collateral`}
           value={formatTokenAmount(token0Collateral, 3)}
         />
         <MetricCard
-          label={`${marginAccount.token1.ticker} Collateral`}
+          label={`${marginAccount.token1.symbol} Collateral`}
           value={formatTokenAmount(token1Collateral, 3)}
         />
         <MetricCard
-          label={`${marginAccount.token0.ticker} Borrows`}
+          label={`${marginAccount.token0.symbol} Borrows`}
           value={formatTokenAmount(marginAccount.liabilities.amount0 || 0, 3)}
         />
         <MetricCard
-          label={`${marginAccount.token1.ticker} Borrows`}
+          label={`${marginAccount.token1.symbol} Borrows`}
           value={formatTokenAmount(marginAccount.liabilities.amount1 || 0, 3)}
         />
       </MetricsGridUpper>
@@ -240,7 +240,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
           value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.ticker} + ${formatTokenAmount(
             dailyInterest1,
             2
-          )} ${marginAccount.token1.ticker}`}
+          )} ${marginAccount.token1.symbol}`}
         />
       </MetricsGridLower>
     </MetricsGrid>

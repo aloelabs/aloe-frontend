@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import {
   BodyDivider,
@@ -13,12 +13,14 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
+import { useAccount } from 'wagmi';
 
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import useProminentColor from '../../data/hooks/UseProminentColor';
 import { LendingPair } from '../../data/LendingPair';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { getBrighterColor, rgb, rgba } from '../../util/Colors';
 import TokenPairIcons from '../common/TokenPairIcons';
 import LendTokenInfo from './LendTokenInfo';
 import ContractLinksModal from './modal/ContractLinksModal';
@@ -49,6 +51,10 @@ const CardActionButton = styled.button`
       stroke: rgba(51, 60, 66, 255);
     }
   }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 `;
 
 function EditPositionButton(props: { Icon: React.ReactChild; onClick?: () => void; disabled?: boolean }) {
@@ -72,24 +78,9 @@ export default function LendPairCard(props: LendPairCardProps) {
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] = useState<boolean>(false);
   const [isContractLinksModalOpen, setIsContractLinksModalOpen] = useState<boolean>(false);
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
-  const [token0Color, setToken0Color] = useState<string>('');
-  const [token1Color, setToken1Color] = useState<string>('');
-  useEffect(() => {
-    let mounted = true;
-    getProminentColor(token0.iconPath || '').then((color) => {
-      if (mounted) {
-        setToken0Color(color);
-      }
-    });
-    getProminentColor(token1.iconPath || '').then((color) => {
-      if (mounted) {
-        setToken1Color(color);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  });
+  const token0Color = useProminentColor(token0.logoURI);
+  const token1Color = useProminentColor(token1.logoURI);
+  const { address: accountAddress } = useAccount();
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,
@@ -119,7 +110,7 @@ export default function LendPairCard(props: LendPairCardProps) {
         <CardTitleWrapper backgroundGradient={cardTitleBackgroundGradient}>
           <div className='flex items-center gap-2'>
             <Display size='M' weight='semibold'>
-              {token0.ticker} / {token1.ticker}
+              {token0.symbol} / {token1.symbol}
             </Display>
             <button onClick={() => setIsContractLinksModalOpen(true)}>
               <MoreIcon width={20} height={20} />
@@ -127,8 +118,8 @@ export default function LendPairCard(props: LendPairCardProps) {
           </div>
           <CardSubTitleWrapper>
             <TokenPairIcons
-              token0IconPath={token0.iconPath}
-              token1IconPath={token1.iconPath}
+              token0IconPath={token0.logoURI}
+              token1IconPath={token1.logoURI}
               token0AltText={`${token0.name}'s Icon`}
               token1AltText={`${token1.name}'s Icon`}
             />
@@ -139,7 +130,7 @@ export default function LendPairCard(props: LendPairCardProps) {
           <CustomBodySubContainer>
             <div className='flex items-center gap-3'>
               <Text size='M' weight='medium'>
-                {token0?.ticker}+
+                {token0?.symbol}+
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
@@ -154,6 +145,7 @@ export default function LendPairCard(props: LendPairCardProps) {
                 onClick={() => {
                   setIsEditToken0PositionModalOpen(true);
                 }}
+                disabled={!accountAddress}
               />
             )}
           </CustomBodySubContainer>
@@ -161,7 +153,7 @@ export default function LendPairCard(props: LendPairCardProps) {
           <CustomBodySubContainer>
             <div className='flex items-center gap-3'>
               <Text size='M' weight='medium'>
-                {token1?.ticker}+
+                {token1?.symbol}+
               </Text>
               <TokenAPYWrapper>
                 <Text size='S' weight='medium'>
@@ -176,6 +168,7 @@ export default function LendPairCard(props: LendPairCardProps) {
                 onClick={() => {
                   setIsEditToken1PositionModalOpen(true);
                 }}
+                disabled={!accountAddress}
               />
             )}
           </CustomBodySubContainer>

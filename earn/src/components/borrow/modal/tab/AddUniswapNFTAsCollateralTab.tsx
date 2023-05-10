@@ -119,13 +119,13 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
     <UniswapNFTPositionButtonWrapper onClick={onClick} active={isActive}>
       <div className='flex items-center gap-4'>
         <TokenPairIcons
-          token0IconPath={token0.iconPath}
-          token1IconPath={token1.iconPath}
+          token0IconPath={token0.logoURI}
+          token1IconPath={token1.logoURI}
           token0AltText={`${token0.name}'s Icon`}
           token1AltText={`${token1.name}'s Icon`}
         />
         <Display size='S' weight='semibold'>
-          {token0.ticker} / {token1.ticker}
+          {token0.symbol} / {token1.symbol}
         </Display>
       </div>
       <div className='flex flex-col items-start gap-1'>
@@ -133,13 +133,13 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
           Total Liquidity:
         </Text>
         <Display size='S' weight='semibold'>
-          {truncateDecimals(liquidityAmount.toString(), 6)} {token1.ticker}
+          {truncateDecimals(liquidityAmount.toString(), 6)} {token1.symbol}
         </Display>
       </div>
       <div className='flex items-center gap-4'>
         <Text size='S' color={SECONDARY_COLOR}>
-          Min: {truncateDecimals(minPrice.toString(), 3)} {token1.ticker} per {token0.ticker} - Max:{' '}
-          {truncateDecimals(maxPrice.toString(), 3)} {token1.ticker} per {token0.ticker}
+          Min: {truncateDecimals(minPrice.toString(), 3)} {token1.symbol} per {token0.symbol} - Max:{' '}
+          {truncateDecimals(maxPrice.toString(), 3)} {token1.symbol} per {token0.symbol}
         </Text>
       </div>
     </UniswapNFTPositionButtonWrapper>
