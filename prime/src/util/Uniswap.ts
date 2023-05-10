@@ -480,6 +480,15 @@ export function getValueOfLiquidity(
   return GN.fromJSBI(value, token1Decimals);
 }
 
+/**
+ *
+ * @param priceX96 the price of the input token in terms of the output token
+ * @param amount the amount of the input token
+ * @param isInputToken0 true if the input token is token0, false otherwise
+ * @param outputDecimals the number of decimals of the output token
+ * @param slippage a string representing the slippage in percentage (0.0-100.0)
+ * @returns the amount of the output token
+ */
 export function getOutputForSwap(
   priceX96: GN,
   amount: GN,
@@ -488,7 +497,7 @@ export function getOutputForSwap(
   slippage: string
 ): string {
   // We use resolution of 5 to get basis-points resolution
-  const slippageFactor = GN.one(5).sub(GN.fromDecimalString(slippage, 5));
+  const slippageFactor = GN.one(5).sub(GN.fromDecimalString(slippage, 5).recklessDiv(100));
 
   if (isInputToken0) {
     return amount.mul(slippageFactor).setResolution(outputDecimals).mul(priceX96).toString(GNFormat.DECIMAL);

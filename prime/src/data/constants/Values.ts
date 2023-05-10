@@ -12,6 +12,7 @@ export const API_URL = 'https://api.aloe.capital';
 export const API_GEO_FENCING_URL = 'https://geo-fencing.aloe.capital/v1/verify';
 export const GAS_ESTIMATION_SCALING = 1.1;
 export const DEFAULT_ADD_LIQUIDITY_SLIPPAGE_PERCENTAGE = 0.5;
+export const DEFAULT_SLIPPAGE_PERCENTAGE = '0.50';
 export const Q48 = BigNumber.from('0x1000000000000');
 export const Q96 = BigNumber.from('0x1000000000000000000000000');
 export const BIGQ96 = toBig(Q96);
