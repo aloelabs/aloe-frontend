@@ -22,11 +22,11 @@ function _computeProbePrices(sqrtMeanPriceX96: GN, sigma: GN): [GN, GN] {
 
   sigma = sigma.recklessMul(ALOE_II_SIGMA_SCALER);
 
-  let a = sqrtMeanPriceX96.mul(ONE.sub(sigma).sqrt()).recklessDiv('1e9');
-  let b = sqrtMeanPriceX96.mul(ONE.add(sigma).sqrt()).recklessDiv('1e9');
+  let a = sqrtMeanPriceX96.mul(ONE.sub(sigma).sqrt());
+  let b = sqrtMeanPriceX96.mul(ONE.add(sigma).sqrt());
 
-  if (a.lt(MIN_SQRT_RATIO)) a = MIN_SQRT_RATIO;
-  if (b.gt(MAX_SQRT_RATIO)) b = MAX_SQRT_RATIO;
+  if (a.lt(MIN_SQRT_RATIO)) a = MIN_SQRT_RATIO.recklessAdd(1);
+  if (b.gt(MAX_SQRT_RATIO)) b = MAX_SQRT_RATIO.recklessSub(1);
 
   return [a, b];
 }
@@ -316,6 +316,11 @@ export function maxWithdraws(
   return [maxNewWithdraws0, maxNewWithdraws1];
 }
 
+function priceToNumber(price: GN, scaler: number, inTermsOfToken0 = false) {
+  const priceNumber = price.toDecimalBig().mul(scaler).toNumber();
+  return inTermsOfToken0 ? 1 / priceNumber : priceNumber;
+}
+
 export function computeLiquidationThresholds(
   assets: Assets,
   liabilities: Liabilities,
@@ -334,17 +339,18 @@ export function computeLiquidationThresholds(
     upper: 0,
   };
 
-  const MINPRICE = MIN_SQRT_RATIO.recklessMul('123').recklessDiv('100');
-  const MAXPRICE = MAX_SQRT_RATIO.recklessDiv('123').recklessMul('100');
+  const BOUND_L = MIN_SQRT_RATIO.recklessMul('123').recklessDiv('100');
+  const BOUND_R = MAX_SQRT_RATIO.recklessDiv('123').recklessMul('100');
+  const scaler = 10 ** (token0Decimals - token1Decimals);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, MINPRICE, iv, token0Decimals, token1Decimals);
+  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, BOUND_L, iv, token0Decimals, token1Decimals);
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
-    result.lower = MINPRICE.square().toNumber();
+    result.lower = priceToNumber(BOUND_L.square(), scaler, false);
   } else {
     // Start binary search
-    let lowerBoundSqrtPrice = MINPRICE;
+    let lowerBoundSqrtPrice = BOUND_L;
     let upperBoundSqrtPrice = sqrtPriceX96;
     let searchPrice = zero;
     for (let i = 0; i < iterations; i++) {
@@ -372,18 +378,18 @@ export function computeLiquidationThresholds(
         upperBoundSqrtPrice = searchPrice;
       }
     }
-    result.lower = searchPrice.square().toNumber();
+    result.lower = priceToNumber(searchPrice.square(), scaler, false);
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, MAXPRICE, iv, token0Decimals, token1Decimals);
+  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, BOUND_R, iv, token0Decimals, token1Decimals);
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
-    result.upper = MAXPRICE.square().toNumber();
+    result.upper = BOUND_R.square().toNumber();
   } else {
     // Start binary search
     let lowerBoundSqrtPrice = sqrtPriceX96;
-    let upperBoundSqrtPrice = MAXPRICE;
+    let upperBoundSqrtPrice = BOUND_R;
     let searchPrice = zero;
     for (let i = 0; i < iterations; i++) {
       const prevSearchPrice = searchPrice;
@@ -410,7 +416,7 @@ export function computeLiquidationThresholds(
         lowerBoundSqrtPrice = searchPrice;
       }
     }
-    result.upper = searchPrice.square().toNumber();
+    result.upper = priceToNumber(searchPrice.square(), scaler, false);
   }
 
   return result;
