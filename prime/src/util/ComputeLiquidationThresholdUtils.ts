@@ -5,12 +5,24 @@ import { Token } from 'shared/lib/data/Token';
 import { Address } from 'wagmi';
 
 import { UniswapPosition } from '../data/actions/Actions';
-import { Assets, Liabilities, MarginAccount } from '../data/MarginAccount';
+import { MarginAccount } from '../data/MarginAccount';
 
 export type UniswapPositionParams = {
   lower: number;
   upper: number;
   liquidity: string;
+};
+
+export type AssetsParams = {
+  token0Raw: string;
+  token1Raw: string;
+  uni0: string;
+  uni1: string;
+};
+
+export type LiabilitiesParams = {
+  amount0: string;
+  amount1: string;
 };
 
 export type MarginAccountParams = {
@@ -19,8 +31,8 @@ export type MarginAccountParams = {
   token0: Token;
   token1: Token;
   feeTier: FeeTier;
-  assets: Assets;
-  liabilities: Liabilities;
+  assets: AssetsParams;
+  liabilities: LiabilitiesParams;
   sqrtPriceX96: string;
   health: number;
   lender0: Address;
@@ -45,6 +57,16 @@ export type ComputeLiquidationThresholdsRequest = {
 export function stringifyMarginAccount(marginAccount: MarginAccount): MarginAccountParams {
   return {
     ...marginAccount,
+    assets: {
+      token0Raw: marginAccount.assets.token0Raw.toString(GNFormat.INT),
+      token1Raw: marginAccount.assets.token1Raw.toString(GNFormat.INT),
+      uni0: marginAccount.assets.uni0.toString(GNFormat.INT),
+      uni1: marginAccount.assets.uni1.toString(GNFormat.INT),
+    },
+    liabilities: {
+      amount0: marginAccount.liabilities.amount0.toString(GNFormat.INT),
+      amount1: marginAccount.liabilities.amount1.toString(GNFormat.INT),
+    },
     sqrtPriceX96: marginAccount.sqrtPriceX96.toString(GNFormat.INT),
     iv: marginAccount.iv.toString(GNFormat.INT),
   };
@@ -53,6 +75,16 @@ export function stringifyMarginAccount(marginAccount: MarginAccount): MarginAcco
 export function parseMarginAccountParams(marginAccount: MarginAccountParams): MarginAccount {
   return {
     ...marginAccount,
+    assets: {
+      token0Raw: new GN(marginAccount.assets.token0Raw, marginAccount.token0.decimals, 10),
+      token1Raw: new GN(marginAccount.assets.token1Raw, marginAccount.token1.decimals, 10),
+      uni0: new GN(marginAccount.assets.uni0, marginAccount.token0.decimals, 10),
+      uni1: new GN(marginAccount.assets.uni1, marginAccount.token1.decimals, 10),
+    },
+    liabilities: {
+      amount0: new GN(marginAccount.liabilities.amount0, marginAccount.token0.decimals, 10),
+      amount1: new GN(marginAccount.liabilities.amount1, marginAccount.token1.decimals, 10),
+    },
     sqrtPriceX96: new GN(marginAccount.sqrtPriceX96, 96, 2),
     iv: new GN(marginAccount.iv, 18, 10),
   };

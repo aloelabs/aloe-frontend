@@ -328,6 +328,8 @@ export default function BorrowActionsPage() {
 
       if (mounted) {
         setUniswapPositions(_uniswapPositions);
+        const token0 = marginAccount.token0;
+        const token1 = marginAccount.token1;
         // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
         // this is because one is computed on-chain and cached, while the other is computed locally.
         // if we've fetched both, prefer the uniswapPositions version (local & newer).

@@ -1,5 +1,4 @@
 import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
 import { GN } from 'shared/lib/data/GoodNumber';
 
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
@@ -10,7 +9,6 @@ import {
   ALOE_II_SIGMA_MAX,
   ALOE_II_SIGMA_MIN,
   ALOE_II_SIGMA_SCALER,
-  BIGQ96,
 } from './constants/Values';
 import { Assets, Liabilities, LiquidationThresholds } from './MarginAccount';
 

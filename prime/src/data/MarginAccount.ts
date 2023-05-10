@@ -296,7 +296,7 @@ export async function fetchMarginAccount(
   const assets: Assets = {
     token0Raw: GN.fromBigNumber(assetsData[0], token0.decimals), // fixed0
     token1Raw: GN.fromBigNumber(assetsData[1], token1.decimals), // fixed1
-    uni0: GN.fromBigNumber(assetsData[2], token0.decimals), // fluid0C
+    uni0: GN.fromBigNumber(assetsData[4], token0.decimals), // fluid0C
     uni1: GN.fromBigNumber(assetsData[5], token1.decimals), // fluid1C
   };
   const liabilities: Liabilities = {
