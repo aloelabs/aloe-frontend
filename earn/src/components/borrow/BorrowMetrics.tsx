@@ -237,7 +237,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
         <HorizontalMetricCard label='Liquidation Distance' value={liquidationDistanceText} />
         <HorizontalMetricCard
           label='Daily Interest (-)'
-          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.ticker} + ${formatTokenAmount(
+          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.symbol} + ${formatTokenAmount(
             dailyInterest1,
             2
           )} ${marginAccount.token1.symbol}`}
