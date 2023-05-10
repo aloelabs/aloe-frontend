@@ -77,7 +77,7 @@ export function formatNumberRelativeToSize(value: number): string {
 }
 
 function priceToNumber(price: GN, scaler: number, inTermsOfToken0 = false) {
-  const priceNumber = price.toBigNumber().mul(scaler).toNumber();
+  const priceNumber = price.toDecimalBig().mul(scaler).toNumber();
   return inTermsOfToken0 ? 1 / priceNumber : priceNumber;
 }
 
@@ -283,8 +283,8 @@ export default function PnLGraph(props: PnLGraphProps) {
   }, [activeChain, activeChain.id, marginAccount.address]);
 
   const scaler = 10 ** (marginAccount.token0.decimals - marginAccount.token1.decimals);
-  let currentPrice = marginAccount.sqrtPriceX96.square(); //.toDecimalBig().mul(scaler).toNumber();
-  let previousPrice = priceAtLastUpdate ?? currentPrice; //?.toDecimalBig().mul(scaler).toNumber() ?? currentPrice;
+  let currentPrice = marginAccount.sqrtPriceX96.square();
+  let previousPrice = priceAtLastUpdate ?? currentPrice;
 
   // If we're showing hypothetical, we want to use the current price as the price at the last update
   if (isShowingHypothetical) previousPrice = currentPrice;

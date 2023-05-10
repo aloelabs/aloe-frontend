@@ -205,7 +205,7 @@ export class GN {
   }
 
   sqrt() {
-    return GN.fromDecimalBig(this.x().sqrt(), this.resolution);
+    return new GN(this.x().sqrt().mul(this.scaler).toFixed(0), this.resolution, this.base);
   }
 
   square() {
