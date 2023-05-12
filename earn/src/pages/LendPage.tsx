@@ -31,7 +31,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-import { getTokenByTicker, getTokens } from '../data/TokenData';
+import { getTokenBySymbol } from '../data/TokenData';
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -95,23 +95,11 @@ export default function LendPage() {
     chainId: wagmiChain.mainnet.id,
   });
 
-  useEffect(() => {
-    const options: MultiDropdownOption<Token>[] = getTokens(activeChain.id).map((token) => {
-      return {
-        value: token,
-        label: token.ticker || '',
-        icon: token.iconPath,
-      };
-    });
-    setFilterOptions(options);
-    setSelectedOptions(options);
-  }, [activeChain]);
-
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
     lendingPairs.forEach((pair) => {
-      symbols.add(pair.token0.ticker.toUpperCase());
-      symbols.add(pair.token1.ticker.toUpperCase());
+      symbols.add(pair.token0.symbol.toUpperCase());
+      symbols.add(pair.token1.symbol.toUpperCase());
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
@@ -129,7 +117,7 @@ export default function LendPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: getTokenByTicker(activeChain.id, key),
+          token: getTokenBySymbol(activeChain.id, key),
           price: value.price,
         };
       });
@@ -161,6 +149,23 @@ export default function LendPage() {
   }, [provider, address, activeChain]);
 
   useEffect(() => {
+    let uniqueTokens = new Set<Token>();
+    lendingPairs.forEach((pair) => {
+      uniqueTokens.add(pair.token0);
+      uniqueTokens.add(pair.token1);
+    });
+    const options: MultiDropdownOption<Token>[] = Array.from(uniqueTokens).map((token) => {
+      return {
+        value: token,
+        label: token.symbol || '',
+        icon: token.logoURI,
+      };
+    });
+    setFilterOptions(options);
+    setSelectedOptions(options);
+  }, [lendingPairs]);
+
+  useEffect(() => {
     let mounted = true;
     async function fetch() {
       if (!address) return;
@@ -188,7 +193,7 @@ export default function LendPage() {
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
-      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      const pairName = `${pair.token0.symbol}-${pair.token1.symbol}`;
       return [
         {
           token: pair.token0,
@@ -336,6 +341,7 @@ export default function LendPage() {
                   );
                 }}
                 flipDirection={true}
+                maxHeight={275}
               />
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>

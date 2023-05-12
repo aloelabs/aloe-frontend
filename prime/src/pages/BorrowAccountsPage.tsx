@@ -212,7 +212,7 @@ export default function BorrowAccountsPage() {
       }
 
       return {
-        label: `${token0.ticker}/${token1.ticker} ${PrintFeeTier(feeTier)}`,
+        label: `${token0.symbol}/${token1.symbol} ${PrintFeeTier(feeTier)}`,
         value: addr,
       };
     })

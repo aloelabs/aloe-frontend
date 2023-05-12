@@ -34,10 +34,10 @@ export default function TokenChooser(props: TokenChooserProps) {
     >
       <RadioButtonsContainer>
         <RadioGroup.Option value={token0.address}>
-          {({ checked }) => <StyledRadioButton checked={checked} label={token0?.ticker || ''} />}
+          {({ checked }) => <StyledRadioButton checked={checked} label={token0?.symbol || ''} />}
         </RadioGroup.Option>
         <RadioGroup.Option value={token1.address}>
-          {({ checked }) => <StyledRadioButton checked={checked} label={token1?.ticker || ''} />}
+          {({ checked }) => <StyledRadioButton checked={checked} label={token1?.symbol || ''} />}
         </RadioGroup.Option>
       </RadioButtonsContainer>
     </RadioGroup>

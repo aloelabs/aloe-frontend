@@ -84,8 +84,8 @@ export function AssetChunk(props: AssetChunkProps) {
       ref={containerRef}
     >
       <AssetIcon
-        src={token.iconPath || ''}
-        alt={token.ticker}
+        src={token.logoURI || ''}
+        alt={token.symbol}
         className={selected ? 'selected' : ''}
         width={32}
         height={32}
