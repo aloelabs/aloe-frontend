@@ -67,21 +67,19 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
     const tokenTypeInDecimals = newTokenTypeIn === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const tokenTypeOutDecimals = newTokenTypeIn === TokenType.ASSET0 ? token1.decimals : token0.decimals;
 
+    const parsedAmountIn = GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals);
     let newAmountOutMin = '';
     if (newAmountInExact !== '') {
       newAmountOutMin = getOutputForSwap(
         priceX96,
-        GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals),
+        parsedAmountIn,
         newTokenTypeIn === TokenType.ASSET0,
         tokenTypeOutDecimals,
         newSlippage || DEFAULT_SLIPPAGE_PERCENTAGE
       );
       newAmountOutMin = truncateDecimals(newAmountOutMin, tokenTypeOutDecimals);
     }
-
-    const parsedAmountIn = GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals);
     const parsedAmountOut = GN.fromDecimalString(newAmountOutMin || '0', tokenTypeOutDecimals);
-
     const amount0 = newTokenTypeIn === TokenType.ASSET0 ? parsedAmountIn.neg() : parsedAmountOut;
     const amount1 = newTokenTypeIn === TokenType.ASSET1 ? parsedAmountIn.neg() : parsedAmountOut;
 
