@@ -45,7 +45,7 @@ function _computeLiquidationIncentive(
   let reward = GN.zero(token1Decimals);
   if (liabilities0.gt(assets0)) {
     const shortfall = liabilities0.sub(assets0);
-    reward = reward.add(shortfall.mul(price).setResolution(token1Decimals).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+    reward = reward.add(shortfall.setResolution(token1Decimals).mul(price).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
   }
   if (liabilities1.gt(assets1)) {
     const shortfall = liabilities1.sub(assets1);
@@ -83,10 +83,10 @@ function _computeSolvencyBasics(
   const liabilities0 = liabilities.amount0.recklessMul(coeff);
   const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
 
-  const liabilitiesA = liabilities1.add(liabilities0.mul(priceA).setResolution(token1Decimals));
-  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.mul(priceA).setResolution(token1Decimals));
-  const liabilitiesB = liabilities1.add(liabilities0.mul(priceB).setResolution(token1Decimals));
-  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.mul(priceB).setResolution(token1Decimals));
+  const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
+  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
+  const liabilitiesB = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceB));
+  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceB));
 
   return {
     priceA,
@@ -164,12 +164,12 @@ export function isSolvent(
   const liabilities0 = liabilities.amount0.recklessMul(coeff);
   const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
 
-  const liabilitiesA = liabilities1.add(liabilities0.mul(priceA).setResolution(token1Decimals));
-  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.mul(priceA).setResolution(token1Decimals));
+  const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
+  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
   const healthA = liabilitiesA.isGtZero() ? assetsA.div(liabilitiesA).toNumber() : 1000;
 
-  const liabilitiesB = liabilities1.add(liabilities0.mul(priceB).setResolution(token1Decimals));
-  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.mul(priceB).setResolution(token1Decimals));
+  const liabilitiesB = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceB));
+  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceB));
   const healthB = liabilitiesB.isGtZero() ? assetsB.div(liabilitiesB).toNumber() : 1000;
 
   return {

@@ -469,7 +469,7 @@ export default function BorrowActionsPage() {
     const priceX96 = marginAccount.sqrtPriceX96.square();
     const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
     const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
-    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.mul(priceX96).setResolution(token1.decimals);
+    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.setResolution(token1.decimals).mul(priceX96);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
     if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
