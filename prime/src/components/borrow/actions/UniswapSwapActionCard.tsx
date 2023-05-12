@@ -1,6 +1,6 @@
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -59,7 +59,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const amountInExact = userInputFields?.at(0) ?? '';
   const amountOutMin = userInputFields?.at(1) ?? '';
   const tokenTypeIn = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
-  const slippage = userInputFields?.at(3) ?? DEFAULT_SLIPPAGE_PERCENTAGE;
+  const slippage = userInputFields?.at(3) ?? '';
 
   const priceX96 = marginAccount.sqrtPriceX96.square();
 
@@ -99,7 +99,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
 
   const maxFromAmount =
     tokenTypeIn === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
-  const maxFromAmountString = maxFromAmount.toString();
+  const maxFromAmountString = maxFromAmount.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard

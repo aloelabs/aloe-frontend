@@ -41,7 +41,8 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   const maxString = GN.max(GN.zero(selectedTokenDecimals), GN.min(assetMax, liabilityMax)).toString(GNFormat.DECIMAL);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     let amount0 = GN.zero(token0.decimals);
     let amount1 = GN.zero(token1.decimals);
     if (token === TokenType.ASSET0) {
@@ -55,7 +56,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         actionId: ActionID.REPAY,
         actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          return repayOperator(operand, selectedToken, GN.max(amount0, amount1));
+          return repayOperator(operand, token, parsedValue);
         },
       },
       [token, value]

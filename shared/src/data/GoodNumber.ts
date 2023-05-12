@@ -216,20 +216,24 @@ export class GN {
     return new GN(this.int.neg().toFixed(0), this.resolution, this.base);
   }
 
+  /**
+   * Recklessly multiplies the `GN` by a `BigSource` without checking for precision loss.
+   * Note: recklessMul by a non-integer wouldn't be possible in the EVM. Be careful!
+   * @param other The `BigSource` to multiply by.
+   * @returns The product.
+   */
   recklessMul(other: BigSource) {
-    other = new Big(other);
-    if (!isInteger(other)) {
-      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
-    }
-    return new GN(this.int.times(other).toFixed(0), this.resolution, this.base);
+    return new GN(this.int.times(new Big(other)).toFixed(0), this.resolution, this.base);
   }
 
+  /**
+   * Recklessly divides the `GN` by a `BigSource` without checking for precision loss.
+   * Note: recklessDiv by a non-integer wouldn't be possible in the EVM. Be careful!
+   * @param other The `BigSource` to divide by.
+   * @returns The quotient.
+   */
   recklessDiv(other: BigSource) {
-    other = new Big(other);
-    if (!isInteger(other)) {
-      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
-    }
-    return new GN(this.int.div(other).toFixed(0), this.resolution, this.base);
+    return new GN(this.int.div(new Big(other)).toFixed(0), this.resolution, this.base);
   }
 
   recklessAdd(other: BigSource) {

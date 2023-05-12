@@ -2,8 +2,13 @@ import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
+import {
+  formatPriceRatioGN,
+  numericPriceRatioGN,
+  roundDownToNearestN,
+  roundUpToNearestN,
+} from 'shared/lib/util/Numbers';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -272,14 +277,21 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   const ticksAreDefined = previousLower != null && previousUpper != null && currentTick != null;
   const tickIncrement = (tickInfo && (isToken0Selected ? tickInfo.tickSpacing : -tickInfo.tickSpacing)) ?? null;
 
-  let prices: GN[] | null = null;
+  let prices: number[] | null = null;
   if (ticksAreDefined) {
-    prices = [tickToPrice(previousLower!), tickToPrice(previousUpper!)].sort();
+    prices = [
+      numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, isToken0Selected),
+      numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, isToken0Selected),
+    ].sort();
   }
 
   const lowerSteppedInput = (
     <SteppedInput
-      value={previousLower == null ? '' : tickToPrice(previousLower).toString(GNFormat.DECIMAL)}
+      value={
+        previousLower == null
+          ? ''
+          : formatPriceRatioGN(tickToPrice(previousLower), token0.decimals, token1.decimals, isToken0Selected, 8)
+      }
       label={isToken0Selected ? 'Min Price' : 'Max Price'}
       token0={token0}
       token1={token1}
@@ -322,7 +334,11 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
   const upperSteppedInput = (
     <SteppedInput
-      value={previousUpper == null ? '' : tickToPrice(previousUpper).toString(GNFormat.DECIMAL)}
+      value={
+        previousUpper == null
+          ? ''
+          : formatPriceRatioGN(tickToPrice(previousUpper), token0.decimals, token1.decimals, isToken0Selected, 8)
+      }
       label={isToken0Selected ? 'Max Price' : 'Min Price'}
       token0={token0}
       token1={token1}
@@ -391,9 +407,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       ) : (
         <LiquidityChart
           data={chartData}
-          rangeStart={prices![0].toNumber()}
-          rangeEnd={prices![1].toNumber()}
-          currentPrice={tickToPrice(currentTick).toNumber()}
+          rangeStart={prices![0]}
+          rangeEnd={prices![1]}
+          currentPrice={numericPriceRatioGN(
+            tickToPrice(currentTick),
+            token0.decimals,
+            token1.decimals,
+            isToken0Selected
+          )}
         />
       )}
       <div className='flex flex-row gap-2 mb-4'>
