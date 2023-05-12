@@ -33,8 +33,8 @@ const Wrapper = styled.div`
   background: rgba(13, 23, 30, 1);
   border-radius: 8px;
   position: sticky;
-  top: 96px;
-  max-height: calc(100vh - 188px);
+  top: 117px;
+  max-height: calc(100vh - 230px);
   overflow: hidden;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
@@ -65,7 +65,7 @@ const Wrapper = styled.div`
 `;
 
 const ScrollableContainer = styled.div`
-  ${tw`flex flex-col items-center justify-start`}
+  ${tw`flex flex-col items-start justify-start`}
   width: 100%;
   max-height: 100%;
   overflow-y: auto;
@@ -330,7 +330,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </ActionItem>
         </ActionsList>
         <HealthBar health={health} />
-        <div className='flex justify-end gap-4 mt-4'>
+        <div className='w-full flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
