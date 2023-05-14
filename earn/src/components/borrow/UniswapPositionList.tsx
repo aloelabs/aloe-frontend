@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { formatTokenAmount, roundPercentage, truncateDecimals } from 'shared/lib/util/Numbers';
+import { formatTokenAmountCompact, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
@@ -178,14 +178,14 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               <Display size='XS' color={ACCENT_COLOR}>
                 {roundPercentage(amount0Percent, 1)}%
               </Display>
-              <Display size='S'>{truncateDecimals(amount0.toString(), 5)}</Display>
+              <Display size='S'>{formatTokenAmountCompact(amount0, 5)}</Display>
               <Text size='XS'>{marginAccount.token0.symbol}</Text>
             </div>
             <div className='text-right'>
               <Display size='XS' color={ACCENT_COLOR}>
                 {roundPercentage(amount1Percent, 1)}%
               </Display>
-              <Display size='S'>{truncateDecimals(amount1.toString(), 5)}</Display>
+              <Display size='S'>{formatTokenAmountCompact(amount1, 5)}</Display>
               <Text size='XS'>{marginAccount.token1.symbol}</Text>
             </div>
           </div>
@@ -194,7 +194,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               <Text size='S' color={ACCENT_COLOR}>
                 Min Price
               </Text>
-              <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
+              <Display size='S'>{formatTokenAmountCompact(minPrice, 5)}</Display>
               <Text size='XS'>
                 {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
               </Text>
@@ -203,7 +203,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               <Text size='S' color={ACCENT_COLOR}>
                 Max Price
               </Text>
-              <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
+              <Display size='S'>{formatTokenAmountCompact(maxPrice, 5)}</Display>
               <Text size='XS'>
                 {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
               </Text>

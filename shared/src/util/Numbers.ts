@@ -167,7 +167,13 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
 }
 
 export function formatTokenAmountCompact(amount: number, length = 4): string {
-  if (amount > 1e6) {
+  if (amount >= 1e15) {
+    return amount.toLocaleString('en-US', {
+      style: 'decimal',
+      notation: 'scientific',
+      maximumSignificantDigits: length - 1,
+    });
+  } else if (amount > 1e6) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'compact',

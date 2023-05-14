@@ -335,7 +335,7 @@ describe('GoodNumber', () => {
       expect(GN.fromDecimalString('1000000', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1,000,000');
       expect(GN.fromDecimalString('1000000000', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1.0B');
       expect(GN.fromDecimalString('1000000000000', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1.0T');
-      expect(GN.fromDecimalString('1000000000000000', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1000T');
+      expect(GN.fromDecimalString('1000000000000000', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1E15');
       expect(GN.fromDecimalString('0.00203982', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('2.04E-3');
       expect(GN.fromDecimalString('0.000000000000000001', 18).toString(GNFormat.LOSSY_HUMAN_COMPACT)).toEqual('1E-18');
     });
