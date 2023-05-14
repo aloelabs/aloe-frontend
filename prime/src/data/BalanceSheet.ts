@@ -273,13 +273,13 @@ export function maxWithdraws(
     // In this case, `surplus0C` is big enough to absorb part of the new withdrawal, but not all of it. The
     // portion that's *not* absorbed will increase the liquidation incentive
     else if (surplus0C.lt(maxWithdrawA0.setResolution(token0Decimals).div(priceA))) {
-      maxWithdrawA0 = maxWithdrawA0
-        .setResolution(token0Decimals)
-        .add(surplus0C.mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+      maxWithdrawA0 = maxWithdrawA0.add(
+        surplus0C.setResolution(token1Decimals).mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE)
+      );
       denom0 = priceA.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
     }
   }
-  maxWithdrawA0 = maxWithdrawA0.div(denom0);
+  maxWithdrawA0 = maxWithdrawA0.setResolution(token0Decimals).div(denom0);
 
   // REPEAT AT PRICE B FOR TOKEN1
 
@@ -303,13 +303,13 @@ export function maxWithdraws(
     if (surplus0C.isLteZero()) {
       denom0 = priceB.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
     } else if (surplus0C.lt(maxWithdrawB0.setResolution(token0Decimals).div(priceB))) {
-      maxWithdrawB0 = maxWithdrawB0
-        .setResolution(token0Decimals)
-        .add(surplus0C.mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+      maxWithdrawB0 = maxWithdrawB0.add(
+        surplus0C.setResolution(token1Decimals).mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE)
+      );
       denom0 = priceB.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
     }
   }
-  maxWithdrawB0 = maxWithdrawB0.div(denom0);
+  maxWithdrawB0 = maxWithdrawB0.setResolution(token0Decimals).div(denom0);
 
   // If the account is liquidatable, the math will yield negative numbers. Clamp them to 0.
   // Examples when this may happen:

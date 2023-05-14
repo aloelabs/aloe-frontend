@@ -217,7 +217,7 @@ export class GN {
   }
 
   /**
-   * Recklessly multiplies the `GN` by a `BigSource` without checking for precision loss.
+   * Recklessly multiplies the `GN` by a `BigSource`.
    * Note: recklessMul by a non-integer wouldn't be possible in the EVM. Be careful!
    * @param other The `BigSource` to multiply by.
    * @returns The product.
