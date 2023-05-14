@@ -270,12 +270,12 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     );
     const lowerText = (
       <Text size='M' weight='medium'>
-        {formatPriceRatio_(item.lower) + ' ' + selectedTokenTicker}
+        {formatPriceRatio_(isInTermsOfToken0 ? item.upper : item.lower) + ' ' + selectedTokenTicker}
       </Text>
     );
     const upperText = (
       <Text size='M' weight='medium'>
-        {formatPriceRatio_(item.upper) + ' ' + selectedTokenTicker}
+        {formatPriceRatio_(isInTermsOfToken0 ? item.lower : item.upper) + ' ' + selectedTokenTicker}
       </Text>
     );
     const isInRange = item.current.gte(item.lower) && item.current.lt(item.upper);
