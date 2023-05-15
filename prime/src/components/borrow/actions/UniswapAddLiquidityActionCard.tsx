@@ -3,12 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
-import {
-  formatPriceRatioGN,
-  numericPriceRatioGN,
-  roundDownToNearestN,
-  roundUpToNearestN,
-} from 'shared/lib/util/Numbers';
+import { numericPriceRatioGN, roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -280,8 +275,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let prices: number[] | null = null;
   if (ticksAreDefined) {
     prices = [
-      numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, isToken0Selected),
-      numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, isToken0Selected),
+      numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, !isToken0Selected),
+      numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, !isToken0Selected),
     ].sort();
   }
 
@@ -290,7 +285,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       value={
         previousLower == null
           ? ''
-          : formatPriceRatioGN(tickToPrice(previousLower), token0.decimals, token1.decimals, isToken0Selected, 8)
+          : numericPriceRatioGN(
+              tickToPrice(previousLower),
+              token0.decimals,
+              token1.decimals,
+              !isToken0Selected
+            ).toString()
       }
       label={isToken0Selected ? 'Min Price' : 'Max Price'}
       token0={token0}
@@ -305,9 +305,25 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           priceToTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
+        const priceAtNearestTick = numericPriceRatioGN(
+          tickToPrice(nearestTick),
+          token0.decimals,
+          token1.decimals,
+          !isToken0Selected
+        );
+        const priceAboveNearestTick = numericPriceRatioGN(
+          tickToPrice(nearestTick + tickInfo.tickSpacing),
+          token0.decimals,
+          token1.decimals,
+          !isToken0Selected
+        );
+        const closestTick =
+          Math.abs(price - priceAtNearestTick) < Math.abs(price - priceAboveNearestTick)
+            ? nearestTick
+            : nearestTick + tickInfo.tickSpacing;
 
-        if (nearestTick < previousUpper && nearestTick >= MIN_TICK) {
-          updateTick(nearestTick, true);
+        if (closestTick < previousUpper && nearestTick >= MIN_TICK) {
+          updateTick(closestTick, true);
         }
       }}
       onDecrement={() => {
@@ -337,7 +353,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       value={
         previousUpper == null
           ? ''
-          : formatPriceRatioGN(tickToPrice(previousUpper), token0.decimals, token1.decimals, isToken0Selected, 8)
+          : numericPriceRatioGN(
+              tickToPrice(previousUpper),
+              token0.decimals,
+              token1.decimals,
+              !isToken0Selected
+            ).toFixed(18)
       }
       label={isToken0Selected ? 'Max Price' : 'Min Price'}
       token0={token0}
@@ -352,9 +373,25 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           priceToTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
+        const priceAtNearestTick = numericPriceRatioGN(
+          tickToPrice(nearestTick),
+          token0.decimals,
+          token1.decimals,
+          !isToken0Selected
+        );
+        const priceAboveNearestTick = numericPriceRatioGN(
+          tickToPrice(nearestTick + tickInfo.tickSpacing),
+          token0.decimals,
+          token1.decimals,
+          !isToken0Selected
+        );
+        const closestTick =
+          Math.abs(price - priceAtNearestTick) < Math.abs(price - priceAboveNearestTick)
+            ? nearestTick
+            : nearestTick + tickInfo.tickSpacing;
 
-        if (nearestTick > previousLower && nearestTick <= MAX_TICK) {
-          updateTick(nearestTick, false);
+        if (closestTick > previousLower && nearestTick <= MAX_TICK) {
+          updateTick(closestTick, false);
         }
       }}
       onDecrement={() => {
@@ -413,7 +450,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             tickToPrice(currentTick),
             token0.decimals,
             token1.decimals,
-            isToken0Selected
+            !isToken0Selected
           )}
         />
       )}
