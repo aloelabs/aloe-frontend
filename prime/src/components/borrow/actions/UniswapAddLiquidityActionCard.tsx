@@ -208,7 +208,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let amountYStr = isToken0 ? previousAmount1Str : previousAmount0Str;
     let liquidity = JSBI.BigInt('0');
     // If possible, compute amountY from amountX
-    if (!isNaN(amountX)) {
+    if (!isNaN(amountX) && amountX > 0) {
       const res = (isToken0 ? calculateAmount1FromAmount0 : calculateAmount0FromAmount1)(
         amountX,
         lower,
@@ -219,6 +219,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       );
       amountYStr = res.amount;
       liquidity = res.liquidity;
+    } else {
+      amountYStr = '';
     }
 
     const [amount0Str, amount1Str] = isToken0 ? [amountXStr, amountYStr] : [amountYStr, amountXStr];
@@ -462,7 +464,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token0 : token1}
           value={isInput0Disabled ? '' : tokenAmount0}
-          onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, isToken0Selected, previousLower, previousUpper)}
           disabled={isInput0Disabled}
           max={maxString0}
           maxed={tokenAmount0 === maxString0}
@@ -474,7 +476,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token1 : token0}
           value={isInput1Disabled ? '' : tokenAmount1}
-          onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, !isToken0Selected, previousLower, previousUpper)}
           disabled={isInput1Disabled}
           max={maxString1}
           maxed={tokenAmount1 === maxString1}
