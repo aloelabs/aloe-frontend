@@ -305,25 +305,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           priceToTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
-        const priceAtNearestTick = numericPriceRatioGN(
-          tickToPrice(nearestTick),
-          token0.decimals,
-          token1.decimals,
-          !isToken0Selected
-        );
-        const priceAboveNearestTick = numericPriceRatioGN(
-          tickToPrice(nearestTick + tickInfo.tickSpacing),
-          token0.decimals,
-          token1.decimals,
-          !isToken0Selected
-        );
-        const closestTick =
-          Math.abs(price - priceAtNearestTick) < Math.abs(price - priceAboveNearestTick)
-            ? nearestTick
-            : nearestTick + tickInfo.tickSpacing;
 
-        if (closestTick < previousUpper && nearestTick >= MIN_TICK) {
-          updateTick(closestTick, true);
+        if (nearestTick < previousUpper && nearestTick >= MIN_TICK) {
+          updateTick(nearestTick, true);
         }
       }}
       onDecrement={() => {
@@ -373,25 +357,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           priceToTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
-        const priceAtNearestTick = numericPriceRatioGN(
-          tickToPrice(nearestTick),
-          token0.decimals,
-          token1.decimals,
-          !isToken0Selected
-        );
-        const priceAboveNearestTick = numericPriceRatioGN(
-          tickToPrice(nearestTick + tickInfo.tickSpacing),
-          token0.decimals,
-          token1.decimals,
-          !isToken0Selected
-        );
-        const closestTick =
-          Math.abs(price - priceAtNearestTick) < Math.abs(price - priceAboveNearestTick)
-            ? nearestTick
-            : nearestTick + tickInfo.tickSpacing;
 
-        if (closestTick > previousLower && nearestTick <= MAX_TICK) {
-          updateTick(closestTick, false);
+        if (nearestTick > previousLower && nearestTick <= MAX_TICK) {
+          updateTick(nearestTick, false);
         }
       }}
       onDecrement={() => {
