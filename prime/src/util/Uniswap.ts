@@ -315,7 +315,7 @@ export function calculateAmount1FromAmount0(
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return {
-    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
+    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(token1Decimals),
     liquidity,
   };
 }
@@ -361,7 +361,7 @@ export function calculateAmount0FromAmount1(
     };
   }
   return {
-    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
+    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(token0Decimals),
     liquidity,
   };
 }
