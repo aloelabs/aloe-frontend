@@ -1,5 +1,6 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
+import { GN } from '../data/GoodNumber';
 
 const DEFAULT_PRECISION = 2;
 
@@ -188,6 +189,23 @@ export function formatTokenAmountCompact(amount: number, length = 4): string {
       maximumSignificantDigits: length - 1,
     });
   }
+}
+
+export function formatPriceRatioGN(
+  price: GN,
+  token0Decimals: number,
+  token1Decimals: number,
+  inTermsOfToken0: boolean,
+  sigDigs = 4
+): string {
+  const oneToken0 = GN.one(token0Decimals);
+  const oneToken1 = GN.one(token1Decimals);
+
+  const nToken1PerOneToken0 = oneToken0.setResolution(token1Decimals).mul(price);
+  const nToken0PerOneToken1 = oneToken1.setResolution(token0Decimals).div(price);
+
+  const x = inTermsOfToken0 ? nToken0PerOneToken1.toNumber() : nToken1PerOneToken0.toNumber();
+  return formatPriceRatio(x, sigDigs);
 }
 
 export function formatPriceRatio(x: number, sigDigs = 4): string {

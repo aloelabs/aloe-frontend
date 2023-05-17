@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { formatTokenAmount } from 'shared/lib/util/Numbers';
+import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
@@ -48,7 +48,6 @@ import {
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
-const SUPPLY_SIGNIFICANT_DIGITS = 4;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
@@ -294,7 +293,9 @@ export default function BorrowActionsPage() {
       const fetchedMarketInfo = await fetchMarketInfoFor(
         lenderLensContract,
         marginAccount.lender0,
-        marginAccount.lender1
+        marginAccount.lender1,
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
       );
       if (mounted) setMarketInfo(fetchedMarketInfo);
     }
@@ -390,14 +391,14 @@ export default function BorrowActionsPage() {
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,
-        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token1Decimals)),
-        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token0Decimals) : numericSwapFees),
+        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token0Decimals)),
+        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token1Decimals) : numericSwapFees),
       };
       // Apply the user's inputted borrow interest to the displayed margin account's liabilities
       _marginAccount.liabilities = {
         ...liabilitiesF,
-        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token1Decimals)),
-        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token0Decimals) : numericBorrowInterest),
+        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token0Decimals)),
+        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token1Decimals) : numericBorrowInterest),
       };
     }
     setDisplayedMarginAccount(_marginAccount);
@@ -466,7 +467,7 @@ export default function BorrowActionsPage() {
     const priceX96 = marginAccount.sqrtPriceX96.square();
     const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
     const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
-    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).setResolution(token1.decimals);
+    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.mul(priceX96).setResolution(token1.decimals);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
     if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
@@ -493,8 +494,8 @@ export default function BorrowActionsPage() {
   let displayedLiquidationThresholds = liquidationThresholds;
   if (displayedLiquidationThresholds && isToken0Selected) {
     displayedLiquidationThresholds = {
-      lower: displayedLiquidationThresholds.upper.reciprocal(),
-      upper: displayedLiquidationThresholds.lower.reciprocal(),
+      lower: 1.0 / displayedLiquidationThresholds.upper,
+      upper: 1.0 / displayedLiquidationThresholds.lower,
     };
   }
 
@@ -526,13 +527,13 @@ export default function BorrowActionsPage() {
   let utilization1 = marketInfo?.lender1Utilization;
   if (marketInfo && isShowingHypothetical) {
     utilization0 =
-      1 -
-        hypotheticalState.availableForBorrow.amount0 /
-          marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber() || 0;
+      GN.one(token0.decimals)
+        .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
+        .toNumber() || 0;
     utilization1 =
-      1 -
-        hypotheticalState.availableForBorrow.amount1 /
-          marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber() || 0;
+      GN.one(token1.decimals)
+        .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
+        .toNumber() || 0;
   }
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));
@@ -611,9 +612,7 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Lower Liquidation Threshold'
               value={
-                displayedLiquidationThresholds
-                  ? `${displayedLiquidationThresholds.lower.toString(GNFormat.LOSSY_PRICE_RATIO)}`
-                  : '-'
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
@@ -623,9 +622,7 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Upper Liquidation Threshold'
               value={
-                displayedLiquidationThresholds
-                  ? `${displayedLiquidationThresholds.upper.toString(GNFormat.LOSSY_PRICE_RATIO)}`
-                  : '-'
+                displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={
                 displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
@@ -642,10 +639,7 @@ export default function BorrowActionsPage() {
             <MarketStatsGrid>
               <AccountStatsCard
                 label={`${token0.ticker} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token0.ticker}
                 showAsterisk={false}
               />
@@ -663,10 +657,7 @@ export default function BorrowActionsPage() {
               </div>
               <AccountStatsCard
                 label={`${token1.ticker} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token1.ticker}
                 showAsterisk={false}
               />

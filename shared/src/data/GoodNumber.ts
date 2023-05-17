@@ -2,7 +2,7 @@ import Big, { BigConstructor, BigSource } from 'big.js';
 import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 
-import { formatPriceRatio, formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
+import { formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
 
 export function scalerFor(base: 2 | 10, resolution: number) {
   if (base === 2) {
@@ -25,8 +25,8 @@ export enum GNFormat {
   DECIMAL,
   DECIMAL_WITH_TRAILING_ZEROS,
   LOSSY_HUMAN,
+  LOSSY_HUMAN_SHORT,
   LOSSY_HUMAN_COMPACT,
-  LOSSY_PRICE_RATIO,
 }
 
 export class GN {
@@ -46,7 +46,7 @@ export class GN {
    * Infinity, NaN and hexadecimal literal strings, e.g. '0xff', are not valid.
    * @param resolution The maximum number of decimals to keep for operations involving division (div, sqrt, pow)
    */
-  private constructor(int: string, resolution: number, base: 2 | 10) {
+  constructor(int: string, resolution: number, base: 2 | 10) {
     if (resolution !== Math.floor(resolution)) throw new Error('`resolution` must be a whole number');
     else if (resolution < 0) throw new Error('`resolution` cannot be negative');
     else if (resolution > 1e6) throw new Error('`resolution` cannot be larger than 1000000');
@@ -212,8 +212,8 @@ export class GN {
     return this.mul(this);
   }
 
-  reciprocal() {
-    return new GN(this.scaler, this.resolution, this.base).div(this);
+  neg() {
+    return new GN(this.int.neg().toFixed(0), this.resolution, this.base);
   }
 
   recklessMul(other: BigSource) {
@@ -263,13 +263,22 @@ export class GN {
       case GNFormat.LOSSY_HUMAN:
         // TODO: Bring logic in here instead of calling formatTokenAmount
         return formatTokenAmount(this.x().toNumber());
+      case GNFormat.LOSSY_HUMAN_SHORT:
+        // TODO: merge this with LOSSY_HUMAN
+        return formatTokenAmount(this.x().toNumber(), 3);
       case GNFormat.LOSSY_HUMAN_COMPACT:
         // TODO: Bring logic in here instead of calling formatTokenAmountCompact
         return formatTokenAmountCompact(this.x().toNumber());
-      case GNFormat.LOSSY_PRICE_RATIO:
-        return formatPriceRatio(this.x().toNumber());
       // TODO: Other formatting options from `Numbers.ts`
     }
+  }
+
+  /**
+   * Converts to a decimal number (stored as a `Big`). Use sparingly.
+   * @returns Equivalent `Big`
+   */
+  toDecimalBig() {
+    return this.x();
   }
 
   /**

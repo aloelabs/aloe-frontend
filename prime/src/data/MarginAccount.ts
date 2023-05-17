@@ -51,9 +51,12 @@ export type UniswapPoolInfo = {
   fee: number;
 };
 
+// We do a lot of math to compute these, but once we have them they're only for display. Sometimes
+// we want to display them in terms of the other token (take the reciprocal) so it's easier to use
+// numbers instead of `GN`
 export type LiquidationThresholds = {
-  lower: GN;
-  upper: GN;
+  lower: number;
+  upper: number;
 };
 
 /**
