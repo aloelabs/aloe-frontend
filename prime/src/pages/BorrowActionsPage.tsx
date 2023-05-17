@@ -528,14 +528,16 @@ export default function BorrowActionsPage() {
   let utilization0 = marketInfo?.lender0Utilization;
   let utilization1 = marketInfo?.lender1Utilization;
   if (marketInfo && isShowingHypothetical) {
-    utilization0 =
-      GN.one(token0.decimals)
-        .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
-        .toNumber() || 0;
-    utilization1 =
-      GN.one(token1.decimals)
-        .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
-        .toNumber() || 0;
+    utilization0 = !marketInfo.lender0TotalAssets.isZero()
+      ? GN.one(token0.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
+          .toNumber()
+      : 0;
+    utilization1 = !marketInfo.lender1TotalAssets.isZero()
+      ? GN.one(token1.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
+          .toNumber()
+      : 0;
   }
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));
