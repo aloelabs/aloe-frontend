@@ -4,7 +4,8 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'wagmi';
 
@@ -57,8 +58,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   let selectedOption: DropdownOption<number> | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
-  let amount0: number | undefined = undefined;
-  let amount1: number | undefined = undefined;
+  let amount0: GN = GN.zero(token0.decimals);
+  let amount1: GN = GN.zero(token1.decimals);
 
   const previousPositionKey = userInputFields?.at(0) ?? '';
   if (previousPositionKey) {
@@ -130,6 +131,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     updateResult(updatedPosition, localRemoveLiquidityPercentage);
   }
 
+  const updatedBalance0 = amount0.recklessMul(100 - parsePercentage(localRemoveLiquidityPercentage)).recklessDiv(100);
+  const updatedBalance1 = amount1.recklessMul(100 - parsePercentage(localRemoveLiquidityPercentage)).recklessDiv(100);
+
   return (
     <BaseActionCard
       action={ActionID.REMOVE_LIQUIDITY}
@@ -177,10 +181,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount0 || 0)} {token0?.ticker}
+                      {amount0.toString(GNFormat.DECIMAL)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount1 || 0)} {token1?.ticker}
+                      {amount1.toString(GNFormat.DECIMAL)} {token1?.ticker}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -191,12 +195,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Updated Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount0 ?? 0))}{' '}
-                      {token0?.ticker}
+                      {updatedBalance0.toString(GNFormat.DECIMAL)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount1 ?? 0))}{' '}
-                      {token1?.ticker}
+                      {updatedBalance1.toString(GNFormat.DECIMAL)} {token1?.ticker}
                     </Text>
                   </div>
                 </div>

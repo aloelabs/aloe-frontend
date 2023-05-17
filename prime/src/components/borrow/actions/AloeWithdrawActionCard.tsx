@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 
 import { getTransferOutActionArgs } from '../../../data/actions/ActionArgs';
@@ -35,13 +36,14 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = parseFloat(value) || 0;
+    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
     onChange(
       {
         actionId: ActionID.TRANSFER_OUT,
@@ -69,7 +71,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   );
 
   const max = selectedTokenOption.value === TokenType.ASSET0 ? allowed0 : allowed1;
-  const maxString = Math.max(0, max - 1e-6).toFixed(6);
+  const maxString = max.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard

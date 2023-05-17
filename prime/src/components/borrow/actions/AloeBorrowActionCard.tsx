@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 
 import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -34,11 +35,12 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = parseFloat(value) || 0;
-    let amount0 = 0;
-    let amount1 = 0;
+    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
+    let amount0 = GN.zero(token0.decimals);
+    let amount1 = GN.zero(token1.decimals);
     if (token === TokenType.ASSET0) {
       amount0 = parsedValue;
     } else {
@@ -50,7 +52,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         actionId: ActionID.BORROW,
         actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          return borrowOperator(operand, token, Math.max(amount0, amount1));
+          return borrowOperator(operand, token, GN.max(amount0, amount1));
         },
       },
       [token, value]
@@ -74,8 +76,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const available1 = accountState.availableForBorrow.amount1;
 
   const max =
-    selectedTokenOption.value === TokenType.ASSET0 ? Math.min(allowed0, available0) : Math.min(allowed1, available1);
-  const maxString = Math.max(0, max - 1e-6).toFixed(6);
+    selectedTokenOption.value === TokenType.ASSET0 ? GN.min(allowed0, available0) : GN.min(allowed1, available1);
+  const maxString = max.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard
