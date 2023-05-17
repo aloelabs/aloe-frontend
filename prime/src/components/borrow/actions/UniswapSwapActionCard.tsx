@@ -8,6 +8,7 @@ import { getSwapActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { swapOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, TokenType } from '../../../data/actions/Actions';
+import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 import { getOutputForSwap } from '../../../util/Uniswap';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
@@ -58,7 +59,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const amountInExact = userInputFields?.at(0) ?? '';
   const amountOutMin = userInputFields?.at(1) ?? '';
   const tokenTypeIn = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
-  const slippage = userInputFields?.at(3) ?? '0.5';
+  const slippage = userInputFields?.at(3) ?? DEFAULT_SLIPPAGE_PERCENTAGE;
 
   const priceX96 = marginAccount.sqrtPriceX96.square();
 
@@ -72,9 +73,8 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
         priceX96,
         GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals),
         newTokenTypeIn === TokenType.ASSET0,
-        tokenTypeInDecimals,
         tokenTypeOutDecimals,
-        parseFloat(newSlippage) / 100 || 0
+        newSlippage || DEFAULT_SLIPPAGE_PERCENTAGE
       );
       newAmountOutMin = truncateDecimals(newAmountOutMin, tokenTypeOutDecimals);
     }

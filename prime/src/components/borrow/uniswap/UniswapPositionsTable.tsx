@@ -237,11 +237,16 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
 
   // This just saves us from having to specify all the args every time we use it.
   const formatPriceRatio_ = (p: GN) => {
-    formatPriceRatioGN(p, marginAccount.token0.decimals, marginAccount.token1.decimals, isInTermsOfToken0);
+    return formatPriceRatioGN(p, marginAccount.token0.decimals, marginAccount.token1.decimals, isInTermsOfToken0);
   };
 
-  const rows = uniswapPositionInfo.map((item: UniswapPositionInfo) => {
+  let rows: Array<JSX.Element[]> = [];
+  for (const item of uniswapPositionInfo) {
+    // TODO: sometimes we have issues with undefined values here, investigate
     const fees = uniswapPositionEarnedFees[item.positionKey];
+    if (!fees) {
+      continue;
+    }
     const selectedTokenTicker = selectedToken?.ticker ?? '';
     const value = isInTermsOfToken0
       ? item.value.setResolution(marginAccount.token0.decimals).div(item.current)
@@ -283,8 +288,8 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
         {'Out-of-Range'}
       </Text>
     );
-    return [valueText, earnedFeesText, lowerText, upperText, inRangeText];
-  });
+    rows.push([valueText, earnedFeesText, lowerText, upperText, inRangeText]);
+  }
 
   return (
     <Wrapper>

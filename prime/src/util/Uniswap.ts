@@ -6,7 +6,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { chain } from 'wagmi';
@@ -480,27 +480,28 @@ export function getValueOfLiquidity(
   return GN.fromJSBI(value, token1Decimals);
 }
 
+/**
+ *
+ * @param priceX96 the price of the input token in terms of the output token
+ * @param amount the amount of the input token
+ * @param isInputToken0 true if the input token is token0, false otherwise
+ * @param outputDecimals the number of decimals of the output token
+ * @param slippage a string representing the slippage in percentage (0.0-100.0)
+ * @returns the amount of the output token
+ */
 export function getOutputForSwap(
   priceX96: GN,
   amount: GN,
   isInputToken0: boolean,
-  inputDecimals: number,
   outputDecimals: number,
-  slippage: number
+  slippage: string
 ): string {
-  return isInputToken0
-    ? new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(priceX96)
-        .div(2 ** 96)
-        .div(10 ** outputDecimals)
-        .toString()
-    : new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(2 ** 96)
-        .div(priceX96)
-        .div(10 ** outputDecimals)
-        .toString();
+  // We use resolution of 5 to get basis-points resolution
+  const slippageFactor = GN.one(5).sub(GN.fromDecimalString(slippage, 5).recklessDiv(100));
+
+  if (isInputToken0) {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).mul(priceX96).toString(GNFormat.DECIMAL);
+  } else {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).div(priceX96).toString(GNFormat.DECIMAL);
+  }
 }
