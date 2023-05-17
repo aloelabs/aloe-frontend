@@ -35,10 +35,10 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
-  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     let amount0 = GN.zero(token0.decimals);
     let amount1 = GN.zero(token1.decimals);
     if (token === TokenType.ASSET0) {
@@ -52,7 +52,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
         actionId: ActionID.BORROW,
         actionArgs: value === '' ? undefined : getBorrowActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          return borrowOperator(operand, token, GN.max(amount0, amount1));
+          return borrowOperator(operand, token, parsedValue);
         },
       },
       [token, value]

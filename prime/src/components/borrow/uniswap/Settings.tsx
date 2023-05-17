@@ -88,7 +88,12 @@ export default function Settings(props: SettingsProps) {
         <SettingsMenuWrapper>
           <Tooltip
             buttonSize='S'
-            content={<Text size='XS'>a</Text>}
+            content={
+              <Text size='XS'>
+                Slippage tolerance is the maximum price difference you are willing to accept between the estimated price
+                and the execution price.
+              </Text>
+            }
             position='top-right'
             buttonText='Slippage Tolerance'
             filled={true}

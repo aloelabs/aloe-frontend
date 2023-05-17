@@ -225,8 +225,8 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
 
   const price = sqrtPriceX96.square();
   const sliceAmounts = [
-    assets.token0Raw.mul(price).setResolution(token1.decimals),
-    assets.uni0.mul(price).setResolution(token1.decimals),
+    assets.token0Raw.setResolution(token1.decimals).mul(price),
+    assets.uni0.setResolution(token1.decimals).mul(price),
     assets.token1Raw,
     assets.uni1,
   ];

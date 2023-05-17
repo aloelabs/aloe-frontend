@@ -36,14 +36,14 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
-  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const tokenMap = new Map<TokenType, Token>();
   tokenMap.set(TokenType.ASSET0, token0);
   tokenMap.set(TokenType.ASSET1, token1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     onChange(
       {
         actionId: ActionID.TRANSFER_OUT,

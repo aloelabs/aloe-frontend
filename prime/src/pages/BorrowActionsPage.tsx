@@ -388,8 +388,8 @@ export default function BorrowActionsPage() {
       const token0Decimals = marginAccount.token0.decimals;
       const token1Decimals = marginAccount.token1.decimals;
       const selectedToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
-      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue ?? '0', selectedToken.decimals);
-      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue ?? '0', selectedToken.decimals);
+      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue || '0', selectedToken.decimals);
+      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue || '0', selectedToken.decimals);
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,
@@ -469,7 +469,7 @@ export default function BorrowActionsPage() {
     const priceX96 = marginAccount.sqrtPriceX96.square();
     const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
     const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
-    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.mul(priceX96).setResolution(token1.decimals);
+    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.setResolution(token1.decimals).mul(priceX96);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
     if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
@@ -528,14 +528,16 @@ export default function BorrowActionsPage() {
   let utilization0 = marketInfo?.lender0Utilization;
   let utilization1 = marketInfo?.lender1Utilization;
   if (marketInfo && isShowingHypothetical) {
-    utilization0 =
-      GN.one(token0.decimals)
-        .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
-        .toNumber() || 0;
-    utilization1 =
-      GN.one(token1.decimals)
-        .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
-        .toNumber() || 0;
+    utilization0 = !marketInfo.lender0TotalAssets.isZero()
+      ? GN.one(token0.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
+          .toNumber()
+      : 0;
+    utilization1 = !marketInfo.lender1TotalAssets.isZero()
+      ? GN.one(token1.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
+          .toNumber()
+      : 0;
   }
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));

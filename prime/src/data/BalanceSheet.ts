@@ -45,7 +45,7 @@ function _computeLiquidationIncentive(
   let reward = GN.zero(token1Decimals);
   if (liabilities0.gt(assets0)) {
     const shortfall = liabilities0.sub(assets0);
-    reward = reward.add(shortfall.mul(price).setResolution(token1Decimals).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+    reward = reward.add(shortfall.setResolution(token1Decimals).mul(price).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
   }
   if (liabilities1.gt(assets1)) {
     const shortfall = liabilities1.sub(assets1);
@@ -83,10 +83,10 @@ function _computeSolvencyBasics(
   const liabilities0 = liabilities.amount0.recklessMul(coeff);
   const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
 
-  const liabilitiesA = liabilities1.add(liabilities0.mul(priceA).setResolution(token1Decimals));
-  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.mul(priceA).setResolution(token1Decimals));
-  const liabilitiesB = liabilities1.add(liabilities0.mul(priceB).setResolution(token1Decimals));
-  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.mul(priceB).setResolution(token1Decimals));
+  const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
+  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
+  const liabilitiesB = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceB));
+  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceB));
 
   return {
     priceA,
@@ -164,12 +164,12 @@ export function isSolvent(
   const liabilities0 = liabilities.amount0.recklessMul(coeff);
   const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
 
-  const liabilitiesA = liabilities1.add(liabilities0.mul(priceA).setResolution(token1Decimals));
-  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.mul(priceA).setResolution(token1Decimals));
+  const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
+  const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
   const healthA = liabilitiesA.isGtZero() ? assetsA.div(liabilitiesA).toNumber() : 1000;
 
-  const liabilitiesB = liabilities1.add(liabilities0.mul(priceB).setResolution(token1Decimals));
-  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.mul(priceB).setResolution(token1Decimals));
+  const liabilitiesB = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceB));
+  const assetsB = mem.fluid1B.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceB));
   const healthB = liabilitiesB.isGtZero() ? assetsB.div(liabilitiesB).toNumber() : 1000;
 
   return {
@@ -179,8 +179,8 @@ export function isSolvent(
     assetsB,
     liabilitiesA,
     liabilitiesB,
-    atA: assetsA >= liabilitiesA,
-    atB: assetsB >= liabilitiesB,
+    atA: assetsA.gte(liabilitiesA),
+    atB: assetsB.gte(liabilitiesB),
     health: Math.min(healthA, healthB),
   };
 }
@@ -272,12 +272,14 @@ export function maxWithdraws(
     }
     // In this case, `surplus0C` is big enough to absorb part of the new withdrawal, but not all of it. The
     // portion that's *not* absorbed will increase the liquidation incentive
-    else if (surplus0C.lt(maxWithdrawA0.div(priceA))) {
-      maxWithdrawA0 = maxWithdrawA0.add(surplus0C.mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+    else if (surplus0C.lt(maxWithdrawA0.setResolution(token0Decimals).div(priceA))) {
+      maxWithdrawA0 = maxWithdrawA0.add(
+        surplus0C.setResolution(token1Decimals).mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE)
+      );
       denom0 = priceA.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
     }
   }
-  maxWithdrawA0 = maxWithdrawA0.div(denom0);
+  maxWithdrawA0 = maxWithdrawA0.setResolution(token0Decimals).div(denom0);
 
   // REPEAT AT PRICE B FOR TOKEN1
 
@@ -300,12 +302,14 @@ export function maxWithdraws(
   if (surplus1C.isGteZero()) {
     if (surplus0C.isLteZero()) {
       denom0 = priceB.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
-    } else if (surplus0C.lt(maxWithdrawB0.div(priceB))) {
-      maxWithdrawB0 = maxWithdrawB0.add(surplus0C.mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+    } else if (surplus0C.lt(maxWithdrawB0.setResolution(token0Decimals).div(priceB))) {
+      maxWithdrawB0 = maxWithdrawB0.add(
+        surplus0C.setResolution(token1Decimals).mul(priceC).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE)
+      );
       denom0 = priceB.recklessMul(coeff).add(priceC.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
     }
   }
-  maxWithdrawB0 = maxWithdrawB0.div(denom0);
+  maxWithdrawB0 = maxWithdrawB0.setResolution(token0Decimals).div(denom0);
 
   // If the account is liquidatable, the math will yield negative numbers. Clamp them to 0.
   // Examples when this may happen:

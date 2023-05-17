@@ -131,8 +131,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     updateResult(updatedPosition, localRemoveLiquidityPercentage);
   }
 
-  const updatedBalance0 = amount0.recklessMul(100 - parsePercentage(localRemoveLiquidityPercentage)).recklessDiv(100);
-  const updatedBalance1 = amount1.recklessMul(100 - parsePercentage(localRemoveLiquidityPercentage)).recklessDiv(100);
+  const updatedBalance0 = amount0.recklessMul(1.0 - parsePercentage(localRemoveLiquidityPercentage) / 100);
+  const updatedBalance1 = amount1.recklessMul(1.0 - parsePercentage(localRemoveLiquidityPercentage) / 100);
 
   return (
     <BaseActionCard
@@ -181,10 +181,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {amount0.toString(GNFormat.DECIMAL)} {token0?.ticker}
+                      {amount0.toString(GNFormat.LOSSY_HUMAN)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {amount1.toString(GNFormat.DECIMAL)} {token1?.ticker}
+                      {amount1.toString(GNFormat.LOSSY_HUMAN)} {token1?.ticker}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -195,10 +195,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Updated Balance
                     </Text>
                     <Text size='M'>
-                      {updatedBalance0.toString(GNFormat.DECIMAL)} {token0?.ticker}
+                      {updatedBalance0.toString(GNFormat.LOSSY_HUMAN)} {token0?.ticker}
                     </Text>
                     <Text size='M'>
-                      {updatedBalance1.toString(GNFormat.DECIMAL)} {token1?.ticker}
+                      {updatedBalance1.toString(GNFormat.LOSSY_HUMAN)} {token1?.ticker}
                     </Text>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -59,7 +59,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const amountInExact = userInputFields?.at(0) ?? '';
   const amountOutMin = userInputFields?.at(1) ?? '';
   const tokenTypeIn = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
-  const slippage = userInputFields?.at(3) ?? DEFAULT_SLIPPAGE_PERCENTAGE;
+  const slippage = userInputFields?.at(3) ?? '';
 
   const priceX96 = marginAccount.sqrtPriceX96.square();
 
@@ -67,21 +67,19 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
     const tokenTypeInDecimals = newTokenTypeIn === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const tokenTypeOutDecimals = newTokenTypeIn === TokenType.ASSET0 ? token1.decimals : token0.decimals;
 
+    const parsedAmountIn = GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals);
     let newAmountOutMin = '';
     if (newAmountInExact !== '') {
       newAmountOutMin = getOutputForSwap(
         priceX96,
-        GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals),
+        parsedAmountIn,
         newTokenTypeIn === TokenType.ASSET0,
         tokenTypeOutDecimals,
         newSlippage || DEFAULT_SLIPPAGE_PERCENTAGE
       );
       newAmountOutMin = truncateDecimals(newAmountOutMin, tokenTypeOutDecimals);
     }
-
-    const parsedAmountIn = GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals);
     const parsedAmountOut = GN.fromDecimalString(newAmountOutMin || '0', tokenTypeOutDecimals);
-
     const amount0 = newTokenTypeIn === TokenType.ASSET0 ? parsedAmountIn.neg() : parsedAmountOut;
     const amount1 = newTokenTypeIn === TokenType.ASSET1 ? parsedAmountIn.neg() : parsedAmountOut;
 
@@ -99,7 +97,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
 
   const maxFromAmount =
     tokenTypeIn === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
-  const maxFromAmountString = maxFromAmount.toString();
+  const maxFromAmountString = maxFromAmount.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard
