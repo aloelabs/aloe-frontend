@@ -70,8 +70,13 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
     token1.decimals
   );
 
+  const hasOutstandingBorrows = Object.values(accountState.liabilities).some((liability) => liability.isGtZero());
+
   const max = selectedTokenOption.value === TokenType.ASSET0 ? allowed0 : allowed1;
-  const maxString = max.toString(GNFormat.DECIMAL);
+  const eightyPercentMax = max.recklessMul(80).recklessDiv(100);
+  const maxString = hasOutstandingBorrows
+    ? eightyPercentMax.toString(GNFormat.DECIMAL)
+    : max.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard
@@ -96,6 +101,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
           maxed={tokenAmount === maxString}
+          maxButtonText={hasOutstandingBorrows ? '80% MAX' : undefined}
         />
       </div>
     </BaseActionCard>
