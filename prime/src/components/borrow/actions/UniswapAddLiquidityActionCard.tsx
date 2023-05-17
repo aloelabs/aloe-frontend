@@ -62,6 +62,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   // MARK: state for user inputs
   const [localIsAmount0UserDefined, setLocalIsAmount0UserDefined] = useState(false);
   const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
+  const [localLiquidity, setLocalLiquidity] = useState<JSBI>(JSBI.BigInt(0));
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
@@ -227,6 +228,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
     setLocalTokenAmounts([amount0Str, amount1Str]);
     setLocalIsAmount0UserDefined(isToken0);
+    setLocalLiquidity(liquidity);
 
     callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
   }
@@ -436,7 +438,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             token1={token1}
             isToken0Selected={isToken0Selected}
             setIsToken0Selected={(value: boolean) => {
-              callbackWithFullResults(value, previousAmount0Str, previousAmount1Str, previousLower, previousUpper);
+              callbackWithFullResults(
+                value,
+                previousAmount0Str,
+                previousAmount1Str,
+                previousLower,
+                previousUpper,
+                localLiquidity
+              );
             }}
           />
         )}
