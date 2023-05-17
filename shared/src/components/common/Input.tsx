@@ -226,7 +226,7 @@ export const CustomMaxButton = styled.button.attrs((props: { width?: string; hei
   }
 `;
 
-const MaxButton = styled(BaseMaxButton)`
+const MaxButton = styled(CustomMaxButton)`
   margin-left: 0.75rem;
   position: absolute;
   top: calc(50% - 9.45px);
@@ -377,6 +377,7 @@ export type InputWithMaxProps = InputProps & {
   onMaxClick: () => void;
   maxDisabled?: boolean;
   maxHidden?: boolean;
+  maxButtonText?: string;
 };
 
 export function SquareInputWithMax(props: InputWithMaxProps) {
@@ -389,6 +390,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     inputClassName,
     onMaxClick,
     maxDisabled,
+    maxButtonText,
     placeholder,
     disabled,
     onEnter,
@@ -416,8 +418,8 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         ref={innerRef}
       />
       {props.maxHidden !== true && (
-        <MaxButton size={size} onClick={onMaxClick} disabled={disabled || maxDisabled}>
-          MAX
+        <MaxButton onClick={onMaxClick} disabled={disabled || maxDisabled}>
+          {maxButtonText || 'MAX'}
         </MaxButton>
       )}
     </SquareInputWrapper>
