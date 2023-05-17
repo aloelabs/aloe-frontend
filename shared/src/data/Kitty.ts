@@ -9,12 +9,12 @@ export class Kitty extends Token {
     chainId: number,
     address: Address,
     decimals: number,
-    ticker: string,
+    symbol: string,
     name: string,
-    iconPath: string,
+    logoURI: string,
     underlyingToken: Token
   ) {
-    super(chainId, address, decimals, ticker, name, iconPath);
+    super(chainId, address, decimals, symbol, name, logoURI);
     this.underlyingToken = underlyingToken;
   }
 

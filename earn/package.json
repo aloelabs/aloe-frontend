@@ -9,6 +9,7 @@
     "@heroicons/react": "^1.0.5",
     "@metamask/jazzicon": "^2.0.0",
     "@sentry/react": "^7.50.0",
+    "@socket.tech/plugin": "^1.0.12",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",

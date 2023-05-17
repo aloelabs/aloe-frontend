@@ -23,14 +23,14 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
-      label: token0?.ticker || '',
+      label: token0?.symbol || '',
       value: TokenType.ASSET0,
-      icon: token0?.iconPath || '',
+      icon: token0?.logoURI || '',
     },
     {
-      label: token1?.ticker || '',
+      label: token1?.symbol || '',
       value: TokenType.ASSET1,
-      icon: token1?.iconPath || '',
+      icon: token1?.logoURI || '',
     },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';

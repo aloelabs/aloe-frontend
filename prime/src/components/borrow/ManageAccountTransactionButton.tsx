@@ -51,25 +51,25 @@ function getConfirmButton(
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET0:
       return {
-        text: `Insufficient ${token0.ticker}`,
+        text: `Insufficient ${token0.symbol}`,
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.INSUFFICIENT_ASSET1:
       return {
-        text: `Insufficient ${token1.ticker}`,
+        text: `Insufficient ${token1.symbol}`,
         Icon: <AlertTriangleIcon />,
         enabled: false,
       };
     case ConfirmButtonState.APPROVE_ASSET0:
       return {
-        text: `Approve ${token0.ticker}`,
+        text: `Approve ${token0.symbol}`,
         Icon: <CheckIcon />,
         enabled: true,
       };
     case ConfirmButtonState.APPROVE_ASSET1:
       return {
-        text: `Approve ${token1.ticker}`,
+        text: `Approve ${token1.symbol}`,
         Icon: <CheckIcon />,
         enabled: true,
       };

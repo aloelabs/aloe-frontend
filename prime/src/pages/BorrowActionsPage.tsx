@@ -98,7 +98,7 @@ const GridExpandingDiv = styled.div`
   grid-row: 1 / 4;
   grid-column: 2 / span 1;
   justify-self: center;
-  margin-top: 96px;
+  margin-top: 0px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     justify-self: start;
@@ -508,8 +508,8 @@ export default function BorrowActionsPage() {
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
   const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a.isZero());
   const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l.isZero());
-  const selectedTokenTicker = selectedToken?.ticker || '';
-  const unselectedTokenTicker = unselectedToken?.ticker || '';
+  const selectedTokenSymbol = selectedToken.symbol;
+  const unselectedTokenSymbol = unselectedToken.symbol;
 
   const { health } = isSolvent(
     displayedMarginAccount.assets,
@@ -588,28 +588,28 @@ export default function BorrowActionsPage() {
             <AccountStatsCard
               label='Assets'
               value={assetsSum0.toString(GNFormat.LOSSY_HUMAN)}
-              denomination={token0.ticker ?? ''}
+              denomination={token0.symbol}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
               value={assetsSum1.toString(GNFormat.LOSSY_HUMAN)}
-              denomination={token1.ticker ?? ''}
+              denomination={token1.symbol}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${displayedMarginAccount.liabilities.amount0.toString(GNFormat.LOSSY_HUMAN)}`}
-              denomination={token0.ticker ?? ''}
+              denomination={token0.symbol}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
               value={`-${displayedMarginAccount.liabilities.amount1.toString(GNFormat.LOSSY_HUMAN)}`}
-              denomination={token1.ticker ?? ''}
+              denomination={token1.symbol}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
@@ -619,7 +619,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.lower, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+                displayedLiquidationThresholds ? `${selectedTokenSymbol}/${unselectedTokenSymbol}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />
@@ -629,7 +629,7 @@ export default function BorrowActionsPage() {
                 displayedLiquidationThresholds ? `${formatPriceRatio(displayedLiquidationThresholds.upper, 4)}` : '-'
               }
               denomination={
-                displayedLiquidationThresholds ? `${selectedTokenTicker}/${unselectedTokenTicker}` : undefined
+                displayedLiquidationThresholds ? `${selectedTokenSymbol}/${unselectedTokenSymbol}` : undefined
               }
               showAsterisk={isShowingHypothetical}
             />
@@ -642,37 +642,37 @@ export default function BorrowActionsPage() {
             </Text>
             <MarketStatsGrid>
               <AccountStatsCard
-                label={`${token0.ticker} Supply`}
+                label={`${token0.symbol} Supply`}
                 value={marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
-                denomination={token0.ticker}
+                denomination={token0.symbol}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
-                  label={`${token0.ticker} Utilization`}
+                  label={`${token0.symbol} Utilization`}
                   value={`${(utilization0! * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
-                  label={`${token0.ticker} APR`}
+                  label={`${token0.symbol} APR`}
                   value={`${(apr0 * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
               </div>
               <AccountStatsCard
-                label={`${token1.ticker} Supply`}
+                label={`${token1.symbol} Supply`}
                 value={marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
-                denomination={token1.ticker}
+                denomination={token1.symbol}
                 showAsterisk={false}
               />
               <div className='grid grid-cols-2 gap-4'>
                 <AccountStatsCard
-                  label={`${token1.ticker} Utilization`}
+                  label={`${token1.symbol} Utilization`}
                   value={`${(utilization1! * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />
                 <AccountStatsCard
-                  label={`${token1.ticker} APR`}
+                  label={`${token1.symbol} APR`}
                   value={`${(apr1 * 100).toFixed(2)}%`}
                   showAsterisk={isShowingHypothetical}
                 />

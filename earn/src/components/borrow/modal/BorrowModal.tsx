@@ -45,7 +45,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.UNHEALTHY:
       return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.NOT_ENOUGH_SUPPLY:
-      return { text: `Not Enough ${token.ticker} Supply`, enabled: false };
+      return { text: `Not Enough ${token.symbol} Supply`, enabled: false };
     case ConfirmButtonState.LOADING:
       return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.DISABLED:
@@ -308,15 +308,15 @@ export default function BorrowModal(props: BorrowModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're borrowing{' '}
             <strong>
-              {borrowAmountStr || '0.00'} {borrowToken.ticker}
+              {borrowAmountStr || '0.00'} {borrowToken.symbol}
             </strong>{' '}
             using this{' '}
             <strong>
-              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
+              {marginAccount.token0.symbol}/{marginAccount.token1.symbol}
             </strong>{' '}
             smart wallet. Your total borrows for this token in this smart wallet will be{' '}
             <strong>
-              {newLiability.toString(GNFormat.DECIMAL)} {borrowToken.ticker}
+              {newLiability.toString(GNFormat.DECIMAL)} {borrowToken.symbol}
             </strong>
             .
           </Text>

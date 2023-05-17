@@ -43,17 +43,17 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
-        text: `Insufficient ${token.ticker}`,
+        text: `Insufficient ${token.symbol}`,
         enabled: false,
       };
     case ConfirmButtonState.PERMIT_ASSET:
       return {
-        text: `Permit ${token.ticker}`,
+        text: `Permit ${token.symbol}`,
         enabled: true,
       };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
-        text: `Approve ${token.ticker}`,
+        text: `Approve ${token.symbol}`,
         enabled: true,
       };
     case ConfirmButtonState.WAITING_FOR_TRANSACTION:
@@ -218,7 +218,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {depositAmount || 0} {token?.ticker}
+          {depositAmount || 0} {token?.symbol}
         </Text>
       </div>
       <div className='w-full'>

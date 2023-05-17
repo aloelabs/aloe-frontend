@@ -20,7 +20,7 @@ export default function TokenIcon(props: TokenIconProps) {
   const { token, width, height, borderRadius } = props;
   return (
     <StyledTokenIcon
-      src={token.iconPath}
+      src={token.logoURI}
       alt={token.name}
       width={width || 16}
       height={height || 16}
