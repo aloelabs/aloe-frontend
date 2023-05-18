@@ -3,9 +3,10 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'wagmi';
 
 import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
-import { AccountState, TokenType } from './Actions';
+import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
+import { AccountState, OperationResult, TokenType } from './Actions';
 
-export function transferInOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function transferInOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   const assets = { ...operand.assets };
   const availableForDeposit = { ...operand.availableForDeposit };
   const requiredAllowances = { ...operand.requiredAllowances };
@@ -24,18 +25,21 @@ export function transferInOperator(operand: AccountState, token: TokenType, amou
   }
 
   return {
-    ...operand,
-    assets,
-    availableForDeposit,
-    requiredAllowances,
+    success: true,
+    accountState: {
+      ...operand,
+      assets,
+      availableForDeposit,
+      requiredAllowances,
+    },
   };
 }
 
-export function transferOutOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function transferOutOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   return transferInOperator(operand, token, amount.neg());
 }
 
-export function mintOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function mintOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   const assets = { ...operand.assets };
 
   if (token === TokenType.ASSET0) {
@@ -44,14 +48,14 @@ export function mintOperator(operand: AccountState, token: TokenType, amount: GN
     assets.token1Raw = assets.token1Raw.sub(amount);
   }
 
-  return { ...operand, assets };
+  return { success: true, accountState: { ...operand, assets } };
 }
 
-export function burnOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function burnOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   return mintOperator(operand, token, amount.neg());
 }
 
-export function borrowOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function borrowOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   const assets = { ...operand.assets };
   const liabilities = { ...operand.liabilities };
   const availableForBorrow = { ...operand.availableForBorrow };
@@ -67,14 +71,17 @@ export function borrowOperator(operand: AccountState, token: TokenType, amount: 
   }
 
   return {
-    ...operand,
-    assets,
-    liabilities,
-    availableForBorrow,
+    success: true,
+    accountState: {
+      ...operand,
+      assets,
+      liabilities,
+      availableForBorrow,
+    },
   };
 }
 
-export function repayOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+export function repayOperator(operand: AccountState, token: TokenType, amount: GN): OperationResult {
   return borrowOperator(operand, token, amount.neg());
 }
 
@@ -87,7 +94,7 @@ export function addLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): AccountState {
+): OperationResult {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
 
@@ -116,7 +123,14 @@ export function addLiquidityOperator(
     uniswapPositions.push({ liquidity, lower: lowerTick, upper: upperTick });
   }
 
-  return { ...operand, assets, uniswapPositions };
+  if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
+    return {
+      success: false,
+      error: Error(`Too many uniswap positions`),
+    };
+  }
+
+  return { success: true, accountState: { ...operand, assets, uniswapPositions } };
 }
 
 export function removeLiquidityOperator(
@@ -128,7 +142,7 @@ export function removeLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): AccountState | null {
+): OperationResult {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
   const claimedFeeUniswapKeys = operand.claimedFeeUniswapKeys.concat();
@@ -151,28 +165,32 @@ export function removeLiquidityOperator(
   const idx = uniswapPositions.map((x) => uniswapPositionKey(owner, x.lower ?? 0, x.upper ?? 0)).indexOf(key);
 
   if (idx === -1) {
-    console.error("Attempted to remove liquidity from a position that doens't exist");
-    return null;
+    return {
+      success: false,
+      error: Error("Attempted to remove liquidity from a position that doens't exist"),
+    };
   }
 
   const oldPosition = { ...uniswapPositions[idx] };
   if (JSBI.lessThan(oldPosition.liquidity, liquidity)) {
-    console.error('Attempted to remove more than 100% of liquidity from a position');
-    return null;
+    return {
+      success: false,
+      error: Error('Attempted to remove more than 100% of liquidity from a position'),
+    };
   }
   oldPosition.liquidity = JSBI.subtract(oldPosition.liquidity, liquidity);
   uniswapPositions[idx] = oldPosition;
   claimedFeeUniswapKeys.push(key);
 
   // eslint-disable-next-line object-curly-newline
-  return { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys };
+  return { success: true, accountState: { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys } };
 }
 
-export function swapOperator(operand: AccountState, amount0: GN, amount1: GN): AccountState {
+export function swapOperator(operand: AccountState, amount0: GN, amount1: GN): OperationResult {
   const assets = { ...operand.assets };
 
   assets.token0Raw = assets.token0Raw.add(amount0);
   assets.token1Raw = assets.token1Raw.add(amount1);
 
-  return { ...operand, assets };
+  return { success: true, accountState: { ...operand, assets } };
 }

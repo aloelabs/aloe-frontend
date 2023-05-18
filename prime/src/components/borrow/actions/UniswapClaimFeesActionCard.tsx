@@ -23,7 +23,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
   const { uniswapPositions, claimedFeeUniswapKeys } = accountState;
 
@@ -61,7 +61,12 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
         actionArgs:
           lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
         operator(operand) {
-          if (lower == null || upper == null) return null;
+          if (lower == null || upper == null) {
+            return {
+              success: false,
+              error: Error('Invalid liquidity position'),
+            };
+          }
           return removeLiquidityOperator(
             operand,
             marginAccount.address as Address,
@@ -88,6 +93,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
       action={ActionID.CLAIM_FEES}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div>

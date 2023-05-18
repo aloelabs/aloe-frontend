@@ -40,7 +40,24 @@ export interface AccountState {
   readonly claimedFeeUniswapKeys: readonly string[];
 }
 
-type Operator = (state: AccountState) => AccountState | null;
+export type HypotheticalAccountStates = {
+  accountStates: AccountState[];
+  errorMsg?: string;
+};
+
+export type SuccessResult = {
+  success: true;
+  accountState: AccountState;
+};
+
+export type ErrorResult = {
+  success: false;
+  error: Error;
+};
+
+export type OperationResult = SuccessResult | ErrorResult;
+
+type Operator = (state: AccountState) => OperationResult;
 
 export type ActionCardOutput = {
   actionId: ActionID;
@@ -64,6 +81,8 @@ export type ActionCardProps = {
   isCausingError: boolean;
   /** should be set to true if ActionCard is being created from a template */
   forceOutput: boolean;
+  /** an error message to display if the action is causing an error */
+  errorMsg?: string;
   /** called whenever the ActionCard's output changes */
   onChange: (output: ActionCardOutput, userInputFields: string[]) => void;
   /** removes the ActionCard */
@@ -198,15 +217,24 @@ export function calculateHypotheticalStates(
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>,
   initialState: AccountState,
   operators: Operator[]
-): AccountState[] {
-  const states: AccountState[] = [initialState];
+): HypotheticalAccountStates {
+  const accountStates: AccountState[] = [initialState];
+  let errorMsg: string | undefined = undefined;
 
   for (let i = 0; i < operators.length; i += 1) {
-    const state = runWithChecks(operators[i], states[i], marginAccount);
-    if (state == null) break;
-
-    states.push(state);
+    try {
+      const accountState = runWithChecks(operators[i], accountStates[i], marginAccount);
+      accountStates.push(accountState);
+    } catch (e) {
+      errorMsg = (e as Error).message;
+      // Replace TokenType enums with actual token symbols
+      errorMsg = errorMsg.replace(TokenType.ASSET0, marginAccount.token0.symbol);
+      errorMsg = errorMsg.replace(TokenType.ASSET1, marginAccount.token1.symbol);
+      break;
+    }
   }
-
-  return states;
+  return {
+    accountStates,
+    errorMsg,
+  };
 }

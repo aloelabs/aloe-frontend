@@ -18,7 +18,8 @@ import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 
 export function AloeWithdrawActionCard(prop: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, forceOutput, onRemove, onChange } =
+    prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
@@ -78,6 +79,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
       action={ActionID.TRANSFER_OUT}
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div className='w-full flex flex-col gap-4 items-center'>

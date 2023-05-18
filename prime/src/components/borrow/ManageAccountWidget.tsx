@@ -173,6 +173,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const [actionOutputs, setActionOutputs] = useState<ActionCardOutput[]>([]);
   const [activeActions, setActiveActions] = useState<Action[]>([]);
   const [hypotheticalStates, setHypotheticalStates] = useState<AccountState[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
   // modals
   const [showAddActionModal, setShowAddActionModal] = useState(false);
 
@@ -247,7 +248,8 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   useEffect(() => {
     const operators = actionOutputs.map((o) => o.operator);
-    const states = calculateHypotheticalStates(marginAccount, initialState, operators);
+    const { accountStates: states, errorMsg } = calculateHypotheticalStates(marginAccount, initialState, operators);
+    setErrorMsg(errorMsg);
     setHypotheticalStates(states);
     updateHypotheticalState(states.length > 1 ? states[states.length - 1] : null);
   }, [actionOutputs, marginAccount, initialState, updateHypotheticalState]);
@@ -294,6 +296,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}
                   isCausingError={index >= numValidActions && userInputFields.at(index) !== undefined}
+                  errorMsg={index === numValidActions ? errorMsg : undefined}
                   forceOutput={actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
                     setUserInputFields([

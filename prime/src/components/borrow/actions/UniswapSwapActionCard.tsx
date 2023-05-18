@@ -53,7 +53,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 `;
 
 export default function UniswapSwapActionCard(props: ActionCardProps) {
-  const { accountState, isCausingError, marginAccount, onChange, onRemove, userInputFields } = props;
+  const { accountState, marginAccount, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
 
   const amountInExact = userInputFields?.at(0) ?? '';
@@ -104,6 +104,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
       action={ActionID.SWAP}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div className='ml-auto'>
