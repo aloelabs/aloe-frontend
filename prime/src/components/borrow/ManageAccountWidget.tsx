@@ -278,7 +278,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
-  const hasInvalidAction = activeActions.length > numValidActions;
+  const hasInvalidAction = activeActions.length > numValidActions && userInputFields.at(numValidActions) !== undefined;
 
   const { health } = isSolvent(
     finalState.assets,
@@ -319,7 +319,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}
                   isCausingError={index >= numValidActions && userInputFields.at(index) !== undefined}
-                  errorMsg={index === numValidActions ? errorMsg : undefined}
+                  errorMsg={index === numValidActions && userInputFields.at(index) !== undefined ? errorMsg : undefined}
                   forceOutput={actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
                     setUserInputFields([
