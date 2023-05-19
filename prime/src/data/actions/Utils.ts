@@ -38,6 +38,14 @@ export function runWithChecks(
     throw Error(`Insufficient ${marginAccount.token1.symbol} available for borrow`);
   }
 
+  // if the action would cause insolvency, we have an issue!
+  // note: Technically (in the contracts) solvency is only checked at the end of a series of actions,
+  //       not after each individual one. We tried following that pattern here, but it made the UX
+  //       confusing in some cases. For example, with one set of inputs, an entire set of actions would
+  //       be highlighted red to show a solvency error. But upon entering a massive value for one of those
+  //       actions, the code singles that one out as problematic. In reality solvency is *also* still an issue,
+  //       but to the user it looks like they've fixed solvency by entering bogus data in a single action.
+  // TLDR: It's simpler to check solvency inside this for loop
   const solvency = isSolvent(
     assets,
     liabilities,
