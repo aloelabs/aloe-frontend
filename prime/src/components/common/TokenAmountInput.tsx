@@ -62,7 +62,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
     <div className='w-full'>
       <div className='flex items-center justify-between mb-2'>
         <Text size='M' weight='medium' color={INPUT_LABEL_TEXT_COLOR}>
-          {props.token.ticker}
+          {props.token.symbol}
         </Text>
         {props.max !== undefined && (
           <Text size='XS' weight='medium' color={BALANCE_VALUE_TEXT_COLOR}>

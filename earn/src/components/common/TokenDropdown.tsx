@@ -130,9 +130,9 @@ export default function TokenDropdown(props: TokenDropdownProps) {
         className={isOpen ? 'active' : ''}
       >
         <div className='flex items-center gap-1'>
-          <TokenIcon src={selectedOption.iconPath || UNKNOWN_TOKEN_ICON} width={20} height={20} />
+          <TokenIcon src={selectedOption.logoURI || UNKNOWN_TOKEN_ICON} width={20} height={20} />
           <Text size='M' weight='bold'>
-            {selectedOption.ticker}
+            {selectedOption.symbol}
           </Text>
           {!compact && <Text>- {selectedOption.name}</Text>}
         </div>
@@ -156,9 +156,9 @@ export default function TokenDropdown(props: TokenDropdownProps) {
               backgroundColorHover={backgroundColorHover}
             >
               <div className='flex items-center gap-1 min-w-max'>
-                <TokenIcon src={option.iconPath || UNKNOWN_TOKEN_ICON} width={20} height={20} />
+                <TokenIcon src={option.logoURI || UNKNOWN_TOKEN_ICON} width={20} height={20} />
                 <Text size='M' weight='bold'>
-                  {option.ticker}
+                  {option.symbol}
                 </Text>
                 {!compact && <Text>- {option.name}</Text>}
               </div>

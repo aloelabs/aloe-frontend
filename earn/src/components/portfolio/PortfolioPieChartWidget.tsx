@@ -209,16 +209,16 @@ export default function PortfolioPieChartWidget(props: PortfolioPieChartWidgetPr
                       <Text size='M' weight='bold' color={activeSlice.color}>
                         {activeSlice.pairName}
                       </Text>
-                      <Text size='L'>{activeSlice.token.ticker}</Text>
+                      <Text size='L'>{activeSlice.token.symbol}</Text>
                     </div>
                   ) : (
                     <div className='flex flex-col justify-center items-center gap-1'>
-                      <Text size='L'>{activeSlice.token.ticker}</Text>
+                      <Text size='L'>{activeSlice.token.symbol}</Text>
                     </div>
                   ))}
                 {!activeSlice && (
                   <div className='flex flex-col justify-center items-center'>
-                    <Text size='M'>{token.ticker}</Text>
+                    <Text size='M'>{token.symbol}</Text>
                     <Text size='L'>Assets</Text>
                   </div>
                 )}

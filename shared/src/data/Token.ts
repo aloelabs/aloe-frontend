@@ -4,17 +4,17 @@ export class Token {
   public readonly chainId: number;
   public readonly address: Address;
   public readonly decimals: number;
-  public readonly ticker: string;
+  public readonly symbol: string;
   public readonly name: string;
-  public readonly iconPath: string;
+  public readonly logoURI: string;
 
-  constructor(chainId: number, address: Address, decimals: number, ticker: string, name: string, iconPath: string) {
+  constructor(chainId: number, address: Address, decimals: number, symbol: string, name: string, logoURI: string) {
     this.chainId = chainId;
     this.address = address;
     this.decimals = decimals;
-    this.ticker = ticker;
+    this.symbol = symbol;
     this.name = name;
-    this.iconPath = iconPath;
+    this.logoURI = logoURI;
   }
 
   get underlying(): Token {

@@ -36,7 +36,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
-        text: `Insufficient ${token.ticker}`,
+        text: `Insufficient ${token.symbol}`,
         enabled: false,
       };
     case ConfirmButtonState.PENDING:
@@ -251,15 +251,15 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're removing{' '}
             <strong>
-              {collateralAmountStr || '0.00'} {collateralToken.ticker}
+              {collateralAmountStr || '0.00'} {collateralToken.symbol}
             </strong>{' '}
             collateral from this{' '}
             <strong>
-              {marginAccount.token0.ticker}/{marginAccount.token1.ticker}
+              {marginAccount.token0.symbol}/{marginAccount.token1.symbol}
             </strong>{' '}
             smart wallet. Your total collateral for this token in this smart wallet will be{' '}
             <strong>
-              {newCollateralAmount.toString(GNFormat.DECIMAL)} {collateralToken.ticker}
+              {newCollateralAmount.toString(GNFormat.DECIMAL)} {collateralToken.symbol}
             </strong>
             .
           </Text>

@@ -34,10 +34,10 @@ export default function PnLGraphTooltip(props: {
     const y = data?.payload[0]?.value || 0;
     const x = data?.label || 0;
 
-    const token0Ticker = token0.ticker ?? '';
-    const token1Ticker = token1.ticker ?? '';
-    const tickerActive = inTermsOfToken0 ? token0Ticker : token1Ticker;
-    const tickerInactive = inTermsOfToken0 ? token1Ticker : token0Ticker;
+    const token0Symbol = token0.symbol ?? '';
+    const token1Symbol = token1.symbol ?? '';
+    const symbolActive = inTermsOfToken0 ? token0Symbol : token1Symbol;
+    const symbolInactive = inTermsOfToken0 ? token1Symbol : token0Symbol;
 
     return (
       <TooltipContainer>
@@ -50,7 +50,7 @@ export default function PnLGraphTooltip(props: {
               {formatNumberRelativeToSize(x)}
             </Text>
             <Text size='M' weight='bold'>
-              {`${tickerActive} / ${tickerInactive}`}
+              {`${symbolActive} / ${symbolInactive}`}
             </Text>
           </div>
           <div className='flex flex-col justify-center items-center'>
@@ -65,7 +65,7 @@ export default function PnLGraphTooltip(props: {
               )}
             </div>
             <Text size='M' weight='bold'>
-              {formatNumberRelativeToSize(y)} {tickerActive}
+              {formatNumberRelativeToSize(y)} {symbolActive}
             </Text>
           </div>
         </div>

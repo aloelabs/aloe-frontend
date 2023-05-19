@@ -181,10 +181,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {amount0.toString(GNFormat.LOSSY_HUMAN)} {token0?.ticker}
+                      {amount0.toString(GNFormat.LOSSY_HUMAN)} {token0.symbol}
                     </Text>
                     <Text size='M'>
-                      {amount1.toString(GNFormat.LOSSY_HUMAN)} {token1?.ticker}
+                      {amount1.toString(GNFormat.LOSSY_HUMAN)} {token1.symbol}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -195,10 +195,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Updated Balance
                     </Text>
                     <Text size='M'>
-                      {updatedBalance0.toString(GNFormat.LOSSY_HUMAN)} {token0?.ticker}
+                      {updatedBalance0.toString(GNFormat.LOSSY_HUMAN)} {token0.symbol}
                     </Text>
                     <Text size='M'>
-                      {updatedBalance1.toString(GNFormat.LOSSY_HUMAN)} {token1?.ticker}
+                      {updatedBalance1.toString(GNFormat.LOSSY_HUMAN)} {token1.symbol}
                     </Text>
                   </div>
                 </div>
