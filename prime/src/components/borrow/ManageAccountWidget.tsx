@@ -278,6 +278,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
+  const hasInvalidAction = activeActions.length > numValidActions;
 
   const { health } = isSolvent(
     finalState.assets,
@@ -367,10 +368,10 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
-        {activeActions.length > numValidActions && (
+        {hasInvalidAction && (
           <ActionErrorContainer>
             <div className='flex items-center justify-start gap-2'>
-              <StyledAlertIcon />
+              <StyledAlertIcon width={24} height={24} />
               <Text size='M' weight='bold'>
                 Invalid Action(s)
               </Text>
