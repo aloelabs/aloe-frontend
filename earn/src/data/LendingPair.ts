@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
+import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
@@ -18,7 +19,6 @@ import {
   ALOE_II_ORACLE_ADDRESS,
   UNISWAP_POOL_DENYLIST,
 } from './constants/Addresses';
-import { getToken } from './TokenData';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders

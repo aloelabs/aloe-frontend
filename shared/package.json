@@ -23,6 +23,7 @@
     "@types/react-dom": "^17.0.11",
     "@types/styled-components": "^5.1.21",
     "big.js": "^6.1.1",
+    "ethereum-multicall": "^2.15.0",
     "ethers": "5.7.1",
     "jsbi": "^3.1.4",
     "node-polyfill-webpack-plugin": "^1.1.4",
@@ -34,13 +35,16 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
+    "copyfiles": "^2.4.1",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "start": "yarn tsc -w",
+    "start": "yarn copy-svg && yarn tsc -w",
     "clean": "rm -rf ./lib",
-    "build": "tsc --build \"./tsconfig.json\"",
+    "build": "yarn copy-svg && yarn compile",
+    "compile": "tsc --build \"./tsconfig.json\"",
+    "copy-svg": "copyfiles -u 1 \"./src/**/*.svg\" ./lib",
     "lint": "eslint --fix --ext .tsx,.ts .",
     "test": "jest"
   }

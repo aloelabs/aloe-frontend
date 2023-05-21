@@ -1,4 +1,4 @@
-import { Token } from 'shared/lib/data/Token';
+import { Token } from './Token';
 import { Address, chain } from 'wagmi';
 
 import {

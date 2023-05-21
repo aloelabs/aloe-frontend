@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
+import { getToken, getTokenByTicker } from 'shared/lib/data/TokenData';
 import {
   getSessionStorageInteger,
   getSessionStorageString,
@@ -42,7 +43,6 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
-import { getToken, getTokenByTicker } from '../data/TokenData';
 import { getProminentColor } from '../util/Colors';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
