@@ -98,8 +98,8 @@ export default function LendPage() {
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
     lendingPairs.forEach((pair) => {
-      symbols.add(pair.token0.ticker.toUpperCase());
-      symbols.add(pair.token1.ticker.toUpperCase());
+      symbols.add(pair.token0.symbol.toUpperCase());
+      symbols.add(pair.token1.symbol.toUpperCase());
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
@@ -117,7 +117,7 @@ export default function LendPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: getTokenByTicker(activeChain.id, key),
+          token: getTokenBySymbol(activeChain.id, key),
           price: value.price,
         };
       });
@@ -157,8 +157,8 @@ export default function LendPage() {
     const options: MultiDropdownOption<Token>[] = Array.from(uniqueTokens).map((token) => {
       return {
         value: token,
-        label: token.ticker || '',
-        icon: token.iconPath,
+        label: token.symbol || '',
+        icon: token.logoURI,
       };
     });
     setFilterOptions(options);
@@ -193,7 +193,7 @@ export default function LendPage() {
       );
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
-      const pairName = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      const pairName = `${pair.token0.symbol}-${pair.token1.symbol}`;
       return [
         {
           token: pair.token0,

@@ -1,18 +1,12 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { Address, SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
-import { getToken, getTokenByTicker } from 'shared/lib/data/TokenData';
-import {
-  getSessionStorageInteger,
-  getSessionStorageString,
-  setSessionStorageInteger,
-  setSessionStorageString,
-} from 'shared/lib/util/SessionStorage';
+import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
 import { useAccount, useProvider } from 'wagmi';
 
@@ -21,13 +15,13 @@ import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
-import { ReactComponent as UsersIcon } from '../assets/svg/users.svg';
+import { ReactComponent as TruckIcon } from '../assets/svg/truck.svg';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
+import BridgeModal from '../components/portfolio/modal/BridgeModal';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
-import ReferralModal from '../components/portfolio/modal/ReferralModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
 import PortfolioActionButton from '../components/portfolio/PortfolioActionButton';
@@ -109,11 +103,6 @@ export type TokenBalance = {
   pairName: string;
 };
 
-export type ReferralData = {
-  courierId: number;
-  lender: Token;
-};
-
 export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
@@ -129,11 +118,9 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
-  const [sessionReferrer, setSessionReferrer] = useState<ReferralData | null>(null);
-  const [searchParams] = useSearchParams();
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
@@ -148,40 +135,6 @@ export default function PortfolioPage() {
     return Array.from(tokens);
   }, [lendingPairs]);
 
-  const kitties = useMemo(() => {
-    return lendingPairs.flatMap((pair) => [pair.kitty0, pair.kitty1]);
-  }, [lendingPairs]);
-
-  /**
-   * Handle referral search param
-   */
-  useEffect(() => {
-    const existingSessionReferrer = getSessionStorageInteger('referrer');
-    const existingSessionLenderAddress = getSessionStorageString('lender');
-    if (searchParams.has('ref') && searchParams.has('lender') && kitties.length > 0) {
-      const referrer = parseInt(searchParams.get('ref') ?? '');
-      const lenderAddress = searchParams.get('lender');
-      const lender = kitties.find((kitty) => kitty.address === lenderAddress) ?? null;
-      if (referrer > 0 && lender != null) {
-        setSessionReferrer({
-          courierId: referrer,
-          lender,
-        });
-        setSessionStorageInteger('referrer', referrer);
-        setSessionStorageString('lender', lender.address);
-      }
-    } else if (existingSessionReferrer != null && existingSessionLenderAddress != null) {
-      const existingSessionLender = getToken(activeChain.id, existingSessionLenderAddress as Address);
-      if (existingSessionLender == null) {
-        return;
-      }
-      setSessionReferrer({
-        courierId: existingSessionReferrer,
-        lender: existingSessionLender,
-      });
-    }
-  }, [activeChain.id, searchParams, kitties]);
-
   /**
    * Get the latest and historical prices for all tokens
    */
@@ -189,8 +142,8 @@ export default function PortfolioPage() {
     let mounted = true;
     async function fetch() {
       const symbols = uniqueTokens
-        .map((token) => token?.ticker)
-        .filter((ticker) => ticker !== undefined)
+        .map((token) => token?.symbol)
+        .filter((symbol) => symbol !== undefined)
         .join(',');
       if (symbols.length === 0) {
         return;
@@ -211,15 +164,15 @@ export default function PortfolioPage() {
       if (!latestPriceResponse || !historicalPriceResponse) {
         return;
       }
-      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([ticker, data]) => {
+      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenByTicker(activeChain.id, ticker),
+          token: getTokenBySymbol(activeChain.id, symbol),
           price: data.price,
         };
       });
-      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([ticker, data]) => {
+      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenByTicker(activeChain.id, ticker),
+          token: getTokenBySymbol(activeChain.id, symbol),
           priceEntries: data.prices,
         };
       });
@@ -239,7 +192,7 @@ export default function PortfolioPage() {
     let mounted = true;
     async function fetchTokenColors() {
       const tokenColorMap: Map<string, string> = new Map();
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.iconPath || ''));
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
       const colors = await Promise.all(colorPromises);
       uniqueTokens.forEach((token: Token, index: number) => {
         tokenColorMap.set(token.address, colors[index]);
@@ -311,7 +264,7 @@ export default function PortfolioPage() {
       const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
-      const pairName: string = `${pair.token0.ticker}-${pair.token1.ticker}`;
+      const pairName: string = `${pair.token0.symbol}-${pair.token1.symbol}`;
       return [
         {
           token: pair.token0,
@@ -452,7 +405,7 @@ export default function PortfolioPage() {
               setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton label={'Referral'} Icon={<UsersIcon />} onClick={() => setIsReferralModalOpen(true)} />
+          <PortfolioActionButton label={'Bridge'} Icon={<TruckIcon />} onClick={() => setIsBridgeModalOpen(true)} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
@@ -494,7 +447,6 @@ export default function PortfolioPage() {
             defaultOption={activeAsset}
             lendingPairs={lendingPairs}
             isOpen={isEarnInterestModalOpen}
-            referralData={sessionReferrer}
             setIsOpen={setIsEarnInterestModalOpen}
             setPendingTxn={setPendingTxn}
           />
@@ -506,12 +458,7 @@ export default function PortfolioPage() {
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}
           />
-          <ReferralModal
-            options={lendingPairs}
-            defaultOption={lendingPairs[0]}
-            isOpen={isReferralModalOpen}
-            setIsOpen={setIsReferralModalOpen}
-          />
+          <BridgeModal isOpen={isBridgeModalOpen} selectedAsset={activeAsset} setIsOpen={setIsBridgeModalOpen} />
         </>
       )}
       <PendingTxnModal

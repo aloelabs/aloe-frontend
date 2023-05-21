@@ -17,7 +17,6 @@ import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWr
 import { ChainContext } from '../../../App';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
-import { ReferralData } from '../../../pages/PortfolioPage';
 import PairDropdown from '../../common/PairDropdown';
 import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -50,17 +49,17 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return {
-        text: `Insufficient ${token.ticker}`,
+        text: `Insufficient ${token.symbol}`,
         enabled: false,
       };
     case ConfirmButtonState.PERMIT_ASSET:
       return {
-        text: `Permit ${token.ticker}`,
+        text: `Permit ${token.symbol}`,
         enabled: true,
       };
     case ConfirmButtonState.APPROVE_ASSET:
       return {
-        text: `Approve ${token.ticker}`,
+        text: `Approve ${token.symbol}`,
         enabled: true,
       };
     case ConfirmButtonState.WAITING_FOR_TRANSACTION:
@@ -185,7 +184,6 @@ export type EarnInterestModalProps = {
   options: Token[];
   defaultOption: Token;
   lendingPairs: LendingPair[];
-  referralData: ReferralData | null;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
@@ -357,14 +355,14 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're depositing{' '}
             <strong>
-              {inputValue || '0.00'} {selectedOption.ticker}
+              {inputValue || '0.00'} {selectedOption.symbol}
             </strong>{' '}
             to the{' '}
             <strong>
-              {selectedPairOption.token0.ticker}/{selectedPairOption.token1.ticker}
+              {selectedPairOption.token0.symbol}/{selectedPairOption.token1.symbol}
             </strong>{' '}
-            lending market. Other users will be able to borrow your {selectedOption.ticker} by posting{' '}
-            {peerAsset.ticker} as collateral. When they pay interest, you earn interest.
+            lending market. Other users will be able to borrow your {selectedOption.symbol} by posting{' '}
+            {peerAsset.symbol} as collateral. When they pay interest, you earn interest.
           </Text>
         </div>
         <div className='w-full'>

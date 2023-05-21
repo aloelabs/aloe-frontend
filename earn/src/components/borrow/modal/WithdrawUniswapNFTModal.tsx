@@ -210,10 +210,10 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
             <div className='flex flex-col items-center justify-center gap-4 '>
               <div className='w-full flex justify-between'>
                 <TokenPairIcons
-                  token0IconPath={token0.iconPath}
-                  token1IconPath={token1.iconPath}
-                  token0AltText={`${token0.ticker}'s icon`}
-                  token1AltText={`${token1.ticker}'s icon`}
+                  token0IconPath={token0.logoURI}
+                  token1IconPath={token1.logoURI}
+                  token0AltText={`${token0.symbol}'s icon`}
+                  token1AltText={`${token1.symbol}'s icon`}
                 />
                 {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
               </div>
@@ -223,14 +223,14 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                     {roundPercentage(amount0Percent, 1)}%
                   </Display>
                   <Display size='S'>{truncateDecimals(amount0.toString(), 5)}</Display>
-                  <Text size='XS'>{marginAccount.token0.ticker}</Text>
+                  <Text size='XS'>{marginAccount.token0.symbol}</Text>
                 </div>
                 <div className='text-right'>
                   <Display size='XS' color={ACCENT_COLOR}>
                     {roundPercentage(amount1Percent, 1)}%
                   </Display>
                   <Display size='S'>{truncateDecimals(amount1.toString(), 5)}</Display>
-                  <Text size='XS'>{marginAccount.token1.ticker}</Text>
+                  <Text size='XS'>{marginAccount.token1.symbol}</Text>
                 </div>
               </div>
               <div className='w-full flex justify-between'>
@@ -240,7 +240,7 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                   </Text>
                   <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
                   <Text size='XS'>
-                    {marginAccount.token1.ticker} per {marginAccount.token0.ticker}
+                    {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
                   </Text>
                 </div>
                 <div className='text-right'>
@@ -249,7 +249,7 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                   </Text>
                   <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
                   <Text size='XS'>
-                    {marginAccount.token1.ticker} per {marginAccount.token0.ticker}
+                    {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
                   </Text>
                 </div>
               </div>

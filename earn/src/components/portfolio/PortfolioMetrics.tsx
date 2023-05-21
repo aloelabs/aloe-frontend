@@ -72,7 +72,7 @@ export default function PortfolioMetrics(props: PortfolioMetricsProps) {
             {formatTokenAmount(totalBalance, 3)}
           </Display>
           <Display size='S' className='inline-block ml-0.5'>
-            {activeAsset?.ticker || ''}
+            {activeAsset?.symbol || ''}
           </Display>
         </div>
       </BalanceContainer>

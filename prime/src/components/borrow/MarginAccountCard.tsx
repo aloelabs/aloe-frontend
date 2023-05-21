@@ -126,8 +126,8 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
   useEffect(() => {
     let mounted = true;
     const calculateProminentColors = async () => {
-      const token0Color = await getProminentColor(token0.iconPath || '');
-      const token1Color = await getProminentColor(token1.iconPath || '');
+      const token0Color = await getProminentColor(token0.logoURI || '');
+      const token1Color = await getProminentColor(token1.logoURI || '');
       if (mounted) {
         setToken0Color(token0Color);
         setToken1Color(token1Color);
@@ -153,12 +153,12 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
     <CardWrapper to={link} border={cardBorderGradient} shadow={cardShadowColor}>
       <CardTitleWrapper gradient={cardTitleBackgroundGradient}>
         <Display size='M' weight='semibold'>
-          {token0.ticker}-{token1.ticker}
+          {token0.symbol}-{token1.symbol}
         </Display>
         <CardSubTitleWrapper>
           <TokenPairIcons
-            token0IconPath={token0.iconPath}
-            token1IconPath={token1.iconPath}
+            token0IconPath={token0.logoURI}
+            token1IconPath={token1.logoURI}
             token0AltText={`${token0.name}'s Icon`}
             token1AltText={`${token1.name}'s Icon`}
           />
@@ -172,11 +172,11 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
           <MetricContainer
-            label={token0.ticker ?? 'Token0'}
+            label={token0.symbol ?? 'Token0'}
             value={assets0.sub(liabilities.amount0).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer
-            label={token1.ticker ?? 'Token1'}
+            label={token1.symbol ?? 'Token1'}
             value={assets1.sub(liabilities.amount1).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer

@@ -18,7 +18,11 @@ import {
 } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
 import { isSolvent } from '../../data/BalanceSheet';
-import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
+import {
+  RESPONSIVE_BREAKPOINT_MD,
+  RESPONSIVE_BREAKPOINT_SM,
+  RESPONSIVE_BREAKPOINT_XS,
+} from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 import { MarketInfo } from '../../data/MarketInfo';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
@@ -26,20 +30,29 @@ import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
 
 const Wrapper = styled.div`
-  ${tw`flex flex-col items-center justify-center`}
+  ${tw`flex flex-col items-center justify-start`}
   background: rgba(13, 23, 30, 1);
-  padding: 24px;
   border-radius: 8px;
+  position: sticky;
+  top: 117px;
+  max-height: calc(100vh - 230px);
+  overflow: hidden;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    top: 0;
+    position: relative;
+    max-height: 100%;
+    overflow: visible;
+  }
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     width: 100%;
   }
 
-  position: relative;
   &:before {
     content: '';
     position: absolute;
-    z-index: 0;
+    z-index: 1;
     inset: 0;
     pointer-events: none;
     border-radius: 8px;
@@ -49,6 +62,32 @@ const Wrapper = styled.div`
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
+  }
+`;
+
+const ScrollableContainer = styled.div`
+  ${tw`flex flex-col items-start justify-start`}
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #6f6f6f;
+    border-radius: 16px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #4b4b4b;
   }
 `;
 
@@ -231,7 +270,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   //TODO: add some sort of error message when !transactionIsViable
   return (
     <Wrapper>
-      <div>
+      <ScrollableContainer>
         <ActionCardWrapper>
           <Display size='M' weight='medium'>
             Manage Account
@@ -304,7 +343,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </ActionItem>
         </ActionsList>
         <HealthBar health={health} />
-        <div className='flex justify-end gap-4 mt-4'>
+        <div className='w-full flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
@@ -322,7 +361,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             }}
           />
         </div>
-      </div>
+      </ScrollableContainer>
       <BorrowSelectActionModal
         isOpen={showAddActionModal && enabled}
         setIsOpen={setShowAddActionModal}

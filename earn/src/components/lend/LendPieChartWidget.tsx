@@ -160,7 +160,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
     const calculateProminentColors = async () => {
       const tokenColorPromises = sortedTokenBalances.map(async (tokenBalance: TokenBalance) => {
         return {
-          color: await getProminentColor(tokenBalance.token.iconPath || ''),
+          color: await getProminentColor(tokenBalance.token.logoURI || ''),
           token: tokenBalance.token,
           isKitty: tokenBalance.isKitty,
         };
@@ -262,7 +262,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                   <div className='flex flex-col justify-center items-center gap-1'>
                     <Text size='M' weight='bold' color={activeSlice.color}>
                       {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
-                      {activeSlice.tokenBalance.token.ticker || ''}
+                      {activeSlice.tokenBalance.token.symbol || ''}
                     </Text>
                     {activeSlice.tokenBalance.isKitty && (
                       <Text size='XS' color='rgba(255, 255, 255, 0.5)'>

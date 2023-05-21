@@ -247,22 +247,18 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     if (!fees) {
       continue;
     }
-    const selectedTokenTicker = selectedToken?.ticker ?? '';
+    const selectedTokenSymbol = selectedToken.symbol;
     const value = isInTermsOfToken0
       ? item.value.setResolution(marginAccount.token0.decimals).div(item.current)
       : item.value;
 
     const valueText = (
       <Text size='M' weight='medium'>
-        {value.toString(GNFormat.LOSSY_HUMAN) + ' ' + selectedTokenTicker}
+        {value.toString(GNFormat.LOSSY_HUMAN) + ' ' + selectedTokenSymbol}
       </Text>
     );
-    const token0FeesEarned = `${fees.token0FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${
-      marginAccount.token0?.ticker || ''
-    }`;
-    const token1FeesEarned = `${fees.token1FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${
-      marginAccount.token1?.ticker || ''
-    }`;
+    const token0FeesEarned = `${fees.token0FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${marginAccount.token0.symbol}`;
+    const token1FeesEarned = `${fees.token1FeesEarned.toString(GNFormat.LOSSY_HUMAN)} ${marginAccount.token1.symbol}`;
     const earnedFeesText = (
       <Text size='M' weight='medium'>
         {token0FeesEarned + ' ' + token1FeesEarned}
@@ -270,12 +266,12 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
     );
     const lowerText = (
       <Text size='M' weight='medium'>
-        {formatPriceRatio_(isInTermsOfToken0 ? item.upper : item.lower) + ' ' + selectedTokenTicker}
+        {formatPriceRatio_(isInTermsOfToken0 ? item.upper : item.lower) + ' ' + selectedTokenSymbol}
       </Text>
     );
     const upperText = (
       <Text size='M' weight='medium'>
-        {formatPriceRatio_(isInTermsOfToken0 ? item.lower : item.upper) + ' ' + selectedTokenTicker}
+        {formatPriceRatio_(isInTermsOfToken0 ? item.lower : item.upper) + ' ' + selectedTokenSymbol}
       </Text>
     );
     const isInRange = item.current.gte(item.lower) && item.current.lt(item.upper);

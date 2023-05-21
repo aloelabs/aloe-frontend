@@ -23,14 +23,14 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
-      label: token0?.ticker || '',
+      label: token0?.symbol || '',
       value: TokenType.ASSET0,
-      icon: token0?.iconPath || '',
+      icon: token0?.logoURI || '',
     },
     {
-      label: token1?.ticker || '',
+      label: token1?.symbol || '',
       value: TokenType.ASSET1,
-      icon: token1?.iconPath || '',
+      icon: token1?.logoURI || '',
     },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';
@@ -48,7 +48,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   tokenMap.set(TokenType.ASSET1, token1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = GN.fromDecimalString(value || '0', selectedTokenDecimals);
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     onChange(
       {
         actionId: ActionID.TRANSFER_IN,

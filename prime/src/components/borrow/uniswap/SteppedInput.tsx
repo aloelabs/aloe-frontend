@@ -109,8 +109,8 @@ export default function SteppedInput(props: SteppedInputProps) {
     }
   }, [value, localValue, useLocalValue]);
 
-  const token0Ticker = token0?.ticker || '';
-  const token1Ticker = token1?.ticker || '';
+  const token0Symbol = token0?.symbol || '';
+  const token1Symbol = token1?.symbol || '';
 
   return (
     <SteppedInputWrapper active={active}>
@@ -140,7 +140,7 @@ export default function SteppedInput(props: SteppedInputProps) {
         </SvgButtonWrapper>
       </div>
       <Text>
-        {isToken0Selected ? token1Ticker : token0Ticker} per {isToken0Selected ? token0Ticker : token1Ticker}
+        {isToken0Selected ? token1Symbol : token0Symbol} per {isToken0Selected ? token0Symbol : token1Symbol}
       </Text>
     </SteppedInputWrapper>
   );

@@ -67,6 +67,7 @@ const InRangeBadgeWrapper = styled.div`
   background-color: ${IN_RANGE_BACKGROUND_COLOR};
   align-items: center;
   width: fit-content;
+  height: 28px;
   padding: 4px 8px;
   border-radius: 8px;
 
@@ -87,6 +88,7 @@ const OutOfRangeBadgeWrapper = styled.div`
   align-items: center;
   background-color: ${OUT_OF_RANGE_BACKGROUND_COLOR};
   width: fit-content;
+  height: 28px;
   padding: 4px 8px;
   border-radius: 8px;
 
@@ -165,10 +167,10 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
         <div className='flex flex-col gap-4'>
           <div className='flex justify-center items-center'>
             <TokenPairIcons
-              token0IconPath={marginAccount.token0.iconPath}
-              token1IconPath={marginAccount.token1.iconPath}
-              token0AltText={`${marginAccount.token0.ticker}'s icon`}
-              token1AltText={`${marginAccount.token1.ticker}'s icon`}
+              token0IconPath={marginAccount.token0.logoURI}
+              token1IconPath={marginAccount.token1.logoURI}
+              token0AltText={`${marginAccount.token0.symbol}'s icon`}
+              token1AltText={`${marginAccount.token1.symbol}'s icon`}
             />
           </div>
           <div className='flex justify-between'>
@@ -177,14 +179,14 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
                 {roundPercentage(amount0Percent, 1)}%
               </Display>
               <Display size='S'>{truncateDecimals(amount0.toString(), 5)}</Display>
-              <Text size='XS'>{marginAccount.token0.ticker}</Text>
+              <Text size='XS'>{marginAccount.token0.symbol}</Text>
             </div>
             <div className='text-right'>
               <Display size='XS' color={ACCENT_COLOR}>
                 {roundPercentage(amount1Percent, 1)}%
               </Display>
               <Display size='S'>{truncateDecimals(amount1.toString(), 5)}</Display>
-              <Text size='XS'>{marginAccount.token1.ticker}</Text>
+              <Text size='XS'>{marginAccount.token1.symbol}</Text>
             </div>
           </div>
           <div className='flex justify-between'>
@@ -194,7 +196,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               </Text>
               <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
               <Text size='XS'>
-                {marginAccount.token1.ticker} per {marginAccount.token0.ticker}
+                {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
               </Text>
             </div>
             <div className='text-right'>
@@ -203,7 +205,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               </Text>
               <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
               <Text size='XS'>
-                {marginAccount.token1.ticker} per {marginAccount.token0.ticker}
+                {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
               </Text>
             </div>
           </div>

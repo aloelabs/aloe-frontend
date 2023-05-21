@@ -309,10 +309,10 @@ export function getToken(chainId: number, address: Address): Token {
   return TOKEN_DATA[chainId][getLowercaseAddress(address)];
 }
 
-export function getTokenByTicker(chainId: number, ticker: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.ticker.toUpperCase() === ticker.toUpperCase());
+export function getTokenBySymbol(chainId: number, symbol: string): Token {
+  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.symbol.toUpperCase() === symbol.toUpperCase());
   if (!token) {
-    throw new Error(`Could not find token with ticker ${ticker}`);
+    throw new Error(`Could not find token with symbol ${symbol}`);
   }
   return token;
 }
