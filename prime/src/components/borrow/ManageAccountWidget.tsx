@@ -3,6 +3,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { MarginAccount } from 'shared/lib/data/MarginAccount';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
@@ -23,7 +24,6 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../../data/constants/Breakpoints';
-import { MarginAccount } from '../../data/MarginAccount';
 import { MarketInfo } from '../../data/MarketInfo';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';

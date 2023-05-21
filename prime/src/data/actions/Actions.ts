@@ -1,5 +1,6 @@
 import JSBI from 'jsbi';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { Assets, Liabilities, MarginAccount } from 'shared/lib/data/MarginAccount';
 
 import { ReactComponent as AloeLogo } from '../../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../../assets/svg/uniswap_logo.svg';
@@ -12,7 +13,6 @@ import UnsiwapClaimFeesActionCard from '../../components/borrow/actions/UniswapC
 import UniswapRemoveLiquidityActionCard from '../../components/borrow/actions/UniswapRemoveLiquidityActionCard';
 import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapActionCard';
 import { Balances } from '../Balances';
-import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
 import { MarketInfo } from '../MarketInfo';
 import { ActionID } from './ActionID';
 import { runWithChecks } from './Utils';

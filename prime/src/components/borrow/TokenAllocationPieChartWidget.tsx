@@ -2,12 +2,12 @@ import { useState } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { Assets } from 'shared/lib/data/MarginAccount';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { Assets } from '../../data/MarginAccount';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 

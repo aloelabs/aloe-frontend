@@ -1,6 +1,7 @@
+import { MarginAccount } from 'shared/lib/data/MarginAccount';
+
 import { isSolvent } from '../BalanceSheet';
 import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
-import { MarginAccount } from '../MarginAccount';
 import { AccountState } from './Actions';
 
 export function runWithChecks(

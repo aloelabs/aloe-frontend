@@ -4,11 +4,11 @@ import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { MarginAccountPreview } from 'shared/lib/data/MarginAccount';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { sumAssetsPerToken } from '../../data/BalanceSheet';
-import { MarginAccountPreview } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
 import { getHealthColor } from '../../util/Health';

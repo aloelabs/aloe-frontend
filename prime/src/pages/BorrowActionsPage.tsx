@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from 'shared/lib/data/MarginAccount';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -37,7 +38,6 @@ import {
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
-import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../data/RateModel';
 import {

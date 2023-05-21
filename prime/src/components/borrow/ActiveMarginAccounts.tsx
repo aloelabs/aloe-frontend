@@ -1,6 +1,6 @@
 import { Text } from 'shared/lib/components/common/Typography';
+import { MarginAccountPreview } from 'shared/lib/data/MarginAccount';
 
-import { MarginAccountPreview } from '../../data/MarginAccount';
 import { MarginAccountCard } from './MarginAccountCard';
 
 export type ActiveMarginAccountsProps = {

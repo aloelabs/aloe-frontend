@@ -9,6 +9,7 @@ import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
+import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from 'shared/lib/data/MarginAccount';
 import { getToken } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider, useSigner, Address } from 'wagmi';
 
@@ -24,7 +25,6 @@ import { createBorrower } from '../connector/FactoryActions';
 import { ALOE_II_FACTORY_ADDRESS, UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import useEffectOnce from '../data/hooks/UseEffectOnce';
-import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
