@@ -1,6 +1,6 @@
+import { isSolvent } from 'shared/lib/data/BalanceSheet';
 import { MarginAccount } from 'shared/lib/data/MarginAccount';
 
-import { isSolvent } from '../BalanceSheet';
 import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
 import { AccountState } from './Actions';
 

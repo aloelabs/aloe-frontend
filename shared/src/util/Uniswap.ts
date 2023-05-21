@@ -1,23 +1,22 @@
 import { ApolloQueryResult } from '@apollo/react-hooks';
-import { MaxUint256 } from '@uniswap/sdk-core';
-import { Token as UniswapToken } from '@uniswap/sdk-core';
-import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, FeeAmount, Pool } from '@uniswap/v3-sdk';
+import { MaxUint256, Token as UniswapToken } from '@uniswap/sdk-core';
+import { FeeAmount, maxLiquidityForAmounts, nearestUsableTick, Pool, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { chain } from 'wagmi';
+import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
+import { GN, GNFormat } from '../data/GoodNumber';
+import { Token } from '../data/Token';
+import { roundDownToNearestN, roundUpToNearestN, toBig } from './Numbers';
+
+import { uniswapV3PoolABI } from '../abis/UniswapV3Pool';
 import {
   theGraphUniswapV3ArbitrumClient,
   theGraphUniswapV3Client,
   theGraphUniswapV3GoerliClient,
   theGraphUniswapV3OptimismClient,
-} from 'shared/lib/data/clients/TheGraph';
-import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { Token } from 'shared/lib/data/Token';
-import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
-import { chain } from 'wagmi';
-
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+} from '../data/clients/TheGraph';
 import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
 import { UniswapTicksQuery } from './GraphQL';
 
@@ -229,7 +228,7 @@ export async function getUniswapPoolBasics(
   uniswapPoolAddress: string,
   provider: ethers.providers.BaseProvider
 ): Promise<UniswapV3PoolBasics> {
-  const pool = new ethers.Contract(uniswapPoolAddress, UniswapV3PoolABI, provider);
+  const pool = new ethers.Contract(uniswapPoolAddress, uniswapV3PoolABI, provider);
 
   const [slot0, tickSpacing] = await Promise.all([pool.slot0(), pool.tickSpacing()]);
 

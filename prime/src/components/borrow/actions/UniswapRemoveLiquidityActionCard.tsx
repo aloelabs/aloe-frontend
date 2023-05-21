@@ -5,6 +5,7 @@ import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/c
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'wagmi';
@@ -14,7 +15,7 @@ import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_righ
 import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
-import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
+import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import { getAmountsForLiquidity, sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 

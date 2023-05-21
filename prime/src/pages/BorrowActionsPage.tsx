@@ -6,8 +6,10 @@ import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { isSolvent, sumAssetsPerToken } from 'shared/lib/data/BalanceSheet';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from 'shared/lib/data/MarginAccount';
+import { UniswapPosition, UniswapPositionPrior } from 'shared/lib/data/UniswapPosition';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -29,8 +31,7 @@ import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationP
 import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
-import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
-import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
+import { AccountState } from '../data/actions/Actions';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { maxWithdraws } from 'shared/lib/data/BalanceSheet';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 
@@ -13,7 +14,6 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import { maxWithdraws } from '../../../data/BalanceSheet';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 

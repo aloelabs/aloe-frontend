@@ -1,4 +1,5 @@
-import { computeLiquidationThresholds } from './data/BalanceSheet';
+import { computeLiquidationThresholds } from 'shared/lib/data/BalanceSheet';
+
 import {
   ComputeLiquidationThresholdsRequest,
   parseMarginAccountParams,

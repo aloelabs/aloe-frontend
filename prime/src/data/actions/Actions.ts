@@ -1,6 +1,6 @@
-import JSBI from 'jsbi';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Assets, Liabilities, MarginAccount } from 'shared/lib/data/MarginAccount';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 
 import { ReactComponent as AloeLogo } from '../../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../../assets/svg/uniswap_logo.svg';
@@ -16,14 +16,6 @@ import { Balances } from '../Balances';
 import { MarketInfo } from '../MarketInfo';
 import { ActionID } from './ActionID';
 import { runWithChecks } from './Utils';
-
-export type UniswapPosition = {
-  lower: number;
-  upper: number;
-  liquidity: JSBI;
-};
-
-export type UniswapPositionPrior = Omit<UniswapPosition, 'liquidity'>;
 
 export enum TokenType {
   ASSET0 = 'ASSET0',

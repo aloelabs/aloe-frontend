@@ -1,12 +1,13 @@
 import React, { Suspense, createContext, useContext, useEffect, useState } from 'react';
 
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
+import { gql } from '@apollo/react-hooks';
 import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
+import { theGraphEthereumBlocksClient } from 'shared/lib/data/clients/TheGraph';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import { isDevelopment } from 'shared/lib/util/Utils';
@@ -37,36 +38,6 @@ const CONNECT_WALLET_CHECKBOXES = [
   <Text>I am not a citizen or resident of the United States.</Text>,
   <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
-
-export const theGraphUniswapV2Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3OptimismClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3GoerliClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/0xfind/uniswap-v3-goerli-2' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphEthereumBlocksClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
-  cache: new InMemoryCache(),
-});
 
 export const ChainContext = React.createContext({
   activeChain: DEFAULT_CHAIN,

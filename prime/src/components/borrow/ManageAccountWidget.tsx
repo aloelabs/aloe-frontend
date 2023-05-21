@@ -2,23 +2,18 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { isSolvent } from 'shared/lib/data/BalanceSheet';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { MarginAccount } from 'shared/lib/data/MarginAccount';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import {
-  AccountState,
-  Action,
-  ActionCardOutput,
-  calculateHypotheticalStates,
-  UniswapPosition,
-} from '../../data/actions/Actions';
+import { AccountState, Action, ActionCardOutput, calculateHypotheticalStates } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
-import { isSolvent } from '../../data/BalanceSheet';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,

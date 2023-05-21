@@ -2,8 +2,7 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-
-import { UniswapPosition } from './Actions';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 
 export function getTransferInActionArgs(token: Token, amount: GN): string {
   const address = token.address;

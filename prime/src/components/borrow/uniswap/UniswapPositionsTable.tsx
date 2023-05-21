@@ -4,10 +4,10 @@ import { Provider } from '@wagmi/core';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { MarginAccount } from 'shared/lib/data/MarginAccount';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 import { formatPriceRatioGN } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
-import { UniswapPosition } from '../../../data/actions/Actions';
 import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { UniswapPositionEarnedFees } from '../../../pages/BorrowActionsPage';
 import {

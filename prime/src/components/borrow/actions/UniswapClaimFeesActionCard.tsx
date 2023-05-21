@@ -1,6 +1,7 @@
 import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 import styled from 'styled-components';
 import { Address } from 'wagmi';
 
@@ -8,7 +9,7 @@ import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { removeLiquidityOperator } from '../../../data/actions/ActionOperators';
-import { ActionCardProps, ActionProviders, UniswapPosition } from '../../../data/actions/Actions';
+import { ActionCardProps, ActionProviders } from '../../../data/actions/Actions';
 import { sqrtRatioToTick, uniswapPositionKey } from '../../../util/Uniswap';
 import { BaseActionCard } from '../BaseActionCard';
 

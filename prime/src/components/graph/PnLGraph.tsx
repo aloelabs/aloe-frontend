@@ -16,16 +16,16 @@ import {
 import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text } from 'shared/lib/components/common/Typography';
+import { getAssets } from 'shared/lib/data/BalanceSheet';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { LiquidationThresholds, MarginAccount } from 'shared/lib/data/MarginAccount';
+import { UniswapPosition } from 'shared/lib/data/UniswapPosition';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
-import { UniswapPosition } from '../../data/actions/Actions';
-import { getAssets } from '../../data/BalanceSheet';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { TOPIC0_MODIFY_EVENT } from '../../data/constants/Signatures';
 import { useDebouncedEffect } from '../../data/hooks/UseDebouncedEffect';
