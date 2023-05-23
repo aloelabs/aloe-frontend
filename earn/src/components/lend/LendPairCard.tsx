@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import {
   BodyDivider,
@@ -18,8 +18,9 @@ import { useAccount } from 'wagmi';
 import { ReactComponent as EditIcon } from '../../assets/svg/edit.svg';
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import useProminentColor from '../../data/hooks/UseProminentColor';
 import { LendingPair } from '../../data/LendingPair';
-import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
+import { getBrighterColor, rgb, rgba } from '../../util/Colors';
 import TokenPairIcons from '../common/TokenPairIcons';
 import LendTokenInfo from './LendTokenInfo';
 import ContractLinksModal from './modal/ContractLinksModal';
@@ -77,25 +78,9 @@ export default function LendPairCard(props: LendPairCardProps) {
   const [isEditToken1PositionModalOpen, setIsEditToken1PositionModalOpen] = useState<boolean>(false);
   const [isContractLinksModalOpen, setIsContractLinksModalOpen] = useState<boolean>(false);
   const [isCardHovered, setIsCardHovered] = useState<boolean>(false);
-  const [token0Color, setToken0Color] = useState<string>('');
-  const [token1Color, setToken1Color] = useState<string>('');
+  const token0Color = useProminentColor(token0.logoURI);
+  const token1Color = useProminentColor(token1.logoURI);
   const { address: accountAddress } = useAccount();
-  useEffect(() => {
-    let mounted = true;
-    getProminentColor(token0.logoURI || '').then((color) => {
-      if (mounted) {
-        setToken0Color(color);
-      }
-    });
-    getProminentColor(token1.logoURI || '').then((color) => {
-      if (mounted) {
-        setToken1Color(color);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  });
   // Create the variables for the gradients.
   const cardTitleBackgroundGradient = `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${rgba(
     token1Color,

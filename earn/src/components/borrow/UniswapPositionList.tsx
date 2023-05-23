@@ -67,6 +67,7 @@ const InRangeBadgeWrapper = styled.div`
   background-color: ${IN_RANGE_BACKGROUND_COLOR};
   align-items: center;
   width: fit-content;
+  height: 28px;
   padding: 4px 8px;
   border-radius: 8px;
 
@@ -87,6 +88,7 @@ const OutOfRangeBadgeWrapper = styled.div`
   align-items: center;
   background-color: ${OUT_OF_RANGE_BACKGROUND_COLOR};
   width: fit-content;
+  height: 28px;
   padding: 4px 8px;
   border-radius: 8px;
 

@@ -64,9 +64,6 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
   return new ethers.providers.FallbackProvider(providers, 1);
 }
 
-const hasNonPublicRpc = ['REACT_APP_ALCHEMY_API_KEY', 'REACT_APP_INFURA_ID'].some(
-  (key) => process.env[key] !== undefined
-);
 const providers = [publicProvider({ priority: 2 })];
 if (process.env.REACT_APP_ALCHEMY_API_KEY) {
   providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY || '', priority: 0 }));
@@ -74,6 +71,7 @@ if (process.env.REACT_APP_ALCHEMY_API_KEY) {
 if (process.env.REACT_APP_INFURA_ID) {
   providers.push(infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID || '', priority: 1 }));
 }
+const hasNonPublicRpc = providers.length > 1;
 
 const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet, chain.optimism, chain.arbitrum, chain.goerli],
