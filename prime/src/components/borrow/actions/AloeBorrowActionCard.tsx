@@ -78,7 +78,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const max =
     selectedTokenOption.value === TokenType.ASSET0 ? GN.min(allowed0, available0) : GN.min(allowed1, available1);
   const maxString = max.toString(GNFormat.DECIMAL);
-  const maxEightyPercent = max.recklessMul(80).recklessDiv(100);
+  const maxEightyPercent = max.recklessMul(0.8);
   const maxEightyPercentString = maxEightyPercent.toString(GNFormat.DECIMAL);
 
   return (
