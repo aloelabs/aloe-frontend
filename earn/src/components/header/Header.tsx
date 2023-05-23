@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
+import { primeUrl } from '../../data/constants/Values';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -21,7 +22,7 @@ const NAV_LINKS: NavBarLink[] = [
   },
   {
     label: 'Advanced',
-    to: 'https://prime.aloe.capital',
+    to: primeUrl(),
     isExternal: true,
   },
 ];

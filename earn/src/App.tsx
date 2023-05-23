@@ -6,13 +6,13 @@ import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
+import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
-import WagmiProvider from './connector/WagmiProvider';
 import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
 import LendPage from './pages/LendPage';
