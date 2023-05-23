@@ -282,7 +282,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     prices = [
       numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, !isToken0Selected),
       numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, !isToken0Selected),
-    ].sort();
+    ].sort((a, b) => a - b);
   }
 
   const lowerSteppedInput = (

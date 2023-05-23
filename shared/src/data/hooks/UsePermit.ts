@@ -1,4 +1,4 @@
-import { Address, Chain, useContractReads, useSignTypedData } from 'wagmi';
+import { Address, useContractReads, useSignTypedData } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
 import { erc20ABI } from '../../abis/ERC20';
 import { computeDomainSeparator } from '../../util/Permit';
