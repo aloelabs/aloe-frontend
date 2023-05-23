@@ -14,7 +14,7 @@ const NAV_LINKS: NavBarLink[] = [
   },
   {
     label: 'Earn',
-    to: isDappnet() ? 'https://earn.aloe.eth/' : 'https://earn.aloe.capital',
+    to: isDappnet() ? 'https://earn.aloe.eth/' : 'https://earn.aloe.capital/',
     isExternal: true,
   },
 ];
