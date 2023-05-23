@@ -251,13 +251,48 @@ export function tickToPrice(tick: number): GN {
   return GN.fromJSBI(TickMath.getSqrtRatioAtTick(tick), 96, 2).square();
 }
 
-export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
+/**
+ * Converts a price to the closest tick
+ * @param price0In1 the price of token0 in terms of token1
+ * @param token0Decimals the number of decimals in token0
+ * @param token1Decimals the number of decimals in token1
+ * @returns the closest tick to the price
+ */
+export function priceToClosestTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
   const decimalDiff = token0Decimals - token1Decimals;
   const priceX96 = new Big(price0In1).mul(BIGQ96).div(10 ** decimalDiff);
 
   const sqrtPriceX48 = priceX96.sqrt();
   const sqrtPriceX96JSBI = JSBI.BigInt(sqrtPriceX48.mul(Q48.toString()).toFixed(0));
-  return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
+  let tickAtSqrtRatio = TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
+
+  /**
+   * Converts a tick to a price (javascript number)
+   * @param tick the tick to convert to a price
+   * @returns the price of the tick, converted to a number
+   */
+  const tickToNumericPrice = (tick: number) => {
+    return tickToPrice(tick)
+      .toDecimalBig()
+      .div(10 ** (token1Decimals - token0Decimals))
+      .toNumber();
+  };
+
+  const priceAtTick = tickToNumericPrice(tickAtSqrtRatio);
+  const tickDifference = Math.sign(price0In1 - priceAtTick);
+
+  // If the price isn't exactly at the tick, we need to check the tick above/below
+  if (tickDifference !== 0) {
+    const tickAround = tickAtSqrtRatio + tickDifference;
+    const priceAround = tickToNumericPrice(tickAround);
+
+    // If the price is closer to the tick above/below, use that tick instead
+    if (Math.abs(priceAround - price0In1) < Math.abs(priceAtTick - price0In1)) {
+      tickAtSqrtRatio = tickAround;
+    }
+  }
+
+  return tickAtSqrtRatio;
 }
 
 export function sqrtRatioToTick(sqrtRatioX96: GN): number {
