@@ -36,6 +36,13 @@ const SearchInputDropdownOption = styled.div`
   cursor: pointer;
 `;
 
+const TokenIcon = styled.img`
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+`;
+
 export type TokenSearchInputProps = {
   autoFocus?: boolean;
   options: DropdownOption<Token>[];
@@ -80,6 +87,7 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
         <SearchInputDropdownContainer>
           {matchingOptions.map((option, index) => (
             <SearchInputDropdownOption onClick={() => onOptionSelected(option)} key={index}>
+              <TokenIcon src={option.value.logoURI} className='mr-2' />
               {option.label}
             </SearchInputDropdownOption>
           ))}

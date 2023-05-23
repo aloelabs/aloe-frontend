@@ -7,14 +7,14 @@ import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
+import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
-import { isDevelopment } from 'shared/lib/util/Utils';
+import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
 import { Chain, useAccount, useNetwork } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
-import WagmiProvider from './connector/WagmiProvider';
 import { API_GEO_FENCING_URL } from './data/constants/Values';
 import { GeoFencingResponse } from './data/GeoFencingResponse';
 import useEffectOnce from './data/hooks/UseEffectOnce';
@@ -146,6 +146,10 @@ function App() {
     let mounted = true;
     async function fetch() {
       try {
+        if (isDappnet() && mounted) {
+          setGeoFencingResponse({ isAllowed: true });
+          return;
+        }
         const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
         if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
       } catch (error) {
