@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { formatTokenAmount } from 'shared/lib/util/Numbers';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -173,11 +173,11 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
         <div className='w-full flex flex-row justify-between'>
           <MetricContainer
             label={token0.symbol ?? 'Token0'}
-            value={formatTokenAmount(assets0 - liabilities.amount0, 3)}
+            value={assets0.sub(liabilities.amount0).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer
             label={token1.symbol ?? 'Token1'}
-            value={formatTokenAmount(assets1 - liabilities.amount1, 3)}
+            value={assets1.sub(liabilities.amount1).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer
             label='Health'

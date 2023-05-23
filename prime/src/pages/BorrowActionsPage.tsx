@@ -1,13 +1,13 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
-import Big from 'big.js';
 import { BigNumber, Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { formatPriceRatio, formatTokenAmount, toBig } from 'shared/lib/util/Numbers';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useContract, useContractRead, useProvider } from 'wagmi';
@@ -36,7 +36,6 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINT_XS,
 } from '../data/constants/Breakpoints';
-import { BIGQ96 } from '../data/constants/Values';
 import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccount, LiquidationThresholds, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
@@ -49,7 +48,6 @@ import {
 import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
-const SUPPLY_SIGNIFICANT_DIGITS = 4;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
@@ -159,8 +157,8 @@ const MarketStatsGrid = styled.div`
 
 export type UniswapPositionEarnedFees = {
   [key: string]: {
-    token0FeesEarned: number;
-    token1FeesEarned: number;
+    token0FeesEarned: GN;
+    token1FeesEarned: GN;
   };
 };
 
@@ -295,7 +293,9 @@ export default function BorrowActionsPage() {
       const fetchedMarketInfo = await fetchMarketInfoFor(
         lenderLensContract,
         marginAccount.lender0,
-        marginAccount.lender1
+        marginAccount.lender1,
+        marginAccount.token0.decimals,
+        marginAccount.token1.decimals
       );
       if (mounted) setMarketInfo(fetchedMarketInfo);
     }
@@ -328,22 +328,24 @@ export default function BorrowActionsPage() {
 
       if (mounted) {
         setUniswapPositions(_uniswapPositions);
+        const token0 = marginAccount.token0;
+        const token1 = marginAccount.token1;
         // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
         // this is because one is computed on-chain and cached, while the other is computed locally.
         // if we've fetched both, prefer the uniswapPositions version (local & newer).
-        const i = { amount0: 0, amount1: 0 };
+        const i = { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) };
         const { amount0, amount1 } = _uniswapPositions.reduce((p, c) => {
           const [amount0, amount1] = getAmountsForLiquidity(
             c.liquidity,
             c.lower,
             c.upper,
-            TickMath.getTickAtSqrtRatio(JSBI.BigInt(marginAccount.sqrtPriceX96.toFixed(0))),
+            TickMath.getTickAtSqrtRatio(marginAccount.sqrtPriceX96.toJSBI()),
             marginAccount.token0.decimals,
             marginAccount.token1.decimals
           );
           return {
-            amount0: p.amount0 + amount0,
-            amount1: p.amount1 + amount1,
+            amount0: p.amount0.add(amount0),
+            amount1: p.amount1.add(amount1),
           };
         }, i);
         setMarginAccount({
@@ -383,19 +385,22 @@ export default function BorrowActionsPage() {
     // tell React about our findings
     const _marginAccount = { ...marginAccount };
     if (userWantsHypothetical) {
-      const numericBorrowInterest = parseFloat(borrowInterestInputValue) || 0.0;
-      const numericSwapFees = parseFloat(swapFeesInputValue) || 0.0;
+      const token0Decimals = marginAccount.token0.decimals;
+      const token1Decimals = marginAccount.token1.decimals;
+      const selectedToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
+      const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue || '0', selectedToken.decimals);
+      const numericSwapFees = GN.fromDecimalString(swapFeesInputValue || '0', selectedToken.decimals);
       // Apply the user's inputted swap fees to the displayed margin account's assets
       _marginAccount.assets = {
         ...assetsF,
-        token0Raw: assetsF.token0Raw + (isToken0Selected ? numericSwapFees : 0),
-        token1Raw: assetsF.token1Raw + (isToken0Selected ? 0 : numericSwapFees),
+        token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token0Decimals)),
+        token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token1Decimals) : numericSwapFees),
       };
       // Apply the user's inputted borrow interest to the displayed margin account's liabilities
       _marginAccount.liabilities = {
         ...liabilitiesF,
-        amount0: liabilitiesF.amount0 - (isToken0Selected ? numericBorrowInterest : 0),
-        amount1: liabilitiesF.amount1 - (isToken0Selected ? 0 : numericBorrowInterest),
+        amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token0Decimals)),
+        amount1: liabilitiesF.amount1.sub(isToken0Selected ? GN.zero(token1Decimals) : numericBorrowInterest),
       };
     }
     setDisplayedMarginAccount(_marginAccount);
@@ -437,12 +442,8 @@ export default function BorrowActionsPage() {
       const earnedFeesMap: UniswapPositionEarnedFees = {};
       earnedFees[0].forEach((positionId, index) => {
         earnedFeesMap[positionId] = {
-          token0FeesEarned: toBig(earnedFees[1][index * 2])
-            .div(10 ** marginAccount.token0.decimals)
-            .toNumber(),
-          token1FeesEarned: toBig(earnedFees[1][index * 2 + 1])
-            .div(10 ** marginAccount.token1.decimals)
-            .toNumber(),
+          token0FeesEarned: GN.fromBigNumber(earnedFees[1][index * 2], marginAccount.token0.decimals),
+          token1FeesEarned: GN.fromBigNumber(earnedFees[1][index * 2 + 1], marginAccount.token1.decimals),
         };
       });
       if (mounted) {
@@ -465,21 +466,19 @@ export default function BorrowActionsPage() {
     }
     const { token0, token1 } = marginAccount;
     const earnedFeesValues = Object.values(uniswapPositionEarnedFees);
-    const priceX96 = marginAccount.sqrtPriceX96.mul(marginAccount.sqrtPriceX96).div(BIGQ96);
-    const token0FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), new Big(0))).mul(
-      10 ** token0.decimals
-    );
-    const token1FeesEarned = new Big(earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), new Big(0))).mul(
-      10 ** token1.decimals
-    );
-    const token0FeesEarnedInTermsOfToken1 = priceX96.mul(token0FeesEarned).div(BIGQ96);
+    const priceX96 = marginAccount.sqrtPriceX96.square();
+    const token0FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token0FeesEarned), GN.zero(token0.decimals));
+    const token1FeesEarned = earnedFeesValues.reduce((p, c) => p.add(c.token1FeesEarned), GN.zero(token1.decimals));
+    const token0FeesEarnedInTermsOfToken1 = token0FeesEarned.setResolution(token1.decimals).mul(priceX96);
     const totalFeesEarnedInTermsOfToken1 = token1FeesEarned.add(token0FeesEarnedInTermsOfToken1);
-    if (totalFeesEarnedInTermsOfToken1.gt(0)) {
+    if (totalFeesEarnedInTermsOfToken1.isGtZero()) {
       if (isToken0Selected) {
-        const totalFeesEarnedInTermsOfToken0 = totalFeesEarnedInTermsOfToken1.mul(BIGQ96).div(priceX96);
-        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken0.div(10 ** token0.decimals).toFixed(token0.decimals));
+        const totalFeesEarnedInTermsOfToken0 = totalFeesEarnedInTermsOfToken1
+          .div(priceX96)
+          .setResolution(token0.decimals);
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken0.toString(GNFormat.DECIMAL));
       } else {
-        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken1.div(10 ** token1.decimals).toFixed(token1.decimals));
+        setSwapFeesInputValue(totalFeesEarnedInTermsOfToken1.toString(GNFormat.DECIMAL));
       }
     }
   }, [marginAccount, displayedMarginAccount, uniswapPositionEarnedFees, displayedUniswapPositions, isToken0Selected]);
@@ -507,10 +506,10 @@ export default function BorrowActionsPage() {
   const token1 = marginAccount.token1;
   const [selectedToken, unselectedToken] = isToken0Selected ? [token0, token1] : [token1, token0];
   const [assetsSum0, assetsSum1] = sumAssetsPerToken(displayedMarginAccount.assets);
-  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a === 0);
-  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l === 0);
-  const selectedTokenSymbol = selectedToken?.symbol || '';
-  const unselectedTokenSymbol = unselectedToken?.symbol || '';
+  const isActiveAssetsEmpty = Object.values(displayedMarginAccount.assets).every((a) => a.isZero());
+  const isActiveLiabilitiesEmpty = Object.values(displayedMarginAccount.liabilities).every((l) => l.isZero());
+  const selectedTokenSymbol = selectedToken.symbol;
+  const unselectedTokenSymbol = unselectedToken.symbol;
 
   const { health } = isSolvent(
     displayedMarginAccount.assets,
@@ -529,14 +528,16 @@ export default function BorrowActionsPage() {
   let utilization0 = marketInfo?.lender0Utilization;
   let utilization1 = marketInfo?.lender1Utilization;
   if (marketInfo && isShowingHypothetical) {
-    utilization0 =
-      1 -
-        hypotheticalState.availableForBorrow.amount0 /
-          marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber() || 0;
-    utilization1 =
-      1 -
-        hypotheticalState.availableForBorrow.amount1 /
-          marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber() || 0;
+    utilization0 = !marketInfo.lender0TotalAssets.isZero()
+      ? GN.one(token0.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount0.div(marketInfo.lender0TotalAssets))
+          .toNumber()
+      : 0;
+    utilization1 = !marketInfo.lender1TotalAssets.isZero()
+      ? GN.one(token1.decimals)
+          .sub(hypotheticalState.availableForBorrow.amount1.div(marketInfo.lender1TotalAssets))
+          .toNumber()
+      : 0;
   }
   const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization0 || 0));
   const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilization1 || 0));
@@ -586,29 +587,29 @@ export default function BorrowActionsPage() {
           <AccountStatsGrid>
             <AccountStatsCard
               label='Assets'
-              value={formatTokenAmount(assetsSum0, 4)}
-              denomination={token0.symbol ?? ''}
+              value={assetsSum0.toString(GNFormat.LOSSY_HUMAN)}
+              denomination={token0.symbol}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Assets'
-              value={formatTokenAmount(assetsSum1, 4)}
-              denomination={token1.symbol ?? ''}
+              value={assetsSum1.toString(GNFormat.LOSSY_HUMAN)}
+              denomination={token1.symbol}
               boxColor={GREEN_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount0, 4)}`}
-              denomination={token0.symbol ?? ''}
+              value={`-${displayedMarginAccount.liabilities.amount0.toString(GNFormat.LOSSY_HUMAN)}`}
+              denomination={token0.symbol}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
             <AccountStatsCard
               label='Liabilities'
-              value={`-${formatTokenAmount(displayedMarginAccount.liabilities.amount1, 4)}`}
-              denomination={token1.symbol ?? ''}
+              value={`-${displayedMarginAccount.liabilities.amount1.toString(GNFormat.LOSSY_HUMAN)}`}
+              denomination={token1.symbol}
               boxColor={RED_COLOR}
               showAsterisk={isShowingHypothetical}
             />
@@ -642,10 +643,7 @@ export default function BorrowActionsPage() {
             <MarketStatsGrid>
               <AccountStatsCard
                 label={`${token0.symbol} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender0TotalAssets.div(10 ** token0.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token0.symbol}
                 showAsterisk={false}
               />
@@ -663,10 +661,7 @@ export default function BorrowActionsPage() {
               </div>
               <AccountStatsCard
                 label={`${token1.symbol} Supply`}
-                value={formatTokenAmount(
-                  marketInfo.lender1TotalAssets.div(10 ** token1.decimals).toNumber(),
-                  SUPPLY_SIGNIFICANT_DIGITS
-                )}
+                value={marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
                 denomination={token1.symbol}
                 showAsterisk={false}
               />

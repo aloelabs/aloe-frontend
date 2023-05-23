@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
+import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 import useClickOutside from '../../../data/hooks/UseClickOutside';
 import Tooltip from '../../common/Tooltip';
 
@@ -87,7 +88,12 @@ export default function Settings(props: SettingsProps) {
         <SettingsMenuWrapper>
           <Tooltip
             buttonSize='S'
-            content={<Text size='XS'>a</Text>}
+            content={
+              <Text size='XS'>
+                Slippage tolerance is the maximum price difference you are willing to accept between the estimated price
+                and the execution price.
+              </Text>
+            }
             position='top-right'
             buttonText='Slippage Tolerance'
             filled={true}
@@ -124,7 +130,7 @@ export default function Settings(props: SettingsProps) {
                 }
               }}
               inputClassName={localSlippagePercentage !== '' ? 'active' : ''}
-              placeholder='0.50'
+              placeholder={DEFAULT_SLIPPAGE_PERCENTAGE}
               size='S'
               fullWidth={true}
               unit='%'

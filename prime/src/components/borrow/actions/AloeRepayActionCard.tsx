@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 
 import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -33,15 +34,17 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const assetMax = accountState.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
   const liabilityMax = accountState.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
-  const maxString = Math.max(0, Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
+  const maxString = GN.max(GN.zero(selectedTokenDecimals), GN.min(assetMax, liabilityMax)).toString(GNFormat.DECIMAL);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = parseFloat(value) || 0;
-    let amount0 = 0;
-    let amount1 = 0;
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
+    let amount0 = GN.zero(token0.decimals);
+    let amount1 = GN.zero(token1.decimals);
     if (token === TokenType.ASSET0) {
       amount0 = parsedValue;
     } else {
@@ -53,7 +56,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         actionId: ActionID.REPAY,
         actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          return repayOperator(operand, selectedToken, Math.max(amount0, amount1));
+          return repayOperator(operand, token, parsedValue);
         },
       },
       [token, value]

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
@@ -193,16 +194,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   // MARK: logic to ensure that listed balances and MAXes work
   const userBalances: Balances = useMemo(
     () => ({
-      amount0: Number(userBalance0Asset?.formatted ?? 0) || 0,
-      amount1: Number(userBalance1Asset?.formatted ?? 0) || 0,
+      amount0: userBalance0Asset
+        ? GN.fromBigNumber(userBalance0Asset?.value, token0.decimals)
+        : GN.zero(token0.decimals),
+      amount1: userBalance1Asset
+        ? GN.fromBigNumber(userBalance1Asset?.value, token1.decimals)
+        : GN.zero(token1.decimals),
     }),
-    [userBalance0Asset, userBalance1Asset]
+    [token0.decimals, token1.decimals, userBalance0Asset, userBalance1Asset]
   );
 
   const lenderBalances: Balances = useMemo(() => {
     return {
-      amount0: marketInfo?.lender0AvailableAssets.div(10 ** token0.decimals).toNumber() ?? 0,
-      amount1: marketInfo?.lender1AvailableAssets.div(10 ** token1.decimals).toNumber() ?? 0,
+      amount0: marketInfo?.lender0AvailableAssets ?? GN.zero(token0.decimals),
+      amount1: marketInfo?.lender1AvailableAssets ?? GN.zero(token1.decimals),
     };
   }, [marketInfo, token0, token1]);
 
@@ -213,10 +218,18 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
       uniswapPositions: uniswapPositions,
       availableForDeposit: userBalances,
       availableForBorrow: lenderBalances,
-      requiredAllowances: { amount0: 0, amount1: 0 },
+      requiredAllowances: { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) },
       claimedFeeUniswapKeys: [],
     }),
-    [marginAccount, uniswapPositions, userBalances, lenderBalances]
+    [
+      marginAccount.assets,
+      marginAccount.liabilities,
+      uniswapPositions,
+      userBalances,
+      lenderBalances,
+      token0.decimals,
+      token1.decimals,
+    ]
   );
 
   useEffect(() => {

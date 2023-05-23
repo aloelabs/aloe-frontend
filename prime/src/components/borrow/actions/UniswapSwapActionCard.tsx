@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
-
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -9,6 +8,7 @@ import { getSwapActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
 import { swapOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, TokenType } from '../../../data/actions/Actions';
+import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 import { getOutputForSwap } from '../../../util/Uniswap';
 import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
@@ -59,35 +59,29 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
   const amountInExact = userInputFields?.at(0) ?? '';
   const amountOutMin = userInputFields?.at(1) ?? '';
   const tokenTypeIn = (userInputFields?.at(2) ?? TokenType.ASSET0) as TokenType;
-  const slippage = userInputFields?.at(3) ?? '0.5';
+  const slippage = userInputFields?.at(3) ?? '';
 
-  const priceX96 = useMemo(() => {
-    const sqrtPriceX96 = marginAccount.sqrtPriceX96;
-    return sqrtPriceX96.mul(sqrtPriceX96).div(2 ** 96);
-  }, [marginAccount]);
+  const priceX96 = marginAccount.sqrtPriceX96.square();
 
   function updateResult(newAmountInExact: string, newTokenTypeIn: TokenType, newSlippage: string) {
     const tokenTypeInDecimals = newTokenTypeIn === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const tokenTypeOutDecimals = newTokenTypeIn === TokenType.ASSET0 ? token1.decimals : token0.decimals;
 
+    const parsedAmountIn = GN.fromDecimalString(newAmountInExact || '0', tokenTypeInDecimals);
     let newAmountOutMin = '';
     if (newAmountInExact !== '') {
       newAmountOutMin = getOutputForSwap(
         priceX96,
-        newAmountInExact,
+        parsedAmountIn,
         newTokenTypeIn === TokenType.ASSET0,
-        tokenTypeInDecimals,
         tokenTypeOutDecimals,
-        parseFloat(newSlippage) / 100 || 0
+        newSlippage || DEFAULT_SLIPPAGE_PERCENTAGE
       );
       newAmountOutMin = truncateDecimals(newAmountOutMin, tokenTypeOutDecimals);
     }
-
-    const parsedAmountIn = parseFloat(newAmountInExact) || 0;
-    const parsedAmountOut = parseFloat(newAmountOutMin) || 0;
-
-    const amount0 = newTokenTypeIn === TokenType.ASSET0 ? -parsedAmountIn : parsedAmountOut;
-    const amount1 = newTokenTypeIn === TokenType.ASSET1 ? -parsedAmountIn : parsedAmountOut;
+    const parsedAmountOut = GN.fromDecimalString(newAmountOutMin || '0', tokenTypeOutDecimals);
+    const amount0 = newTokenTypeIn === TokenType.ASSET0 ? parsedAmountIn.neg() : parsedAmountOut;
+    const amount1 = newTokenTypeIn === TokenType.ASSET1 ? parsedAmountIn.neg() : parsedAmountOut;
 
     onChange(
       {
@@ -103,7 +97,7 @@ export default function UniswapSwapActionCard(props: ActionCardProps) {
 
   const maxFromAmount =
     tokenTypeIn === TokenType.ASSET0 ? accountState.assets.token0Raw : accountState.assets.token1Raw;
-  const maxFromAmountString = maxFromAmount.toString();
+  const maxFromAmountString = maxFromAmount.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard

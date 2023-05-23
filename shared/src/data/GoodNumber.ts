@@ -25,6 +25,7 @@ export enum GNFormat {
   DECIMAL,
   DECIMAL_WITH_TRAILING_ZEROS,
   LOSSY_HUMAN,
+  LOSSY_HUMAN_SHORT,
   LOSSY_HUMAN_COMPACT,
 }
 
@@ -45,7 +46,7 @@ export class GN {
    * Infinity, NaN and hexadecimal literal strings, e.g. '0xff', are not valid.
    * @param resolution The maximum number of decimals to keep for operations involving division (div, sqrt, pow)
    */
-  private constructor(int: string, resolution: number, base: 2 | 10) {
+  constructor(int: string, resolution: number, base: 2 | 10) {
     if (resolution !== Math.floor(resolution)) throw new Error('`resolution` must be a whole number');
     else if (resolution < 0) throw new Error('`resolution` cannot be negative');
     else if (resolution > 1e6) throw new Error('`resolution` cannot be larger than 1000000');
@@ -165,12 +166,12 @@ export class GN {
     return this.int.lte('0');
   }
 
-  static max(a: GN, b: GN) {
-    return a.gt(b) ? a : b;
+  static max(...gns: GN[]) {
+    return gns.reduce((p, c) => (p.gt(c) ? p : c));
   }
 
-  static min(a: GN, b: GN) {
-    return a.lt(b) ? a : b;
+  static min(...gns: GN[]) {
+    return gns.reduce((p, c) => (p.lt(c) ? p : c));
   }
 
   static firstNSigDigsMatch(a: GN, b: GN, n: number): boolean {
@@ -204,27 +205,35 @@ export class GN {
   }
 
   sqrt() {
-    return GN.fromDecimalBig(this.x().sqrt(), this.resolution);
+    return new GN(this.x().sqrt().mul(this.scaler).toFixed(0), this.resolution, this.base);
   }
 
   square() {
     return this.mul(this);
   }
 
-  recklessMul(other: BigSource) {
-    other = new Big(other);
-    if (!isInteger(other)) {
-      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
-    }
-    return new GN(this.int.times(other).toFixed(0), this.resolution, this.base);
+  neg() {
+    return new GN(this.int.neg().toFixed(0), this.resolution, this.base);
   }
 
+  /**
+   * Recklessly multiplies the `GN` by a `BigSource`.
+   * Note: recklessMul by a non-integer wouldn't be possible in the EVM. Be careful!
+   * @param other The `BigSource` to multiply by.
+   * @returns The product.
+   */
+  recklessMul(other: BigSource) {
+    return new GN(this.int.times(new Big(other)).toFixed(0), this.resolution, this.base);
+  }
+
+  /**
+   * Recklessly divides the `GN` by a `BigSource` without checking for precision loss.
+   * Note: recklessDiv by a non-integer wouldn't be possible in the EVM. Be careful!
+   * @param other The `BigSource` to divide by.
+   * @returns The quotient.
+   */
   recklessDiv(other: BigSource) {
-    other = new Big(other);
-    if (!isInteger(other)) {
-      console.warn(`recklessMul by non-integer (${other.toString()}) wouldn't be possible in the EVM. Be careful!`);
-    }
-    return new GN(this.int.div(other).toFixed(0), this.resolution, this.base);
+    return new GN(this.int.div(new Big(other)).toFixed(0), this.resolution, this.base);
   }
 
   recklessAdd(other: BigSource) {
@@ -258,11 +267,22 @@ export class GN {
       case GNFormat.LOSSY_HUMAN:
         // TODO: Bring logic in here instead of calling formatTokenAmount
         return formatTokenAmount(this.x().toNumber());
+      case GNFormat.LOSSY_HUMAN_SHORT:
+        // TODO: merge this with LOSSY_HUMAN
+        return formatTokenAmount(this.x().toNumber(), 3);
       case GNFormat.LOSSY_HUMAN_COMPACT:
         // TODO: Bring logic in here instead of calling formatTokenAmountCompact
         return formatTokenAmountCompact(this.x().toNumber());
       // TODO: Other formatting options from `Numbers.ts`
     }
+  }
+
+  /**
+   * Converts to a decimal number (stored as a `Big`). Use sparingly.
+   * @returns Equivalent `Big`
+   */
+  toDecimalBig() {
+    return this.x();
   }
 
   /**
@@ -284,10 +304,9 @@ export class GN {
   /**
    * Converts to `Number` with a potential loss of precision.
    * @returns Equivalent `Number`
-   * @deprecated
    */
   toNumber() {
-    console.warn('toNumber should be avoided whenever possible');
+    // console.warn('toNumber should be avoided whenever possible');
     return this.x().toNumber();
   }
 

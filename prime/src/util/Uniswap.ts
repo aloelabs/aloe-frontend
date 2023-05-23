@@ -6,6 +6,7 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { chain } from 'wagmi';
@@ -24,7 +25,7 @@ const BINS_TO_FETCH = 500;
 const ONE = new Big('1.0');
 
 export interface UniswapV3PoolSlot0 {
-  sqrtPriceX96: ethers.BigNumber;
+  sqrtPriceX96: GN;
   tick: number;
   observationIndex: number;
   observationCardinality: number;
@@ -91,23 +92,14 @@ export function calculateTickInfo(
   const tickOffset = Math.floor((BINS_TO_FETCH * tickSpacing) / 2);
   const minTick = roundDownToNearestN(poolBasics.slot0.tick - tickOffset, tickSpacing);
   const maxTick = roundUpToNearestN(poolBasics.slot0.tick + tickOffset, tickSpacing);
-  const minPrice = tickToPrice(
-    isToken0Selected ? minTick : maxTick,
-    token0.decimals,
-    token1.decimals,
-    isToken0Selected
-  );
-  const maxPrice = tickToPrice(
-    isToken0Selected ? maxTick : minTick,
-    token0.decimals,
-    token1.decimals,
-    isToken0Selected
-  );
+  const scaler = 10 ** (token0.decimals - token1.decimals);
+  const minPrice = tickToPrice(minTick).toDecimalBig().mul(scaler).toNumber();
+  const maxPrice = tickToPrice(maxTick).toDecimalBig().mul(scaler).toNumber();
   return {
     minTick,
     maxTick,
-    minPrice,
-    maxPrice,
+    minPrice: isToken0Selected ? minPrice : 1 / maxPrice, // TODO: these ternaries may be flipped
+    maxPrice: isToken0Selected ? maxPrice : 1 / minPrice,
     tickSpacing,
     tickOffset,
   };
@@ -255,25 +247,8 @@ export async function getUniswapPoolBasics(
   };
 }
 
-export function tickToPrice(
-  tick: number,
-  token0Decimals: number,
-  token1Decimals: number,
-  isInTermsOfToken0 = true
-): number {
-  const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-  const priceX192 = JSBI.multiply(sqrtPriceX96, sqrtPriceX96);
-  const priceX96 = JSBI.signedRightShift(priceX192, JSBI.BigInt(96));
-
-  const priceX96Big = new Big(priceX96.toString(10));
-
-  const decimalDiff = token0Decimals - token1Decimals;
-  const price0In1 = priceX96Big
-    .mul(10 ** decimalDiff)
-    .div(BIGQ96)
-    .toNumber();
-  const price1In0 = 1.0 / price0In1;
-  return isInTermsOfToken0 ? price0In1 : price1In0;
+export function tickToPrice(tick: number): GN {
+  return GN.fromJSBI(TickMath.getSqrtRatioAtTick(tick), 96, 2).square();
 }
 
 export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
@@ -285,8 +260,8 @@ export function priceToTick(price0In1: number, token0Decimals: number, token1Dec
   return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
 }
 
-export function sqrtRatioToTick(sqrtRatioX96: Big): number {
-  const sqrtRatioX96JSBI = JSBI.BigInt(sqrtRatioX96.toFixed(0));
+export function sqrtRatioToTick(sqrtRatioX96: GN): number {
+  const sqrtRatioX96JSBI = sqrtRatioX96.toJSBI();
   return TickMath.getTickAtSqrtRatio(sqrtRatioX96JSBI);
 }
 
@@ -438,7 +413,7 @@ export function getAmountsForLiquidity(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): [number, number] {
+): [GN, GN] {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
   //lower price
@@ -460,10 +435,7 @@ export function getAmountsForLiquidity(
     amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
   }
 
-  return [
-    new Big(amount0.toString(10)).div(10 ** token0Decimals).toNumber(),
-    new Big(amount1.toString(10)).div(10 ** token1Decimals).toNumber(),
-  ];
+  return [GN.fromJSBI(amount0, token0Decimals), GN.fromJSBI(amount1, token1Decimals)];
 }
 
 export function getValueOfLiquidity(
@@ -472,7 +444,7 @@ export function getValueOfLiquidity(
   upperTick: number,
   currentTick: number,
   token1Decimals: number
-): number {
+): GN {
   if (lowerTick > upperTick) [lowerTick, upperTick] = [upperTick, lowerTick];
 
   //lower price
@@ -505,30 +477,31 @@ export function getValueOfLiquidity(
 
   const value = JSBI.add(value0, value1);
 
-  return new Big(value.toString(10)).div(10 ** token1Decimals).toNumber();
+  return GN.fromJSBI(value, token1Decimals);
 }
 
+/**
+ *
+ * @param priceX96 the price of the input token in terms of the output token
+ * @param amount the amount of the input token
+ * @param isInputToken0 true if the input token is token0, false otherwise
+ * @param outputDecimals the number of decimals of the output token
+ * @param slippage a string representing the slippage in percentage (0.0-100.0)
+ * @returns the amount of the output token
+ */
 export function getOutputForSwap(
-  priceX96: Big,
-  amount: string,
+  priceX96: GN,
+  amount: GN,
   isInputToken0: boolean,
-  inputDecimals: number,
   outputDecimals: number,
-  slippage: number
+  slippage: string
 ): string {
-  return isInputToken0
-    ? new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(priceX96)
-        .div(2 ** 96)
-        .div(10 ** outputDecimals)
-        .toString()
-    : new Big(amount)
-        .mul(1 - slippage)
-        .mul(10 ** inputDecimals)
-        .mul(2 ** 96)
-        .div(priceX96)
-        .div(10 ** outputDecimals)
-        .toString();
+  // We use resolution of 5 to get basis-points resolution
+  const slippageFactor = GN.one(5).sub(GN.fromDecimalString(slippage, 5).recklessDiv(100));
+
+  if (isInputToken0) {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).mul(priceX96).toString(GNFormat.DECIMAL);
+  } else {
+    return amount.mul(slippageFactor).setResolution(outputDecimals).div(priceX96).toString(GNFormat.DECIMAL);
+  }
 }

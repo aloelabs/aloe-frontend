@@ -1,13 +1,12 @@
 import { useState } from 'react';
 
-import Big from 'big.js';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
-import { BIGQ96 } from '../../data/constants/Values';
 import { Assets } from '../../data/MarginAccount';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
@@ -206,7 +205,7 @@ export type TokenAllocationPieChartWidgetProps = {
   token0: Token;
   token1: Token;
   assets: Assets;
-  sqrtPriceX96: Big;
+  sqrtPriceX96: GN;
 };
 
 export default function TokenAllocationPieChartWidget(props: TokenAllocationPieChartWidgetProps) {
@@ -224,35 +223,38 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
     setCurrentPercent('');
   };
 
-  const price = BIGQ96.mul(BIGQ96)
-    .div(sqrtPriceX96)
-    .div(sqrtPriceX96)
-    .mul(10 ** (token1.decimals - token0.decimals))
-    .toNumber();
-  const totalAssets: number = assets.token0Raw + assets.token1Raw * price + assets.uni0 + assets.uni1 * price;
+  const price = sqrtPriceX96.square();
+  const sliceAmounts = [
+    assets.token0Raw.setResolution(token1.decimals).mul(price),
+    assets.uni0.setResolution(token1.decimals).mul(price),
+    assets.token1Raw,
+    assets.uni1,
+  ];
+
+  const totalAssets = sliceAmounts.reduce((a, b) => a.add(b));
 
   const slices: AllocationPieChartSlice[] = [
     {
       index: 0,
-      percent: assets.token0Raw / totalAssets,
+      percent: sliceAmounts[0].div(totalAssets).toNumber(),
       color: TOKEN0_COLOR_RAW,
       category: 'Raw',
     },
     {
       index: 1,
-      percent: assets.uni0 / totalAssets,
+      percent: sliceAmounts[1].div(totalAssets).toNumber(),
       color: TOKEN0_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 2,
-      percent: (assets.uni1 * price) / totalAssets,
+      percent: sliceAmounts[2].div(totalAssets).toNumber(),
       color: TOKEN1_COLOR_UNISWAP,
       category: 'Uniswap',
     },
     {
       index: 3,
-      percent: (assets.token1Raw * price) / totalAssets,
+      percent: sliceAmounts[3].div(totalAssets).toNumber(),
       color: TOKEN1_COLOR_RAW,
       category: 'Raw',
     },

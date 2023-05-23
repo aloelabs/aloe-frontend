@@ -1,36 +1,28 @@
-import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 
 import { UniswapPosition } from './Actions';
 
-export function getTransferInActionArgs(token: Token, amount: number): string {
+export function getTransferInActionArgs(token: Token, amount: GN): string {
   const address = token.address;
-  const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
 
-  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
+  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, amount.toBigNumber()]);
 }
 
-export function getTransferOutActionArgs(token: Token, amount: number): string {
+export function getTransferOutActionArgs(token: Token, amount: GN): string {
   const address = token.address;
-  const bigAmount = new Big(amount.toFixed(Math.min(token.decimals, 20))).mul(10 ** token.decimals);
 
-  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, bigAmount.toFixed(0)]);
+  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, amount.toBigNumber()]);
 }
 
-export function getBorrowActionArgs(token0: Token, amount0: number, token1: Token, amount1: number): string {
-  const bigAmount0 = new Big(amount0.toFixed(Math.min(token0.decimals, 20))).mul(10 ** token0.decimals);
-  const bigAmount1 = new Big(amount1.toFixed(Math.min(token1.decimals, 20))).mul(10 ** token1.decimals);
-
-  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [bigAmount0.toFixed(0), bigAmount1.toFixed(0)]);
+export function getBorrowActionArgs(token0: Token, amount0: GN, token1: Token, amount1: GN): string {
+  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [amount0.toBigNumber(), amount1.toBigNumber()]);
 }
 
-export function getRepayActionArgs(token0: Token, amount0: number, token1: Token, amount1: number): string {
-  const bigAmount0 = new Big(amount0.toFixed(Math.min(token0.decimals, 20))).mul(10 ** token0.decimals);
-  const bigAmount1 = new Big(amount1.toFixed(Math.min(token1.decimals, 20))).mul(10 ** token1.decimals);
-
-  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [bigAmount0.toFixed(0), bigAmount1.toFixed(0)]);
+export function getRepayActionArgs(token0: Token, amount0: GN, token1: Token, amount1: GN): string {
+  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [amount0.toBigNumber(), amount1.toBigNumber()]);
 }
 
 export function getAddLiquidityActionArgs(lower: number, upper: number, liquidity: JSBI): string {
@@ -51,14 +43,12 @@ export function getRemoveLiquidityActionArgs(lower: number, upper: number, liqui
  * @param amount1 If negative, the amount of `token1` to sell. If positive, the amount of `token1` we expect to receive
  * @returns
  */
-export function getSwapActionArgs(token0: Token, amount0: number, token1: Token, amount1: number): string {
-  const bigAmount0 = new Big(amount0.toFixed(Math.min(token0.decimals, 20))).mul(10 ** token0.decimals);
-  const bigAmount1 = new Big(amount1.toFixed(Math.min(token1.decimals, 20))).mul(10 ** token1.decimals);
-  const assetIn = amount0 < 0 ? token0.address : token1.address;
+export function getSwapActionArgs(token0: Token, amount0: GN, token1: Token, amount1: GN): string {
+  const assetIn = amount0.isLtZero() ? token0.address : token1.address;
 
   return ethers.utils.defaultAbiCoder.encode(
     ['address', 'int256', 'int256'],
-    [assetIn, bigAmount0.toFixed(0), bigAmount1.toFixed(0)]
+    [assetIn, amount0.toBigNumber(), amount1.toBigNumber()]
   );
 }
 
