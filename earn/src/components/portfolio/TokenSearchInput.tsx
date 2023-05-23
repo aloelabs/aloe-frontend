@@ -87,7 +87,7 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
         <SearchInputDropdownContainer>
           {matchingOptions.map((option, index) => (
             <SearchInputDropdownOption onClick={() => onOptionSelected(option)} key={index}>
-              <TokenIcon src={option.value.iconPath} className='mr-2' />
+              <TokenIcon src={option.value.logoURI} className='mr-2' />
               {option.label}
             </SearchInputDropdownOption>
           ))}
