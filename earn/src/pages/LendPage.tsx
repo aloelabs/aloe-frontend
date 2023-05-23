@@ -108,9 +108,12 @@ export default function LendPage() {
     let mounted = true;
     async function fetch() {
       // fetch token quotes
-      const quoteDataResponse: AxiosResponse<PriceRelayLatestResponse> = await axios.get(
-        `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols}`
-      );
+      let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
+      try {
+        quoteDataResponse = await axios.get(`${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols}`);
+      } catch {
+        return;
+      }
       const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
       if (!prResponse) {
         return;
