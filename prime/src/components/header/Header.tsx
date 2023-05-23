@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
+import { isDappnet } from 'shared/lib/util/Utils';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -13,7 +14,7 @@ const NAV_LINKS: NavBarLink[] = [
   },
   {
     label: 'Earn',
-    to: 'https://earn.aloe.capital',
+    to: isDappnet() ? 'https://earn.aloe.eth/' : 'https://earn.aloe.capital/',
     isExternal: true,
   },
 ];
