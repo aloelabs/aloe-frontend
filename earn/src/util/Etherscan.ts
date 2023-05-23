@@ -41,7 +41,8 @@ export function makeEtherscanRequest(
   }
 
   if (page) query += `&page=${page}`;
-  query = query.concat(`&offset=${pageLength}`, `&apikey=${ETHERSCAN_API_KEYS[chain.id]}`);
+  query += `&offset=${pageLength}`;
+  if (ETHERSCAN_API_KEYS[chain.id]) query += `&apikey=${ETHERSCAN_API_KEYS[chain.id]}`;
 
   return axios.get(query);
 }
