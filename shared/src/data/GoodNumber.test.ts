@@ -4,7 +4,7 @@ import { Big } from 'big.js';
 import { GN, GNFormat, scalerFor } from './GoodNumber';
 
 describe('GoodNumber', () => {
-  describe('scaleFor', () => {
+  describe('scalerFor', () => {
     it('should return a scaler string for base 2 with resolution divisible by 4', () => {
       expect(scalerFor(2, 4)).toEqual('16');
       expect(scalerFor(2, 8)).toEqual('256');
