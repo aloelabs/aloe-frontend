@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 
 import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
@@ -13,8 +13,8 @@ import {
   TokenType,
 } from '../../../data/actions/Actions';
 import { maxBorrows } from '../../../data/BalanceSheet';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
+import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 export function AloeBorrowActionCard(prop: ActionCardProps) {
   const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
@@ -22,14 +22,14 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
-      label: token0?.symbol || '',
+      label: token0.symbol,
       value: TokenType.ASSET0,
-      icon: token0?.logoURI || '',
+      icon: token0.logoURI,
     },
     {
-      label: token1?.symbol || '',
+      label: token1.symbol,
       value: TokenType.ASSET1,
-      icon: token1?.logoURI || '',
+      icon: token1.logoURI,
     },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';
@@ -89,23 +89,20 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
       onRemove={onRemove}
     >
       <div className='w-full flex flex-col gap-4 items-center'>
-        <Dropdown
+        <TokenAmountSelectInput
+          inputValue={tokenAmount}
           options={dropdownOptions}
           selectedOption={selectedTokenOption}
+          maxAmount={maxString}
+          maxAmountLabel='Max'
+          maxButtonLabel='80% MAX'
+          onMax={() => callbackWithFullResult(selectedToken, maxEightyPercentString)}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           onSelect={(option: DropdownOption<TokenType>) => {
             if (option.value !== selectedTokenOption.value) {
               callbackWithFullResult(option.value as TokenType, '');
             }
           }}
-        />
-        <TokenAmountInput
-          token={selectedTokenOption.value === TokenType.ASSET0 ? token0 : token1}
-          value={tokenAmount}
-          onChange={(value) => callbackWithFullResult(selectedToken, value)}
-          max={maxString}
-          maxed={tokenAmount === maxEightyPercentString}
-          onMax={() => callbackWithFullResult(selectedToken, maxEightyPercentString)}
-          maxButtonText='80% MAX'
         />
       </div>
     </BaseActionCard>
