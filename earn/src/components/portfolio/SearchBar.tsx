@@ -68,7 +68,7 @@ export function SearchBar(props: SearchBarProps) {
       .filter((balance) => balance.balance > 0)
       .map((balance) => {
         return {
-          label: balance.token.symbol || '',
+          label: balance.token.symbol,
           value: balance.token,
         };
       });

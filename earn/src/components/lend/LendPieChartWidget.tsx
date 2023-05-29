@@ -262,7 +262,7 @@ export default function LendPieChartWidget(props: LendPieChartWidgetProps) {
                   <div className='flex flex-col justify-center items-center gap-1'>
                     <Text size='M' weight='bold' color={activeSlice.color}>
                       {formatTokenAmountCompact(activeSlice.tokenBalance.balance)}{' '}
-                      {activeSlice.tokenBalance.token.symbol || ''}
+                      {activeSlice.tokenBalance.token.symbol}
                     </Text>
                     {activeSlice.tokenBalance.isKitty && (
                       <Text size='XS' color='rgba(255, 255, 255, 0.5)'>

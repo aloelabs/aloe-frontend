@@ -172,11 +172,11 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
           <MetricContainer
-            label={token0.symbol ?? 'Token0'}
+            label={token0.symbol}
             value={assets0.sub(liabilities.amount0).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer
-            label={token1.symbol ?? 'Token1'}
+            label={token1.symbol}
             value={assets1.sub(liabilities.amount1).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer

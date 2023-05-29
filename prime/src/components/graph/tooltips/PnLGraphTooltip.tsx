@@ -34,8 +34,8 @@ export default function PnLGraphTooltip(props: {
     const y = data?.payload[0]?.value || 0;
     const x = data?.label || 0;
 
-    const token0Symbol = token0.symbol ?? '';
-    const token1Symbol = token1.symbol ?? '';
+    const token0Symbol = token0.symbol;
+    const token1Symbol = token1.symbol;
     const symbolActive = inTermsOfToken0 ? token0Symbol : token1Symbol;
     const symbolInactive = inTermsOfToken0 ? token1Symbol : token0Symbol;
 

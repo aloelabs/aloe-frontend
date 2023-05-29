@@ -160,7 +160,7 @@ export default function LendPage() {
     const options: MultiDropdownOption<Token>[] = Array.from(uniqueTokens).map((token) => {
       return {
         value: token,
-        label: token.symbol || '',
+        label: token.symbol,
         icon: token.logoURI,
       };
     });
