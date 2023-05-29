@@ -45,19 +45,7 @@ export type HypotheticalAccountStates = {
   errorMsg?: string;
 };
 
-export type SuccessResult = {
-  success: true;
-  accountState: AccountState;
-};
-
-export type ErrorResult = {
-  success: false;
-  error: Error;
-};
-
-export type OperationResult = SuccessResult | ErrorResult;
-
-type Operator = (state: AccountState) => OperationResult;
+type Operator = (state: AccountState) => AccountState;
 
 export type ActionCardOutput = {
   actionId: ActionID;

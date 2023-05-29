@@ -1,9 +1,9 @@
 import { isSolvent } from '../BalanceSheet';
 import { MarginAccount } from '../MarginAccount';
-import { AccountState, OperationResult } from './Actions';
+import { AccountState } from './Actions';
 
 export function runWithChecks(
-  operator: (operand: AccountState) => OperationResult,
+  operator: (operand: AccountState) => AccountState,
   operand: AccountState | undefined,
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>
 ): AccountState {
@@ -11,10 +11,7 @@ export function runWithChecks(
   const updatedOperand = operator(operand);
   if (updatedOperand == null) throw Error('updatedOperand is null');
 
-  if (!updatedOperand.success) throw updatedOperand.error;
-
-  const { assets, liabilities, uniswapPositions, availableForDeposit, availableForBorrow } =
-    updatedOperand.accountState;
+  const { assets, liabilities, uniswapPositions, availableForDeposit, availableForBorrow } = updatedOperand;
 
   if (assets.token0Raw.isLtZero()) {
     throw Error(`Insufficient ${marginAccount.token0.symbol}`);
@@ -59,5 +56,5 @@ export function runWithChecks(
     throw Error('Margin Account is not solvent');
   }
 
-  return updatedOperand.accountState;
+  return updatedOperand;
 }

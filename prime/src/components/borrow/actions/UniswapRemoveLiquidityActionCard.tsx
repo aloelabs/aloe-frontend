@@ -110,10 +110,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
           lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
         operator(operand) {
           if (lower == null || upper == null) {
-            return {
-              success: false,
-              error: Error('No liquidity position selected'),
-            };
+            throw Error('No liquidity position selected');
           }
           return removeLiquidityOperator(
             operand,

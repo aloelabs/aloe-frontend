@@ -62,10 +62,7 @@ export default function UnsiwapClaimFeesActionCard(props: ActionCardProps) {
           lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, updatedLiquidity) : undefined,
         operator(operand) {
           if (lower == null || upper == null) {
-            return {
-              success: false,
-              error: Error('Invalid liquidity position'),
-            };
+            throw Error('Invalid liquidity position');
           }
           return removeLiquidityOperator(
             operand,

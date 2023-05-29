@@ -246,10 +246,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             : undefined,
         operator(operand) {
           if (lowerTick == null || upperTick == null || currentTick == null) {
-            return {
-              success: false,
-              error: Error('Cannot add liquidity without position bounds'),
-            };
+            throw Error('Cannot add liquidity without position bounds');
           }
           return addLiquidityOperator(
             operand,
