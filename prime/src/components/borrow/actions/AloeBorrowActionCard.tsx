@@ -79,6 +79,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const max =
     selectedTokenOption.value === TokenType.ASSET0 ? GN.min(allowed0, available0) : GN.min(allowed1, available1);
   const maxString = max.toString(GNFormat.DECIMAL);
+  const maxEightyPercent = max.recklessMul(0.8);
+  const maxEightyPercentString = maxEightyPercent.toString(GNFormat.DECIMAL);
 
   return (
     <BaseActionCard
@@ -103,7 +105,9 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           value={tokenAmount}
           onChange={(value) => callbackWithFullResult(selectedToken, value)}
           max={maxString}
-          maxed={tokenAmount === maxString}
+          maxed={tokenAmount === maxEightyPercentString}
+          onMax={() => callbackWithFullResult(selectedToken, maxEightyPercentString)}
+          maxButtonText='80% MAX'
         />
       </div>
     </BaseActionCard>

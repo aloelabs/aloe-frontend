@@ -246,10 +246,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             : undefined,
         operator(operand) {
           if (lowerTick == null || upperTick == null || currentTick == null) {
-            return {
-              success: false,
-              error: Error('Cannot add liquidity without position bounds'),
-            };
+            throw Error('Specify position bounds before adding liquidity');
           }
           return addLiquidityOperator(
             operand,
@@ -282,7 +279,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     prices = [
       numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, !isToken0Selected),
       numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, !isToken0Selected),
-    ].sort();
+    ].sort((a, b) => a - b);
   }
 
   const lowerSteppedInput = (
