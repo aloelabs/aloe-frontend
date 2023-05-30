@@ -55,7 +55,7 @@ function fromFields(fields: string[] | undefined): PreviousState {
 }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
   const { activeChain } = useContext(ChainContext);
 
@@ -245,7 +245,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             ? getAddLiquidityActionArgs(lowerTick, upperTick, liquidity)
             : undefined,
         operator(operand) {
-          if (lowerTick == null || upperTick == null || currentTick == null) return null;
+          if (lowerTick == null || upperTick == null || currentTick == null) {
+            throw Error('Specify position bounds before adding liquidity');
+          }
           return addLiquidityOperator(
             operand,
             marginAccount.address as Address,
@@ -393,6 +395,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       action={ActionID.ADD_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div className='w-full flex justify-between items-center gap-2 mb-4'>

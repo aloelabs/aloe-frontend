@@ -31,7 +31,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 
@@ -109,7 +109,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
         actionArgs:
           lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
         operator(operand) {
-          if (lower == null || upper == null) return null;
+          if (lower == null || upper == null) {
+            throw Error('Specify position bounds before removing liquidity');
+          }
           return removeLiquidityOperator(
             operand,
             marginAccount.address as Address,
@@ -139,6 +141,7 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
       action={ActionID.REMOVE_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div>

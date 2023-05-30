@@ -4,25 +4,40 @@ import { MarginAccount } from '../MarginAccount';
 import { AccountState } from './Actions';
 
 export function runWithChecks(
-  operator: (operand: AccountState) => AccountState | null,
+  operator: (operand: AccountState) => AccountState,
   operand: AccountState | undefined,
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>
-): AccountState | null {
-  if (operand == null) return null;
+): AccountState {
+  if (operand === undefined) throw Error('operand is undefined');
   const updatedOperand = operator(operand);
-  if (updatedOperand == null) return null;
 
   const { assets, liabilities, uniswapPositions, availableForDeposit, availableForBorrow } = updatedOperand;
 
-  // if any assets or liabilities are < 0, we have an issue!
-  if (
-    Object.values(assets).find((x) => x.isLtZero()) ||
-    Object.values(liabilities).find((x) => x.isLtZero()) ||
-    Object.values(availableForDeposit).find((x) => x < 0) ||
-    Object.values(availableForBorrow).find((x) => x < 0)
-  ) {
-    console.log('Margin Account, EOA, or Lender balance dropped below 0!');
-    return null;
+  // Sanity check (making sure we don't have too many Uniswap positions)
+  if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
+    throw Error('Too many Uniswap positions');
+  }
+
+  if (assets.token0Raw.isLtZero()) {
+    throw Error(`Insufficient account balance (${marginAccount.token0.symbol})`);
+  } else if (assets.token1Raw.isLtZero()) {
+    throw Error(`Insufficient account balance (${marginAccount.token1.symbol})`);
+  } else if (assets.uni0.isLtZero()) {
+    throw Error(`Not enough ${marginAccount.token0.symbol} in Uniswap`);
+  } else if (assets.uni1.isLtZero()) {
+    throw Error(`Not enough ${marginAccount.token1.symbol} in Uniswap`);
+  } else if (liabilities.amount0.isLtZero()) {
+    throw Error(`Repaying too much ${marginAccount.token0.symbol}`);
+  } else if (liabilities.amount1.isLtZero()) {
+    throw Error(`Repaying too much ${marginAccount.token1.symbol}`);
+  } else if (availableForDeposit.amount0.isLtZero()) {
+    throw Error(`Insufficient wallet balance (${marginAccount.token0.symbol})`);
+  } else if (availableForDeposit.amount1.isLtZero()) {
+    throw Error(`Insufficient wallet balance (${marginAccount.token1.symbol})`);
+  } else if (availableForBorrow.amount0.isLtZero()) {
+    throw Error(`Lending market supply depleted (${marginAccount.token0.symbol})`);
+  } else if (availableForBorrow.amount1.isLtZero()) {
+    throw Error(`Lending market supply depleted (${marginAccount.token1.symbol})`);
   }
 
   // if the action would cause insolvency, we have an issue!
@@ -43,15 +58,7 @@ export function runWithChecks(
     marginAccount.token1.decimals
   );
   if (!solvency.atA || !solvency.atB) {
-    console.log('Margin Account not solvent!');
-    console.log(solvency);
-    return null;
-  }
-
-  // Check that there are not too many Uniswap positions
-  if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
-    console.log('Too many Uniswap positions!');
-    return null;
+    throw Error('Account unhealthy');
   }
 
   return updatedOperand;

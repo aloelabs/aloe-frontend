@@ -128,7 +128,7 @@ export function removeLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): AccountState | null {
+): AccountState {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
   const claimedFeeUniswapKeys = operand.claimedFeeUniswapKeys.concat();
@@ -151,14 +151,12 @@ export function removeLiquidityOperator(
   const idx = uniswapPositions.map((x) => uniswapPositionKey(owner, x.lower ?? 0, x.upper ?? 0)).indexOf(key);
 
   if (idx === -1) {
-    console.error("Attempted to remove liquidity from a position that doens't exist");
-    return null;
+    throw Error("Attempted to remove liquidity from a position that doens't exist");
   }
 
   const oldPosition = { ...uniswapPositions[idx] };
   if (JSBI.lessThan(oldPosition.liquidity, liquidity)) {
-    console.error('Attempted to remove more than 100% of liquidity from a position');
-    return null;
+    throw Error('Attempted to remove more than 100% of liquidity from a position');
   }
   oldPosition.liquidity = JSBI.subtract(oldPosition.liquidity, liquidity);
   uniswapPositions[idx] = oldPosition;
