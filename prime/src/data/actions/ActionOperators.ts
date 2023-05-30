@@ -118,7 +118,7 @@ export function addLiquidityOperator(
   }
 
   if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
-    throw Error(`Too many uniswap positions`);
+    throw Error('Too many uniswap positions');
   }
 
   return { ...operand, assets, uniswapPositions };
