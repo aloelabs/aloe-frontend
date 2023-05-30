@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -8,6 +8,7 @@ import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../App';
+import { ReactComponent as AlertIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import {
   AccountState,
@@ -151,6 +152,22 @@ const ActionCardWrapper = styled.div`
   }
 `;
 
+const ActionErrorContainer = styled.div`
+  ${tw`w-full flex flex-row items-center justify-between gap-2`}
+  background-color: rgba(255, 54, 69, 1);
+  box-shadow: 0px 0px 10px rgba(255, 54, 69, 0.5);
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-top: 32px;
+`;
+
+const StyledAlertIcon = styled(AlertIcon)`
+  path {
+    stroke: rgba(255, 54, 69, 1);
+    fill: #ffff;
+  }
+`;
+
 export type ManageAccountWidgetProps = {
   marketInfo: MarketInfo | null;
   marginAccount: MarginAccount;
@@ -176,6 +193,11 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
   // modals
   const [showAddActionModal, setShowAddActionModal] = useState(false);
+  const actionCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    actionCardRefs.current = actionCardRefs.current.slice(0, activeActions.length);
+  }, [activeActions]);
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
@@ -256,6 +278,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   const finalState = hypotheticalStates.at(hypotheticalStates.length - 1) ?? initialState;
   const numValidActions = hypotheticalStates.length - 1;
+  const hasInvalidAction = activeActions.length > numValidActions && userInputFields.at(numValidActions) !== undefined;
 
   const { health } = isSolvent(
     finalState.assets,
@@ -289,14 +312,14 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                   {index + 1}
                 </Text>
               </ActionItemCount>
-              <ActionCardWrapper>
+              <ActionCardWrapper ref={(el) => (actionCardRefs.current[index] = el)}>
                 <action.actionCard
                   marketInfo={marketInfo}
                   marginAccount={marginAccount}
                   accountState={hypotheticalStates.at(index) ?? finalState}
                   userInputFields={userInputFields.at(index)}
                   isCausingError={index >= numValidActions && userInputFields.at(index) !== undefined}
-                  errorMsg={index === numValidActions ? errorMsg : undefined}
+                  errorMsg={index === numValidActions && userInputFields.at(index) !== undefined ? errorMsg : undefined}
                   forceOutput={actionOutputs.length === index}
                   onChange={(output: ActionCardOutput, userInputs: string[]) => {
                     setUserInputFields([
@@ -345,6 +368,29 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </ActionCardWrapper>
           </ActionItem>
         </ActionsList>
+        {hasInvalidAction && (
+          <ActionErrorContainer>
+            <div className='flex items-center justify-start gap-2'>
+              <StyledAlertIcon width={24} height={24} />
+              <Text size='M' weight='bold'>
+                Invalid Action(s)
+              </Text>
+            </div>
+            <Text size='S' weight='medium'>
+              <button
+                onClick={() => {
+                  actionCardRefs.current[numValidActions]?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                }}
+                className='hover:underline'
+              >
+                View Problem
+              </button>
+            </Text>
+          </ActionErrorContainer>
+        )}
         <HealthBar health={health} />
         <div className='w-full flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
