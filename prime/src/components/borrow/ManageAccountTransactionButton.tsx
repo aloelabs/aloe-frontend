@@ -194,7 +194,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   }, [refetchEtherBalance, refetchAllowance0, refetchAllowance1]);
 
   const requiredBalances = [accountState.requiredAllowances.amount0, accountState.requiredAllowances.amount1];
-  const insufficient = [requiredBalances[0] > userBalances.amount0, requiredBalances[1] > userBalances.amount1];
+  const insufficient = [requiredBalances[0].gt(userBalances.amount0), requiredBalances[1].gt(userBalances.amount1)];
   const loadingApprovals = [
     requiredBalances[0].isGtZero() && !userAllowance0Asset,
     requiredBalances[1].isGtZero() && !userAllowance1Asset,
