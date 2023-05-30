@@ -3,7 +3,6 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'wagmi';
 
 import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
-import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
 import { AccountState, TokenType } from './Actions';
 
 export function transferInOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
@@ -115,10 +114,6 @@ export function addLiquidityOperator(
     uniswapPositions[idx] = oldPosition;
   } else {
     uniswapPositions.push({ liquidity, lower: lowerTick, upper: upperTick });
-  }
-
-  if (uniswapPositions.length > MAX_UNISWAP_POSITIONS) {
-    throw Error('Too many uniswap positions');
   }
 
   return { ...operand, assets, uniswapPositions };
