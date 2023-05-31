@@ -251,13 +251,17 @@ export function tickToPrice(tick: number): GN {
   return GN.fromJSBI(TickMath.getSqrtRatioAtTick(tick), 96, 2).square();
 }
 
-export function priceToTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
+/**
+ * Converts a price to the closest tick
+ * @param price0In1 the price of token0 in terms of token1
+ * @param token0Decimals the number of decimals in token0
+ * @param token1Decimals the number of decimals in token1
+ * @returns the closest tick to the price
+ */
+export function priceToClosestTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
   const decimalDiff = token0Decimals - token1Decimals;
-  const priceX96 = new Big(price0In1).mul(BIGQ96).div(10 ** decimalDiff);
-
-  const sqrtPriceX48 = priceX96.sqrt();
-  const sqrtPriceX96JSBI = JSBI.BigInt(sqrtPriceX48.mul(Q48.toString()).toFixed(0));
-  return TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
+  const tick = (Math.log10(price0In1) - decimalDiff) / Math.log10(1.0001);
+  return Math.round(tick);
 }
 
 export function sqrtRatioToTick(sqrtRatioX96: GN): number {
@@ -315,7 +319,7 @@ export function calculateAmount1FromAmount0(
     amount1 = SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity, false);
   }
   return {
-    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(6),
+    amount: new Big(amount1.toString()).div(10 ** token1Decimals).toFixed(token1Decimals),
     liquidity,
   };
 }
@@ -361,7 +365,7 @@ export function calculateAmount0FromAmount1(
     };
   }
   return {
-    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(6),
+    amount: new Big(amount0.toString()).div(10 ** token0Decimals).toFixed(token0Decimals),
     liquidity,
   };
 }

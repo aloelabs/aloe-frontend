@@ -19,7 +19,7 @@ import {
   calculateTickInfo,
   getPoolAddressFromTokens,
   getUniswapPoolBasics,
-  priceToTick,
+  priceToClosestTick,
   shouldAmount0InputBeDisabled,
   shouldAmount1InputBeDisabled,
   TickData,
@@ -62,6 +62,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   // MARK: state for user inputs
   const [localIsAmount0UserDefined, setLocalIsAmount0UserDefined] = useState(false);
   const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
+  const [localLiquidity, setLocalLiquidity] = useState<JSBI>(JSBI.BigInt(0));
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
@@ -208,7 +209,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let amountYStr = isToken0 ? previousAmount1Str : previousAmount0Str;
     let liquidity = JSBI.BigInt('0');
     // If possible, compute amountY from amountX
-    if (!isNaN(amountX)) {
+    if (!isNaN(amountX) && amountX > 0) {
       const res = (isToken0 ? calculateAmount1FromAmount0 : calculateAmount0FromAmount1)(
         amountX,
         lower,
@@ -219,12 +220,15 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       );
       amountYStr = res.amount;
       liquidity = res.liquidity;
+    } else {
+      amountYStr = '';
     }
 
     const [amount0Str, amount1Str] = isToken0 ? [amountXStr, amountYStr] : [amountYStr, amountXStr];
 
     setLocalTokenAmounts([amount0Str, amount1Str]);
     setLocalIsAmount0UserDefined(isToken0);
+    setLocalLiquidity(liquidity);
 
     callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
   }
@@ -304,7 +308,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
         if (!isToken0Selected) price = 1.0 / price;
         const nearestTick = roundDownToNearestN(
-          priceToTick(price, token0.decimals, token1.decimals),
+          priceToClosestTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
 
@@ -356,7 +360,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
         if (!isToken0Selected) price = 1.0 / price;
         const nearestTick = roundUpToNearestN(
-          priceToTick(price, token0.decimals, token1.decimals),
+          priceToClosestTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
 
@@ -405,7 +409,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             token1={token1}
             isToken0Selected={isToken0Selected}
             setIsToken0Selected={(value: boolean) => {
-              callbackWithFullResults(value, previousAmount0Str, previousAmount1Str, previousLower, previousUpper);
+              callbackWithFullResults(
+                value,
+                previousAmount0Str,
+                previousAmount1Str,
+                previousLower,
+                previousUpper,
+                localLiquidity
+              );
             }}
           />
         )}
@@ -433,7 +444,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token0 : token1}
           value={isInput0Disabled ? '' : tokenAmount0}
-          onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, isToken0Selected, previousLower, previousUpper)}
           disabled={isInput0Disabled}
           max={maxString0}
           maxed={tokenAmount0 === maxString0}
@@ -445,7 +456,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token1 : token0}
           value={isInput1Disabled ? '' : tokenAmount1}
-          onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, !isToken0Selected, previousLower, previousUpper)}
           disabled={isInput1Disabled}
           max={maxString1}
           maxed={tokenAmount1 === maxString1}
