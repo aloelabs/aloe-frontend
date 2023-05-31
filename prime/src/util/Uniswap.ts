@@ -260,39 +260,8 @@ export function tickToPrice(tick: number): GN {
  */
 export function priceToClosestTick(price0In1: number, token0Decimals: number, token1Decimals: number): number {
   const decimalDiff = token0Decimals - token1Decimals;
-  const priceX96 = new Big(price0In1).mul(BIGQ96).div(10 ** decimalDiff);
-
-  const sqrtPriceX48 = priceX96.sqrt();
-  const sqrtPriceX96JSBI = JSBI.BigInt(sqrtPriceX48.mul(Q48.toString()).toFixed(0));
-  let tickAtSqrtRatio = TickMath.getTickAtSqrtRatio(sqrtPriceX96JSBI);
-
-  /**
-   * Converts a tick to a price (javascript number)
-   * @param tick the tick to convert to a price
-   * @returns the price of the tick, converted to a number
-   */
-  const tickToNumericPrice = (tick: number) => {
-    return tickToPrice(tick)
-      .toDecimalBig()
-      .div(10 ** (token1Decimals - token0Decimals))
-      .toNumber();
-  };
-
-  const priceAtTick = tickToNumericPrice(tickAtSqrtRatio);
-  const tickDifference = Math.sign(price0In1 - priceAtTick);
-
-  // If the price isn't exactly at the tick, we need to check the tick above/below
-  if (tickDifference !== 0) {
-    const tickAround = tickAtSqrtRatio + tickDifference;
-    const priceAround = tickToNumericPrice(tickAround);
-
-    // If the price is closer to the tick above/below, use that tick instead
-    if (Math.abs(priceAround - price0In1) < Math.abs(priceAtTick - price0In1)) {
-      tickAtSqrtRatio = tickAround;
-    }
-  }
-
-  return tickAtSqrtRatio;
+  const tick = (Math.log10(price0In1) - decimalDiff) / Math.log10(1.0001);
+  return Math.round(tick);
 }
 
 export function sqrtRatioToTick(sqrtRatioX96: GN): number {
