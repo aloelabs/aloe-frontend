@@ -159,6 +159,8 @@ const ActionErrorContainer = styled.div`
   padding: 8px 16px;
   border-radius: 8px;
   margin-top: 32px;
+  max-width: min-content;
+  min-width: 100%;
 `;
 
 const StyledAlertIcon = styled(AlertIcon)`
@@ -166,6 +168,22 @@ const StyledAlertIcon = styled(AlertIcon)`
     stroke: rgba(255, 54, 69, 1);
     fill: #ffff;
   }
+`;
+
+const StyledWarningIcon = styled(AlertIcon)`
+  path {
+    stroke: rgba(242, 201, 76, 1);
+    fill: black;
+  }
+`;
+
+const WarningContainer = styled.div`
+  ${tw`flex flex-row items-center justify-between gap-2`}
+  background-color: rgba(242, 201, 76, 1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  max-width: min-content;
+  min-width: 100%;
 `;
 
 export type ManageAccountWidgetProps = {
@@ -392,6 +410,21 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </ActionErrorContainer>
         )}
         <HealthBar health={health} />
+        {health <= 1.001 && (
+          <WarningContainer>
+            <div>
+              <StyledWarningIcon width={24} height={24} />
+            </div>
+            <div className='w-full flex flex-col'>
+              <Text size='M' weight='bold' color='rgb(0, 0, 0)'>
+                Warning
+              </Text>
+              <Text size='S' weight='medium' color='rgb(0, 0, 0)'>
+                Your account is nearly insolvent. Please proceed with caution.
+              </Text>
+            </div>
+          </WarningContainer>
+        )}
         <div className='w-full flex justify-end gap-4 mt-4'>
           <ManageAccountTransactionButton
             userAddress={userAddress}
