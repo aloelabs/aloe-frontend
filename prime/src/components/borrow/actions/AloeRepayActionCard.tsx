@@ -22,14 +22,14 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
-      label: token0?.symbol || '',
+      label: token0.symbol,
       value: TokenType.ASSET0,
-      icon: token0?.logoURI || '',
+      icon: token0.logoURI,
     },
     {
-      label: token1?.symbol || '',
+      label: token1.symbol,
       value: TokenType.ASSET1,
-      icon: token1?.logoURI || '',
+      icon: token1.logoURI,
     },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';
