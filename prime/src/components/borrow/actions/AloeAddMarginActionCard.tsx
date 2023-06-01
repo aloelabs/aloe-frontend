@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 
@@ -14,8 +14,8 @@ import {
   TokenType,
 } from '../../../data/actions/Actions';
 import { getBalanceFor } from '../../../data/Balances';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
+import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 export function AloeAddMarginActionCard(prop: ActionCardProps) {
   const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, forceOutput, onRemove, onChange } =
@@ -75,24 +75,18 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
       errorMsg={errorMsg}
       onRemove={onRemove}
     >
-      <div className='w-full flex flex-col gap-4 items-center'>
-        <Dropdown
-          options={dropdownOptions}
-          selectedOption={selectedTokenOption}
-          onSelect={(option: DropdownOption<TokenType>) => {
-            if (option.value !== selectedTokenOption.value) {
-              callbackWithFullResult(option.value, '');
-            }
-          }}
-        />
-        <TokenAmountInput
-          token={selectedTokenOption.value === TokenType.ASSET0 ? token0 : token1}
-          value={tokenAmount}
-          onChange={(value) => callbackWithFullResult(selectedToken, value)}
-          max={maxString}
-          maxed={tokenAmount === maxString}
-        />
-      </div>
+      <TokenAmountSelectInput
+        inputValue={tokenAmount}
+        options={dropdownOptions}
+        selectedOption={selectedTokenOption}
+        maxAmount={maxString}
+        onChange={(value) => callbackWithFullResult(selectedToken, value)}
+        onSelect={(option: DropdownOption<TokenType>) => {
+          if (option.value !== selectedTokenOption.value) {
+            callbackWithFullResult(option.value, '');
+          }
+        }}
+      />
     </BaseActionCard>
   );
 }
