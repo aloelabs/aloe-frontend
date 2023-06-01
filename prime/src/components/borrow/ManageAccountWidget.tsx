@@ -420,7 +420,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
                 Warning
               </Text>
               <Text size='S' weight='medium' color='rgb(0, 0, 0)'>
-                Your account is nearly insolvent. Please proceed with caution.
+                Your account is nearly unhealthy. Please proceed with caution.
               </Text>
             </div>
           </WarningContainer>
