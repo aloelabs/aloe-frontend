@@ -52,7 +52,7 @@ export default function HealthBar(props: HealthBarProps) {
           content={`Health is a measure of how close your account is to being liquidated.
               It is calculated by dividing your account's assets by its liabilities.
               If your health is at or below 1.0, your account may be liquidated.`}
-          position='top-center'
+          position='top-left'
         />
         <Text size='L' weight='medium'>
           Account Health:
