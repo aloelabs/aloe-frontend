@@ -20,6 +20,7 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
 import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
+import AccountNotFound from '../components/borrow/AccountNotFound';
 import { AccountStatsCard } from '../components/borrow/AccountStatsCard';
 import { HypotheticalToggleButton } from '../components/borrow/HypotheticalToggleButton';
 import ManageAccountWidget from '../components/borrow/ManageAccountWidget';
@@ -209,6 +210,7 @@ export default function BorrowActionsPage() {
   const [borrowInterestInputValue, setBorrowInterestInputValue] = useState<string>('');
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
   const [uniswapPositionEarnedFees, setUniswapPositionEarnedFees] = useState<UniswapPositionEarnedFees>({});
+  const [isInvalidAddress, setIsInvalidAddress] = useState<boolean>(false);
 
   // MARK: worker message handling (for liquidation threshold calcs)
   useEffect(() => {
@@ -250,6 +252,7 @@ export default function BorrowActionsPage() {
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
+    enabled: !!marginAccount,
   });
   const uniswapV3PoolContract = useContract({
     address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
@@ -267,14 +270,20 @@ export default function BorrowActionsPage() {
     let mounted = true;
     // Ensure we have non-null values
     async function fetch(marginAccountAddress: string) {
-      const result = await fetchMarginAccount(
-        accountAddressParam ?? '0x', // TODO better optional resolution
-        activeChain,
-        provider,
-        marginAccountAddress
-      );
-      if (mounted) {
-        setMarginAccount(result.marginAccount);
+      try {
+        const result = await fetchMarginAccount(
+          accountAddressParam ?? '0x', // TODO better optional resolution
+          activeChain,
+          provider,
+          marginAccountAddress
+        );
+        if (mounted) {
+          setMarginAccount(result.marginAccount);
+        }
+      } catch (error) {
+        if (mounted) {
+          setIsInvalidAddress(true);
+        }
       }
     }
     if (accountAddressParam) {
@@ -486,6 +495,10 @@ export default function BorrowActionsPage() {
   const updateHypotheticalState = useCallback((state: AccountState | null) => {
     setHypotheticalState(state);
   }, []);
+
+  if (isInvalidAddress) {
+    return <AccountNotFound />;
+  }
 
   // if no account data is found, don't render the page
   if (!marginAccount || !displayedMarginAccount) {
