@@ -24,6 +24,8 @@ const OUT_OF_RANGE_COLOR = '#EB5757';
 const IN_RANGE_BACKGROUND_COLOR = 'rgba(0, 193, 67, 0.1)';
 const OUT_OF_RANGE_BACKGROUND_COLOR = 'rgba(235, 87, 87, 0.1)';
 
+const UNISWAP_POSITION_SLOTS = ['Slot A', 'Slot B', 'Slot C'];
+
 type SelectedUniswapPosition = {
   uniswapPosition: UniswapPosition;
   withdrawableNFT: UniswapNFTPositionEntry;
@@ -123,7 +125,7 @@ export function OutOfRangeBadge() {
 }
 
 type UniswapPositionCardProps = {
-  marginAccount: MarginAccount;
+  marginAccount?: MarginAccount;
   uniswapPosition?: UniswapPosition;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setSelectedUniswapPosition: (uniswapPosition: SelectedUniswapPosition | null) => void;
@@ -132,6 +134,17 @@ type UniswapPositionCardProps = {
 
 function UniswapPositionCard(props: UniswapPositionCardProps) {
   const { marginAccount, uniswapPosition, withdrawableUniswapNFTs, setSelectedUniswapPosition } = props;
+
+  if (!marginAccount || !uniswapPosition) {
+    return (
+      <UniswapPositionCardWrapper>
+        <Text size='S' color={ACCENT_COLOR} className='text-center'>
+          Empty
+        </Text>
+      </UniswapPositionCardWrapper>
+    );
+  }
+
   const { sqrtPriceX96, token0, token1 } = marginAccount;
 
   const minPrice = uniswapPosition
@@ -163,75 +176,69 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
   return (
     <UniswapPositionCardWrapper>
-      {uniswapPosition ? (
-        <div className='flex flex-col gap-4'>
-          <div className='flex justify-center items-center'>
-            <TokenPairIcons
-              token0IconPath={marginAccount.token0.logoURI}
-              token1IconPath={marginAccount.token1.logoURI}
-              token0AltText={`${marginAccount.token0.symbol}'s icon`}
-              token1AltText={`${marginAccount.token1.symbol}'s icon`}
-            />
+      <div className='flex flex-col gap-4'>
+        <div className='flex justify-center items-center'>
+          <TokenPairIcons
+            token0IconPath={marginAccount.token0.logoURI}
+            token1IconPath={marginAccount.token1.logoURI}
+            token0AltText={`${marginAccount.token0.symbol}'s icon`}
+            token1AltText={`${marginAccount.token1.symbol}'s icon`}
+          />
+        </div>
+        <div className='flex justify-between'>
+          <div className='text-left'>
+            <Display size='XS' color={ACCENT_COLOR}>
+              {roundPercentage(amount0Percent, 1)}%
+            </Display>
+            <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
+            <Text size='XS'>{marginAccount.token0.symbol}</Text>
           </div>
-          <div className='flex justify-between'>
-            <div className='text-left'>
-              <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(amount0Percent, 1)}%
-              </Display>
-              <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
-              <Text size='XS'>{marginAccount.token0.symbol}</Text>
-            </div>
-            <div className='text-right'>
-              <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(amount1Percent, 1)}%
-              </Display>
-              <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
-              <Text size='XS'>{marginAccount.token1.symbol}</Text>
-            </div>
-          </div>
-          <div className='flex justify-between'>
-            <div className='text-left'>
-              <Text size='S' color={ACCENT_COLOR}>
-                Min Price
-              </Text>
-              <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
-              <Text size='XS'>
-                {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
-              </Text>
-            </div>
-            <div className='text-right'>
-              <Text size='S' color={ACCENT_COLOR}>
-                Max Price
-              </Text>
-              <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
-              <Text size='XS'>
-                {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
-              </Text>
-            </div>
-          </div>
-          <div className='flex justify-between'>
-            {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
-            {withdrawableNFT && (
-              <FilledGreyButton
-                size='S'
-                disabled={!withdrawableNFT}
-                onClick={() => {
-                  setSelectedUniswapPosition({
-                    uniswapPosition: uniswapPosition,
-                    withdrawableNFT: withdrawableNFT,
-                  });
-                }}
-              >
-                Withdraw
-              </FilledGreyButton>
-            )}
+          <div className='text-right'>
+            <Display size='XS' color={ACCENT_COLOR}>
+              {roundPercentage(amount1Percent, 1)}%
+            </Display>
+            <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
+            <Text size='XS'>{marginAccount.token1.symbol}</Text>
           </div>
         </div>
-      ) : (
-        <Text size='S' color={ACCENT_COLOR} className='text-center'>
-          Empty
-        </Text>
-      )}
+        <div className='flex justify-between'>
+          <div className='text-left'>
+            <Text size='S' color={ACCENT_COLOR}>
+              Min Price
+            </Text>
+            <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
+            <Text size='XS'>
+              {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+            </Text>
+          </div>
+          <div className='text-right'>
+            <Text size='S' color={ACCENT_COLOR}>
+              Max Price
+            </Text>
+            <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
+            <Text size='XS'>
+              {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+            </Text>
+          </div>
+        </div>
+        <div className='flex justify-between'>
+          {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
+          {withdrawableNFT && (
+            <FilledGreyButton
+              size='S'
+              disabled={!withdrawableNFT}
+              onClick={() => {
+                setSelectedUniswapPosition({
+                  uniswapPosition: uniswapPosition,
+                  withdrawableNFT: withdrawableNFT,
+                });
+              }}
+            >
+              Withdraw
+            </FilledGreyButton>
+          )}
+        </div>
+      </div>
     </UniswapPositionCardWrapper>
   );
 }
@@ -247,45 +254,26 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
   const { marginAccount, uniswapPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
 
-  if (!marginAccount) return null;
   return (
     <>
       <Container>
         <Text size='M'>Uniswap Positions</Text>
         <PositionList>
-          <UniswapPositionCardContainer>
-            <Text size='S'>Slot A</Text>
-            <UniswapPositionCard
-              marginAccount={marginAccount}
-              uniswapPosition={uniswapPositions.length > 0 ? uniswapPositions[0] : undefined}
-              withdrawableUniswapNFTs={withdrawableUniswapNFTs}
-              setSelectedUniswapPosition={setSelectedUniswapPosition}
-              setPendingTxn={props.setPendingTxn}
-            />
-          </UniswapPositionCardContainer>
-          <UniswapPositionCardContainer>
-            <Text size='S'>Slot B</Text>
-            <UniswapPositionCard
-              marginAccount={marginAccount}
-              uniswapPosition={uniswapPositions.length > 1 ? uniswapPositions[1] : undefined}
-              withdrawableUniswapNFTs={withdrawableUniswapNFTs}
-              setSelectedUniswapPosition={setSelectedUniswapPosition}
-              setPendingTxn={props.setPendingTxn}
-            />
-          </UniswapPositionCardContainer>
-          <UniswapPositionCardContainer>
-            <Text size='S'>Slot C</Text>
-            <UniswapPositionCard
-              marginAccount={marginAccount}
-              uniswapPosition={uniswapPositions.length > 2 ? uniswapPositions[2] : undefined}
-              withdrawableUniswapNFTs={withdrawableUniswapNFTs}
-              setSelectedUniswapPosition={setSelectedUniswapPosition}
-              setPendingTxn={props.setPendingTxn}
-            />
-          </UniswapPositionCardContainer>
+          {UNISWAP_POSITION_SLOTS.map((slot, index) => (
+            <UniswapPositionCardContainer>
+              <Text size='S'>{slot}</Text>
+              <UniswapPositionCard
+                marginAccount={marginAccount}
+                uniswapPosition={uniswapPositions.length > index ? uniswapPositions[index] : undefined}
+                withdrawableUniswapNFTs={withdrawableUniswapNFTs}
+                setSelectedUniswapPosition={setSelectedUniswapPosition}
+                setPendingTxn={props.setPendingTxn}
+              />
+            </UniswapPositionCardContainer>
+          ))}
         </PositionList>
       </Container>
-      {selectedUniswapPosition && (
+      {marginAccount && selectedUniswapPosition && (
         <WithdrawUniswapNFTModal
           isOpen={selectedUniswapPosition !== null}
           marginAccount={marginAccount}
