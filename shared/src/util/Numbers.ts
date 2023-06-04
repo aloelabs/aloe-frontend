@@ -135,7 +135,7 @@ export function roundUpToNearestN(value: number, n: number): number {
 
 export function formatTokenAmount(amount: number, sigDigs = 4): string {
   //TODO: if we want to support more than one locale, we would need to add more logic here
-  if (amount > 1e9) {
+  if (amount > 1e13) {
     return amount.toExponential(sigDigs - 3);
   } else if (amount > 1e6) {
     return amount.toLocaleString('en-US', {
