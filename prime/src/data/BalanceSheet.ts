@@ -36,7 +36,6 @@ function _computeLiquidationIncentive(
   assets1: GN,
   liabilities0: GN,
   liabilities1: GN,
-  token0Decimals: number,
   token1Decimals: number,
   sqrtPriceX96: GN
 ): GN {
@@ -74,7 +73,6 @@ function _computeSolvencyBasics(
     mem.fixed1.add(mem.fluid1C),
     liabilities.amount0,
     liabilities.amount1,
-    token0Decimals,
     token1Decimals,
     sqrtPriceX96
   );
