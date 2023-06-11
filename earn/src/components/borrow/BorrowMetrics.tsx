@@ -26,6 +26,29 @@ const MetricCardContainer = styled.div`
   padding: 16px;
 `;
 
+const MetricCardPlaceholder = styled.div.attrs((props: { height: number }) => props)`
+  display: inline-block;
+  border-radius: 8px;
+  padding: 16px;
+  height: ${(props) => props.height}px;
+  background-color: #0d171e;
+  background-image: linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%);
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  animation: metricCardShimmer 0.75s forwards linear infinite;
+  overflow: hidden;
+  position: relative;
+
+  @keyframes metricCardShimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+`;
+
 const HorizontalMetricCardContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -201,7 +224,22 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     return Math.min(percentChange0, percentChange1);
   }, [marginAccount, uniswapPositions]);
 
-  if (!marginAccount) return null;
+  if (!marginAccount)
+    return (
+      <MetricsGrid>
+        <MetricsGridUpper>
+          <MetricCardPlaceholder height={96} />
+          <MetricCardPlaceholder height={96} />
+          <MetricCardPlaceholder height={96} />
+          <MetricCardPlaceholder height={96} />
+        </MetricsGridUpper>
+        <MetricsGridLower>
+          <MetricCardPlaceholder height={56} />
+          <MetricCardPlaceholder height={56} />
+          <MetricCardPlaceholder height={56} />
+        </MetricsGridLower>
+      </MetricsGrid>
+    );
 
   let liquidationDistanceText = '-';
   if (maxSafeCollateralFall !== null) {
