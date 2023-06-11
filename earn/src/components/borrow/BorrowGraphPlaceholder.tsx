@@ -4,11 +4,11 @@ import styled from 'styled-components';
 export const BorrowGraphPlaceholder = styled.div`
   height: 374px;
   width: 520px;
-  /* margin-left: auto; */
+  margin-left: auto;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     margin-left: 0;
-    /* margin-right: auto; */
+    margin-right: auto;
     /* 99% is important here as the graph does not render properly at 100% width */
     width: 99%;
   }
