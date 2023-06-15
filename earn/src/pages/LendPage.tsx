@@ -21,6 +21,7 @@ import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
 import Tooltip from '../components/common/Tooltip';
 import BalanceSlider from '../components/lend/BalanceSlider';
 import LendPairCard from '../components/lend/LendPairCard';
+import { LendCardPlaceholder } from '../components/lend/LendPairCardPlaceholder';
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
@@ -32,6 +33,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
+
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -141,6 +143,7 @@ export default function LendPage() {
     async function fetch() {
       const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
+        console.log('available lending pairs', results);
         setLendingPairs(results);
         setIsLoading(false);
       }
@@ -380,6 +383,13 @@ export default function LendPage() {
                 hasDeposited1={(lendingPairBalances?.[i]?.kitty1Balance || 0) > 0}
               />
             ))}
+            {isLoading && (
+              <>
+                <LendCardPlaceholder />
+                <LendCardPlaceholder />
+                <LendCardPlaceholder />
+              </>
+            )}
           </LendCards>
           {filteredLendingPairs.length > 0 && (
             <div className='mt-[42px] mb-[34px]'>
@@ -397,7 +407,7 @@ export default function LendPage() {
               />
             </div>
           )}
-          {filteredLendingPairs.length === 0 && (
+          {!isLoading && filteredLendingPairs.length === 0 && (
             <div className='flex flex-col items-center gap-2'>
               <Text size='L' weight='bold' color={LEND_TITLE_TEXT_COLOR}>
                 No lending pairs found
