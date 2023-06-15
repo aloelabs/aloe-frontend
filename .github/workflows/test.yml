@@ -16,7 +16,4 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - run: cd shared
-      - run: yarn install
-      - run: yarn build
-      - run: yarn test
+      - run: cd shared && yarn install && yarn test
