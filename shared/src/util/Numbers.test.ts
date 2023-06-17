@@ -11,8 +11,13 @@ import {
   formatUSDCompact,
   formatUSDAuto,
   formatNumberInput,
+  formatTokenAmount,
+  formatTokenAmountCompact,
+  prettyFormatBalance,
+  toBig,
   String1E,
 } from './Numbers';
+import { BigNumber } from 'ethers';
 
 describe('Numbers', () => {
   describe('areWithinNSigDigs', () => {
@@ -216,6 +221,132 @@ describe('Numbers', () => {
       expect(formatNumberInput('1.1a', true)).toEqual(null);
       expect(formatNumberInput('1.1.1')).toEqual(null);
       expect(formatNumberInput('1.1.1', true)).toEqual(null);
+    });
+  });
+
+  describe('formatTokenAmount', () => {
+    it('should format zero', () => {
+      expect(formatTokenAmount(0)).toEqual('0.0');
+    });
+    it('should format very small amounts', () => {
+      expect(formatTokenAmount(0.00000000000192542)).toEqual('1.9E-12');
+      expect(formatTokenAmount(0.000000000001967)).toEqual('2.0E-12');
+      expect(formatTokenAmount(0.0000000000000000052529)).toEqual('5.3E-18');
+    });
+    it('should format small amounts', () => {
+      expect(formatTokenAmount(0.00005)).toEqual('0.000050');
+      expect(formatTokenAmount(0.00052)).toEqual('0.00052');
+      expect(formatTokenAmount(0.000525)).toEqual('0.000525');
+      expect(formatTokenAmount(0.0005252)).toEqual('0.0005252');
+      expect(formatTokenAmount(0.00052525)).toEqual('0.0005253');
+    });
+    it('should format amounts', () => {
+      expect(formatTokenAmount(0.005)).toEqual('0.0050');
+      expect(formatTokenAmount(0.052)).toEqual('0.052');
+      expect(formatTokenAmount(0.052542)).toEqual('0.05254');
+      expect(formatTokenAmount(1)).toEqual('1.0');
+      expect(formatTokenAmount(1.1)).toEqual('1.1');
+      expect(formatTokenAmount(1.123)).toEqual('1.123');
+      expect(formatTokenAmount(1.1234)).toEqual('1.123');
+      expect(formatTokenAmount(15.252)).toEqual('15.25');
+      expect(formatTokenAmount(235.923)).toEqual('235.9');
+      expect(formatTokenAmount(9529.252)).toEqual('9,529');
+    });
+    it('should format large amounts', () => {
+      expect(formatTokenAmount(15929.2542)).toEqual('15,930');
+      expect(formatTokenAmount(573252.8232)).toEqual('573,300');
+      expect(formatTokenAmount(2529253.7529)).toEqual('2.529M');
+    });
+    it('should format very large amounts', () => {
+      expect(formatTokenAmount(1000000000)).toEqual('1.0B');
+      expect(formatTokenAmount(1252923409)).toEqual('1.253B');
+      expect(formatTokenAmount(1000000000000)).toEqual('1.0T');
+      expect(formatTokenAmount(1252923409000)).toEqual('1.253T');
+      expect(formatTokenAmount(10000000000000)).toEqual('10T');
+      expect(formatTokenAmount(12529234090000)).toEqual('1.3e+13');
+      expect(formatTokenAmount(159203242993439)).toEqual('1.6e+14');
+      expect(formatTokenAmount(1000000000000000)).toEqual('1.0e+15');
+      expect(formatTokenAmount(1252923409000000)).toEqual('1.3e+15');
+      expect(formatTokenAmount(1e18)).toEqual('1.0e+18');
+      expect(formatTokenAmount(2.252e18)).toEqual('2.3e+18');
+      expect(formatTokenAmount(1e21)).toEqual('1.0e+21');
+      expect(formatTokenAmount(5.252e21)).toEqual('5.3e+21');
+    });
+  });
+
+  describe('formatTokenAmountCompact', () => {
+    it('should format zero', () => {
+      expect(formatTokenAmountCompact(0)).toEqual('0.0');
+    });
+    it('should format very small amounts', () => {
+      expect(formatTokenAmountCompact(0.00000000000192542)).toEqual('1.93E-12');
+      expect(formatTokenAmountCompact(0.000000000001967)).toEqual('1.97E-12');
+      expect(formatTokenAmountCompact(0.0000000000000000052529)).toEqual('5.25E-18');
+    });
+    it('should format small amounts', () => {
+      expect(formatTokenAmountCompact(0.00005)).toEqual('5E-5');
+      expect(formatTokenAmountCompact(0.00052)).toEqual('5.2E-4');
+      expect(formatTokenAmountCompact(0.000525)).toEqual('5.25E-4');
+      expect(formatTokenAmountCompact(0.0005252)).toEqual('5.25E-4');
+      expect(formatTokenAmountCompact(0.00052525)).toEqual('5.25E-4');
+    });
+    it('should format amounts', () => {
+      expect(formatTokenAmountCompact(0.005)).toEqual('5E-3');
+      expect(formatTokenAmountCompact(0.052)).toEqual('0.052');
+      expect(formatTokenAmountCompact(0.052542)).toEqual('0.052542');
+      expect(formatTokenAmountCompact(1)).toEqual('1.0');
+      expect(formatTokenAmountCompact(1.1)).toEqual('1.1');
+      expect(formatTokenAmountCompact(1.123)).toEqual('1.123');
+      expect(formatTokenAmountCompact(1.1234)).toEqual('1.1234');
+      expect(formatTokenAmountCompact(15.252)).toEqual('15.252');
+      expect(formatTokenAmountCompact(235.923)).toEqual('235.92');
+    });
+    it('should format large amounts', () => {
+      expect(formatTokenAmountCompact(15929.2542)).toEqual('15,929');
+      expect(formatTokenAmountCompact(573252.8232)).toEqual('573,250');
+      expect(formatTokenAmountCompact(2529253.7529)).toEqual('2.529M');
+    });
+    it('should format very large amounts', () => {
+      expect(formatTokenAmountCompact(1000000000)).toEqual('1.0B');
+      expect(formatTokenAmountCompact(1252923409)).toEqual('1.253B');
+      expect(formatTokenAmountCompact(1000000000000)).toEqual('1.0T');
+      expect(formatTokenAmountCompact(1252923409000)).toEqual('1.253T');
+      expect(formatTokenAmountCompact(10000000000000)).toEqual('10T');
+      expect(formatTokenAmountCompact(12529234090000)).toEqual('12.53T');
+      expect(formatTokenAmountCompact(159203242993439)).toEqual('159.2T');
+      expect(formatTokenAmountCompact(1000000000000000)).toEqual('1000T');
+      expect(formatTokenAmountCompact(1252923409000000)).toEqual('1253T');
+      expect(formatTokenAmountCompact(1e18)).toEqual('1,000,000T');
+      expect(formatTokenAmountCompact(2.252e18)).toEqual('2,252,000T');
+      expect(formatTokenAmountCompact(1e21)).toEqual('1,000,000,000T');
+      expect(formatTokenAmountCompact(5.252e21)).toEqual('5,252,000,000T');
+    });
+  });
+
+  describe('prettyFormatBalance', () => {
+    it('should format a balance', () => {
+      const balance0 = new Big('1000000000000000000');
+      expect(prettyFormatBalance(balance0, 18)).toEqual('1.0000');
+      const balance1 = new Big('2529253752925000000');
+      expect(prettyFormatBalance(balance1, 18)).toEqual('2.5293');
+      const balance2 = new Big('100000000000000');
+      expect(prettyFormatBalance(balance2, 18)).toEqual('0.0001');
+    });
+    it('should not format if no balance is provided', () => {
+      expect(prettyFormatBalance(undefined, 18)).toEqual('-');
+    });
+    it('should not format if no decimals are provided', () => {
+      const balance = new Big('1000000000000000000');
+      expect(prettyFormatBalance(balance, undefined)).toEqual('-');
+    });
+  });
+
+  describe('toBig', () => {
+    it('should convert a BigNumber to a Big', () => {
+      const bn = BigNumber.from('852935923343242');
+      const big = toBig(bn);
+      expect(big).toBeInstanceOf(Big);
+      expect(big.toString()).toEqual('852935923343242');
     });
   });
 
