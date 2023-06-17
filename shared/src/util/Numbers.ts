@@ -291,6 +291,9 @@ export function truncateDecimals(value: string, decimals: number): string {
   if (decimalIndex === -1) {
     return value;
   }
+  if (decimals === 0) {
+    return value.slice(0, decimalIndex);
+  }
   return value.slice(0, decimalIndex + decimals + 1);
 }
 
