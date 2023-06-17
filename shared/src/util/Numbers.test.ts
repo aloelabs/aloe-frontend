@@ -8,6 +8,10 @@ import {
   roundPercentage,
   formatAmountWithUnit,
   formatUSD,
+  formatUSDCompact,
+  formatUSDAuto,
+  formatNumberInput,
+  String1E,
 } from './Numbers';
 
 describe('Numbers', () => {
@@ -119,6 +123,9 @@ describe('Numbers', () => {
     it('should format the amount in USD', () => {
       expect(formatUSD(1)).toEqual('$1.00');
       expect(formatUSD(1.1)).toEqual('$1.10');
+      expect(formatUSD(125.25)).toEqual('$125.25');
+      expect(formatUSD(1592.25)).toEqual('$1,592.25');
+      expect(formatUSD(15922.252)).toEqual('$15,922.25');
       expect(formatUSD(952932.252)).toEqual('$952,932.25');
       expect(formatUSD(1000000)).toEqual('$1,000,000.00');
       expect(formatUSD(1000000000)).toEqual('$1,000,000,000.00');
@@ -127,6 +134,104 @@ describe('Numbers', () => {
     it('should display the specified placeholder if the amount is null', () => {
       expect(formatUSD(null)).toEqual('-');
       expect(formatUSD(null, 'test')).toEqual('test');
+    });
+  });
+
+  describe('formatUSDCompact', () => {
+    it('should format the amount in USD', () => {
+      expect(formatUSDCompact(1)).toEqual('$1');
+      expect(formatUSDCompact(1.1)).toEqual('$1.1');
+      expect(formatUSDCompact(152.252)).toEqual('$152');
+      expect(formatUSDCompact(1592.25)).toEqual('$1.59K');
+      expect(formatUSDCompact(15921.25)).toEqual('$15.9K');
+      expect(formatUSDCompact(952932.252)).toEqual('$953K');
+      expect(formatUSDCompact(1000000)).toEqual('$1M');
+      expect(formatUSDCompact(1225209)).toEqual('$1.23M');
+      expect(formatUSDCompact(1000000000)).toEqual('$1B');
+      expect(formatUSDCompact(1252923409)).toEqual('$1.25B');
+    });
+    it('should display the specified placeholder if the amount is null', () => {
+      expect(formatUSDCompact(null)).toEqual('-');
+      expect(formatUSDCompact(null, 'test')).toEqual('test');
+    });
+  });
+
+  describe('formatUSDAuto', () => {
+    it('should format the amount in USD', () => {
+      expect(formatUSDAuto(1)).toEqual('$1.00');
+      expect(formatUSDAuto(1.1)).toEqual('$1.10');
+      expect(formatUSDAuto(125.25)).toEqual('$125.25');
+      expect(formatUSDAuto(1592.25)).toEqual('$1.59K');
+      expect(formatUSDAuto(15922.252)).toEqual('$15.9K');
+      expect(formatUSDAuto(952932.252)).toEqual('$953K');
+      expect(formatUSDAuto(1000000)).toEqual('$1M');
+      expect(formatUSDAuto(1225209)).toEqual('$1.23M');
+      expect(formatUSDAuto(1000000000)).toEqual('$1B');
+      expect(formatUSDAuto(1252923409)).toEqual('$1.25B');
+    });
+    it('should display the specified placeholder if the amount is null', () => {
+      expect(formatUSDAuto(null)).toEqual('-');
+      expect(formatUSDAuto(null, 'test')).toEqual('test');
+    });
+  });
+
+  describe('formatNumberInput', () => {
+    it('should format the number input for positive numbers', () => {
+      expect(formatNumberInput('')).toEqual('');
+      expect(formatNumberInput('-')).toEqual('');
+      expect(formatNumberInput('.')).toEqual('0.');
+      expect(formatNumberInput('1')).toEqual('1');
+      expect(formatNumberInput('1.')).toEqual('1.');
+      expect(formatNumberInput('1.1')).toEqual('1.1');
+    });
+    it('should format the number input for negative numbers', () => {
+      expect(formatNumberInput('', true)).toEqual('');
+      expect(formatNumberInput('-', true)).toEqual('');
+      expect(formatNumberInput('.', true)).toEqual('-0.');
+      expect(formatNumberInput('1', true)).toEqual('-1');
+      expect(formatNumberInput('1.', true)).toEqual('-1.');
+      expect(formatNumberInput('1.1', true)).toEqual('-1.1');
+    });
+    it('should format the number input using the specified decimals', () => {
+      expect(formatNumberInput('1', false, 1)).toEqual('1');
+      expect(formatNumberInput('1.', false, 1)).toEqual('1.');
+      expect(formatNumberInput('1.1', false, 1)).toEqual('1.1');
+      expect(formatNumberInput('1.1', false, 2)).toEqual('1.1');
+      expect(formatNumberInput('1.1', true, 1)).toEqual('-1.1');
+      expect(formatNumberInput('', false, 1)).toEqual('');
+      expect(formatNumberInput('-', false, 1)).toEqual('');
+      expect(formatNumberInput('.', false, 1)).toEqual('0.');
+      expect(formatNumberInput('', true, 1)).toEqual('');
+      expect(formatNumberInput('-', true, 1)).toEqual('');
+      expect(formatNumberInput('.', true, 1)).toEqual('-0.');
+    });
+    it('should return null if the input is invalid', () => {
+      expect(formatNumberInput('a')).toEqual(null);
+      expect(formatNumberInput('a', true)).toEqual(null);
+      expect(formatNumberInput('1a')).toEqual(null);
+      expect(formatNumberInput('1a', true)).toEqual(null);
+      expect(formatNumberInput('1.a')).toEqual(null);
+      expect(formatNumberInput('1.a', true)).toEqual(null);
+      expect(formatNumberInput('1.1a')).toEqual(null);
+      expect(formatNumberInput('1.1a', true)).toEqual(null);
+      expect(formatNumberInput('1.1.1')).toEqual(null);
+      expect(formatNumberInput('1.1.1', true)).toEqual(null);
+    });
+  });
+
+  describe('String1E', () => {
+    it('should return 1 with the specified number of zeros after it', () => {
+      expect(String1E(0)).toEqual('1');
+      expect(String1E(1)).toEqual('10');
+      expect(String1E(2)).toEqual('100');
+      expect(String1E(3)).toEqual('1000');
+      expect(String1E(4)).toEqual('10000');
+      expect(String1E(5)).toEqual('100000');
+      expect(String1E(8)).toEqual('100000000');
+      expect(String1E(12)).toEqual('1000000000000');
+      expect(String1E(15)).toEqual('1000000000000000');
+      expect(String1E(18)).toEqual('1000000000000000000');
+      expect(String1E(23)).toEqual('100000000000000000000000');
     });
   });
 });
