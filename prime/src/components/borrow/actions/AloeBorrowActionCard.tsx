@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 
 import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -99,7 +100,12 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           maxAmountLabel='Max'
           maxButtonLabel='80% MAX'
           onMax={() => callbackWithFullResult(selectedToken, maxEightyPercentString)}
-          onChange={(value) => callbackWithFullResult(selectedToken, value)}
+          onChange={(value) => {
+            const output = formatNumberInput(value);
+            if (output != null) {
+              callbackWithFullResult(selectedToken, value);
+            }
+          }}
           onSelect={(option: DropdownOption<TokenType>) => {
             if (option.value !== selectedTokenOption.value) {
               callbackWithFullResult(option.value as TokenType, '');

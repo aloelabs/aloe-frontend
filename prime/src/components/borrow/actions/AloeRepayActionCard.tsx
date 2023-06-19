@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 
 import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -81,7 +82,12 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         options={dropdownOptions}
         selectedOption={selectedTokenOption}
         maxAmount={maxString}
-        onChange={(value) => callbackWithFullResult(selectedToken, value)}
+        onChange={(value) => {
+          const output = formatNumberInput(value);
+          if (output != null) {
+            callbackWithFullResult(selectedToken, value);
+          }
+        }}
         onSelect={(option: DropdownOption<TokenType>) => {
           if (option.value !== selectedTokenOption.value) {
             callbackWithFullResult(option.value, '');
