@@ -276,7 +276,7 @@ export function RoundedInput(props: InputProps) {
         fullWidth={fullWidth}
         className={inputClassName}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -316,7 +316,7 @@ export function SquareInput(props: InputProps) {
         fullWidth={fullWidth}
         className={inputClassName}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -360,7 +360,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -409,7 +409,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -463,7 +463,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         flipped={leadingIcon}
         className={inputClassName}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -514,7 +514,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         flipped={leadingIcon}
         className={inputClassName}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
