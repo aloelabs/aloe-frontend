@@ -171,8 +171,10 @@ const SvgWrapper = styled.div.attrs(
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: ${(props) => (props.isClickable ? 'auto' : 'none')};
   cursor: ${(props) => (props.isClickable ? 'pointer' : 'default')};
-  ${(props) => (props.leadingIcon ? 'left' : 'right')}: ${(props) =>
-    `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
+  left: ${(props) =>
+    props.leadingIcon ? `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px` : 'unset'};
+  right: ${(props) =>
+    props.leadingIcon ? 'unset' : `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
   svg {
     width: ${(props) => ICON_SIZES[props.size]}px;
     height: ${(props) => ICON_SIZES[props.size]}px;
