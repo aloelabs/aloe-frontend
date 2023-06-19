@@ -275,7 +275,7 @@ export function RoundedInput(props: InputProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
@@ -315,7 +315,7 @@ export function SquareInput(props: InputProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
@@ -359,7 +359,7 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
@@ -408,7 +408,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
@@ -462,7 +462,7 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         fullWidth={fullWidth}
         flipped={leadingIcon}
         className={inputClassName}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
@@ -513,7 +513,7 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         fullWidth={fullWidth}
         flipped={leadingIcon}
         className={inputClassName}
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           if (e.key === 'Enter' && onEnter) {
             onEnter();
           }
