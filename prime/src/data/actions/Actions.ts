@@ -95,6 +95,7 @@ export type ActionProvider = {
 export type ActionTemplate = {
   name: string;
   description: string;
+  isLocal: boolean;
   actions: Array<Action>;
   userInputFields?: (string[] | undefined)[];
 };
@@ -186,6 +187,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
   MARKET_MAKING: {
     name: 'Market-Making',
     description: 'Create an in-range Uniswap Position at 20x leverage.',
+    isLocal: false,
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     userInputFields: [[TokenType.ASSET0, '10'], [TokenType.ASSET0, '90'], [TokenType.ASSET1, '0.0625'], undefined],
   },

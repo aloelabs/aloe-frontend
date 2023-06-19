@@ -29,6 +29,7 @@ import { MarketInfo } from '../../data/MarketInfo';
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
+import SaveTemplateButton from './SaveTemplateButton';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-start`}
@@ -425,7 +426,12 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             </div>
           </WarningContainer>
         )}
-        <div className='w-full flex justify-end gap-4 mt-4'>
+        <div className='w-full flex justify-between gap-4 mt-4'>
+          <SaveTemplateButton
+            activeActions={activeActions}
+            userInputFields={userInputFields}
+            onAddTemplate={() => {}}
+          />
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
