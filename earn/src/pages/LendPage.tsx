@@ -31,6 +31,7 @@ import {
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
+  sortLendingPairsByAPY,
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 
@@ -287,10 +288,14 @@ export default function LendPage() {
     );
   }, [lendingPairs, selectedOptions]);
 
-  const filteredPages: LendingPair[][] = useMemo(() => {
+  const sortedLendingPairs = useMemo(() => {
+    return sortLendingPairsByAPY(filteredLendingPairs);
+  }, [filteredLendingPairs]);
+
+  const filteredAndSortedPages: LendingPair[][] = useMemo(() => {
     const pages: LendingPair[][] = [];
     let page: LendingPair[] = [];
-    filteredLendingPairs.forEach((pair, i) => {
+    sortedLendingPairs.forEach((pair, i) => {
       if (i % itemsPerPage === 0 && i !== 0) {
         pages.push(page);
         page = [];
@@ -299,7 +304,7 @@ export default function LendPage() {
     });
     pages.push(page);
     return pages;
-  }, [filteredLendingPairs, itemsPerPage]);
+  }, [sortedLendingPairs, itemsPerPage]);
 
   return (
     <AppPage>
@@ -375,7 +380,7 @@ export default function LendPage() {
             />
           </div>
           <LendCards>
-            {filteredPages[currentPage - 1].map((lendPair, i) => (
+            {filteredAndSortedPages[currentPage - 1].map((lendPair, i) => (
               <LendPairCard
                 key={`${lendPair.token0.address}${lendPair.token1.address}${lendPair.uniswapFeeTier}`}
                 pair={lendPair}
