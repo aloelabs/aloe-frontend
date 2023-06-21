@@ -135,7 +135,10 @@ export default function Pagination(props: PaginationProps) {
           <Dropdown
             options={itemsPerPageOptions}
             selectedOption={itemsPerPageOption}
-            onSelect={(updatedOption) => onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage)}
+            onSelect={(updatedOption) => {
+              onPageChange(1);
+              onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage);
+            }}
             placeAbove={true}
             small={true}
           />
