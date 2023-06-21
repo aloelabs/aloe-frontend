@@ -9,11 +9,10 @@ import SaveTemplateModal from './modal/SaveTemplateModal';
 export type SaveTemplateButtonProps = {
   activeActions: Action[];
   userInputFields: (string[] | undefined)[];
-  onAddTemplate: () => void;
 };
 
 export default function SaveTemplateButton(props: SaveTemplateButtonProps) {
-  const { activeActions, userInputFields, onAddTemplate } = props;
+  const { activeActions, userInputFields } = props;
 
   const [saveModalOpen, setSaveModalOpen] = useState(false);
 
@@ -33,7 +32,6 @@ export default function SaveTemplateButton(props: SaveTemplateButtonProps) {
             userInputFields: userInputFields,
           };
           storeTemplate(template);
-          onAddTemplate();
         }}
       />
     </>

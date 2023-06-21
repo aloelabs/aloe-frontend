@@ -427,11 +427,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           </WarningContainer>
         )}
         <div className='w-full flex justify-between gap-4 mt-4'>
-          <SaveTemplateButton
-            activeActions={activeActions}
-            userInputFields={userInputFields}
-            onAddTemplate={() => {}}
-          />
+          <SaveTemplateButton activeActions={activeActions} userInputFields={userInputFields} />
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
