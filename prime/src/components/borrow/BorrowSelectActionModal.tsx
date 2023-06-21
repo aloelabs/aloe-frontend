@@ -128,13 +128,9 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
       setLocalTemplates(localTemplates);
     };
     updateLocalTemplates();
-    window.addEventListener(TEMPLATE_STORED_EVENT_STRING, () => {
-      updateLocalTemplates();
-    });
+    window.addEventListener(TEMPLATE_STORED_EVENT_STRING, updateLocalTemplates);
     return () => {
-      window.removeEventListener(TEMPLATE_STORED_EVENT_STRING, () => {
-        updateLocalTemplates();
-      });
+      window.removeEventListener(TEMPLATE_STORED_EVENT_STRING, updateLocalTemplates);
     };
   }, []);
 
