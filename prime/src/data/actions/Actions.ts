@@ -228,3 +228,26 @@ export function calculateHypotheticalStates(
     errorMsg,
   };
 }
+
+export function getAction(id: ActionID): Action {
+  switch (id) {
+    case ActionID.TRANSFER_IN:
+      return ADD_MARGIN;
+    case ActionID.TRANSFER_OUT:
+      return WITHDRAW;
+    case ActionID.BORROW:
+      return BORROW;
+    case ActionID.REPAY:
+      return REPAY;
+    case ActionID.ADD_LIQUIDITY:
+      return ADD_LIQUIDITY;
+    case ActionID.REMOVE_LIQUIDITY:
+      return REMOVE_LIQUIDITY;
+    case ActionID.CLAIM_FEES:
+      return CLAIM_FEES;
+    case ActionID.SWAP:
+      return SWAP;
+    default:
+      return ADD_MARGIN;
+  }
+}
