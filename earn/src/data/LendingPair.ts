@@ -276,3 +276,11 @@ export function filterLendingPairsByTokens(lendingPairs: LendingPair[], tokens: 
     return tokens.some((token) => token.address === pair.token0.address || token.address === pair.token1.address);
   });
 }
+
+export function sortLendingPairsByAPY(lendingPairs: LendingPair[]): LendingPair[] {
+  return lendingPairs.sort((a, b) => {
+    const apyA = a.kitty0Info.apy + a.kitty1Info.apy;
+    const apyB = b.kitty0Info.apy + b.kitty1Info.apy;
+    return apyB - apyA;
+  });
+}

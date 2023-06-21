@@ -22,6 +22,7 @@ import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
+import { BorrowGraphPlaceholder } from '../components/borrow/BorrowGraphPlaceholder';
 import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
 import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
 import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
@@ -567,19 +568,17 @@ export default function BorrowPage() {
             />
           </MonitorContainer>
           <GraphContainer>
-            {graphData && graphData.length > 0 ? (
-              <div>
-                <BorrowGraph graphData={graphData} />
-                <div className='text-center opacity-50 pl-8'>
-                  <Text size='S' weight='regular' color={LABEL_TEXT_COLOR}>
-                    <em>
-                      IV comes from an on-chain oracle. It influences the current collateral factor, which impacts the
-                      health of your account.
-                    </em>
-                  </Text>
-                </div>
+            <div>
+              {graphData && graphData.length > 0 ? <BorrowGraph graphData={graphData} /> : <BorrowGraphPlaceholder />}
+              <div className='text-center opacity-50 pl-8'>
+                <Text size='S' weight='regular' color={LABEL_TEXT_COLOR}>
+                  <em>
+                    IV comes from an on-chain oracle. It influences the current collateral factor, which impacts the
+                    health of your account.
+                  </em>
+                </Text>
               </div>
-            ) : null}
+            </div>
           </GraphContainer>
           <MetricsContainer>
             <BorrowMetrics
