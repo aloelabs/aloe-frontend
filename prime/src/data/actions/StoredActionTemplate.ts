@@ -1,5 +1,5 @@
-import { ActionID, getAction } from './ActionID';
-import { ActionTemplate } from './Actions';
+import { ActionID } from './ActionID';
+import { ActionTemplate, getAction } from './Actions';
 
 const ACTION_TEMPLATE_PREFIX = 'ACTION_TEMPLATE_';
 
