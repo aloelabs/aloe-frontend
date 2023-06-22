@@ -95,6 +95,7 @@ export type ActionProvider = {
 export type ActionTemplate = {
   name: string;
   description: string;
+  isLocal: boolean;
   actions: Array<Action>;
   userInputFields?: (string[] | undefined)[];
 };
@@ -186,6 +187,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
   MARKET_MAKING: {
     name: 'Market-Making',
     description: 'Create an in-range Uniswap Position at 20x leverage.',
+    isLocal: false,
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     userInputFields: [[TokenType.ASSET0, '10'], [TokenType.ASSET0, '90'], [TokenType.ASSET1, '0.0625'], undefined],
   },
@@ -225,4 +227,27 @@ export function calculateHypotheticalStates(
     accountStates,
     errorMsg,
   };
+}
+
+export function getAction(id: ActionID): Action {
+  switch (id) {
+    case ActionID.TRANSFER_IN:
+      return ADD_MARGIN;
+    case ActionID.TRANSFER_OUT:
+      return WITHDRAW;
+    case ActionID.BORROW:
+      return BORROW;
+    case ActionID.REPAY:
+      return REPAY;
+    case ActionID.ADD_LIQUIDITY:
+      return ADD_LIQUIDITY;
+    case ActionID.REMOVE_LIQUIDITY:
+      return REMOVE_LIQUIDITY;
+    case ActionID.CLAIM_FEES:
+      return CLAIM_FEES;
+    case ActionID.SWAP:
+      return SWAP;
+    default:
+      return ADD_MARGIN;
+  }
 }
