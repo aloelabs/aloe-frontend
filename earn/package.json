@@ -48,8 +48,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "cd ../shared && yarn build && cd ../earn && craco start",
-    "build": "cd ../shared && yarn build && cd ../earn && craco build",
+    "git-info": "node src/scripts/gitInfo.js",
+    "start": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco start",
+    "build": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco build",
     "test": "craco test",
     "lint": "eslint --fix --ext .tsx,.ts ."
   },
