@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
-import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { DropdownOption } from 'shared/lib/components/common/Dropdown';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 
 import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -11,37 +12,40 @@ import {
   getDropdownOptionFromSelectedToken,
   TokenType,
 } from '../../../data/actions/Actions';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
+import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 export function AloeRepayActionCard(prop: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, forceOutput, onRemove, onChange } = prop;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, forceOutput, onRemove, onChange } =
+    prop;
   const { token0, token1 } = marginAccount;
 
   const dropdownOptions: DropdownOption<TokenType>[] = [
     {
-      label: token0?.symbol || '',
+      label: token0.symbol,
       value: TokenType.ASSET0,
-      icon: token0?.logoURI || '',
+      icon: token0.logoURI,
     },
     {
-      label: token1?.symbol || '',
+      label: token1.symbol,
       value: TokenType.ASSET1,
-      icon: token1?.logoURI || '',
+      icon: token1.logoURI,
     },
   ];
   const tokenAmount = userInputFields?.at(1) ?? '';
   const selectedToken = (userInputFields?.at(0) ?? TokenType.ASSET0) as TokenType;
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
+  const selectedTokenDecimals = selectedToken === TokenType.ASSET0 ? token0.decimals : token1.decimals;
 
   const assetMax = accountState.assets[selectedToken === TokenType.ASSET0 ? 'token0Raw' : 'token1Raw'];
   const liabilityMax = accountState.liabilities[selectedToken === TokenType.ASSET0 ? 'amount0' : 'amount1'];
-  const maxString = Math.max(0, Math.min(assetMax, liabilityMax) - 1e-6).toFixed(6);
+  const maxString = GN.max(GN.zero(selectedTokenDecimals), GN.min(assetMax, liabilityMax)).toString(GNFormat.DECIMAL);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
-    const parsedValue = parseFloat(value) || 0;
-    let amount0 = 0;
-    let amount1 = 0;
+    const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
+    const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
+    let amount0 = GN.zero(token0.decimals);
+    let amount1 = GN.zero(token1.decimals);
     if (token === TokenType.ASSET0) {
       amount0 = parsedValue;
     } else {
@@ -53,7 +57,7 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
         actionId: ActionID.REPAY,
         actionArgs: value === '' ? undefined : getRepayActionArgs(token0, amount0, token1, amount1),
         operator(operand) {
-          return repayOperator(operand, selectedToken, Math.max(amount0, amount1));
+          return repayOperator(operand, token, parsedValue);
         },
       },
       [token, value]
@@ -69,26 +73,21 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
       action={ActionID.REPAY}
       actionProvider={ActionProviders.AloeII}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
-      <div className='w-full flex flex-col gap-4 items-center'>
-        <Dropdown
-          options={dropdownOptions}
-          selectedOption={selectedTokenOption}
-          onSelect={(option: DropdownOption<TokenType>) => {
-            if (option.value !== selectedTokenOption.value) {
-              callbackWithFullResult(option.value, '');
-            }
-          }}
-        />
-        <TokenAmountInput
-          token={selectedTokenOption.value === TokenType.ASSET0 ? token0 : token1}
-          value={tokenAmount}
-          onChange={(value) => callbackWithFullResult(selectedToken, value)}
-          max={maxString}
-          maxed={tokenAmount === maxString}
-        />
-      </div>
+      <TokenAmountSelectInput
+        inputValue={tokenAmount}
+        options={dropdownOptions}
+        selectedOption={selectedTokenOption}
+        maxAmount={maxString}
+        onChange={(value) => callbackWithFullResult(selectedToken, value)}
+        onSelect={(option: DropdownOption<TokenType>) => {
+          if (option.value !== selectedTokenOption.value) {
+            callbackWithFullResult(option.value, '');
+          }
+        }}
+      />
     </BaseActionCard>
   );
 }

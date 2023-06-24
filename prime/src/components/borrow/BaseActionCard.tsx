@@ -38,6 +38,16 @@ const SvgWrapper = styled.div`
   }
 `;
 
+const ErrorMsgContainer = styled.div`
+  ${tw`flex items-center justify-center`}
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background-color: rgba(255, 54, 69, 1);
+  box-shadow: 0px 0px 10px rgba(255, 54, 69, 0.5);
+  border-radius: 6px;
+`;
+
 export type BaseActionCardProps = {
   actionProvider: ActionProvider;
   action: ActionID;
@@ -45,10 +55,11 @@ export type BaseActionCardProps = {
   children: React.ReactNode;
   onRemove: () => void;
   tooltipContent?: React.ReactNode;
+  errorMsg?: string;
 };
 
 export function BaseActionCard(props: BaseActionCardProps) {
-  const { actionProvider, action, isCausingError, children, onRemove, tooltipContent } = props;
+  const { actionProvider, action, isCausingError, children, onRemove, tooltipContent, errorMsg } = props;
   return (
     <ActionCardContainer isCausingError={isCausingError}>
       <div className='w-full grid grid-cols-3 mb-4'>
@@ -72,6 +83,13 @@ export function BaseActionCard(props: BaseActionCardProps) {
         </button>
       </div>
       {children}
+      {errorMsg && (
+        <ErrorMsgContainer>
+          <Text size='S' weight='medium'>
+            {errorMsg}
+          </Text>
+        </ErrorMsgContainer>
+      )}
     </ActionCardContainer>
   );
 }

@@ -1,24 +1,25 @@
 import JSBI from 'jsbi';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'wagmi';
 
 import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
 import { AccountState, TokenType } from './Actions';
 
-export function transferInOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
+export function transferInOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
   const assets = { ...operand.assets };
   const availableForDeposit = { ...operand.availableForDeposit };
   const requiredAllowances = { ...operand.requiredAllowances };
 
   switch (token) {
     case TokenType.ASSET0:
-      assets.token0Raw += amount;
-      availableForDeposit.amount0 -= amount;
-      requiredAllowances.amount0 += amount;
+      assets.token0Raw = assets.token0Raw.add(amount);
+      availableForDeposit.amount0 = availableForDeposit.amount0.sub(amount);
+      requiredAllowances.amount0 = requiredAllowances.amount0.add(amount);
       break;
     case TokenType.ASSET1:
-      assets.token1Raw += amount;
-      availableForDeposit.amount1 -= amount;
-      requiredAllowances.amount1 += amount;
+      assets.token1Raw = assets.token1Raw.add(amount);
+      availableForDeposit.amount1 = availableForDeposit.amount1.sub(amount);
+      requiredAllowances.amount1 = requiredAllowances.amount1.add(amount);
       break;
   }
 
@@ -30,39 +31,39 @@ export function transferInOperator(operand: AccountState, token: TokenType, amou
   };
 }
 
-export function transferOutOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
-  return transferInOperator(operand, token, -amount);
+export function transferOutOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+  return transferInOperator(operand, token, amount.neg());
 }
 
-export function mintOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
+export function mintOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
   const assets = { ...operand.assets };
 
   if (token === TokenType.ASSET0) {
-    assets.token0Raw -= amount;
+    assets.token0Raw = assets.token0Raw.sub(amount);
   } else {
-    assets.token1Raw -= amount;
+    assets.token1Raw = assets.token1Raw.sub(amount);
   }
 
   return { ...operand, assets };
 }
 
-export function burnOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
-  return mintOperator(operand, token, -amount);
+export function burnOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+  return mintOperator(operand, token, amount.neg());
 }
 
-export function borrowOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
+export function borrowOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
   const assets = { ...operand.assets };
   const liabilities = { ...operand.liabilities };
   const availableForBorrow = { ...operand.availableForBorrow };
 
   if (token === TokenType.ASSET0) {
-    assets.token0Raw += amount;
-    liabilities.amount0 += amount;
-    availableForBorrow.amount0 -= amount;
+    assets.token0Raw = assets.token0Raw.add(amount);
+    liabilities.amount0 = liabilities.amount0.add(amount);
+    availableForBorrow.amount0 = availableForBorrow.amount0.sub(amount);
   } else {
-    assets.token1Raw += amount;
-    liabilities.amount1 += amount;
-    availableForBorrow.amount1 -= amount;
+    assets.token1Raw = assets.token1Raw.add(amount);
+    liabilities.amount1 = liabilities.amount1.add(amount);
+    availableForBorrow.amount1 = availableForBorrow.amount1.sub(amount);
   }
 
   return {
@@ -73,8 +74,8 @@ export function borrowOperator(operand: AccountState, token: TokenType, amount: 
   };
 }
 
-export function repayOperator(operand: AccountState, token: TokenType, amount: number): AccountState {
-  return borrowOperator(operand, token, -amount);
+export function repayOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
+  return borrowOperator(operand, token, amount.neg());
 }
 
 export function addLiquidityOperator(
@@ -99,10 +100,10 @@ export function addLiquidityOperator(
     token1Decimals
   );
 
-  assets.token0Raw -= amount0;
-  assets.token1Raw -= amount1;
-  assets.uni0 += amount0;
-  assets.uni1 += amount1;
+  assets.token0Raw = assets.token0Raw.sub(amount0);
+  assets.token1Raw = assets.token1Raw.sub(amount1);
+  assets.uni0 = assets.uni0.add(amount0);
+  assets.uni1 = assets.uni1.add(amount1);
 
   const key = uniswapPositionKey(owner, lowerTick, upperTick);
   const idx = uniswapPositions.map((x) => uniswapPositionKey(owner, x.lower ?? 0, x.upper ?? 0)).indexOf(key);
@@ -127,7 +128,7 @@ export function removeLiquidityOperator(
   currentTick: number,
   token0Decimals: number,
   token1Decimals: number
-): AccountState | null {
+): AccountState {
   const assets = { ...operand.assets };
   const uniswapPositions = operand.uniswapPositions.concat();
   const claimedFeeUniswapKeys = operand.claimedFeeUniswapKeys.concat();
@@ -141,23 +142,21 @@ export function removeLiquidityOperator(
     token1Decimals
   );
 
-  assets.token0Raw += amount0;
-  assets.token1Raw += amount1;
-  assets.uni0 -= amount0;
-  assets.uni1 -= amount1;
+  assets.token0Raw = assets.token0Raw.add(amount0);
+  assets.token1Raw = assets.token1Raw.add(amount1);
+  assets.uni0 = assets.uni0.sub(amount0);
+  assets.uni1 = assets.uni1.sub(amount1);
 
   const key = uniswapPositionKey(owner, lowerTick, upperTick);
   const idx = uniswapPositions.map((x) => uniswapPositionKey(owner, x.lower ?? 0, x.upper ?? 0)).indexOf(key);
 
   if (idx === -1) {
-    console.error("Attempted to remove liquidity from a position that doens't exist");
-    return null;
+    throw Error("Attempted to remove liquidity from a position that doens't exist");
   }
 
   const oldPosition = { ...uniswapPositions[idx] };
   if (JSBI.lessThan(oldPosition.liquidity, liquidity)) {
-    console.error('Attempted to remove more than 100% of liquidity from a position');
-    return null;
+    throw Error('Attempted to remove more than 100% of liquidity from a position');
   }
   oldPosition.liquidity = JSBI.subtract(oldPosition.liquidity, liquidity);
   uniswapPositions[idx] = oldPosition;
@@ -167,11 +166,11 @@ export function removeLiquidityOperator(
   return { ...operand, assets, uniswapPositions, claimedFeeUniswapKeys };
 }
 
-export function swapOperator(operand: AccountState, amount0: number, amount1: number): AccountState {
+export function swapOperator(operand: AccountState, amount0: GN, amount1: GN): AccountState {
   const assets = { ...operand.assets };
 
-  assets.token0Raw += amount0;
-  assets.token1Raw += amount1;
+  assets.token0Raw = assets.token0Raw.add(amount0);
+  assets.token1Raw = assets.token1Raw.add(amount1);
 
   return { ...operand, assets };
 }

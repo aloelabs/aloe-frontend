@@ -4,7 +4,7 @@ import { Big } from 'big.js';
 import { GN, GNFormat, scalerFor } from './GoodNumber';
 
 describe('GoodNumber', () => {
-  describe('scaleFor', () => {
+  describe('scalerFor', () => {
     it('should return a scaler string for base 2 with resolution divisible by 4', () => {
       expect(scalerFor(2, 4)).toEqual('16');
       expect(scalerFor(2, 8)).toEqual('256');
@@ -254,27 +254,56 @@ describe('GoodNumber', () => {
     });
   });
 
+  describe('neg', () => {
+    it('should return the negative of a value', () => {
+      expect(GN.fromDecimalString('2', 18).neg().toString(GNFormat.DECIMAL)).toEqual('-2');
+      expect(GN.fromDecimalString('-2', 18).neg().toString(GNFormat.DECIMAL)).toEqual('2');
+    });
+  });
+
   describe('recklessMul', () => {
     it('should multiply two values', () => {
       expect(GN.fromDecimalString('2', 18).recklessMul(2).toString(GNFormat.DECIMAL)).toEqual('4');
+      expect(GN.fromDecimalString('25', 18).recklessMul('1.1').toString(GNFormat.DECIMAL)).toEqual('27.5');
+      expect(GN.fromDecimalString('25', 18).recklessMul('1.25').toString(GNFormat.DECIMAL)).toEqual('31.25');
+      expect(GN.fromDecimalString('25', 18).recklessMul('1.5').toString(GNFormat.DECIMAL)).toEqual('37.5');
+      expect(GN.fromDecimalString('7.392243', 18).recklessMul('1.3333').toString(GNFormat.DECIMAL)).toEqual(
+        '9.8560775919'
+      );
+      expect(GN.fromDecimalString('2.2342', 18).recklessMul('5.2582583428').toString(GNFormat.DECIMAL)).toEqual(
+        '11.74800078948376'
+      );
+      expect(GN.fromDecimalString('25', 18).recklessMul('5.258258342829529342').toString(GNFormat.DECIMAL)).toEqual(
+        '131.45645857073823355'
+      );
     });
-    it('should print a warning if the input is not an integer', () => {
-      const spy = jest.spyOn(console, 'warn');
-      GN.fromDecimalString('2', 18).recklessMul(2.1);
-      expect(spy).toHaveBeenCalled();
-      spy.mockRestore();
+    it('should lose precision when multiplying numbers with too many decimals', () => {
+      expect(GN.fromDecimalString('1.5', 1).recklessMul('1.25').toString(GNFormat.DECIMAL)).toEqual('1.8');
+    });
+    it('should not lose precision when multiplying numbers with few enough decimals', () => {
+      expect(GN.fromDecimalString('1.5', 5).recklessMul('1.25').toString(GNFormat.DECIMAL)).toEqual('1.875');
     });
   });
 
   describe('recklessDiv', () => {
     it('should divide two values', () => {
       expect(GN.fromDecimalString('2', 18).recklessDiv(2).toString(GNFormat.DECIMAL)).toEqual('1');
+      expect(GN.fromDecimalString('25', 18).recklessDiv('1.2').toString(GNFormat.DECIMAL)).toEqual(
+        '20.833333333333333333'
+      );
+      expect(GN.fromDecimalString('1e18', 18).recklessDiv('1.2').toString(GNFormat.DECIMAL)).toEqual(
+        '833333333333333333.333333333333333333'
+      );
+      expect(GN.fromDecimalString('25', 18).recklessDiv('1.25').toString(GNFormat.DECIMAL)).toEqual('20');
+      expect(GN.fromDecimalString('25', 18).recklessDiv('1.5').toString(GNFormat.DECIMAL)).toEqual(
+        '16.666666666666666666'
+      );
     });
-    it('should print a warning if the input is not an integer', () => {
-      const spy = jest.spyOn(console, 'warn');
-      GN.fromDecimalString('2', 18).recklessDiv(2.1);
-      expect(spy).toHaveBeenCalled();
-      spy.mockRestore();
+    it('should lose precision when dividing numbers with too many decimals', () => {
+      expect(GN.fromDecimalString('2.25', 1).recklessDiv('1.2').toString(GNFormat.DECIMAL)).toEqual('1.9');
+    });
+    it('should not lose precision when dividing numbers with few enough decimals', () => {
+      expect(GN.fromDecimalString('2.25', 5).recklessDiv('1.2').toString(GNFormat.DECIMAL)).toEqual('1.875');
     });
   });
 
@@ -420,6 +449,9 @@ describe('GoodNumber', () => {
     });
     it('should throw an error if the value is not a number', () => {
       expect(() => GN.fromDecimalString('a', 18)).toThrow();
+    });
+    it('should return a negative decimal string', () => {
+      expect(GN.fromDecimalString('-1', 18).toString(GNFormat.DECIMAL)).toEqual('-1');
     });
   });
 

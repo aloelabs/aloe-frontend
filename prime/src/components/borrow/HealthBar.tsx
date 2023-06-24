@@ -1,9 +1,11 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
+import { getHealthColor } from '../../util/Health';
 import Tooltip from '../common/Tooltip';
 
-const MAX_HEALTH = 3;
+const MAX_HEALTH_BAR = 3;
+const MAX_HEALTH_LABEL = 5;
 const MIN_HEALTH = 0.5;
 
 const HealthBarContainer = styled.div`
@@ -42,8 +44,10 @@ export default function HealthBar(props: HealthBarProps) {
   const { health } = props;
   // Bound health between MIN_HEALTH and MAX_HEALTH
   const healthPercent =
-    ((Math.max(Math.min(health, MAX_HEALTH), MIN_HEALTH) - MIN_HEALTH) / (MAX_HEALTH - MIN_HEALTH)) * 100;
-  const healthLabel = health > MAX_HEALTH ? `${MAX_HEALTH}+` : health.toFixed(2);
+    ((Math.max(Math.min(health, MAX_HEALTH_BAR), MIN_HEALTH) - MIN_HEALTH) / (MAX_HEALTH_BAR - MIN_HEALTH)) * 100;
+  const healthLabel = health > MAX_HEALTH_LABEL ? `${MAX_HEALTH_LABEL}+` : health.toFixed(4);
+  const healthLabelColor = getHealthColor(health);
+
   return (
     <div className='w-full flex flex-col align-middle mb-8 mt-8'>
       <div className='flex gap-2 items-center mb-4'>
@@ -52,12 +56,12 @@ export default function HealthBar(props: HealthBarProps) {
           content={`Health is a measure of how close your account is to being liquidated.
               It is calculated by dividing your account's assets by its liabilities.
               If your health is at or below 1.0, your account may be liquidated.`}
-          position='top-center'
+          position='top-left'
         />
         <Text size='L' weight='medium'>
           Account Health:
         </Text>
-        <Display size='M' weight='medium' className='text-center'>
+        <Display size='M' weight='medium' className='text-center' color={healthLabelColor}>
           {healthLabel}
         </Display>
       </div>

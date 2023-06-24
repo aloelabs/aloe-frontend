@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
@@ -6,8 +8,9 @@ import tw from 'twin.macro';
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { ReactComponent as LayersIcon } from '../../assets/svg/layers.svg';
 import { getNameOfAction } from '../../data/actions/ActionID';
-import { ActionProvider, ActionProviders, ActionTemplates } from '../../data/actions/Actions';
+import { ActionProvider, ActionProviders, ActionTemplate, ActionTemplates } from '../../data/actions/Actions';
 import { Action } from '../../data/actions/Actions';
+import { TEMPLATE_STORED_EVENT_STRING, retrieveAllTemplates } from '../../data/actions/StoredActionTemplate';
 import { FullscreenModal } from '../common/Modal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -117,6 +120,23 @@ export type BorrowSelectActionModalProps = {
 
 export default function BorrowSelectActionModal(props: BorrowSelectActionModalProps) {
   const { isOpen, setIsOpen, handleAddAction, handleAddActions } = props;
+  const [localTemplates, setLocalTemplates] = useState<ActionTemplate[]>([]);
+
+  useEffect(() => {
+    const updateLocalTemplates = () => {
+      const localTemplates = retrieveAllTemplates();
+      setLocalTemplates(localTemplates);
+    };
+    updateLocalTemplates();
+    window.addEventListener(TEMPLATE_STORED_EVENT_STRING, updateLocalTemplates);
+    return () => {
+      window.removeEventListener(TEMPLATE_STORED_EVENT_STRING, updateLocalTemplates);
+    };
+  }, []);
+
+  const defaultTemplates = Object.values(ActionTemplates);
+  const templates = [...defaultTemplates, ...localTemplates];
+
   return (
     <FullscreenModal open={isOpen} setOpen={setIsOpen}>
       <ActionModalHeader>
@@ -142,8 +162,7 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
             </Display>
           </div>
           <ActionButtonsContainer>
-            {Object.entries(ActionTemplates).map((templateData, index) => {
-              const template = templateData[1];
+            {templates.map((template, index) => {
               return (
                 <ActionButton
                   key={index}

@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
+import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
@@ -18,7 +19,6 @@ import {
   ALOE_II_ORACLE_ADDRESS,
   UNISWAP_POOL_DENYLIST,
 } from './constants/Addresses';
-import { getToken } from './TokenData';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -274,5 +274,13 @@ export async function getLendingPairBalances(
 export function filterLendingPairsByTokens(lendingPairs: LendingPair[], tokens: Token[]): LendingPair[] {
   return lendingPairs.filter((pair) => {
     return tokens.some((token) => token.address === pair.token0.address || token.address === pair.token1.address);
+  });
+}
+
+export function sortLendingPairsByAPY(lendingPairs: LendingPair[]): LendingPair[] {
+  return lendingPairs.sort((a, b) => {
+    const apyA = a.kitty0Info.apy + a.kitty1Info.apy;
+    const apyB = b.kitty0Info.apy + b.kitty1Info.apy;
+    return apyB - apyA;
   });
 }

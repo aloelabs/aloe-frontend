@@ -1,9 +1,10 @@
-import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
+import { getToken } from 'shared/lib/data/TokenData';
+import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'wagmi';
 
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
@@ -13,18 +14,17 @@ import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { getToken } from './TokenData';
 
 export type Assets = {
-  token0Raw: number;
-  token1Raw: number;
-  uni0: number;
-  uni1: number;
+  token0Raw: GN;
+  token1Raw: GN;
+  uni0: GN;
+  uni1: GN;
 };
 
 export type Liabilities = {
-  amount0: number;
-  amount1: number;
+  amount0: GN;
+  amount1: GN;
 };
 
 /**
@@ -38,11 +38,11 @@ export type MarginAccount = {
   feeTier: FeeTier;
   assets: Assets;
   liabilities: Liabilities;
-  sqrtPriceX96: Big;
+  sqrtPriceX96: GN;
   health: number;
   lender0: Address;
   lender1: Address;
-  iv: number;
+  iv: GN;
 };
 
 export type UniswapPoolInfo = {
@@ -51,6 +51,9 @@ export type UniswapPoolInfo = {
   fee: number;
 };
 
+// We do a lot of math to compute these, but once we have them they're only for display. Sometimes
+// we want to display them in terms of the other token (take the reciprocal) so it's easier to use
+// numbers instead of `GN`
 export type LiquidationThresholds = {
   lower: number;
   upper: number;
@@ -177,14 +180,14 @@ export async function fetchMarginAccountPreviews(
 
     const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
     const assets: Assets = {
-      token0Raw: toImpreciseNumber(assetsData[0], token0.decimals),
-      token1Raw: toImpreciseNumber(assetsData[1], token1.decimals),
-      uni0: toImpreciseNumber(assetsData[4], token0.decimals),
-      uni1: toImpreciseNumber(assetsData[5], token1.decimals),
+      token0Raw: GN.fromBigNumber(assetsData[0], token0.decimals),
+      token1Raw: GN.fromBigNumber(assetsData[1], token1.decimals),
+      uni0: GN.fromBigNumber(assetsData[4], token0.decimals),
+      uni1: GN.fromBigNumber(assetsData[5], token1.decimals),
     };
     const liabilities: Liabilities = {
-      amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
-      amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
+      amount0: GN.fromBigNumber(liabilitiesData[0], token0.decimals),
+      amount1: GN.fromBigNumber(liabilitiesData[1], token1.decimals),
     };
     const marginAccountPreview: MarginAccountPreview = {
       address: accountAddress,
@@ -291,25 +294,25 @@ export async function fetchMarginAccount(
   ]);
 
   const assets: Assets = {
-    token0Raw: toImpreciseNumber(assetsData[0], token0.decimals), // fixed0
-    token1Raw: toImpreciseNumber(assetsData[1], token1.decimals), // fixed1
-    uni0: toImpreciseNumber(assetsData[2], token0.decimals), // fluid0C
-    uni1: toImpreciseNumber(assetsData[5], token1.decimals), // fluid1C
+    token0Raw: GN.fromBigNumber(assetsData[0], token0.decimals), // fixed0
+    token1Raw: GN.fromBigNumber(assetsData[1], token1.decimals), // fixed1
+    uni0: GN.fromBigNumber(assetsData[4], token0.decimals), // fluid0C
+    uni1: GN.fromBigNumber(assetsData[5], token1.decimals), // fluid1C
   };
   const liabilities: Liabilities = {
-    amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
-    amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
+    amount0: GN.fromBigNumber(liabilitiesData[0], token0.decimals),
+    amount1: GN.fromBigNumber(liabilitiesData[1], token1.decimals),
   };
 
   const healthData = marginAccountLensResults[2].returnValues;
   const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
-  const iv = toImpreciseNumber(oracleResult[1], 18);
+  const iv = GN.fromBigNumber(oracleResult[1], 18);
 
   return {
     marginAccount: {
       address: marginAccountAddress,
       feeTier: NumericFeeTierToEnum(feeTier),
-      sqrtPriceX96: toBig(oracleResult[0]),
+      sqrtPriceX96: GN.fromBigNumber(oracleResult[0], 96, 2),
       uniswapPool,
       token0,
       token1,

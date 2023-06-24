@@ -2,7 +2,8 @@ import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
-import { roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { numericPriceRatioGN, roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
@@ -18,7 +19,7 @@ import {
   calculateTickInfo,
   getPoolAddressFromTokens,
   getUniswapPoolBasics,
-  priceToTick,
+  priceToClosestTick,
   shouldAmount0InputBeDisabled,
   shouldAmount1InputBeDisabled,
   TickData,
@@ -54,13 +55,14 @@ function fromFields(fields: string[] | undefined): PreviousState {
 }
 
 export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1, feeTier } = marginAccount;
   const { activeChain } = useContext(ChainContext);
 
   // MARK: state for user inputs
   const [localIsAmount0UserDefined, setLocalIsAmount0UserDefined] = useState(false);
   const [localTokenAmounts, setLocalTokenAmounts] = useState<readonly [string, string]>(['', '']);
+  const [localLiquidity, setLocalLiquidity] = useState<JSBI>(JSBI.BigInt(0));
 
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
@@ -207,7 +209,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
     let amountYStr = isToken0 ? previousAmount1Str : previousAmount0Str;
     let liquidity = JSBI.BigInt('0');
     // If possible, compute amountY from amountX
-    if (!isNaN(amountX)) {
+    if (!isNaN(amountX) && amountX > 0) {
       const res = (isToken0 ? calculateAmount1FromAmount0 : calculateAmount0FromAmount1)(
         amountX,
         lower,
@@ -218,12 +220,15 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       );
       amountYStr = res.amount;
       liquidity = res.liquidity;
+    } else {
+      amountYStr = '';
     }
 
     const [amount0Str, amount1Str] = isToken0 ? [amountXStr, amountYStr] : [amountYStr, amountXStr];
 
     setLocalTokenAmounts([amount0Str, amount1Str]);
     setLocalIsAmount0UserDefined(isToken0);
+    setLocalLiquidity(liquidity);
 
     callbackWithFullResults(isToken0Selected, amount0Str, amount1Str, lower, upper, liquidity);
   }
@@ -244,7 +249,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             ? getAddLiquidityActionArgs(lowerTick, upperTick, liquidity)
             : undefined,
         operator(operand) {
-          if (lowerTick == null || upperTick == null || currentTick == null) return null;
+          if (lowerTick == null || upperTick == null || currentTick == null) {
+            throw Error('Specify position bounds before adding liquidity');
+          }
           return addLiquidityOperator(
             operand,
             marginAccount.address as Address,
@@ -265,8 +272,8 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let max1 = accountState.assets.token1Raw;
   // If token1 is selected, we need to swap the max amounts
   if (!isToken0Selected) [max0, max1] = [max1, max0];
-  const maxString0 = Math.max(0, max0 - 1e-6).toFixed(6);
-  const maxString1 = Math.max(0, max1 - 1e-6).toFixed(6);
+  const maxString0 = max0.toString(GNFormat.DECIMAL);
+  const maxString1 = max1.toString(GNFormat.DECIMAL);
 
   const ticksAreDefined = previousLower != null && previousUpper != null && currentTick != null;
   const tickIncrement = (tickInfo && (isToken0Selected ? tickInfo.tickSpacing : -tickInfo.tickSpacing)) ?? null;
@@ -274,9 +281,9 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
   let prices: number[] | null = null;
   if (ticksAreDefined) {
     prices = [
-      tickToPrice(previousLower!, token0.decimals, token1.decimals, isToken0Selected),
-      tickToPrice(previousUpper!, token0.decimals, token1.decimals, isToken0Selected),
-    ].sort();
+      numericPriceRatioGN(tickToPrice(previousLower!), token0.decimals, token1.decimals, !isToken0Selected),
+      numericPriceRatioGN(tickToPrice(previousUpper!), token0.decimals, token1.decimals, !isToken0Selected),
+    ].sort((a, b) => a - b);
   }
 
   const lowerSteppedInput = (
@@ -284,7 +291,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       value={
         previousLower == null
           ? ''
-          : tickToPrice(previousLower, token0.decimals, token1.decimals, isToken0Selected).toString(10)
+          : numericPriceRatioGN(
+              tickToPrice(previousLower),
+              token0.decimals,
+              token1.decimals,
+              !isToken0Selected
+            ).toString()
       }
       label={isToken0Selected ? 'Min Price' : 'Max Price'}
       token0={token0}
@@ -296,7 +308,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
         if (!isToken0Selected) price = 1.0 / price;
         const nearestTick = roundDownToNearestN(
-          priceToTick(price, token0.decimals, token1.decimals),
+          priceToClosestTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
 
@@ -331,7 +343,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       value={
         previousUpper == null
           ? ''
-          : tickToPrice(previousUpper, token0.decimals, token1.decimals, isToken0Selected).toString(10)
+          : numericPriceRatioGN(
+              tickToPrice(previousUpper),
+              token0.decimals,
+              token1.decimals,
+              !isToken0Selected
+            ).toFixed(18)
       }
       label={isToken0Selected ? 'Max Price' : 'Min Price'}
       token0={token0}
@@ -343,7 +360,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
 
         if (!isToken0Selected) price = 1.0 / price;
         const nearestTick = roundUpToNearestN(
-          priceToTick(price, token0.decimals, token1.decimals),
+          priceToClosestTick(price, token0.decimals, token1.decimals),
           tickInfo.tickSpacing
         );
 
@@ -382,6 +399,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
       action={ActionID.ADD_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div className='w-full flex justify-between items-center gap-2 mb-4'>
@@ -391,7 +409,14 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
             token1={token1}
             isToken0Selected={isToken0Selected}
             setIsToken0Selected={(value: boolean) => {
-              callbackWithFullResults(value, previousAmount0Str, previousAmount1Str, previousLower, previousUpper);
+              callbackWithFullResults(
+                value,
+                previousAmount0Str,
+                previousAmount1Str,
+                previousLower,
+                previousUpper,
+                localLiquidity
+              );
             }}
           />
         )}
@@ -403,7 +428,12 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
           data={chartData}
           rangeStart={prices![0]}
           rangeEnd={prices![1]}
-          currentPrice={tickToPrice(currentTick, token0.decimals, token1.decimals, isToken0Selected)}
+          currentPrice={numericPriceRatioGN(
+            tickToPrice(currentTick),
+            token0.decimals,
+            token1.decimals,
+            !isToken0Selected
+          )}
         />
       )}
       <div className='flex flex-row gap-2 mb-4'>
@@ -414,7 +444,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token0 : token1}
           value={isInput0Disabled ? '' : tokenAmount0}
-          onChange={(value) => updateAmount(value, true, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, isToken0Selected, previousLower, previousUpper)}
           disabled={isInput0Disabled}
           max={maxString0}
           maxed={tokenAmount0 === maxString0}
@@ -426,7 +456,7 @@ export default function UniswapAddLiquidityActionCard(props: ActionCardProps) {
         <TokenAmountInput
           token={isToken0Selected ? token1 : token0}
           value={isInput1Disabled ? '' : tokenAmount1}
-          onChange={(value) => updateAmount(value, false, previousLower, previousUpper)}
+          onChange={(value) => updateAmount(value, !isToken0Selected, previousLower, previousUpper)}
           disabled={isInput1Disabled}
           max={maxString1}
           maxed={tokenAmount1 === maxString1}

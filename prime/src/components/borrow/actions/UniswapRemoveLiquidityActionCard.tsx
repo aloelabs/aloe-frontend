@@ -4,7 +4,8 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
-import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'wagmi';
 
@@ -30,7 +31,7 @@ const SVGIconWrapper = styled.div.attrs((props: { width: number; height: number 
 //TODO: make sure the numbers displayed are accurate and contain enough digits
 //TODO: potentially allow for more digits in the percentage input
 export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps) {
-  const { marginAccount, accountState, userInputFields, isCausingError, onChange, onRemove } = props;
+  const { marginAccount, accountState, userInputFields, isCausingError, errorMsg, onChange, onRemove } = props;
   const { token0, token1 } = marginAccount;
   const { uniswapPositions } = accountState;
 
@@ -57,8 +58,8 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
 
   let selectedOption: DropdownOption<number> | undefined = undefined;
   let selectedPosition: UniswapPosition | undefined = undefined;
-  let amount0: number | undefined = undefined;
-  let amount1: number | undefined = undefined;
+  let amount0: GN = GN.zero(token0.decimals);
+  let amount1: GN = GN.zero(token1.decimals);
 
   const previousPositionKey = userInputFields?.at(0) ?? '';
   if (previousPositionKey) {
@@ -108,7 +109,9 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
         actionArgs:
           lower !== null && upper !== null ? getRemoveLiquidityActionArgs(lower, upper, liquidityToRemove) : undefined,
         operator(operand) {
-          if (lower == null || upper == null) return null;
+          if (lower == null || upper == null) {
+            throw Error('Specify position bounds before removing liquidity');
+          }
           return removeLiquidityOperator(
             operand,
             marginAccount.address as Address,
@@ -130,11 +133,15 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
     updateResult(updatedPosition, localRemoveLiquidityPercentage);
   }
 
+  const updatedBalance0 = amount0.recklessMul(1.0 - parsePercentage(localRemoveLiquidityPercentage) / 100);
+  const updatedBalance1 = amount1.recklessMul(1.0 - parsePercentage(localRemoveLiquidityPercentage) / 100);
+
   return (
     <BaseActionCard
       action={ActionID.REMOVE_LIQUIDITY}
       actionProvider={ActionProviders.UniswapV3}
       isCausingError={isCausingError}
+      errorMsg={errorMsg}
       onRemove={onRemove}
     >
       <div>
@@ -177,10 +184,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Current Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount0 || 0)} {token0?.symbol}
+                      {amount0.toString(GNFormat.LOSSY_HUMAN)} {token0.symbol}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount(amount1 || 0)} {token1?.symbol}
+                      {amount1.toString(GNFormat.LOSSY_HUMAN)} {token1.symbol}
                     </Text>
                   </div>
                   <SVGIconWrapper width={24} height={24}>
@@ -191,12 +198,10 @@ export default function UniswapRemoveLiquidityActionCard(props: ActionCardProps)
                       Updated Balance
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount0 ?? 0))}{' '}
-                      {token0?.symbol}
+                      {updatedBalance0.toString(GNFormat.LOSSY_HUMAN)} {token0.symbol}
                     </Text>
                     <Text size='M'>
-                      {formatTokenAmount((1 - parsePercentage(localRemoveLiquidityPercentage) / 100) * (amount1 ?? 0))}{' '}
-                      {token1?.symbol}
+                      {updatedBalance1.toString(GNFormat.LOSSY_HUMAN)} {token1.symbol}
                     </Text>
                   </div>
                 </div>

@@ -40,7 +40,12 @@ export interface AccountState {
   readonly claimedFeeUniswapKeys: readonly string[];
 }
 
-type Operator = (state: AccountState) => AccountState | null;
+export type HypotheticalAccountStates = {
+  accountStates: AccountState[];
+  errorMsg?: string;
+};
+
+type Operator = (state: AccountState) => AccountState;
 
 export type ActionCardOutput = {
   actionId: ActionID;
@@ -64,6 +69,8 @@ export type ActionCardProps = {
   isCausingError: boolean;
   /** should be set to true if ActionCard is being created from a template */
   forceOutput: boolean;
+  /** an error message to display if the action is causing an error */
+  errorMsg?: string;
   /** called whenever the ActionCard's output changes */
   onChange: (output: ActionCardOutput, userInputFields: string[]) => void;
   /** removes the ActionCard */
@@ -88,6 +95,7 @@ export type ActionProvider = {
 export type ActionTemplate = {
   name: string;
   description: string;
+  isLocal: boolean;
   actions: Array<Action>;
   userInputFields?: (string[] | undefined)[];
 };
@@ -179,6 +187,7 @@ export const ActionTemplates: { [key: string]: ActionTemplate } = {
   MARKET_MAKING: {
     name: 'Market-Making',
     description: 'Create an in-range Uniswap Position at 20x leverage.',
+    isLocal: false,
     actions: [ADD_MARGIN, BORROW, BORROW, ADD_LIQUIDITY],
     userInputFields: [[TokenType.ASSET0, '10'], [TokenType.ASSET0, '90'], [TokenType.ASSET1, '0.0625'], undefined],
   },
@@ -198,15 +207,47 @@ export function calculateHypotheticalStates(
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>,
   initialState: AccountState,
   operators: Operator[]
-): AccountState[] {
-  const states: AccountState[] = [initialState];
+): HypotheticalAccountStates {
+  const accountStates: AccountState[] = [initialState];
+  let errorMsg: string | undefined = undefined;
 
   for (let i = 0; i < operators.length; i += 1) {
-    const state = runWithChecks(operators[i], states[i], marginAccount);
-    if (state == null) break;
-
-    states.push(state);
+    try {
+      const accountState = runWithChecks(operators[i], accountStates[i], marginAccount);
+      accountStates.push(accountState);
+    } catch (e) {
+      errorMsg = (e as Error).message;
+      // Replace TokenType enums with actual token symbols
+      errorMsg = errorMsg.replace(TokenType.ASSET0, marginAccount.token0.symbol);
+      errorMsg = errorMsg.replace(TokenType.ASSET1, marginAccount.token1.symbol);
+      break;
+    }
   }
+  return {
+    accountStates,
+    errorMsg,
+  };
+}
 
-  return states;
+export function getAction(id: ActionID): Action {
+  switch (id) {
+    case ActionID.TRANSFER_IN:
+      return ADD_MARGIN;
+    case ActionID.TRANSFER_OUT:
+      return WITHDRAW;
+    case ActionID.BORROW:
+      return BORROW;
+    case ActionID.REPAY:
+      return REPAY;
+    case ActionID.ADD_LIQUIDITY:
+      return ADD_LIQUIDITY;
+    case ActionID.REMOVE_LIQUIDITY:
+      return REMOVE_LIQUIDITY;
+    case ActionID.CLAIM_FEES:
+      return CLAIM_FEES;
+    case ActionID.SWAP:
+      return SWAP;
+    default:
+      return ADD_MARGIN;
+  }
 }

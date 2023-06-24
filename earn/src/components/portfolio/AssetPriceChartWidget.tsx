@@ -62,7 +62,7 @@ export default function AssetPriceChartWidget(props: PortfolioPriceChartWidgetPr
     <div className='flex flex-col justify-between w-full'>
       <div className='flex justify-between items-center my-2 px-3'>
         <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-          {token?.symbol || ''} Price
+          {token.symbol} Price
         </Text>
         <Display size='M'>{error ? '-' : formatUSD(currentPrice)}</Display>
       </div>

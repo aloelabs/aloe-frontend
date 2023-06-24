@@ -5,10 +5,10 @@ import { ethers } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific';
 import { Token } from 'shared/lib/data/Token';
+import { getTokens } from 'shared/lib/data/TokenData';
 import { chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { getTokens } from '../../../data/TokenData';
 
 export type BridgeModalProps = {
   isOpen: boolean;

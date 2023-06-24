@@ -1,5 +1,6 @@
 import Big from 'big.js';
 import { ethers } from 'ethers';
+import { GN } from '../data/GoodNumber';
 
 const DEFAULT_PRECISION = 2;
 
@@ -134,7 +135,9 @@ export function roundUpToNearestN(value: number, n: number): number {
 
 export function formatTokenAmount(amount: number, sigDigs = 4): string {
   //TODO: if we want to support more than one locale, we would need to add more logic here
-  if (amount > 1e6) {
+  if (amount > 1e13) {
+    return amount.toExponential(sigDigs - 3);
+  } else if (amount > 1e6) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'compact',
@@ -188,6 +191,31 @@ export function formatTokenAmountCompact(amount: number, length = 4): string {
       maximumSignificantDigits: length - 1,
     });
   }
+}
+
+export function numericPriceRatioGN(
+  price: GN,
+  token0Decimals: number,
+  token1Decimals: number,
+  inTermsOfToken0: boolean
+): number {
+  const oneToken0 = GN.one(token0Decimals);
+  const oneToken1 = GN.one(token1Decimals);
+
+  const nToken1PerOneToken0 = oneToken0.setResolution(token1Decimals).mul(price);
+  const nToken0PerOneToken1 = oneToken1.setResolution(token0Decimals).div(price);
+
+  return inTermsOfToken0 ? nToken0PerOneToken1.toNumber() : nToken1PerOneToken0.toNumber();
+}
+
+export function formatPriceRatioGN(
+  price: GN,
+  token0Decimals: number,
+  token1Decimals: number,
+  inTermsOfToken0: boolean,
+  sigDigs = 4
+): string {
+  return formatPriceRatio(numericPriceRatioGN(price, token0Decimals, token1Decimals, inTermsOfToken0), sigDigs);
 }
 
 export function formatPriceRatio(x: number, sigDigs = 4): string {
@@ -262,6 +290,9 @@ export function truncateDecimals(value: string, decimals: number): string {
   const decimalIndex = value.indexOf('.');
   if (decimalIndex === -1) {
     return value;
+  }
+  if (decimals === 0) {
+    return value.slice(0, decimalIndex);
   }
   return value.slice(0, decimalIndex + decimals + 1);
 }

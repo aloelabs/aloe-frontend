@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { formatTokenAmount, roundPercentage, truncateDecimals } from 'shared/lib/util/Numbers';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
@@ -222,14 +222,14 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                   <Display size='XS' color={ACCENT_COLOR}>
                     {roundPercentage(amount0Percent, 1)}%
                   </Display>
-                  <Display size='S'>{truncateDecimals(amount0.toString(), 5)}</Display>
+                  <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
                   <Text size='XS'>{marginAccount.token0.symbol}</Text>
                 </div>
                 <div className='text-right'>
                   <Display size='XS' color={ACCENT_COLOR}>
                     {roundPercentage(amount1Percent, 1)}%
                   </Display>
-                  <Display size='S'>{truncateDecimals(amount1.toString(), 5)}</Display>
+                  <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
                   <Text size='XS'>{marginAccount.token1.symbol}</Text>
                 </div>
               </div>

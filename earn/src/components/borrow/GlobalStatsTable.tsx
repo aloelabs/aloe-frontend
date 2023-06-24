@@ -55,76 +55,73 @@ export type GlobalStatsTableProps = {
 
 export default function GlobalStatsTable(props: GlobalStatsTableProps) {
   const { marginAccount, marketInfo } = props;
-  if (!marginAccount || !marketInfo) {
-    return null;
-  }
-  const { token0, token1 } = marginAccount;
+
   return (
     <Wrapper>
       <Text size='M'>Pair Stats</Text>
       <StatsWidgetGrid>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.symbol} Total Supply
+            {marginAccount?.token0.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
+            {marketInfo?.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.symbol} Total Supply
+            {marginAccount?.token1.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN)}
+            {marketInfo?.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.symbol} Borrows
+            {marginAccount?.token0.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo.lender0TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
+            {marketInfo?.lender0TotalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.symbol} Borrows
+            {marginAccount?.token1.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo.lender1TotalBorrows.toString(GNFormat.LOSSY_HUMAN)}
+            {marketInfo?.lender1TotalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.symbol} Utilization
+            {marginAccount?.token0.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {roundPercentage(marketInfo.lender0Utilization * 100, 2)}%
+            {marketInfo ? roundPercentage(marketInfo.lender0Utilization * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.symbol} Utilization
+            {marginAccount?.token1.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {roundPercentage(marketInfo.lender1Utilization * 100, 2)}%
+            {marketInfo ? roundPercentage(marketInfo.lender1Utilization * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token0.symbol} Borrow APR
+            {marginAccount?.token0.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {roundPercentage(marketInfo.borrowerAPR0 * 100, 2)}%
+            {marketInfo ? roundPercentage(marketInfo.borrowerAPR0 * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {token1.symbol} Borrow APR
+            {marginAccount?.token1.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {roundPercentage(marketInfo.borrowerAPR1 * 100, 2)}%
+            {marketInfo ? roundPercentage(marketInfo.borrowerAPR1 * 100, 2) : '-'}%
           </Display>
         </StatContainer>
       </StatsWidgetGrid>

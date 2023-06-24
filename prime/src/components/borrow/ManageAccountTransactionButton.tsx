@@ -3,8 +3,8 @@ import { ReactElement, useContext, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { toBig } from 'shared/lib/util/Numbers';
 import {
   Address,
   Chain,
@@ -194,14 +194,14 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   }, [refetchEtherBalance, refetchAllowance0, refetchAllowance1]);
 
   const requiredBalances = [accountState.requiredAllowances.amount0, accountState.requiredAllowances.amount1];
-  const insufficient = [requiredBalances[0] > userBalances.amount0, requiredBalances[1] > userBalances.amount1];
+  const insufficient = [requiredBalances[0].gt(userBalances.amount0), requiredBalances[1].gt(userBalances.amount1)];
   const loadingApprovals = [
-    requiredBalances[0] > 0 && !userAllowance0Asset,
-    requiredBalances[1] > 0 && !userAllowance1Asset,
+    requiredBalances[0].isGtZero() && !userAllowance0Asset,
+    requiredBalances[1].isGtZero() && !userAllowance1Asset,
   ];
   const needsApproval = [
-    userAllowance0Asset && toBig(userAllowance0Asset).div(token0.decimals).toNumber() < requiredBalances[0],
-    userAllowance1Asset && toBig(userAllowance1Asset).div(token1.decimals).toNumber() < requiredBalances[1],
+    userAllowance0Asset && GN.fromBigNumber(userAllowance0Asset, token0.decimals).lt(requiredBalances[0]),
+    userAllowance1Asset && GN.fromBigNumber(userAllowance1Asset, token1.decimals).lt(requiredBalances[1]),
   ];
 
   if (writeAsset0Allowance.isError) writeAsset0Allowance.reset();
@@ -223,7 +223,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const shouldProvideAnte =
     accountEtherBalance &&
     accountEtherBalance.value.toNumber() < ANTE &&
-    (accountState.liabilities.amount0 > 0 || accountState.liabilities.amount1 > 0);
+    (accountState.liabilities.amount0.isGtZero() || accountState.liabilities.amount1.isGtZero());
 
   const isRemovingToken0Collateral = actionIds.some((id, idx) => {
     if (id === 1) {

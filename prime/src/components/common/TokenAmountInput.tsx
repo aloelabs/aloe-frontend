@@ -51,6 +51,7 @@ export type TokenAmountInputProps = {
   onMax?: (maxValue: string) => void;
   max?: string;
   maxed?: boolean;
+  maxButtonText?: string;
   error?: boolean;
   errorMessage?: string;
   disabled?: boolean;
@@ -89,6 +90,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
         }}
         maxDisabled={props.maxed}
         maxHidden={props.max === undefined}
+        maxButtonText={props.maxButtonText}
         fullWidth={true}
         onBlur={props?.onBlur}
         disabled={props?.disabled}

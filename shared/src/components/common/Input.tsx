@@ -171,8 +171,10 @@ const SvgWrapper = styled.div.attrs(
   top: ${(props) => `calc(50% - ${ICON_SIZES[props.size] / 2}px)`};
   pointer-events: ${(props) => (props.isClickable ? 'auto' : 'none')};
   cursor: ${(props) => (props.isClickable ? 'pointer' : 'default')};
-  ${(props) => (props.leadingIcon ? 'left' : 'right')}: ${(props) =>
-    `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
+  left: ${(props) =>
+    props.leadingIcon ? `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px` : 'unset'};
+  right: ${(props) =>
+    props.leadingIcon ? 'unset' : `${ICON_PADDING[props.size] - ICON_SIZES[props.size] - ICON_SPACING[props.size]}px`};
   svg {
     width: ${(props) => ICON_SIZES[props.size]}px;
     height: ${(props) => ICON_SIZES[props.size]}px;
@@ -226,7 +228,7 @@ export const CustomMaxButton = styled.button.attrs((props: { width?: string; hei
   }
 `;
 
-const MaxButton = styled(BaseMaxButton)`
+const MaxButton = styled(CustomMaxButton)`
   margin-left: 0.75rem;
   position: absolute;
   top: calc(50% - 9.45px);
@@ -275,8 +277,8 @@ export function RoundedInput(props: InputProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -315,8 +317,8 @@ export function SquareInput(props: InputProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={inputClassName}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -359,8 +361,8 @@ export function SquareInputWithTrailingUnit(props: InputWithUnitProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -377,6 +379,7 @@ export type InputWithMaxProps = InputProps & {
   onMaxClick: () => void;
   maxDisabled?: boolean;
   maxHidden?: boolean;
+  maxButtonText?: string;
 };
 
 export function SquareInputWithMax(props: InputWithMaxProps) {
@@ -389,6 +392,7 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
     inputClassName,
     onMaxClick,
     maxDisabled,
+    maxButtonText,
     placeholder,
     disabled,
     onEnter,
@@ -406,8 +410,8 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         disabled={disabled}
         fullWidth={fullWidth}
         className={classNames('no-border', inputClassName || '')}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -416,8 +420,8 @@ export function SquareInputWithMax(props: InputWithMaxProps) {
         ref={innerRef}
       />
       {props.maxHidden !== true && (
-        <MaxButton size={size} onClick={onMaxClick} disabled={disabled || maxDisabled}>
-          MAX
+        <MaxButton onClick={onMaxClick} disabled={disabled || maxDisabled}>
+          {maxButtonText || 'MAX'}
         </MaxButton>
       )}
     </SquareInputWrapper>
@@ -460,8 +464,8 @@ export function RoundedInputWithIcon(props: InputWithIconProps) {
         fullWidth={fullWidth}
         flipped={leadingIcon}
         className={inputClassName}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
@@ -511,8 +515,8 @@ export function SquareInputWithIcon(props: InputWithIconProps) {
         fullWidth={fullWidth}
         flipped={leadingIcon}
         className={inputClassName}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && onEnter) {
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter && !e.repeat) {
             onEnter();
           }
         }}
