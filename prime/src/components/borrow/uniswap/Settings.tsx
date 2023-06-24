@@ -2,13 +2,13 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
-import useClickOutside from '../../../data/hooks/UseClickOutside';
 import Tooltip from '../../common/Tooltip';
 
 const SvgButtonWrapper = styled.button`
