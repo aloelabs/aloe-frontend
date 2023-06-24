@@ -14,6 +14,7 @@ if (process.env.REACT_APP_SENTRY_DSN) {
     integrations: [new Sentry.BrowserTracing()],
     release: generatedGitInfo.commit || undefined,
     sampleRate: 1.0,
+    tracesSampleRate: 1.0,
   });
 }
 
