@@ -44,6 +44,8 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   tokenMap.set(TokenType.ASSET1, token1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
+    const formatted = formatNumberInput(value);
+    if (formatted == null) return;
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     onChange(
@@ -97,12 +99,7 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
         maxAmountLabel='Max'
         maxButtonLabel={hasOutstandingBorrows ? '80% Max' : 'Max'}
         onMax={() => callbackWithFullResult(selectedToken, maxString)}
-        onChange={(value) => {
-          const output = formatNumberInput(value);
-          if (output != null) {
-            callbackWithFullResult(selectedToken, value);
-          }
-        }}
+        onChange={(value) => callbackWithFullResult(selectedToken, value)}
         onSelect={(option: DropdownOption<TokenType>) => {
           if (option.value !== selectedTokenOption.value) {
             callbackWithFullResult(option.value, '');

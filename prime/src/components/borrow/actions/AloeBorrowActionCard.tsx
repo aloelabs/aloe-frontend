@@ -39,6 +39,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
+    const formatted = formatNumberInput(value);
+    if (formatted == null) return;
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     let amount0 = GN.zero(token0.decimals);
@@ -100,12 +102,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
           maxAmountLabel='Max'
           maxButtonLabel='80% MAX'
           onMax={() => callbackWithFullResult(selectedToken, maxEightyPercentString)}
-          onChange={(value) => {
-            const output = formatNumberInput(value);
-            if (output != null) {
-              callbackWithFullResult(selectedToken, value);
-            }
-          }}
+          onChange={(value) => callbackWithFullResult(selectedToken, value)}
           onSelect={(option: DropdownOption<TokenType>) => {
             if (option.value !== selectedTokenOption.value) {
               callbackWithFullResult(option.value as TokenType, '');
