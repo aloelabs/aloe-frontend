@@ -26,4 +26,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.sha }}
-          sourcemaps: 'earn/build/static/js/*.map'
+          sourcemaps: 'earn/build/static/js'

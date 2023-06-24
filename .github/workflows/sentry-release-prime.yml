@@ -26,4 +26,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.sha }}
-          sourcemaps: 'prime/build/static/js/*.map'
+          sourcemaps: 'prime/build/static/js'
