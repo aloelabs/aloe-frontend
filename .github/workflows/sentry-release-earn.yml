@@ -13,10 +13,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-      - name: Install dependencies
-        run: yarn install
-      - name: Build
-        run: yarn build
+      - name: Install dependencies and build
+        run: cd earn && yarn install && yarn build
       - name: Create Sentry Release
         uses: getsentry/action-release@v1
         env:
@@ -26,4 +24,4 @@ jobs:
         with:
           environment: production
           version: ${{ github.sha }}
-          sourcemaps: 'build/static/js/*.map'
+          sourcemaps: 'earn/build/static/js/*.map'
