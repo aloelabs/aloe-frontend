@@ -1,14 +1,15 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
+import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 
-const INPUT_BG_COLOR = 'rgba(13, 23, 30, 1)';
-const INPUT_ACTIVE_BG_COLOR = 'rgba(26, 41, 52, 1)';
+const INPUT_BG_COLOR = GREY_800;
+const INPUT_ACTIVE_BG_COLOR = GREY_700;
 const INPUT_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 const INPUT_TEXT_COLOR_HOVER = 'rgba(204, 223, 237, 1)';
 const INPUT_TEXT_COLOR_FOCUS = 'rgba(204, 223, 237, 1)';
 const INPUT_TEXT_COLOR_DISABLED = 'rgba(75, 105, 128, 1)';
-const INPUT_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
+const INPUT_BORDER_COLOR = GREY_700;
 const INPUT_CARET_COLOR = 'rgba(82, 182, 154, 1)';
 const INPUT_ICON_COLOR_DISABLED = 'rgba(75, 105, 128, 1)';
 
