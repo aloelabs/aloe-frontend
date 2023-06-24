@@ -1,4 +1,4 @@
-name: Sentry Release Earn
+name: Sentry Release Prime
 on:
   push:
     branches:
@@ -14,14 +14,14 @@ jobs:
         with:
           node-version: 16
       - name: Install dependencies and build
-        run: cd earn && yarn install && yarn build
+        run: cd prime && yarn install && yarn build
       - name: Create Sentry Release
         uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_EARN }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT_PRIME }}
         with:
           environment: production
           version: ${{ github.sha }}
-          sourcemaps: 'earn/build/static/js/*.map'
+          sourcemaps: 'prime/build/static/js/*.map'
