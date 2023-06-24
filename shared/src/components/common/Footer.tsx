@@ -110,14 +110,6 @@ export default function Footer() {
         >
           <MediumFooterIcon width={21} height={11} />
         </a>
-        <button
-          onClick={() => {
-            // Throw an error to test Sentry
-            throw new Error('Test Sentry');
-          }}
-        >
-          Click me
-        </button>
       </div>
     </StyledFooter>
   );
