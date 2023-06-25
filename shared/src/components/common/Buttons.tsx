@@ -3,10 +3,10 @@ import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
 import LeftChevron from '../../assets/svg/LeftChevron';
 import { Text } from './Typography';
-import { GREY_700, GREY_800 } from '../../data/constants/Colors';
+import { GREY_700, GREY_800, GREY_900 } from '../../data/constants/Colors';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
-const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
+const DISABLED_BLACK = GREY_900;
 const DEFAULT_WHITE = 'rgba(255, 255, 255, 1)';
 const DISABLED_WHITE = 'rgba(255, 255, 255, 0.4)';
 
@@ -118,13 +118,13 @@ export const FilledGradientButton = styled(BaseButton)`
   }
 
   &:disabled {
-    color: rgba(7, 14, 18, 1);
+    color: ${GREY_900};
     background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px ${GREY_900}, 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -179,7 +179,7 @@ export const FilledGreyButton = styled(BaseButton)`
       pointer-events: none;
       border-radius: 8px;
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -227,7 +227,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
@@ -247,7 +247,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
     }
     &:before {
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;
@@ -286,7 +286,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       content: '';
@@ -299,7 +299,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
     &:before {
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;
@@ -328,13 +328,13 @@ export const FilledStylizedButton = styled(BaseButton)`
   }
 
   &:disabled {
-    color: rgba(7, 14, 18, 1);
+    color: ${GREY_900};
     background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px ${GREY_900}, 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -376,7 +376,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       content: '';
@@ -396,7 +396,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     }
     &:before {
       padding: 1.5px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;

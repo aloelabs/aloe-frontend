@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
-import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { GREY_700, GREY_900 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -66,7 +66,7 @@ const TooltipContainer = styled.div.attrs(
   z-index: 6;
   border-radius: 8px;
   width: 240px;
-  background-color: ${(props) => (props.filled ? GREY_700 : 'rgba(7, 14, 18, 1)')};
+  background-color: ${(props) => (props.filled ? GREY_700 : GREY_900)};
   border: ${(props) => (props.filled ? 'none' : '1px solid rgba(43, 64, 80, 1)')};
 
   &:before {
@@ -93,7 +93,7 @@ const TooltipContainer = styled.div.attrs(
     height: 16px;
     transform: rotate(-45deg);
     border-radius: 0 4px 0 0;
-    background-color: ${(props) => (props.filled ? GREY_700 : 'rgba(7, 14, 18, 1)')};
+    background-color: ${(props) => (props.filled ? GREY_700 : GREY_900)};
     border-left: ${(props) => (props.filled ? 'none' : '1px solid rgba(43, 64, 80, 1)')};
     border-bottom: ${(props) => (props.filled ? 'none' : '1px solid rgba(43, 64, 80, 1)')};
   }

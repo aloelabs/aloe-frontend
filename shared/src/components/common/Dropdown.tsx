@@ -5,9 +5,10 @@ import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
 import { CheckIcon } from '@heroicons/react/solid';
 import useClickOutside from '../../data/hooks/UseClickOutside';
 import { Text } from './Typography';
+import { GREY_900 } from '../../data/constants/Colors';
 
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';
-const DROPDOWN_LIST_BG_COLOR = 'rgba(7, 14, 18, 1)';
+const DROPDOWN_LIST_BG_COLOR = GREY_900;
 const DROPDOWN_LIST_BORDER_COLOR = 'rgba(56, 82, 101, 1)';
 const DROPDOWN_LIST_SHADOW_COLOR = 'rgba(0, 0, 0, 0.12)';
 const DROPDOWN_OPTION_BG_COLOR_HOVER = 'rgba(255, 255, 255, 0.04)';
