@@ -144,7 +144,6 @@ export default function LendPage() {
     async function fetch() {
       const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
-        console.log('available lending pairs', results);
         setLendingPairs(results);
         setIsLoading(false);
       }
