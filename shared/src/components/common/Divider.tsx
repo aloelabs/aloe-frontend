@@ -1,6 +1,7 @@
 import styled from 'styled-components';
+import { GREY_700 } from '../../data/constants/Colors';
 
-const DEFAULT_COLOR = 'rgba(26,41,52,1)';
+const DEFAULT_COLOR = GREY_700;
 
 export const Divider = styled.div.attrs((props: { height?: string; color?: string }) => props)`
   width: 100%;
