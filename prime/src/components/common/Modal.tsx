@@ -2,7 +2,7 @@ import React, { Fragment, useRef } from 'react';
 
 import { Dialog, Transition } from '@headlessui/react';
 import { Display } from 'shared/lib/components/common/Typography';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -101,7 +101,7 @@ export const DashedDivider = styled.div`
     top: 50%;
     width: 100%;
     height: 1px;
-    border-bottom: 1px dashed rgba(26, 41, 52, 1);
+    border-bottom: 1px dashed ${GREY_700};
   }
 `;
 
@@ -110,7 +110,7 @@ export const HorizontalDivider = styled.div`
   height: 1px;
   margin-top: 32px;
   margin-bottom: 32px;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 `;
 
 export const Message = styled.div`

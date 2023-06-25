@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
 import LeftChevron from '../../assets/svg/LeftChevron';
 import { Text } from './Typography';
-import { GREY_800 } from '../../data/constants/Colors';
+import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
@@ -129,7 +129,7 @@ export const FilledGradientButton = styled(BaseButton)`
 `;
 
 export const FilledGreyButton = styled(BaseButton)`
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
   color: rgba(255, 255, 255, 1);
 
   ${(props) => {
@@ -818,7 +818,7 @@ const PreviousPageButtonWrapper = styled.button`
   width: 35px;
   height: 35px;
   border-radius: 8px;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 `;
 
 export type PreviousPageButtonProps = {
@@ -840,15 +840,15 @@ const StyledRadioButtonWrapper = styled.div.attrs((props: { checked: boolean; di
   justify-content: center;
   padding: 6px 16px;
   border-radius: 8px;
-  background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent')};
+  background-color: ${(props) => (props.checked ? GREY_700 : 'transparent')};
   cursor: pointer;
 
   &:hover {
-    background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.25)')};
+    background-color: ${(props) => (props.checked ? GREY_700 : 'rgba(26, 41, 52, 0.25)')};
   }
 
   &:active {
-    background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.5)')};
+    background-color: ${(props) => (props.checked ? GREY_700 : 'rgba(26, 41, 52, 0.5)')};
   }
 `;
 

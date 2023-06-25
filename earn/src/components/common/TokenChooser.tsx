@@ -1,6 +1,6 @@
 import { RadioGroup } from '@headlessui/react';
 import { StyledRadioButton } from 'shared/lib/components/common/Buttons';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -10,7 +10,7 @@ const RadioButtonsContainer = styled.div`
   padding: 4px;
   border-radius: 8px;
   background-color: ${GREY_800};
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
 `;
 
 export type TokenChooserProps = {

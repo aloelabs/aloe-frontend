@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import CloseModal from '../../assets/svg/CloseModal';
 import useLocalStorage from '../../data/hooks/UseLocalStorage';
+import { GREY_700 } from '../../data/constants/Colors';
 
 const BETA_BANNER_KEY = 'beta-banner';
 
@@ -21,7 +22,7 @@ const BannerContainer = styled.div`
   align-items: center;
   width: 100%;
   background-color: #0d171e;
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
   border-top: 0;
   border-radius: 4px;
   border-top-left-radius: 0;
