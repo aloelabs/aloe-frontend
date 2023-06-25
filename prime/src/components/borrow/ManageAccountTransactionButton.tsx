@@ -25,6 +25,7 @@ import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
+import { ANTE } from '../../data/constants/Values';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
@@ -119,8 +120,6 @@ export type ManageAccountTransactionButtonProps = {
   enabled: boolean;
   onSuccessReceipt: () => void;
 };
-
-const ANTE = 0.001e18; // TODO move to constants
 
 export function ManageAccountTransactionButton(props: ManageAccountTransactionButtonProps) {
   const {
