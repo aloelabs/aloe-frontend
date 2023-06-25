@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -45,7 +46,6 @@ import {
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { primeUrl } from '../data/constants/Values';
-import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import {
