@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 
 import { getTransferInActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -49,6 +50,8 @@ export function AloeAddMarginActionCard(prop: ActionCardProps) {
   tokenMap.set(TokenType.ASSET1, token1);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
+    const formatted = formatNumberInput(value);
+    if (formatted == null) return;
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     onChange(

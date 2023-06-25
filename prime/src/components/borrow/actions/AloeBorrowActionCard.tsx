@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 
 import { getBorrowActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -38,6 +39,8 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
   const selectedTokenOption = getDropdownOptionFromSelectedToken(selectedToken, dropdownOptions);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
+    const formatted = formatNumberInput(value);
+    if (formatted == null) return;
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     let amount0 = GN.zero(token0.decimals);
