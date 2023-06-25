@@ -258,6 +258,13 @@ export default function PortfolioPage() {
     };
   }, [pendingTxn]);
 
+  useEffect(() => {
+    if (!isConnected && !isConnecting && lendingPairBalances.length > 0) {
+      setLendingPairBalances([]);
+      setActiveAsset(null);
+    }
+  }, [isConnecting, isConnected, lendingPairBalances]);
+
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.address);
