@@ -35,6 +35,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 
+const MIN_PAGE_NUMBER = 1;
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -86,7 +87,7 @@ export default function LendPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
 
   // MARK: wagmi hooks
@@ -322,6 +323,7 @@ export default function LendPage() {
                 options={filterOptions}
                 activeOptions={selectedOptions}
                 handleChange={(updatedOptions: MultiDropdownOption<Token>[]) => {
+                  setCurrentPage(MIN_PAGE_NUMBER);
                   setSelectedOptions(updatedOptions);
                 }}
                 DropdownButton={(props: { onClick: () => void }) => {
