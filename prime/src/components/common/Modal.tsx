@@ -2,6 +2,7 @@ import React, { Fragment, useRef } from 'react';
 
 import { Dialog, Transition } from '@headlessui/react';
 import { Display } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -31,7 +32,7 @@ const ModalWrapper = styled.div.attrs(
   width: ${(props) => (props.fullWidth ? '100%' : 'auto')};
   height: ${(props) => (props.fullHeight ? '100vh' : 'auto')};
   ${(props) => (props.fullHeight ? 'margin: 0 !important;' : '')}
-  background-color: rgba(13, 23, 30, 1);
+  background-color: ${GREY_800};
   ${(props) => props.backgroundColor && `background-color: ${props.backgroundColor};`}
   color: rgba(255, 255, 255, 1);
   position: relative;

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
 import LeftChevron from '../../assets/svg/LeftChevron';
 import { Text } from './Typography';
+import { GREY_800 } from '../../data/constants/Colors';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
 const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
@@ -162,7 +163,7 @@ export const FilledGreyButton = styled(BaseButton)`
   }
 
   &:disabled {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     color: rgba(255, 255, 255, 0.4);
     box-shadow: none;
   }
@@ -216,7 +217,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
   }
 
   &:not(:disabled):hover {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -234,7 +235,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
 
     span {
@@ -281,7 +282,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
 
   &:not(:disabled):hover {
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
   }
 
   &:disabled {
@@ -294,7 +295,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
     &:before {
       padding: 2px;
@@ -367,7 +368,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   }
 
   &:not(:disabled):hover {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -384,7 +385,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
     span {
       background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
