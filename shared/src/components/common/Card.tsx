@@ -24,6 +24,7 @@ export const CardWrapper = styled.div.attrs((props: { borderGradient: string; sh
       border-radius: 8px;
       padding: 1.5px;
       background: ${(props) => props.borderGradient};
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
