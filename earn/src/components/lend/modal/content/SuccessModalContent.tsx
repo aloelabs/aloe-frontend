@@ -1,13 +1,12 @@
 import React, { useContext } from 'react';
 
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { HorizontalDivider, MESSAGE_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
 import { ChainContext } from '../../../../App';
 import SuccessIcon from '../../../../assets/svg/success.svg';
-import { HorizontalDivider, MESSAGE_TEXT_COLOR } from '../../../common/Modal';
-import { MODAL_BLACK_TEXT_COLOR } from '../../../common/Modal';
 import { ConfirmationType, getConfirmationTypeValue } from '../EditPositionModal';
 
 export type SuccessModalContentProps = {

@@ -4,6 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { routerABI } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
@@ -13,7 +14,6 @@ import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWr
 
 import { ChainContext } from '../../../../App';
 import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
-import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
 import TokenAmountInput from '../../../common/TokenAmountInput';
 
 const TERTIARY_COLOR = '#4b6980';

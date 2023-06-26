@@ -1,9 +1,9 @@
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal, { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
 import SuccessIcon from '../../../assets/svg/success.svg';
-import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 export type CreatedMarginAccountModalProps = {
   isOpen: boolean;
