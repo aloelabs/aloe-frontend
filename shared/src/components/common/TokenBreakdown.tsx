@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Text } from './Typography';
+import { GREY_700 } from '../../data/constants/Colors';
 
 const LABEL_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -12,7 +13,7 @@ const TokenBreakdownWrapper = styled.div`
   justify-content: space-between;
   column-gap: 0.75rem;
   padding: 16px;
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
   border-radius: 8px;
 `;
 

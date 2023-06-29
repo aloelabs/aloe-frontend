@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -11,7 +12,7 @@ const SECONDARY_COLOR = '#82a0b6';
 
 const AccountStatsCardWrapper = styled.div`
   ${tw`flex flex-col justify-center`}
-  background-color: rgba(13, 23, 30, 1);
+  background-color: ${GREY_800};
   border-radius: 8px;
   padding: 24px 32px;
 `;
