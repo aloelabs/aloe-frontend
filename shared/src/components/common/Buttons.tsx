@@ -156,6 +156,7 @@ export const FilledGreyButton = styled(BaseButton)`
       border-radius: 8px;
       padding: 1.5px;
       background: rgba(255, 255, 255, 1);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -180,6 +181,7 @@ export const FilledGreyButton = styled(BaseButton)`
       border-radius: 8px;
       padding: 2px;
       background: ${GREY_900};
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -211,6 +213,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -222,7 +225,6 @@ export const OutlinedGradientButton = styled(BaseButton)`
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
@@ -243,7 +245,6 @@ export const OutlinedGradientButton = styled(BaseButton)`
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-fill-color: transparent;
     }
     &:before {
       padding: 2px;
@@ -275,6 +276,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: rgba(255, 255, 255, 1);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -362,6 +364,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     border-radius: 100px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -370,6 +373,7 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   &:not(:disabled):hover {
     background-color: ${GREY_800};
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
@@ -392,7 +396,6 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-fill-color: transparent;
     }
     &:before {
       padding: 1.5px;
