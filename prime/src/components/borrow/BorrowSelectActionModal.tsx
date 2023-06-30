@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { FullscreenModal } from 'shared/lib/components/common/Modal';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
@@ -11,7 +12,6 @@ import { getNameOfAction } from '../../data/actions/ActionID';
 import { ActionProvider, ActionProviders, ActionTemplate, ActionTemplates } from '../../data/actions/Actions';
 import { Action } from '../../data/actions/Actions';
 import { TEMPLATE_STORED_EVENT_STRING, retrieveAllTemplates } from '../../data/actions/StoredActionTemplate';
-import { FullscreenModal } from '../common/Modal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TEMPLATE_COLOR = '#4b6980';
@@ -138,7 +138,7 @@ export default function BorrowSelectActionModal(props: BorrowSelectActionModalPr
   const templates = [...defaultTemplates, ...localTemplates];
 
   return (
-    <FullscreenModal open={isOpen} setOpen={setIsOpen}>
+    <FullscreenModal isOpen={isOpen} setIsOpen={setIsOpen}>
       <ActionModalHeader>
         <BackButtonWrapper>
           <BackArrowIcon

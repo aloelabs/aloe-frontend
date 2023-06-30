@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
+import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
@@ -34,7 +35,6 @@ import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralMo
 import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
-import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,

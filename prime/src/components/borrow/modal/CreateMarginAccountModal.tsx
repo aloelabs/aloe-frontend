@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import Modal, { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-
-import { MODAL_BLACK_TEXT_COLOR } from '../../common/Modal';
 
 const TERTIARY_COLOR = '#4b6980';
 
