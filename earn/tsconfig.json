@@ -1,4 +1,10 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/scripts"],
+  "compilerOptions": {
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "src",
+  },
 }

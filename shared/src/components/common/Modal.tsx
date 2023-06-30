@@ -7,12 +7,13 @@ import styled from 'styled-components';
 import CloseIcon from '../../assets/svg/CloseModal';
 import LoadingIcon from '../../assets/svg/Loading';
 import { classNames } from '../../util/ClassNames';
+import { GREY_700, GREY_800, GREY_900 } from '../../data/constants/Colors';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
 export const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 export const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 export const MESSAGE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
-export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
+export const MODAL_BLACK_TEXT_COLOR = GREY_900;
 
 const StyledDialog = styled.div`
   z-index: 100;
@@ -35,7 +36,7 @@ const ModalWrapper = styled.div.attrs(
   width: ${(props) => (props.fullWidth ? '100%' : 'auto')};
   height: ${(props) => (props.fullHeight ? '100vh' : 'auto')};
   ${(props) => (props.fullHeight ? 'margin: 0 !important;' : '')}
-  background-color: rgba(13, 23, 30, 1);
+  background-color: ${GREY_800};
   ${(props) => props.backgroundColor && `background-color: ${props.backgroundColor};`}
   color: rgba(255, 255, 255, 1);
   position: relative;
@@ -113,7 +114,7 @@ export const DashedDivider = styled.div`
     top: 50%;
     width: 100%;
     height: 1px;
-    border-bottom: 1px dashed rgba(26, 41, 52, 1);
+    border-bottom: 1px dashed ${GREY_700};
   }
 `;
 
@@ -122,7 +123,7 @@ export const HorizontalDivider = styled.div`
   height: 1px;
   margin-top: 32px;
   margin-bottom: 32px;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 `;
 
 export const Message = styled.div`
@@ -215,7 +216,7 @@ const ModalPanel = styled(Dialog.Panel)`
   left: 50%;
   transform: translateY(-50%) translateX(-50%);
   width: fit-content;
-  background-color: rgba(13, 23, 30, 1);
+  background-color: ${GREY_800};
   border: 2px solid rgba(43, 64, 80, 1);
   border-radius: 8px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1);

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 
 import { getRepayActionArgs } from '../../../data/actions/ActionArgs';
 import { ActionID } from '../../../data/actions/ActionID';
@@ -42,6 +43,8 @@ export function AloeRepayActionCard(prop: ActionCardProps) {
   const maxString = GN.max(GN.zero(selectedTokenDecimals), GN.min(assetMax, liabilityMax)).toString(GNFormat.DECIMAL);
 
   const callbackWithFullResult = (token: TokenType, value: string) => {
+    const formatted = formatNumberInput(value);
+    if (formatted == null) return;
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
     let amount0 = GN.zero(token0.decimals);

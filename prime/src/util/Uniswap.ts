@@ -18,7 +18,7 @@ import {
   theGraphUniswapV3OptimismClient,
 } from '../App';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { BIGQ96, Q48, Q96 } from '../data/constants/Values';
+import { BIGQ96, Q96 } from '../data/constants/Values';
 import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;

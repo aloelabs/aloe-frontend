@@ -1,4 +1,5 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -26,7 +27,7 @@ const StatsWidgetGrid = styled.div`
   display: grid;
   grid-template-columns: calc(50% - 12px) calc(50% - 12px);
   column-gap: 24px;
-  border-top: 1px solid rgba(26, 41, 52, 1);
+  border-top: 1px solid ${GREY_700};
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     grid-template-columns: 100%;
@@ -39,7 +40,7 @@ const StatContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 18px 8px;
-  border-bottom: 1px solid rgba(26, 41, 52, 1);
+  border-bottom: 1px solid ${GREY_700};
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column;

@@ -5,6 +5,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate } from 'react-router-dom';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -36,7 +37,7 @@ const TabsWrapper = styled.div`
   ${tw`w-full flex flex-row`}
   padding: 4px;
   border-radius: 8px;
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
 `;
 
 const TabButton = styled.button`

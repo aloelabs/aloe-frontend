@@ -1,6 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { ethers } from 'ethers';
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
@@ -10,6 +9,7 @@ import { useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import useNumberOfUsers from '../../data/hooks/UseNumberOfUsers';
 import { LendingPair } from '../../data/LendingPair';
 import Tooltip from '../common/Tooltip';
 
@@ -144,7 +144,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
 
-  const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
+  // const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
 
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
@@ -155,7 +155,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     });
   }, [lendingPairs]);
 
-  const [numberOfUsers, setNumberOfUsers] = useState(0);
+  // const [numberOfUsers, setNumberOfUsers] = useState(0);
   const [selectedOption, setSelectedOption] = useState<DropdownOption<LendingPair>>(options[0]);
   useEffect(() => {
     setSelectedOption(options[0]);
@@ -163,60 +163,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
 
   const selectedLendingPair = selectedOption.value;
 
-  useEffect(() => {
-    let mounted = true;
-    const cachedResult = cachedData.get(selectedOption.label);
-    if (cachedResult) {
-      setNumberOfUsers(cachedResult);
-      return;
-    }
-    // Temporarily set the number of users to 0 while we fetch the number of users
-    setNumberOfUsers(0);
-    // TODO: move this to a hook
-    async function fetchNumberOfUsers() {
-      let lender0Logs: ethers.providers.Log[] = [];
-      let lender1Logs: ethers.providers.Log[] = [];
-      try {
-        [lender0Logs, lender1Logs] = await Promise.all([
-          provider.getLogs({
-            fromBlock: 0,
-            toBlock: 'latest',
-            address: selectedLendingPair.kitty0.address,
-            topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
-          }),
-          provider.getLogs({
-            fromBlock: 0,
-            toBlock: 'latest',
-            address: selectedLendingPair.kitty1.address,
-            topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
-          }),
-        ]);
-      } catch (error) {
-        console.error(error);
-      }
-      if (lender0Logs.length === 0 && lender1Logs.length === 0) {
-        return;
-      }
-      let uniqueUsers = new Set<string>();
-      const logs = [...lender0Logs, ...lender1Logs];
-      logs.forEach((log: ethers.providers.Log) => {
-        if (log.topics.length < 3) return;
-        const userAddress = `0x${log.topics[2].slice(26)}`;
-        uniqueUsers.add(userAddress);
-      });
-      if (mounted) {
-        setNumberOfUsers(uniqueUsers.size);
-        setCachedData((cachedData) => {
-          // TODO: Make this into a custom hook (and make it more efficient)
-          return new Map(cachedData).set(selectedOption.label, uniqueUsers.size);
-        });
-      }
-    }
-    fetchNumberOfUsers();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedLendingPair, activeChain, cachedData, selectedOption.label, provider]);
+  const numberOfUsers = useNumberOfUsers(provider, selectedLendingPair, selectedOption.label);
 
   const [activeUtilization, activeTotalSupply] = getActiveUtilizationAndTotalSupply(activeAsset, selectedLendingPair);
 

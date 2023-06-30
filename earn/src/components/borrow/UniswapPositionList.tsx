@@ -260,7 +260,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
         <Text size='M'>Uniswap Positions</Text>
         <PositionList>
           {UNISWAP_POSITION_SLOTS.map((slot, index) => (
-            <UniswapPositionCardContainer>
+            <UniswapPositionCardContainer key={slot}>
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 marginAccount={marginAccount}

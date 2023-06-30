@@ -17,6 +17,7 @@ export const Q48 = BigNumber.from('0x1000000000000');
 export const Q96 = BigNumber.from('0x1000000000000000000000000');
 export const BIGQ96 = toBig(Q96);
 export const MAX_UNISWAP_POSITIONS = 3;
+export const ANTE = 0.001e18;
 
 export const ALOE_II_SIGMA_MIN = GN.fromDecimalString('0.01', 18);
 export const ALOE_II_SIGMA_MAX = GN.fromDecimalString('0.18', 18);

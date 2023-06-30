@@ -1,7 +1,8 @@
 import styled from 'styled-components';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { GREY_800 } from '../../data/constants/Colors';
 
-const CARD_BODY_BG_COLOR = 'rgba(13, 23, 30, 1)';
+const CARD_BODY_BG_COLOR = GREY_800;
 const TOKEN_ICON_BORDER_COLOR = 'rgba(0, 0, 0, 1)';
 const BODY_DIVIDER_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
 
@@ -23,6 +24,7 @@ export const CardWrapper = styled.div.attrs((props: { borderGradient: string; sh
       border-radius: 8px;
       padding: 1.5px;
       background: ${(props) => props.borderGradient};
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
