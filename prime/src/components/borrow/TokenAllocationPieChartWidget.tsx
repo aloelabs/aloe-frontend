@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_900 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -89,7 +90,7 @@ const PieChartLabel = styled.div`
 
   // colors, borders, text
   border-radius: calc(var(--height) / 2);
-  background-color: rgba(7, 14, 18, 1);
+  background-color: ${GREY_900};
   color: rgba(255, 255, 255, 1);
   ${tw`font-bold`};
 `;

@@ -3,9 +3,10 @@ import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
 import LeftChevron from '../../assets/svg/LeftChevron';
 import { Text } from './Typography';
+import { GREY_700, GREY_800, GREY_900 } from '../../data/constants/Colors';
 
 const DEFAULT_BLACK = 'rgba(0, 0, 0, 1)';
-const DISABLED_BLACK = 'rgba(7, 14, 18, 1)';
+const DISABLED_BLACK = GREY_900;
 const DEFAULT_WHITE = 'rgba(255, 255, 255, 1)';
 const DISABLED_WHITE = 'rgba(255, 255, 255, 0.4)';
 
@@ -117,18 +118,18 @@ export const FilledGradientButton = styled(BaseButton)`
   }
 
   &:disabled {
-    color: rgba(7, 14, 18, 1);
+    color: ${GREY_900};
     background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px ${GREY_900}, 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
 export const FilledGreyButton = styled(BaseButton)`
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
   color: rgba(255, 255, 255, 1);
 
   ${(props) => {
@@ -155,6 +156,7 @@ export const FilledGreyButton = styled(BaseButton)`
       border-radius: 8px;
       padding: 1.5px;
       background: rgba(255, 255, 255, 1);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -162,7 +164,7 @@ export const FilledGreyButton = styled(BaseButton)`
   }
 
   &:disabled {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     color: rgba(255, 255, 255, 0.4);
     box-shadow: none;
   }
@@ -178,7 +180,8 @@ export const FilledGreyButton = styled(BaseButton)`
       pointer-events: none;
       border-radius: 8px;
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
@@ -210,23 +213,23 @@ export const OutlinedGradientButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
 
   &:not(:disabled):hover {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
@@ -234,7 +237,7 @@ export const OutlinedGradientButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
 
     span {
@@ -242,11 +245,10 @@ export const OutlinedGradientButton = styled(BaseButton)`
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-fill-color: transparent;
     }
     &:before {
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;
@@ -274,6 +276,7 @@ export const OutlinedWhiteButton = styled(BaseButton)`
     border-radius: 8px;
     padding: 1.5px;
     background: rgba(255, 255, 255, 1);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -281,11 +284,11 @@ export const OutlinedWhiteButton = styled(BaseButton)`
 
   &:not(:disabled):hover {
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       content: '';
@@ -294,11 +297,11 @@ export const OutlinedWhiteButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
     &:before {
       padding: 2px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;
@@ -327,13 +330,13 @@ export const FilledStylizedButton = styled(BaseButton)`
   }
 
   &:disabled {
-    color: rgba(7, 14, 18, 1);
+    color: ${GREY_900};
     background: linear-gradient(90deg, rgba(155, 170, 243, 0.4) 0%, rgba(123, 216, 192, 0.4) 100%);
     box-shadow: none;
   }
 
   &:focus-visible {
-    box-shadow: 0px 0px 0px 2px rgba(7, 14, 18, 1), 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 0px 0px 2px ${GREY_900}, 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -361,21 +364,23 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
     border-radius: 100px;
     padding: 1.5px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
 
   &:not(:disabled):hover {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     box-shadow: 0px 8px 16px -4px rgba(126, 213, 197, 0.08), 0px 8px 24px -4px rgba(154, 173, 241, 0.12);
   }
 
   &:disabled {
-    background-color: rgba(7, 14, 18, 1);
+    background-color: ${GREY_900};
     color: rgba(255, 255, 255, 0.4);
     &:before {
       content: '';
@@ -384,18 +389,17 @@ export const OutlinedGradientRoundedButton = styled(BaseButton)`
   }
 
   &:focus-visible {
-    background-color: rgba(13, 23, 30, 1);
+    background-color: ${GREY_800};
     box-shadow: 0px 0px 0px 2px rgba(255, 255, 255, 0.2);
     span {
       background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-fill-color: transparent;
     }
     &:before {
       padding: 1.5px;
-      background: rgba(7, 14, 18, 1);
+      background: ${GREY_900};
     }
   }
 `;
@@ -817,7 +821,7 @@ const PreviousPageButtonWrapper = styled.button`
   width: 35px;
   height: 35px;
   border-radius: 8px;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 `;
 
 export type PreviousPageButtonProps = {
@@ -839,15 +843,15 @@ const StyledRadioButtonWrapper = styled.div.attrs((props: { checked: boolean; di
   justify-content: center;
   padding: 6px 16px;
   border-radius: 8px;
-  background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'transparent')};
+  background-color: ${(props) => (props.checked ? GREY_700 : 'transparent')};
   cursor: pointer;
 
   &:hover {
-    background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.25)')};
+    background-color: ${(props) => (props.checked ? GREY_700 : 'rgba(26, 41, 52, 0.25)')};
   }
 
   &:active {
-    background-color: ${(props) => (props.checked ? 'rgba(26, 41, 52, 1)' : 'rgba(26, 41, 52, 0.5)')};
+    background-color: ${(props) => (props.checked ? GREY_700 : 'rgba(26, 41, 52, 0.5)')};
   }
 `;
 

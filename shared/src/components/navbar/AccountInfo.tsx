@@ -14,6 +14,7 @@ import { formatAddress } from '../../util/FormatAddress';
 import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
+import { GREY_700 } from '../../data/constants/Colors';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -185,7 +186,7 @@ export default function AccountInfo(props: AccountInfoProps) {
                 <FilledStylizedButton
                   name='Disconnect'
                   size='M'
-                  backgroundColor='rgba(26, 41, 52, 1)'
+                  backgroundColor={GREY_700}
                   color={'rgba(255, 255, 255, 1)'}
                   fillWidth={true}
                   disabled={!connector.ready}

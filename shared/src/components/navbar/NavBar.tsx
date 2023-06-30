@@ -24,6 +24,7 @@ import {
 } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
+import { GREY_700 } from '../../data/constants/Colors';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
@@ -65,7 +66,7 @@ const TabletBottomNav = styled.div`
   right: 0;
   height: 64px;
   background-color: rgba(6, 11, 15, 1);
-  border-top: 1px solid rgba(26, 41, 52, 1);
+  border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
   @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
@@ -86,7 +87,7 @@ const MobileBottomNav = styled.div`
   right: 0;
   height: 64px;
   background-color: rgba(6, 11, 15, 1);
-  border-top: 1px solid rgba(26, 41, 52, 1);
+  border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
   @media (min-width: ${RESPONSIVE_BREAKPOINT_XS}) {
@@ -97,7 +98,7 @@ const MobileBottomNav = styled.div`
 const VerticalDivider = styled.div`
   width: 1px;
   height: 64px;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
     width: 100%;
@@ -154,7 +155,7 @@ const DesktopNavLink = styled(NavLink)`
   }
 
   &.mobile {
-    border-bottom: 1px solid rgba(26, 41, 52, 1);
+    border-bottom: 1px solid ${GREY_700};
   }
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
@@ -178,7 +179,7 @@ const ExternalDesktopLink = styled.a`
   }
 
   &.mobile {
-    border-bottom: 1px solid rgba(26, 41, 52, 1);
+    border-bottom: 1px solid ${GREY_700};
   }
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
@@ -193,7 +194,7 @@ const MobileNavLink = styled(NavLink)`
   padding: 8px 16px;
 
   &:hover {
-    background-color: rgba(26, 41, 52, 1);
+    background-color: ${GREY_700};
     border-radius: 8px;
   }
 `;
@@ -204,7 +205,7 @@ const MobileExternalLink = styled.a`
   padding: 8px 16px;
 
   &:hover {
-    background-color: rgba(26, 41, 52, 1);
+    background-color: ${GREY_700};
     border-radius: 8px;
   }
 `;
@@ -215,7 +216,7 @@ const StyledPopoverButton = styled(Popover.Button)`
   padding: 0px 16px;
 
   &:hover {
-    background-color: rgba(26, 41, 52, 1);
+    background-color: ${GREY_700};
     border-radius: 8px;
   }
 `;
@@ -227,7 +228,7 @@ const StyledPopoverPanel = styled(Popover.Panel)`
   z-index: 50;
   /* background-color: rgba(6, 11, 15, 1); */
   background-color: rgb(13, 23, 30);
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
   border-radius: 8px;
   padding: 16px;
 `;

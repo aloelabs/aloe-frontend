@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
 import { Dropdown } from './Dropdown';
+import { GREY_800 } from '../../data/constants/Colors';
 
 const MAX_DISPLAYED_COUNT = 6;
 
@@ -31,7 +32,7 @@ const ChevronButton = styled.button`
   justify-content: center;
   align-items: center;
   background: transparent;
-  border: 1px solid rgba(13, 23, 30, 1);
+  border: 1px solid ${GREY_800};
   border-radius: 25px;
   width: 40px;
   height: 40px;

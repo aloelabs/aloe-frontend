@@ -1,6 +1,7 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -9,7 +10,7 @@ import tw from 'twin.macro';
 import { ReactComponent as MinusIcon } from '../../../assets/svg/minus.svg';
 import { ReactComponent as PlusIcon } from '../../../assets/svg/plus.svg';
 
-const REGULAR_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
+const REGULAR_BORDER_COLOR = GREY_700;
 const ACTIVE_BORDER_COLOR = 'rgba(82, 182, 154, 1)';
 
 const SteppedInputWrapper = styled.div.attrs((props: { active: boolean }) => props)`
@@ -51,7 +52,7 @@ const SvgButtonWrapper = styled.button`
   }
 
   &:not(:disabled):active {
-    background-color: rgba(26, 41, 52, 1);
+    background-color: ${GREY_700};
   }
 
   :disabled {

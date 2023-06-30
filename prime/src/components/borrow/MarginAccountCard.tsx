@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
@@ -14,9 +15,9 @@ import { formatAddressStart } from '../../util/FormatAddress';
 import { getHealthColor } from '../../util/Health';
 import TokenPairIcons from '../common/TokenPairIcons';
 
-const FEE_TIER_BG_COLOR = 'rgba(26, 41, 52, 1)';
+const FEE_TIER_BG_COLOR = GREY_700;
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
-const FEE_TIER_OUTLINE_COLOR = 'rgba(13, 23, 30, 1)';
+const FEE_TIER_OUTLINE_COLOR = GREY_800;
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const CardWrapper = styled(NavLink).attrs((props: { border: string; shadow: string }) => props)`
@@ -25,8 +26,8 @@ const CardWrapper = styled(NavLink).attrs((props: { border: string; shadow: stri
   border-radius: 16px;
   overflow: hidden;
   position: relative;
-  background-color: rgba(13, 23, 30, 1);
-  border: 4px solid rgba(26, 41, 52, 1);
+  background-color: ${GREY_800};
+  border: 4px solid ${GREY_700};
 
   &:hover {
     box-shadow: 0px 8px 48px 0px ${(props) => props.shadow};

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -9,7 +10,7 @@ import { formatNumberRelativeToSize } from '../PnLGraph';
 
 export const PORTFOLIO_TOOLTIP_WIDTH = 175;
 const TOOLTIP_BG_COLOR = 'rgba(13, 23, 30, 0.75)';
-const TOOLTIP_BORDER_COLOR = 'rgba(26, 41, 52, 1)';
+const TOOLTIP_BORDER_COLOR = GREY_700;
 
 const TooltipContainer = styled.div.attrs((props: { offset: number }) => props)`
   ${tw`rounded-md shadow-md`}
