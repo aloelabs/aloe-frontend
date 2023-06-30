@@ -2,11 +2,11 @@ import React from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_900 } from 'shared/lib/data/constants/Colors';
+import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import InfoIcon from '../../assets/svg/info.svg';
-import useClickOutside from '../../data/hooks/UseClickOutside';
 
 const ICON_SIZES = {
   S: 16,
