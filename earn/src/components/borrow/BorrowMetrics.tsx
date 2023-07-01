@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -21,7 +22,7 @@ const MetricCardContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
   padding: 16px;
 `;
@@ -55,7 +56,7 @@ const HorizontalMetricCardContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
   padding: 16px;
 `;

@@ -14,7 +14,7 @@ import { formatAddress } from '../../util/FormatAddress';
 import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
-import { GREY_700 } from '../../data/constants/Colors';
+import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -24,7 +24,7 @@ const StyledPopoverPanel = styled(Popover.Panel)`
   width: 350px;
   padding: 16px;
   border-radius: 8px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
 
   &:before {
     content: '';
