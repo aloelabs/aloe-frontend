@@ -312,7 +312,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   if (marketInfo === null) return null;
 
-  //TODO: add some sort of error message when !transactionIsViable
   return (
     <Wrapper>
       <ScrollableContainer>
