@@ -181,7 +181,7 @@ export type UniswapPoolInfo = {
 export default function BorrowPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
-  const { address: userAddress } = useAccount();
+  const { address: userAddress, isConnected } = useAccount();
 
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [cachedGraphDatas, setCachedGraphDatas] = useState<Map<string, BorrowGraphData[]>>(new Map());
@@ -510,6 +510,7 @@ export default function BorrowPage() {
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
+
   return (
     <AppPage>
       <Container>
@@ -548,16 +549,16 @@ export default function BorrowPage() {
             </Text>
             <ManageAccountButtons
               onAddCollateral={() => {
-                setIsAddCollateralModalOpen(true);
+                if (isConnected) setIsAddCollateralModalOpen(true);
               }}
               onRemoveCollateral={() => {
-                setIsRemoveCollateralModalOpen(true);
+                if (isConnected) setIsRemoveCollateralModalOpen(true);
               }}
               onBorrow={() => {
-                setIsBorrowModalOpen(true);
+                if (isConnected) setIsBorrowModalOpen(true);
               }}
               onRepay={() => {
-                setIsRepayModalOpen(true);
+                if (isConnected) setIsRepayModalOpen(true);
               }}
               onGetLeverage={() => {
                 if (selectedMarginAccount != null) {
