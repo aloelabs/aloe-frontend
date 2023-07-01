@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-import { Text } from 'shared/lib/components/common/Typography';
-import { GREY_700, GREY_900 } from 'shared/lib/data/constants/Colors';
-import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
+import { Text } from './Typography';
+import { GREY_700, GREY_900 } from '../../data/constants/Colors';
+import useClickOutside from '../../data/hooks/UseClickOutside';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
-import InfoIcon from '../../assets/svg/info.svg';
+import InfoIcon from '../../assets/svg/Info';
 
 const ICON_SIZES = {
   S: 16,
@@ -20,23 +19,15 @@ const ICON_GAPS = {
   L: 10,
 };
 
-const InfoButton = styled.button.attrs((props: { icon: string; iconSize: 'S' | 'M' | 'L' }) => props)`
-  ${tw`flex justify-center items-center`}
+const InfoButtonContainer = styled.button.attrs((props: { iconSize: 'S' | 'M' | 'L' }) => props)`
+  display: flex;
+  justify-content: center;
+  align-items: center;
   gap: ${(props) => ICON_GAPS[props.iconSize]}px;
   color: rgba(130, 160, 182, 1);
   border-radius: 8px;
   line-height: 30px;
   font-size: 18px;
-  &:after {
-    content: '';
-    display: block;
-    width: ${(props) => ICON_SIZES[props.iconSize]}px;
-    height: ${(props) => ICON_SIZES[props.iconSize]}px;
-    background-image: url(${(props) => props.icon});
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-  }
 `;
 
 const TooltipContainer = styled.div.attrs(
@@ -45,7 +36,11 @@ const TooltipContainer = styled.div.attrs(
     filled?: boolean;
   }) => props
 )`
-  ${tw`flex flex-col items-center justify-center absolute`}
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
   ${(props) => {
     if (props.position.startsWith('top')) {
       return 'bottom: calc(100% + 14px);';
@@ -99,6 +94,26 @@ const TooltipContainer = styled.div.attrs(
   }
 `;
 
+function InfoButton(props: {
+  Icon: ReactElement;
+  size: 'S' | 'M' | 'L';
+  onClick: () => void;
+  className?: string;
+  buttonText?: string;
+}) {
+  const { Icon, size, onClick, className, buttonText } = props;
+  return (
+    <InfoButtonContainer iconSize={size} onClick={onClick} className={className}>
+      {Icon}
+      {buttonText && (
+        <Text size={size} weight='medium' color='rgba(130, 160, 182, 1)'>
+          {buttonText}
+        </Text>
+      )}
+    </InfoButtonContainer>
+  );
+}
+
 export type TooltipProps = {
   buttonSize: 'S' | 'M' | 'L';
   content: string | React.ReactNode;
@@ -128,13 +143,13 @@ export default function Tooltip(props: TooltipProps) {
           </Text>
         </TooltipContainer>
       )}
-      <InfoButton icon={InfoIcon} iconSize={buttonSize} onClick={() => setIsOpen(!isOpen)} className={buttonClassName}>
-        {buttonText && (
-          <Text size={buttonSize} weight='medium' color='rgba(130, 160, 182, 1)'>
-            {buttonText}
-          </Text>
-        )}
-      </InfoButton>
+      <InfoButton
+        Icon={<InfoIcon width={ICON_SIZES[buttonSize]} height={ICON_SIZES[buttonSize]} />}
+        size={buttonSize}
+        onClick={() => setIsOpen(!isOpen)}
+        className={buttonClassName}
+        buttonText={buttonText}
+      />
     </div>
   );
 }

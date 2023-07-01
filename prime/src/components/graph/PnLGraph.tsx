@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
@@ -32,7 +33,6 @@ import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { makeEtherscanRequest } from '../../util/Etherscan';
 import { tickToPrice } from '../../util/Uniswap';
-import Tooltip from '../common/Tooltip';
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 

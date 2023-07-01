@@ -7,6 +7,7 @@ import { Divider } from 'shared/lib/components/common/Divider';
 import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -18,7 +19,6 @@ import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi'
 import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
-import Tooltip from '../components/common/Tooltip';
 import BalanceSlider from '../components/lend/BalanceSlider';
 import LendPairCard from '../components/lend/LendPairCard';
 import { LendCardPlaceholder } from '../components/lend/LendPairCardPlaceholder';
