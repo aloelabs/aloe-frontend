@@ -4,6 +4,7 @@ import { Bridge } from '@socket.tech/plugin';
 import { ethers } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific';
+import { GREY_900 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokens } from 'shared/lib/data/TokenData';
 import { chain } from 'wagmi';
@@ -43,11 +44,11 @@ export default function BridgeModal(props: BridgeModalProps) {
         API_KEY={process.env.REACT_APP_SOCKET_API_KEY!}
         customize={{
           primary: 'rgb(13, 23, 30)',
-          secondary: 'rgb(26, 41, 52)',
+          secondary: GREY_900,
           onInteractive: 'rgb(255, 255, 255)',
           text: 'rgb(255, 255, 255)',
           secondaryText: 'rgb(255, 255, 255)',
-          interactive: 'rgb(26, 41, 52)',
+          interactive: GREY_900,
           fontFamily: 'Satoshi-Variable',
         }}
         defaultSourceNetwork={chain.mainnet.id}
