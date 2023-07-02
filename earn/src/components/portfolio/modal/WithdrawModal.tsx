@@ -4,6 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
@@ -15,7 +16,6 @@ import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
-import Tooltip from '../../common/Tooltip';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';

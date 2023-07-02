@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
@@ -8,7 +9,6 @@ import tw from 'twin.macro';
 import { ReactComponent as CloseModal } from '../../assets/svg/close_modal.svg';
 import { ActionID, getNameOfAction } from '../../data/actions/ActionID';
 import { ActionProvider } from '../../data/actions/Actions';
-import Tooltip from '../common/Tooltip';
 
 const ActionCardContainer = styled.div.attrs((props: { isCausingError: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center`}
