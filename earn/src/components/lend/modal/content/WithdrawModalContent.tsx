@@ -10,6 +10,7 @@ import {
   MODAL_BLACK_TEXT_COLOR,
   VALUE_TEXT_COLOR,
 } from 'shared/lib/components/common/Modal';
+import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -17,7 +18,6 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import TokenAmountInput from '../../../common/TokenAmountInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';

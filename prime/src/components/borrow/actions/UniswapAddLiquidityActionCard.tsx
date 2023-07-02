@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 import { TickMath } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
+import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { numericPriceRatioGN, roundDownToNearestN, roundUpToNearestN } from 'shared/lib/util/Numbers';
@@ -26,7 +27,6 @@ import {
   tickToPrice,
   UniswapV3PoolBasics,
 } from '../../../util/Uniswap';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import TokenChooser from '../../common/TokenChooser';
 import { BaseActionCard } from '../BaseActionCard';
 import LiquidityChart, { ChartEntry } from '../uniswap/LiquidityChart';
