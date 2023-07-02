@@ -1,7 +1,9 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -11,7 +13,6 @@ import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import useNumberOfUsers from '../../data/hooks/UseNumberOfUsers';
 import { LendingPair } from '../../data/LendingPair';
-import Tooltip from '../common/Tooltip';
 
 const Container = styled.div`
   width: 100%;
@@ -70,7 +71,7 @@ const CardHeader = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   padding: 8px 16px;
   border-radius: 8px;
   height: 50px;
@@ -96,7 +97,7 @@ const LargeCardBodyItem = styled.div`
   justify-content: center;
   align-items: center;
   padding: 16px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
 `;
 
@@ -107,7 +108,7 @@ const SmallCardBodyItem = styled.div`
   align-items: center;
   width: 140px;
   padding: 16px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
