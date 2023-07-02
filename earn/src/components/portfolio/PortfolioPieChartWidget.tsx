@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -69,7 +70,7 @@ const PieChartLabel = styled.div`
   transition: all 0.1s linear;
   // colors, borders, text
   border-radius: calc(var(--height) / 2);
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   color: rgba(255, 255, 255, 1);
   ${tw`font-bold`};
 `;

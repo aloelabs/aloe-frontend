@@ -24,7 +24,7 @@ import {
 } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
-import { GREY_700 } from '../../data/constants/Colors';
+import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
@@ -227,7 +227,7 @@ const StyledPopoverPanel = styled(Popover.Panel)`
   right: 16px;
   z-index: 50;
   /* background-color: rgba(6, 11, 15, 1); */
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border: 1px solid ${GREY_700};
   border-radius: 8px;
   padding: 16px;
@@ -239,7 +239,7 @@ const NavOverlay = styled.div`
   bottom: 64px;
   left: 0;
   right: 0;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   z-index: 40;
   padding: 16px;
   overflow-y: scroll;

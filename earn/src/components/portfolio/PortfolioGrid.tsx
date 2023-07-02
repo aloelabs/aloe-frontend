@@ -1,4 +1,5 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
@@ -40,7 +41,7 @@ const BaseGridItem = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
 `;
 
@@ -114,7 +115,7 @@ const StatusDot = styled.div.attrs((props: { active: boolean }) => props)`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1px solid rgb(13, 23, 30);
+  border: 1px solid ${GREY_800};
   background-color: ${(props) => (props.active ? STATUS_GREEN : STATUS_RED)};
   animation: ${(props) => (props.active ? 'pulse-green 1.5s linear infinite' : 'pulse-red 1s linear infinite')};
   @keyframes pulse-green {
