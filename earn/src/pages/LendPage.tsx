@@ -14,7 +14,8 @@ import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi';
+import { useAccount, useEnsName, useProvider } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 
 import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
@@ -96,7 +97,7 @@ export default function LendPage() {
   const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: wagmiChain.mainnet.id,
+    chainId: mainnet.id,
   });
 
   const uniqueSymbols = useMemo(() => {

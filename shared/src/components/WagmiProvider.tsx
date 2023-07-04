@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
-import { WagmiConfig, chain, createClient, configureChains } from 'wagmi';
+import { WagmiConfig, createClient, configureChains } from 'wagmi';
+import { arbitrum, optimism, mainnet } from 'wagmi/chains';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
@@ -8,11 +9,12 @@ import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
 
 import { DEFAULT_CHAIN } from '../data/constants/Values';
+import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 
 function fallbackProvider({ chainId }: { chainId?: number }) {
-  const targetChain = Object.values(chain).find((v) => v.id === chainId) || DEFAULT_CHAIN;
+  const targetChain = ALL_CHAINS.find((v) => v.id === chainId) || DEFAULT_CHAIN;
   const config = {
-    ensAddress: targetChain.ens?.address,
+    // ensAddress: targetChain.ens?.address,
     chainId: targetChain.id,
     name: targetChain.name,
   };
@@ -27,7 +29,7 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
   }
 
   switch (config.chainId) {
-    case chain.mainnet.id:
+    case mainnet.id:
       providers.push({
         provider: new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth', config),
         priority: 1,
@@ -37,7 +39,7 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
         priority: 1,
       });
       break;
-    case chain.optimism.id:
+    case optimism.id:
       providers.push({
         provider: new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/optimism', config),
         priority: 1,
@@ -47,7 +49,7 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
         priority: 1,
       });
       break;
-    case chain.arbitrum.id:
+    case arbitrum.id:
       providers.push({
         provider: new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/arbitrum', config),
         priority: 1,
@@ -73,11 +75,10 @@ if (process.env.REACT_APP_INFURA_ID) {
 }
 const hasNonPublicRpc = providers.length > 1;
 
-const { chains, provider, webSocketProvider } = configureChains(
-  [chain.mainnet, chain.optimism, chain.arbitrum, chain.goerli],
-  providers,
-  { stallTimeout: 5000 }
-);
+// @ts-ignore
+const { chains, provider, webSocketProvider } = configureChains(ALL_CHAINS, providers, {
+  stallTimeout: 5000,
+});
 
 const client = createClient({
   autoConnect: true,
@@ -88,7 +89,7 @@ const client = createClient({
     }),
     new WalletConnectConnector({
       chains,
-      options: { qrcode: true },
+      options: { projectId: '3475bfb3ffc4cd0576fabe5d47efeafb' },
     }),
     new CoinbaseWalletConnector({
       chains,

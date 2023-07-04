@@ -9,7 +9,7 @@ import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
-import { chain } from 'wagmi';
+import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   theGraphUniswapV3ArbitrumClient,
@@ -116,16 +116,16 @@ export async function calculateTickData(
 
   let theGraphClient = theGraphUniswapV3Client;
   switch (chainId) {
-    case chain.arbitrum.id:
+    case arbitrum.id:
       theGraphClient = theGraphUniswapV3ArbitrumClient;
       break;
-    case chain.optimism.id:
+    case optimism.id:
       theGraphClient = theGraphUniswapV3OptimismClient;
       break;
-    case chain.goerli.id:
+    case goerli.id:
       theGraphClient = theGraphUniswapV3GoerliClient;
       break;
-    case chain.mainnet.id:
+    case mainnet.id:
     default:
       break;
   }

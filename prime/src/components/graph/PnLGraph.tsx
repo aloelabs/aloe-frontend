@@ -17,6 +17,7 @@ import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ChainId } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
@@ -259,7 +260,7 @@ export default function PnLGraph(props: PnLGraphProps) {
           ALOE_II_FRONTEND_MANAGER_ADDRESS,
           [TOPIC0_MODIFY_EVENT, `0x000000000000000000000000${marginAccount.address.slice(2)}`],
           true,
-          activeChain
+          activeChain.id as ChainId
         );
       } catch (e) {
         console.error(e);
