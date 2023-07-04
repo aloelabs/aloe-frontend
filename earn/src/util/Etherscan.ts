@@ -1,15 +1,14 @@
 import axios from 'axios';
-import { ChainId } from 'shared/lib/data/constants/ChainSpecific';
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { Chain, arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
-const ETHERSCAN_DOMAINS_BY_CHAIN_ID = {
+const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [mainnet.id]: 'api.etherscan.io',
   [goerli.id]: 'api-goerli.etherscan.io',
   [optimism.id]: 'api-optimistic.etherscan.io',
   [arbitrum.id]: 'api.arbiscan.io',
 };
 
-const ETHERSCAN_API_KEYS = {
+const ETHERSCAN_API_KEYS: { [chainId: number]: string | undefined } = {
   [mainnet.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
   [goerli.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
   [optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
@@ -21,12 +20,12 @@ export function makeEtherscanRequest(
   address: string,
   topics: (string | null)[],
   shouldMatchAll: boolean,
-  chainId: ChainId,
+  chain: Chain,
   pageLength = 1000,
   page?: number,
   toBlock?: number
 ) {
-  const domain = ETHERSCAN_DOMAINS_BY_CHAIN_ID[chainId];
+  const domain = ETHERSCAN_DOMAINS_BY_CHAIN_ID[chain.id];
   let query = `https://${domain}/api?module=logs&action=getLogs`.concat(
     `&fromBlock=${fromBlock.toFixed(0)}`,
     toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '&toBlock=latest',
@@ -43,7 +42,7 @@ export function makeEtherscanRequest(
 
   if (page) query += `&page=${page}`;
   query += `&offset=${pageLength}`;
-  if (ETHERSCAN_API_KEYS[chainId]) query += `&apikey=${ETHERSCAN_API_KEYS[chainId]}`;
+  if (ETHERSCAN_API_KEYS[chain.id]) query += `&apikey=${ETHERSCAN_API_KEYS[chain.id]}`;
 
   return axios.get(query);
 }

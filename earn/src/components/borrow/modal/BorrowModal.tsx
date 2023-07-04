@@ -7,7 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ANTES, ChainId } from 'shared/lib/data/constants/ChainSpecific';
+import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -82,7 +82,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
-  const ante = ANTES[activeChain.id as ChainId];
+  const ante = ANTES[activeChain.id];
 
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
@@ -209,7 +209,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
 
-  const ante = ANTES[activeChain.id as ChainId];
+  const ante = ANTES[activeChain.id];
 
   const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
 

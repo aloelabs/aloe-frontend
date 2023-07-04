@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ChainId } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { Token } from 'shared/lib/data/Token';
@@ -338,7 +337,7 @@ export default function BorrowPage() {
           ALOE_II_ORACLE_ADDRESS,
           [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
           true,
-          activeChain.id as ChainId
+          activeChain
         );
       } catch (e) {
         console.error(e);
