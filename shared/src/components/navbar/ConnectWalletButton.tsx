@@ -73,7 +73,17 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                     color={'rgba(255, 255, 255, 1)'}
                     fillWidth={true}
                     disabled={!connector.ready}
-                    onClick={() => connect({ connector })}
+                    onClick={() => {
+                      // Manually close the modal when the connector is connecting
+                      // This indicates the connector's modal/popup is or will soon be open
+                      connector.addListener('message', (m) => {
+                        if (m.type === 'connecting') {
+                          setWalletModalOpen(false);
+                          connector.removeListener('message');
+                        }
+                      });
+                      connect({ connector });
+                    }}
                   >
                     {connector.name}
                     {!connector.ready && ' (unsupported)'}
