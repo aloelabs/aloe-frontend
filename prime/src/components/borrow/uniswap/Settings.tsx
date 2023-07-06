@@ -48,7 +48,6 @@ const SettingsMenuWrapper = styled.div`
   right: 0;
 `;
 
-//TODO: Improve styling and possibly create a more generic reusable button to replace this
 const AutoSlippageButton = styled.button.attrs((props: { active: boolean }) => props)`
   padding: 4px 8px;
   border-radius: 8px;
