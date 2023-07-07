@@ -142,6 +142,10 @@ export default function PortfolioPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
+      // Only fetch prices for tokens if they are all on the same (active) chain
+      if (uniqueTokens.length > 0 && uniqueTokens.some((token) => token.chainId !== activeChain.id)) {
+        return;
+      }
       const symbols = uniqueTokens
         .map((token) => token?.symbol)
         .filter((symbol) => symbol !== undefined)
