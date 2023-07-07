@@ -399,21 +399,31 @@ export default function PortfolioPage() {
           <PortfolioActionButton
             label={'Send Crypto'}
             Icon={<SendIcon />}
-            onClick={() => setIsSendCryptoModalOpen(true)}
+            onClick={() => {
+              if (isConnected) setIsSendCryptoModalOpen(true);
+            }}
           />
           <PortfolioActionButton
             label={'Deposit'}
             Icon={<TrendingUpIcon />}
-            onClick={() => setIsEarnInterestModalOpen(true)}
+            onClick={() => {
+              if (isConnected) setIsEarnInterestModalOpen(true);
+            }}
           />
           <PortfolioActionButton
             label={'Withdraw'}
             Icon={<ShareIcon />}
             onClick={() => {
-              setIsWithdrawModalOpen(true);
+              if (isConnected) setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton label={'Bridge'} Icon={<TruckIcon />} onClick={() => setIsBridgeModalOpen(true)} />
+          <PortfolioActionButton
+            label={'Bridge'}
+            Icon={<TruckIcon />}
+            onClick={() => {
+              if (isConnected) setIsBridgeModalOpen(true);
+            }}
+          />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>
