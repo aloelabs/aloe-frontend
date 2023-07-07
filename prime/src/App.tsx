@@ -12,7 +12,8 @@ import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
-import { Chain, useAccount, useNetwork } from 'wagmi';
+import { useAccount, useNetwork } from 'wagmi';
+import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -69,7 +70,7 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
 });
 
 export const ChainContext = React.createContext({
-  activeChain: DEFAULT_CHAIN,
+  activeChain: DEFAULT_CHAIN as Chain,
   isChainLoading: true,
   setActiveChain: (chain: Chain) => {},
   setIsChainLoading: (isLoading: boolean) => {},

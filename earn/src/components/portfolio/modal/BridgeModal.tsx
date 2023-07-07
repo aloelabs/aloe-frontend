@@ -7,7 +7,7 @@ import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific
 import { GREY_800, GREY_900 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokens } from 'shared/lib/data/TokenData';
-import { chain } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 
 import { ChainContext } from '../../../App';
 
@@ -51,7 +51,7 @@ export default function BridgeModal(props: BridgeModalProps) {
           interactive: GREY_900,
           fontFamily: 'Satoshi-Variable',
         }}
-        defaultSourceNetwork={chain.mainnet.id}
+        defaultSourceNetwork={mainnet.id}
         defaultDestNetwork={activeChain.id}
         sourceNetworks={supportedChainIds}
         destNetworks={supportedChainIds}

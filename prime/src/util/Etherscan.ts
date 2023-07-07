@@ -1,18 +1,18 @@
 import axios from 'axios';
-import { chain as wagmiChain } from 'wagmi';
+import { Chain, arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
-const ETHERSCAN_DOMAINS_BY_CHAIN_ID = {
-  [wagmiChain.mainnet.id]: 'api.etherscan.io',
-  [wagmiChain.goerli.id]: 'api-goerli.etherscan.io',
-  [wagmiChain.optimism.id]: 'api-optimistic.etherscan.io',
-  [wagmiChain.arbitrum.id]: 'api.arbiscan.io',
+const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
+  [mainnet.id]: 'api.etherscan.io',
+  [goerli.id]: 'api-goerli.etherscan.io',
+  [optimism.id]: 'api-optimistic.etherscan.io',
+  [arbitrum.id]: 'api.arbiscan.io',
 };
 
-const ETHERSCAN_API_KEYS = {
-  [wagmiChain.mainnet.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
-  [wagmiChain.goerli.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
-  [wagmiChain.optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
-  [wagmiChain.arbitrum.id]: process.env.REACT_APP_ARBISCAN_API_KEY,
+const ETHERSCAN_API_KEYS: { [chainId: number]: string | undefined } = {
+  [mainnet.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
+  [goerli.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
+  [optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
+  [arbitrum.id]: process.env.REACT_APP_ARBISCAN_API_KEY,
 };
 
 export function makeEtherscanRequest(
@@ -20,7 +20,7 @@ export function makeEtherscanRequest(
   address: string,
   topics: (string | null)[],
   shouldMatchAll: boolean,
-  chain = wagmiChain.mainnet,
+  chain: Chain,
   pageLength = 1000,
   page?: number,
   toBlock?: number

@@ -6,7 +6,8 @@ import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { Chain, useConnect, useEnsName, chain as wagmiChain } from 'wagmi';
+import { useConnect, useEnsName } from 'wagmi';
+import { Chain, mainnet } from 'wagmi/chains';
 
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
@@ -71,7 +72,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
     address: account.address,
-    chainId: wagmiChain.mainnet.id,
+    chainId: mainnet.id,
   });
   const buttonText = isConnected ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 

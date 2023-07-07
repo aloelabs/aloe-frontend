@@ -9,7 +9,8 @@ import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
-import { Chain, useAccount, useNetwork } from 'wagmi';
+import { useAccount, useNetwork } from 'wagmi';
+import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -53,7 +54,7 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
 });
 
 export const ChainContext = React.createContext({
-  activeChain: DEFAULT_CHAIN,
+  activeChain: DEFAULT_CHAIN as Chain,
   setActiveChain: (chain: Chain) => {},
 });
 

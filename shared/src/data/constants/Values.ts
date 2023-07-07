@@ -1,4 +1,4 @@
-import { chain } from 'wagmi';
+import { optimism } from 'wagmi/chains';
 
-export const DEFAULT_CHAIN = chain.optimism;
+export const DEFAULT_CHAIN = optimism;
 export const DEFAULT_ETHERSCAN_URL = 'https://etherscan.io';

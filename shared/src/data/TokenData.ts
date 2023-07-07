@@ -1,5 +1,6 @@
 import { Token } from './Token';
-import { Address, chain } from 'wagmi';
+import { Address } from 'wagmi';
+import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   ArbLogo,
@@ -21,7 +22,7 @@ import {
 } from '../assets/svg/tokens';
 
 const USDC_GOERLI = new Token(
-  chain.goerli.id,
+  goerli.id,
   '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
   6,
   'USDC',
@@ -30,7 +31,7 @@ const USDC_GOERLI = new Token(
 );
 
 const WBTC_GOERLI = new Token(
-  chain.goerli.id,
+  goerli.id,
   '0x886055958cdf2635ff47a2071264a3413d26f959',
   8,
   'WBTC',
@@ -39,7 +40,7 @@ const WBTC_GOERLI = new Token(
 );
 
 const WETH_GOERLI = new Token(
-  chain.goerli.id,
+  goerli.id,
   '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
   18,
   'WETH',
@@ -48,7 +49,7 @@ const WETH_GOERLI = new Token(
 );
 
 const USDC_MAINNET = new Token(
-  chain.mainnet.id,
+  mainnet.id,
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
   6,
   'USDC',
@@ -57,7 +58,7 @@ const USDC_MAINNET = new Token(
 );
 
 const WBTC_MAINNET = new Token(
-  chain.mainnet.id,
+  mainnet.id,
   '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
   8,
   'WBTC',
@@ -66,7 +67,7 @@ const WBTC_MAINNET = new Token(
 );
 
 const WETH_MAINNET = new Token(
-  chain.mainnet.id,
+  mainnet.id,
   '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
   18,
   'WETH',
@@ -75,7 +76,7 @@ const WETH_MAINNET = new Token(
 );
 
 const DAI_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
   18,
   'DAI',
@@ -84,7 +85,7 @@ const DAI_OPTIMISM = new Token(
 );
 
 const FRAX_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x2e3d870790dc77a83dd1d18184acc7439a53f475',
   18,
   'FRAX',
@@ -93,7 +94,7 @@ const FRAX_OPTIMISM = new Token(
 );
 
 const LYRA_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
   18,
   'LYRA',
@@ -101,17 +102,10 @@ const LYRA_OPTIMISM = new Token(
   LyraLogo
 );
 
-const OP_OPTIMISM = new Token(
-  chain.optimism.id,
-  '0x4200000000000000000000000000000000000042',
-  18,
-  'OP',
-  'Optimism',
-  OpLogo
-);
+const OP_OPTIMISM = new Token(optimism.id, '0x4200000000000000000000000000000000000042', 18, 'OP', 'Optimism', OpLogo);
 
 const PERP_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x9e1028f5f1d5ede59748ffcee5532509976840e0',
   18,
   'PERP',
@@ -120,7 +114,7 @@ const PERP_OPTIMISM = new Token(
 );
 
 const UNI_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x6fd9d7ad17242c41f7131d257212c54a0e816691',
   18,
   'UNI',
@@ -129,7 +123,7 @@ const UNI_OPTIMISM = new Token(
 );
 
 const USDC_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
   6,
   'USDC',
@@ -138,7 +132,7 @@ const USDC_OPTIMISM = new Token(
 );
 
 const USDT_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58',
   6,
   'USDT',
@@ -147,7 +141,7 @@ const USDT_OPTIMISM = new Token(
 );
 
 const VELO_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x3c8b650257cfb5f272f799f5e2b4e65093a11a05',
   18,
   'VELO',
@@ -156,7 +150,7 @@ const VELO_OPTIMISM = new Token(
 );
 
 const WBTC_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x68f180fcce6836688e9084f035309e29bf0a2095',
   8,
   'WBTC',
@@ -165,7 +159,7 @@ const WBTC_OPTIMISM = new Token(
 );
 
 const WETH_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x4200000000000000000000000000000000000006',
   18,
   'WETH',
@@ -174,7 +168,7 @@ const WETH_OPTIMISM = new Token(
 );
 
 const WSTETH_OPTIMISM = new Token(
-  chain.optimism.id,
+  optimism.id,
   '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
   18,
   'wstETH',
@@ -183,7 +177,7 @@ const WSTETH_OPTIMISM = new Token(
 );
 
 const DAI_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
   18,
   'DAI',
@@ -191,17 +185,10 @@ const DAI_ARBITRUM = new Token(
   DaiLogo
 );
 
-const GMX_ARBITRUM = new Token(
-  chain.arbitrum.id,
-  '0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a',
-  18,
-  'GMX',
-  'GMX',
-  GmxLogo
-);
+const GMX_ARBITRUM = new Token(arbitrum.id, '0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a', 18, 'GMX', 'GMX', GmxLogo);
 
 const MAGIC_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0x539bde0d7dbd336b79148aa742883198bbf60342',
   18,
   'MAGIC',
@@ -210,7 +197,7 @@ const MAGIC_ARBITRUM = new Token(
 );
 
 const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a',
   18,
   'MIM',
@@ -219,7 +206,7 @@ const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
 );
 
 const USDC_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
   6,
   'USDC',
@@ -228,7 +215,7 @@ const USDC_ARBITRUM = new Token(
 );
 
 const USDT_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
   6,
   'USDT',
@@ -237,7 +224,7 @@ const USDT_ARBITRUM = new Token(
 );
 
 const WBTC_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
   8,
   'WBTC',
@@ -246,7 +233,7 @@ const WBTC_ARBITRUM = new Token(
 );
 
 const WETH_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
   18,
   'WETH',
@@ -255,7 +242,7 @@ const WETH_ARBITRUM = new Token(
 );
 
 const ARB_ARBITRUM = new Token(
-  chain.arbitrum.id,
+  arbitrum.id,
   '0x912ce59144191c1204e64559fe8253a0e49e6548',
   18,
   'ARB',
@@ -264,17 +251,17 @@ const ARB_ARBITRUM = new Token(
 );
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
-  [chain.mainnet.id]: {
+  [mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
     [WBTC_MAINNET.address]: WBTC_MAINNET,
     [WETH_MAINNET.address]: WETH_MAINNET,
   },
-  [chain.goerli.id]: {
+  [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,
     [WBTC_GOERLI.address]: WBTC_GOERLI,
     [WETH_GOERLI.address]: WETH_GOERLI,
   },
-  [chain.optimism.id]: {
+  [optimism.id]: {
     [DAI_OPTIMISM.address]: DAI_OPTIMISM,
     [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
     [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
@@ -288,7 +275,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WETH_OPTIMISM.address]: WETH_OPTIMISM,
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
   },
-  [chain.arbitrum.id]: {
+  [arbitrum.id]: {
     [ARB_ARBITRUM.address]: ARB_ARBITRUM,
     [DAI_ARBITRUM.address]: DAI_ARBITRUM,
     [GMX_ARBITRUM.address]: GMX_ARBITRUM,
