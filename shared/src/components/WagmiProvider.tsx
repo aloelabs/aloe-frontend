@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { WagmiConfig, createClient, configureChains } from 'wagmi';
+import { WagmiConfig, createClient, configureChains, Connector } from 'wagmi';
 import { arbitrum, optimism, mainnet } from 'wagmi/chains';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { InjectedConnector } from 'wagmi/connectors/injected';
@@ -14,7 +14,6 @@ import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 function fallbackProvider({ chainId }: { chainId?: number }) {
   const targetChain = ALL_CHAINS.find((v) => v.id === chainId) || DEFAULT_CHAIN;
   const config = {
-    // ensAddress: targetChain.ens?.address,
     chainId: targetChain.id,
     name: targetChain.name,
   };
@@ -80,22 +79,29 @@ const { chains, provider, webSocketProvider } = configureChains(ALL_CHAINS, prov
   stallTimeout: 5000,
 });
 
-const client = createClient({
-  autoConnect: true,
-  connectors: [
-    new InjectedConnector({
-      chains,
-      options: { shimDisconnect: true },
-    }),
+const connectors: Connector[] = [
+  new InjectedConnector({
+    chains,
+    options: { shimDisconnect: true },
+  }),
+  new CoinbaseWalletConnector({
+    chains,
+    options: { appName: 'Aloe II' },
+  }),
+];
+
+if (process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID) {
+  connectors.push(
     new WalletConnectConnector({
       chains,
-      options: { projectId: '3475bfb3ffc4cd0576fabe5d47efeafb' },
-    }),
-    new CoinbaseWalletConnector({
-      chains,
-      options: { appName: 'Aloe II' },
-    }),
-  ],
+      options: { projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID },
+    })
+  );
+}
+
+const client = createClient({
+  autoConnect: true,
+  connectors,
   // @ts-ignore
   provider: hasNonPublicRpc ? provider : fallbackProvider,
   webSocketProvider: hasNonPublicRpc ? webSocketProvider : undefined,

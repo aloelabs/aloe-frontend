@@ -16042,7 +16042,7 @@ w3c-xmlserializer@^2.0.0:
   dependencies:
     xml-name-validator "^3.0.0"
 
-wagmi@^0.12.0, wagmi@^0.12.16:
+wagmi@^0.12.16:
   version "0.12.18"
   resolved "https://registry.yarnpkg.com/wagmi/-/wagmi-0.12.18.tgz#36053a2f104d8223112d6b2f2d0936da4104add9"
   integrity sha512-Ci0cy1R6NXmwVjRF4ukjBdOor7ZH3SDBSXPZetlkm6mey9RJq5yEHEZYdcPgtLWANqRRzFD5TxXtrmZJkhhs3w==
