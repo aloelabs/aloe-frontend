@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import './index.css';
 import * as Sentry from '@sentry/react';
@@ -16,17 +16,31 @@ if (process.env.REACT_APP_SENTRY_DSN) {
     sampleRate: 1.0,
     tracesSampleRate: 1.0,
   });
+}
 
-  window.addEventListener('unhandledrejection', (event) => {
-    Sentry.captureException(event.reason);
-  });
+function GlobalErrorBoundary({ children }: { children: JSX.Element }) {
+  useEffect(() => {
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      Sentry.captureException(event.reason);
+    };
+
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
+  return children;
 }
 
 ReactDOM.render(
   <React.StrictMode>
-    <Router>
-      <App />
-    </Router>
+    <GlobalErrorBoundary>
+      <Router>
+        <App />
+      </Router>
+    </GlobalErrorBoundary>
   </React.StrictMode>,
   document.getElementById('root')
 );
