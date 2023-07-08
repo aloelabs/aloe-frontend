@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import DropdownArrowDown from 'shared/lib/assets/svg/DropdownArrowDown';
 import DropdownArrowUp from 'shared/lib/assets/svg/DropdownArrowUp';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
 const UNKNOWN_TOKEN_ICON = '../../assets/svg/tokens/unknown_token.svg';
-const DEFAULT_BACKGROUND_COLOR = 'rgb(13, 23, 30)';
+const DEFAULT_BACKGROUND_COLOR = GREY_800;
 const DEFAULT_BACKGROUND_COLOR_HOVER = 'rgb(18, 32, 41)';
 const DROPDOWN_HEADER_BORDER_COLOR = 'rgba(34, 54, 69, 1)';
 const DROPDOWN_LIST_SHADOW_COLOR = 'rgba(0, 0, 0, 0.12)';

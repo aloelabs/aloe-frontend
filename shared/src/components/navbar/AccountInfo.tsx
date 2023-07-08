@@ -6,7 +6,8 @@ import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { Chain, useConnect, useEnsName, chain as wagmiChain } from 'wagmi';
+import { useConnect, useEnsName } from 'wagmi';
+import { Chain, mainnet } from 'wagmi/chains';
 
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
@@ -14,6 +15,7 @@ import { formatAddress } from '../../util/FormatAddress';
 import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
+import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -23,7 +25,7 @@ const StyledPopoverPanel = styled(Popover.Panel)`
   width: 350px;
   padding: 16px;
   border-radius: 8px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
 
   &:before {
     content: '';
@@ -70,7 +72,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
     address: account.address,
-    chainId: wagmiChain.mainnet.id,
+    chainId: mainnet.id,
   });
   const buttonText = isConnected ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
 
@@ -185,7 +187,7 @@ export default function AccountInfo(props: AccountInfoProps) {
                 <FilledStylizedButton
                   name='Disconnect'
                   size='M'
-                  backgroundColor='rgba(26, 41, 52, 1)'
+                  backgroundColor={GREY_700}
                   color={'rgba(255, 255, 255, 1)'}
                   fillWidth={true}
                   disabled={!connector.ready}

@@ -9,15 +9,16 @@ import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
-import { Chain, useAccount, useNetwork } from 'wagmi';
+import { useAccount, useNetwork } from 'wagmi';
+import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import { API_GEO_FENCING_URL } from './data/constants/Values';
 import { GeoFencingResponse } from './data/GeoFencingResponse';
-import useEffectOnce from './data/hooks/UseEffectOnce';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 import ScrollToTop from './util/ScrollToTop';
@@ -69,7 +70,7 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
 });
 
 export const ChainContext = React.createContext({
-  activeChain: DEFAULT_CHAIN,
+  activeChain: DEFAULT_CHAIN as Chain,
   isChainLoading: true,
   setActiveChain: (chain: Chain) => {},
   setIsChainLoading: (isLoading: boolean) => {},

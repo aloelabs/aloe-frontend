@@ -5,6 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -71,7 +72,7 @@ export const UniswapNFTPositionButtonWrapper = styled.button.attrs((props: { act
   opacity: ${(props) => (props.active ? 1 : 0.25)};
   filter: ${(props) => (props.active ? 'none' : 'grayscale(100%)')};
   cursor: pointer;
-  background-color: rgba(26, 41, 52, 1);
+  background-color: ${GREY_700};
 
   &:hover {
     filter: none;

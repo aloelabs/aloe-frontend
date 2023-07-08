@@ -7,18 +7,19 @@ import { Divider } from 'shared/lib/components/common/Divider';
 import { MultiDropdownButton, MultiDropdownOption } from 'shared/lib/components/common/Dropdown';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { useAccount, useEnsName, useProvider, chain as wagmiChain } from 'wagmi';
+import { useAccount, useEnsName, useProvider } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 
 import { ChainContext } from '../App';
 import { ReactComponent as FilterIcon } from '../assets/svg/filter.svg';
 import { ReactComponent as SearchIcon } from '../assets/svg/search.svg';
-import Tooltip from '../components/common/Tooltip';
 import BalanceSlider from '../components/lend/BalanceSlider';
 import LendPairCard from '../components/lend/LendPairCard';
 import { LendCardPlaceholder } from '../components/lend/LendPairCardPlaceholder';
@@ -35,6 +36,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 
+const MIN_PAGE_NUMBER = 1;
 const LEND_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 
 const LendHeaderContainer = styled.div`
@@ -86,7 +88,7 @@ export default function LendPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
 
   // MARK: wagmi hooks
@@ -95,7 +97,7 @@ export default function LendPage() {
   const address = account.address;
   const { data: ensName } = useEnsName({
     address: address,
-    chainId: wagmiChain.mainnet.id,
+    chainId: mainnet.id,
   });
 
   const uniqueSymbols = useMemo(() => {
@@ -144,7 +146,6 @@ export default function LendPage() {
     async function fetch() {
       const results = await getAvailableLendingPairs(activeChain, provider);
       if (mounted) {
-        console.log('available lending pairs', results);
         setLendingPairs(results);
         setIsLoading(false);
       }
@@ -322,6 +323,7 @@ export default function LendPage() {
                 options={filterOptions}
                 activeOptions={selectedOptions}
                 handleChange={(updatedOptions: MultiDropdownOption<Token>[]) => {
+                  setCurrentPage(MIN_PAGE_NUMBER);
                   setSelectedOptions(updatedOptions);
                 }}
                 DropdownButton={(props: { onClick: () => void }) => {

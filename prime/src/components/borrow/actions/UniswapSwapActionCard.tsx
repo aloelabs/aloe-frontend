@@ -1,5 +1,7 @@
 import JSBI from 'jsbi';
 import DropdownArrowDown from 'shared/lib/assets/svg/DownArrow';
+import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -10,7 +12,6 @@ import { swapOperator } from '../../../data/actions/ActionOperators';
 import { ActionCardProps, ActionProviders, TokenType } from '../../../data/actions/Actions';
 import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
 import { getOutputForSwap } from '../../../util/Uniswap';
-import TokenAmountInput from '../../common/TokenAmountInput';
 import { BaseActionCard } from '../BaseActionCard';
 import Settings from '../uniswap/Settings';
 
@@ -27,7 +28,7 @@ const StyledArrowButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
   border-radius: 4px;
   width: 40px;
   height: 40px;

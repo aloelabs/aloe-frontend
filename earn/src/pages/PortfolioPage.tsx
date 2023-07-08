@@ -5,6 +5,7 @@ import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -57,7 +58,7 @@ const EmptyAssetBar = styled.div`
   width: 100%;
   height: 56px;
   background-color: transparent;
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
   border-radius: 8px;
 `;
 
@@ -258,6 +259,13 @@ export default function PortfolioPage() {
     };
   }, [pendingTxn]);
 
+  useEffect(() => {
+    if (!isConnected && !isConnecting && lendingPairBalances.length > 0) {
+      setLendingPairBalances([]);
+      setActiveAsset(null);
+    }
+  }, [isConnecting, isConnected, lendingPairBalances]);
+
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.address);
@@ -391,21 +399,31 @@ export default function PortfolioPage() {
           <PortfolioActionButton
             label={'Send Crypto'}
             Icon={<SendIcon />}
-            onClick={() => setIsSendCryptoModalOpen(true)}
+            onClick={() => {
+              if (isConnected) setIsSendCryptoModalOpen(true);
+            }}
           />
           <PortfolioActionButton
             label={'Deposit'}
             Icon={<TrendingUpIcon />}
-            onClick={() => setIsEarnInterestModalOpen(true)}
+            onClick={() => {
+              if (isConnected) setIsEarnInterestModalOpen(true);
+            }}
           />
           <PortfolioActionButton
             label={'Withdraw'}
             Icon={<ShareIcon />}
             onClick={() => {
-              setIsWithdrawModalOpen(true);
+              if (isConnected) setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton label={'Bridge'} Icon={<TruckIcon />} onClick={() => setIsBridgeModalOpen(true)} />
+          <PortfolioActionButton
+            label={'Bridge'}
+            Icon={<TruckIcon />}
+            onClick={() => {
+              if (isConnected) setIsBridgeModalOpen(true);
+            }}
+          />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>

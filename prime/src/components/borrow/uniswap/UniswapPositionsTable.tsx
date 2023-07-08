@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { formatPriceRatioGN } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { UniswapPosition } from '../../../data/actions/Actions';
-import useEffectOnce from '../../../data/hooks/UseEffectOnce';
 import { MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPositionEarnedFees } from '../../../pages/BorrowActionsPage';
 import {
@@ -19,7 +20,7 @@ import {
 } from '../../../util/Uniswap';
 
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
-const BORDER_COLOR = 'rgba(26, 41, 52, 1)';
+const BORDER_COLOR = GREY_700;
 const SCROLLBAR_TRACK_COLOR = 'rgba(13, 23, 30, 0.75)';
 const SCROLLBAR_THUMB_COLOR = 'rgba(75, 105, 128, 0.75)';
 const SCROLLBAR_THUMB_HOVER_COLOR = 'rgba(75, 105, 128, 0.6)';

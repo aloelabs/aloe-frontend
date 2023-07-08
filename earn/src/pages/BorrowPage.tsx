@@ -7,8 +7,10 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
+import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -33,7 +35,6 @@ import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralMo
 import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
-import { LABEL_TEXT_COLOR } from '../components/common/Modal';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -45,7 +46,6 @@ import {
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { primeUrl } from '../data/constants/Values';
-import { useDebouncedEffect } from '../data/hooks/UseDebouncedEffect';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import {
@@ -181,7 +181,7 @@ export type UniswapPoolInfo = {
 export default function BorrowPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
-  const { address: userAddress } = useAccount();
+  const { address: userAddress, isConnected } = useAccount();
 
   const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
   const [cachedGraphDatas, setCachedGraphDatas] = useState<Map<string, BorrowGraphData[]>>(new Map());
@@ -510,6 +510,7 @@ export default function BorrowPage() {
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
+
   return (
     <AppPage>
       <Container>
@@ -548,16 +549,16 @@ export default function BorrowPage() {
             </Text>
             <ManageAccountButtons
               onAddCollateral={() => {
-                setIsAddCollateralModalOpen(true);
+                if (isConnected) setIsAddCollateralModalOpen(true);
               }}
               onRemoveCollateral={() => {
-                setIsRemoveCollateralModalOpen(true);
+                if (isConnected) setIsRemoveCollateralModalOpen(true);
               }}
               onBorrow={() => {
-                setIsBorrowModalOpen(true);
+                if (isConnected) setIsBorrowModalOpen(true);
               }}
               onRepay={() => {
-                setIsRepayModalOpen(true);
+                if (isConnected) setIsRepayModalOpen(true);
               }}
               onGetLeverage={() => {
                 if (selectedMarginAccount != null) {

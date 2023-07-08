@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -56,7 +57,7 @@ const UniswapPositionCardWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: rgb(13, 23, 30);
+  background-color: ${GREY_800};
   border-radius: 8px;
   padding: 16px;
   width: 100%;
@@ -260,7 +261,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
         <Text size='M'>Uniswap Positions</Text>
         <PositionList>
           {UNISWAP_POSITION_SLOTS.map((slot, index) => (
-            <UniswapPositionCardContainer>
+            <UniswapPositionCardContainer key={slot}>
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 marginAccount={marginAccount}

@@ -1,7 +1,6 @@
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-
-import Tooltip from '../common/Tooltip';
 
 const MAX_HEALTH = 3;
 const MIN_HEALTH = 0.5;

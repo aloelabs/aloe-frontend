@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -33,7 +34,7 @@ import SaveTemplateButton from './SaveTemplateButton';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-start`}
-  background: rgba(13, 23, 30, 1);
+  background: ${GREY_800};
   border-radius: 8px;
   position: sticky;
   top: 117px;
@@ -129,7 +130,7 @@ const ActionItemCount = styled.span`
   position: relative;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 1);
-  border: 2px solid rgba(13, 23, 30, 1);
+  border: 2px solid ${GREY_800};
   width: 32px;
   height: 32px;
   margin-right: 32px;
@@ -311,7 +312,6 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
 
   if (marketInfo === null) return null;
 
-  //TODO: add some sort of error message when !transactionIsViable
   return (
     <Wrapper>
       <ScrollableContainer>
@@ -327,7 +327,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           {activeActions.map((action, index) => (
             <ActionItem key={index}>
               <ActionItemCount>
-                <Text size='M' weight='bold' color='rgba(13, 23, 30, 1)'>
+                <Text size='M' weight='bold' color={GREY_800}>
                   {index + 1}
                 </Text>
               </ActionItemCount>
@@ -365,7 +365,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           ))}
           <ActionItem>
             <ActionItemCount>
-              <Text size='M' weight='bold' color='rgba(13, 23, 30, 1)'>
+              <Text size='M' weight='bold' color={GREY_800}>
                 {activeActions.length + 1}
               </Text>
             </ActionItemCount>

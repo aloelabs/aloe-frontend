@@ -4,6 +4,13 @@ import { Address, SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { lenderABI } from 'shared/lib/abis/Lender';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import {
+  DashedDivider,
+  LABEL_TEXT_COLOR,
+  MODAL_BLACK_TEXT_COLOR,
+  VALUE_TEXT_COLOR,
+} from 'shared/lib/components/common/Modal';
+import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -11,8 +18,6 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { DashedDivider, LABEL_TEXT_COLOR, MODAL_BLACK_TEXT_COLOR, VALUE_TEXT_COLOR } from '../../../common/Modal';
-import TokenAmountInput from '../../../common/TokenAmountInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';

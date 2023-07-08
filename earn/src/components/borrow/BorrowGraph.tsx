@@ -1,3 +1,4 @@
+import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import styled from 'styled-components';
@@ -7,7 +8,6 @@ import {
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINTS,
 } from '../../data/constants/Breakpoints';
-import { LABEL_TEXT_COLOR } from '../common/Modal';
 import Graph from '../graph/Graph';
 import BorrowGraphTooltip from './BorrowGraphTooltip';
 

@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import { Chain, useConnect } from 'wagmi';
 
 import Modal, { MODAL_BLACK_TEXT_COLOR } from '../common/Modal';
+import { GREY_700 } from '../../data/constants/Colors';
 
 const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
   width: ${(props) => (props.fillWidth ? '100%' : 'max-content')};
@@ -68,11 +69,21 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                   <FilledStylizedButton
                     name='Connect'
                     size='M'
-                    backgroundColor='rgba(26, 41, 52, 1)'
+                    backgroundColor={GREY_700}
                     color={'rgba(255, 255, 255, 1)'}
                     fillWidth={true}
                     disabled={!connector.ready}
-                    onClick={() => connect({ connector })}
+                    onClick={() => {
+                      // Manually close the modal when the connector is connecting
+                      // This indicates the connector's modal/popup is or will soon be open
+                      connector.addListener('message', (m) => {
+                        if (m.type === 'connecting') {
+                          setWalletModalOpen(false);
+                          connector.removeListener('message');
+                        }
+                      });
+                      connect({ connector });
+                    }}
                   >
                     {connector.name}
                     {!connector.ready && ' (unsupported)'}

@@ -44,7 +44,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
   };
 
   const router = {
-    address: ALOE_II_ROUTER_ADDRESS,
+    address: ALOE_II_ROUTER_ADDRESS as Address,
     abi: routerABI,
     chainId,
   };

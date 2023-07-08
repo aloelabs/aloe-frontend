@@ -1,9 +1,9 @@
 import React from 'react';
 
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { CloseableModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
-import { CloseableModal, MESSAGE_TEXT_COLOR } from '../../common/Modal';
 import FeedbackBlock from './common/FeedbackBlock';
 
 const FAILED_BORDER_GRADIENT = 'rgba(235, 87, 87, 1)';
@@ -16,8 +16,8 @@ export type FailedTxnModalProps = {
 export default function FailedTxnModal(props: FailedTxnModalProps) {
   return (
     <CloseableModal
-      open={props.open}
-      setOpen={props.setOpen}
+      isOpen={props.open}
+      setIsOpen={props.setOpen}
       title='Transaction Failed'
       borderGradient={FAILED_BORDER_GRADIENT}
     >

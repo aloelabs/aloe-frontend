@@ -1,15 +1,16 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input';
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
+import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as GearIcon } from '../../../assets/svg/gear.svg';
 import { DEFAULT_SLIPPAGE_PERCENTAGE } from '../../../data/constants/Values';
-import useClickOutside from '../../../data/hooks/UseClickOutside';
-import Tooltip from '../../common/Tooltip';
 
 const SvgButtonWrapper = styled.button`
   ${tw`flex justify-center items-center`}
@@ -38,8 +39,8 @@ const SvgButtonWrapper = styled.button`
 const SettingsMenuWrapper = styled.div`
   ${tw`absolute flex flex-col gap-4`}
   z-index: 6;
-  background-color: rgba(13, 24, 33, 1);
-  border: 1px solid rgba(26, 41, 52, 1);
+  background-color: ${GREY_800};
+  border: 1px solid ${GREY_700};
   border-radius: 8px;
   width: 250px;
   padding: 16px;
@@ -47,12 +48,11 @@ const SettingsMenuWrapper = styled.div`
   right: 0;
 `;
 
-//TODO: Improve styling and possibly create a more generic reusable button to replace this
 const AutoSlippageButton = styled.button.attrs((props: { active: boolean }) => props)`
   padding: 4px 8px;
   border-radius: 8px;
   background-color: ${(props) => (props.active ? '#63b59a' : 'transparent')};
-  border: 1px solid rgba(26, 41, 52, 1);
+  border: 1px solid ${GREY_700};
 `;
 
 export type SettingsProps = {

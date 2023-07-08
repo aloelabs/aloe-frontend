@@ -1,8 +1,8 @@
+import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
 import { getHealthColor } from '../../util/Health';
-import Tooltip from '../common/Tooltip';
 
 const MAX_HEALTH_BAR = 3;
 const MAX_HEALTH_LABEL = 5;

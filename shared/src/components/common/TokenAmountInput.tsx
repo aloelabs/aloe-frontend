@@ -1,19 +1,21 @@
 import React from 'react';
 
-import { SquareInputWithMax } from 'shared/lib/components/common/Input';
-import { Text } from 'shared/lib/components/common/Typography';
-import { Token } from 'shared/lib/data/Token';
-import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { SquareInputWithMax } from './Input';
+import { Text } from './Typography';
+import { Token } from '../../data/Token';
+import { formatNumberInput, truncateDecimals } from '../../util/Numbers';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
-import ErrorIcon from '../../assets/svg/interaction_error.svg';
+import ErrorIcon from '../../assets/svg/InteractionError';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
 
 const ErrorMessageWrapper = styled.div`
-  ${tw`flex items-center gap-x-2 mt-2`}
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 `;
 
 const ErrorMessageText = styled.div`
@@ -27,7 +29,7 @@ export type TokenAmountInputProps = {
   value: string;
   token: Token;
   onChange: (newValue: string) => void;
-  //NOTE: if onMax is defined, onChange will not run when max button is clicked
+  // NOTE: if onMax is defined, onChange will not run when max button is clicked
   onMax?: (maxValue: string) => void;
   max?: string;
   maxed?: boolean;
@@ -76,7 +78,7 @@ export default function TokenAmountInput(props: TokenAmountInputProps) {
       />
       {error && (
         <ErrorMessageWrapper>
-          <img src={ErrorIcon} width={16} height={16} alt='error' />
+          <ErrorIcon width={16} height={16} />
           <ErrorMessageText>{errorMessage ? errorMessage : 'Invalid input'}</ErrorMessageText>
         </ErrorMessageWrapper>
       )}
