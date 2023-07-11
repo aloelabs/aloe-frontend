@@ -11,6 +11,7 @@ import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
+import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
@@ -21,7 +22,6 @@ import { API_GEO_FENCING_URL } from './data/constants/Values';
 import { GeoFencingResponse } from './data/GeoFencingResponse';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
-import ScrollToTop from './util/ScrollToTop';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
