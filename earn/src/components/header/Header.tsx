@@ -6,7 +6,6 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
-import { primeUrl } from '../../data/constants/Values';
 
 const NAV_LINKS: NavBarLink[] = [
   {
@@ -18,13 +17,8 @@ const NAV_LINKS: NavBarLink[] = [
     to: '/markets',
   },
   {
-    label: 'Borrow',
-    to: '/borrow',
-  },
-  {
     label: 'Advanced',
-    to: primeUrl(),
-    isExternal: true,
+    to: '/borrow',
   },
 ];
 
