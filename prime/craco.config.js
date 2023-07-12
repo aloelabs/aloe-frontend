@@ -1,4 +1,6 @@
 const webpack = require('webpack');
+const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
+
 module.exports = {
   webpack: {
     configure: {
@@ -18,6 +20,11 @@ module.exports = {
         new webpack.ProvidePlugin({
           Buffer: ['buffer', 'Buffer'],
           process: 'process/browser',
+        }),
+        sentryWebpackPlugin({
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+          org: "aloe-labs-inc",
+          project: "aloe-prime",  
         }),
       ],
       module: {
