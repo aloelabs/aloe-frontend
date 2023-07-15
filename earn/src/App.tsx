@@ -9,6 +9,7 @@ import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
+import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
@@ -18,7 +19,6 @@ import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
 import LendPage from './pages/LendPage';
 import PortfolioPage from './pages/PortfolioPage';
-import ScrollToTop from './util/ScrollToTop';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
