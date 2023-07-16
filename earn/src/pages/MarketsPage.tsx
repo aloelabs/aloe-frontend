@@ -8,6 +8,7 @@ import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import {
@@ -178,12 +179,12 @@ export default function MarketsPage() {
     return Array.from(new Set(combinedBalances.filter((balance) => !balance.isKitty)).values());
   }, [combinedBalances]);
 
-  const rows = useMemo(() => {
-    const supplyRows: SupplyTableRow[] = [];
+  const supplyRows = useMemo(() => {
+    const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
       const token0Balance = tokenBalances.find((balance) => balance.token.address === pair.token0.address);
       const token1Balance = tokenBalances.find((balance) => balance.token.address === pair.token1.address);
-      supplyRows.push({
+      rows.push({
         asset: pair.token0,
         apy: pair.kitty0Info.apy,
         collateralAssets: [pair.token1],
@@ -191,7 +192,7 @@ export default function MarketsPage() {
         supplyBalanceUsd: token0Balance?.balanceUSD || 0,
         isOptimized: true,
       });
-      supplyRows.push({
+      rows.push({
         asset: pair.token1,
         apy: pair.kitty1Info.apy,
         collateralAssets: [pair.token0],
@@ -200,14 +201,32 @@ export default function MarketsPage() {
         isOptimized: true,
       });
     });
-    return supplyRows;
+    return rows;
   }, [lendingPairs, tokenBalances]);
+
+  const collateralRows = useMemo(() => {
+    const rows: CollateralTableRow[] = [];
+    tokenBalances.forEach((tokenBalance) => {
+      if (tokenBalance.balance !== 0) {
+        rows.push({
+          asset: tokenBalance.token,
+          balance: tokenBalance.balance,
+          balanceUsd: tokenBalance.balanceUSD,
+        });
+      }
+    });
+    return rows;
+  }, [tokenBalances]);
 
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
         <Text size='XL'>Supply</Text>
-        <SupplyTable rows={rows} />
+        <SupplyTable rows={supplyRows} />
+        <div className='flex flex-col gap-6'>
+          <Text size='XL'>Collateral</Text>
+          <CollateralTable rows={collateralRows} />
+        </div>
       </div>
     </AppPage>
   );
