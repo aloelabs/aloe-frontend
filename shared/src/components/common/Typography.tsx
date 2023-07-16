@@ -9,6 +9,7 @@ const DISPLAY_FONT_SIZES = {
   M: '24px',
   S: '20px',
   XS: '16px',
+  XXS: '14px',
 };
 
 const DISPLAY_FONT_SIZES_MOBILE = {
@@ -17,6 +18,7 @@ const DISPLAY_FONT_SIZES_MOBILE = {
   M: '20px',
   S: '16px',
   XS: '14px',
+  XXS: '12px',
 };
 
 const DISPLAY_FONT_WEIGHTS = {
@@ -31,6 +33,7 @@ const DISPLAY_LINE_HEIGHTS = {
   M: '32px',
   S: '24px',
   XS: '20px',
+  XXS: '18px',
 };
 
 const TEXT_FONT_SIZES = {
@@ -67,7 +70,8 @@ const TEXT_LINE_HEIGHTS = {
 };
 
 export const Display = styled.div.attrs(
-  (props: { size: 'XL' | 'L' | 'M' | 'S' | 'XS'; weight: 'regular' | 'medium' | 'semibold'; color?: string }) => props
+  (props: { size: 'XL' | 'L' | 'M' | 'S' | 'XS' | 'XXS'; weight: 'regular' | 'medium' | 'semibold'; color?: string }) =>
+    props
 )`
   font-family: 'ClashDisplay-Variable';
   font-size: ${(props) => DISPLAY_FONT_SIZES[props.size]};
