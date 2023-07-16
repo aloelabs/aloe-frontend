@@ -56,12 +56,12 @@ export default function CollateralTable(props: CollateralTableProps) {
               <td className='px-4 py-2 text-start'>
                 <div className='flex items-center gap-2'>
                   <TokenIcon token={row.asset} />
-                  <Display size='S'>{row.asset.symbol}</Display>
+                  <Display size='XS'>{row.asset.symbol}</Display>
                 </div>
               </td>
               <td className='px-4 py-2 text-end'>
-                <Display size='S'>${row.balanceUsd.toFixed(2)}</Display>
-                <Display size='S'>
+                <Display size='XS'>${row.balanceUsd.toFixed(2)}</Display>
+                <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                   {formatTokenAmount(row.balance)} {row.asset.symbol}
                 </Display>
               </td>
