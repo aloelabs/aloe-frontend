@@ -33,7 +33,6 @@ import {
 import { MarginAccount, UniswapPoolInfo, fetchMarginAccounts } from '../data/MarginAccount';
 import { MarketInfo, fetchMarketInfoFor } from '../data/MarketInfo';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-
 export type TokenQuote = {
   token: Token;
   price: number;
