@@ -98,10 +98,9 @@ export default function SupplyTable(props: SupplyTableProps) {
               </td>
               <td className='px-4 py-2 flex justify-center'>
                 <OptimizeButton
-                  isOptimized={false}
+                  isOptimized={row.isOptimized}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('Optimize button clicked');
                   }}
                 />
               </td>
