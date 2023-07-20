@@ -7,6 +7,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import TokenIcon from '../common/TokenIcon';
+import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import OptimizeButton from './OptimizeButton';
 
 const PAGE_SIZE = 10;
@@ -83,8 +84,7 @@ export default function SupplyTable(props: SupplyTableProps) {
               </td>
               <td className='px-4 py-2 text-start'>
                 <div className='flex items-center gap-2'>
-                  <TokenIcon token={row.collateralAssets[0]} />
-                  <Text size='M'>{row.collateralAssets.map((token) => token.symbol).join(', ')}</Text>
+                  <TokenIconsWithTooltip tokens={row.collateralAssets} />
                 </div>
               </td>
               <td className='px-4 py-2 text-end'>
