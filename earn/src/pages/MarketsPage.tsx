@@ -182,27 +182,31 @@ export default function MarketsPage() {
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
-      const token0Balance = tokenBalances.find((balance) => balance.token.address === pair.token0.address);
-      const token1Balance = tokenBalances.find((balance) => balance.token.address === pair.token1.address);
+      const kitty0Balance = combinedBalances.find(
+        (balance) => balance.token.address === (pair.kitty0?.address || pair.kitty0.address)
+      );
+      const kitty1Balance = combinedBalances.find(
+        (balance) => balance.token.address === (pair.kitty1?.address || pair.kitty1.address)
+      );
       rows.push({
         asset: pair.token0,
         apy: pair.kitty0Info.apy,
         collateralAssets: [pair.token1],
-        supplyBalance: token0Balance?.balance || 0,
-        supplyBalanceUsd: token0Balance?.balanceUSD || 0,
+        supplyBalance: kitty0Balance?.balance || 0,
+        supplyBalanceUsd: kitty0Balance?.balanceUSD || 0,
         isOptimized: true,
       });
       rows.push({
         asset: pair.token1,
         apy: pair.kitty1Info.apy,
         collateralAssets: [pair.token0],
-        supplyBalance: token1Balance?.balance || 0,
-        supplyBalanceUsd: token1Balance?.balanceUSD || 0,
+        supplyBalance: kitty1Balance?.balance || 0,
+        supplyBalanceUsd: kitty1Balance?.balanceUSD || 0,
         isOptimized: true,
       });
     });
     return rows;
-  }, [lendingPairs, tokenBalances]);
+  }, [combinedBalances, lendingPairs]);
 
   const collateralRows = useMemo(() => {
     const rows: CollateralTableRow[] = [];
