@@ -176,10 +176,11 @@ async function fetchUniswapPositions(
   const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
 
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
-  priors.forEach((prior, i) => {
+  for (let i = 0; i < priors.length; i++) {
     const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
-  });
+    if (JSBI.equal(liquidity, JSBI.BigInt(0))) continue;
+    fetchedUniswapPositions.set(keys[i], { ...priors[i], liquidity: liquidity });
+  }
 
   return fetchedUniswapPositions;
 }
