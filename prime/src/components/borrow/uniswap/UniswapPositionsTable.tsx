@@ -243,7 +243,7 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
 
   let rows: Array<JSX.Element[]> = [];
   for (const item of uniswapPositionInfo) {
-    const fees = uniswapPositionEarnedFees[item.positionKey] || {
+    const fees = uniswapPositionEarnedFees[item.positionKey] ?? {
       token0FeesEarned: GN.zero(marginAccount.token0.decimals),
       token1FeesEarned: GN.zero(marginAccount.token1.decimals),
     };
