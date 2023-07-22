@@ -31,7 +31,7 @@ export default function TokenIcons(props: TokenIconsProps) {
     <Container>
       {tokens.map((token, index) => (
         <div key={index}>
-          <TokenIcon key={index} token={token} />
+          <TokenIcon key={index} token={token} width={16} height={16} />
         </div>
       ))}
     </Container>

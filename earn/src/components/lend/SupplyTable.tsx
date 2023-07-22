@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 
 import Pagination from 'shared/lib/components/common/Pagination';
+import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
-import TokenIcon from '../common/TokenIcon';
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import OptimizeButton from './OptimizeButton';
 
@@ -66,37 +66,37 @@ export default function SupplyTable(props: SupplyTableProps) {
       <Table>
         <TableHeader>
           <tr>
-            <th className='px-4 py-2 text-start'>Asset</th>
-            <th className='px-4 py-2 text-start'>Collateral Assets</th>
-            <th className='px-4 py-2 text-end'>APY</th>
-            <th className='px-4 py-2 text-end'>Balance</th>
-            <th className='px-4 py-2 text-center'>Optimized</th>
+            <th className='px-4 py-2 text-start whitespace-nowrap'>Asset</th>
+            <th className='px-4 py-2 text-start whitespace-nowrap'>Collateral Assets</th>
+            <th className='px-4 py-2 text-end whitespace-nowrap'>APY</th>
+            <th className='px-4 py-2 text-end whitespace-nowrap'>Balance</th>
+            <th className='px-4 py-2 text-center whitespace-nowrap'>Optimized</th>
           </tr>
         </TableHeader>
         <tbody>
           {pages[currentPage - 1].map((row, index) => (
             <HoverableRow key={index} onClick={() => {}}>
-              <td className='px-4 py-2 text-start'>
+              <td className='px-4 py-2 text-start whitespace-nowrap'>
                 <div className='flex items-center gap-2'>
                   <TokenIcon token={row.asset} />
                   <Text size='M'>{row.asset.symbol}</Text>
                 </div>
               </td>
-              <td className='px-4 py-2 text-start'>
+              <td className='px-4 py-2 text-start whitespace-nowrap'>
                 <div className='flex items-center gap-2'>
                   <TokenIconsWithTooltip tokens={row.collateralAssets} />
                 </div>
               </td>
-              <td className='px-4 py-2 text-end'>
+              <td className='px-4 py-2 text-end whitespace-nowrap'>
                 <Display size='XS'>{row.apy.toFixed(2)}%</Display>
               </td>
-              <td className='px-4 py-2 text-end'>
+              <td className='px-4 py-2 text-end whitespace-nowrap'>
                 <Display size='XS'>${row.supplyBalanceUsd.toFixed(2)}</Display>
                 <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                   {formatTokenAmount(row.supplyBalance)} {row.asset.symbol}
                 </Display>
               </td>
-              <td className='px-4 py-2 flex justify-center'>
+              <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
                 <OptimizeButton
                   isOptimized={row.isOptimized}
                   onClick={(e) => {

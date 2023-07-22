@@ -7,6 +7,7 @@ const StyledTokenIcon = styled.img.attrs((props: { width: number; height: number
   background-color: #ffffff;
   box-shadow: 0 0 0 ${(props) => props.borderRadius} #000000;
   border-radius: 50%;
+  max-width: none;
 `;
 
 export type TokenIconProps = {

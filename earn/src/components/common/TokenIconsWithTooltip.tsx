@@ -23,6 +23,7 @@ const TooltipWrapper = styled.div`
   border: 1px solid rgba(43, 64, 80, 1);
   z-index: 30;
   pointer-events: none;
+  white-space: normal;
 `;
 
 export function TokenIconsWithTooltip(props: TokenIconsProps) {
