@@ -66,7 +66,7 @@ export default function HealthBar(props: HealthBarProps) {
         </Display>
       </div>
       <HealthBarContainer>
-        <HealthBarDial healthPercent={healthPercent} />
+        <HealthBarDial healthPercent={healthPercent} data-testid='health-bar-dial' />
       </HealthBarContainer>
     </div>
   );
