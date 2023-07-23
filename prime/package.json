@@ -51,7 +51,7 @@
     "git-info": "node src/scripts/gitInfo.js",
     "start": "yarn git-info && cd ../shared && yarn build && cd ../prime && craco start",
     "build": "yarn git-info && cd ../shared && yarn build && cd ../prime && craco build",
-    "test": "craco test",
+    "test": "craco test --watchAll=false",
     "lint": "eslint --fix --ext .tsx,.ts ."
   },
   "eslintConfig": {
