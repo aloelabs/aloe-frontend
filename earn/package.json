@@ -53,7 +53,7 @@
     "start": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco start",
     "build": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco build",
     "clean": "rm -rf build",
-    "test": "craco test",
+    "test": "craco test --watchAll=false",
     "lint": "eslint --fix --ext .tsx,.ts ."
   },
   "eslintConfig": {
