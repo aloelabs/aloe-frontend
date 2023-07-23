@@ -13,6 +13,7 @@
     "@babel/eslint-parser": "^7.17.0",
     "autoprefixer": "^10.4.2",
     "babel-plugin-macros": "^3.1.0",
+    "concurrently": "^8.2.0",
     "eslint-plugin-import": "^2.25.2",
     "husky": "^8.0.0",
     "lint-staged": "^13.0.3",
@@ -23,7 +24,8 @@
   "scripts": {
     "prettier": "prettier --write */src/**/*.{ts,tsx,json}",
     "prettier:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "concurrently --group --prefix=\"none\" --kill-others-on-fail \"cd earn && yarn test\" \"cd prime && yarn test\" \"cd shared && yarn test\""
   },
   "husky": {
     "hooks": {

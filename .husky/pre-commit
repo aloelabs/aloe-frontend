@@ -4,3 +4,4 @@
 cd ./blend && yarn lint && cd ../earn && yarn lint && cd ../prime && yarn lint && cd ../shared && yarn lint && cd ..
 yarn prettier
 npx lint-staged
+yarn test
