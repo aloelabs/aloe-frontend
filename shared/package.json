@@ -45,6 +45,6 @@
     "compile": "tsc --build \"./tsconfig.json\"",
     "copy-svg": "copyfiles -u 1 \"./src/**/*.svg\" ./lib",
     "lint": "eslint --fix --ext .tsx,.ts .",
-    "test": "jest"
+    "test": "jest --watchAll=false"
   }
 }
