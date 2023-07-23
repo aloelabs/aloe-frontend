@@ -2,5 +2,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  collectCoverage: true,
+  collectCoverage: false,
+  displayName: {
+    name: 'SHARED',
+    color: 'yellow',
+  },
+  silent: true,
 };

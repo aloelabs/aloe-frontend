@@ -47,4 +47,12 @@ module.exports = {
       ],
     },
   },
+  jest: {
+    configure: {
+      displayName: {
+        name: 'PRIME',
+        color: 'magenta',
+      },
+    },
+  },
 };
