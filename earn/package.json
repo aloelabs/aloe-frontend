@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@apollo/react-hooks": "^4.0.0",
-    "@craco/craco": "^6.4.5",
+    "@craco/craco": "^7.0.0",
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
     "@metamask/jazzicon": "^2.0.0",
