@@ -17,6 +17,7 @@ import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
+import LendPage from './pages/LendPage';
 import MarketsPage from './pages/MarketsPage';
 import PortfolioPage from './pages/PortfolioPage';
 
@@ -86,6 +87,7 @@ function AppBodyWrapper() {
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
+          <Route path='/lend' element={<LendPage />} />
           <Route path='/borrow' element={<BorrowPage />} />
           <Route path='/claim' element={<ClaimPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />

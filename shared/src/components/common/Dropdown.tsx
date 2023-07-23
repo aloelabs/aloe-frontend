@@ -38,23 +38,14 @@ export const DropdownHeader = styled.button.attrs((props: { small?: boolean }) =
   white-space: nowrap;
 `;
 
-export const DropdownList = styled.div.attrs(
-  (props: { small?: boolean; flipDirection?: boolean; maxHeight?: number }) => props
-)`
+export const DropdownListWrapper = styled.div.attrs((props: { flipDirection?: boolean; maxHeight?: number }) => props)`
   display: flex;
   flex-direction: column;
   position: absolute;
   ${(props) => (props.flipDirection ? 'left: 0px;' : 'right: 0px;')};
   z-index: 10;
   min-width: 100%;
-  padding: ${(props) => (props.small ? '8px' : '12px')};
-  gap: ${(props) => (props.small ? '4px' : '8px')};
-  background-color: ${DROPDOWN_LIST_BG_COLOR};
-  border-radius: 16px;
-  border: 1px solid ${DROPDOWN_LIST_BORDER_COLOR};
-  box-shadow: 0px 8px 32px 0px ${DROPDOWN_LIST_SHADOW_COLOR};
   ${(props) => (props.maxHeight ? `max-height: ${props.maxHeight}px;` : '')}
-  overflow-y: auto;
 
   &:not(.inverted) {
     top: calc(100% + 10px);
@@ -63,6 +54,24 @@ export const DropdownList = styled.div.attrs(
   &.inverted {
     bottom: calc(100% + 10px);
   }
+
+  // This is to prevent the dropdown list from being cut off by the parent container
+  &::after {
+    content: '';
+    margin-bottom: 72px;
+  }
+`;
+
+export const DropdownList = styled.div.attrs((props: { small?: boolean }) => props)`
+  display: flex;
+  flex-direction: column;
+  padding: ${(props) => (props.small ? '8px' : '12px')};
+  gap: ${(props) => (props.small ? '4px' : '8px')};
+  background-color: ${DROPDOWN_LIST_BG_COLOR};
+  border-radius: 16px;
+  border: 1px solid ${DROPDOWN_LIST_BORDER_COLOR};
+  box-shadow: 0px 8px 32px 0px ${DROPDOWN_LIST_SHADOW_COLOR};
+  overflow-y: auto;
 `;
 
 export const DropdownOptionContainer = styled.button`
@@ -151,25 +160,27 @@ export function Dropdown<T>(props: DropdownProps<T>) {
         )}
       </DropdownHeader>
       {isOpen && (
-        <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
-          {options.map((option, index) => (
-            <DropdownOptionContainer
-              className={option.value === selectedOption.value ? 'active' : ''}
-              key={index}
-              onClick={() => selectItem(option)}
-            >
-              <div className='flex items-center gap-3'>
-                {option.icon && (
-                  <div className='w-4 h-4 bg-white rounded-full'>
-                    {React.isValidElement(option.icon) && option.icon}
-                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
-                  </div>
-                )}
-                <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
-              </div>
-            </DropdownOptionContainer>
-          ))}
-        </DropdownList>
+        <DropdownListWrapper className={placeAbove ? 'inverted' : ''}>
+          <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
+            {options.map((option, index) => (
+              <DropdownOptionContainer
+                className={option.value === selectedOption.value ? 'active' : ''}
+                key={index}
+                onClick={() => selectItem(option)}
+              >
+                <div className='flex items-center gap-3'>
+                  {option.icon && (
+                    <div className='w-4 h-4 bg-white rounded-full'>
+                      {React.isValidElement(option.icon) && option.icon}
+                      {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
+                    </div>
+                  )}
+                  <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+                </div>
+              </DropdownOptionContainer>
+            ))}
+          </DropdownList>
+        </DropdownListWrapper>
       )}
     </DropdownWrapper>
   );
@@ -226,25 +237,27 @@ export function DropdownWithPlaceholder<T>(props: DropdownWithPlaceholderProps<T
         )}
       </DropdownHeader>
       {isOpen && (
-        <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
-          {options.map((option, index) => (
-            <DropdownOptionContainer
-              className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
-              key={index}
-              onClick={() => selectItem(option)}
-            >
-              <div className='flex items-center gap-3'>
-                {option.icon && (
-                  <div className='w-4 h-4 bg-white rounded-full'>
-                    {React.isValidElement(option.icon) && option.icon}
-                    {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
-                  </div>
-                )}
-                <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
-              </div>
-            </DropdownOptionContainer>
-          ))}
-        </DropdownList>
+        <DropdownListWrapper className={placeAbove ? 'inverted' : ''}>
+          <DropdownList className={placeAbove ? 'inverted' : ''} small={small}>
+            {options.map((option, index) => (
+              <DropdownOptionContainer
+                className={selectedOption && option.value === selectedOption.value ? 'active' : ''}
+                key={index}
+                onClick={() => selectItem(option)}
+              >
+                <div className='flex items-center gap-3'>
+                  {option.icon && (
+                    <div className='w-4 h-4 bg-white rounded-full'>
+                      {React.isValidElement(option.icon) && option.icon}
+                      {typeof option.icon === 'string' && <img className='w-4 h-4' src={option.icon} alt='' />}
+                    </div>
+                  )}
+                  <Text size={small ? 'XS' : 'M'}>{option.label}</Text>
+                </div>
+              </DropdownOptionContainer>
+            ))}
+          </DropdownList>
+        </DropdownListWrapper>
       )}
     </DropdownWrapper>
   );
@@ -283,17 +296,19 @@ export function DropdownWithPlaceholderValue<T>(props: DropdownWithPlaceholderVa
         {isOpen ? <DropdownArrowUp className='absolute right-3' /> : <DropdownArrowDown className='absolute right-3' />}
       </DropdownHeader>
       {isOpen && (
-        <DropdownList>
-          {options.map((option: DropdownWithPlaceholderValueOption<T>, index: number) => (
-            <DropdownOptionContainer
-              className={option.value === selectedOption.value ? 'active' : ''}
-              key={index}
-              onClick={() => selectItem(option)}
-            >
-              <Text size='M'>{option.label}</Text>
-            </DropdownOptionContainer>
-          ))}
-        </DropdownList>
+        <DropdownListWrapper className={selectedOption.isDefault ? 'inverted' : ''}>
+          <DropdownList>
+            {options.map((option: DropdownWithPlaceholderValueOption<T>, index: number) => (
+              <DropdownOptionContainer
+                className={option.value === selectedOption.value ? 'active' : ''}
+                key={index}
+                onClick={() => selectItem(option)}
+              >
+                <Text size='M'>{option.label}</Text>
+              </DropdownOptionContainer>
+            ))}
+          </DropdownList>
+        </DropdownListWrapper>
       )}
     </DropdownWrapper>
   );
@@ -363,47 +378,51 @@ function MultiDropdownBase<T>(props: MultiDropdownBaseProps<T>) {
     <DropdownWrapper ref={dropdownRef}>
       <DropdownButton />
       {isOpen && (
-        <MultiDropdownList ref={dropdownRef} flipDirection={flipDirection} maxHeight={maxHeight}>
-          {SearchInput && <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />}
-          {searchTerm === '' && (
-            <MultiDropdownOptionContainer
-              className={activeOptions.length === options.length ? 'active' : ''}
-              onClick={() => {
-                if (activeOptions.length === options.length) {
-                  handleChange([]);
-                } else {
-                  handleChange(options);
-                }
-              }}
-            >
-              <div className='flex-grow h-6'>
-                <Text size='M'>Select All</Text>
-              </div>
-              <CheckContainer className={activeOptions.length === options.length ? 'active' : ''}>
-                {activeOptions.length === options.length && <CheckIcon color='black' className='w-5 h-5' />}
-              </CheckContainer>
-            </MultiDropdownOptionContainer>
-          )}
-          {filteredOptions.map((option, index) => {
-            const { label, icon } = option;
-            const isActive = activeOptions.some((currentOption) => currentOption.value === option.value);
-            return (
+        <DropdownListWrapper flipDirection={flipDirection} maxHeight={maxHeight}>
+          <MultiDropdownList ref={dropdownRef}>
+            {SearchInput && <SearchInput searchTerm={searchTerm} onSearch={handleSearch} />}
+            {searchTerm === '' && (
               <MultiDropdownOptionContainer
-                className={activeOptions.some((currentOption) => currentOption.value === option.value) ? 'active' : ''}
-                key={index}
-                onClick={() => selectItem(option, index)}
+                className={activeOptions.length === options.length ? 'active' : ''}
+                onClick={() => {
+                  if (activeOptions.length === options.length) {
+                    handleChange([]);
+                  } else {
+                    handleChange(options);
+                  }
+                }}
               >
-                {icon && <img className='bg-white w-5 h-5 rounded-full' src={icon} width={20} height={20} alt='' />}
                 <div className='flex-grow h-6'>
-                  <Text size='M'>{label}</Text>
+                  <Text size='M'>Select All</Text>
                 </div>
-                <CheckContainer className={isActive ? 'active' : ''}>
-                  {isActive && <CheckIcon color='black' className='w-5 h-5' width={20} height={20} />}
+                <CheckContainer className={activeOptions.length === options.length ? 'active' : ''}>
+                  {activeOptions.length === options.length && <CheckIcon color='black' className='w-5 h-5' />}
                 </CheckContainer>
               </MultiDropdownOptionContainer>
-            );
-          })}
-        </MultiDropdownList>
+            )}
+            {filteredOptions.map((option, index) => {
+              const { label, icon } = option;
+              const isActive = activeOptions.some((currentOption) => currentOption.value === option.value);
+              return (
+                <MultiDropdownOptionContainer
+                  className={
+                    activeOptions.some((currentOption) => currentOption.value === option.value) ? 'active' : ''
+                  }
+                  key={index}
+                  onClick={() => selectItem(option, index)}
+                >
+                  {icon && <img className='bg-white w-5 h-5 rounded-full' src={icon} width={20} height={20} alt='' />}
+                  <div className='flex-grow h-6'>
+                    <Text size='M'>{label}</Text>
+                  </div>
+                  <CheckContainer className={isActive ? 'active' : ''}>
+                    {isActive && <CheckIcon color='black' className='w-5 h-5' width={20} height={20} />}
+                  </CheckContainer>
+                </MultiDropdownOptionContainer>
+              );
+            })}
+          </MultiDropdownList>
+        </DropdownListWrapper>
       )}
     </DropdownWrapper>
   );
