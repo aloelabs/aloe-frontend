@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import Modal from 'shared/lib/components/common/Modal';
+import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -10,7 +11,6 @@ import styled from 'styled-components';
 import { ChainContext } from '../../../App';
 import { ReactComponent as OpenIcon } from '../../../assets/svg/open.svg';
 import { truncateAddress } from '../../../util/Addresses';
-import TokenIcon from '../../common/TokenIcon';
 
 const LinkSection = styled.div`
   width: 100%;
