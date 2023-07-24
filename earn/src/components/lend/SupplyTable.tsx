@@ -66,11 +66,31 @@ export default function SupplyTable(props: SupplyTableProps) {
       <Table>
         <TableHeader>
           <tr>
-            <th className='px-4 py-2 text-start whitespace-nowrap'>Asset</th>
-            <th className='px-4 py-2 text-start whitespace-nowrap'>Collateral Assets</th>
-            <th className='px-4 py-2 text-end whitespace-nowrap'>APY</th>
-            <th className='px-4 py-2 text-end whitespace-nowrap'>Balance</th>
-            <th className='px-4 py-2 text-center whitespace-nowrap'>Optimized</th>
+            <th className='px-4 py-2 text-start whitespace-nowrap'>
+              <Text size='M' weight='bold'>
+                Asset
+              </Text>
+            </th>
+            <th className='px-4 py-2 text-start whitespace-nowrap'>
+              <Text size='M' weight='bold'>
+                Collateral Assets
+              </Text>
+            </th>
+            <th className='px-4 py-2 text-end whitespace-nowrap'>
+              <Text size='M' weight='bold'>
+                APY
+              </Text>
+            </th>
+            <th className='px-4 py-2 text-end whitespace-nowrap'>
+              <Text size='M' weight='bold'>
+                Balance
+              </Text>
+            </th>
+            <th className='px-4 py-2 text-center whitespace-nowrap'>
+              <Text size='M' weight='bold'>
+                Optimized
+              </Text>
+            </th>
           </tr>
         </TableHeader>
         <tbody>
