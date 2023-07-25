@@ -354,7 +354,6 @@ export default function LendPage() {
                   );
                 }}
                 flipDirection={true}
-                maxHeight={275}
               />
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>
