@@ -17,6 +17,10 @@ const NAV_LINKS: NavBarLink[] = [
     to: '/markets',
   },
   {
+    label: 'Boost',
+    to: '/boost',
+  },
+  {
     label: 'Advanced',
     to: '/borrow',
   },
