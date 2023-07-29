@@ -23,7 +23,7 @@ import {
   zip,
 } from '../../../data/Uniswap';
 import TokenPairIcons from '../../common/TokenPairIcons';
-import { InRangeBadge, OutOfRangeBadge } from '../UniswapPositionList';
+import { InRangeBadge, OutOfRangeBadge } from '../../common/UniswapPositionCard';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';

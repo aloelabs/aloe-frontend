@@ -1,3 +1,6 @@
+import { defaultAbiCoder } from '@ethersproject/abi';
+import { getCreate2Address } from '@ethersproject/address';
+import { keccak256 } from '@ethersproject/solidity';
 import { TickMath } from '@uniswap/v3-sdk';
 import { Chain, Provider } from '@wagmi/core';
 import Big from 'big.js';
@@ -8,12 +11,16 @@ import JSBI from 'jsbi';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
+import { Address } from 'wagmi';
 
 import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
 import { BIGQ96, Q96 } from './constants/Values';
+
+const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
+const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 
 export type UniswapPosition = {
   lower: number;
@@ -344,4 +351,15 @@ export function zip(uniswapPositions: readonly UniswapPosition[]) {
   }, JSBI.BigInt(0));
 
   return zipped.toString(10);
+}
+
+export function computePoolAddress({ token0, token1, fee }: { token0: Token; token1: Token; fee: number }): Address {
+  return getCreate2Address(
+    FACTORY_ADDRESS,
+    keccak256(
+      ['bytes'],
+      [defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, fee])]
+    ),
+    POOL_INIT_CODE_HASH
+  ) as Address;
 }
