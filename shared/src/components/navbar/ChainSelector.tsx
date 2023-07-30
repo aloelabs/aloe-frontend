@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import {
   DropdownOption,
   DropdownHeader,
-  DropdownList,
+  DropdownListWrapper,
   DropdownOptionContainer,
   DropdownWrapper,
+  DropdownList,
 } from '../common/Dropdown';
 import DropdownArrowDown from '../../assets/svg/DropdownArrowDown';
 import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
@@ -102,39 +103,41 @@ export default function ChainSelector(props: ChainSelectorProps) {
         )}
       </DropdownHeader>
       {isOpen && (
-        <DropdownList small={true}>
-          {DROPDOWN_OPTIONS.map((option, index) => (
-            <StyledDropdownOptionContainer
-              className={classNames(
-                option.value === selectedChainOption.value ? 'active' : '',
-                option.value === pendingChainOption?.value ? 'pending' : ''
-              )}
-              key={index}
-              onClick={() => {
-                // If the user selects the currently selected chain, do nothing
-                if (option.value === selectedChainOption.value) return;
-                if (pendingChainOption?.value !== undefined) return;
-                // If the user is offline, set the chain
-                if (isOffline) {
-                  setActiveChain(option.value);
-                  setIsOpen(false);
-                  return;
-                }
-                // Otherwise, set the pending chain option and attempt to switch networks
-                setPendingChainOption(option);
-                setShouldAttemptToSwitchNetwork(true);
-              }}
-            >
-              <div className='flex items-center gap-3'>
-                {option.icon && <div className='w-4 h-4 bg-white rounded-full'>{option.icon}</div>}
-                <Text size='XS'>{option.label}</Text>
-                <div className='relative w-4 h-4 ml-auto'>
-                  {option.value === pendingChainOption?.value && <AltSpinner size='XS' />}
+        <DropdownListWrapper>
+          <DropdownList small={true}>
+            {DROPDOWN_OPTIONS.map((option, index) => (
+              <StyledDropdownOptionContainer
+                className={classNames(
+                  option.value === selectedChainOption.value ? 'active' : '',
+                  option.value === pendingChainOption?.value ? 'pending' : ''
+                )}
+                key={index}
+                onClick={() => {
+                  // If the user selects the currently selected chain, do nothing
+                  if (option.value === selectedChainOption.value) return;
+                  if (pendingChainOption?.value !== undefined) return;
+                  // If the user is offline, set the chain
+                  if (isOffline) {
+                    setActiveChain(option.value);
+                    setIsOpen(false);
+                    return;
+                  }
+                  // Otherwise, set the pending chain option and attempt to switch networks
+                  setPendingChainOption(option);
+                  setShouldAttemptToSwitchNetwork(true);
+                }}
+              >
+                <div className='flex items-center gap-3'>
+                  {option.icon && <div className='w-4 h-4 bg-white rounded-full'>{option.icon}</div>}
+                  <Text size='XS'>{option.label}</Text>
+                  <div className='relative w-4 h-4 ml-auto'>
+                    {option.value === pendingChainOption?.value && <AltSpinner size='XS' />}
+                  </div>
                 </div>
-              </div>
-            </StyledDropdownOptionContainer>
-          ))}
-        </DropdownList>
+              </StyledDropdownOptionContainer>
+            ))}
+          </DropdownList>
+        </DropdownListWrapper>
       )}
     </DropdownWrapper>
   );
