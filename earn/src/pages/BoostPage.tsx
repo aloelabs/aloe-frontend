@@ -9,6 +9,7 @@ import { formatTokenAmount, roundPercentage, toBig } from 'shared/lib/util/Numbe
 import { useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import BoostGraph from '../components/boost/BoostGraph';
 import TokenPairIcons from '../components/common/TokenPairIcons';
 import {
   InRangeBadge,
@@ -105,6 +106,10 @@ export default function BoostPage() {
 
       const isDeposit = Math.random() > 0.5; // TODO: figure out how to determine if this is a deposit or withdrawal
 
+      const poolAddress = computePoolAddress(position);
+
+      const currentPrice = sqrtRatioToPrice(toBig(sqrtPriceX96), token0.decimals, token1.decimals);
+
       return {
         token0: token0,
         token1: token1,
@@ -116,6 +121,8 @@ export default function BoostPage() {
         amount1Percent: amount1Percent,
         isInRange: isInRange,
         isDeposit: isDeposit,
+        poolAddress: poolAddress,
+        currentPrice: currentPrice,
       };
     });
   }, [nonZeroUniswapNFTPositions, slot0Data]);
@@ -199,6 +206,12 @@ export default function BoostPage() {
                     )}
                   </div>
                 </div>
+                <BoostGraph
+                  poolAddress={position.poolAddress}
+                  currentPrice={position.currentPrice}
+                  minPrice={position.minPrice}
+                  maxPrice={position.maxPrice}
+                />
               </UniswapPositionCardWrapper>
             </UniswapPositionCardContainer>
           );
