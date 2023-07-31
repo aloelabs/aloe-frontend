@@ -5,7 +5,7 @@ import { prominent } from 'color.js';
  * @param rgb RGB color
  * @returns HSV color
  */
-function rgb_to_hsv(rgb: number[]): number[] {
+function rgbToHSV(rgb: number[]): number[] {
   // R, G, B values are divided by 255
   // to change the range from 0..255 to 0..1
   const r = rgb[0] / 255.0;
@@ -13,27 +13,27 @@ function rgb_to_hsv(rgb: number[]): number[] {
   const b = rgb[2] / 255.0;
 
   // h, s, v = hue, saturation, value
-  let cmax = Math.max(r, Math.max(g, b)); // maximum of r, g, b
-  let cmin = Math.min(r, Math.min(g, b)); // minimum of r, g, b
-  let diff = cmax - cmin; // diff of cmax and cmin.
+  let cMax = Math.max(r, Math.max(g, b)); // maximum of r, g, b
+  let cMin = Math.min(r, Math.min(g, b)); // minimum of r, g, b
+  let diff = cMax - cMin; // diff of cmax and cmin.
   let h = -1,
     s = -1;
 
   // if cmax and cmax are equal then h = 0
-  if (cmax === cmin) h = 0;
+  if (cMax === cMin) h = 0;
   // if cmax equal r then compute h
-  else if (cmax === r) h = (60 * ((g - b) / diff) + 360) % 360;
+  else if (cMax === r) h = (60 * ((g - b) / diff) + 360) % 360;
   // if cmax equal g then compute h
-  else if (cmax === g) h = (60 * ((b - r) / diff) + 120) % 360;
+  else if (cMax === g) h = (60 * ((b - r) / diff) + 120) % 360;
   // if cmax equal b then compute h
-  else if (cmax === b) h = (60 * ((r - g) / diff) + 240) % 360;
+  else if (cMax === b) h = (60 * ((r - g) / diff) + 240) % 360;
 
   // if cmax equal zero
-  if (cmax === 0) s = 0;
-  else s = (diff / cmax) * 100;
+  if (cMax === 0) s = 0;
+  else s = (diff / cMax) * 100;
 
   // compute v
-  let v = cmax * 100;
+  let v = cMax * 100;
   return [h, s, v];
 }
 
@@ -47,7 +47,7 @@ export async function getProminentColor(path: string): Promise<string> {
   const colors = colorsRGB.map((colorRGB) => {
     return {
       rgb: colorRGB,
-      hsv: rgb_to_hsv(colorRGB),
+      hsv: rgbToHSV(colorRGB),
     };
   });
 
