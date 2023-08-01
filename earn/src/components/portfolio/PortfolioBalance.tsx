@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 
 import { Display } from 'shared/lib/components/common/Typography';
 
+const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+const INTERVAL = 100;
+
 export type PortfolioBalanceProps = {
   errorLoadingPrices: boolean;
   totalUsd: number;
   weightedAvgApy: number;
 };
-
-const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
-const INTERVAL = 100;
 
 export default function PortfolioBalance(props: PortfolioBalanceProps) {
   const { errorLoadingPrices, totalUsd, weightedAvgApy } = props;
