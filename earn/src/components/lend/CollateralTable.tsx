@@ -32,6 +32,11 @@ export type CollateralTableProps = {
 
 export default function CollateralTable(props: CollateralTableProps) {
   const { rows } = props;
+
+  if (rows.length === 0) {
+    return null;
+  }
+
   return (
     <TableContainer>
       <Table>
