@@ -37,7 +37,7 @@ export default function LiquidityChartTooltip(props: {
       <TooltipContainer offset={x}>
         <div className='flex flex-col justify-center items-center'>
           <Text size='S' weight='bold'>
-            {roundPercentage(percentChange, 1)}%
+            {(percentChange > 0 ? '+' : '') + roundPercentage(percentChange, 1)}%
           </Text>
         </div>
       </TooltipContainer>

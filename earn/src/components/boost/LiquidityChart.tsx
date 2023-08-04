@@ -29,6 +29,9 @@ const ChartWrapper = styled.div`
   width: 300px;
   top: 0;
   left: -16px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
 `;
 
 export type LiquidityChartProps = {
@@ -36,10 +39,13 @@ export type LiquidityChartProps = {
   currentPrice: number;
   minPrice: number;
   maxPrice: number;
+  color0: string;
+  color1: string;
+  uniqueId: string;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { poolAddress, currentPrice, minPrice, maxPrice } = props;
+  const { poolAddress, currentPrice, minPrice, maxPrice, color0, color1, uniqueId } = props;
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider();
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
@@ -98,39 +104,38 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const upper = (maxPrice - lowestPrice) / width;
   const current = (currentPrice - lowestPrice) / width;
 
-  // let gradient: JSX.Element;
-  // if (currentPrice < minPrice) {
-  //   gradient = (
-  //     <linearGradient id='splitColor' x1='0' y1='0' x2='1' y2='0'>
-  //       <stop offset={current} stopColor='red' stopOpacity={0.5} />
-  //       <stop offset={current} stopColor='blue' stopOpacity={0.5} />
-  //       <stop offset={lower} stopColor='blue' stopOpacity={0.5} />
-  //       <stop offset={lower} stopColor='blue' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='blue' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='blue' stopOpacity={0.5} />
-  //     </linearGradient>
-  //   );
-  // } else if (currentPrice < maxPrice) {
-  //   gradient = (
-  //     <linearGradient id='splitColor' x1='0' y1='0' x2='1' y2='0'>
-  //       <stop offset={lower} stopColor='gray' stopOpacity={1} />
-  //       <stop offset={lower} stopColor='red' stopOpacity={1} />
-  //       <stop offset={current} stopColor='red' stopOpacity={1} />
-  //       <stop offset={current} stopColor='blue' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='blue' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='gray' stopOpacity={1} />
-  //     </linearGradient>
-  //   );
-  // } else {
-  //   gradient = (
-  //     <linearGradient id='splitColor' x1='0' y1='0' x2='1' y2='0'>
-  //       <stop offset={lower} stopColor='gray' stopOpacity={1} />
-  //       <stop offset={lower} stopColor='red' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='red' stopOpacity={1} />
-  //       <stop offset={upper} stopColor='gray' stopOpacity={1} />
-  //     </linearGradient>
-  //   )
-  // }
+  let positionHighlight: JSX.Element;
+  const positionHighlightId = 'positionHighlight'.concat(uniqueId);
+  if (currentPrice < minPrice) {
+    positionHighlight = (
+      <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
+        <stop offset={lower} stopColor='white' stopOpacity={0.0} />
+        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor='white' stopOpacity={0.0} />
+      </linearGradient>
+    );
+  } else if (currentPrice < maxPrice) {
+    positionHighlight = (
+      <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
+        <stop offset={lower} stopColor='white' stopOpacity={0.0} />
+        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={current} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={current} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor='white' stopOpacity={0} />
+      </linearGradient>
+    );
+  } else {
+    positionHighlight = (
+      <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
+        <stop offset={lower} stopColor='white' stopOpacity={0.0} />
+        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor='white' stopOpacity={0.0} />
+      </linearGradient>
+    );
+  }
 
   return (
     <Wrapper>
@@ -149,15 +154,10 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               }}
             >
               <defs>
-                <linearGradient id='positionHighlight' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-                  <stop offset={lower} stopColor='white' stopOpacity={0.5} />
-                  <stop offset={upper} stopColor='white' stopOpacity={0.5} />
-                  <stop offset={upper} stopColor='white' stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id='currentPriceSplit' x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset={current} stopColor='red' stopOpacity={1} />
-                  <stop offset={current} stopColor='blue' stopOpacity={1} />
+                {positionHighlight}
+                <linearGradient id={'currentPriceSplit'.concat(uniqueId)} x1='0' y1='0' x2='1' y2='0'>
+                  <stop offset={current} stopColor={color0} stopOpacity={1} />
+                  <stop offset={current} stopColor={color1} stopOpacity={1} />
                 </linearGradient>
                 <pattern
                   id='stripes'
@@ -166,29 +166,30 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                   patternUnits='userSpaceOnUse'
                   patternTransform='rotate(45)'
                 >
-                  <line x1='0' y='0' x2='0' y2='10' stroke='white' stroke-width='10' />
+                  <line x1='0' y='0' x2='0' y2='10' stroke='white' strokeWidth='10' />
                 </pattern>
                 <mask id='stripesMask'>
                   <rect x='0' y='0' width='100%' height='100%' fill='url(#stripes)' />
                 </mask>
-                <pattern id='areaFill' width='100%' height='100%' patternUnits='userSpaceOnUse'>
+                <pattern id={'areaFill'.concat(uniqueId)} width='100%' height='100%' patternUnits='userSpaceOnUse'>
                   <rect
                     x='0'
                     y='0'
                     width='100%'
                     height='100%'
-                    fill='url(#positionHighlight)'
-                    mask='url(#stripesMask)'
+                    fill={'url(#'.concat(positionHighlightId, ')')}
+                    // mask='url(#stripesMask)'
                   />
                 </pattern>
               </defs>
+              <XAxis dataKey='price' type='number' domain={[lowestPrice, highestPrice]} tick={false} height={0} />
               <YAxis hide={true} type='number' domain={['dataMin', (dataMax: number) => dataMax * 1.25]} />
               <Area
                 type='monotone'
                 dataKey='liquidityDensity'
-                stroke='url(#currentPriceSplit)'
+                stroke={'url(#currentPriceSplit'.concat(uniqueId, ')')}
                 strokeWidth='3'
-                fill='url(#areaFill)'
+                fill={'url(#areaFill'.concat(uniqueId, ')')}
                 fillOpacity={1.0}
                 activeDot={true}
               />
@@ -206,7 +207,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                   );
                 }}
               />
-              <XAxis dataKey='price' type='number' domain={[lowestPrice, highestPrice]} tick={false} height={0} />
             </AreaChart>
           </div>
         </ResponsiveContainer>

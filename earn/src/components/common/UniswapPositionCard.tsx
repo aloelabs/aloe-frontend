@@ -21,7 +21,6 @@ export const UniswapPositionCardWrapper = styled.div`
   gap: 8px;
   background-color: ${GREY_800};
   border-radius: 8px;
-  overflow: hidden;
   padding: 16px;
   width: 100%;
 `;
