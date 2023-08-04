@@ -14,6 +14,7 @@ export type ChartEntry = {
   liquidityDensity: number;
 };
 
+const CHART_WIDTH = 300;
 const CHART_HEIGHT = 160;
 
 const Wrapper = styled.div`
@@ -25,7 +26,7 @@ const Wrapper = styled.div`
 
 const ChartWrapper = styled.div`
   position: absolute;
-  width: 300px;
+  width: ${CHART_WIDTH}px;
   top: 0;
   left: -16px;
   border-bottom-left-radius: 8px;
@@ -147,7 +148,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
           <div>
             <AreaChart
               data={chartData}
-              width={300}
+              width={CHART_WIDTH}
               height={CHART_HEIGHT}
               margin={{
                 top: 0,
@@ -206,6 +207,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                       selectedPrice={props?.payload[0]?.payload.price}
                       currentPrice={currentPrice}
                       x={props?.coordinate?.x ?? 0}
+                      chartWidth={CHART_WIDTH}
                     />
                   );
                 }}
