@@ -27,6 +27,9 @@ const ChartWrapper = styled.div`
   height: 200px;
   top: 0;
   left: -16px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
 `;
 
 export type LiquidityChartProps = {
