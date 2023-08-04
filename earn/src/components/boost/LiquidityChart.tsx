@@ -15,7 +15,6 @@ export type ChartEntry = {
 };
 
 const CHART_HEIGHT = 160;
-const ZOOM = 1.15;
 
 const Wrapper = styled.div`
   position: relative;
@@ -70,8 +69,12 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   // Once liquidityData has been fetched, arrange/format it to be workable chartData
   useEffect(() => {
     if (liquidityData == null) return;
-    const cutoffLeft = Math.min(minPrice, currentPrice) / ZOOM;
-    const cutoffRight = Math.max(maxPrice, currentPrice) * ZOOM;
+    let cutoffLeft = Math.min(minPrice, currentPrice);
+    let cutoffRight = Math.max(maxPrice, currentPrice);
+    let zoom = (cutoffRight - cutoffLeft) / ((cutoffRight + cutoffLeft) / 2);
+    zoom = Math.max(1.01, Math.min(zoom, 1.15));
+    cutoffLeft /= zoom;
+    cutoffRight *= zoom;
 
     const chartData: { price: number; liquidityDensity: number }[] = [];
     let minValue = Number.MAX_VALUE;
@@ -185,7 +188,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               <XAxis dataKey='price' type='number' domain={[lowestPrice, highestPrice]} tick={false} height={0} />
               <YAxis hide={true} type='number' domain={['dataMin', (dataMax: number) => dataMax * 1.25]} />
               <Area
-                type='monotone'
+                type='natural'
                 dataKey='liquidityDensity'
                 stroke={'url(#currentPriceSplit'.concat(uniqueId, ')')}
                 strokeWidth='3'
