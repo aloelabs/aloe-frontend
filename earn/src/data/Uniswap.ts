@@ -1,3 +1,4 @@
+import { ApolloQueryResult } from '@apollo/react-hooks';
 import { defaultAbiCoder } from '@ethersproject/abi';
 import { getCreate2Address } from '@ethersproject/address';
 import { keccak256 } from '@ethersproject/solidity';
@@ -12,13 +13,23 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
+import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
+import {
+  theGraphUniswapV3ArbitrumClient,
+  theGraphUniswapV3Client,
+  theGraphUniswapV3GoerliClient,
+  theGraphUniswapV3OptimismClient,
+} from '../App';
 import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { UniswapTicksQuery } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
 import { BIGQ96, Q96 } from './constants/Values';
 
+const BINS_TO_FETCH = 500;
+const ONE = new Big('1.0');
 const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 
@@ -56,6 +67,35 @@ export interface UniswapV3PoolBasics {
   tickSpacing: number;
   token1OverToken0: Big;
 }
+
+export type TickData = {
+  tick: number;
+  liquidity: Big;
+  amount0: number;
+  amount1: number;
+  price1In0: number;
+  price0In1: number;
+  totalValueIn0: number;
+};
+
+export type UniswapV3GraphQLTick = {
+  tickIdx: string;
+  liquidityNet: string;
+  price0: string;
+  price1: string;
+  __typename: string;
+};
+
+export type UniswapV3GraphQLTicksQueryResponse = {
+  pools: {
+    token0: { decimals: string };
+    token1: { decimals: string };
+    liquidity: string;
+    tick: string;
+    ticks: UniswapV3GraphQLTick[];
+    __typename: string;
+  }[];
+};
 
 function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
@@ -322,6 +362,122 @@ export async function fetchUniswapNFTPositions(
     result.set(tokenIds[i], uniswapPosition);
   }
   return result;
+}
+
+export async function calculateTickData(
+  poolAddress: string,
+  poolBasics: UniswapV3PoolBasics,
+  chainId: number
+): Promise<TickData[]> {
+  const tickOffset = Math.floor((BINS_TO_FETCH * poolBasics.tickSpacing) / 2);
+  const minTick = poolBasics.slot0.tick - tickOffset;
+  const maxTick = poolBasics.slot0.tick + tickOffset;
+
+  let theGraphClient = theGraphUniswapV3Client;
+  switch (chainId) {
+    case arbitrum.id:
+      theGraphClient = theGraphUniswapV3ArbitrumClient;
+      break;
+    case optimism.id:
+      theGraphClient = theGraphUniswapV3OptimismClient;
+      break;
+    case goerli.id:
+      theGraphClient = theGraphUniswapV3GoerliClient;
+      break;
+    case mainnet.id:
+    default:
+      break;
+  }
+
+  const uniswapV3GraphQLTicksQueryResponse = (await theGraphClient.query({
+    query: UniswapTicksQuery,
+    variables: {
+      poolAddress: poolAddress.toLowerCase(),
+      minTick: minTick,
+      maxTick: maxTick,
+    },
+  })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
+  if (!uniswapV3GraphQLTicksQueryResponse.data.pools) return [];
+  const poolLiquidityData = uniswapV3GraphQLTicksQueryResponse.data.pools[0];
+
+  const token0Decimals = Number(poolLiquidityData.token0.decimals);
+  const token1Decimals = Number(poolLiquidityData.token1.decimals);
+  const decimalFactor = new Big(10 ** (token1Decimals - token0Decimals));
+
+  const currentLiquidity = new Big(poolLiquidityData.liquidity);
+  const currentTick = Number(poolLiquidityData.tick);
+  const rawTicksData = poolLiquidityData.ticks;
+
+  const tickDataLeft: TickData[] = [];
+  const tickDataRight: TickData[] = [];
+
+  // MARK -- filling out data for ticks *above* the current tick
+  let liquidity = currentLiquidity;
+  let splitIdx = rawTicksData.length;
+
+  for (let i = 0; i < rawTicksData.length; i += 1) {
+    const rawTickData = rawTicksData[i];
+    const tick = Number(rawTickData.tickIdx);
+    if (tick <= currentTick) continue;
+
+    // remember the first index above current tick so that search below current tick is more efficient
+    if (i < splitIdx) splitIdx = i;
+
+    liquidity = liquidity.plus(new Big(rawTickData.liquidityNet));
+    const price0 = new Big(rawTickData.price0);
+    const price1 = new Big(rawTickData.price1);
+
+    const sqrtPL = price0.sqrt();
+    const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
+    const amount0 = liquidity
+      .mul(ONE.div(sqrtPL).minus(ONE.div(sqrtPU)))
+      .div(10 ** token0Decimals)
+      .toNumber();
+
+    tickDataRight.push({
+      tick,
+      liquidity,
+      amount0: amount0,
+      amount1: 0,
+      price1In0: price1.mul(decimalFactor).toNumber(),
+      price0In1: price0.div(decimalFactor).toNumber(),
+      totalValueIn0: amount0,
+    });
+  }
+
+  // MARK -- filling out data for ticks *below* the current tick
+  liquidity = currentLiquidity;
+
+  for (let i = splitIdx - 1; i >= 0; i -= 1) {
+    const rawTickData = rawTicksData[i];
+    const tick = Number(rawTickData.tickIdx);
+    if (tick > currentTick) continue;
+
+    liquidity = liquidity.minus(new Big(rawTickData.liquidityNet));
+    const price0 = new Big(rawTickData.price0);
+    const price1 = new Big(rawTickData.price1);
+
+    const sqrtPL = price0.sqrt();
+    const sqrtPU = price0.mul(new Big(1.0001).pow(poolBasics.tickSpacing)).sqrt();
+    const amount1 = liquidity
+      .mul(sqrtPU.minus(sqrtPL))
+      .div(10 ** token1Decimals)
+      .toNumber();
+
+    tickDataLeft.push({
+      tick,
+      liquidity,
+      amount0: 0,
+      amount1: amount1,
+      price1In0: price1.mul(decimalFactor).toNumber(),
+      price0In1: price0.div(decimalFactor).toNumber(),
+      totalValueIn0: amount1 * price1.mul(decimalFactor).toNumber(),
+    });
+  }
+
+  const tickData = tickDataLeft.reverse().concat(...tickDataRight);
+
+  return tickData;
 }
 
 function modQ24(value: number) {
