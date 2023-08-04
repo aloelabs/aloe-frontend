@@ -26,6 +26,7 @@ import {
   getAmountsForLiquidity,
   tickToPrice,
 } from '../data/Uniswap';
+import { getProminentColor } from '../util/Colors';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 
@@ -35,6 +36,7 @@ export default function BoostPage() {
   const { address: userAddress } = useAccount();
 
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
+  const [colors, setColors] = useState<Map<number, [string, string]>>(new Map());
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +58,21 @@ export default function BoostPage() {
       return JSBI.greaterThan(position.liquidity, JSBI.BigInt(0));
     });
   }, [uniswapNFTPositions]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const entries = Array.from(nonZeroUniswapNFTPositions.entries()).map(async ([idx, pos]) => {
+        const color0 = (await getProminentColor(pos.token0.logoURI)).replace(' ', '');
+        const color1 = (await getProminentColor(pos.token1.logoURI)).replace(' ', '');
+        return [idx, [`rgb(${color0})`, `rgb(${color1})`]] as [number, [string, string]];
+      });
+
+      setColors(new Map(await Promise.all(entries)));
+    };
+
+    fetch();
+    return () => {};
+  }, [nonZeroUniswapNFTPositions]);
 
   const contracts = useMemo(() => {
     return nonZeroUniswapNFTPositions.map((position) => {
@@ -210,6 +227,9 @@ export default function BoostPage() {
                   minPrice={position.minPrice}
                   maxPrice={position.maxPrice}
                   currentPrice={position.currentPrice}
+                  color0={colors.get(index)?.[0] ?? 'red'}
+                  color1={colors.get(index)?.[1] ?? 'blue'}
+                  uniqueId={index.toString()}
                 />
               </UniswapPositionCardWrapper>
             </UniswapPositionCardContainer>
