@@ -6,7 +6,7 @@ import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-export const PERCENTAGE_WIDTH = 75;
+export const PERCENTAGE_WIDTH = 66;
 const TOOLTIP_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const TOOLTIP_BORDER_COLOR = GREY_700;
 
@@ -35,12 +35,10 @@ export default function LiquidityChartTooltip(props: {
     const percentChange = ((selectedPrice - currentPrice) / currentPrice) * 100 || 0;
     return (
       <TooltipContainer offset={x}>
-        <div className='flex flex-col justify-between gap-2 mt-4 pl-3 pr-3 pb-3'>
-          <div className='flex flex-col justify-center items-center'>
-            <Text size='M' weight='bold'>
-              {roundPercentage(percentChange, 1)}%
-            </Text>
-          </div>
+        <div className='flex flex-col justify-center items-center'>
+          <Text size='S' weight='bold'>
+            {roundPercentage(percentChange, 1)}%
+          </Text>
         </div>
       </TooltipContainer>
     );
