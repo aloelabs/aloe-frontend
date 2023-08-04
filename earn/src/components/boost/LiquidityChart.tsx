@@ -68,7 +68,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     const updatedChartData = liquidityDataCopy.map((td: TickData) => {
       return { price: td.price0In1, liquidityDensity: td.totalValueIn0 };
     });
-    // TODO: use a better filter
+    // TODO: temporary filter while we still use the graph (their data isn't great)
     const filteredChartData = updatedChartData.filter((d) => d.liquidityDensity > 0);
     setChartData(filteredChartData);
   }, [liquidityData, maxPrice, minPrice]);
