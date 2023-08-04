@@ -21,7 +21,6 @@ const TooltipContainer = styled.div.attrs((props: { offset: number; chartWidth: 
   border: 1px solid ${TOOLTIP_BORDER_COLOR};
   width: ${PERCENTAGE_WIDTH}px;
   box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(24px);
   background: ${TOOLTIP_BG_COLOR};
   visibility: visible;
 `;
