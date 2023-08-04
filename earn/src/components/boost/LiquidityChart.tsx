@@ -69,9 +69,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       return { price: td.price0In1, liquidityDensity: td.totalValueIn0 };
     });
     // TODO: use a better filter
-    const filteredChartData = updatedChartData.filter(
-      (d) => d.liquidityDensity > 0 && d.price > minPrice - 200 && d.price < maxPrice + 300
-    );
+    const filteredChartData = updatedChartData.filter((d) => d.liquidityDensity > 0);
     setChartData(filteredChartData);
   }, [liquidityData, maxPrice, minPrice]);
 
