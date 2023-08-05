@@ -197,7 +197,11 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 strokeWidth='3'
                 fill={'url(#areaFill'.concat(uniqueId, ')')}
                 fillOpacity={1.0}
-                activeDot={true}
+                activeDot={{
+                  fill: '#ccc',
+                  stroke: '#ccc',
+                  r: 3,
+                }}
                 isAnimationActive={false}
               />
               <ReferenceLine x={currentPrice} stroke='white' strokeWidth='1' />
