@@ -353,7 +353,28 @@ export default function PnLGraph(props: PnLGraphProps) {
 
   const off = gradientOffset();
   if (data.length === 0 || inTermsOfToken0 !== localInTermsOfToken0) {
-    return <PnLGraphPlaceholder />;
+    return (
+      <div className='w-full flex flex-col gap-4'>
+        <div className='flex justify-between items-center'>
+          <Text size='L' weight='medium'>
+            P&L
+          </Text>
+          <PnLGraphSettings
+            borrowInterestInputValue={borrowInterestInputValue}
+            setBorrowInterestInputValue={setBorrowInterestInputValue}
+            swapFeeInputValue={swapFeesInputValue}
+            setSwapFeesInputValue={setSwapFeesInputValue}
+            disabled={true}
+          />
+        </div>
+        <PnLGraphPlaceholder />
+        <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+          This graph estimates profit and losses arising solely from the structure of your positions. To include
+          time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the
+          graph and enter your desired values.
+        </Text>
+      </div>
+    );
   }
 
   return (
