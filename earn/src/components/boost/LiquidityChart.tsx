@@ -196,6 +196,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 fill={'url(#areaFill'.concat(uniqueId, ')')}
                 fillOpacity={1.0}
                 activeDot={true}
+                isAnimationActive={false}
               />
               <ReferenceLine x={currentPrice} stroke='white' strokeWidth='1' />
               <Tooltip
