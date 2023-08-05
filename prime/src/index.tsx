@@ -4,6 +4,7 @@ import './index.css';
 import * as Sentry from '@sentry/react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { isDevelopment } from 'shared/lib/util/Utils';
 
 import App from './App';
 import generatedGitInfo from './gitInfo.json';
@@ -15,6 +16,7 @@ if (process.env.REACT_APP_SENTRY_DSN) {
     release: generatedGitInfo.commit || undefined,
     sampleRate: 1.0,
     tracesSampleRate: 1.0,
+    environment: isDevelopment() ? 'development' : 'production',
   });
 }
 
