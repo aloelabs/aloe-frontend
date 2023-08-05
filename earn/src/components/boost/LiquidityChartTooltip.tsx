@@ -27,19 +27,27 @@ const TooltipContainer = styled.div.attrs((props: { offset: number; chartWidth: 
 
 export default function LiquidityChartTooltip(props: {
   active: boolean;
-  selectedPrice: number;
-  currentPrice: number;
+  selectedTick: number;
+  currentTick: number;
   x: number;
   chartWidth: number;
 }) {
-  const { active, selectedPrice, currentPrice, x, chartWidth } = props;
+  const { active, selectedTick, currentTick, x, chartWidth } = props;
   if (active) {
-    const percentChange = ((selectedPrice - currentPrice) / currentPrice) * 100 || 0;
+    const percentChange = 1.0001 ** (selectedTick - currentTick) - 1 || 0;
+
+    let text: string;
+    if (percentChange < 1.0) {
+      text = `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 1)}%`;
+    } else {
+      text = `${(percentChange + 1).toFixed(0)}x`;
+    }
+
     return (
       <TooltipContainer offset={x} chartWidth={chartWidth}>
         <div className='flex flex-col justify-center items-center'>
           <Text size='S' weight='bold'>
-            {(percentChange > 0 ? '+' : '') + roundPercentage(percentChange, 1)}%
+            {text}
           </Text>
         </div>
       </TooltipContainer>

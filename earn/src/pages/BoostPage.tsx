@@ -91,7 +91,6 @@ export default function BoostPage() {
       const { token0, token1, tickLower, tickUpper } = position;
 
       const minPrice = tickToPrice(tickLower, token0.decimals, token1.decimals, true);
-
       const maxPrice = tickToPrice(tickUpper, token0.decimals, token1.decimals, true);
 
       const sqrtPriceX96 = slot0Data[index][0];
@@ -132,6 +131,9 @@ export default function BoostPage() {
         isDeposit: isDeposit,
         poolAddress: poolAddress,
         currentPrice: currentPrice,
+        tickLower,
+        tickUpper,
+        currentTick,
       };
     });
   }, [nonZeroUniswapNFTPositions, slot0Data]);
@@ -151,7 +153,9 @@ export default function BoostPage() {
               token1={position.token1}
               minPrice={position.minPrice}
               maxPrice={position.maxPrice}
-              currentPrice={position.currentPrice}
+              minTick={position.tickLower}
+              maxTick={position.tickUpper}
+              currentTick={position.currentTick}
               amount0={position.amount0}
               amount1={position.amount1}
               amount0Percent={position.amount0Percent}
