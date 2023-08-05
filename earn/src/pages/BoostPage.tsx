@@ -140,7 +140,9 @@ export default function BoostPage() {
     <AppPage>
       <Text size='XL'>Boost</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
-        {isLoading && uniswapNFTCardInfo.length === 0 && [...Array(4)].map((_, index) => <BoostCardPlaceholder />)}
+        {isLoading &&
+          uniswapNFTCardInfo.length === 0 &&
+          [...Array(4)].map((_, index) => <BoostCardPlaceholder key={index} />)}
         {uniswapNFTCardInfo.map((position, index) => {
           return (
             <BoostCard
