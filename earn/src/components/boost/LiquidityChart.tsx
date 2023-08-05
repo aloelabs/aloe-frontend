@@ -7,6 +7,7 @@ import { useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { TickData, calculateTickData, fetchUniswapPoolBasics } from '../../data/Uniswap';
+import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
 
 export type ChartEntry = {
@@ -99,7 +100,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     setChartData(chartData);
   }, [liquidityData, minPrice, maxPrice, currentPrice]);
 
-  if (chartData == null || chartData.length < 3) return null;
+  if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
+
   const lowestPrice = chartData[0].price;
   const highestPrice = chartData[chartData.length - 1].price;
 
