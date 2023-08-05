@@ -1,8 +1,6 @@
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
 export const PnLGraphPlaceholder = styled.div`
-  ${tw`flex flex-col items-start justify-evenly`}
   width: 100%;
   height: 300px;
   background: #0d171e;
