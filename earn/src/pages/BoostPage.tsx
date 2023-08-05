@@ -9,6 +9,7 @@ import { useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
+import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import { sqrtRatioToPrice } from '../data/BalanceSheet';
 import {
   UniswapNFTPosition,
@@ -25,6 +26,7 @@ export default function BoostPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [colors, setColors] = useState<Map<number, [string, string]>>(new Map());
 
@@ -35,6 +37,7 @@ export default function BoostPage() {
       const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
       if (mounted) {
         setUniswapNFTPositions(fetchedUniswapNFTPositions);
+        setIsLoading(false);
       }
     }
     fetch();
@@ -137,6 +140,7 @@ export default function BoostPage() {
     <AppPage>
       <Text size='XL'>Boost</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
+        {isLoading && uniswapNFTCardInfo.length === 0 && [...Array(4)].map((_, index) => <BoostCardPlaceholder />)}
         {uniswapNFTCardInfo.map((position, index) => {
           return (
             <BoostCard
