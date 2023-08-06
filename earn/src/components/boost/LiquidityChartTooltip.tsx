@@ -27,7 +27,7 @@ function getPercentageText(percentChange: number) {
   if (percentChange > 1000) {
     return '∞';
   } else if (percentChange < 1.0) {
-    return `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 1)}%`;
+    return `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 2)}%`;
   } else if (percentChange < 9.0) {
     return `${(percentChange + 1).toFixed(2)}x`;
   } else {
