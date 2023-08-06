@@ -10,8 +10,8 @@ import { TickData, calculateTickData, fetchUniswapPoolBasics } from '../../data/
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
 
-export type ChartEntry = {
-  price: number;
+type ChartEntry = {
+  tick: number;
   liquidityDensity: number;
 };
 
@@ -37,20 +37,20 @@ const ChartWrapper = styled.div`
 
 export type LiquidityChartProps = {
   poolAddress: string;
-  currentPrice: number;
-  minPrice: number;
-  maxPrice: number;
+  currentTick: number;
+  minTick: number;
+  maxTick: number;
   color0: string;
   color1: string;
   uniqueId: string;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { poolAddress, currentPrice, minPrice, maxPrice, color0, color1, uniqueId } = props;
+  const { poolAddress, currentTick, minTick, maxTick, color0, color1, uniqueId } = props;
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider();
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
-  const [chartData, setChartData] = useState<{ price: number; liquidityDensity: number }[] | null>(null);
+  const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
 
   // Fetch (a) uniswapPoolBasics from ethers and (b) liquidityData from TheGraph
   useEffectOnce(() => {
@@ -71,64 +71,66 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   // Once liquidityData has been fetched, arrange/format it to be workable chartData
   useEffect(() => {
     if (liquidityData == null) return;
-    let cutoffLeft = Math.min(minPrice, currentPrice);
-    let cutoffRight = Math.max(maxPrice, currentPrice);
-    let zoom = (cutoffRight - cutoffLeft) / ((cutoffRight + cutoffLeft) / 2);
-    zoom = Math.max(1.01, Math.min(zoom, 1.15));
-    cutoffLeft /= zoom;
-    cutoffRight *= zoom;
 
-    const chartData: { price: number; liquidityDensity: number }[] = [];
+    // Make sure graph shows position bounds (both lower and upper) and the current tick
+    let cutoffLeft = Math.min(minTick, currentTick);
+    let cutoffRight = Math.max(maxTick, currentTick);
+    // Zoom out a bit to make things prettier
+    const positionWidth = maxTick - minTick;
+    cutoffLeft -= positionWidth;
+    cutoffRight += positionWidth;
+
+    const newChartData: ChartEntry[] = [];
     let minValue = Number.MAX_VALUE;
     let maxValue = 0;
 
     for (const element of liquidityData) {
-      const price = element.price0In1;
-      let liquidityDensity = element.totalValueIn0;
+      const tick = element.tick;
+      let liquidityDensity = element.liquidity.toNumber();
 
       if (liquidityDensity <= 0) continue;
-      if (price < cutoffLeft || price > cutoffRight) continue;
+      if (tick < cutoffLeft || tick > cutoffRight) continue;
 
-      liquidityDensity = Math.log10(liquidityDensity);
       minValue = Math.min(minValue, liquidityDensity);
       maxValue = Math.max(maxValue, liquidityDensity);
 
-      chartData.push({ price, liquidityDensity });
+      newChartData.push({ tick, liquidityDensity });
     }
 
-    chartData.forEach((el) => (el.liquidityDensity = el.liquidityDensity - minValue));
-    setChartData(chartData);
-  }, [liquidityData, minPrice, maxPrice, currentPrice]);
+    const range = maxValue - minValue;
+    newChartData.forEach((el) => (el.liquidityDensity = el.liquidityDensity - minValue + range / 8));
+    setChartData(newChartData);
+  }, [liquidityData, minTick, maxTick, currentTick]);
 
   if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
 
-  const lowestPrice = chartData[0].price;
-  const highestPrice = chartData[chartData.length - 1].price;
+  const lowestTick = chartData[0].tick;
+  const highestTick = chartData[chartData.length - 1].tick;
 
-  const width = highestPrice - lowestPrice;
-  const lower = (minPrice - lowestPrice) / width;
-  const upper = (maxPrice - lowestPrice) / width;
-  const current = (currentPrice - lowestPrice) / width;
+  const domain = highestTick - lowestTick;
+  const lower = (minTick - lowestTick) / domain;
+  const upper = (maxTick - lowestTick) / domain;
+  const current = (currentTick - lowestTick) / domain;
 
   let positionHighlight: JSX.Element;
   const positionHighlightId = 'positionHighlight'.concat(uniqueId);
-  if (currentPrice < minPrice) {
-    positionHighlight = (
-      <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
-        <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
-        <stop offset={upper} stopColor='white' stopOpacity={0.0} />
-      </linearGradient>
-    );
-  } else if (currentPrice < maxPrice) {
+  if (currentTick < minTick) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
         <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
-        <stop offset={current} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor='white' stopOpacity={0.0} />
+      </linearGradient>
+    );
+  } else if (currentTick < maxTick) {
+    positionHighlight = (
+      <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
+        <stop offset={lower} stopColor='white' stopOpacity={0.0} />
+        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
         <stop offset={current} stopColor={color1} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={current} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
         <stop offset={upper} stopColor='white' stopOpacity={0} />
       </linearGradient>
     );
@@ -136,8 +138,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
         <stop offset={upper} stopColor='white' stopOpacity={0.0} />
       </linearGradient>
     );
@@ -162,8 +164,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               <defs>
                 {positionHighlight}
                 <linearGradient id={'currentPriceSplit'.concat(uniqueId)} x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset={current} stopColor={color0} stopOpacity={1} />
                   <stop offset={current} stopColor={color1} stopOpacity={1} />
+                  <stop offset={current} stopColor={color0} stopOpacity={1} />
                 </linearGradient>
                 <pattern
                   id='stripes'
@@ -188,10 +190,17 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                   />
                 </pattern>
               </defs>
-              <XAxis dataKey='price' type='number' domain={[lowestPrice, highestPrice]} tick={false} height={0} />
-              <YAxis hide={true} type='number' domain={['dataMin', (dataMax: number) => dataMax * 1.25]} />
+              <XAxis dataKey='tick' type='number' domain={[lowestTick, highestTick]} tick={false} height={0} />
+              <YAxis
+                hide={true}
+                type='number'
+                domain={([dataMin, dataMax]: [number, number]) => {
+                  const range = dataMax - dataMin;
+                  return [dataMin - range / 8, dataMax + range / 4];
+                }}
+              />
               <Area
-                type='natural'
+                type='stepAfter'
                 dataKey='liquidityDensity'
                 stroke={'url(#currentPriceSplit'.concat(uniqueId, ')')}
                 strokeWidth='3'
@@ -204,15 +213,15 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 }}
                 isAnimationActive={false}
               />
-              <ReferenceLine x={currentPrice} stroke='white' strokeWidth='1' />
+              <ReferenceLine x={currentTick} stroke='white' strokeWidth='1' />
               <Tooltip
                 isAnimationActive={false}
                 content={(props: any) => {
                   return (
                     <LiquidityChartTooltip
                       active={props?.active ?? false}
-                      selectedPrice={props?.payload[0]?.payload.price}
-                      currentPrice={currentPrice}
+                      selectedTick={props?.payload[0]?.payload.tick}
+                      currentTick={currentTick}
                       x={props?.coordinate?.x ?? 0}
                       chartWidth={CHART_WIDTH}
                     />

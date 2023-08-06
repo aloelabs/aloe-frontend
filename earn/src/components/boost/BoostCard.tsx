@@ -19,7 +19,9 @@ export type UniswapPositionCardProps = {
   token1: Token;
   minPrice: number;
   maxPrice: number;
-  currentPrice: number;
+  minTick: number;
+  maxTick: number;
+  currentTick: number;
   amount0: number;
   amount1: number;
   amount0Percent: number;
@@ -38,7 +40,9 @@ export default function BoostCard(props: UniswapPositionCardProps) {
     token1,
     minPrice,
     maxPrice,
-    currentPrice,
+    minTick,
+    maxTick,
+    currentTick,
     amount0,
     amount1,
     amount0Percent,
@@ -113,9 +117,9 @@ export default function BoostCard(props: UniswapPositionCardProps) {
         </div>
         <LiquidityChart
           poolAddress={poolAddress}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          currentPrice={currentPrice}
+          minTick={minTick}
+          maxTick={maxTick}
+          currentTick={currentTick}
           color0={color0}
           color1={color1}
           uniqueId={uniqueId}
