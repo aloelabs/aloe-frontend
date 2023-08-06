@@ -1,8 +1,9 @@
 import { FilledGradientButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
 
+import { UniswapNFTCardInfo } from '../../pages/BoostPage';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,
@@ -12,26 +13,16 @@ import {
 } from '../common/UniswapPositionCard';
 import LiquidityChart from './LiquidityChart';
 
-const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
+export const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 
-export type UniswapPositionCardProps = {
-  token0: Token;
-  token1: Token;
-  minPrice: number;
-  maxPrice: number;
-  minTick: number;
-  maxTick: number;
-  currentTick: number;
-  amount0: number;
-  amount1: number;
-  amount0Percent: number;
-  amount1Percent: number;
-  isInRange: boolean;
-  isDeposit: boolean;
-  poolAddress: string;
-  color0: string;
-  color1: string;
+const CustomUniswapPositionCardContainer = styled(UniswapPositionCardContainer)`
+  width: 300px;
+`;
+
+export type UniswapPositionCardProps = UniswapNFTCardInfo & {
   uniqueId: string;
+  isDisplayOnly?: boolean;
+  setSelectedPosition?: (uniqueId: number | null) => void;
 };
 
 export default function BoostCard(props: UniswapPositionCardProps) {
@@ -53,9 +44,27 @@ export default function BoostCard(props: UniswapPositionCardProps) {
     color0,
     color1,
     uniqueId,
+    isDisplayOnly,
+    setSelectedPosition,
   } = props;
+
+  const editButton = isDeposit ? (
+    <FilledGradientButton size='S' onClick={() => {}}>
+      Lever Up
+    </FilledGradientButton>
+  ) : (
+    <FilledGreyButton
+      size='S'
+      onClick={() => {
+        setSelectedPosition?.(parseInt(uniqueId));
+      }}
+    >
+      Manage
+    </FilledGreyButton>
+  );
+
   return (
-    <UniswapPositionCardContainer>
+    <CustomUniswapPositionCardContainer>
       <UniswapPositionCardWrapper>
         <div className='flex flex-col gap-4'>
           <div className='flex justify-center items-center'>
@@ -104,15 +113,7 @@ export default function BoostCard(props: UniswapPositionCardProps) {
           </div>
           <div className='flex justify-between'>
             {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
-            {isDeposit ? (
-              <FilledGradientButton size='S' onClick={() => {}}>
-                Lever Up
-              </FilledGradientButton>
-            ) : (
-              <FilledGreyButton size='S' onClick={() => {}}>
-                Manage
-              </FilledGreyButton>
-            )}
+            {!isDisplayOnly && editButton}
           </div>
         </div>
         <LiquidityChart
@@ -125,6 +126,6 @@ export default function BoostCard(props: UniswapPositionCardProps) {
           uniqueId={uniqueId}
         />
       </UniswapPositionCardWrapper>
-    </UniswapPositionCardContainer>
+    </CustomUniswapPositionCardContainer>
   );
 }
