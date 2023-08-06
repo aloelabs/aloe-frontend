@@ -28,8 +28,6 @@ import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
 import { BIGQ96, Q96 } from './constants/Values';
 
-const BINS_TO_FETCH = 500;
-const ONE = new Big('1.0');
 const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 
