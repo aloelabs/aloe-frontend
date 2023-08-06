@@ -118,8 +118,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
         <stop offset={upper} stopColor='white' stopOpacity={0.0} />
       </linearGradient>
     );
@@ -127,10 +127,10 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
-        <stop offset={current} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
         <stop offset={current} stopColor={color1} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={current} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
         <stop offset={upper} stopColor='white' stopOpacity={0} />
       </linearGradient>
     );
@@ -138,8 +138,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
-        <stop offset={lower} stopColor={color0} stopOpacity={0.5} />
-        <stop offset={upper} stopColor={color0} stopOpacity={0.5} />
+        <stop offset={lower} stopColor={color1} stopOpacity={0.5} />
+        <stop offset={upper} stopColor={color1} stopOpacity={0.5} />
         <stop offset={upper} stopColor='white' stopOpacity={0.0} />
       </linearGradient>
     );
@@ -164,8 +164,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
               <defs>
                 {positionHighlight}
                 <linearGradient id={'currentPriceSplit'.concat(uniqueId)} x1='0' y1='0' x2='1' y2='0'>
-                  <stop offset={current} stopColor={color0} stopOpacity={1} />
                   <stop offset={current} stopColor={color1} stopOpacity={1} />
+                  <stop offset={current} stopColor={color0} stopOpacity={1} />
                 </linearGradient>
                 <pattern
                   id='stripes'
