@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { roundPercentage } from 'shared/lib/util/Numbers';
@@ -37,8 +35,12 @@ export default function LiquidityChartTooltip(props: {
     const percentChange = 1.0001 ** (selectedTick - currentTick) - 1 || 0;
 
     let text: string;
-    if (percentChange < 1.0) {
+    if (percentChange > 1000 && x === chartWidth) {
+      text = '∞';
+    } else if (percentChange < 1.0) {
       text = `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 1)}%`;
+    } else if (percentChange < 9.0) {
+      text = `${(percentChange + 1).toFixed(2)}x`;
     } else {
       text = `${(percentChange + 1).toFixed(0)}x`;
     }

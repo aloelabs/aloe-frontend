@@ -200,7 +200,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 }}
               />
               <Area
-                type='step'
+                type='stepAfter'
                 dataKey='liquidityDensity'
                 stroke={'url(#currentPriceSplit'.concat(uniqueId, ')')}
                 strokeWidth='3'

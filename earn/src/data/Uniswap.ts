@@ -71,11 +71,8 @@ export interface UniswapV3PoolBasics {
 export type TickData = {
   tick: number;
   liquidity: Big;
-  amount0: number;
-  amount1: number;
   price1In0: number;
   price0In1: number;
-  totalValueIn0: number;
 };
 
 export type UniswapV3GraphQLTick = {
@@ -453,11 +450,8 @@ export async function calculateTickData(
     tickData.push({
       tick,
       liquidity: new Big(liquidity.toString(10)),
-      amount0: 0,
-      amount1: 0,
       price1In0: price1.mul(decimalFactor).toNumber(),
       price0In1: price0.div(decimalFactor).toNumber(),
-      totalValueIn0: 0,
     });
   }
 
