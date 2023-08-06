@@ -30,6 +30,7 @@ import { BIGQ96, Q96 } from './constants/Values';
 
 const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
+const MAX_TICKS_PER_QUERY = 1000;
 
 export type UniswapPosition = {
   lower: number;
@@ -411,7 +412,7 @@ async function fetchTickData(
     if (!queryResponse.data.pools) break;
 
     tickData.push(...queryResponse.data.pools[0].ticks);
-    if (queryResponse.data.pools[0].ticks.length < 1000) break;
+    if (queryResponse.data.pools[0].ticks.length < MAX_TICKS_PER_QUERY) break;
   }
 
   return {
