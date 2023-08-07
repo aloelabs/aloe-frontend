@@ -4,76 +4,15 @@ import JSBI from 'jsbi';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Token } from 'shared/lib/data/Token';
-import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
+import { useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import ManageBoostModal from '../components/boost/ManageBoostModal';
-import { fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
-import {
-  UniswapNFTPosition,
-  UniswapPosition,
-  computePoolAddress,
-  fetchUniswapNFTPositions,
-  getAmountsForLiquidity,
-  getValueOfLiquidity,
-} from '../data/Uniswap';
+import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
+import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
-
-export enum BoostCardType {
-  UNISWAP_NFT,
-  BOOST_NFT,
-  BOOST_NFT_GENERALIZED,
-}
-
-export class BoostCardInfo {
-  constructor(
-    public readonly cardType: BoostCardType,
-    public readonly uniswapPool: Address,
-    public readonly currentTick: number,
-    public readonly token0: Token,
-    public readonly token1: Token,
-    public readonly color0: string,
-    public readonly color1: string,
-    public readonly position: UniswapPosition
-  ) {}
-
-  isInRange() {
-    return this.position.lower <= this.currentTick && this.currentTick < this.position.upper;
-  }
-
-  /**
-   * The amount of token0 in the Uniswap Position, not including earned fees
-   */
-  amount0() {
-    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[0];
-  }
-
-  /**
-   * The amount of token1 in the Uniswap Position, not including earned fees
-   */
-  amount1() {
-    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[1];
-  }
-
-  /**
-   * The amount of token0 in the Uniswap Position as a percentage, not including earned fees
-   */
-  amount0Percent() {
-    return 1 - this.amount1Percent();
-  }
-
-  /**
-   * The amount of token1 in the Uniswap Position as a percentage, not including earned fees
-   */
-  amount1Percent() {
-    const amount1 = this.amount1();
-    const totalValueIn1 = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
-    return amount1 / totalValueIn1;
-  }
-}
 
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);

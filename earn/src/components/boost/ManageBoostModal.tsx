@@ -2,7 +2,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { BoostCardInfo } from '../../pages/BoostPage';
+import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
 const Container = styled.div`

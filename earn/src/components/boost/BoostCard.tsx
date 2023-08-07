@@ -3,8 +3,8 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
+import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
 import { tickToPrice } from '../../data/Uniswap';
-import { BoostCardInfo, BoostCardType } from '../../pages/BoostPage';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,
