@@ -3,10 +3,9 @@ import { useContext, useEffect, useState } from 'react';
 import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import styled from 'styled-components';
-import { useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
-import { TickData, calculateTickData, fetchUniswapPoolBasics } from '../../data/Uniswap';
+import { TickData, calculateTickData } from '../../data/Uniswap';
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
 
