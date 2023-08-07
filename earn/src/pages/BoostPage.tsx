@@ -4,15 +4,20 @@ import JSBI from 'jsbi';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useAccount, useContractReads, useProvider } from 'wagmi';
+import { GN } from 'shared/lib/data/GoodNumber';
+import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import ManageBoostModal from '../components/boost/ManageBoostModal';
+import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
+
+const DEFAULT_COLOR0 = 'white';
+const DEFAULT_COLOR1 = 'white';
 
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);
@@ -20,34 +25,56 @@ export default function BoostPage() {
   const { address: userAddress } = useAccount();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
-  const [colors, setColors] = useState<Map<number, [string, string]>>(new Map());
+  const [boostedCardInfos, setBoostedCardInfos] = useState<BoostCardInfo[]>([]);
+  const [uniswapNFTPositions, setUniswapNFTPositions] = useState<UniswapNFTPosition[]>([]);
+  const [colors, setColors] = useState<Map<string, string>>(new Map());
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
 
+  /*//////////////////////////////////////////////////////////////
+                      FETCH BOOSTED CARD INFOS
+  //////////////////////////////////////////////////////////////*/
   useEffect(() => {
     (async () => {
       if (userAddress === undefined) return;
       const borrowerList = await fetchBoostBorrowersList(activeChain, provider, userAddress);
 
-      const borrowers = await Promise.all(
-        borrowerList.map((borrowerAddress) => {
-          return fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
+      const fetchedInfos = await Promise.all(
+        borrowerList.map(async (borrowerAddress) => {
+          const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
+          return new BoostCardInfo(
+            BoostCardType.BOOST_NFT,
+            res.borrower.uniswapPool as Address,
+            sqrtRatioToTick(res.borrower.sqrtPriceX96),
+            res.borrower.token0,
+            res.borrower.token1,
+            DEFAULT_COLOR0,
+            DEFAULT_COLOR1,
+            res.uniswapPosition,
+            res.uniswapFees,
+            res.borrower
+          );
         })
       );
 
-      console.log(borrowers);
+      setBoostedCardInfos(fetchedInfos);
     })();
 
     return () => {};
   }, [activeChain, provider, userAddress]);
 
+  /*//////////////////////////////////////////////////////////////
+                    FETCH UNISWAP NFT POSITIONS
+  //////////////////////////////////////////////////////////////*/
   useEffect(() => {
     let mounted = true;
     async function fetch() {
       if (userAddress === undefined) return;
-      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedPositions = Array.from(fetchedPositionsMap.values());
+      const nonZeroPositions = fetchedPositions.filter((v) => JSBI.greaterThan(v.liquidity, JSBI.BigInt(0)));
+
       if (mounted) {
-        setUniswapNFTPositions(fetchedUniswapNFTPositions);
+        setUniswapNFTPositions(nonZeroPositions);
         setIsLoading(false);
       }
     }
@@ -57,29 +84,11 @@ export default function BoostPage() {
     };
   }, [activeChain, provider, userAddress]);
 
-  const nonZeroUniswapNFTPositions = useMemo(() => {
-    return Array.from(uniswapNFTPositions.values()).filter((position) => {
-      return JSBI.greaterThan(position.liquidity, JSBI.BigInt(0));
-    });
-  }, [uniswapNFTPositions]);
-
-  useEffect(() => {
-    const fetch = async () => {
-      const entries = Array.from(nonZeroUniswapNFTPositions.entries()).map(async ([idx, pos]) => {
-        const color0 = (await getProminentColor(pos.token0.logoURI)).replace(' ', '');
-        const color1 = (await getProminentColor(pos.token1.logoURI)).replace(' ', '');
-        return [idx, [`rgb(${color0})`, `rgb(${color1})`]] as [number, [string, string]];
-      });
-
-      setColors(new Map(await Promise.all(entries)));
-    };
-
-    fetch();
-    return () => {};
-  }, [nonZeroUniswapNFTPositions]);
-
-  const contracts = useMemo(() => {
-    return nonZeroUniswapNFTPositions.map((position) => {
+  /*//////////////////////////////////////////////////////////////
+            FETCH UNISWAP NFT POSITIONS - CONT. (SLOT0)
+  //////////////////////////////////////////////////////////////*/
+  const poolContracts = useMemo(() => {
+    return uniswapNFTPositions.map((position) => {
       return {
         abi: UniswapV3PoolABI,
         address: computePoolAddress(position),
@@ -87,19 +96,21 @@ export default function BoostPage() {
         chainId: activeChain.id,
       } as const;
     });
-  }, [activeChain.id, nonZeroUniswapNFTPositions]);
-
+  }, [activeChain.id, uniswapNFTPositions]);
   const { data: slot0Data } = useContractReads({
-    contracts: contracts,
+    contracts: poolContracts,
     allowFailure: false,
   });
 
-  const uniswapNFTCardInfo: BoostCardInfo[] = useMemo(() => {
-    if (slot0Data === undefined || slot0Data.length !== nonZeroUniswapNFTPositions.length) {
+  /*//////////////////////////////////////////////////////////////
+                     CREATE UNISWAP CARD INFOS
+  //////////////////////////////////////////////////////////////*/
+  const uniswapCardInfos: BoostCardInfo[] = useMemo(() => {
+    if (slot0Data === undefined || slot0Data.length !== uniswapNFTPositions.length) {
       return [];
     }
-    return nonZeroUniswapNFTPositions.map((position, index) => {
-      const currentTick = slot0Data[index][1];
+    return uniswapNFTPositions.map((position, index) => {
+      const currentTick = slot0Data[index]['tick'];
 
       return new BoostCardInfo(
         BoostCardType.UNISWAP_NFT,
@@ -107,38 +118,97 @@ export default function BoostPage() {
         currentTick,
         position.token0,
         position.token1,
-        colors.get(index)?.[0] ?? 'red',
-        colors.get(index)?.[1] ?? 'blue',
-        position
+        DEFAULT_COLOR0,
+        DEFAULT_COLOR1,
+        position,
+        // TODO: fetch fees earned for Uniswap NFT
+        { amount0: GN.zero(position.token0.decimals), amount1: GN.zero(position.token1.decimals) },
+        null
       );
     });
-  }, [colors, nonZeroUniswapNFTPositions, slot0Data]);
+  }, [uniswapNFTPositions, slot0Data]);
 
-  const selectedPositionInfo = useMemo(() => {
+  /*//////////////////////////////////////////////////////////////
+                           COMPUTE COLORS
+  //////////////////////////////////////////////////////////////*/
+  useEffect(() => {
+    (async () => {
+      const merged = boostedCardInfos.concat(uniswapCardInfos);
+      const tokenAddresses = Array.from(
+        new Set(merged.flatMap((cardInfo) => [cardInfo.token0.logoURI, cardInfo.token1.logoURI])).values()
+      );
+      const entries = tokenAddresses.map(async (logoUri) => {
+        const color = await getProminentColor(logoUri);
+        return [logoUri, `rgb(${color.replace(' ', '')})`] as [string, string];
+      });
+
+      setColors(new Map(await Promise.all(entries)));
+    })();
+
+    return () => {};
+  }, [boostedCardInfos, uniswapCardInfos]);
+
+  /*//////////////////////////////////////////////////////////////
+                          MERGE CARD INFOS
+  //////////////////////////////////////////////////////////////*/
+  const allCardInfos = useMemo(() => {
+    const merged = boostedCardInfos.concat(uniswapCardInfos);
+    return merged.map(
+      (cardInfo) =>
+        new BoostCardInfo(
+          cardInfo.cardType,
+          cardInfo.uniswapPool,
+          cardInfo.currentTick,
+          cardInfo.token0,
+          cardInfo.token1,
+          colors.get(cardInfo.token0.logoURI) ?? cardInfo.color0,
+          colors.get(cardInfo.token1.logoURI) ?? cardInfo.color1,
+          cardInfo.position,
+          cardInfo.feesEarned,
+          cardInfo.borrower
+        )
+    );
+  }, [boostedCardInfos, uniswapCardInfos, colors]);
+
+  const selectedCardInfo = useMemo(() => {
     if (selectedPosition === null) return undefined;
-    return uniswapNFTCardInfo[selectedPosition];
-  }, [selectedPosition, uniswapNFTCardInfo]);
+    return allCardInfos[selectedPosition];
+  }, [selectedPosition, allCardInfos]);
+
+  const getUniqueId = (info: BoostCardInfo) => {
+    return info.uniswapPool.concat(
+      info.borrower?.address ?? '',
+      info.position.lower.toString(),
+      info.position.upper.toString()
+    );
+  };
 
   return (
     <AppPage>
       <Text size='XL'>Boost</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
         {isLoading &&
-          uniswapNFTCardInfo.length === 0 &&
+          allCardInfos.length === 0 &&
           [...Array(4)].map((_, index) => <BoostCardPlaceholder key={index} />)}
-        {uniswapNFTCardInfo.map((info, index) => {
+        {allCardInfos.map((info, index) => {
+          const uniqueId = getUniqueId(info);
           return (
-            <BoostCard key={index} info={info} uniqueId={index.toString()} setSelectedPosition={setSelectedPosition} />
+            <BoostCard
+              key={uniqueId}
+              info={info}
+              uniqueId={uniqueId}
+              setSelectedPosition={() => setSelectedPosition(index)}
+            />
           );
         })}
       </div>
       <ManageBoostModal
         isOpen={selectedPosition !== null}
-        uniqueId={selectedPosition?.toString() ?? ''}
+        uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
         setIsOpen={() => {
           setSelectedPosition(null);
         }}
-        uniswapNFTCardInfo={selectedPositionInfo}
+        uniswapNFTCardInfo={selectedCardInfo}
       />
     </AppPage>
   );
