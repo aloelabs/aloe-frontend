@@ -4,12 +4,14 @@ import JSBI from 'jsbi';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Token } from 'shared/lib/data/Token';
 import { toBig } from 'shared/lib/util/Numbers';
 import { useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
+import ManageBoostModal from '../components/boost/ManageBoostModal';
 import { sqrtRatioToPrice } from '../data/BalanceSheet';
 import {
   UniswapNFTPosition,
@@ -21,6 +23,25 @@ import {
 } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
 
+export type UniswapNFTCardInfo = {
+  token0: Token;
+  token1: Token;
+  minPrice: number;
+  maxPrice: number;
+  amount0: number;
+  amount1: number;
+  amount0Percent: number;
+  amount1Percent: number;
+  isInRange: boolean;
+  isDeposit: boolean;
+  poolAddress: string;
+  color0: string;
+  color1: string;
+  minTick: number;
+  maxTick: number;
+  currentTick: number;
+};
+
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
@@ -29,6 +50,7 @@ export default function BoostPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [colors, setColors] = useState<Map<number, [string, string]>>(new Map());
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -83,7 +105,7 @@ export default function BoostPage() {
     allowFailure: false,
   });
 
-  const uniswapNFTCardInfo = useMemo(() => {
+  const uniswapNFTCardInfo: UniswapNFTCardInfo[] = useMemo(() => {
     if (slot0Data === undefined || slot0Data.length !== nonZeroUniswapNFTPositions.length) {
       return [];
     }
@@ -131,12 +153,19 @@ export default function BoostPage() {
         isDeposit: isDeposit,
         poolAddress: poolAddress,
         currentPrice: currentPrice,
-        tickLower,
-        tickUpper,
+        minTick: tickLower,
+        maxTick: tickUpper,
         currentTick,
+        color0: colors.get(index)?.[0] ?? 'red',
+        color1: colors.get(index)?.[1] ?? 'blue',
       };
     });
-  }, [nonZeroUniswapNFTPositions, slot0Data]);
+  }, [colors, nonZeroUniswapNFTPositions, slot0Data]);
+
+  const selectedPositionInfo = useMemo(() => {
+    if (selectedPosition === null) return undefined;
+    return uniswapNFTCardInfo[selectedPosition];
+  }, [selectedPosition, uniswapNFTCardInfo]);
 
   return (
     <AppPage>
@@ -153,8 +182,8 @@ export default function BoostPage() {
               token1={position.token1}
               minPrice={position.minPrice}
               maxPrice={position.maxPrice}
-              minTick={position.tickLower}
-              maxTick={position.tickUpper}
+              minTick={position.minTick}
+              maxTick={position.maxTick}
               currentTick={position.currentTick}
               amount0={position.amount0}
               amount1={position.amount1}
@@ -166,10 +195,19 @@ export default function BoostPage() {
               color0={colors.get(index)?.[0] ?? 'red'}
               color1={colors.get(index)?.[1] ?? 'blue'}
               uniqueId={index.toString()}
+              setSelectedPosition={setSelectedPosition}
             />
           );
         })}
       </div>
+      <ManageBoostModal
+        isOpen={selectedPosition !== null}
+        uniqueId={selectedPosition?.toString() ?? ''}
+        setIsOpen={() => {
+          setSelectedPosition(null);
+        }}
+        uniswapNFTCardInfo={selectedPositionInfo}
+      />
     </AppPage>
   );
 }
