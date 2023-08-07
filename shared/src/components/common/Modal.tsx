@@ -140,6 +140,8 @@ export type ModalProps = {
   noClose?: boolean;
   maxHeight?: string;
   maxWidth?: string;
+  backgroundColor?: string;
+  backdropFilter?: string;
   setIsOpen: (open: boolean) => void;
 };
 
@@ -210,16 +212,17 @@ function ModalBase(props: ModalBaseProps) {
   );
 }
 
-const ModalPanel = styled(Dialog.Panel)`
+const ModalPanel = styled(Dialog.Panel).attrs((props: { backgroundColor?: string; backdropFilter?: string }) => props)`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translateY(-50%) translateX(-50%);
   width: fit-content;
-  background-color: ${GREY_800};
+  background-color: ${(props) => props.backgroundColor || GREY_800};
   border: 2px solid rgba(43, 64, 80, 1);
   border-radius: 8px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  backdrop-filter: ${(props) => props.backdropFilter || 'none'};
   overflow: hidden;
 `;
 
@@ -268,7 +271,7 @@ const InnerContainer = styled.div`
 `;
 
 export default function Modal(props: ModalProps) {
-  const { isOpen, title, children, noClose, maxHeight, maxWidth, setIsOpen } = props;
+  const { isOpen, title, children, noClose, maxHeight, maxWidth, backgroundColor, backdropFilter, setIsOpen } = props;
   function handleClose() {
     if (!noClose) {
       setIsOpen(false);
@@ -298,7 +301,7 @@ export default function Modal(props: ModalProps) {
             leaveFrom='opacity-100 translate-y-0 sm:scale-100'
             leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
           >
-            <ModalPanel>
+            <ModalPanel as='div' backgroundColor={backgroundColor} backdropFilter={backdropFilter}>
               <ModalPanelWrapper maxHeight={maxHeight} maxWidth={maxWidth}>
                 {title && (
                   <ModalTitle>
