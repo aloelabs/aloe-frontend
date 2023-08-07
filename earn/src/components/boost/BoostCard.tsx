@@ -24,7 +24,7 @@ export type UniswapPositionCardProps = {
   info: BoostCardInfo;
   uniqueId: string;
   isDisplayOnly?: boolean;
-  setSelectedPosition?: (uniqueId: number | null) => void;
+  setSelectedPosition?: () => void;
 };
 
 export default function BoostCard(props: UniswapPositionCardProps) {
@@ -37,12 +37,7 @@ export default function BoostCard(props: UniswapPositionCardProps) {
         Lever Up
       </FilledGradientButton>
     ) : (
-      <FilledGreyButton
-        size='S'
-        onClick={() => {
-          setSelectedPosition?.(parseInt(uniqueId));
-        }}
-      >
+      <FilledGreyButton size='S' onClick={setSelectedPosition}>
         Manage
       </FilledGreyButton>
     );
