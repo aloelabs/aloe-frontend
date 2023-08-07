@@ -1,9 +1,3 @@
-/**
- * 1. balance = boostNft.balanceOf(userAddress)
- * 2. for i in range(balance): tokenIds.append(keccak(abi.encodePacked(userAddress, i)))
- * 3. for tokenId in tokenIds: borrowers.append(boostNft.attributesOf(tokenId))
- */
-
 import { arbitrum, optimism } from '@wagmi/chains';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
