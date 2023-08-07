@@ -16,7 +16,7 @@ import UniswapV3PoolAbi from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleAbi from '../assets/abis/VolatilityOracle.json';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
-import { getAmountsForLiquidity, getValueOfLiquidity, UniswapPosition } from './Uniswap';
+import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
 
 const BOOST_NFT_ADDRESSES: { [chainId: number]: Address } = {
   [optimism.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
@@ -39,8 +39,24 @@ export class BoostCardInfo {
     public readonly token1: Token,
     public readonly color0: string,
     public readonly color1: string,
-    public readonly position: UniswapPosition
+    public readonly position: UniswapPosition,
+    public readonly feesEarned: { amount0: GN; amount1: GN },
+    public readonly borrower: MarginAccount | null
   ) {}
+
+  boostFactor() {
+    if (this.borrower === null) return null;
+    // Compute total value in the Uniswap position
+    const uniswapValue = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
+
+    // Compute total debt
+    const debt0 = this.borrower.liabilities.amount0 - this.borrower.assets.token0Raw;
+    const debt1 = this.borrower.liabilities.amount1 - this.borrower.assets.token1Raw;
+    const price = tickToPrice(this.currentTick, this.token0.decimals, this.token1.decimals, true);
+    const debtValue = debt0 * price + debt1;
+
+    return uniswapValue / (uniswapValue - debtValue);
+  }
 
   isInRange() {
     return this.position.lower <= this.currentTick && this.currentTick < this.position.upper;
