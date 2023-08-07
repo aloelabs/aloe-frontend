@@ -492,7 +492,7 @@ export default function BorrowPage() {
     uniswapPositions.forEach((uniswapPosition) => {
       const isNonZero = JSBI.greaterThan(uniswapPosition.liquidity, JSBI.BigInt('0'));
       const matchingNFTPosition = Array.from(uniswapNFTPositions.entries()).find(([, position]) => {
-        return position.tickLower === uniswapPosition.lower && position.tickUpper === uniswapPosition.upper;
+        return position.lower === uniswapPosition.lower && position.upper === uniswapPosition.upper;
       });
       if (matchingNFTPosition !== undefined && isNonZero) {
         filteredPositions.set(matchingNFTPosition[0], matchingNFTPosition[1]);

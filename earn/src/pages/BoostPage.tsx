@@ -5,14 +5,12 @@ import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
-import { toBig } from 'shared/lib/util/Numbers';
-import { useAccount, useContractReads, useProvider } from 'wagmi';
+import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import ManageBoostModal from '../components/boost/ManageBoostModal';
-import { sqrtRatioToPrice } from '../data/BalanceSheet';
 import { fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import {
   UniswapNFTPosition,
@@ -20,28 +18,62 @@ import {
   computePoolAddress,
   fetchUniswapNFTPositions,
   getAmountsForLiquidity,
-  tickToPrice,
+  getValueOfLiquidity,
 } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
 
-export type UniswapNFTCardInfo = {
-  token0: Token;
-  token1: Token;
-  minPrice: number;
-  maxPrice: number;
-  amount0: number;
-  amount1: number;
-  amount0Percent: number;
-  amount1Percent: number;
-  isInRange: boolean;
-  isDeposit: boolean;
-  poolAddress: string;
-  color0: string;
-  color1: string;
-  minTick: number;
-  maxTick: number;
-  currentTick: number;
-};
+export enum BoostCardType {
+  UNISWAP_NFT,
+  BOOST_NFT,
+  BOOST_NFT_GENERALIZED,
+}
+
+export class BoostCardInfo {
+  constructor(
+    public readonly cardType: BoostCardType,
+    public readonly uniswapPool: Address,
+    public readonly currentTick: number,
+    public readonly token0: Token,
+    public readonly token1: Token,
+    public readonly color0: string,
+    public readonly color1: string,
+    public readonly position: UniswapPosition
+  ) {}
+
+  isInRange() {
+    return this.position.lower <= this.currentTick && this.currentTick < this.position.upper;
+  }
+
+  /**
+   * The amount of token0 in the Uniswap Position, not including earned fees
+   */
+  amount0() {
+    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[0];
+  }
+
+  /**
+   * The amount of token1 in the Uniswap Position, not including earned fees
+   */
+  amount1() {
+    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[1];
+  }
+
+  /**
+   * The amount of token0 in the Uniswap Position as a percentage, not including earned fees
+   */
+  amount0Percent() {
+    return 1 - this.amount1Percent();
+  }
+
+  /**
+   * The amount of token1 in the Uniswap Position as a percentage, not including earned fees
+   */
+  amount1Percent() {
+    const amount1 = this.amount1();
+    const totalValueIn1 = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
+    return amount1 / totalValueIn1;
+  }
+}
 
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);
@@ -123,60 +155,23 @@ export default function BoostPage() {
     allowFailure: false,
   });
 
-  const uniswapNFTCardInfo: UniswapNFTCardInfo[] = useMemo(() => {
+  const uniswapNFTCardInfo: BoostCardInfo[] = useMemo(() => {
     if (slot0Data === undefined || slot0Data.length !== nonZeroUniswapNFTPositions.length) {
       return [];
     }
     return nonZeroUniswapNFTPositions.map((position, index) => {
-      const { token0, token1, tickLower, tickUpper } = position;
-
-      const minPrice = tickToPrice(tickLower, token0.decimals, token1.decimals, true);
-      const maxPrice = tickToPrice(tickUpper, token0.decimals, token1.decimals, true);
-
-      const sqrtPriceX96 = slot0Data[index][0];
       const currentTick = slot0Data[index][1];
 
-      const uniswapPosition: UniswapPosition = {
-        lower: tickLower,
-        upper: tickUpper,
-        liquidity: position.liquidity,
-      };
-
-      const [amount0, amount1] = getAmountsForLiquidity(uniswapPosition, currentTick, token0.decimals, token1.decimals);
-
-      const token0PerToken1 = sqrtRatioToPrice(toBig(sqrtPriceX96), token0.decimals, token1.decimals);
-      const amount0InTermsOfToken1 = amount0 * token0PerToken1;
-      const totalValue = amount0InTermsOfToken1 + amount1;
-
-      const amount0Percent = totalValue > 0 ? (amount0InTermsOfToken1 / totalValue) * 100 : 0;
-      const amount1Percent = totalValue > 0 ? (amount1 / totalValue) * 100 : 0;
-
-      const isInRange = uniswapPosition && currentTick >= uniswapPosition.lower && currentTick <= uniswapPosition.upper;
-
-      const isDeposit = Math.random() > 0.5; // TODO: figure out how to determine if this is a deposit or withdrawal
-
-      const poolAddress = computePoolAddress(position);
-      const currentPrice = sqrtRatioToPrice(toBig(sqrtPriceX96), token0.decimals, token1.decimals);
-
-      return {
-        token0: token0,
-        token1: token1,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-        amount0: amount0,
-        amount1: amount1,
-        amount0Percent: amount0Percent,
-        amount1Percent: amount1Percent,
-        isInRange: isInRange,
-        isDeposit: isDeposit,
-        poolAddress: poolAddress,
-        currentPrice: currentPrice,
-        minTick: tickLower,
-        maxTick: tickUpper,
+      return new BoostCardInfo(
+        BoostCardType.UNISWAP_NFT,
+        computePoolAddress(position),
         currentTick,
-        color0: colors.get(index)?.[0] ?? 'red',
-        color1: colors.get(index)?.[1] ?? 'blue',
-      };
+        position.token0,
+        position.token1,
+        colors.get(index)?.[0] ?? 'red',
+        colors.get(index)?.[1] ?? 'blue',
+        position
+      );
     });
   }, [colors, nonZeroUniswapNFTPositions, slot0Data]);
 
@@ -192,29 +187,9 @@ export default function BoostPage() {
         {isLoading &&
           uniswapNFTCardInfo.length === 0 &&
           [...Array(4)].map((_, index) => <BoostCardPlaceholder key={index} />)}
-        {uniswapNFTCardInfo.map((position, index) => {
+        {uniswapNFTCardInfo.map((info, index) => {
           return (
-            <BoostCard
-              key={index}
-              token0={position.token0}
-              token1={position.token1}
-              minPrice={position.minPrice}
-              maxPrice={position.maxPrice}
-              minTick={position.minTick}
-              maxTick={position.maxTick}
-              currentTick={position.currentTick}
-              amount0={position.amount0}
-              amount1={position.amount1}
-              amount0Percent={position.amount0Percent}
-              amount1Percent={position.amount1Percent}
-              isInRange={position.isInRange}
-              isDeposit={position.isDeposit}
-              poolAddress={position.poolAddress}
-              color0={colors.get(index)?.[0] ?? 'red'}
-              color1={colors.get(index)?.[1] ?? 'blue'}
-              uniqueId={index.toString()}
-              setSelectedPosition={setSelectedPosition}
-            />
+            <BoostCard key={index} info={info} uniqueId={index.toString()} setSelectedPosition={setSelectedPosition} />
           );
         })}
       </div>
