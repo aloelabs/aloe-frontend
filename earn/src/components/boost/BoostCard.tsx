@@ -65,14 +65,14 @@ export default function BoostCard(props: UniswapPositionCardProps) {
           <div className='flex justify-between'>
             <div className='text-left'>
               <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(info.amount0Percent(), 1)}%
+                {roundPercentage(info.amount0Percent() * 100, 1)}%
               </Display>
               <Display size='S'>{formatTokenAmount(info.amount0(), 5)}</Display>
               <Text size='XS'>{token0.symbol}</Text>
             </div>
             <div className='text-right'>
               <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(info.amount1Percent(), 1)}%
+                {roundPercentage(info.amount1Percent() * 100, 1)}%
               </Display>
               <Display size='S'>{formatTokenAmount(info.amount1(), 5)}</Display>
               <Text size='XS'>{token1.symbol}</Text>
