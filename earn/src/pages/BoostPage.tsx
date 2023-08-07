@@ -13,6 +13,7 @@ import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import ManageBoostModal from '../components/boost/ManageBoostModal';
 import { sqrtRatioToPrice } from '../data/BalanceSheet';
+import { fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import {
   UniswapNFTPosition,
   UniswapPosition,
@@ -51,6 +52,23 @@ export default function BoostPage() {
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [colors, setColors] = useState<Map<number, [string, string]>>(new Map());
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (userAddress === undefined) return;
+      const borrowerList = await fetchBoostBorrowersList(activeChain, provider, userAddress);
+
+      const borrowers = await Promise.all(
+        borrowerList.map((borrowerAddress) => {
+          return fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
+        })
+      );
+
+      console.log(borrowers);
+    })();
+
+    return () => {};
+  }, [activeChain, provider, userAddress]);
 
   useEffect(() => {
     let mounted = true;
