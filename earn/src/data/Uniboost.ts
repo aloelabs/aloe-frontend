@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { Address, Chain } from 'wagmi';
 
@@ -15,13 +16,66 @@ import UniswapV3PoolAbi from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleAbi from '../assets/abis/VolatilityOracle.json';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
-import { UniswapPosition } from './Uniswap';
+import { getAmountsForLiquidity, getValueOfLiquidity, UniswapPosition } from './Uniswap';
 
 const BOOST_NFT_ADDRESSES: { [chainId: number]: Address } = {
   [optimism.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
   [arbitrum.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
   8453: '0xecED17C61971A32E28bc55537e8103ce3002d0dA',
 };
+
+export enum BoostCardType {
+  UNISWAP_NFT,
+  BOOST_NFT,
+  BOOST_NFT_GENERALIZED,
+}
+
+export class BoostCardInfo {
+  constructor(
+    public readonly cardType: BoostCardType,
+    public readonly uniswapPool: Address,
+    public readonly currentTick: number,
+    public readonly token0: Token,
+    public readonly token1: Token,
+    public readonly color0: string,
+    public readonly color1: string,
+    public readonly position: UniswapPosition
+  ) {}
+
+  isInRange() {
+    return this.position.lower <= this.currentTick && this.currentTick < this.position.upper;
+  }
+
+  /**
+   * The amount of token0 in the Uniswap Position, not including earned fees
+   */
+  amount0() {
+    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[0];
+  }
+
+  /**
+   * The amount of token1 in the Uniswap Position, not including earned fees
+   */
+  amount1() {
+    return getAmountsForLiquidity(this.position, this.currentTick, this.token0.decimals, this.token1.decimals)[1];
+  }
+
+  /**
+   * The amount of token0 in the Uniswap Position as a percentage, not including earned fees
+   */
+  amount0Percent() {
+    return 1 - this.amount1Percent();
+  }
+
+  /**
+   * The amount of token1 in the Uniswap Position as a percentage, not including earned fees
+   */
+  amount1Percent() {
+    const amount1 = this.amount1();
+    const totalValueIn1 = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
+    return amount1 / totalValueIn1;
+  }
+}
 
 export async function fetchBoostBorrowersList(
   chain: Chain,
