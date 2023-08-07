@@ -3,7 +3,8 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
-import { UniswapNFTCardInfo } from '../../pages/BoostPage';
+import { tickToPrice } from '../../data/Uniswap';
+import { BoostCardInfo, BoostCardType } from '../../pages/BoostPage';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,
@@ -19,49 +20,35 @@ const CustomUniswapPositionCardContainer = styled(UniswapPositionCardContainer)`
   width: 300px;
 `;
 
-export type UniswapPositionCardProps = UniswapNFTCardInfo & {
+export type UniswapPositionCardProps = {
+  info: BoostCardInfo;
   uniqueId: string;
   isDisplayOnly?: boolean;
   setSelectedPosition?: (uniqueId: number | null) => void;
 };
 
 export default function BoostCard(props: UniswapPositionCardProps) {
-  const {
-    token0,
-    token1,
-    minPrice,
-    maxPrice,
-    minTick,
-    maxTick,
-    currentTick,
-    amount0,
-    amount1,
-    amount0Percent,
-    amount1Percent,
-    isInRange,
-    isDeposit,
-    poolAddress,
-    color0,
-    color1,
-    uniqueId,
-    isDisplayOnly,
-    setSelectedPosition,
-  } = props;
+  const { info, uniqueId, isDisplayOnly, setSelectedPosition } = props;
+  const { token0, token1 } = info;
 
-  const editButton = isDeposit ? (
-    <FilledGradientButton size='S' onClick={() => {}}>
-      Lever Up
-    </FilledGradientButton>
-  ) : (
-    <FilledGreyButton
-      size='S'
-      onClick={() => {
-        setSelectedPosition?.(parseInt(uniqueId));
-      }}
-    >
-      Manage
-    </FilledGreyButton>
-  );
+  const editButton =
+    info.cardType === BoostCardType.UNISWAP_NFT ? (
+      <FilledGradientButton size='S' onClick={() => {}}>
+        Lever Up
+      </FilledGradientButton>
+    ) : (
+      <FilledGreyButton
+        size='S'
+        onClick={() => {
+          setSelectedPosition?.(parseInt(uniqueId));
+        }}
+      >
+        Manage
+      </FilledGreyButton>
+    );
+
+  const minPrice = tickToPrice(info.position.lower, token0.decimals, token1.decimals, true);
+  const maxPrice = tickToPrice(info.position.upper, token0.decimals, token1.decimals, true);
 
   return (
     <CustomUniswapPositionCardContainer>
@@ -78,16 +65,16 @@ export default function BoostCard(props: UniswapPositionCardProps) {
           <div className='flex justify-between'>
             <div className='text-left'>
               <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(amount0Percent, 1)}%
+                {roundPercentage(info.amount0Percent(), 1)}%
               </Display>
-              <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
+              <Display size='S'>{formatTokenAmount(info.amount0(), 5)}</Display>
               <Text size='XS'>{token0.symbol}</Text>
             </div>
             <div className='text-right'>
               <Display size='XS' color={ACCENT_COLOR}>
-                {roundPercentage(amount1Percent, 1)}%
+                {roundPercentage(info.amount1Percent(), 1)}%
               </Display>
-              <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
+              <Display size='S'>{formatTokenAmount(info.amount1(), 5)}</Display>
               <Text size='XS'>{token1.symbol}</Text>
             </div>
           </div>
@@ -112,17 +99,17 @@ export default function BoostCard(props: UniswapPositionCardProps) {
             </div>
           </div>
           <div className='flex justify-between'>
-            {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
+            {info.isInRange() ? <InRangeBadge /> : <OutOfRangeBadge />}
             {!isDisplayOnly && editButton}
           </div>
         </div>
         <LiquidityChart
-          poolAddress={poolAddress}
-          minTick={minTick}
-          maxTick={maxTick}
-          currentTick={currentTick}
-          color0={color0}
-          color1={color1}
+          poolAddress={info.uniswapPool}
+          minTick={info.position.lower}
+          maxTick={info.position.upper}
+          currentTick={info.currentTick}
+          color0={info.color0}
+          color1={info.color1}
           uniqueId={uniqueId}
         />
       </UniswapPositionCardWrapper>

@@ -93,7 +93,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
   const isInRange = uniswapPosition && currentTick >= uniswapPosition.lower && currentTick <= uniswapPosition.upper;
 
   const withdrawableNFT = Array.from(withdrawableUniswapNFTs.entries()).find(([_, position]) => {
-    return position.tickLower === uniswapPosition?.lower && position.tickUpper === uniswapPosition?.upper;
+    return position.lower === uniswapPosition?.lower && position.upper === uniswapPosition?.upper;
   });
 
   return (
