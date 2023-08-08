@@ -14,7 +14,7 @@ import ManageBoostModal from '../components/boost/ManageBoostModal';
 import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
-import { getProminentColor } from '../util/Colors';
+import { getProminentColor, rgb } from '../util/Colors';
 
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
@@ -139,7 +139,7 @@ export default function BoostPage() {
       );
       const entries = tokenAddresses.map(async (logoUri) => {
         const color = await getProminentColor(logoUri);
-        return [logoUri, `rgb(${color.replace(' ', '')})`] as [string, string];
+        return [logoUri, rgb(color)] as [string, string];
       });
 
       setColors(new Map(await Promise.all(entries)));
