@@ -5,6 +5,10 @@ import { BigNumber, ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import {
+  UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -13,10 +17,6 @@ import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite 
 import { ChainContext } from '../../../../App';
 import MarginAccountABI from '../../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
-import {
-  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
-  UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
-} from '../../../../data/constants/Addresses';
 import { MarginAccount } from '../../../../data/MarginAccount';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
 import TokenPairIcons from '../../../common/TokenPairIcons';
@@ -165,14 +165,14 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 
   // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
   const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'getApproved',
     args: [BigNumber.from(uniswapNFTPosition[0].toFixed(0))] as const,
     chainId: activeChain.id,
   });
   const { writeAsync: writeApproveAsync } = useContractWrite({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'approve',
     mode: 'recklesslyUnprepared',
@@ -248,7 +248,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
           setIsPending(true);
           writeApproveAsync?.({
             recklesslySetUnpreparedArgs: [
-              ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+              ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
               BigNumber.from(uniswapNFTPosition[0].toFixed(0)),
             ],
             recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from(100000) },

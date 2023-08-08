@@ -1,6 +1,11 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
@@ -11,7 +16,6 @@ import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 
 export type Assets = {
@@ -52,14 +56,15 @@ export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0
 
 export async function getMarginAccountsForUser(
   userAddress: string,
-  provider: ethers.providers.Provider
+  provider: ethers.providers.Provider,
+  chain: Chain
 ): Promise<{ address: string; uniswapPool: string }[]> {
   let logs: ethers.providers.Log[] = [];
   try {
     logs = await provider.getLogs({
       fromBlock: 0,
       toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS,
+      address: ALOE_II_FACTORY_ADDRESS[chain.id],
       topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
     });
   } catch (e) {
@@ -90,7 +95,7 @@ export async function fetchMarginAccounts(
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccount[]> {
   const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
-  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider);
+  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider, chain);
   const marginAccountCallContext: ContractCallContext[] = [];
 
   // Fetch all the data for the margin accounts
@@ -124,7 +129,7 @@ export async function fetchMarginAccounts(
     });
     marginAccountCallContext.push({
       reference: `${accountAddress}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS,
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chain.id],
       abi: VolatilityOracleABI,
       calls: [
         {
@@ -136,7 +141,7 @@ export async function fetchMarginAccounts(
     });
     marginAccountCallContext.push({
       reference: `${accountAddress}-lens`,
-      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS,
+      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chain.id],
       abi: MarginAccountLensABI,
       calls: [
         {

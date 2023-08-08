@@ -9,6 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { Token } from 'shared/lib/data/Token';
@@ -36,13 +42,7 @@ import RepayModal from '../components/borrow/modal/RepayModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import {
-  ALOE_II_BORROWER_LENS_ADDRESS,
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  UNISWAP_POOL_DENYLIST,
-} from '../data/constants/Addresses';
+import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
 import { primeUrl } from '../data/constants/Values';
@@ -209,7 +209,7 @@ export default function BorrowPage() {
 
   const borrowerLensContract = useContract({
     abi: MarginAccountLensABI,
-    address: ALOE_II_BORROWER_LENS_ADDRESS,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     signerOrProvider: provider,
   });
   const { data: uniswapPositionTicks } = useContractRead({
@@ -229,7 +229,7 @@ export default function BorrowPage() {
         logs = await provider.getLogs({
           fromBlock: 0,
           toBlock: 'latest',
-          address: ALOE_II_FACTORY_ADDRESS,
+          address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
           topics: [TOPIC0_CREATE_MARKET_EVENT],
         });
       } catch (e) {
@@ -298,7 +298,11 @@ export default function BorrowPage() {
     }
     async function fetch() {
       if (selectedMarginAccount == null) return;
-      const lenderLensContract = new ethers.Contract(ALOE_II_LENDER_LENS_ADDRESS, KittyLensAbi, provider);
+      const lenderLensContract = new ethers.Contract(
+        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
+        KittyLensAbi,
+        provider
+      );
       const result = await fetchMarketInfoFor(
         lenderLensContract,
         selectedMarginAccount.lender0,
@@ -317,7 +321,7 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [selectedMarginAccount, provider, cachedMarketInfos]);
+  }, [selectedMarginAccount, provider, cachedMarketInfos, activeChain.id]);
 
   // MARK: Fetch GraphData
   useEffect(() => {
@@ -334,7 +338,7 @@ export default function BorrowPage() {
         // TODO: make this into a dedicated function
         etherscanResult = await makeEtherscanRequest(
           0,
-          ALOE_II_ORACLE_ADDRESS,
+          ALOE_II_ORACLE_ADDRESS[activeChain.id],
           [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
           true,
           activeChain

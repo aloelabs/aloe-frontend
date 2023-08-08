@@ -7,9 +7,11 @@ import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc';
 
 import { DEFAULT_CHAIN } from '../data/constants/Values';
 import { ALL_CHAINS } from '../data/constants/ChainSpecific';
+import { base } from '../data/BaseChain';
 
 function fallbackProvider({ chainId }: { chainId?: number }) {
   const targetChain = ALL_CHAINS.find((v) => v.id === chainId) || DEFAULT_CHAIN;
@@ -58,6 +60,12 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
         priority: 1,
       });
       break;
+    case base.id:
+      providers.push({
+        provider: new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/base', config),
+        priority: 1,
+      });
+      break;
     default:
       throw new Error('Unsupported network');
   }
@@ -68,6 +76,16 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
 const providers = [publicProvider({ priority: 2 })];
 if (process.env.REACT_APP_ALCHEMY_API_KEY) {
   providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY || '', priority: 0 }));
+}
+if (process.env.REACT_APP_ANKR_API_KEY) {
+  providers.push(
+    jsonRpcProvider({
+      rpc: (chain) => ({
+        http: `https://rpc.ankr.com/${chain.network}/${process.env.REACT_APP_ANKR_API_KEY}`,
+      }),
+      priority: 1,
+    })
+  );
 }
 if (process.env.REACT_APP_INFURA_ID) {
   providers.push(infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID || '', priority: 1 }));

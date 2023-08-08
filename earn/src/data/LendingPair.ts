@@ -1,5 +1,10 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -13,12 +18,7 @@ import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import {
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  UNISWAP_POOL_DENYLIST,
-} from './constants/Addresses';
+import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -63,10 +63,11 @@ export async function getAvailableLendingPairs(
   const multicall = new Multicall({ ethersProvider: provider });
   let logs: ethers.providers.Log[] = [];
   try {
+    console.log(chain.name);
     logs = await provider.getLogs({
-      fromBlock: 7537163,
+      fromBlock: 1,
       toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS,
+      address: ALOE_II_FACTORY_ADDRESS[chain.id],
       topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     });
   } catch (e) {
@@ -91,7 +92,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chain.id],
       abi: KittyLensABI,
       calls: [
         {
@@ -123,7 +124,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS,
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chain.id],
       abi: VolatilityOracleABI,
       calls: [
         {

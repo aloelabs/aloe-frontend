@@ -9,6 +9,7 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
@@ -25,7 +26,6 @@ import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from './constants/Addresses';
 import { BIGQ96, Q96 } from './constants/Values';
 
 const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
@@ -298,7 +298,11 @@ export async function fetchUniswapNFTPositions(
   provider: Provider,
   chain: Chain
 ): Promise<Map<number, UniswapNFTPosition>> {
-  const nftManager = new ethers.Contract(UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS, UniswapNFTManagerABI, provider);
+  const nftManager = new ethers.Contract(
+    UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
+    UniswapNFTManagerABI,
+    provider
+  );
   const numPositions: BigNumber = await nftManager.balanceOf(userAddress);
   if (numPositions.isZero()) {
     return new Map();
@@ -315,7 +319,7 @@ export async function fetchUniswapNFTPositions(
   const tokenIdCallContext: ContractCallContext[] = [
     {
       reference: 'uniswapNFTManager',
-      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
       abi: UniswapNFTManagerABI,
       calls: tokenIdCallContexts,
     },
@@ -335,7 +339,7 @@ export async function fetchUniswapNFTPositions(
   const positionsCallContext: ContractCallContext[] = [
     {
       reference: 'uniswapNFTManager',
-      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
       abi: UniswapNFTManagerABI,
       calls: positionsCallContexts,
     },
