@@ -29,6 +29,7 @@ import {
   ALOE_II_WITHDRAW_MANAGER_ADDRESS_ARBITRUM,
   ALOE_II_WITHDRAW_MANAGER_ADDRESS_BASE,
   ALOE_II_WITHDRAW_MANAGER_ADDRESS_OPTIMISM,
+  MULTICALL3_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS_ARBITRUM,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS_BASE,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS_OPTIMISM,
@@ -39,9 +40,9 @@ import {
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
-export const SUPPORTED_CHAINS = [goerli, optimism, arbitrum, base];
+export const SUPPORTED_CHAINS = [optimism, arbitrum, base];
 
-export const ALL_CHAINS = [mainnet, goerli, optimism, arbitrum, base];
+export const ALL_CHAINS = [mainnet, optimism, arbitrum, base];
 
 export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [mainnet.id]: <EthereumLogo width={16} height={16} />,
@@ -57,6 +58,12 @@ export const ANTES: { [chainId: number]: GN } = {
   [optimism.id]: GN.fromDecimalString('0.001', 18),
   [arbitrum.id]: GN.fromDecimalString('0.001', 18),
   [base.id]: GN.fromDecimalString('0.001', 18),
+};
+
+export const MULTICALL_ADDRESS: { [chainId: number]: Address } = {
+  [optimism.id]: MULTICALL3_ADDRESS,
+  [arbitrum.id]: MULTICALL3_ADDRESS,
+  [base.id]: MULTICALL3_ADDRESS,
 };
 
 export const UNISWAP_PERMIT2_ADDRESS: { [chainId: number]: Address } = {

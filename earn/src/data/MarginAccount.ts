@@ -5,6 +5,7 @@ import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
+  MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Token } from 'shared/lib/data/Token';
@@ -94,7 +95,11 @@ export async function fetchMarginAccounts(
   userAddress: string,
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccount[]> {
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
   const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider, chain);
   const marginAccountCallContext: ContractCallContext[] = [];
 

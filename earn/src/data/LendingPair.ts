@@ -1,9 +1,11 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { base } from 'shared/lib/data/BaseChain';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
+  MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -60,11 +62,14 @@ export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
-  const multicall = new Multicall({ ethersProvider: provider });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
   let logs: ethers.providers.Log[] = [];
   try {
     logs = await provider.getLogs({
-      fromBlock: 1,
+      fromBlock: chain.id === base.id ? 2284814 : 0,
       toBlock: 'latest',
       address: ALOE_II_FACTORY_ADDRESS[chain.id],
       topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
