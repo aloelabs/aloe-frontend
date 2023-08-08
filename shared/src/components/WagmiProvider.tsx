@@ -75,22 +75,16 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
 
 const providers = [publicProvider({ priority: 2 })];
 if (process.env.REACT_APP_ALCHEMY_API_KEY) {
-  providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY || '', priority: 1 }));
-}
-if (process.env.REACT_APP_INFURA_ID) {
-  providers.push(infuraProvider({ apiKey: process.env.REACT_APP_INFURA_ID || '', priority: 2 }));
+  providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY || '', priority: 0 }));
 }
 if (process.env.REACT_APP_ANKR_API_KEY) {
   providers.push(
     jsonRpcProvider({
-      rpc: (chain) => {
-        if (chain.id !== base.id) return null;
-        return {
-          http: `https://rpc.ankr.com/${chain.network}/${process.env.REACT_APP_ANKR_API_KEY}`,
-          ws: `wss://rpc.ankr.com/${chain.network}/ws/${process.env.REACT_APP_ANKR_API_KEY}`,
-        };
-      },
-      priority: 0,
+      rpc: (chain) => ({
+        http: `https://rpc.ankr.com/${chain.network}/${process.env.REACT_APP_ANKR_API_KEY}`,
+        ws: `wss://rpc.ankr.com/${chain.network}/ws/${process.env.REACT_APP_ANKR_API_KEY}`,
+      }),
+      priority: 1,
     })
   );
 }
