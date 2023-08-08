@@ -263,7 +263,7 @@ const WETH_BASE = new Token(
 
 const CBETH_BASE = new Token(
   base.id,
-  '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22',
+  '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
   18,
   'cbETH',
   'Coinbase Wrapped Staked ETH',
