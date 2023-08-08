@@ -1,8 +1,9 @@
-import { FilledGradientButton, FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
+import { ReactComponent as WrenchIcon } from '../../assets/svg/wrench.svg';
+import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
 import { tickToPrice } from '../../data/Uniswap';
 import TokenPairIcons from '../common/TokenPairIcons';
@@ -13,9 +14,6 @@ import {
   UniswapPositionCardWrapper,
 } from '../common/UniswapPositionCard';
 import LiquidityChart from './LiquidityChart';
-
-import { ReactComponent as WrenchIcon } from '../../assets/svg/wrench.svg';
-import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 
 export const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 const BOOSTED_BACKGROUND_COLOR = 'rgb(255,217,102,0.1)';
@@ -40,9 +38,6 @@ const CustomUniswapPositionCardContainer = styled(UniswapPositionCardContainer)`
   }
 
   &:hover {
-    // box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.16);
-    // outline: 0.5px solid white;
-
     &:after {
       content: none;
     }
