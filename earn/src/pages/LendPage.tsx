@@ -109,8 +109,6 @@ export default function LendPage() {
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
 
-  console.log('uniqueSymbols', lendingPairs);
-
   useEffect(() => {
     let mounted = true;
     async function fetch() {

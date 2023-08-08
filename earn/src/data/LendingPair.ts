@@ -63,7 +63,6 @@ export async function getAvailableLendingPairs(
   const multicall = new Multicall({ ethersProvider: provider });
   let logs: ethers.providers.Log[] = [];
   try {
-    console.log(chain.name);
     logs = await provider.getLogs({
       fromBlock: 1,
       toBlock: 'latest',
