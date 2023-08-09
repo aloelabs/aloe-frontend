@@ -8,6 +8,8 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
+import { base } from 'shared/lib/data/BaseChain';
+import { ALOE_II_FACTORY_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { getToken } from 'shared/lib/data/TokenData';
@@ -22,9 +24,10 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_FACTORY_ADDRESS, UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
+import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
+import { makeEtherscanRequest } from '../util/Etherscan';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -71,17 +74,33 @@ export default function BorrowAccountsPage() {
     async function fetchAvailablePools() {
       let createMarketLogs: ethers.providers.Log[] = [];
       try {
-        createMarketLogs = await provider.getLogs({
-          address: ALOE_II_FACTORY_ADDRESS,
-          fromBlock: 0,
-          toBlock: 'latest',
-          topics: [TOPIC0_CREATE_MARKET_EVENT],
-        });
+        // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
+        if (activeChain.id === base.id) {
+          const res = await makeEtherscanRequest(
+            2284814,
+            ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            [TOPIC0_CREATE_MARKET_EVENT],
+            true,
+            activeChain
+          );
+          createMarketLogs = res.data.result;
+        } else {
+          createMarketLogs = await provider.getLogs({
+            fromBlock: 0,
+            toBlock: 'latest',
+            address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            topics: [TOPIC0_CREATE_MARKET_EVENT],
+          });
+        }
       } catch (e) {
         console.error(e);
       }
 
-      const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+      const multicall = new Multicall({
+        ethersProvider: provider,
+        tryAggregate: true,
+        multicallCustomContractAddress: MULTICALL_ADDRESS[activeChain.id],
+      });
       const marginAccountCallContext: ContractCallContext[] = [];
 
       createMarketLogs.forEach((e) => {
@@ -258,7 +277,7 @@ export default function BorrowAccountsPage() {
             if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
               return;
             }
-            createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
+            createBorrower(signer, selectedPool, accountAddress, activeChain, onCommencement, onCompletion);
           }}
         />
       )}
