@@ -8,6 +8,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -15,7 +16,6 @@ import { Address, useAccount, useContractWrite, usePrepareContractWrite } from '
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
-import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { Assets, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapPosition } from '../../../data/Uniswap';
@@ -75,7 +75,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     abi: borrowerABI,
     functionName: 'modify',
     args: [
-      ALOE_II_WITHDRAW_MANAGER_ADDRESS,
+      ALOE_II_WITHDRAW_MANAGER_ADDRESS[activeChain.id],
       ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address'],
         [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]

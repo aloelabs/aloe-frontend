@@ -4,6 +4,7 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   ArbLogo,
+  CbEthLogo,
   DaiLogo,
   FraxLogo,
   GmxLogo,
@@ -20,6 +21,7 @@ import {
   WethLogo,
   WstEthLogo,
 } from '../assets/svg/tokens';
+import { base } from './BaseChain';
 
 const USDC_GOERLI = new Token(
   goerli.id,
@@ -250,6 +252,24 @@ const ARB_ARBITRUM = new Token(
   ArbLogo
 );
 
+const WETH_BASE = new Token(
+  base.id,
+  '0x4200000000000000000000000000000000000006',
+  18,
+  'WETH',
+  'Wrapped Ether',
+  WethLogo
+);
+
+const CBETH_BASE = new Token(
+  base.id,
+  '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
+  18,
+  'cbETH',
+  'Coinbase Wrapped Staked ETH',
+  CbEthLogo
+);
+
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
@@ -285,6 +305,10 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDT_ARBITRUM.address]: USDT_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
+  },
+  [base.id]: {
+    [WETH_BASE.address]: WETH_BASE,
+    [CBETH_BASE.address]: CBETH_BASE,
   },
 };
 

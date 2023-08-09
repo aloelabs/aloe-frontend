@@ -8,6 +8,7 @@ import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -16,7 +17,6 @@ import { formatNumberInput, roundPercentage, truncateDecimals } from 'shared/lib
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -93,10 +93,10 @@ function DepositButton(props: DepositButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerABI,
     functionName: 'depositWithPermit2',
     args: [

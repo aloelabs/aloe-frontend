@@ -56,7 +56,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   useEffectOnce(() => {
     let mounted = true;
     async function fetch(poolAddress: string) {
-      const poolBasics = await fetchUniswapPoolBasics(poolAddress, provider);
+      const poolBasics = await fetchUniswapPoolBasics(poolAddress, provider, activeChain);
       const tickData = await calculateTickData(poolAddress, poolBasics, activeChain.id);
       if (mounted) {
         setLiquidityData(tickData);

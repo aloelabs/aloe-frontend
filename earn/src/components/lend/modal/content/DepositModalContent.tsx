@@ -7,6 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -14,7 +15,6 @@ import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 
 const TERTIARY_COLOR = '#4b6980';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
@@ -86,10 +86,10 @@ function DepositButton(props: DepositButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
 
   const { config: depositWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerABI,
     functionName: 'depositWithPermit2',
     args: [

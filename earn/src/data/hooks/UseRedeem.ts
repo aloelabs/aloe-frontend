@@ -1,5 +1,6 @@
 import { BigNumber, Signature } from 'ethers';
 import { routerABI } from 'shared/lib/abis/Router';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { PermitState, usePermit } from 'shared/lib/data/hooks/UsePermit';
 import {
@@ -10,8 +11,6 @@ import {
   useContractWrite,
   usePrepareContractWrite,
 } from 'wagmi';
-
-import { ALOE_II_ROUTER_ADDRESS } from '../constants/Addresses';
 
 export enum RedeemState {
   WAITING_FOR_INPUT,
@@ -111,7 +110,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     state: permitState,
     action: permitAction,
     result: permitResult,
-  } = usePermit(chainId, lender, owner, ALOE_II_ROUTER_ADDRESS, shares.toString(), shouldUseChecks);
+  } = usePermit(chainId, lender, owner, ALOE_II_ROUTER_ADDRESS[chainId], shares.toString(), shouldUseChecks);
   const deadline = BigNumber.from(permitResult.deadline);
   const signature = permitResult.signature ?? ({ v: 0, r: '0x', s: '0x' } as Signature);
 

@@ -1,16 +1,18 @@
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { Chain } from 'wagmi';
 
 import FactoryABI from '../assets/abis/Factory.json';
-import { ALOE_II_FACTORY_ADDRESS } from '../data/constants/Addresses';
 import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 
 export async function createMarginAccount(
   signer: Signer,
   poolAddress: string,
   ownerAddress: string,
-  completionCallback: (receipt?: ContractReceipt) => void
+  completionCallback: (receipt?: ContractReceipt) => void,
+  chain: Chain
 ): Promise<void> {
-  const factory = new Contract(ALOE_II_FACTORY_ADDRESS, FactoryABI, signer);
+  const factory = new Contract(ALOE_II_FACTORY_ADDRESS[chain.id], FactoryABI, signer);
 
   let transactionOptions: any = {};
 

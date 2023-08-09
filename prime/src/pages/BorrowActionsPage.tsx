@@ -6,6 +6,8 @@ import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
@@ -32,7 +34,6 @@ import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
 import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
@@ -239,12 +240,12 @@ export default function BorrowActionsPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
   const marginAccountLensContract = useContract({
-    address: ALOE_II_BORROWER_LENS_ADDRESS,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     abi: MarginAccountLensABI,
     signerOrProvider: provider,
   });
   const lenderLensContract = useContract({
-    address: ALOE_II_LENDER_LENS_ADDRESS,
+    address: ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
     abi: KittyLensAbi,
     signerOrProvider: provider,
   });

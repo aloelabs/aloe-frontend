@@ -6,13 +6,13 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import styled from 'styled-components';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import FactoryABI from '../../../assets/abis/Factory.json';
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
-import { ALOE_II_FACTORY_ADDRESS } from '../../../data/constants/Addresses';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
 
@@ -43,7 +43,7 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
   const [isPending, setIsPending] = useState(false);
 
   const { config: createBorrowerConfig } = usePrepareContractWrite({
-    address: ALOE_II_FACTORY_ADDRESS,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     abi: FactoryABI,
     functionName: 'createBorrower',
     args: [poolAddress, userAddress],

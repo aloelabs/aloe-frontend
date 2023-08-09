@@ -7,6 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
@@ -15,7 +16,6 @@ import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Addr
 
 import { ChainContext } from '../../../App';
 import { isSolvent } from '../../../data/BalanceSheet';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -101,10 +101,10 @@ function RepayButton(props: RepayButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS, repayAmount);
+  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], repayAmount);
 
   const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerABI,
     functionName: 'repayWithPermit2',
     args: [

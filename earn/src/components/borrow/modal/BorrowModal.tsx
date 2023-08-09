@@ -8,6 +8,7 @@ import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -15,7 +16,6 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
@@ -100,7 +100,7 @@ function BorrowButton(props: BorrowButtonProps) {
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData as Address, [false, false]],
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as Address, [false, false]],
     overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
     enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
     chainId: activeChain.id,
