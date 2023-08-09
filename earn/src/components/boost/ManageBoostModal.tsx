@@ -25,7 +25,14 @@ export type ManageBoostModalProps = {
 export default function ManageBoostModal(props: ManageBoostModalProps) {
   const { uniswapNFTCardInfo, uniqueId, isOpen, setIsOpen } = props;
   return (
-    <Modal isOpen={isOpen} setIsOpen={setIsOpen} title={'Manage'} maxWidth='640px'>
+    <Modal
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      title={'Manage'}
+      maxWidth='640px'
+      backgroundColor='rgba(43, 64, 80, 0.1)'
+      backdropFilter='blur(40px)'
+    >
       {uniswapNFTCardInfo && (
         <Container>
           <BoostCard info={uniswapNFTCardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
