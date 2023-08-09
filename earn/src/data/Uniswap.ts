@@ -9,7 +9,10 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  MULTICALL_ADDRESS,
+  UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
@@ -216,11 +219,13 @@ export async function fetchUniswapPositions(
   priors: UniswapPositionPrior[],
   marginAccountAddress: string,
   uniswapV3PoolAddress: string,
-  provider: Provider
+  provider: Provider,
+  chain: Chain
 ) {
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
   });
   const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
   const contractCallContext: ContractCallContext[] = [];
@@ -259,9 +264,14 @@ export async function fetchUniswapPositions(
  */
 export async function fetchUniswapPoolBasics(
   uniswapPoolAddress: string,
-  provider: ethers.providers.BaseProvider
+  provider: ethers.providers.BaseProvider,
+  chain: Chain
 ): Promise<UniswapV3PoolBasics> {
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
   const contractCallContext: ContractCallContext[] = [
     {
       reference: 'uniswapV3Pool',
@@ -307,7 +317,11 @@ export async function fetchUniswapNFTPositions(
   if (numPositions.isZero()) {
     return new Map();
   }
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
   const tokenIdCallContexts: CallContext[] = [];
   for (let i = 0; i < numPositions.toNumber(); i++) {
     tokenIdCallContexts.push({

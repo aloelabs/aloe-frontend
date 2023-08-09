@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
 import { ethers } from 'ethers';
+import { base } from 'shared/lib/data/BaseChain';
 
 import { ChainContext } from '../../App';
 import { LendingPair } from '../LendingPair';
@@ -11,7 +12,7 @@ export default function useNumberOfUsers(
   selectedLendingPair: LendingPair,
   lendingPairLabel: string
 ) {
-  const activeChain = useContext(ChainContext);
+  const { activeChain } = useContext(ChainContext);
   const [numberOfUsers, setNumberOfUsers] = useState<number>(0);
   const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
 
@@ -30,13 +31,13 @@ export default function useNumberOfUsers(
       try {
         [lender0Logs, lender1Logs] = await Promise.all([
           provider.getLogs({
-            fromBlock: 0,
+            fromBlock: activeChain.id === base.id ? 2284814 : 0,
             toBlock: 'latest',
             address: selectedLendingPair.kitty0.address,
             topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],
           }),
           provider.getLogs({
-            fromBlock: 0,
+            fromBlock: activeChain.id === base.id ? 2284814 : 0,
             toBlock: 'latest',
             address: selectedLendingPair.kitty1.address,
             topics: ['0xdcbc1c05240f31ff3ad067ef1ee35ce4997762752e3a095284754544f4c709d7'],

@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { base } from 'shared/lib/data/BaseChain';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
@@ -227,7 +228,7 @@ export default function BorrowPage() {
       let logs: ethers.providers.Log[] = [];
       try {
         logs = await provider.getLogs({
-          fromBlock: 0,
+          fromBlock: activeChain.id === base.id ? 2284814 : 0,
           toBlock: 'latest',
           address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
           topics: [TOPIC0_CREATE_MARKET_EVENT],
@@ -415,7 +416,8 @@ export default function BorrowPage() {
           uniswapPositionPriors,
           selectedMarginAccount.address,
           selectedMarginAccount.uniswapPool,
-          provider
+          provider,
+          activeChain
         );
         // We only want the values, not the keys
         const fetchedUniswapPositions = Array.from(fetchedUniswapPositionsMap.values());

@@ -1,6 +1,7 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { base } from 'shared/lib/data/BaseChain';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -63,7 +64,7 @@ export async function getMarginAccountsForUser(
   let logs: ethers.providers.Log[] = [];
   try {
     logs = await provider.getLogs({
-      fromBlock: 0,
+      fromBlock: chain.id === base.id ? 2284814 : 0,
       toBlock: 'latest',
       address: ALOE_II_FACTORY_ADDRESS[chain.id],
       topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
