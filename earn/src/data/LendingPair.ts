@@ -19,6 +19,7 @@ import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 
@@ -68,12 +69,24 @@ export async function getAvailableLendingPairs(
   });
   let logs: ethers.providers.Log[] = [];
   try {
-    logs = await provider.getLogs({
-      fromBlock: chain.id === base.id ? 2284814 : 0,
-      toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS[chain.id],
-      topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
-    });
+    // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
+    if (chain.id === base.id) {
+      const res = await makeEtherscanRequest(
+        2284814,
+        ALOE_II_FACTORY_ADDRESS[chain.id],
+        ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+        true,
+        chain
+      );
+      logs = res.data.result;
+    } else {
+      logs = await provider.getLogs({
+        fromBlock: 0,
+        toBlock: 'latest',
+        address: ALOE_II_FACTORY_ADDRESS[chain.id],
+        topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+      });
+    }
   } catch (e) {
     console.error(e);
   }

@@ -227,12 +227,24 @@ export default function BorrowPage() {
     async function fetchAvailablePools() {
       let logs: ethers.providers.Log[] = [];
       try {
-        logs = await provider.getLogs({
-          fromBlock: activeChain.id === base.id ? 2284814 : 0,
-          toBlock: 'latest',
-          address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-          topics: [TOPIC0_CREATE_MARKET_EVENT],
-        });
+        // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
+        if (activeChain.id === base.id) {
+          const res = await makeEtherscanRequest(
+            2284814,
+            ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            [TOPIC0_CREATE_MARKET_EVENT],
+            true,
+            activeChain
+          );
+          logs = res.data.result;
+        } else {
+          logs = await provider.getLogs({
+            fromBlock: 0,
+            toBlock: 'latest',
+            address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            topics: [TOPIC0_CREATE_MARKET_EVENT],
+          });
+        }
       } catch (e) {
         console.error(e);
       }

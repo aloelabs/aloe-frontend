@@ -74,7 +74,7 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
 
 const providers = [publicProvider({ priority: 2 })];
 if (process.env.REACT_APP_ALCHEMY_API_KEY) {
-  providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY || '', priority: 0 }));
+  providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY, priority: 0 }));
 }
 if (process.env.REACT_APP_ANKR_API_KEY) {
   providers.push(
