@@ -2,7 +2,7 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 import { base } from '../BaseChain';
 import { Address } from 'wagmi';
 
-import { ArbitrumLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
+import { ArbitrumLogo, BaseLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS_ARBITRUM,
@@ -49,7 +49,7 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [goerli.id]: <EthereumLogo width={16} height={16} />,
   [optimism.id]: <OptimismLogo width={16} height={16} />,
   [arbitrum.id]: <ArbitrumLogo width={16} height={16} />,
-  [base.id]: <EthereumLogo width={16} height={16} />,
+  [base.id]: <BaseLogo width={16} height={16} />,
 };
 
 export const ANTES: { [chainId: number]: GN } = {
