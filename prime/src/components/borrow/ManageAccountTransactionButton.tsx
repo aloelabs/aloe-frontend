@@ -3,6 +3,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import {
@@ -24,7 +25,6 @@ import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
-import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { ANTE } from '../../data/constants/Values';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
@@ -155,26 +155,26 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     activeChain,
     token0,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
     enabled
   );
   const { data: userAllowance1Asset, refetch: refetchAllowance1 } = useAllowance(
     activeChain,
     token1,
     userAddress ?? '0x',
-    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
     enabled
   );
   const writeAsset0Allowance = useAllowanceWrite(
     activeChain,
     token0,
-    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
     refetchAllowance0
   );
   const writeAsset1Allowance = useAllowanceWrite(
     activeChain,
     token1,
-    ALOE_II_FRONTEND_MANAGER_ADDRESS,
+    ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
     refetchAllowance1
   );
 
@@ -272,7 +272,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     functionName: 'modify',
     chainId: activeChain.id,
     args: [
-      ALOE_II_FRONTEND_MANAGER_ADDRESS,
+      ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
       calldata,
       [
         isRemovingToken0Collateral || isSwappingToken0ForToken1,

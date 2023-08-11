@@ -18,6 +18,7 @@ import VeloLogo from './velo.svg';
 import WbtcLogo from './wbtc.svg';
 import WethLogo from './weth.svg';
 import WstEthLogo from './wsteth.svg';
+import CbEthLogo from './cbeth.svg';
 
 export {
   ArbLogo,
@@ -40,4 +41,5 @@ export {
   UsdtLogo,
   MagicLogo,
   MimLogo,
+  CbEthLogo,
 };

@@ -1,5 +1,12 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { base } from 'shared/lib/data/BaseChain';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  MULTICALL_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -12,13 +19,9 @@ import KittyABI from '../assets/abis/Kitty.json';
 import KittyLensABI from '../assets/abis/KittyLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
+import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import {
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  UNISWAP_POOL_DENYLIST,
-} from './constants/Addresses';
+import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -60,15 +63,30 @@ export async function getAvailableLendingPairs(
   chain: Chain,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
-  const multicall = new Multicall({ ethersProvider: provider });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
   let logs: ethers.providers.Log[] = [];
   try {
-    logs = await provider.getLogs({
-      fromBlock: 7537163,
-      toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS,
-      topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
-    });
+    // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
+    if (chain.id === base.id) {
+      const res = await makeEtherscanRequest(
+        2284814,
+        ALOE_II_FACTORY_ADDRESS[chain.id],
+        ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+        true,
+        chain
+      );
+      logs = res.data.result;
+    } else {
+      logs = await provider.getLogs({
+        fromBlock: 0,
+        toBlock: 'latest',
+        address: ALOE_II_FACTORY_ADDRESS[chain.id],
+        topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+      });
+    }
   } catch (e) {
     console.error(e);
   }
@@ -91,7 +109,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chain.id],
       abi: KittyLensABI,
       calls: [
         {
@@ -123,7 +141,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS,
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chain.id],
       abi: VolatilityOracleABI,
       calls: [
         {

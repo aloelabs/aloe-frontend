@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -13,7 +14,6 @@ import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 import { ChainContext } from '../../../App';
 import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
-import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { MarginAccount } from '../../../data/MarginAccount';
 import {
   getAmountsForLiquidity,
@@ -109,7 +109,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS, data, [true, true]],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, [true, true]],
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
