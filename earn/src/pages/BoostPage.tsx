@@ -10,6 +10,7 @@ import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
+import ImportModal from '../components/boost/ImportModal';
 import ManageBoostModal from '../components/boost/ManageBoostModal';
 import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
@@ -36,13 +37,14 @@ export default function BoostPage() {
   useEffect(() => {
     (async () => {
       if (userAddress === undefined) return;
-      const borrowerList = await fetchBoostBorrowersList(activeChain, provider, userAddress);
+      const { borrowers, tokenIds } = await fetchBoostBorrowersList(activeChain, provider, userAddress);
 
       const fetchedInfos = await Promise.all(
-        borrowerList.map(async (borrowerAddress) => {
+        borrowers.map(async (borrowerAddress, i) => {
           const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
+            tokenIds[i],
             res.borrower.uniswapPool as Address,
             sqrtRatioToTick(res.borrower.sqrtPriceX96),
             res.borrower.token0,
@@ -114,6 +116,7 @@ export default function BoostPage() {
 
       return new BoostCardInfo(
         BoostCardType.UNISWAP_NFT,
+        position.tokenId,
         computePoolAddress(position),
         currentTick,
         position.token0,
@@ -157,6 +160,7 @@ export default function BoostPage() {
       (cardInfo) =>
         new BoostCardInfo(
           cardInfo.cardType,
+          cardInfo.nftTokenId,
           cardInfo.uniswapPool,
           cardInfo.currentTick,
           cardInfo.token0,
@@ -202,8 +206,16 @@ export default function BoostPage() {
           );
         })}
       </div>
+      <ImportModal
+        isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
+        uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
+        setIsOpen={() => {
+          setSelectedPosition(null);
+        }}
+        cardInfo={selectedCardInfo}
+      />
       <ManageBoostModal
-        isOpen={selectedPosition !== null}
+        isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.BOOST_NFT}
         uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
         setIsOpen={() => {
           setSelectedPosition(null);
