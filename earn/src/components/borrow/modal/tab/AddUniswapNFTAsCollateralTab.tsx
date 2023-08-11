@@ -200,8 +200,8 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS, data, [true, true]],
-    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, [true, true]],
+    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
@@ -230,7 +230,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     confirmButtonState = ConfirmButtonState.APPROVING;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (getApprovedData !== ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS) {
+  } else if (getApprovedData !== ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]) {
     confirmButtonState = ConfirmButtonState.APPROVE_NFT_MANAGER;
   } else if (contractWriteConfig && contractWriteConfig.request === undefined) {
     confirmButtonState = ConfirmButtonState.LOADING;
