@@ -109,7 +109,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     address: marginAccount.address,
     abi: MarginAccountABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS, data, [true, true]],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, [true, true]],
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {

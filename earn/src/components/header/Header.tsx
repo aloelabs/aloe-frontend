@@ -14,12 +14,16 @@ const NAV_LINKS: NavBarLink[] = [
   },
   {
     label: 'Markets',
-    to: '/markets',
+    to: '/lend',
   },
-  {
-    label: 'Boost',
-    to: '/boost',
-  },
+  // {
+  //   label: 'Markets',
+  //   to: '/markets',
+  // },
+  // {
+  //   label: 'Boost',
+  //   to: '/boost',
+  // },
   {
     label: 'Advanced',
     to: '/borrow',

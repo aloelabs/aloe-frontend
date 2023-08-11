@@ -272,7 +272,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     functionName: 'modify',
     chainId: activeChain.id,
     args: [
-      ALOE_II_FRONTEND_MANAGER_ADDRESS,
+      ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
       calldata,
       [
         isRemovingToken0Collateral || isSwappingToken0ForToken1,
