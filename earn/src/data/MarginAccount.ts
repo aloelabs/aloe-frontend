@@ -12,7 +12,7 @@ import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address, Chain } from 'wagmi';
+import { Address } from 'wagmi';
 
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
@@ -58,27 +58,27 @@ export type MarginAccount = {
 export type MarginAccountPreview = Omit<MarginAccount, 'sqrtPriceX96' | 'lender0' | 'lender1' | 'iv'>;
 
 export async function getMarginAccountsForUser(
-  userAddress: string,
+  chainId: number,
   provider: ethers.providers.Provider,
-  chain: Chain
+  userAddress: string
 ): Promise<{ address: string; uniswapPool: string }[]> {
   let logs: ethers.providers.Log[] = [];
   try {
     // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-    if (chain.id === base.id) {
+    if (chainId === base.id) {
       const res = await makeEtherscanRequest(
         2284814,
-        ALOE_II_FACTORY_ADDRESS[chain.id],
+        ALOE_II_FACTORY_ADDRESS[chainId],
         [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
         true,
-        chain
+        chainId
       );
       logs = res.data.result;
     } else {
       logs = await provider.getLogs({
         fromBlock: 0,
         toBlock: 'latest',
-        address: ALOE_II_FACTORY_ADDRESS[chain.id],
+        address: ALOE_II_FACTORY_ADDRESS[chainId],
         topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
       });
     }
@@ -104,7 +104,7 @@ export type UniswapPoolInfo = {
 };
 
 export async function fetchMarginAccounts(
-  chain: Chain,
+  chainId: number,
   provider: ethers.providers.BaseProvider,
   userAddress: string,
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
@@ -112,9 +112,9 @@ export async function fetchMarginAccounts(
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
-  const marginAccountsAddresses = await getMarginAccountsForUser(userAddress, provider, chain);
+  const marginAccountsAddresses = await getMarginAccountsForUser(chainId, provider, userAddress);
   const marginAccountCallContext: ContractCallContext[] = [];
 
   // Fetch all the data for the margin accounts
@@ -148,7 +148,7 @@ export async function fetchMarginAccounts(
     });
     marginAccountCallContext.push({
       reference: `${accountAddress}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS[chain.id],
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
       abi: VolatilityOracleABI,
       calls: [
         {
@@ -160,7 +160,7 @@ export async function fetchMarginAccounts(
     });
     marginAccountCallContext.push({
       reference: `${accountAddress}-lens`,
-      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chain.id],
+      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
       abi: MarginAccountLensABI,
       calls: [
         {
@@ -183,7 +183,7 @@ export async function fetchMarginAccounts(
         fee: fee,
         token0Address: token0.address,
         token1Address: token1.address,
-        chainId: chain.id,
+        chainId: chainId,
         accountAddress: accountAddress,
         uniswapPool: uniswapPool,
       },

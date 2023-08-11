@@ -12,7 +12,7 @@ import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address, Chain } from 'wagmi';
+import { Address } from 'wagmi';
 
 import BoostNftAbi from '../assets/abis/BoostNFT.json';
 import BorrowerAbi from '../assets/abis/MarginAccount.json';
@@ -93,11 +93,11 @@ export class BoostCardInfo {
 }
 
 export async function fetchBoostBorrowersList(
-  chain: Chain,
+  chainId: number,
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ) {
-  const boostNftContract = new ethers.Contract(ALOE_II_BOOST_NFT_ADDRESS[chain.id], BoostNftAbi, provider);
+  const boostNftContract = new ethers.Contract(ALOE_II_BOOST_NFT_ADDRESS[chainId], BoostNftAbi, provider);
 
   // Figure out how many Boost NFTs the user has
   const numBoostNfts: number = (await boostNftContract.balanceOf(userAddress)).toNumber();
@@ -129,7 +129,7 @@ export async function fetchBoostBorrowersList(
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
   const attributes = (await multicall.call(attributesCallContext)).results['attributes']?.callsReturnContext ?? [];
   const borrowers = attributes.filter((v) => !v.success || !v.returnValues.at(1)).map((v) => v.returnValues[0]);

@@ -89,7 +89,8 @@ export default function MarketsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(activeChain, provider);
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await getAvailableLendingPairs(chainId, provider);
       if (mounted) {
         setLendingPairs(results);
       }

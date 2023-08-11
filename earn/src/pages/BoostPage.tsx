@@ -35,13 +35,18 @@ export default function BoostPage() {
                       FETCH BOOSTED CARD INFOS
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
+    let mounted = true;
+
     (async () => {
       if (userAddress === undefined) return;
-      const { borrowers, tokenIds } = await fetchBoostBorrowersList(activeChain, provider, userAddress);
+      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
+      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
+      const chainId = (await provider.getNetwork()).chainId;
+      const { borrowers, tokenIds } = await fetchBoostBorrowersList(chainId, provider, userAddress);
 
       const fetchedInfos = await Promise.all(
         borrowers.map(async (borrowerAddress, i) => {
-          const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
+          const res = await fetchBoostBorrower(chainId, provider, borrowerAddress);
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
             tokenIds[i],
@@ -58,11 +63,13 @@ export default function BoostPage() {
         })
       );
 
-      setBoostedCardInfos(fetchedInfos);
+      if (mounted) setBoostedCardInfos(fetchedInfos);
     })();
 
-    return () => {};
-  }, [activeChain, provider, userAddress]);
+    return () => {
+      mounted = false;
+    };
+  }, [provider, userAddress]);
 
   /*//////////////////////////////////////////////////////////////
                     FETCH UNISWAP NFT POSITIONS
@@ -71,7 +78,7 @@ export default function BoostPage() {
     let mounted = true;
     async function fetch() {
       if (userAddress === undefined) return;
-      const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider);
       const fetchedPositions = Array.from(fetchedPositionsMap.values());
       const nonZeroPositions = fetchedPositions.filter((v) => JSBI.greaterThan(v.liquidity, JSBI.BigInt(0)));
 
@@ -135,6 +142,8 @@ export default function BoostPage() {
                            COMPUTE COLORS
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
+    let mounted = true;
+
     (async () => {
       const merged = boostedCardInfos.concat(uniswapCardInfos);
       const tokenAddresses = Array.from(
@@ -145,10 +154,12 @@ export default function BoostPage() {
         return [logoUri, rgb(color)] as [string, string];
       });
 
-      setColors(new Map(await Promise.all(entries)));
+      if (mounted) setColors(new Map(await Promise.all(entries)));
     })();
 
-    return () => {};
+    return () => {
+      mounted = false;
+    };
   }, [boostedCardInfos, uniswapCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
