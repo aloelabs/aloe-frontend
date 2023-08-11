@@ -1,8 +1,13 @@
-import { arbitrum, optimism } from '@wagmi/chains';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import {
+  ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  MULTICALL_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
@@ -14,15 +19,8 @@ import BorrowerAbi from '../assets/abis/MarginAccount.json';
 import BorrowerLensAbi from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolAbi from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleAbi from '../assets/abis/VolatilityOracle.json';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constants/Addresses';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
-
-export const BOOST_NFT_ADDRESSES: { [chainId: number]: Address } = {
-  [optimism.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
-  [arbitrum.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
-  8453: '0xecED17C61971A32E28bc55537e8103ce3002d0dA',
-};
 
 export enum BoostCardType {
   UNISWAP_NFT,
@@ -99,7 +97,7 @@ export async function fetchBoostBorrowersList(
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ) {
-  const boostNftContract = new ethers.Contract(BOOST_NFT_ADDRESSES[chain.id], BoostNftAbi, provider);
+  const boostNftContract = new ethers.Contract(ALOE_II_BOOST_NFT_ADDRESS[chain.id], BoostNftAbi, provider);
 
   // Figure out how many Boost NFTs the user has
   const numBoostNfts: number = (await boostNftContract.balanceOf(userAddress)).toNumber();
@@ -128,8 +126,12 @@ export async function fetchBoostBorrowersList(
 
   // Parse multicall results. Note that I'm filtering out generalized borrowers, but we may want to find
   // a way to show those in the future
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
-  const attributes = (await multicall.call(attributesCallContext)).results['attributes'].callsReturnContext;
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+  });
+  const attributes = (await multicall.call(attributesCallContext)).results['attributes']?.callsReturnContext ?? [];
   const borrowers = attributes.filter((v) => !v.success || !v.returnValues.at(1)).map((v) => v.returnValues[0]);
 
   return { borrowers: borrowers as Address[], tokenIds };
@@ -156,7 +158,7 @@ export async function fetchBoostBorrower(
     },
     {
       reference: 'lens',
-      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS,
+      contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
       abi: BorrowerLensAbi,
       calls: [
         { reference: 'getAssets', methodName: 'getAssets', methodParameters: [borrowerAddress] },
@@ -168,7 +170,11 @@ export async function fetchBoostBorrower(
   ];
 
   // Execute multicall fetch
-  const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
   const mainResults = (await multicall.call(mainContext)).results;
 
   // ---
@@ -225,7 +231,7 @@ export async function fetchBoostBorrower(
   const extraContext: ContractCallContext[] = [
     {
       reference: 'oracle',
-      contractAddress: ALOE_II_ORACLE_ADDRESS,
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
       abi: VolatilityOracleAbi,
       calls: [{ reference: 'consult', methodName: 'consult', methodParameters: [uniswapPool] }],
     },

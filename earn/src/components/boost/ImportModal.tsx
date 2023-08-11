@@ -4,13 +4,17 @@ import { ethers } from 'ethers';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BOOST_MANAGER_ADDRESS,
+  ALOE_II_BOOST_NFT_ADDRESS,
+  ANTES,
+  UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import styled from 'styled-components';
 import { erc721ABI, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
 import { ChainContext } from '../../App';
-import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from '../../data/constants/Addresses';
-import { BOOST_NFT_ADDRESSES, BoostCardInfo } from '../../data/Uniboost';
+import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
 const Container = styled.div`
@@ -57,8 +61,6 @@ const LeverageSlider = styled.input`
   }
 `;
 
-// TODO: dynamic for chain; move to shared
-const ALOE_II_BOOST_MANAGER_ADDRESS = '0xD13C5D053387Ca59BAf0aBC0B18Af1C1d3413Ed5';
 const BOOST_MIN = 1;
 const BOOST_MAX = 5;
 
@@ -101,7 +103,7 @@ export default function ImportModal(props: ImportModalProps) {
     refetch: refetchManager,
     isFetching: isFetchingManager,
   } = useContractRead({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'getApproved',
     args: [nftTokenId],
@@ -113,11 +115,11 @@ export default function ImportModal(props: ImportModalProps) {
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
+    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'approve',
     // TODO: Boost manager addresses across chains
-    args: [ALOE_II_BOOST_MANAGER_ADDRESS, nftTokenId],
+    args: [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id], nftTokenId],
     chainId: activeChain.id,
     enabled: enableHooks && shouldWriteManager,
   });
@@ -147,7 +149,7 @@ export default function ImportModal(props: ImportModalProps) {
 
   // Prepare for actual import/mint transaction
   const { config: configMint } = usePrepareContractWrite({
-    address: BOOST_NFT_ADDRESSES[activeChain.id],
+    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'mint',
     args: [cardInfo?.uniswapPool ?? '0x', initializationData ?? '0x'],
