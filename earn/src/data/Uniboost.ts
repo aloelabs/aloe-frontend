@@ -18,7 +18,7 @@ import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_ORACLE_ADDRESS } from './constan
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
 
-const BOOST_NFT_ADDRESSES: { [chainId: number]: Address } = {
+export const BOOST_NFT_ADDRESSES: { [chainId: number]: Address } = {
   [optimism.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
   [arbitrum.id]: '0xA58eEcBd367334E742554ce6A2CC8b6863487ebB',
   8453: '0xecED17C61971A32E28bc55537e8103ce3002d0dA',
@@ -33,6 +33,7 @@ export enum BoostCardType {
 export class BoostCardInfo {
   constructor(
     public readonly cardType: BoostCardType,
+    public readonly nftTokenId: number | string,
     public readonly uniswapPool: Address,
     public readonly currentTick: number,
     public readonly token0: Token,
@@ -112,18 +113,18 @@ export async function fetchBoostBorrowersList(
   // returns a tuple: (borrower, isGeneralized)
   // The borrower is the `Borrower` corresponding to the given NFT `id`, and `isGeneralized` indicates whether
   // it is fully controlled by the Boost contract, or if the user has taken over with manual control.
-  const attributesCallContext: ContractCallContext[] = tokenIds.map((id) => ({
-    reference: 'attributes',
-    contractAddress: boostNftContract.address,
-    abi: BoostNftAbi,
-    calls: [
-      {
+  const attributesCallContext: ContractCallContext[] = [
+    {
+      reference: 'attributes',
+      contractAddress: boostNftContract.address,
+      abi: BoostNftAbi,
+      calls: tokenIds.map((id) => ({
         reference: `attributesOf(${id})`,
         methodName: 'attributesOf',
         methodParameters: [id],
-      },
-    ],
-  }));
+      })),
+    },
+  ];
 
   // Parse multicall results. Note that I'm filtering out generalized borrowers, but we may want to find
   // a way to show those in the future
@@ -131,7 +132,7 @@ export async function fetchBoostBorrowersList(
   const attributes = (await multicall.call(attributesCallContext)).results['attributes'].callsReturnContext;
   const borrowers = attributes.filter((v) => !v.success || !v.returnValues.at(1)).map((v) => v.returnValues[0]);
 
-  return borrowers as Address[];
+  return { borrowers: borrowers as Address[], tokenIds };
 }
 
 export async function fetchBoostBorrower(
