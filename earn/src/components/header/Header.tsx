@@ -12,18 +12,18 @@ const NAV_LINKS: NavBarLink[] = [
     label: 'Portfolio',
     to: '/portfolio',
   },
-  {
-    label: 'Markets',
-    to: '/lend',
-  },
   // {
   //   label: 'Markets',
-  //   to: '/markets',
+  //   to: '/lend',
   // },
-  // {
-  //   label: 'Boost',
-  //   to: '/boost',
-  // },
+  {
+    label: 'Markets',
+    to: '/markets',
+  },
+  {
+    label: 'Boost',
+    to: '/boost',
+  },
   {
     label: 'Advanced',
     to: '/borrow',

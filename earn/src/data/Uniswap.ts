@@ -43,14 +43,12 @@ export type UniswapPosition = {
 
 export type UniswapPositionPrior = Omit<UniswapPosition, 'liquidity'>;
 
-export type UniswapNFTPosition = {
+export type UniswapNFTPosition = UniswapPosition & {
   operator: string;
   token0: Token;
   token1: Token;
   fee: number;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: JSBI;
+  tokenId: number;
 };
 
 export type UniswapNFTPositionEntry = [number, UniswapNFTPosition];
@@ -369,9 +367,10 @@ export async function fetchUniswapNFTPositions(
       token0: getToken(chainId, position[2]),
       token1: getToken(chainId, position[3]),
       fee: position[4],
-      tickLower: position[5],
-      tickUpper: position[6],
+      lower: position[5],
+      upper: position[6],
       liquidity: JSBI.BigInt(position[7].toString()),
+      tokenId: tokenIds[i],
     };
     result.set(tokenIds[i], uniswapPosition);
   }
