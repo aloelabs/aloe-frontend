@@ -35,6 +35,42 @@ export default function BoostPage() {
   const [colors, setColors] = useState<Map<string, string>>(new Map());
   const [selectedPosition, setSelectedPosition] = useChainDependentState<number | null>(null, activeChain.id);
 
+  /*//////////////////////////////////////////////////////////////
+                      FETCH BOOSTED CARD INFOS
+  //////////////////////////////////////////////////////////////*/
+  useEffect(() => {
+    (async () => {
+      if (userAddress === undefined) return;
+      const { borrowers, tokenIds } = await fetchBoostBorrowersList(activeChain, provider, userAddress);
+
+      const fetchedInfos = await Promise.all(
+        borrowers.map(async (borrowerAddress, i) => {
+          const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress);
+          return new BoostCardInfo(
+            BoostCardType.BOOST_NFT,
+            tokenIds[i],
+            res.borrower.uniswapPool as Address,
+            sqrtRatioToTick(res.borrower.sqrtPriceX96),
+            res.borrower.token0,
+            res.borrower.token1,
+            DEFAULT_COLOR0,
+            DEFAULT_COLOR1,
+            res.uniswapPosition,
+            res.uniswapFees,
+            res.borrower
+          );
+        })
+      );
+
+      setBoostedCardInfos(fetchedInfos);
+    })();
+
+    return () => {};
+  }, [activeChain, provider, userAddress]);
+
+  /*//////////////////////////////////////////////////////////////
+                    FETCH UNISWAP NFT POSITIONS
+  //////////////////////////////////////////////////////////////*/
   useEffect(() => {
     setIsLoading(true);
   }, [activeChain.id]);
