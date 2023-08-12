@@ -12,7 +12,7 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address, Chain } from 'wagmi';
+import { Address } from 'wagmi';
 
 import ERC20ABI from '../assets/abis/ERC20.json';
 import KittyABI from '../assets/abis/Kitty.json';
@@ -60,30 +60,30 @@ export type LendingPairBalances = {
 };
 
 export async function getAvailableLendingPairs(
-  chain: Chain,
+  chainId: number,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
   const multicall = new Multicall({
     ethersProvider: provider,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
   let logs: ethers.providers.Log[] = [];
   try {
     // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-    if (chain.id === base.id) {
+    if (chainId === base.id) {
       const res = await makeEtherscanRequest(
         2284814,
-        ALOE_II_FACTORY_ADDRESS[chain.id],
+        ALOE_II_FACTORY_ADDRESS[chainId],
         ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
         true,
-        chain
+        chainId
       );
       logs = res.data.result;
     } else {
       logs = await provider.getLogs({
         fromBlock: 0,
         toBlock: 'latest',
-        address: ALOE_II_FACTORY_ADDRESS[chain.id],
+        address: ALOE_II_FACTORY_ADDRESS[chainId],
         topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
       });
     }
@@ -109,7 +109,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chain.id],
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chainId],
       abi: KittyLensABI,
       calls: [
         {
@@ -141,7 +141,7 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS[chain.id],
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
       abi: VolatilityOracleABI,
       calls: [
         {
@@ -182,11 +182,11 @@ export async function getAvailableLendingPairs(
     const basics1 = basicsReturnContexts[1].returnValues;
     const feeTier = feeTierReturnContexts[0].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
-    const token0 = getToken(chain.id, basics0[0]);
-    const token1 = getToken(chain.id, basics1[0]);
+    const token0 = getToken(chainId, basics0[0]);
+    const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
     const kitty0 = new Kitty(
-      chain.id,
+      chainId,
       kitty0Address as Address,
       token0.decimals,
       `${token0.symbol}+`,
@@ -195,7 +195,7 @@ export async function getAvailableLendingPairs(
       token0
     );
     const kitty1 = new Kitty(
-      chain.id,
+      chainId,
       kitty1Address as Address,
       token1.decimals,
       `${token1.symbol}+`,

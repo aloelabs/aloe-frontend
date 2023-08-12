@@ -56,7 +56,7 @@ export default function BoostPage() {
     let mounted = true;
     async function fetch() {
       if (userAddress === undefined) return;
-      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider);
       if (mounted) {
         setUniswapNFTPositions(fetchedUniswapNFTPositions);
         setIsLoading(false);

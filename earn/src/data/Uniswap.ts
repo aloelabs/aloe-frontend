@@ -264,13 +264,13 @@ export async function fetchUniswapPositions(
  */
 export async function fetchUniswapPoolBasics(
   uniswapPoolAddress: string,
-  provider: ethers.providers.BaseProvider,
-  chain: Chain
+  provider: ethers.providers.BaseProvider
 ): Promise<UniswapV3PoolBasics> {
+  const chainId = (await provider.getNetwork()).chainId;
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
   const contractCallContext: ContractCallContext[] = [
     {
@@ -305,11 +305,11 @@ export async function fetchUniswapPoolBasics(
 
 export async function fetchUniswapNFTPositions(
   userAddress: string,
-  provider: Provider,
-  chain: Chain
+  provider: Provider
 ): Promise<Map<number, UniswapNFTPosition>> {
+  const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(
-    UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
+    UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
     UniswapNFTManagerABI,
     provider
   );
@@ -320,7 +320,7 @@ export async function fetchUniswapNFTPositions(
   const multicall = new Multicall({
     ethersProvider: provider,
     tryAggregate: true,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chain.id],
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
   const tokenIdCallContexts: CallContext[] = [];
   for (let i = 0; i < numPositions.toNumber(); i++) {
@@ -333,7 +333,7 @@ export async function fetchUniswapNFTPositions(
   const tokenIdCallContext: ContractCallContext[] = [
     {
       reference: 'uniswapNFTManager',
-      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
       abi: UniswapNFTManagerABI,
       calls: tokenIdCallContexts,
     },
@@ -353,7 +353,7 @@ export async function fetchUniswapNFTPositions(
   const positionsCallContext: ContractCallContext[] = [
     {
       reference: 'uniswapNFTManager',
-      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id],
+      contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
       abi: UniswapNFTManagerABI,
       calls: positionsCallContexts,
     },
@@ -366,8 +366,8 @@ export async function fetchUniswapNFTPositions(
     const position = callsReturnContext[i].returnValues;
     const uniswapPosition: UniswapNFTPosition = {
       operator: position[1],
-      token0: getToken(chain.id, position[2]),
-      token1: getToken(chain.id, position[3]),
+      token0: getToken(chainId, position[2]),
+      token1: getToken(chainId, position[3]),
       fee: position[4],
       tickLower: position[5],
       tickUpper: position[6],
@@ -378,13 +378,7 @@ export async function fetchUniswapNFTPositions(
   return result;
 }
 
-async function fetchTickData(
-  poolAddress: string,
-  poolBasics: UniswapV3PoolBasics,
-  chainId: number,
-  minTick?: number,
-  maxTick?: number
-) {
+async function fetchTickData(poolAddress: string, chainId: number, minTick?: number, maxTick?: number) {
   if (minTick === undefined) minTick = TickMath.MIN_TICK;
   if (maxTick === undefined) maxTick = TickMath.MAX_TICK;
 
@@ -439,12 +433,8 @@ async function fetchTickData(
   };
 }
 
-export async function calculateTickData(
-  poolAddress: string,
-  poolBasics: UniswapV3PoolBasics,
-  chainId: number
-): Promise<TickData[]> {
-  const poolLiquidityData = await fetchTickData(poolAddress, poolBasics, chainId);
+export async function calculateTickData(poolAddress: string, chainId: number): Promise<TickData[]> {
+  const poolLiquidityData = await fetchTickData(poolAddress, chainId);
   if (poolLiquidityData === null) return [];
 
   const token0Decimals = Number(poolLiquidityData.token0.decimals);
