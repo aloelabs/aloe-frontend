@@ -1,9 +1,11 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ethers } from 'ethers';
+import { useNavigate } from 'react-router-dom';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BOOST_MANAGER_ADDRESS,
   ALOE_II_BOOST_NFT_ADDRESS,
@@ -23,6 +25,10 @@ const Container = styled.div`
 `;
 
 const ImportContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
   width: 300px;
   text-align: center;
 `;
@@ -31,28 +37,53 @@ const StyledDatalist = styled.datalist`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 200px;
+  margin-top: 8px;
+  width: 223px;
+  margin-left: auto;
+  margin-right: auto;
+
+  option {
+    color: #ffffff;
+    position: relative;
+    width: 25px;
+  }
+
+  option::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: -14px;
+    width: 2px;
+    height: 4px;
+    background-color: #ffffff;
+  }
 `;
 
 const LeverageSlider = styled.input`
+  appearance: none;
   -webkit-appearance: none;
-  height: 4px;
-  background: grey;
+  height: 6px;
+  background: #ffffff;
   border-radius: 0px;
-  background-image: linear-gradient(#d46a6a, #d46a6a);
+  /* background-image: linear-gradient(#d46a6a, #d46a6a); */
   background-repeat: no-repeat;
+  width: 200px;
+  margin: 0 auto;
 
   &::-webkit-slider-thumb {
+    position: relative;
     -webkit-appearance: none;
     margin-top: -16px;
     height: 16px;
-    width: 8px;
-    border-radius: 0px;
-    background: #ffffff;
+    width: 4px;
+    background: #4197ff;
+    z-index: 1;
     cursor: pointer;
   }
 
   &::-webkit-slider-runnable-track {
+    appearance: none;
     -webkit-appearance: none;
     width: 100%;
     box-shadow: none;
@@ -63,6 +94,7 @@ const LeverageSlider = styled.input`
 
 const BOOST_MIN = 1;
 const BOOST_MAX = 5;
+const BOOST_DEFAULT = BOOST_MIN;
 
 enum ImportModalState {
   FETCHING_DATA,
@@ -71,6 +103,46 @@ enum ImportModalState {
   WAITING_FOR_TRANSACTION,
   READY_TO_MINT,
   ASKING_USER_TO_MINT,
+}
+
+function getButtonState(state?: ImportModalState) {
+  switch (state) {
+    case ImportModalState.FETCHING_DATA:
+      return {
+        disabled: true,
+        label: 'Loading...',
+      };
+    case ImportModalState.READY_TO_APPROVE:
+      return {
+        disabled: false,
+        label: 'Approve',
+      };
+    case ImportModalState.ASKING_USER_TO_APPROVE:
+      return {
+        disabled: true,
+        label: 'Approve',
+      };
+    case ImportModalState.WAITING_FOR_TRANSACTION:
+      return {
+        disabled: true,
+        label: 'Approve',
+      };
+    case ImportModalState.READY_TO_MINT:
+      return {
+        disabled: false,
+        label: 'Mint',
+      };
+    case ImportModalState.ASKING_USER_TO_MINT:
+      return {
+        disabled: true,
+        label: 'Mint',
+      };
+    default:
+      return {
+        disabled: true,
+        label: 'Loading...',
+      };
+  }
 }
 
 export type ImportModalProps = {
@@ -83,8 +155,15 @@ export type ImportModalProps = {
 export default function ImportModal(props: ImportModalProps) {
   const { cardInfo, uniqueId, isOpen, setIsOpen } = props;
   const { activeChain } = useContext(ChainContext);
+  const navigate = useNavigate();
 
-  const [boostFactor, setBoostFactor] = useState(1);
+  const [boostFactor, setBoostFactor] = useState(BOOST_DEFAULT);
+
+  useEffect(() => {
+    if (isOpen) {
+      setBoostFactor(BOOST_DEFAULT);
+    }
+  }, [isOpen]);
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
   const initializationData = useMemo(() => {
@@ -110,15 +189,16 @@ export default function ImportModal(props: ImportModalProps) {
     chainId: activeChain.id,
     enabled: enableHooks,
   });
-  const shouldWriteManager = !isFetchingManager && !!manager && manager !== ALOE_II_BOOST_MANAGER_ADDRESS;
-  const shouldMint = !isFetchingManager && !!initializationData && manager === ALOE_II_BOOST_MANAGER_ADDRESS;
+  const shouldWriteManager =
+    !isFetchingManager && !!manager && manager !== ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
+  const shouldMint =
+    !isFetchingManager && !!initializationData && manager === ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'approve',
-    // TODO: Boost manager addresses across chains
     args: [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id], nftTokenId],
     chainId: activeChain.id,
     enabled: enableHooks && shouldWriteManager,
@@ -175,45 +255,43 @@ export default function ImportModal(props: ImportModalProps) {
     confirmations: 1,
     hash: mintTxn?.hash,
     chainId: activeChain.id,
-    onSuccess(data) {
-      // TODO: prob want to reload the page in here. keep the console.debug if possible (for consistency since we have this style of thing elsewhere)
-      console.debug('Mint transaction successful!', data);
+    onSuccess() {
+      navigate(0);
     },
   });
 
-  // TODO: you can remove these console.logs obviously
-  let state: ImportModalState;
+  let state: ImportModalState | undefined;
   if (isFetchingManager) {
     state = ImportModalState.FETCHING_DATA;
-    console.log('fetching');
   } else if (isWritingManager || isMinting) {
     state = ImportModalState.WAITING_FOR_TRANSACTION;
-    console.log('waiting for txn');
   } else if (isAskingUserToWriteManager) {
     state = ImportModalState.ASKING_USER_TO_APPROVE;
-    console.log('asking user to approve');
   } else if (isAskingUserToMint) {
     state = ImportModalState.ASKING_USER_TO_MINT;
-    console.log('asking user to mint');
   } else if (shouldWriteManager && writeManager) {
     state = ImportModalState.READY_TO_APPROVE;
-    console.log('ready to approve');
   } else if (shouldMint && mint) {
     state = ImportModalState.READY_TO_MINT;
-    console.log('ready to mint');
   }
+
+  const buttonState = getButtonState(state);
 
   // Generate labels for input range (slider)
   const labels: string[] = [];
   for (let i = BOOST_MIN; i <= BOOST_MAX; i += 1) {
-    labels.push(`${i.toFixed(0)}x`);
+    if (i % 2 !== 0) {
+      labels.push(`${i.toFixed(0)}x`);
+    } else {
+      labels.push('');
+    }
   }
 
   return (
     <Modal
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      title={'Manage'}
+      title={'Import'}
       maxWidth='640px'
       backgroundColor='rgba(43, 64, 80, 0.1)'
       backdropFilter='blur(40px)'
@@ -222,30 +300,37 @@ export default function ImportModal(props: ImportModalProps) {
         <Container>
           <BoostCard info={cardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
           <ImportContainer>
-            <LeverageSlider
-              type='range'
-              list='boost-factor-labels'
-              min={BOOST_MIN}
-              max={BOOST_MAX}
-              step={1}
-              value={boostFactor}
-              onChange={(e) => setBoostFactor(parseInt(e.target.value) || 0)}
-            />
-            <StyledDatalist id='boost-factor-labels'>
-              {labels.map((label, i) => (
-                <option key={i} value={i + 1} label={label}></option>
-              ))}
-            </StyledDatalist>
-            <Text size='M' weight='bold'>
-              Import thingy
-            </Text>
-            <Text size='S'>Coming soon</Text>
-            <button className='bg-white' onClick={writeManager}>
-              Approve
-            </button>
-            <button className='bg-white' onClick={mint}>
-              Mint
-            </button>
+            <Text size='L'>Boost Factor</Text>
+            <div>
+              <Display size='M'>{`${boostFactor}x`}</Display>
+              <LeverageSlider
+                type='range'
+                list='boost-factor-labels'
+                min={BOOST_MIN}
+                max={BOOST_MAX}
+                step={1}
+                value={boostFactor}
+                onChange={(e) => setBoostFactor(parseInt(e.target.value) || 0)}
+              />
+              <StyledDatalist id='boost-factor-labels'>
+                {labels.map((label, i) => (
+                  <option key={i} value={i + 1} label={label}></option>
+                ))}
+              </StyledDatalist>
+            </div>
+            <FilledStylizedButton
+              size='M'
+              disabled={buttonState.disabled}
+              onClick={() => {
+                if (state === ImportModalState.READY_TO_APPROVE) {
+                  writeManager?.();
+                } else if (state === ImportModalState.READY_TO_MINT) {
+                  mint?.();
+                }
+              }}
+            >
+              {buttonState.label}
+            </FilledStylizedButton>
           </ImportContainer>
         </Container>
       )}
