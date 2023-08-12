@@ -23,18 +23,6 @@ const TooltipContainer = styled.div.attrs((props: { offset: number; chartWidth: 
   visibility: visible;
 `;
 
-function getPercentageText(percentChange: number) {
-  if (percentChange > 1000) {
-    return '∞';
-  } else if (percentChange < 1.0) {
-    return `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 2)}%`;
-  } else if (percentChange < 9.0) {
-    return `${(percentChange + 1).toFixed(2)}x`;
-  } else {
-    return `${(percentChange + 1).toFixed(0)}x`;
-  }
-}
-
 export default function LiquidityChartTooltip(props: {
   active: boolean;
   selectedTick: number;
@@ -46,7 +34,16 @@ export default function LiquidityChartTooltip(props: {
   if (active) {
     const percentChange = 1.0001 ** (selectedTick - currentTick) - 1 || 0;
 
-    const percentageText = getPercentageText(percentChange);
+    let percentageText: string;
+    if (percentChange > 1000 && x === chartWidth) {
+      percentageText = '∞';
+    } else if (percentChange < 1.0) {
+      percentageText = `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 2)}%`;
+    } else if (percentChange < 9.0) {
+      percentageText = `${(percentChange + 1).toFixed(2)}x`;
+    } else {
+      percentageText = `${(percentChange + 1).toFixed(0)}x`;
+    }
 
     return (
       <TooltipContainer offset={x} chartWidth={chartWidth}>
