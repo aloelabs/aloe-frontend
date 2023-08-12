@@ -1,10 +1,9 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { base } from 'shared/lib/data/BaseChain';
 
-import { ChainContext } from '../../App';
 import { makeEtherscanRequest } from '../../util/Etherscan';
 import { LendingPair } from '../LendingPair';
 
@@ -27,7 +26,6 @@ export default function useNumberOfUsers(
     setNumberOfUsers(0);
     async function fetchNumberOfUsers() {
       const chainId = (await provider.getNetwork()).chainId;
-
       let lender0Logs: ethers.providers.Log[] = [];
       let lender1Logs: ethers.providers.Log[] = [];
       try {

@@ -470,7 +470,7 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider, userAddress]);
+  }, [provider, userAddress]);
 
   useEffect(() => {
     let mounted = true;

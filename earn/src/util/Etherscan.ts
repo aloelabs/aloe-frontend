@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { base } from 'shared/lib/data/BaseChain';
-import { Chain, arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [mainnet.id]: 'api.etherscan.io',
