@@ -93,14 +93,14 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
   const { token0, token1 } = uniswapNFTPosition;
 
   const minPrice = tickToPrice(
-    uniswapNFTPosition.tickLower,
+    uniswapNFTPosition.lower,
     uniswapNFTPosition.token0.decimals,
     uniswapNFTPosition.token1.decimals,
     true
   );
 
   const maxPrice = tickToPrice(
-    uniswapNFTPosition.tickUpper,
+    uniswapNFTPosition.upper,
     uniswapNFTPosition.token0.decimals,
     uniswapNFTPosition.token1.decimals,
     true
@@ -108,8 +108,8 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 
   const liquidityAmount = getValueOfLiquidity(
     {
-      lower: uniswapNFTPosition.tickLower,
-      upper: uniswapNFTPosition.tickUpper,
+      lower: uniswapNFTPosition.lower,
+      upper: uniswapNFTPosition.upper,
       liquidity: uniswapNFTPosition.liquidity,
     },
     sqrtRatioToTick(marginAccount.sqrtPriceX96),
@@ -183,14 +183,14 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     ['uint256', 'int24', 'int24', 'int128', 'uint144'],
     [
       uniswapNFTPosition[0],
-      uniswapNFTPosition[1].tickLower,
-      uniswapNFTPosition[1].tickUpper,
+      uniswapNFTPosition[1].lower,
+      uniswapNFTPosition[1].upper,
       `-${uniswapNFTPosition[1].liquidity.toString(10)}`,
       zip([
         ...existingUniswapPositions,
         {
-          lower: uniswapNFTPosition[1].tickLower,
-          upper: uniswapNFTPosition[1].tickUpper,
+          lower: uniswapNFTPosition[1].lower,
+          upper: uniswapNFTPosition[1].upper,
           liquidity: uniswapNFTPosition[1].liquidity,
         },
       ]),

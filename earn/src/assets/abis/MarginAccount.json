@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract VolatilityOracle",
+        "name": "oracle",
+        "type": "address"
+      },
+      {
         "internalType": "contract IUniswapV3Pool",
         "name": "pool",
         "type": "address"
@@ -19,6 +24,43 @@
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "repay0",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "repay1",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "incentive1",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "priceX96",
+        "type": "uint256"
+      }
+    ],
+    "name": "Liquidate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "Warn",
+    "type": "event"
   },
   {
     "inputs": [],
@@ -74,25 +116,12 @@
   },
   {
     "inputs": [],
-    "name": "MAX_SIGMA",
+    "name": "ORACLE",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "contract VolatilityOracle",
         "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MIN_SIGMA",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -162,17 +191,29 @@
   },
   {
     "inputs": [],
-    "name": "getLiabilities",
+    "name": "getPrices",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "amount0",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount1",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint160",
+            "name": "a",
+            "type": "uint160"
+          },
+          {
+            "internalType": "uint160",
+            "name": "b",
+            "type": "uint160"
+          },
+          {
+            "internalType": "uint160",
+            "name": "c",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct Prices",
+        "name": "prices",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -195,7 +236,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "owner_",
         "type": "address"
       }
     ],
@@ -215,6 +256,11 @@
         "internalType": "bytes",
         "name": "data",
         "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "strain",
+        "type": "uint256"
       }
     ],
     "name": "liquidate",
@@ -243,24 +289,6 @@
     "name": "modify",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "packedSlot",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "isInCallback",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -298,6 +326,29 @@
     "name": "repay",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slot0",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint88",
+        "name": "unleashLiquidationTime",
+        "type": "uint88"
+      },
+      {
+        "internalType": "enum Borrower.State",
+        "name": "state",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -398,6 +449,13 @@
         "type": "uint256"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "warn",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   }
