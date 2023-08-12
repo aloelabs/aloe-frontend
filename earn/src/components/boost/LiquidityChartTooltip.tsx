@@ -34,22 +34,22 @@ export default function LiquidityChartTooltip(props: {
   if (active) {
     const percentChange = 1.0001 ** (selectedTick - currentTick) - 1 || 0;
 
-    let percentText: string;
+    let percentageText: string;
     if (percentChange > 1000 && x === chartWidth) {
-      percentText = '∞';
+      percentageText = '∞';
     } else if (percentChange < 1.0) {
-      percentText = `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 2)}%`;
+      percentageText = `${percentChange > 0 ? '+' : ''}${roundPercentage(100 * percentChange, 2)}%`;
     } else if (percentChange < 9.0) {
-      percentText = `${(percentChange + 1).toFixed(2)}x`;
+      percentageText = `${(percentChange + 1).toFixed(2)}x`;
     } else {
-      percentText = `${(percentChange + 1).toFixed(0)}x`;
+      percentageText = `${(percentChange + 1).toFixed(0)}x`;
     }
 
     return (
       <TooltipContainer offset={x} chartWidth={chartWidth}>
         <div className='flex flex-col justify-center items-center'>
           <Text size='S' weight='bold'>
-            {percentText}
+            {percentageText}
           </Text>
         </div>
       </TooltipContainer>
