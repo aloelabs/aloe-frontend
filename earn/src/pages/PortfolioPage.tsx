@@ -39,6 +39,7 @@ import {
 } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -106,11 +107,15 @@ export type TokenBalance = {
 
 export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
+
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
-  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
+  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
+  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
+  const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
+    [],
+    activeChain.id
+  );
   const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
@@ -126,6 +131,11 @@ export default function PortfolioPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLoading(true);
+    setIsLoadingPrices(true);
+  }, [activeChain.id]);
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -191,7 +201,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, uniqueTokens]);
+  }, [activeChain, uniqueTokens, setTokenQuotes]);
 
   useEffect(() => {
     let mounted = true;
@@ -226,7 +236,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [provider]);
+  }, [provider, setLendingPairs]);
 
   useEffect(() => {
     let mounted = true;
@@ -242,7 +252,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address, lendingPairs, isLoading]);
+  }, [provider, address, lendingPairs, isLoading, setLendingPairBalances]);
 
   useEffect(() => {
     let mounted = true;
@@ -269,7 +279,7 @@ export default function PortfolioPage() {
       setLendingPairBalances([]);
       setActiveAsset(null);
     }
-  }, [isConnecting, isConnected, lendingPairBalances]);
+  }, [isConnecting, isConnected, lendingPairBalances, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
