@@ -83,9 +83,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const account = useAccount();
 
   const filteredPairs = lendingPairs.filter((p) => doesLendingPairContainToken(p, selectedToken));
-  if (filteredPairs.length === 0) throw new Error(`${selectedToken.symbol} isn't part of any lending pair`);
-  const selectedPair = filteredPairs.at(selectedPairIdx) ?? filteredPairs[0];
-  const lender = selectedPair.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair.kitty1;
+  const selectedPair = filteredPairs.at(selectedPairIdx);
+  const lender = selectedPair?.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair?.kitty1;
   const amount = GN.fromDecimalString(inputValue[0] || '0', selectedToken.decimals);
 
   // TODO: debounce amount to avoid repeated network requests for `convertToShares`
@@ -97,7 +96,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     maxAmount: maxAmountBN,
   } = useRedeem(
     activeChain.id,
-    lender.address,
+    lender?.address ?? ZERO_ADDRESS,
     inputValue[1] ? GN.Q(112) : amount,
     isOpen && account.address ? account.address : ZERO_ADDRESS
   );
@@ -120,6 +119,10 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     resetUserInputs();
   }, [txn, setPendingTxn, resetTxn, setIsOpen, resetUserInputs]);
 
+  useEffect(() => {
+    resetUserInputs();
+  }, [activeChain.id, resetUserInputs]);
+
   /*//////////////////////////////////////////////////////////////
                             CONFIRM BUTTON
   //////////////////////////////////////////////////////////////*/
@@ -135,6 +138,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     confirmButtonState = REDEEM_STATE_TO_BUTTON_STATE[redeemState];
   }
   const confirmButton = getConfirmButton(confirmButtonState, selectedToken);
+
+  if (selectedPair === undefined) return null;
 
   return (
     <Modal

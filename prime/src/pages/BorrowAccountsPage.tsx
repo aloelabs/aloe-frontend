@@ -11,6 +11,7 @@ import { Display } from 'shared/lib/components/common/Typography';
 import { base } from 'shared/lib/data/BaseChain';
 import { ALOE_II_FACTORY_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { getToken } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider, useSigner, Address } from 'wagmi';
@@ -39,8 +40,11 @@ export default function BorrowAccountsPage() {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
-  const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
-  const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
+  const [availablePools, setAvailablePools] = useChainDependentState(
+    new Map<string, UniswapPoolInfo>(),
+    activeChain.id
+  );
+  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccountPreview[]>([], activeChain.id);
   const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
   const [refetchCount, setRefetchCount] = useState(0);
@@ -83,6 +87,7 @@ export default function BorrowAccountsPage() {
             true,
             activeChain
           );
+          if (res.data.status !== '1') return;
           createMarketLogs = res.data.result;
         } else {
           createMarketLogs = await provider.getLogs({
@@ -153,7 +158,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider]);
+  }, [activeChain, provider, setAvailablePools]);
 
   useEffect(() => {
     let mounted = true;
@@ -190,7 +195,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools]);
+  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools, setMarginAccounts]);
 
   function onCommencement() {
     setIsTxnPending(false);
