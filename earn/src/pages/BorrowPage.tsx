@@ -225,23 +225,27 @@ export default function BorrowPage() {
   useEffect(() => {
     let mounted = true;
     async function fetchAvailablePools() {
+      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
+      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
+      const chainId = (await provider.getNetwork()).chainId;
+
       let logs: ethers.providers.Log[] = [];
       try {
         // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-        if (activeChain.id === base.id) {
+        if (chainId === base.id) {
           const res = await makeEtherscanRequest(
             2284814,
-            ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            ALOE_II_FACTORY_ADDRESS[chainId],
             [TOPIC0_CREATE_MARKET_EVENT],
             true,
-            activeChain
+            chainId
           );
           logs = res.data.result;
         } else {
           logs = await provider.getLogs({
             fromBlock: 0,
             toBlock: 'latest',
-            address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+            address: ALOE_II_FACTORY_ADDRESS[chainId],
             topics: [TOPIC0_CREATE_MARKET_EVENT],
           });
         }
@@ -263,8 +267,8 @@ export default function BorrowPage() {
 
       const poolInfoMap = new Map<string, UniswapPoolInfo>();
       poolAddresses.forEach((addr, i) => {
-        const token0 = getToken(activeChain.id, poolInfoTuples[i][0] as Address);
-        const token1 = getToken(activeChain.id, poolInfoTuples[i][1] as Address);
+        const token0 = getToken(chainId, poolInfoTuples[i][0] as Address);
+        const token1 = getToken(chainId, poolInfoTuples[i][1] as Address);
         const fee = poolInfoTuples[i][2] as number;
         if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
       });
@@ -276,14 +280,15 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider]);
+  }, [provider]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
     let mounted = true;
     async function fetch() {
+      const chainId = (await provider.getNetwork()).chainId;
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
-      const marginAccounts = await fetchMarginAccounts(activeChain, provider, userAddress, availablePools);
+      const marginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
       if (mounted) {
         setMarginAccounts(marginAccounts);
       }
@@ -292,7 +297,7 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [userAddress, activeChain, borrowerLensContract, provider, availablePools]);
+  }, [userAddress, borrowerLensContract, provider, availablePools]);
 
   // If no margin account is selected, select the first one
   useEffect(() => {
@@ -354,7 +359,7 @@ export default function BorrowPage() {
           ALOE_II_ORACLE_ADDRESS[activeChain.id],
           [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
           true,
-          activeChain
+          activeChain.id
         );
       } catch (e) {
         console.error(e);
@@ -457,7 +462,7 @@ export default function BorrowPage() {
     let mounted = true;
     async function fetch() {
       if (userAddress === undefined) return;
-      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider);
       if (mounted) {
         setUniswapNFTPositions(fetchedUniswapNFTPositions);
       }
@@ -466,7 +471,7 @@ export default function BorrowPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider, userAddress]);
+  }, [provider, userAddress]);
 
   useEffect(() => {
     let mounted = true;

@@ -215,7 +215,8 @@ export default function PortfolioPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(activeChain, provider);
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await getAvailableLendingPairs(chainId, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -225,7 +226,7 @@ export default function PortfolioPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider]);
+  }, [provider]);
 
   useEffect(() => {
     let mounted = true;

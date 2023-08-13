@@ -71,7 +71,7 @@ export default function BoostPage() {
     let mounted = true;
     async function fetch() {
       if (userAddress === undefined) return;
-      const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider, activeChain);
+      const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider);
       const fetchedPositions = Array.from(fetchedPositionsMap.values());
       const nonZeroPositions = fetchedPositions.filter((v) => JSBI.greaterThan(v.liquidity, JSBI.BigInt(0)));
 

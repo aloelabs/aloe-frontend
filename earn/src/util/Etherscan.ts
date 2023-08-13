@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { base } from 'shared/lib/data/BaseChain';
-import { Chain, arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [mainnet.id]: 'api.etherscan.io',
@@ -23,12 +23,12 @@ export function makeEtherscanRequest(
   address: string,
   topics: (string | null)[],
   shouldMatchAll: boolean,
-  chain: Chain,
+  chainId: number,
   pageLength = 1000,
   page?: number,
   toBlock?: number
 ) {
-  const domain = ETHERSCAN_DOMAINS_BY_CHAIN_ID[chain.id];
+  const domain = ETHERSCAN_DOMAINS_BY_CHAIN_ID[chainId];
   let query = `https://${domain}/api?module=logs&action=getLogs`.concat(
     `&fromBlock=${fromBlock.toFixed(0)}`,
     toBlock ? `&toBlock=${toBlock.toFixed(0)}` : '&toBlock=latest',
@@ -45,7 +45,7 @@ export function makeEtherscanRequest(
 
   if (page) query += `&page=${page}`;
   query += `&offset=${pageLength}`;
-  if (ETHERSCAN_API_KEYS[chain.id]) query += `&apikey=${ETHERSCAN_API_KEYS[chain.id]}`;
+  if (ETHERSCAN_API_KEYS[chainId]) query += `&apikey=${ETHERSCAN_API_KEYS[chainId]}`;
 
   return axios.get(query);
 }

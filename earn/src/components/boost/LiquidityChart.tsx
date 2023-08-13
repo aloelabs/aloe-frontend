@@ -48,7 +48,6 @@ export type LiquidityChartProps = {
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { poolAddress, currentTick, minTick, maxTick, color0, color1, uniqueId } = props;
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider();
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
 
@@ -56,8 +55,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   useEffectOnce(() => {
     let mounted = true;
     async function fetch(poolAddress: string) {
-      const poolBasics = await fetchUniswapPoolBasics(poolAddress, provider, activeChain);
-      const tickData = await calculateTickData(poolAddress, poolBasics, activeChain.id);
+      const tickData = await calculateTickData(poolAddress, activeChain.id);
       if (mounted) {
         setLiquidityData(tickData);
       }

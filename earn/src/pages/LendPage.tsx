@@ -144,7 +144,8 @@ export default function LendPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      const results = await getAvailableLendingPairs(activeChain, provider);
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await getAvailableLendingPairs(chainId, provider);
       if (mounted) {
         setLendingPairs(results);
         setIsLoading(false);
@@ -154,7 +155,7 @@ export default function LendPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address, activeChain]);
+  }, [provider, address]);
 
   useEffect(() => {
     let uniqueTokens = new Set<Token>();
