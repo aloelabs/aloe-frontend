@@ -228,7 +228,6 @@ export default function BorrowPage() {
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;
-
       let logs: ethers.providers.Log[] = [];
       try {
         // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
