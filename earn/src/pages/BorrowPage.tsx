@@ -285,8 +285,8 @@ export default function BorrowPage() {
   useEffect(() => {
     let mounted = true;
     async function fetch() {
-      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const chainId = (await provider.getNetwork()).chainId;
+      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const marginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
       if (mounted) {
         setMarginAccounts(marginAccounts);
