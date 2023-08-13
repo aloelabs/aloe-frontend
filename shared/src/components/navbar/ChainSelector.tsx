@@ -16,7 +16,6 @@ import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
 import { AltSpinner } from '../common/Spinner';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { useNavigate } from 'react-router-dom';
 
 const DROPDOWN_OPTIONS: DropdownOption<Chain>[] = SUPPORTED_CHAINS.map((chain) => ({
   label: chain.name,
@@ -49,8 +48,6 @@ export default function ChainSelector(props: ChainSelectorProps) {
   const [pendingChainOption, setPendingChainOption] = useState<DropdownOption<Chain> | undefined>(undefined);
   const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
 
-  const navigate = useNavigate();
-
   const { isLoading, switchNetwork } = useSwitchNetwork({
     chainId: selectedChainOption.value.id,
     onError: () => {
@@ -58,11 +55,14 @@ export default function ChainSelector(props: ChainSelectorProps) {
       setIsOpen(false);
       setPendingChainOption(undefined);
     },
-    onSuccess: () => {
+    onMutate(args) {
+      console.debug('About to switch chains', args);
+    },
+    onSuccess: (chain) => {
+      setActiveChain(chain);
       setShouldAttemptToSwitchNetwork(false);
       setIsOpen(false);
       setPendingChainOption(undefined);
-      navigate(0);
     },
   });
 

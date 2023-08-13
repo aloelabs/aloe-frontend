@@ -5,6 +5,7 @@ import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
@@ -26,10 +27,17 @@ export default function BoostPage() {
   const { address: userAddress } = useAccount();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [boostedCardInfos, setBoostedCardInfos] = useState<BoostCardInfo[]>([]);
-  const [uniswapNFTPositions, setUniswapNFTPositions] = useState<UniswapNFTPosition[]>([]);
+  const [boostedCardInfos, setBoostedCardInfos] = useChainDependentState<BoostCardInfo[]>([], activeChain.id);
+  const [uniswapNFTPositions, setUniswapNFTPositions] = useChainDependentState<UniswapNFTPosition[]>(
+    [],
+    activeChain.id
+  );
   const [colors, setColors] = useState<Map<string, string>>(new Map());
-  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+  const [selectedPosition, setSelectedPosition] = useChainDependentState<number | null>(null, activeChain.id);
+
+  useEffect(() => {
+    setIsLoading(true);
+  }, [activeChain.id]);
 
   /*//////////////////////////////////////////////////////////////
                       FETCH BOOSTED CARD INFOS
@@ -69,7 +77,7 @@ export default function BoostPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, userAddress]);
+  }, [provider, userAddress, setBoostedCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                     FETCH UNISWAP NFT POSITIONS
@@ -91,7 +99,7 @@ export default function BoostPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider, userAddress]);
+  }, [activeChain, provider, userAddress, setUniswapNFTPositions]);
 
   /*//////////////////////////////////////////////////////////////
             FETCH UNISWAP NFT POSITIONS - CONT. (SLOT0)

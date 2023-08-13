@@ -1,8 +1,9 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider } from 'wagmi';
@@ -36,13 +37,16 @@ export type TokenBalance = {
 export default function MarketsPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
-  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
+  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
+  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
+  const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
+    [],
+    activeChain.id
+  );
 
   // MARK: wagmi hooks
   const account = useAccount();
-  const provider = useProvider({ chainId: activeChain?.id });
+  const provider = useProvider({ chainId: activeChain.id });
   const address = account.address;
 
   const uniqueSymbols = useMemo(() => {
@@ -84,7 +88,7 @@ export default function MarketsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
+  }, [activeChain, tokenQuotes, uniqueSymbols, setTokenQuotes]);
 
   useEffect(() => {
     let mounted = true;
@@ -99,7 +103,7 @@ export default function MarketsPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address]);
+  }, [provider, address, setLendingPairs]);
 
   useEffect(() => {
     let mounted = true;
@@ -114,7 +118,7 @@ export default function MarketsPage() {
     return () => {
       mounted = false;
     };
-  }, [provider, address, lendingPairs]);
+  }, [provider, address, lendingPairs, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {

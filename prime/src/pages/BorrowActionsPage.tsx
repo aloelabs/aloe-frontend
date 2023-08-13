@@ -9,6 +9,7 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -200,8 +201,11 @@ export default function BorrowActionsPage() {
 
   // MARK: component state
   const [userWantsHypothetical, setUserWantsHypothetical] = useState<boolean>(false);
-  const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
+  const [marginAccount, setMarginAccount] = useChainDependentState<MarginAccount | null>(null, activeChain.id);
+  const [uniswapPositions, setUniswapPositions] = useChainDependentState<readonly UniswapPosition[]>(
+    [],
+    activeChain.id
+  );
   const [isToken0Selected, setIsToken0Selected] = useState(true);
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
@@ -294,7 +298,7 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, provider, activeChain]);
+  }, [accountAddressParam, provider, activeChain, setMarginAccount]);
 
   // MARK: fetch MarketInfo
   useEffect(() => {
