@@ -8,14 +8,22 @@ export const PERCENTAGE_WIDTH = 66;
 const TOOLTIP_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const TOOLTIP_BORDER_COLOR = GREY_700;
 
-const TooltipContainer = styled.div.attrs((props: { offset: number; chartWidth: number }) => props)`
+interface TooltipProps {
+  offset: number;
+  chartWidth: number;
+}
+
+const TooltipContainer = styled.div.attrs<TooltipProps>((props) => ({
+  style: {
+    transform: `translateX(clamp(0px, ${props.offset - PERCENTAGE_WIDTH / 2}px, ${
+      props.chartWidth - PERCENTAGE_WIDTH
+    }px))`,
+  },
+}))<TooltipProps>`
   ${tw`rounded-md shadow-md`}
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translateX(
-    clamp(0px, ${(props) => props.offset - PERCENTAGE_WIDTH / 2}px, ${(props) => props.chartWidth - PERCENTAGE_WIDTH}px)
-  );
   border: 1px solid ${TOOLTIP_BORDER_COLOR};
   width: ${PERCENTAGE_WIDTH}px;
   box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.12);
