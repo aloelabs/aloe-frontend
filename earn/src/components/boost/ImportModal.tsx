@@ -305,7 +305,7 @@ export default function ImportModal(props: ImportModalProps) {
       cardInfo.color0,
       cardInfo.color1,
       {
-        ...cardInfo.position,
+        ...position,
         liquidity: updatedLiquidity,
       },
       cardInfo.feesEarned,
