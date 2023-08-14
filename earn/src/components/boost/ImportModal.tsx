@@ -178,10 +178,9 @@ export default function ImportModal(props: ImportModalProps) {
     chainId: activeChain.id,
     enabled: enableHooks,
   });
-  const shouldWriteManager =
-    !isFetchingManager && !!manager && manager !== ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
-  const shouldMint =
-    !isFetchingManager && !!initializationData && manager === ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
+  const managerIsCorrect = manager === ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
+  const shouldWriteManager = !isFetchingManager && !!manager && !managerIsCorrect;
+  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
