@@ -113,37 +113,37 @@ function getButtonState(state?: ImportModalState) {
   switch (state) {
     case ImportModalState.FETCHING_DATA:
       return {
-        disabled: true,
+        isDisabled: true,
         label: 'Loading...',
       };
     case ImportModalState.READY_TO_APPROVE:
       return {
-        disabled: false,
+        isDisabled: false,
         label: 'Approve',
       };
     case ImportModalState.ASKING_USER_TO_APPROVE:
       return {
-        disabled: true,
+        isDisabled: true,
         label: 'Approve',
       };
     case ImportModalState.WAITING_FOR_TRANSACTION:
       return {
-        disabled: true,
+        isDisabled: true,
         label: 'Pending',
       };
     case ImportModalState.READY_TO_MINT:
       return {
-        disabled: false,
+        isDisabled: false,
         label: 'Confirm',
       };
     case ImportModalState.ASKING_USER_TO_MINT:
       return {
-        disabled: true,
+        isDisabled: true,
         label: 'Confirm',
       };
     default:
       return {
-        disabled: true,
+        isDisabled: true,
         label: 'Loading...',
       };
   }
@@ -380,7 +380,7 @@ export default function ImportModal(props: ImportModalProps) {
               <FilledStylizedButton
                 size='M'
                 fillWidth={true}
-                disabled={buttonState.disabled}
+                disabled={buttonState.isDisabled}
                 onClick={() => {
                   if (state === ImportModalState.READY_TO_APPROVE) {
                     writeManager?.();
