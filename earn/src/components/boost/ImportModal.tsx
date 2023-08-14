@@ -376,7 +376,7 @@ export default function ImportModal(props: ImportModalProps) {
               >
                 {buttonState.label}
               </FilledStylizedButton>
-              <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+              <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
                 By depositing, you agree to our{' '}
                 <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
                   Terms of Service
