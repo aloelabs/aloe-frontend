@@ -2,7 +2,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import Big from 'big.js';
 import { ethers } from 'ethers';
-import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -15,6 +14,7 @@ import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import { erc721ABI, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
@@ -278,7 +278,8 @@ export default function ImportModal(props: ImportModalProps) {
   const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
-    const updatedLiquidity = JSBI.multiply(position.liquidity, JSBI.BigInt(boostFactor));
+
+    const updatedLiquidity = GN.fromJSBI(position.liquidity, 0).recklessMul(boostFactor).toJSBI();
     return new BoostCardInfo(
       cardInfo.cardType,
       cardInfo.nftTokenId,
@@ -339,9 +340,9 @@ export default function ImportModal(props: ImportModalProps) {
                 list='boost-factor-labels'
                 min={BOOST_MIN}
                 max={BOOST_MAX}
-                step={1}
+                step={0.1}
                 value={boostFactor}
-                onChange={(e) => setBoostFactor(parseInt(e.target.value) || 0)}
+                onChange={(e) => setBoostFactor(Number(e.target.value))}
               />
               <StyledDatalist id='boost-factor-labels'>
                 {labels.map((label, i) => (
