@@ -154,7 +154,13 @@ export default function ImportModal(props: ImportModalProps) {
     const { position } = cardInfo;
     return ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24'],
-      [cardInfo.nftTokenId, position.lower, position.upper, position.liquidity.toString(10), boostFactor * 10000]
+      [
+        cardInfo.nftTokenId,
+        position.lower,
+        position.upper,
+        position.liquidity.toString(10),
+        (boostFactor * 10000).toFixed(0),
+      ]
     ) as `0x${string}`;
   }, [cardInfo, boostFactor]);
   const enableHooks = isOpen && cardInfo !== undefined;
