@@ -43,6 +43,22 @@ export class BoostCardInfo {
     public readonly borrower: MarginAccount | null
   ) {}
 
+  static from(boostCardInfo: BoostCardInfo, marginAccount: MarginAccount, position: UniswapPosition): BoostCardInfo {
+    return new BoostCardInfo(
+      boostCardInfo.cardType,
+      boostCardInfo.nftTokenId,
+      boostCardInfo.uniswapPool,
+      boostCardInfo.currentTick,
+      boostCardInfo.token0,
+      boostCardInfo.token1,
+      boostCardInfo.color0,
+      boostCardInfo.color1,
+      position,
+      boostCardInfo.feesEarned,
+      marginAccount
+    );
+  }
+
   boostFactor() {
     if (this.borrower === null) return null;
     // Compute total value in the Uniswap position

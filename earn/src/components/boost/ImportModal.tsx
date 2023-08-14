@@ -280,20 +280,8 @@ export default function ImportModal(props: ImportModalProps) {
     const { position } = cardInfo;
 
     const updatedLiquidity = GN.fromJSBI(position.liquidity, 0).recklessMul(boostFactor).toJSBI();
-    return new BoostCardInfo(
-      cardInfo.cardType,
-      cardInfo.nftTokenId,
-      cardInfo.uniswapPool,
-      cardInfo.currentTick,
-      cardInfo.token0,
-      cardInfo.token1,
-      cardInfo.color0,
-      cardInfo.color1,
-      {
-        ...position,
-        liquidity: updatedLiquidity,
-      },
-      cardInfo.feesEarned,
+    return BoostCardInfo.from(
+      cardInfo,
       {
         address: '0x',
         uniswapPool: cardInfo.uniswapPool,
@@ -315,6 +303,10 @@ export default function ImportModal(props: ImportModalProps) {
         lender0: '0x',
         lender1: '0x',
         iv: 0,
+      },
+      {
+        ...position,
+        liquidity: updatedLiquidity,
       }
     );
   }, [cardInfo, boostFactor]);
