@@ -112,40 +112,19 @@ enum ImportModalState {
 function getButtonState(state?: ImportModalState) {
   switch (state) {
     case ImportModalState.FETCHING_DATA:
-      return {
-        isDisabled: true,
-        label: 'Loading...',
-      };
+      return { isDisabled: true, label: 'Loading...' };
     case ImportModalState.READY_TO_APPROVE:
-      return {
-        isDisabled: false,
-        label: 'Approve',
-      };
+      return { isDisabled: false, label: 'Approve' };
     case ImportModalState.ASKING_USER_TO_APPROVE:
-      return {
-        isDisabled: true,
-        label: 'Approve',
-      };
+      return { isDisabled: true, label: 'Approve' };
     case ImportModalState.WAITING_FOR_TRANSACTION:
-      return {
-        isDisabled: true,
-        label: 'Pending',
-      };
+      return { isDisabled: true, label: 'Pending' };
     case ImportModalState.READY_TO_MINT:
-      return {
-        isDisabled: false,
-        label: 'Confirm',
-      };
+      return { isDisabled: false, label: 'Confirm' };
     case ImportModalState.ASKING_USER_TO_MINT:
-      return {
-        isDisabled: true,
-        label: 'Confirm',
-      };
+      return { isDisabled: true, label: 'Confirm' };
     default:
-      return {
-        isDisabled: true,
-        label: 'Loading...',
-      };
+      return { isDisabled: true, label: 'Loading...' };
   }
 }
 
