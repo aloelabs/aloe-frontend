@@ -1,6 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
+import Big from 'big.js';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { useNavigate } from 'react-router-dom';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -12,6 +14,7 @@ import {
   ANTES,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
+import { FeeTier } from 'shared/lib/data/FeeTier';
 import styled from 'styled-components';
 import { erc721ABI, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
@@ -19,16 +22,22 @@ import { ChainContext } from '../../App';
 import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
+const BOOST_MIN = 1;
+const BOOST_MAX = 5;
+const BOOST_DEFAULT = BOOST_MIN;
+const SECONDARY_COLOR = '#CCDFED';
+const TERTIARY_COLOR = '#4b6980';
+
 const Container = styled.div`
   display: flex;
   justify-content: space-between;
+  gap: 20px;
 `;
 
 const ImportContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
   width: 300px;
   text-align: center;
 `;
@@ -66,7 +75,6 @@ const LeverageSlider = styled.input`
   height: 6px;
   background: #ffffff;
   border-radius: 0px;
-  /* background-image: linear-gradient(#d46a6a, #d46a6a); */
   background-repeat: no-repeat;
   width: 200px;
   margin: 0 auto;
@@ -91,10 +99,6 @@ const LeverageSlider = styled.input`
     background: transparent;
   }
 `;
-
-const BOOST_MIN = 1;
-const BOOST_MAX = 5;
-const BOOST_DEFAULT = BOOST_MIN;
 
 enum ImportModalState {
   FETCHING_DATA,
@@ -125,17 +129,17 @@ function getButtonState(state?: ImportModalState) {
     case ImportModalState.WAITING_FOR_TRANSACTION:
       return {
         disabled: true,
-        label: 'Approve',
+        label: 'Pending',
       };
     case ImportModalState.READY_TO_MINT:
       return {
         disabled: false,
-        label: 'Mint',
+        label: 'Confirm',
       };
     case ImportModalState.ASKING_USER_TO_MINT:
       return {
         disabled: true,
-        label: 'Mint',
+        label: 'Confirm',
       };
     default:
       return {
@@ -287,18 +291,61 @@ export default function ImportModal(props: ImportModalProps) {
     }
   }
 
+  const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
+    if (!cardInfo) return undefined;
+    const { position } = cardInfo;
+    const updatedLiquidity = JSBI.multiply(position.liquidity, JSBI.BigInt(boostFactor));
+    return new BoostCardInfo(
+      cardInfo.cardType,
+      cardInfo.nftTokenId,
+      cardInfo.uniswapPool,
+      cardInfo.currentTick,
+      cardInfo.token0,
+      cardInfo.token1,
+      cardInfo.color0,
+      cardInfo.color1,
+      {
+        ...cardInfo.position,
+        liquidity: updatedLiquidity,
+      },
+      cardInfo.feesEarned,
+      {
+        address: '0x',
+        uniswapPool: cardInfo.uniswapPool,
+        token0: cardInfo.token0,
+        token1: cardInfo.token1,
+        assets: {
+          token0Raw: 0,
+          token1Raw: 0,
+          uni0: 0,
+          uni1: 0,
+        },
+        liabilities: {
+          amount0: cardInfo.amount0() * (boostFactor - 1),
+          amount1: cardInfo.amount1() * (boostFactor - 1),
+        },
+        feeTier: FeeTier.INVALID,
+        sqrtPriceX96: new Big(0),
+        health: 0,
+        lender0: '0x',
+        lender1: '0x',
+        iv: 0,
+      }
+    );
+  }, [cardInfo, boostFactor]);
+
   return (
     <Modal
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      title={'Import'}
-      maxWidth='640px'
+      title={'Import Uniswap Position'}
+      maxWidth='660px'
       backgroundColor='rgba(43, 64, 80, 0.1)'
       backdropFilter='blur(40px)'
     >
-      {cardInfo && (
+      {updatedCardInfo && (
         <Container>
-          <BoostCard info={cardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
+          <BoostCard info={updatedCardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
           <ImportContainer>
             <Text size='L'>Boost Factor</Text>
             <div>
@@ -318,19 +365,41 @@ export default function ImportModal(props: ImportModalProps) {
                 ))}
               </StyledDatalist>
             </div>
-            <FilledStylizedButton
-              size='M'
-              disabled={buttonState.disabled}
-              onClick={() => {
-                if (state === ImportModalState.READY_TO_APPROVE) {
-                  writeManager?.();
-                } else if (state === ImportModalState.READY_TO_MINT) {
-                  mint?.();
-                }
-              }}
-            >
-              {buttonState.label}
-            </FilledStylizedButton>
+            <div className='flex flex-col gap-1 w-full mt-auto'>
+              <Text size='M' weight='bold' className='w-full text-start'>
+                Summary
+              </Text>
+              <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
+                You're moving your liquidity from a Uniswap NFT to an Aloe NFT and are applying a{' '}
+                <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but
+                you will also be paying intest to Aloe lenders and risk liquidation. Liquidation thresholds are shown in
+                the graph to the left.
+              </Text>
+            </div>
+            <div className='w-full mt-8'>
+              <FilledStylizedButton
+                size='M'
+                fillWidth={true}
+                disabled={buttonState.disabled}
+                onClick={() => {
+                  if (state === ImportModalState.READY_TO_APPROVE) {
+                    writeManager?.();
+                  } else if (state === ImportModalState.READY_TO_MINT) {
+                    mint?.();
+                  }
+                }}
+              >
+                {buttonState.label}
+              </FilledStylizedButton>
+              <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+                By depositing, you agree to our{' '}
+                <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+                  Terms of Service
+                </a>{' '}
+                and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur.
+                It is your duty to educate yourself and be aware of the risks.
+              </Text>
+            </div>
           </ImportContainer>
         </Container>
       )}
