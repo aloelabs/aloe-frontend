@@ -349,8 +349,8 @@ export default function ImportModal(props: ImportModalProps) {
               <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
                 You're moving your liquidity from a Uniswap NFT to an Aloe NFT and are applying a{' '}
                 <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but
-                you will also be paying intest to Aloe lenders and risk liquidation. Liquidation thresholds are shown in
-                the graph to the left.
+                you will also be paying interest to Aloe lenders and risk liquidation. Liquidation thresholds are shown
+                in the graph to the left.
               </Text>
             </div>
             <div className='w-full mt-8'>
