@@ -12,6 +12,10 @@ import { TickData, calculateTickData } from '../../data/Uniswap';
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
 
+const LIQUIDATION_THRESHOLDS_DEBOUNCE_MS = 250;
+const CHART_WIDTH = 300;
+const CHART_HEIGHT = 160;
+
 type ChartEntry = {
   tick: number;
   liquidityDensity: number;
@@ -23,9 +27,6 @@ type ViewBox = {
   width: number;
   height: number;
 };
-
-const CHART_WIDTH = 300;
-const CHART_HEIGHT = 160;
 
 const Wrapper = styled.div`
   position: relative;
@@ -192,7 +193,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       );
     },
     [info],
-    250
+    LIQUIDATION_THRESHOLDS_DEBOUNCE_MS
   );
 
   const lowerLiquidationThresholdTick = useMemo(() => {
