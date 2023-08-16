@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import styled from 'styled-components';
@@ -118,17 +118,18 @@ function LiquidationIconLabel(x: number, y: number) {
 export type LiquidityChartProps = {
   info: BoostCardInfo;
   uniqueId: string;
+  // Whether or not to show point-of-interest bubbles
+  showPOI: boolean;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { info, uniqueId } = props;
+  const { info, uniqueId, showPOI } = props;
   const { uniswapPool: poolAddress, currentTick, position, color0, color1 } = info;
-  const { lower: minTick, upper: maxTick } = position;
   const { activeChain } = useContext(ChainContext);
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
 
-  // Fetch (a) uniswapPoolBasics from ethers and (b) liquidityData from TheGraph
+  // Fetch liquidityData from TheGraph
   useEffectOnce(() => {
     let mounted = true;
     async function fetch(poolAddress: string) {
@@ -143,15 +144,37 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     };
   });
 
+  // Compute liquidation thresholds
+  const liquidation = useDebouncedMemo(
+    () => {
+      if (info.borrower == null) return null;
+      const sqrtRatios = computeLiquidationThresholds(
+        info.borrower.assets,
+        info.borrower.liabilities,
+        [info.position],
+        info.borrower.sqrtPriceX96,
+        info.borrower.iv,
+        info.token0.decimals,
+        info.token1.decimals
+      );
+      return {
+        lower: sqrtRatioToTick(sqrtRatios.lowerSqrtRatio),
+        upper: sqrtRatioToTick(sqrtRatios.upperSqrtRatio),
+      };
+    },
+    [info],
+    LIQUIDATION_THRESHOLDS_DEBOUNCE_MS
+  );
+
   // Once liquidityData has been fetched, arrange/format it to be workable chartData
   useEffect(() => {
     if (liquidityData == null) return;
 
     // Make sure graph shows position bounds (both lower and upper) and the current tick
-    let cutoffLeft = Math.min(minTick, currentTick);
-    let cutoffRight = Math.max(maxTick, currentTick);
+    let cutoffLeft = Math.min(position.lower, currentTick);
+    let cutoffRight = Math.max(position.upper, currentTick);
     // Zoom out a bit to make things prettier
-    const positionWidth = maxTick - minTick;
+    const positionWidth = position.upper - position.lower;
     cutoffLeft -= positionWidth;
     cutoffRight += positionWidth;
 
@@ -163,59 +186,58 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       const tick = element.tick;
       let liquidityDensity = element.liquidity.toNumber();
 
+      // Ignore negative values (TheGraph is stupid)
       if (liquidityDensity <= 0) continue;
+      // Filter out data points that are outside our chosen domain
       if (tick < cutoffLeft || tick > cutoffRight) continue;
 
+      // Update min/max values so we can compute range later on
       minValue = Math.min(minValue, liquidityDensity);
       maxValue = Math.max(maxValue, liquidityDensity);
 
+      // Ensure data points exist for all interesting locations
+      if (newChartData.length > 0) {
+        const prev = newChartData.at(-1)!;
+        // for position.lower
+        if (prev.tick < position.lower && position.lower < element.tick) {
+          newChartData.push({ tick: position.lower, liquidityDensity: prev.liquidityDensity });
+        }
+        // for position.upper
+        if (prev.tick < position.upper && position.upper < element.tick) {
+          newChartData.push({ tick: position.upper, liquidityDensity: prev.liquidityDensity });
+        }
+        if (liquidation) {
+          // for liquidation.lower
+          if (prev.tick < liquidation.lower && liquidation.lower < element.tick) {
+            newChartData.push({ tick: liquidation.lower, liquidityDensity: prev.liquidityDensity });
+          }
+          // for liquidation.upper
+          if (prev.tick < liquidation.upper && liquidation.upper < element.tick) {
+            newChartData.push({ tick: liquidation.upper, liquidityDensity: prev.liquidityDensity });
+          }
+        }
+      }
+      // Add the data point
       newChartData.push({ tick, liquidityDensity });
     }
 
     const range = maxValue - minValue;
     newChartData.forEach((el) => (el.liquidityDensity = el.liquidityDensity - minValue + range / 8));
     setChartData(newChartData);
-  }, [liquidityData, minTick, maxTick, currentTick]);
+  }, [liquidityData, position, currentTick, liquidation]);
 
-  const liquidationThresholds = useDebouncedMemo(
-    () => {
-      if (info.borrower == null) return null;
-      return computeLiquidationThresholds(
-        info.borrower.assets,
-        info.borrower.liabilities,
-        [info.position],
-        info.borrower.sqrtPriceX96,
-        info.borrower.iv,
-        info.token0.decimals,
-        info.token1.decimals
-      );
-    },
-    [info],
-    LIQUIDATION_THRESHOLDS_DEBOUNCE_MS
-  );
+  const minTickY = useMemo(() => calculateYPosition(position.lower, chartData), [position, chartData]);
 
-  const lowerLiquidationThresholdTick = useMemo(() => {
-    if (liquidationThresholds == null) return 0;
-    return sqrtRatioToTick(liquidationThresholds.lowerSqrtRatio);
-  }, [liquidationThresholds]);
-
-  const upperLiquidationThresholdTick = useMemo(() => {
-    if (liquidationThresholds == null) return 0;
-    return sqrtRatioToTick(liquidationThresholds.upperSqrtRatio);
-  }, [liquidationThresholds]);
-
-  const minTickY = useMemo(() => calculateYPosition(minTick, chartData), [minTick, chartData]);
-
-  const maxTickY = useMemo(() => calculateYPosition(maxTick, chartData), [maxTick, chartData]);
+  const maxTickY = useMemo(() => calculateYPosition(position.upper, chartData), [position, chartData]);
 
   const lowerLiquidationThresholdY = useMemo(
-    () => calculateYPosition(lowerLiquidationThresholdTick, chartData),
-    [lowerLiquidationThresholdTick, chartData]
+    () => calculateYPosition(liquidation?.lower || 0, chartData),
+    [liquidation, chartData]
   );
 
   const upperLiquidationThresholdY = useMemo(
-    () => calculateYPosition(upperLiquidationThresholdTick, chartData),
-    [upperLiquidationThresholdTick, chartData]
+    () => calculateYPosition(liquidation?.upper || 0, chartData),
+    [liquidation, chartData]
   );
 
   if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
@@ -224,13 +246,13 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const highestTick = chartData[chartData.length - 1].tick;
 
   const domain = highestTick - lowestTick;
-  const lower = (minTick - lowestTick) / domain;
-  const upper = (maxTick - lowestTick) / domain;
+  const lower = (position.lower - lowestTick) / domain;
+  const upper = (position.upper - lowestTick) / domain;
   const current = (currentTick - lowestTick) / domain;
 
   let positionHighlight: JSX.Element;
   const positionHighlightId = 'positionHighlight'.concat(uniqueId);
-  if (currentTick < minTick) {
+  if (currentTick < position.lower) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
@@ -239,7 +261,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
         <stop offset={upper} stopColor='white' stopOpacity={0.0} />
       </linearGradient>
     );
-  } else if (currentTick < maxTick) {
+  } else if (currentTick < position.upper) {
     positionHighlight = (
       <linearGradient id={positionHighlightId} x1='0' y1='0' x2='1' y2='0'>
         <stop offset={lower} stopColor='white' stopOpacity={0.0} />
@@ -296,14 +318,10 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                   <rect x='0' y='0' width='100%' height='100%' fill='url(#stripes)' />
                 </mask>
                 <pattern id={'areaFill'.concat(uniqueId)} width='100%' height='100%' patternUnits='userSpaceOnUse'>
-                  <rect
-                    x='0'
-                    y='0'
-                    width='100%'
-                    height='100%'
-                    fill={'url(#'.concat(positionHighlightId, ')')}
-                    // mask='url(#stripesMask)'
-                  />
+                  <rect x='0' y='0' width='100%' height='100%' fill={'url(#'.concat(positionHighlightId, ')')} />
+                </pattern>
+                <pattern id='liqFill' width='100%' height='100%' patternUnits='userSpaceOnUse'>
+                  <rect x='0' y='0' width='100%' height='100%' fill='red' mask='url(#stripesMask)' />
                 </pattern>
               </defs>
               <XAxis dataKey='tick' type='number' domain={[lowestTick, highestTick]} tick={false} height={0} />
@@ -329,40 +347,67 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 }}
                 isAnimationActive={false}
               />
-              <ReferenceLine
-                x={minTick}
-                stroke='transparent'
-                strokeWidth='1'
-                label={({ viewBox }: { viewBox: ViewBox }) => {
-                  return MinIconLabel(viewBox.x, minTickY);
-                }}
-              />
-              <ReferenceLine
-                x={maxTick}
-                stroke='transparent'
-                strokeWidth='1'
-                label={({ viewBox }: { viewBox: ViewBox }) => {
-                  return MaxIconLabel(viewBox.x, maxTickY);
-                }}
-              />
-              <ReferenceLine
-                x={lowerLiquidationThresholdTick}
-                stroke='transparent'
-                strokeWidth='1'
-                label={({ viewBox }: { viewBox: ViewBox }) => {
-                  return LiquidationIconLabel(viewBox.x, lowerLiquidationThresholdY);
-                }}
-                isFront={true}
-              />
-              <ReferenceLine
-                x={upperLiquidationThresholdTick}
-                stroke='transparent'
-                strokeWidth='1'
-                label={({ viewBox }: { viewBox: ViewBox }) => {
-                  return LiquidationIconLabel(viewBox.x, upperLiquidationThresholdY);
-                }}
-                isFront={true}
-              />
+              {liquidation && (
+                <ReferenceArea
+                  x1={liquidation.upper}
+                  x2={887272}
+                  strokeWidth='0'
+                  fill='url(#liqFill)'
+                  ifOverflow='hidden'
+                />
+              )}
+              {liquidation && (
+                <ReferenceArea
+                  x1={-887272}
+                  x2={liquidation.lower}
+                  strokeWidth='0'
+                  fill='url(#liqFill)'
+                  ifOverflow='hidden'
+                  label='LIQUIDATION!'
+                />
+              )}
+              {showPOI && (
+                <ReferenceLine
+                  x={position.lower}
+                  stroke='transparent'
+                  strokeWidth='1'
+                  label={({ viewBox }: { viewBox: ViewBox }) => {
+                    return MinIconLabel(viewBox.x, minTickY);
+                  }}
+                />
+              )}
+              {showPOI && (
+                <ReferenceLine
+                  x={position.upper}
+                  stroke='transparent'
+                  strokeWidth='1'
+                  label={({ viewBox }: { viewBox: ViewBox }) => {
+                    return MaxIconLabel(viewBox.x, maxTickY);
+                  }}
+                />
+              )}
+              {showPOI && liquidation && (
+                <ReferenceLine
+                  x={liquidation.lower}
+                  stroke='transparent'
+                  strokeWidth='1'
+                  label={({ viewBox }: { viewBox: ViewBox }) => {
+                    return LiquidationIconLabel(viewBox.x, lowerLiquidationThresholdY);
+                  }}
+                  isFront={true}
+                />
+              )}
+              {showPOI && liquidation && (
+                <ReferenceLine
+                  x={liquidation.upper}
+                  stroke='transparent'
+                  strokeWidth='1'
+                  label={({ viewBox }: { viewBox: ViewBox }) => {
+                    return LiquidationIconLabel(viewBox.x, upperLiquidationThresholdY);
+                  }}
+                  isFront={true}
+                />
+              )}
               <ReferenceLine x={currentTick} stroke='white' strokeWidth='1' />
               <Tooltip
                 isAnimationActive={false}
