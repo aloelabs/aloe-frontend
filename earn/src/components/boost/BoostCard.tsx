@@ -208,7 +208,7 @@ export default function BoostCard(props: UniswapPositionCardProps) {
             <BoostBadge boostFactor={boostFactor} />
           </div>
         </div>
-        <LiquidityChart info={info} color0={info.color0} color1={info.color1} uniqueId={uniqueId} />
+        <LiquidityChart info={info} uniqueId={uniqueId} />
       </UniswapPositionCardWrapper>
     </CustomUniswapPositionCardContainer>
   );

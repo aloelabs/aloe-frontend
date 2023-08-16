@@ -117,14 +117,12 @@ function LiquidationIconLabel(x: number, y: number) {
 
 export type LiquidityChartProps = {
   info: BoostCardInfo;
-  color0: string;
-  color1: string;
   uniqueId: string;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { info, color0, color1, uniqueId } = props;
-  const { uniswapPool: poolAddress, currentTick, position } = info;
+  const { info, uniqueId } = props;
+  const { uniswapPool: poolAddress, currentTick, position, color0, color1 } = info;
   const { lower: minTick, upper: maxTick } = position;
   const { activeChain } = useContext(ChainContext);
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
