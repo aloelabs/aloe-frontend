@@ -208,15 +208,7 @@ export default function BoostCard(props: UniswapPositionCardProps) {
             <BoostBadge boostFactor={boostFactor} />
           </div>
         </div>
-        <LiquidityChart
-          poolAddress={info.uniswapPool}
-          minTick={info.position.lower}
-          maxTick={info.position.upper}
-          currentTick={info.currentTick}
-          color0={info.color0}
-          color1={info.color1}
-          uniqueId={uniqueId}
-        />
+        <LiquidityChart info={info} color0={info.color0} color1={info.color1} uniqueId={uniqueId} />
       </UniswapPositionCardWrapper>
     </CustomUniswapPositionCardContainer>
   );

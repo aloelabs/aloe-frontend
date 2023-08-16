@@ -1,10 +1,13 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import styled from 'styled-components';
 
 import { ChainContext } from '../../App';
+import { computeLiquidationThresholds, sqrtRatioToTick } from '../../data/BalanceSheet';
+import { BoostCardInfo } from '../../data/Uniboost';
 import { TickData, calculateTickData } from '../../data/Uniswap';
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
@@ -71,7 +74,7 @@ function MinIconLabel(x: number, y: number) {
     <g>
       <svg width='24' height='36' viewBox='0 0 24 36' fill='none' x={x - 24 / 2} y={y - 24}>
         <path d='M12 36L3.5 20.5L1 9H23L20.5 20.5L12 36Z' fill='white' />
-        <circle cx='12' cy='12' r='11' fill='black' stroke='white' stroke-width='2' />
+        <circle cx='12' cy='12' r='11' fill='black' stroke='white' strokeWidth='2' />
         <path d='M19 12L14 9.11325V14.8868L19 12ZM10 12.5H14.5V11.5H10V12.5Z' fill='white' />
         <line x1='9.5' y1='7' x2='9.5' y2='17' stroke='white' />
       </svg>
@@ -84,7 +87,7 @@ function MaxIconLabel(x: number, y: number) {
     <g>
       <svg width='24' height='36' viewBox='0 0 24 36' fill='none' x={x - 24 / 2} y={y - 24}>
         <path d='M12 36L3.5 20.5L1 9H23L20.5 20.5L12 36Z' fill='white' />
-        <circle cx='12' cy='12' r='11' fill='black' stroke='white' stroke-width='2' />
+        <circle cx='12' cy='12' r='11' fill='black' stroke='white' strokeWidth='2' />
         <path d='M5 12L10 14.8868V9.11325L5 12ZM9.5 12.5H14V11.5H9.5V12.5Z' fill='white' />
         <line x1='14.5' y1='7' x2='14.5' y2='17' stroke='white' />
       </svg>
@@ -92,18 +95,36 @@ function MaxIconLabel(x: number, y: number) {
   );
 }
 
+function LiquidationIconLabel(x: number, y: number) {
+  return (
+    <g>
+      <svg width='24' height='36' viewBox='0 0 24 36' fill='none' x={x - 24 / 2} y={y - 24}>
+        <path d='M12 36L3.5 20.5L1 9H23L20.5 20.5L12 36Z' fill='white' />
+        <circle cx='12' cy='12' r='11' fill='black' stroke='white' strokeWidth='2' />
+        <path
+          d='M12.9939 14.5935C12.8621 15.7796 11.1379 15.7796
+           11.0061 14.5935L10.1234 6.64887C10.0576 6.0565 10.5213
+           5.53844 11.1173 5.53844H12.8827C13.4787 5.53844 13.9424
+            6.0565 13.8766 6.64887L12.9939 14.5935Z'
+          fill='white'
+        />
+        <circle cx='12' cy='17.5384' r='1' fill='white' />
+      </svg>
+    </g>
+  );
+}
+
 export type LiquidityChartProps = {
-  poolAddress: string;
-  currentTick: number;
-  minTick: number;
-  maxTick: number;
+  info: BoostCardInfo;
   color0: string;
   color1: string;
   uniqueId: string;
 };
 
 export default function LiquidityChart(props: LiquidityChartProps) {
-  const { poolAddress, currentTick, minTick, maxTick, color0, color1, uniqueId } = props;
+  const { info, color0, color1, uniqueId } = props;
+  const { uniswapPool: poolAddress, currentTick, position } = info;
+  const { lower: minTick, upper: maxTick } = position;
   const { activeChain } = useContext(ChainContext);
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
@@ -157,8 +178,46 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     setChartData(newChartData);
   }, [liquidityData, minTick, maxTick, currentTick]);
 
+  const liquidationThresholds = useDebouncedMemo(
+    () => {
+      if (info.borrower == null) return null;
+      return computeLiquidationThresholds(
+        info.borrower.assets,
+        info.borrower.liabilities,
+        [info.position],
+        info.borrower.sqrtPriceX96,
+        info.borrower.iv,
+        info.token0.decimals,
+        info.token1.decimals
+      );
+    },
+    [info],
+    250
+  );
+
+  const lowerLiquidationThresholdTick = useMemo(() => {
+    if (liquidationThresholds == null) return 0;
+    return sqrtRatioToTick(liquidationThresholds.lowerSqrtRatio);
+  }, [liquidationThresholds]);
+
+  const upperLiquidationThresholdTick = useMemo(() => {
+    if (liquidationThresholds == null) return 0;
+    return sqrtRatioToTick(liquidationThresholds.upperSqrtRatio);
+  }, [liquidationThresholds]);
+
   const minTickY = useMemo(() => calculateYPosition(minTick, chartData), [minTick, chartData]);
+
   const maxTickY = useMemo(() => calculateYPosition(maxTick, chartData), [maxTick, chartData]);
+
+  const lowerLiquidationThresholdY = useMemo(
+    () => calculateYPosition(lowerLiquidationThresholdTick, chartData),
+    [lowerLiquidationThresholdTick, chartData]
+  );
+
+  const upperLiquidationThresholdY = useMemo(
+    () => calculateYPosition(upperLiquidationThresholdTick, chartData),
+    [upperLiquidationThresholdTick, chartData]
+  );
 
   if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
 
@@ -286,6 +345,24 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 label={({ viewBox }: { viewBox: ViewBox }) => {
                   return MaxIconLabel(viewBox.x, maxTickY);
                 }}
+              />
+              <ReferenceLine
+                x={lowerLiquidationThresholdTick}
+                stroke='transparent'
+                strokeWidth='1'
+                label={({ viewBox }: { viewBox: ViewBox }) => {
+                  return LiquidationIconLabel(viewBox.x, lowerLiquidationThresholdY);
+                }}
+                isFront={true}
+              />
+              <ReferenceLine
+                x={upperLiquidationThresholdTick}
+                stroke='transparent'
+                strokeWidth='1'
+                label={({ viewBox }: { viewBox: ViewBox }) => {
+                  return LiquidationIconLabel(viewBox.x, upperLiquidationThresholdY);
+                }}
+                isFront={true}
               />
               <ReferenceLine x={currentTick} stroke='white' strokeWidth='1' />
               <Tooltip
