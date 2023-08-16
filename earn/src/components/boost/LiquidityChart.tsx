@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
@@ -12,6 +12,13 @@ import LiquidityChartTooltip from './LiquidityChartTooltip';
 type ChartEntry = {
   tick: number;
   liquidityDensity: number;
+};
+
+type ViewBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 const CHART_WIDTH = 300;
@@ -33,6 +40,57 @@ const ChartWrapper = styled.div`
   border-bottom-right-radius: 8px;
   overflow: hidden;
 `;
+
+function calculateYPosition(tick: number, chartData: ChartEntry[] | null) {
+  if (chartData == null) return 0;
+  let minTickError = Number.MAX_VALUE;
+  let nearestLiquidity = chartData[0].liquidityDensity;
+
+  let minValue = Number.MAX_VALUE;
+  let maxValue = 0;
+  chartData.forEach((el) => {
+    minValue = Math.min(minValue, el.liquidityDensity);
+    maxValue = Math.max(maxValue, el.liquidityDensity);
+
+    const tickError = Math.abs(tick - el.tick);
+    if (tickError < minTickError) {
+      minTickError = tickError;
+      nearestLiquidity = el.liquidityDensity;
+    }
+  });
+
+  const dataRange = maxValue - minValue;
+  const graphBottom = minValue - dataRange / 4;
+  const graphTop = maxValue + dataRange / 8;
+
+  return CHART_HEIGHT - ((nearestLiquidity - graphBottom) * CHART_HEIGHT) / (graphTop - graphBottom);
+}
+
+function MinIconLabel(x: number, y: number) {
+  return (
+    <g>
+      <svg width='24' height='36' viewBox='0 0 24 36' fill='none' x={x - 24 / 2} y={y - 24}>
+        <path d='M12 36L3.5 20.5L1 9H23L20.5 20.5L12 36Z' fill='white' />
+        <circle cx='12' cy='12' r='11' fill='black' stroke='white' stroke-width='2' />
+        <path d='M19 12L14 9.11325V14.8868L19 12ZM10 12.5H14.5V11.5H10V12.5Z' fill='white' />
+        <line x1='9.5' y1='7' x2='9.5' y2='17' stroke='white' />
+      </svg>
+    </g>
+  );
+}
+
+function MaxIconLabel(x: number, y: number) {
+  return (
+    <g>
+      <svg width='24' height='36' viewBox='0 0 24 36' fill='none' x={x - 24 / 2} y={y - 24}>
+        <path d='M12 36L3.5 20.5L1 9H23L20.5 20.5L12 36Z' fill='white' />
+        <circle cx='12' cy='12' r='11' fill='black' stroke='white' stroke-width='2' />
+        <path d='M5 12L10 14.8868V9.11325L5 12ZM9.5 12.5H14V11.5H9.5V12.5Z' fill='white' />
+        <line x1='14.5' y1='7' x2='14.5' y2='17' stroke='white' />
+      </svg>
+    </g>
+  );
+}
 
 export type LiquidityChartProps = {
   poolAddress: string;
@@ -98,6 +156,9 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     newChartData.forEach((el) => (el.liquidityDensity = el.liquidityDensity - minValue + range / 8));
     setChartData(newChartData);
   }, [liquidityData, minTick, maxTick, currentTick]);
+
+  const minTickY = useMemo(() => calculateYPosition(minTick, chartData), [minTick, chartData]);
+  const maxTickY = useMemo(() => calculateYPosition(maxTick, chartData), [maxTick, chartData]);
 
   if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
 
@@ -209,6 +270,22 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                   r: 3,
                 }}
                 isAnimationActive={false}
+              />
+              <ReferenceLine
+                x={minTick}
+                stroke='transparent'
+                strokeWidth='1'
+                label={({ viewBox }: { viewBox: ViewBox }) => {
+                  return MinIconLabel(viewBox.x, minTickY);
+                }}
+              />
+              <ReferenceLine
+                x={maxTick}
+                stroke='transparent'
+                strokeWidth='1'
+                label={({ viewBox }: { viewBox: ViewBox }) => {
+                  return MaxIconLabel(viewBox.x, maxTickY);
+                }}
               />
               <ReferenceLine x={currentTick} stroke='white' strokeWidth='1' />
               <Tooltip
