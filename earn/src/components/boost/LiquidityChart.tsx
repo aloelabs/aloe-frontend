@@ -348,65 +348,65 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                 isAnimationActive={false}
               />
               {liquidation && (
-                <ReferenceArea
-                  x1={liquidation.upper}
-                  x2={887272}
-                  strokeWidth='0'
-                  fill='url(#liqFill)'
-                  ifOverflow='hidden'
-                />
-              )}
-              {liquidation && (
-                <ReferenceArea
-                  x1={-887272}
-                  x2={liquidation.lower}
-                  strokeWidth='0'
-                  fill='url(#liqFill)'
-                  ifOverflow='hidden'
-                  label='LIQUIDATION!'
-                />
-              )}
-              {showPOI && (
-                <ReferenceLine
-                  x={position.lower}
-                  stroke='transparent'
-                  strokeWidth='1'
-                  label={({ viewBox }: { viewBox: ViewBox }) => {
-                    return MinIconLabel(viewBox.x, minTickY);
-                  }}
-                />
+                <>
+                  <ReferenceArea
+                    x1={liquidation.upper}
+                    x2={887272}
+                    strokeWidth='0'
+                    fill='url(#liqFill)'
+                    ifOverflow='hidden'
+                  />
+                  <ReferenceArea
+                    x1={-887272}
+                    x2={liquidation.lower}
+                    strokeWidth='0'
+                    fill='url(#liqFill)'
+                    ifOverflow='hidden'
+                    label='LIQUIDATION!'
+                  />
+                </>
               )}
               {showPOI && (
-                <ReferenceLine
-                  x={position.upper}
-                  stroke='transparent'
-                  strokeWidth='1'
-                  label={({ viewBox }: { viewBox: ViewBox }) => {
-                    return MaxIconLabel(viewBox.x, maxTickY);
-                  }}
-                />
-              )}
-              {showPOI && liquidation && (
-                <ReferenceLine
-                  x={liquidation.lower}
-                  stroke='transparent'
-                  strokeWidth='1'
-                  label={({ viewBox }: { viewBox: ViewBox }) => {
-                    return LiquidationIconLabel(viewBox.x, lowerLiquidationThresholdY);
-                  }}
-                  isFront={true}
-                />
-              )}
-              {showPOI && liquidation && (
-                <ReferenceLine
-                  x={liquidation.upper}
-                  stroke='transparent'
-                  strokeWidth='1'
-                  label={({ viewBox }: { viewBox: ViewBox }) => {
-                    return LiquidationIconLabel(viewBox.x, upperLiquidationThresholdY);
-                  }}
-                  isFront={true}
-                />
+                <>
+                  <ReferenceLine
+                    x={position.lower}
+                    stroke='transparent'
+                    strokeWidth='1'
+                    label={({ viewBox }: { viewBox: ViewBox }) => {
+                      return MinIconLabel(viewBox.x, minTickY);
+                    }}
+                  />
+                  <ReferenceLine
+                    x={position.upper}
+                    stroke='transparent'
+                    strokeWidth='1'
+                    label={({ viewBox }: { viewBox: ViewBox }) => {
+                      return MaxIconLabel(viewBox.x, maxTickY);
+                    }}
+                  />
+                  {liquidation && (
+                    <>
+                      <ReferenceLine
+                        x={liquidation.lower}
+                        stroke='transparent'
+                        strokeWidth='1'
+                        label={({ viewBox }: { viewBox: ViewBox }) => {
+                          return LiquidationIconLabel(viewBox.x, lowerLiquidationThresholdY);
+                        }}
+                        isFront={true}
+                      />
+                      <ReferenceLine
+                        x={liquidation.upper}
+                        stroke='transparent'
+                        strokeWidth='1'
+                        label={({ viewBox }: { viewBox: ViewBox }) => {
+                          return LiquidationIconLabel(viewBox.x, upperLiquidationThresholdY);
+                        }}
+                        isFront={true}
+                      />
+                    </>
+                  )}
+                </>
               )}
               <ReferenceLine x={currentTick} stroke='white' strokeWidth='1' />
               <Tooltip
