@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import Big from 'big.js';
+import { TickMath } from '@uniswap/v3-sdk';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
@@ -298,7 +298,7 @@ export default function ImportModal(props: ImportModalProps) {
           amount1: cardInfo.amount1() * (boostFactor - 1),
         },
         feeTier: FeeTier.INVALID,
-        sqrtPriceX96: new Big(0),
+        sqrtPriceX96: GN.fromJSBI(TickMath.getSqrtRatioAtTick(cardInfo.currentTick), 0).toDecimalBig(),
         health: 0,
         lender0: '0x',
         lender1: '0x',
