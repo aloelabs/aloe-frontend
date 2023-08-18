@@ -151,7 +151,7 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
                 Summary
               </Text>
               <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
-                You're moving your liquidity from an Aloe NFT to a Uniswap NFT.
+                TODO
               </Text>
             </div>
             <div className='w-full mt-8'>
@@ -168,7 +168,7 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
                 {buttonState.label}
               </FilledStylizedButton>
               <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
-                By depositing, you agree to our{' '}
+                By withdrawing, you agree to our{' '}
                 <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
                   Terms of Service
                 </a>{' '}
