@@ -7,11 +7,12 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import { useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
 import { ChainContext } from '../../App';
-// import { MarginAccount } from '../../data/MarginAccount';
+import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
@@ -31,14 +32,47 @@ const EditLeverageContainer = styled.div`
   text-align: center;
 `;
 
-// function calculateShortfall(borrower?: MarginAccount): { shortfall0: number; shortfall1: number } {
-//   if (!borrower) return { shortfall0: 0, shortfall1: 0 };
-//   const { assets, liabilities } = borrower;
-//   return {
-//     shortfall0: liabilities.amount0 - (assets.token0Raw + assets.uni0),
-//     shortfall1: liabilities.amount1 - (assets.token1Raw + assets.uni1),
-//   }
-// }
+function calculateShortfall(borrower: MarginAccount): { shortfall0: GN; shortfall1: GN } {
+  if (!borrower) return { shortfall0: GN.zero(0), shortfall1: GN.zero(0) };
+  const { assets, liabilities } = borrower;
+  return {
+    shortfall0: GN.fromNumber(liabilities.amount0 - (assets.token0Raw + assets.uni0), borrower.token0.decimals),
+    shortfall1: GN.fromNumber(liabilities.amount1 - (assets.token1Raw + assets.uni1), borrower.token1.decimals),
+  };
+}
+
+function computeData(borrower?: MarginAccount, slippage = 0.01) {
+  if (!borrower) return { assetIn: ethers.constants.AddressZero, amount0: GN.zero(0), amount1: GN.zero(0) };
+  const { shortfall0, shortfall1 } = calculateShortfall(borrower);
+  console.log(shortfall0.toString(GNFormat.DECIMAL), shortfall1.toString(GNFormat.DECIMAL));
+  if (shortfall0.isGtZero()) {
+    return {
+      assetIn: borrower.token1.address,
+      amount0: shortfall0,
+      amount1: shortfall0
+        .mul(new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2))
+        .recklessMul(1 + slippage)
+        .neg()
+        .setResolution(borrower.token1.decimals),
+    };
+  }
+  if (shortfall1.isGtZero()) {
+    return {
+      assetIn: borrower.token0.address,
+      amount0: shortfall1
+        .div(new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2))
+        .recklessMul(1 + slippage)
+        .neg()
+        .setResolution(borrower.token0.decimals),
+      amount1: shortfall1,
+    };
+  }
+  return {
+    assetIn: ethers.constants.AddressZero,
+    amount0: GN.zero(0),
+    amount1: GN.zero(0),
+  };
+}
 
 enum ManageModalState {
   WAITING_FOR_TRANSACTION,
@@ -74,16 +108,20 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
 
-  // const { shortfall0, shortfall1 } = useMemo(() => {
-  //   return calculateShortfall(cardInfo?.borrower || undefined);
-  // }, [cardInfo]);
-
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
+    const { assetIn, amount0, amount1 } = computeData(cardInfo.borrower || undefined);
     const { position } = cardInfo;
     return ethers.utils.defaultAbiCoder.encode(
-      ['int24', 'int24', 'uint128'],
-      [position.lower, position.upper, position.liquidity.toString(10)]
+      ['int24', 'int24', 'uint128', 'address', 'int256', 'int256'],
+      [
+        position.lower,
+        position.upper,
+        position.liquidity.toString(10),
+        assetIn,
+        amount0.toBigNumber(),
+        amount1.toBigNumber(),
+      ]
     ) as `0x${string}`;
   }, [cardInfo]);
 
@@ -93,7 +131,7 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [nftTokenId, 1, modifyData ?? '0x', [true, true]],
+    args: [nftTokenId, 2, modifyData ?? '0x', [true, true]],
     chainId: activeChain.id,
     enabled: enableHooks,
   });
