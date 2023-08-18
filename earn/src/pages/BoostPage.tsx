@@ -71,7 +71,9 @@ export default function BoostPage() {
         })
       );
 
-      if (mounted) setBoostedCardInfos(fetchedInfos);
+      const filteredInfos = fetchedInfos.filter((info) => JSBI.greaterThan(info.position.liquidity, JSBI.BigInt(0)));
+
+      if (mounted) setBoostedCardInfos(filteredInfos);
     })();
 
     return () => {
@@ -239,7 +241,7 @@ export default function BoostPage() {
         setIsOpen={() => {
           setSelectedPosition(null);
         }}
-        uniswapNFTCardInfo={selectedCardInfo}
+        cardInfo={selectedCardInfo}
       />
     </AppPage>
   );
