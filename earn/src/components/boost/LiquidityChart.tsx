@@ -1,11 +1,14 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
+import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Text } from 'shared/lib/components/common/Typography';
 import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import styled from 'styled-components';
 
 import { ChainContext } from '../../App';
+import { ReactComponent as WarningIcon } from '../../assets/svg/warning.svg';
 import { computeLiquidationThresholds, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { TickData, calculateTickData } from '../../data/Uniswap';
@@ -45,8 +48,35 @@ const ChartWrapper = styled.div`
   overflow: hidden;
 `;
 
+const ChartErrorOverlay = styled.div`
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: ${CHART_WIDTH}px;
+  height: ${CHART_HEIGHT}px;
+  top: 0;
+  left: -16px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  z-index: 1;
+  pointer-events: none;
+`;
+
+const StyledWarningIcon = styled(WarningIcon)`
+  width: 24px;
+  height: 24px;
+
+  path {
+    fill: #ffffff;
+  }
+`;
+
 function calculateYPosition(tick: number, chartData: ChartEntry[] | null) {
-  if (chartData == null) return 0;
+  if (chartData == null || chartData.length === 0) return 0;
   let minTickError = Number.MAX_VALUE;
   let nearestLiquidity = chartData[0].liquidityDensity;
 
@@ -128,12 +158,43 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const { activeChain } = useContext(ChainContext);
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
+  const [chartError, setChartError] = useState<boolean>(false);
 
   // Fetch liquidityData from TheGraph
   useEffectOnce(() => {
     let mounted = true;
     async function fetch(poolAddress: string) {
-      const tickData = await calculateTickData(poolAddress, activeChain.id);
+      let tickData: TickData[] | null = null;
+      try {
+        tickData = await calculateTickData(poolAddress, activeChain.id);
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setChartError(true);
+        }
+        const cutoffLeft = Math.min(position.lower, currentTick);
+        const cutoffRight = Math.max(position.upper, currentTick);
+        tickData = [
+          {
+            tick: cutoffLeft,
+            liquidity: new Big(0),
+            price0In1: 0,
+            price1In0: 0,
+          },
+          {
+            tick: currentTick,
+            liquidity: new Big(0),
+            price0In1: 0,
+            price1In0: 0,
+          },
+          {
+            tick: cutoffRight,
+            liquidity: new Big(0),
+            price0In1: 0,
+            price1In0: 0,
+          },
+        ];
+      }
       if (mounted) {
         setLiquidityData(tickData);
       }
@@ -187,7 +248,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       let liquidityDensity = element.liquidity.toNumber();
 
       // Ignore negative values (TheGraph is stupid)
-      if (liquidityDensity <= 0) continue;
+      if (liquidityDensity < 0) continue;
       // Filter out data points that are outside our chosen domain
       if (tick < cutoffLeft || tick > cutoffRight) continue;
 
@@ -285,6 +346,14 @@ export default function LiquidityChart(props: LiquidityChartProps) {
 
   return (
     <Wrapper>
+      {chartError && (
+        <ChartErrorOverlay>
+          <StyledWarningIcon />
+          <Text size='M' className='text-center'>
+            Liquidity data is currently unavailable. Chart functionality is limited.
+          </Text>
+        </ChartErrorOverlay>
+      )}
       <ChartWrapper>
         <ResponsiveContainer width='100%' height='100%'>
           <div>
@@ -362,7 +431,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                     strokeWidth='0'
                     fill='url(#liqFill)'
                     ifOverflow='hidden'
-                    label='LIQUIDATION!'
                   />
                 </>
               )}
