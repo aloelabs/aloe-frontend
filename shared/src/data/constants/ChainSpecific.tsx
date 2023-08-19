@@ -5,9 +5,6 @@ import { Address } from 'wagmi';
 import { ArbitrumLogo, BaseLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
 import {
-  ALOE_II_BOOST_MANAGER_ADDRESS_ARBITRUM,
-  ALOE_II_BOOST_MANAGER_ADDRESS_BASE,
-  ALOE_II_BOOST_MANAGER_ADDRESS_OPTIMISM,
   ALOE_II_BOOST_NFT_ADDRESS_ARBITRUM,
   ALOE_II_BOOST_NFT_ADDRESS_BASE,
   ALOE_II_BOOST_NFT_ADDRESS_OPTIMISM,
@@ -145,10 +142,4 @@ export const ALOE_II_BOOST_NFT_ADDRESS: { [chainId: number]: Address } = {
   [optimism.id]: ALOE_II_BOOST_NFT_ADDRESS_OPTIMISM,
   [arbitrum.id]: ALOE_II_BOOST_NFT_ADDRESS_ARBITRUM,
   [base.id]: ALOE_II_BOOST_NFT_ADDRESS_BASE,
-};
-
-export const ALOE_II_BOOST_MANAGER_ADDRESS: { [chainId: number]: Address } = {
-  [optimism.id]: ALOE_II_BOOST_MANAGER_ADDRESS_OPTIMISM,
-  [arbitrum.id]: ALOE_II_BOOST_MANAGER_ADDRESS_ARBITRUM,
-  [base.id]: ALOE_II_BOOST_MANAGER_ADDRESS_BASE,
 };

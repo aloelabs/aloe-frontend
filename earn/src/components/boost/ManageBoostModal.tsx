@@ -7,11 +7,12 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import { useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
 import { ChainContext } from '../../App';
-// import { MarginAccount } from '../../data/MarginAccount';
+import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
@@ -31,14 +32,40 @@ const EditLeverageContainer = styled.div`
   text-align: center;
 `;
 
-// function calculateShortfall(borrower?: MarginAccount): { shortfall0: number; shortfall1: number } {
-//   if (!borrower) return { shortfall0: 0, shortfall1: 0 };
-//   const { assets, liabilities } = borrower;
-//   return {
-//     shortfall0: liabilities.amount0 - (assets.token0Raw + assets.uni0),
-//     shortfall1: liabilities.amount1 - (assets.token1Raw + assets.uni1),
-//   }
-// }
+function calculateShortfall(borrower: MarginAccount): { shortfall0: GN; shortfall1: GN } {
+  if (!borrower) return { shortfall0: GN.zero(0), shortfall1: GN.zero(0) };
+  const { assets, liabilities } = borrower;
+  return {
+    shortfall0: GN.fromNumber(liabilities.amount0 - (assets.token0Raw + assets.uni0), borrower.token0.decimals),
+    shortfall1: GN.fromNumber(liabilities.amount1 - (assets.token1Raw + assets.uni1), borrower.token1.decimals),
+  };
+}
+
+function computeData(borrower?: MarginAccount, slippage = 0.01) {
+  if (borrower) {
+    const { shortfall0, shortfall1 } = calculateShortfall(borrower);
+    const sqrtPrice = new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2);
+
+    if (shortfall0.isGtZero()) {
+      const worstPrice = sqrtPrice.square().recklessMul(1 + slippage);
+      return {
+        maxSpend: shortfall0.setResolution(borrower.token1.decimals).mul(worstPrice),
+        zeroForOne: false,
+      };
+    }
+    if (shortfall1.isGtZero()) {
+      const worstPrice = sqrtPrice.square().recklessDiv(1 + slippage);
+      return {
+        maxSpend: shortfall1.setResolution(borrower.token0.decimals).div(worstPrice),
+        zeroForOne: true,
+      };
+    }
+  }
+  return {
+    maxSpend: GN.zero(0),
+    zeroForOne: false,
+  };
+}
 
 enum ManageModalState {
   WAITING_FOR_TRANSACTION,
@@ -74,16 +101,13 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
 
-  // const { shortfall0, shortfall1 } = useMemo(() => {
-  //   return calculateShortfall(cardInfo?.borrower || undefined);
-  // }, [cardInfo]);
-
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
+    const { maxSpend, zeroForOne } = computeData(cardInfo.borrower || undefined);
     const { position } = cardInfo;
     return ethers.utils.defaultAbiCoder.encode(
-      ['int24', 'int24', 'uint128'],
-      [position.lower, position.upper, position.liquidity.toString(10)]
+      ['int24', 'int24', 'uint128', 'uint128', 'bool'],
+      [position.lower, position.upper, position.liquidity.toString(10), maxSpend?.toBigNumber(), zeroForOne]
     ) as `0x${string}`;
   }, [cardInfo]);
 
@@ -93,7 +117,7 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [nftTokenId, 1, modifyData ?? '0x', [true, true]],
+    args: [nftTokenId, 2, modifyData ?? '0x', [true, true]],
     chainId: activeChain.id,
     enabled: enableHooks,
   });

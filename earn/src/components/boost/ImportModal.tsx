@@ -8,7 +8,6 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
-  ALOE_II_BOOST_MANAGER_ADDRESS,
   ALOE_II_BOOST_NFT_ADDRESS,
   ANTES,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
@@ -165,6 +164,15 @@ export default function ImportModal(props: ImportModalProps) {
   }, [cardInfo, boostFactor]);
   const enableHooks = isOpen && cardInfo !== undefined;
 
+  // Read who the manager is supposed to be
+  const { data: necessaryManager } = useContractRead({
+    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
+    abi: boostNftAbi,
+    functionName: 'boostManager',
+    chainId: activeChain.id,
+    enabled: enableHooks,
+  });
+
   // Read who is approved to manage this Uniswap NFT
   const {
     data: manager,
@@ -178,7 +186,7 @@ export default function ImportModal(props: ImportModalProps) {
     chainId: activeChain.id,
     enabled: enableHooks,
   });
-  const managerIsCorrect = manager === ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
+  const managerIsCorrect = !!manager && manager === necessaryManager;
   const shouldWriteManager = !isFetchingManager && !!manager && !managerIsCorrect;
   const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect;
 
@@ -187,7 +195,7 @@ export default function ImportModal(props: ImportModalProps) {
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
     abi: erc721ABI,
     functionName: 'approve',
-    args: [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id], nftTokenId],
+    args: [necessaryManager ?? '0x', nftTokenId],
     chainId: activeChain.id,
     enabled: enableHooks && shouldWriteManager,
   });
