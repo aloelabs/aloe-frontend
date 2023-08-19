@@ -97,7 +97,10 @@ function calculateYPosition(tick: number, chartData: ChartEntry[] | null) {
   const graphBottom = minValue - dataRange / 4;
   const graphTop = maxValue + dataRange / 8;
 
-  return CHART_HEIGHT - ((nearestLiquidity - graphBottom) * CHART_HEIGHT) / (graphTop - graphBottom);
+  return (
+    // if the y position is NaN, default to the middle of the chart
+    CHART_HEIGHT - ((nearestLiquidity - graphBottom) * CHART_HEIGHT) / (graphTop - graphBottom) || CHART_HEIGHT / 2 - 16
+  );
 }
 
 function MinIconLabel(x: number, y: number) {
