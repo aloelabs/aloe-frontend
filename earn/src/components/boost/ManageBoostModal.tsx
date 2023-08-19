@@ -7,7 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
 import { useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
 
@@ -42,35 +42,28 @@ function calculateShortfall(borrower: MarginAccount): { shortfall0: GN; shortfal
 }
 
 function computeData(borrower?: MarginAccount, slippage = 0.01) {
-  if (!borrower) return { assetIn: ethers.constants.AddressZero, amount0: GN.zero(0), amount1: GN.zero(0) };
-  const { shortfall0, shortfall1 } = calculateShortfall(borrower);
-  console.log(shortfall0.toString(GNFormat.DECIMAL), shortfall1.toString(GNFormat.DECIMAL));
-  if (shortfall0.isGtZero()) {
-    return {
-      assetIn: borrower.token1.address,
-      amount0: shortfall0,
-      amount1: shortfall0
-        .mul(new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2))
-        .recklessMul(1 + slippage)
-        .neg()
-        .setResolution(borrower.token1.decimals),
-    };
-  }
-  if (shortfall1.isGtZero()) {
-    return {
-      assetIn: borrower.token0.address,
-      amount0: shortfall1
-        .div(new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2))
-        .recklessMul(1 + slippage)
-        .neg()
-        .setResolution(borrower.token0.decimals),
-      amount1: shortfall1,
-    };
+  if (borrower) {
+    const { shortfall0, shortfall1 } = calculateShortfall(borrower);
+    const sqrtPrice = new GN(borrower.sqrtPriceX96.toFixed(0), 96, 2);
+
+    if (shortfall0.isGtZero()) {
+      const worstPrice = sqrtPrice.square().recklessMul(1 + slippage);
+      return {
+        maxSpend: shortfall0.setResolution(borrower.token1.decimals).mul(worstPrice),
+        zeroForOne: false,
+      };
+    }
+    if (shortfall1.isGtZero()) {
+      const worstPrice = sqrtPrice.square().recklessDiv(1 + slippage);
+      return {
+        maxSpend: shortfall1.setResolution(borrower.token0.decimals).div(worstPrice),
+        zeroForOne: true,
+      };
+    }
   }
   return {
-    assetIn: ethers.constants.AddressZero,
-    amount0: GN.zero(0),
-    amount1: GN.zero(0),
+    maxSpend: GN.zero(0),
+    zeroForOne: false,
   };
 }
 
@@ -110,18 +103,11 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
 
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
-    const { assetIn, amount0, amount1 } = computeData(cardInfo.borrower || undefined);
+    const { maxSpend, zeroForOne } = computeData(cardInfo.borrower || undefined);
     const { position } = cardInfo;
     return ethers.utils.defaultAbiCoder.encode(
-      ['int24', 'int24', 'uint128', 'address', 'int256', 'int256'],
-      [
-        position.lower,
-        position.upper,
-        position.liquidity.toString(10),
-        assetIn,
-        amount0.toBigNumber(),
-        amount1.toBigNumber(),
-      ]
+      ['int24', 'int24', 'uint128', 'uint128', 'bool'],
+      [position.lower, position.upper, position.liquidity.toString(10), maxSpend?.toBigNumber(), zeroForOne]
     ) as `0x${string}`;
   }, [cardInfo]);
 
