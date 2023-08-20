@@ -1,9 +1,12 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
@@ -62,6 +65,8 @@ export default function BoostPage() {
             sqrtRatioToTick(res.borrower.sqrtPriceX96),
             res.borrower.token0,
             res.borrower.token1,
+            res.borrower.lender0,
+            res.borrower.lender1,
             DEFAULT_COLOR0,
             DEFAULT_COLOR1,
             res.uniswapPosition,
@@ -121,15 +126,31 @@ export default function BoostPage() {
     allowFailure: false,
   });
 
+  const factoryContracts = useMemo(() => {
+    return uniswapNFTPositions.map((position) => {
+      return {
+        abi: factoryAbi,
+        address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+        functionName: 'getMarket',
+        args: [computePoolAddress(position)],
+      } as const;
+    });
+  }, [activeChain.id, uniswapNFTPositions]);
+  const { data: marketDatas } = useContractReads({
+    contracts: factoryContracts,
+    allowFailure: false,
+  });
+
   /*//////////////////////////////////////////////////////////////
                      CREATE UNISWAP CARD INFOS
   //////////////////////////////////////////////////////////////*/
   const uniswapCardInfos: BoostCardInfo[] = useMemo(() => {
-    if (slot0Data === undefined || slot0Data.length !== uniswapNFTPositions.length) {
+    if (slot0Data === undefined || slot0Data.length !== uniswapNFTPositions.length || marketDatas === undefined) {
       return [];
     }
     return uniswapNFTPositions.map((position, index) => {
       const currentTick = slot0Data[index]['tick'];
+      const marketData = marketDatas[index];
 
       return new BoostCardInfo(
         BoostCardType.UNISWAP_NFT,
@@ -138,6 +159,8 @@ export default function BoostPage() {
         currentTick,
         position.token0,
         position.token1,
+        marketData.lender0,
+        marketData.lender1,
         DEFAULT_COLOR0,
         DEFAULT_COLOR1,
         position,
@@ -146,7 +169,7 @@ export default function BoostPage() {
         null
       );
     });
-  }, [uniswapNFTPositions, slot0Data]);
+  }, [slot0Data, uniswapNFTPositions, marketDatas]);
 
   /*//////////////////////////////////////////////////////////////
                            COMPUTE COLORS
@@ -177,22 +200,26 @@ export default function BoostPage() {
   //////////////////////////////////////////////////////////////*/
   const allCardInfos = useMemo(() => {
     const merged = boostedCardInfos.concat(uniswapCardInfos);
-    return merged.map(
-      (cardInfo) =>
-        new BoostCardInfo(
-          cardInfo.cardType,
-          cardInfo.nftTokenId,
-          cardInfo.uniswapPool,
-          cardInfo.currentTick,
-          cardInfo.token0,
-          cardInfo.token1,
-          colors.get(cardInfo.token0.logoURI) ?? cardInfo.color0,
-          colors.get(cardInfo.token1.logoURI) ?? cardInfo.color1,
-          cardInfo.position,
-          cardInfo.feesEarned,
-          cardInfo.borrower
-        )
-    );
+    return merged
+      .map(
+        (cardInfo) =>
+          new BoostCardInfo(
+            cardInfo.cardType,
+            cardInfo.nftTokenId,
+            cardInfo.uniswapPool,
+            cardInfo.currentTick,
+            cardInfo.token0,
+            cardInfo.token1,
+            cardInfo.lender0,
+            cardInfo.lender1,
+            colors.get(cardInfo.token0.logoURI) ?? cardInfo.color0,
+            colors.get(cardInfo.token1.logoURI) ?? cardInfo.color1,
+            cardInfo.position,
+            cardInfo.feesEarned,
+            cardInfo.borrower
+          )
+      )
+      .filter((info) => info.lender0 !== ethers.constants.AddressZero || info.lender1 !== ethers.constants.AddressZero);
   }, [boostedCardInfos, uniswapCardInfos, colors]);
 
   const selectedCardInfo = useMemo(() => {
@@ -227,14 +254,16 @@ export default function BoostPage() {
           );
         })}
       </div>
-      <ImportModal
-        isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
-        uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
-        setIsOpen={() => {
-          setSelectedPosition(null);
-        }}
-        cardInfo={selectedCardInfo}
-      />
+      {selectedCardInfo !== undefined && (
+        <ImportModal
+          isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
+          uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
+          setIsOpen={() => {
+            setSelectedPosition(null);
+          }}
+          cardInfo={selectedCardInfo}
+        />
+      )}
       <ManageBoostModal
         isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.BOOST_NFT}
         uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}

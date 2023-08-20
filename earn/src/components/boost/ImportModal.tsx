@@ -9,15 +9,27 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
   ANTES,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import styled from 'styled-components';
-import { erc721ABI, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
+import {
+  erc721ABI,
+  useContractRead,
+  useContractWrite,
+  usePrepareContractWrite,
+  useProvider,
+  useWaitForTransaction,
+} from 'wagmi';
 
 import { ChainContext } from '../../App';
+import KittyLensAbi from '../../assets/abis/KittyLens.json';
+import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
+import { RateModel, yieldPerSecondToAPR } from '../../data/RateModel';
 import { BoostCardInfo } from '../../data/Uniboost';
 import BoostCard from './BoostCard';
 
@@ -128,7 +140,7 @@ function getButtonState(state?: ImportModalState) {
 }
 
 export type ImportModalProps = {
-  cardInfo?: BoostCardInfo;
+  cardInfo: BoostCardInfo;
   uniqueId: string;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -138,14 +150,42 @@ export default function ImportModal(props: ImportModalProps) {
   const { cardInfo, uniqueId, isOpen, setIsOpen } = props;
   const { activeChain } = useContext(ChainContext);
   const navigate = useNavigate();
+  const provider = useProvider({ chainId: activeChain.id });
 
   const [boostFactor, setBoostFactor] = useState(BOOST_DEFAULT);
+  const [marketInfo, setMarketInfo] = useChainDependentState<MarketInfo | null>(null, activeChain.id);
 
   useEffect(() => {
     if (isOpen) {
       setBoostFactor(BOOST_DEFAULT);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchMarketInfo() {
+      if (!provider || !cardInfo) return;
+      const lenderLensContract = new ethers.Contract(
+        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
+        KittyLensAbi,
+        provider
+      );
+      const marketInfo = await fetchMarketInfoFor(
+        lenderLensContract,
+        cardInfo.lender0,
+        cardInfo.lender1,
+        cardInfo.token0.decimals,
+        cardInfo.token1.decimals
+      );
+      if (isMounted) {
+        setMarketInfo(marketInfo);
+      }
+    }
+    fetchMarketInfo();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeChain.id, cardInfo, provider, setMarketInfo]);
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
   const initializationData = useMemo(() => {
@@ -283,8 +323,7 @@ export default function ImportModal(props: ImportModalProps) {
     }
   }
 
-  const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
-    if (!cardInfo) return undefined;
+  const updatedCardInfo: BoostCardInfo = useMemo(() => {
     const { position } = cardInfo;
 
     const updatedLiquidity = GN.fromJSBI(position.liquidity, 0).recklessMul(boostFactor).toJSBI();
@@ -319,6 +358,34 @@ export default function ImportModal(props: ImportModalProps) {
     );
   }, [cardInfo, boostFactor]);
 
+  const { apr0, apr1 } = useMemo(() => {
+    if (!marketInfo) {
+      return { apr0: 0, apr1: 0 };
+    }
+    const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
+    const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
+
+    const availableAssets0 = marketInfo.lender0AvailableAssets;
+    const availableAssets1 = marketInfo.lender1AvailableAssets;
+    const remainingAvailableAssets0 = availableAssets0.sub(borrowAmount0);
+    const remainingAvailableAssets1 = availableAssets1.sub(borrowAmount1);
+
+    const lenderTotalAssets0 = marketInfo.lender0TotalAssets;
+    const lenderTotalAssets1 = marketInfo.lender1TotalAssets;
+
+    const newUtilization0 = lenderTotalAssets0.isGtZero()
+      ? 1 - remainingAvailableAssets0.div(lenderTotalAssets0).toNumber()
+      : 0;
+
+    const newUtilization1 = lenderTotalAssets1.isGtZero()
+      ? 1 - remainingAvailableAssets1.div(lenderTotalAssets1).toNumber()
+      : 0;
+
+    const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization0)) * 100;
+    const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization1)) * 100;
+    return { apr0, apr1 };
+  }, [cardInfo, boostFactor, marketInfo]);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -349,6 +416,36 @@ export default function ImportModal(props: ImportModalProps) {
                   <option key={i} value={i + 1} label={label}></option>
                 ))}
               </StyledDatalist>
+            </div>
+            <div className='w-full mt-3'>
+              <div className='flex flex-row justify-between'>
+                <div className='w-full'>
+                  <Text size='M' color={SECONDARY_COLOR} className='text-center'>
+                    {cardInfo.token0.symbol}
+                  </Text>
+                  <div className='flex flex-row justify-center items-end'>
+                    <Display size='S' color={SECONDARY_COLOR} className='text-center'>
+                      {apr0.toFixed(2)}
+                    </Display>
+                    <Text size='S' color={SECONDARY_COLOR} className='text-center'>
+                      % APR
+                    </Text>
+                  </div>
+                </div>
+                <div className='w-full'>
+                  <Text size='M' color={SECONDARY_COLOR} className='text-center'>
+                    {cardInfo.token1.symbol}
+                  </Text>
+                  <div className='flex flex-row justify-center items-end'>
+                    <Display size='S' color={SECONDARY_COLOR} className='text-center'>
+                      {apr1.toFixed(2)}
+                    </Display>
+                    <Text size='S' color={SECONDARY_COLOR} className='text-center'>
+                      % APR
+                    </Text>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className='flex flex-col gap-1 w-full mt-auto'>
               <Text size='M' weight='bold' className='w-full text-start'>
