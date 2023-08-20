@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
+import * as Sentry from '@sentry/react';
 import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -171,6 +172,25 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       try {
         tickData = await calculateTickData(poolAddress, activeChain.id);
       } catch (e) {
+        Sentry.captureException(e, {
+          extra: {
+            poolAddress,
+            chain: {
+              id: activeChain.id,
+              name: activeChain.name,
+            },
+            assets: {
+              asset0: {
+                symbol: info.token0.symbol,
+                address: info.token0.address,
+              },
+              asset1: {
+                symbol: info.token1.symbol,
+                address: info.token1.address,
+              },
+            },
+          },
+        });
         console.error(e);
         if (mounted) {
           setChartError(true);
