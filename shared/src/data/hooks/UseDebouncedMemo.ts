@@ -1,27 +1,28 @@
-import { DependencyList, Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import { DependencyList, useEffect, useRef, useState } from 'react';
 
 export function useDebouncedMemo<T>(factory: () => T, deps: DependencyList, delay: number): T {
-  const [state, setState] = useState(factory);
-  const callback = useMemo(() => debounce(setState, delay), [delay]);
+  const [state, setState] = useState<T>(() => factory());
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    callback(factory());
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    timerRef.current = setTimeout(() => {
+      const value = factory();
+      setState(value);
+      timerRef.current = null;
+    }, delay);
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   return state;
-}
-
-function debounce<T>(setState: Dispatch<SetStateAction<T>>, delay: number): (value: T) => void {
-  let timer: NodeJS.Timeout | undefined;
-
-  return (value: T) => {
-    if (timer) {
-      clearTimeout(timer);
-    }
-
-    timer = setTimeout(() => {
-      setState(value);
-    }, delay);
-  };
 }

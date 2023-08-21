@@ -191,7 +191,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             },
           },
         });
-        console.error(e);
         if (mounted) {
           setChartError(true);
         }
