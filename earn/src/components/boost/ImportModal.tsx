@@ -360,7 +360,7 @@ export default function ImportModal(props: ImportModalProps) {
 
   const { apr0, apr1 } = useMemo(() => {
     if (!marketInfo) {
-      return { apr0: 0, apr1: 0 };
+      return { apr0: null, apr1: null };
     }
     const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
     const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
@@ -425,7 +425,7 @@ export default function ImportModal(props: ImportModalProps) {
                   </Text>
                   <div className='flex flex-row justify-center items-end'>
                     <Display size='S' color={SECONDARY_COLOR} className='text-center'>
-                      {apr0.toFixed(2)}
+                      {apr0?.toFixed(2) ?? '-'}
                     </Display>
                     <Text size='S' color={SECONDARY_COLOR} className='text-center'>
                       % APR
@@ -438,7 +438,7 @@ export default function ImportModal(props: ImportModalProps) {
                   </Text>
                   <div className='flex flex-row justify-center items-end'>
                     <Display size='S' color={SECONDARY_COLOR} className='text-center'>
-                      {apr1.toFixed(2)}
+                      {apr1?.toFixed(2) ?? '-'}
                     </Display>
                     <Text size='S' color={SECONDARY_COLOR} className='text-center'>
                       % APR
