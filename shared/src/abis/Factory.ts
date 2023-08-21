@@ -1,0 +1,76 @@
+export const factoryAbi = [
+  {
+    inputs: [{ internalType: 'contract RateModel', name: 'rateModel_', type: 'address' }],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'contract IUniswapV3Pool', name: 'pool', type: 'address' },
+      { indexed: true, internalType: 'address', name: 'owner', type: 'address' },
+      { indexed: false, internalType: 'address', name: 'account', type: 'address' },
+    ],
+    name: 'CreateBorrower',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'contract IUniswapV3Pool', name: 'pool', type: 'address' },
+      { indexed: false, internalType: 'contract Lender', name: 'lender0', type: 'address' },
+      { indexed: false, internalType: 'contract Lender', name: 'lender1', type: 'address' },
+    ],
+    name: 'CreateMarket',
+    type: 'event',
+  },
+  {
+    inputs: [],
+    name: 'RATE_MODEL',
+    outputs: [{ internalType: 'contract RateModel', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'contract IUniswapV3Pool', name: '_pool', type: 'address' },
+      { internalType: 'address', name: '_owner', type: 'address' },
+    ],
+    name: 'createBorrower',
+    outputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'contract IUniswapV3Pool', name: '_pool', type: 'address' }],
+    name: 'createMarket',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'contract IUniswapV3Pool', name: '', type: 'address' }],
+    name: 'getMarket',
+    outputs: [
+      { internalType: 'contract Lender', name: 'lender0', type: 'address' },
+      { internalType: 'contract Lender', name: 'lender1', type: 'address' },
+      { internalType: 'contract Borrower', name: 'borrowerImplementation', type: 'address' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: '', type: 'address' }],
+    name: 'isBorrower',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'lenderImplementation',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
