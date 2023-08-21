@@ -87,7 +87,7 @@ function getButtonState(state?: ManageModalState) {
 }
 
 export type ManageBoostModalProps = {
-  cardInfo?: BoostCardInfo;
+  cardInfo: BoostCardInfo;
   uniqueId: string;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -99,15 +99,14 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
 
   const navigate = useNavigate();
 
-  const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
+  const nftTokenId = ethers.BigNumber.from(cardInfo.nftTokenId || 0);
 
   const modifyData = useMemo(() => {
-    if (!cardInfo) return undefined;
     const { maxSpend, zeroForOne } = computeData(cardInfo.borrower || undefined);
     const { position } = cardInfo;
     return ethers.utils.defaultAbiCoder.encode(
       ['int24', 'int24', 'uint128', 'uint128', 'bool'],
-      [position.lower, position.upper, position.liquidity.toString(10), maxSpend?.toBigNumber(), zeroForOne]
+      [position.lower, position.upper, position.liquidity.toString(10), maxSpend.toBigNumber(), zeroForOne]
     ) as `0x${string}`;
   }, [cardInfo]);
 
@@ -117,7 +116,7 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [nftTokenId, 2, modifyData ?? '0x', [true, true]],
+    args: [nftTokenId, 2, modifyData, [true, true]],
     chainId: activeChain.id,
     enabled: enableHooks,
   });
@@ -163,46 +162,44 @@ export default function ManageBoostModal(props: ManageBoostModalProps) {
       backgroundColor='rgba(43, 64, 80, 0.1)'
       backdropFilter='blur(40px)'
     >
-      {cardInfo && (
-        <Container>
-          <BoostCard info={cardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
-          <EditLeverageContainer>
-            <Text size='M' weight='bold'>
-              Edit Leverage
+      <Container>
+        <BoostCard info={cardInfo} isDisplayOnly={true} uniqueId={uniqueId} />
+        <EditLeverageContainer>
+          <Text size='M' weight='bold'>
+            Edit Leverage
+          </Text>
+          <div className='flex flex-col gap-1 w-full mt-auto'>
+            <Text size='M' weight='bold' className='w-full text-start'>
+              Summary
             </Text>
-            <div className='flex flex-col gap-1 w-full mt-auto'>
-              <Text size='M' weight='bold' className='w-full text-start'>
-                Summary
-              </Text>
-              <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
-                TODO
-              </Text>
-            </div>
-            <div className='w-full mt-8'>
-              <FilledStylizedButton
-                size='M'
-                fillWidth={true}
-                disabled={buttonState.isDisabled}
-                onClick={() => {
-                  if (state === ManageModalState.READY_TO_BURN) {
-                    burn?.();
-                  }
-                }}
-              >
-                {buttonState.label}
-              </FilledStylizedButton>
-              <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
-                By withdrawing, you agree to our{' '}
-                <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
-                  Terms of Service
-                </a>{' '}
-                and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur.
-                It is your duty to educate yourself and be aware of the risks.
-              </Text>
-            </div>
-          </EditLeverageContainer>
-        </Container>
-      )}
+            <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
+              TODO
+            </Text>
+          </div>
+          <div className='w-full mt-8'>
+            <FilledStylizedButton
+              size='M'
+              fillWidth={true}
+              disabled={buttonState.isDisabled}
+              onClick={() => {
+                if (state === ManageModalState.READY_TO_BURN) {
+                  burn?.();
+                }
+              }}
+            >
+              {buttonState.label}
+            </FilledStylizedButton>
+            <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
+              By withdrawing, you agree to our{' '}
+              <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+                Terms of Service
+              </a>{' '}
+              and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur.
+              It is your duty to educate yourself and be aware of the risks.
+            </Text>
+          </div>
+        </EditLeverageContainer>
+      </Container>
     </Modal>
   );
 }
