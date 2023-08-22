@@ -216,8 +216,8 @@ export async function fetchMarginAccounts(
       lensResults.originalContractCallContext.context;
     // Reconstruct the objects (since we can't transfer them as is through the context)
     const feeTier = NumericFeeTierToEnum(fee);
-    const token0 = getToken(chainId, token0Address);
-    const token1 = getToken(chainId, token1Address);
+    const token0 = getToken(chainId, token0Address)!;
+    const token1 = getToken(chainId, token1Address)!;
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
     const healthData = lensReturnContexts[2].returnValues;

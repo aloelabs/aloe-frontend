@@ -9,8 +9,10 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { base } from 'shared/lib/data/BaseChain';
 import {
   MULTICALL_ADDRESS,
+  UNISWAP_FACTORY_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Token } from 'shared/lib/data/Token';
@@ -21,6 +23,7 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   theGraphUniswapV3ArbitrumClient,
+  theGraphUniswapV3BaseClient,
   theGraphUniswapV3Client,
   theGraphUniswapV3GoerliClient,
   theGraphUniswapV3OptimismClient,
@@ -31,7 +34,6 @@ import { UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQ
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { BIGQ96, Q96 } from './constants/Values';
 
-const FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 const MAX_TICKS_PER_QUERY = 1000;
 
@@ -362,10 +364,13 @@ export async function fetchUniswapNFTPositions(
 
   for (let i = 0; i < tokenIds.length; i++) {
     const position = callsReturnContext[i].returnValues;
+    const token0 = getToken(chainId, position[2]);
+    const token1 = getToken(chainId, position[3]);
+    if (token0 === undefined || token1 === undefined) continue;
     const uniswapPosition: UniswapNFTPosition = {
       operator: position[1],
-      token0: getToken(chainId, position[2]),
-      token1: getToken(chainId, position[3]),
+      token0,
+      token1,
       fee: position[4],
       lower: position[5],
       upper: position[6],
@@ -388,6 +393,9 @@ async function fetchTickData(poolAddress: string, chainId: number, minTick?: num
       break;
     case optimism.id:
       theGraphClient = theGraphUniswapV3OptimismClient;
+      break;
+    case base.id:
+      theGraphClient = theGraphUniswapV3BaseClient;
       break;
     case goerli.id:
       theGraphClient = theGraphUniswapV3GoerliClient;
@@ -493,9 +501,19 @@ export function zip(uniswapPositions: readonly UniswapPosition[]) {
   return zipped.toString(10);
 }
 
-export function computePoolAddress({ token0, token1, fee }: { token0: Token; token1: Token; fee: number }): Address {
+export function computePoolAddress({
+  chainId,
+  token0,
+  token1,
+  fee,
+}: {
+  chainId: number;
+  token0: Token;
+  token1: Token;
+  fee: number;
+}): Address {
   return getCreate2Address(
-    FACTORY_ADDRESS,
+    UNISWAP_FACTORY_ADDRESS[chainId],
     keccak256(
       ['bytes'],
       [defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, fee])]

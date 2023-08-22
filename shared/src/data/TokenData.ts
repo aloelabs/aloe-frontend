@@ -316,7 +316,7 @@ export function getTokens(chainId: number): Token[] {
   return Array.from(Object.values(TOKEN_DATA[chainId]));
 }
 
-export function getToken(chainId: number, address: Address): Token {
+export function getToken(chainId: number, address: Address): Token | undefined {
   return TOKEN_DATA[chainId][getLowercaseAddress(address)];
 }
 

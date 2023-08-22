@@ -207,8 +207,8 @@ export async function fetchBoostBorrower(
   const [token0Addr, token1Addr, lender0, lender1, uniswapPool] = borrowerResults
     .slice(0, -1)
     .map((v) => v.returnValues[0] as Address);
-  const token0 = getToken(chainId, token0Addr);
-  const token1 = getToken(chainId, token1Addr);
+  const token0 = getToken(chainId, token0Addr)!;
+  const token1 = getToken(chainId, token1Addr)!;
   const [tickLower, tickUpper] = borrowerResults.at(-1)!.returnValues;
 
   // ---
