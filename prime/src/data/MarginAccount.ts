@@ -196,8 +196,8 @@ export async function fetchMarginAccountPreviews(
       lensResults.originalContractCallContext.context;
     // Reconstruct the objects (since we can't transfer them as is through the context)
     const feeTier = NumericFeeTierToEnum(fee);
-    const token0 = getToken(chainId, token0Address);
-    const token1 = getToken(chainId, token1Address);
+    const token0 = getToken(chainId, token0Address)!;
+    const token1 = getToken(chainId, token1Address)!;
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
     const healthData = lensReturnContexts[2].returnValues;
@@ -310,8 +310,8 @@ export async function fetchMarginAccount(
   const uniswapPool = marginAccountResults[4].returnValues[0] as Address;
   const uniswapPoolContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
   const volatilityOracleContract = new ethers.Contract(ALOE_II_ORACLE_ADDRESS[chain.id], VolatilityOracleABI, provider);
-  const token0 = getToken(chain.id, token0Address);
-  const token1 = getToken(chain.id, token1Address);
+  const token0 = getToken(chain.id, token0Address)!;
+  const token1 = getToken(chain.id, token1Address)!;
   const lender0 = marginAccountResults[2].returnValues[0] as Address;
   const lender1 = marginAccountResults[3].returnValues[0] as Address;
   const assetsData = marginAccountLensResults[0].returnValues;
