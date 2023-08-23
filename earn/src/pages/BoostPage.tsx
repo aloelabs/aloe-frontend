@@ -255,23 +255,25 @@ export default function BoostPage() {
         })}
       </div>
       {selectedCardInfo !== undefined && (
-        <ImportModal
-          isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
-          uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
-          setIsOpen={() => {
-            setSelectedPosition(null);
-          }}
-          cardInfo={selectedCardInfo}
-        />
+        <>
+          <ImportModal
+            isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
+            uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
+            setIsOpen={() => {
+              setSelectedPosition(null);
+            }}
+            cardInfo={selectedCardInfo}
+          />
+          <ManageBoostModal
+            isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.BOOST_NFT}
+            uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
+            setIsOpen={() => {
+              setSelectedPosition(null);
+            }}
+            cardInfo={selectedCardInfo}
+          />
+        </>
       )}
-      <ManageBoostModal
-        isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.BOOST_NFT}
-        uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
-        setIsOpen={() => {
-          setSelectedPosition(null);
-        }}
-        cardInfo={selectedCardInfo}
-      />
     </AppPage>
   );
 }
