@@ -40,23 +40,23 @@ const CONNECT_WALLET_CHECKBOXES = [
   <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
-export const theGraphUniswapV2Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
-  cache: new InMemoryCache(),
-});
-
 export const theGraphUniswapV3Client = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
   cache: new InMemoryCache(),
 });
 
 export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal' }),
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-arbitrum-one' }),
   cache: new InMemoryCache(),
 });
 
 export const theGraphUniswapV3OptimismClient = new ApolloClient({
   link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3BaseClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.studio.thegraph.com/query/48211/uniswap-v3-base/version/latest' }),
   cache: new InMemoryCache(),
 });
 

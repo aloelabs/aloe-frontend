@@ -115,7 +115,7 @@ export default function BoostPage() {
     return uniswapNFTPositions.map((position) => {
       return {
         abi: UniswapV3PoolABI,
-        address: computePoolAddress(position),
+        address: computePoolAddress({ ...position, chainId: activeChain.id }),
         functionName: 'slot0',
         chainId: activeChain.id,
       } as const;
@@ -132,7 +132,7 @@ export default function BoostPage() {
         abi: factoryAbi,
         address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
         functionName: 'getMarket',
-        args: [computePoolAddress(position)],
+        args: [computePoolAddress({ ...position, chainId: activeChain.id })],
       } as const;
     });
   }, [activeChain.id, uniswapNFTPositions]);
@@ -155,7 +155,7 @@ export default function BoostPage() {
       return new BoostCardInfo(
         BoostCardType.UNISWAP_NFT,
         position.tokenId,
-        computePoolAddress(position),
+        computePoolAddress({ ...position, chainId: activeChain.id }),
         currentTick,
         position.token0,
         position.token1,
@@ -169,7 +169,7 @@ export default function BoostPage() {
         null
       );
     });
-  }, [slot0Data, uniswapNFTPositions, marketDatas]);
+  }, [activeChain.id, uniswapNFTPositions, slot0Data, marketDatas]);
 
   /*//////////////////////////////////////////////////////////////
                            COMPUTE COLORS
