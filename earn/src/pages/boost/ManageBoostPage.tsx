@@ -23,14 +23,12 @@ export default function ManageBoostPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const [cardInfo, setCardInfo] = useChainDependentState<BoostCardInfo | null>(null, activeChain.id);
 
-  const numericNftTokenId = ethers.BigNumber.from(nftTokenId || 0);
-
   const { data: boostNftAttributes } = useContractRead({
     abi: boostNftAbi,
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     functionName: 'attributesOf',
-    args: [numericNftTokenId],
-    enabled: !!numericNftTokenId,
+    args: [ethers.BigNumber.from(nftTokenId || 0)],
+    enabled: nftTokenId !== undefined,
   });
 
   const borrowerAddress = boostNftAttributes?.borrower;
