@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
@@ -60,6 +61,7 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
     functionName: 'modify',
     args: [ethers.BigNumber.from(cardInfo.nftTokenId || 0), 1, modifyData, [true, true]],
     chainId: activeChain.id,
+    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const {
