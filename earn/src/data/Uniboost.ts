@@ -99,6 +99,7 @@ export class BoostCardInfo {
    * The amount of token0 in the Uniswap Position as a percentage, not including earned fees
    */
   amount0Percent() {
+    if (JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return 0;
     return 1 - this.amount1Percent();
   }
 
@@ -106,6 +107,7 @@ export class BoostCardInfo {
    * The amount of token1 in the Uniswap Position as a percentage, not including earned fees
    */
   amount1Percent() {
+    if (JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return 0;
     const amount1 = this.amount1();
     const totalValueIn1 = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
     return amount1 / totalValueIn1;
