@@ -52,8 +52,8 @@ export function formatUSD(amount: number | null, placeholder = '-'): string {
     return amount.toLocaleString('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumSignificantDigits: 2,
-      maximumSignificantDigits: 2,
+      minimumSignificantDigits: 3,
+      maximumSignificantDigits: 3,
     });
   }
   return amount.toLocaleString('en-US', {
