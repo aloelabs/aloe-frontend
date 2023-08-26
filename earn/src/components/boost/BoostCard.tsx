@@ -45,7 +45,11 @@ const CustomUniswapPositionCardContainer = styled(UniswapPositionCardContainer)`
   }
 `;
 
-const CardActionButton = styled(Link).attrs((props: { shouldAnimate: boolean }) => props)`
+type CardActionButtonProps = {
+  $shouldAnimate: boolean;
+};
+
+const CardActionButton = styled(Link)<CardActionButtonProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,7 +69,7 @@ const CardActionButton = styled(Link).attrs((props: { shouldAnimate: boolean }) 
   );
   mask-size: cover;
 
-  ${(props) => (props.shouldAnimate ? 'animation: pulse 1.2s linear infinite' : '')};
+  ${(props) => (props.$shouldAnimate ? 'animation: pulse 1.2s linear infinite' : '')};
   @keyframes pulse {
     0% {
       transform: rotate(0deg);
@@ -141,11 +145,11 @@ export default function BoostCard(props: UniswapPositionCardProps) {
 
   const editButton =
     info.cardType === BoostCardType.UNISWAP_NFT ? (
-      <CardActionButton to={''} shouldAnimate={true}>
+      <CardActionButton to={''} $shouldAnimate={true}>
         <ZapIcon width={32} height={32} />
       </CardActionButton>
     ) : (
-      <CardActionButton to={`/boost/manage/${info.nftTokenId}`} shouldAnimate={false}>
+      <CardActionButton to={`/boost/manage/${info.nftTokenId}`} $shouldAnimate={false}>
         <WrenchIcon width={32} height={32} />
       </CardActionButton>
     );
