@@ -14,8 +14,6 @@ import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
-import ImportModal from '../components/boost/ImportModal';
-import ManageBoostModal from '../components/boost/ManageBoostModal';
 import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
@@ -36,7 +34,6 @@ export default function BoostPage() {
     activeChain.id
   );
   const [colors, setColors] = useState<Map<string, string>>(new Map());
-  const [selectedPosition, setSelectedPosition] = useChainDependentState<number | null>(null, activeChain.id);
 
   useEffect(() => {
     setIsLoading(true);
@@ -222,11 +219,6 @@ export default function BoostPage() {
       .filter((info) => info.lender0 !== ethers.constants.AddressZero || info.lender1 !== ethers.constants.AddressZero);
   }, [boostedCardInfos, uniswapCardInfos, colors]);
 
-  const selectedCardInfo = useMemo(() => {
-    if (selectedPosition === null) return undefined;
-    return allCardInfos[selectedPosition];
-  }, [selectedPosition, allCardInfos]);
-
   const getUniqueId = (info: BoostCardInfo) => {
     return info.uniswapPool.concat(
       info.borrower?.address ?? '',
@@ -244,36 +236,9 @@ export default function BoostPage() {
           [...Array(4)].map((_, index) => <BoostCardPlaceholder key={index} />)}
         {allCardInfos.map((info, index) => {
           const uniqueId = getUniqueId(info);
-          return (
-            <BoostCard
-              key={uniqueId}
-              info={info}
-              uniqueId={uniqueId}
-              setSelectedPosition={() => setSelectedPosition(index)}
-            />
-          );
+          return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
       </div>
-      {selectedCardInfo !== undefined && (
-        <>
-          <ImportModal
-            isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.UNISWAP_NFT}
-            uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
-            setIsOpen={() => {
-              setSelectedPosition(null);
-            }}
-            cardInfo={selectedCardInfo}
-          />
-          <ManageBoostModal
-            isOpen={selectedPosition !== null && selectedCardInfo?.cardType === BoostCardType.BOOST_NFT}
-            uniqueId={selectedCardInfo ? getUniqueId(selectedCardInfo) : ''}
-            setIsOpen={() => {
-              setSelectedPosition(null);
-            }}
-            cardInfo={selectedCardInfo}
-          />
-        </>
-      )}
     </AppPage>
   );
 }

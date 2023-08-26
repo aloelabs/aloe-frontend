@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -44,7 +45,11 @@ const CustomUniswapPositionCardContainer = styled(UniswapPositionCardContainer)`
   }
 `;
 
-const CardActionButton = styled.button.attrs((props: { shouldAnimate: boolean }) => props)`
+type CardActionButtonProps = {
+  $shouldAnimate: boolean;
+};
+
+const CardActionButton = styled(Link)<CardActionButtonProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,7 +69,7 @@ const CardActionButton = styled.button.attrs((props: { shouldAnimate: boolean })
   );
   mask-size: cover;
 
-  ${(props) => (props.shouldAnimate ? 'animation: pulse 1.2s linear infinite' : '')};
+  ${(props) => (props.$shouldAnimate ? 'animation: pulse 1.2s linear infinite' : '')};
   @keyframes pulse {
     0% {
       transform: rotate(0deg);
@@ -132,20 +137,19 @@ export type UniswapPositionCardProps = {
   info: BoostCardInfo;
   uniqueId: string;
   isDisplayOnly?: boolean;
-  setSelectedPosition?: () => void;
 };
 
 export default function BoostCard(props: UniswapPositionCardProps) {
-  const { info, uniqueId, isDisplayOnly, setSelectedPosition } = props;
+  const { info, uniqueId, isDisplayOnly } = props;
   const { token0, token1 } = info;
 
   const editButton =
     info.cardType === BoostCardType.UNISWAP_NFT ? (
-      <CardActionButton onClick={setSelectedPosition} disabled={false} shouldAnimate={true}>
+      <CardActionButton to={`/boost/import/${info.nftTokenId}`} $shouldAnimate={true}>
         <ZapIcon width={32} height={32} />
       </CardActionButton>
     ) : (
-      <CardActionButton onClick={setSelectedPosition} disabled={false} shouldAnimate={false}>
+      <CardActionButton to={`/boost/manage/${info.nftTokenId}`} $shouldAnimate={false}>
         <WrenchIcon width={32} height={32} />
       </CardActionButton>
     );

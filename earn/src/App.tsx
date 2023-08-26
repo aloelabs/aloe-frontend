@@ -15,6 +15,7 @@ import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
+import ImportBoostPage from './pages/boost/ImportBoostPage';
 import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
 import BorrowPage from './pages/BorrowPage';
@@ -106,6 +107,7 @@ function AppBodyWrapper() {
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
           <Route path='/boost' element={<BoostPage />} />
+          <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
           <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
           <Route path='/borrow' element={<BorrowPage />} />
           <Route path='/claim' element={<ClaimPage />} />
