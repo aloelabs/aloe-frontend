@@ -303,6 +303,33 @@ export async function fetchUniswapPoolBasics(
   };
 }
 
+export async function fetchUniswapNFTPosition(
+  tokenId: number,
+  provider: Provider
+): Promise<UniswapNFTPosition | undefined> {
+  const chainId = (await provider.getNetwork()).chainId;
+  const nftManager = new ethers.Contract(
+    UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
+    UniswapNFTManagerABI,
+    provider
+  );
+  const position = await nftManager.positions(tokenId);
+  const token0 = getToken(chainId, position[2]);
+  const token1 = getToken(chainId, position[3]);
+  if (token0 === undefined || token1 === undefined) return undefined;
+  const uniswapPosition: UniswapNFTPosition = {
+    operator: position[1],
+    token0,
+    token1,
+    fee: position[4],
+    lower: position[5],
+    upper: position[6],
+    liquidity: JSBI.BigInt(position[7].toString()),
+    tokenId: tokenId,
+  };
+  return uniswapPosition;
+}
+
 export async function fetchUniswapNFTPositions(
   userAddress: string,
   provider: Provider

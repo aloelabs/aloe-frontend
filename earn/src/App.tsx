@@ -107,7 +107,7 @@ function AppBodyWrapper() {
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
           <Route path='/boost' element={<BoostPage />} />
-          <Route path='/boost/import' element={<ImportBoostPage />} />
+          <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
           <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
           <Route path='/borrow' element={<BorrowPage />} />
           <Route path='/claim' element={<ClaimPage />} />
