@@ -145,7 +145,7 @@ export default function BoostCard(props: UniswapPositionCardProps) {
 
   const editButton =
     info.cardType === BoostCardType.UNISWAP_NFT ? (
-      <CardActionButton to={''} $shouldAnimate={true}>
+      <CardActionButton to={'/boost/import'} $shouldAnimate={true}>
         <ZapIcon width={32} height={32} />
       </CardActionButton>
     ) : (
