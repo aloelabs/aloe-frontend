@@ -169,24 +169,16 @@ export default function ManageBoostPage() {
     enabled: nftTokenId !== undefined && cardInfo != null && !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
-  const {
-    write: burn,
-    data: burnTxn,
-    isLoading: burnIsLoading,
-    isSuccess: burnDidSucceed,
-  } = useContractWrite({
+  const { write: burn, isLoading: burnIsLoading } = useContractWrite({
     ...configBurn,
     request: {
       ...configBurn.request,
       gasLimit,
     },
+    onSuccess: (data: SendTransactionResult) => {
+      setPendingTxn(data);
+    },
   });
-
-  useEffect(() => {
-    if (burnDidSucceed && burnTxn) {
-      setPendingTxn(burnTxn);
-    }
-  }, [burnDidSucceed, burnTxn, burnIsLoading, setPendingTxn]);
 
   useEffect(() => {
     let mounted = true;
@@ -225,7 +217,9 @@ export default function ManageBoostPage() {
         <FilledGradientButton
           size='S'
           onClick={() => {
-            burn?.();
+            if (!burnIsLoading) {
+              burn?.();
+            }
           }}
         >
           Burn
