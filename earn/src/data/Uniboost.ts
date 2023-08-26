@@ -64,7 +64,7 @@ export class BoostCardInfo {
   }
 
   boostFactor() {
-    if (this.borrower === null) return null;
+    if (this.borrower === null || JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return null;
     // Compute total value in the Uniswap position
     const uniswapValue = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
 
