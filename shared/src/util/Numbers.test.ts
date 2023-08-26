@@ -125,6 +125,9 @@ describe('Numbers', () => {
   });
 
   describe('formatUSD', () => {
+    it('should format $0.00 correctly', () => {
+      expect(formatUSD(0)).toEqual('$0.00');
+    });
     it('should format the amount in USD', () => {
       expect(formatUSD(1)).toEqual('$1.00');
       expect(formatUSD(1.1)).toEqual('$1.10');
