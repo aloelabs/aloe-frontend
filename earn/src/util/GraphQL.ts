@@ -52,7 +52,7 @@ export const UniswapPairValueQuery = gql`
 
 export const UniswapTicksQueryWithMetadata = gql`
   query GetUniswapTicks($poolAddress: String!, $minTick: BigInt!, $maxTick: BigInt!) {
-    pools(where: { id: $poolAddress }) {
+    pools(where: { id: $poolAddress }, subgraphError: allow) {
       token0 {
         decimals
       }
@@ -73,7 +73,7 @@ export const UniswapTicksQueryWithMetadata = gql`
 
 export const UniswapTicksQuery = gql`
   query GetUniswapTicks($poolAddress: String!, $minTick: BigInt!, $maxTick: BigInt!) {
-    pools(where: { id: $poolAddress }) {
+    pools(where: { id: $poolAddress }, subgraphError: allow) {
       ticks(first: 1000, orderBy: tickIdx, where: { tickIdx_gte: $minTick, tickIdx_lte: $maxTick }) {
         tickIdx
         liquidityNet
