@@ -42,7 +42,7 @@ export default function ImportBoostPage() {
     undefined,
     activeChain.id
   );
-  const [colors, setColors] = useState<Map<string, string>>(new Map());
+  const [colors, setColors] = useState<{ token0: string; token1: string }>();
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -74,12 +74,12 @@ export default function ImportBoostPage() {
     let mounted = true;
     (async () => {
       if (!uniswapNftPosition) return;
-      const tokenAddresses = [uniswapNftPosition.token0.logoURI, uniswapNftPosition.token1.logoURI];
-      const entries = tokenAddresses.map(async (logoUri) => {
-        const color = await getProminentColor(logoUri);
-        return [logoUri, rgb(color)] as [string, string];
-      });
-      if (mounted) setColors(new Map(await Promise.all(entries)));
+      const tokenColors = await Promise.all(
+        [uniswapNftPosition.token0.logoURI, uniswapNftPosition.token1.logoURI].map((logoURI) => {
+          return getProminentColor(logoURI);
+        })
+      );
+      if (mounted) setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
     })();
     return () => {
       mounted = false;
@@ -137,8 +137,8 @@ export default function ImportBoostPage() {
       uniswapNftPosition.token1,
       marketData.lender0,
       marketData.lender1,
-      colors.get(uniswapNftPosition.token0.address) || DEFAULT_COLOR0,
-      colors.get(uniswapNftPosition.token1.address) || DEFAULT_COLOR1,
+      colors?.token0 || DEFAULT_COLOR0,
+      colors?.token1 || DEFAULT_COLOR1,
       uniswapNftPosition,
       {
         amount0: GN.zero(0),
