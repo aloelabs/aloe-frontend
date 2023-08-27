@@ -1,23 +1,38 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { useParams } from 'react-router-dom';
+import { TickMath } from '@uniswap/v3-sdk';
+import { SendTransactionResult } from '@wagmi/core';
+import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import styled from 'styled-components';
 import { useContractRead, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
+import ImportBoostWidget from '../../components/boost/ImportBoostWidget';
+import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from '../../data/Uniswap';
 import { getProminentColor, rgb } from '../../util/Colors';
 
+export const BOOST_MIN = 1;
+export const BOOST_MAX = 5;
+export const BOOST_DEFAULT = BOOST_MIN;
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
+
+const Container = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+`;
 
 export default function ImportBoostPage() {
   const { activeChain } = useContext(ChainContext);
@@ -28,6 +43,32 @@ export default function ImportBoostPage() {
     activeChain.id
   );
   const [colors, setColors] = useState<Map<string, string>>(new Map());
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [boostFactor, setBoostFactor] = useState<number>(BOOST_DEFAULT);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    async function waitForTxn() {
+      if (!pendingTxn) return;
+      setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (!mounted) return;
+      if (receipt.status === 1) {
+        setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
+      } else {
+        setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
+      }
+    }
+    waitForTxn();
+    return () => {
+      mounted = false;
+    };
+  }, [pendingTxn]);
 
   useEffect(() => {
     let mounted = true;
@@ -84,7 +125,7 @@ export default function ImportBoostPage() {
     enabled: !!poolAddress,
   });
 
-  const uniswapCardInfo: BoostCardInfo | undefined = useMemo(() => {
+  const cardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!uniswapNftPosition || !poolAddress || !slot0 || !marketData) return undefined;
     const currentTick = slot0.tick;
     return new BoostCardInfo(
@@ -107,12 +148,78 @@ export default function ImportBoostPage() {
     );
   }, [uniswapNftPosition, poolAddress, slot0, marketData, colors]);
 
+  const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
+    if (!cardInfo) return undefined;
+    const { position } = cardInfo;
+
+    const updatedLiquidity = GN.fromJSBI(position.liquidity, 0).recklessMul(boostFactor).toJSBI();
+    return BoostCardInfo.from(
+      cardInfo,
+      {
+        address: '0x',
+        uniswapPool: cardInfo.uniswapPool,
+        token0: cardInfo.token0,
+        token1: cardInfo.token1,
+        assets: {
+          token0Raw: 0,
+          token1Raw: 0,
+          uni0: 0,
+          uni1: 0,
+        },
+        liabilities: {
+          amount0: cardInfo.amount0() * (boostFactor - 1),
+          amount1: cardInfo.amount1() * (boostFactor - 1),
+        },
+        feeTier: FeeTier.INVALID,
+        sqrtPriceX96: GN.fromJSBI(TickMath.getSqrtRatioAtTick(cardInfo.currentTick), 0).toDecimalBig(),
+        health: 0,
+        lender0: '0x',
+        lender1: '0x',
+        iv: 0,
+      },
+      {
+        ...position,
+        liquidity: updatedLiquidity,
+      }
+    );
+  }, [cardInfo, boostFactor]);
+
+  const isLoading = !updatedCardInfo || !tokenId;
   return (
     <AppPage>
       <div className='mb-4'>
         <Text size='XL'>Import Uniswap Position</Text>
       </div>
-      {uniswapCardInfo && tokenId && <BoostCard info={uniswapCardInfo} uniqueId={tokenId} isDisplayOnly={true} />}
+      {!isLoading && (
+        <Container>
+          <BoostCard info={updatedCardInfo} uniqueId={tokenId} isDisplayOnly={true} />
+          <div className='flex-grow'>
+            <ImportBoostWidget
+              cardInfo={updatedCardInfo}
+              boostFactor={boostFactor}
+              setBoostFactor={setBoostFactor}
+              setPendingTxn={setPendingTxn}
+            />
+          </div>
+        </Container>
+      )}
+      <PendingTxnModal
+        isOpen={isPendingTxnModalOpen}
+        setIsOpen={(isOpen: boolean) => {
+          setIsPendingTxnModalOpen(isOpen);
+          if (!isOpen) {
+            setPendingTxn(null);
+          }
+        }}
+        txnHash={pendingTxn?.hash}
+        onConfirm={() => {
+          setIsPendingTxnModalOpen(false);
+          setTimeout(() => {
+            navigate('/boost');
+          }, 100);
+        }}
+        status={pendingTxnModalStatus}
+      />
     </AppPage>
   );
 }
