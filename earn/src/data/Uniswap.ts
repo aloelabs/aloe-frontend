@@ -440,6 +440,7 @@ async function fetchTickData(poolAddress: string, chainId: number, minTick?: num
       minTick: minTick,
       maxTick: maxTick,
     },
+    errorPolicy: 'ignore',
   })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
   if (!initialQueryResponse.data.pools) return null;
 
@@ -454,6 +455,7 @@ async function fetchTickData(poolAddress: string, chainId: number, minTick?: num
         minTick: Number(tickData[tickData.length - 1].tickIdx),
         maxTick: maxTick,
       },
+      errorPolicy: 'ignore',
     })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
     if (!queryResponse.data.pools) break;
 
