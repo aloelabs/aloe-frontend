@@ -118,6 +118,8 @@ enum ImportState {
   APPROVING,
   READY_TO_MINT,
   ASKING_USER_TO_MINT,
+  UNABLE_TO_MINT,
+  LOADING,
 }
 
 function getImportButtonState(state?: ImportState) {
@@ -132,6 +134,9 @@ function getImportButtonState(state?: ImportState) {
       return { isDisabled: false, label: 'Mint' };
     case ImportState.ASKING_USER_TO_MINT:
       return { isDisabled: true, label: 'Mint' };
+    case ImportState.UNABLE_TO_MINT:
+      return { isDisabled: true, label: 'Unable to Mint' };
+    case ImportState.LOADING:
     default:
       return { isDisabled: true, label: 'Loading...' };
   }
@@ -301,7 +306,11 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
 
   // Prepare for actual import/mint transaction
-  const { config: configMint } = usePrepareContractWrite({
+  const {
+    config: configMint,
+    isError: isUnableToMint,
+    isLoading: isCheckingIfAbleToMint,
+  } = usePrepareContractWrite({
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'mint',
@@ -322,7 +331,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     },
   });
 
-  let state: ImportState | undefined;
+  let state: ImportState = ImportState.LOADING;
   if (isWritingManager) {
     state = ImportState.APPROVING;
   } else if (isAskingUserToWriteManager) {
@@ -331,6 +340,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     state = ImportState.ASKING_USER_TO_MINT;
   } else if (shouldWriteManager && writeManager) {
     state = ImportState.READY_TO_APPROVE;
+  } else if (isUnableToMint) {
+    state = ImportState.UNABLE_TO_MINT;
+  } else if (isCheckingIfAbleToMint) {
+    state = ImportState.LOADING;
   } else if (shouldMint && mint) {
     state = ImportState.READY_TO_MINT;
   }
