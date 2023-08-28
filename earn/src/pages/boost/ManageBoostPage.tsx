@@ -12,6 +12,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { Address, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
@@ -80,11 +81,11 @@ export default function ManageBoostPage() {
   const { nftTokenId } = useParams();
   const provider = useProvider({ chainId: activeChain.id });
   const [cardInfo, setCardInfo] = useChainDependentState<BoostCardInfo | null>(null, activeChain.id);
-  const [tokenQuotes, setTokenQuotes] = useState<TokenPairQuotes>();
-  const [colors, setColors] = useState<{ token0: string; token1: string }>();
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenPairQuotes | undefined>(undefined);
+  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
   const navigate = useNavigate();
 
@@ -95,27 +96,20 @@ export default function ManageBoostPage() {
   }, [cardInfo, navigate]);
 
   useEffect(() => {
-    let mounted = true;
-    async function waitForTxn() {
+    (async () => {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
-      if (!mounted) return;
       if (receipt.status === 1) {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
-    }
-    waitForTxn();
-    return () => {
-      mounted = false;
-    };
-  }, [pendingTxn]);
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
-    let mounted = true;
     (async () => {
       if (!cardInfo) return;
       const tokenColors = await Promise.all(
@@ -123,15 +117,11 @@ export default function ManageBoostPage() {
           return getProminentColor(logoURI);
         })
       );
-      if (mounted) setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
+      setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [cardInfo]);
+  }, [cardInfo, setColors]);
 
   useEffect(() => {
-    let mounted = true;
     if (!cardInfo) return;
     (async () => {
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
@@ -144,14 +134,9 @@ export default function ManageBoostPage() {
       }
       const token0Price = quoteDataResponse.data[cardInfo.token0.symbol].price;
       const token1Price = quoteDataResponse.data[cardInfo.token1.symbol].price;
-      if (mounted) {
-        setTokenQuotes({ token0Price, token1Price });
-      }
+      setTokenQuotes({ token0Price, token1Price });
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [cardInfo]);
+  }, [cardInfo, setTokenQuotes]);
 
   const { data: boostNftAttributes } = useContractRead({
     abi: boostNftAbi,
@@ -198,7 +183,6 @@ export default function ManageBoostPage() {
   });
 
   useEffect(() => {
-    let mounted = true;
     if (!borrowerAddress || !nftTokenId) return;
     (async () => {
       const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress as Address);
@@ -217,13 +201,8 @@ export default function ManageBoostPage() {
         res.uniswapFees,
         res.borrower
       );
-      if (mounted) {
-        setCardInfo(boostCardInfo);
-      }
+      setCardInfo(boostCardInfo);
     })();
-    return () => {
-      mounted = false;
-    };
   }, [activeChain.id, borrowerAddress, nftTokenId, provider, setCardInfo]);
 
   // Handled separately from the above useEffect because we don't want to re-fetch the borrower
