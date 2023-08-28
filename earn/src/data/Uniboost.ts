@@ -63,6 +63,24 @@ export class BoostCardInfo {
     );
   }
 
+  static withColors(boostCardInfo: BoostCardInfo, color0: string, color1: string): BoostCardInfo {
+    return new BoostCardInfo(
+      boostCardInfo.cardType,
+      boostCardInfo.nftTokenId,
+      boostCardInfo.uniswapPool,
+      boostCardInfo.currentTick,
+      boostCardInfo.token0,
+      boostCardInfo.token1,
+      boostCardInfo.lender0,
+      boostCardInfo.lender1,
+      color0,
+      color1,
+      boostCardInfo.position,
+      boostCardInfo.feesEarned,
+      boostCardInfo.borrower
+    );
+  }
+
   boostFactor() {
     if (this.borrower === null || JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return null;
     // Compute total value in the Uniswap position
