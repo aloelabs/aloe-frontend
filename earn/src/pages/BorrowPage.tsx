@@ -18,6 +18,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -184,27 +185,27 @@ export default function BorrowPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress, isConnected } = useAccount();
 
-  const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
-  const [cachedGraphDatas, setCachedGraphDatas] = useState<Map<string, BorrowGraphData[]>>(new Map());
-  const [graphData, setGraphData] = useState<BorrowGraphData[] | null>(null);
-  const [marginAccounts, setMarginAccounts] = useState<MarginAccount[] | null>(null);
+  const [availablePools, setAvailablePools] = useSafeState(new Map<string, UniswapPoolInfo>());
+  const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
+  const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
+  const [marginAccounts, setMarginAccounts] = useSafeState<MarginAccount[] | null>(null);
   const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
-  const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useState<Map<string, readonly UniswapPosition[]>>(
-    new Map()
-  );
-  const [isLoadingUniswapPositions, setIsLoadingUniswapPositions] = useState(true);
-  const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
-  const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
-  const [cachedMarketInfos, setCachedMarketInfos] = useState<Map<string, MarketInfo>>(new Map());
-  const [selectedMarketInfo, setSelectedMarketInfo] = useState<MarketInfo | undefined>(undefined);
+  const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useSafeState<
+    Map<string, readonly UniswapPosition[]>
+  >(new Map());
+  const [isLoadingUniswapPositions, setIsLoadingUniswapPositions] = useSafeState(true);
+  const [uniswapPositions, setUniswapPositions] = useSafeState<readonly UniswapPosition[]>([]);
+  const [uniswapNFTPositions, setUniswapNFTPositions] = useSafeState<Map<number, UniswapNFTPosition>>(new Map());
+  const [cachedMarketInfos, setCachedMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
+  const [selectedMarketInfo, setSelectedMarketInfo] = useSafeState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
   const [isAddCollateralModalOpen, setIsAddCollateralModalOpen] = useState(false);
   const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
   const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
   const navigate = useNavigate();
 
@@ -223,8 +224,7 @@ export default function BorrowPage() {
 
   // MARK: Fetch available pools
   useEffect(() => {
-    let mounted = true;
-    async function fetchAvailablePools() {
+    (async () => {
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;
@@ -272,31 +272,19 @@ export default function BorrowPage() {
         if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
       });
 
-      if (mounted) setAvailablePools(poolInfoMap);
-    }
-
-    fetchAvailablePools();
-    return () => {
-      mounted = false;
-    };
-  }, [provider]);
+      setAvailablePools(poolInfoMap);
+    })();
+  }, [provider, setAvailablePools]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const chainId = (await provider.getNetwork()).chainId;
       const marginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
-      if (mounted) {
-        setMarginAccounts(marginAccounts);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [userAddress, borrowerLensContract, provider, availablePools]);
+      setMarginAccounts(marginAccounts);
+    })();
+  }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
 
   // If no margin account is selected, select the first one
   useEffect(() => {
@@ -307,13 +295,12 @@ export default function BorrowPage() {
 
   // MARK: Fetch market info
   useEffect(() => {
-    let mounted = true;
     const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
     if (cachedMarketInfo !== undefined) {
       setSelectedMarketInfo(cachedMarketInfo);
       return;
     }
-    async function fetch() {
+    (async () => {
       if (selectedMarginAccount == null) return;
       const lenderLensContract = new ethers.Contract(
         ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
@@ -327,28 +314,21 @@ export default function BorrowPage() {
         selectedMarginAccount.token0.decimals,
         selectedMarginAccount.token1.decimals
       );
-      if (mounted) {
-        setCachedMarketInfos((prev) => {
-          return new Map(prev).set(selectedMarginAccount.address, result);
-        });
-        setSelectedMarketInfo(result);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedMarginAccount, provider, cachedMarketInfos, activeChain.id]);
+      setCachedMarketInfos((prev) => {
+        return new Map(prev).set(selectedMarginAccount.address, result);
+      });
+      setSelectedMarketInfo(result);
+    })();
+  }, [selectedMarginAccount, provider, cachedMarketInfos, activeChain.id, setSelectedMarketInfo, setCachedMarketInfos]);
 
   // MARK: Fetch GraphData
   useEffect(() => {
-    let mounted = true;
     const cachedGraphData = cachedGraphDatas.get(selectedMarginAccount?.address ?? '');
     if (cachedGraphData !== undefined) {
       setGraphData(cachedGraphData);
       return;
     }
-    async function fetch() {
+    (async () => {
       let etherscanResult: AxiosResponse<any, any> | null = null;
       if (selectedMarginAccount == null) return;
       try {
@@ -377,23 +357,16 @@ export default function BorrowPage() {
         };
         return resultData;
       });
-      if (mounted) {
-        setCachedGraphDatas((prev) => {
-          return new Map(prev).set(selectedMarginAccount.address, results);
-        });
-        setGraphData(results);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [activeChain, cachedGraphDatas, selectedMarginAccount]);
+      setCachedGraphDatas((prev) => {
+        return new Map(prev).set(selectedMarginAccount.address, results);
+      });
+      setGraphData(results);
+    })();
+  }, [activeChain, cachedGraphDatas, selectedMarginAccount, setCachedGraphDatas, setGraphData]);
 
   // MARK: Fetch Uniswap positions for this MarginAccount (debounced to avoid double-fetching)
   useDebouncedEffect(
     () => {
-      let mounted = true;
       setIsLoadingUniswapPositions(true);
       const cachedUniswapPositions = cachedUniswapPositionsMap.get(selectedMarginAccount?.address ?? '');
       if (cachedUniswapPositions !== undefined) {
@@ -402,7 +375,7 @@ export default function BorrowPage() {
         setIsLoadingUniswapPositions(false);
         return;
       }
-      async function fetch() {
+      (async () => {
         if (!Array.isArray(uniswapPositionTicks)) {
           setCachedUniswapPositionsMap((prev) => {
             return new Map(prev).set(selectedMarginAccount?.address ?? '', []);
@@ -438,59 +411,40 @@ export default function BorrowPage() {
         // We only want the values, not the keys
         const fetchedUniswapPositions = Array.from(fetchedUniswapPositionsMap.values());
 
-        if (mounted) {
-          // Cache the positions
-          setCachedUniswapPositionsMap((prev) => {
-            return new Map(prev).set(selectedMarginAccount.address, fetchedUniswapPositions);
-          });
-          // Set the positions
-          setUniswapPositions(fetchedUniswapPositions);
-          setIsLoadingUniswapPositions(false);
-        }
-      }
-      fetch();
-      return () => {
-        mounted = false;
-      };
+        // Cache the positions
+        setCachedUniswapPositionsMap((prev) => {
+          return new Map(prev).set(selectedMarginAccount.address, fetchedUniswapPositions);
+        });
+        // Set the positions
+        setUniswapPositions(fetchedUniswapPositions);
+        setIsLoadingUniswapPositions(false);
+      })();
     },
     FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS,
     [uniswapPositionTicks]
   );
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       if (userAddress === undefined) return;
       const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider);
-      if (mounted) {
-        setUniswapNFTPositions(fetchedUniswapNFTPositions);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [provider, userAddress]);
+      setUniswapNFTPositions(fetchedUniswapNFTPositions);
+    })();
+  }, [provider, setUniswapNFTPositions, userAddress]);
 
   useEffect(() => {
-    let mounted = true;
-    async function waitForTxn() {
+    (async () => {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
-      if (!mounted) return;
       if (receipt.status === 1) {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
-    }
-    waitForTxn();
-    return () => {
-      mounted = false;
-    };
-  }, [pendingTxn]);
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
