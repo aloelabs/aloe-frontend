@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
@@ -9,6 +9,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
@@ -27,24 +28,22 @@ export default function BoostPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useSafeState<boolean>(true);
   const [boostedCardInfos, setBoostedCardInfos] = useChainDependentState<BoostCardInfo[]>([], activeChain.id);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useChainDependentState<UniswapNFTPosition[]>(
     [],
     activeChain.id
   );
-  const [colors, setColors] = useState<Map<string, string>>(new Map());
+  const [colors, setColors] = useSafeState<Map<string, string>>(new Map());
 
   useEffect(() => {
     setIsLoading(true);
-  }, [activeChain.id]);
+  }, [activeChain.id, setIsLoading]);
 
   /*//////////////////////////////////////////////////////////////
                       FETCH BOOSTED CARD INFOS
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
       if (userAddress === undefined) return;
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
@@ -75,35 +74,24 @@ export default function BoostPage() {
 
       const filteredInfos = fetchedInfos.filter((info) => JSBI.greaterThan(info.position.liquidity, JSBI.BigInt(0)));
 
-      if (mounted) setBoostedCardInfos(filteredInfos);
+      setBoostedCardInfos(filteredInfos);
     })();
-
-    return () => {
-      mounted = false;
-    };
   }, [provider, userAddress, setBoostedCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                     FETCH UNISWAP NFT POSITIONS
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       if (userAddress === undefined) return;
       const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider);
       const fetchedPositions = Array.from(fetchedPositionsMap.values());
       const nonZeroPositions = fetchedPositions.filter((v) => JSBI.greaterThan(v.liquidity, JSBI.BigInt(0)));
 
-      if (mounted) {
-        setUniswapNFTPositions(nonZeroPositions);
-        setIsLoading(false);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [activeChain, provider, userAddress, setUniswapNFTPositions]);
+      setUniswapNFTPositions(nonZeroPositions);
+      setIsLoading(false);
+    })();
+  }, [activeChain, provider, userAddress, setUniswapNFTPositions, setIsLoading]);
 
   /*//////////////////////////////////////////////////////////////
             FETCH UNISWAP NFT POSITIONS - CONT. (SLOT0)
@@ -172,8 +160,6 @@ export default function BoostPage() {
                            COMPUTE COLORS
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
       const merged = boostedCardInfos.concat(uniswapCardInfos);
       const tokenAddresses = Array.from(
@@ -184,13 +170,9 @@ export default function BoostPage() {
         return [logoUri, rgb(color)] as [string, string];
       });
 
-      if (mounted) setColors(new Map(await Promise.all(entries)));
+      setColors(new Map(await Promise.all(entries)));
     })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [boostedCardInfos, uniswapCardInfos]);
+  }, [boostedCardInfos, setColors, uniswapCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                           MERGE CARD INFOS

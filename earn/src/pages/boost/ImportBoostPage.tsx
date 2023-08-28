@@ -11,6 +11,7 @@ import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { useContractRead, useProvider } from 'wagmi';
 
@@ -42,36 +43,29 @@ export default function ImportBoostPage() {
     undefined,
     activeChain.id
   );
-  const [colors, setColors] = useState<{ token0: string; token1: string }>();
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
   const [boostFactor, setBoostFactor] = useState<number>(BOOST_DEFAULT);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    let mounted = true;
-    async function waitForTxn() {
+    (async () => {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
-      if (!mounted) return;
       if (receipt.status === 1) {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
-    }
-    waitForTxn();
-    return () => {
-      mounted = false;
-    };
-  }, [pendingTxn]);
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
-    let mounted = true;
     (async () => {
       if (!uniswapNftPosition) return;
       const tokenColors = await Promise.all(
@@ -79,24 +73,15 @@ export default function ImportBoostPage() {
           return getProminentColor(logoURI);
         })
       );
-      if (mounted) setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
+      setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [uniswapNftPosition]);
+  }, [setColors, uniswapNftPosition]);
 
   useEffect(() => {
-    let mounted = true;
     (async () => {
       const fetchedUniswapNFTPosition = await fetchUniswapNFTPosition(Number(tokenId), provider);
-      if (mounted) {
-        setUniswapNftPosition(fetchedUniswapNFTPosition);
-      }
+      setUniswapNftPosition(fetchedUniswapNFTPosition);
     })();
-    return () => {
-      mounted = false;
-    };
   }, [tokenId, provider, setUniswapNftPosition]);
 
   const poolAddress = useMemo(() => {

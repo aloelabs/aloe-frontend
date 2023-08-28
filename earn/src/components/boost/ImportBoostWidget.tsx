@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -13,6 +13,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import {
@@ -152,7 +153,7 @@ export type ImportBoostWidgetProps = {
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-  const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
+  const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
 
   const provider = useProvider({ chainId: activeChain.id });
 
@@ -167,7 +168,6 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   }
 
   useEffect(() => {
-    let isMounted = true;
     async function fetchMarketInfo() {
       // Checking each of these individually since we don't want to fetch market info when the boost factor changes
       if (!provider || !cardInfo.lender0 || !cardInfo.lender1 || !cardInfo.token0 || !cardInfo.token1) return;
@@ -183,14 +183,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         cardInfo.token0.decimals,
         cardInfo.token1.decimals
       );
-      if (isMounted) {
-        setMarketInfo(marketInfo);
-      }
+      setMarketInfo(marketInfo);
     }
     fetchMarketInfo();
-    return () => {
-      isMounted = false;
-    };
   }, [activeChain.id, cardInfo.lender0, cardInfo.lender1, cardInfo.token0, cardInfo.token1, provider, setMarketInfo]);
 
   const { apr0, apr1 } = useMemo(() => {

@@ -8,6 +8,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { useAccount, useNetwork } from 'wagmi';
@@ -131,7 +132,7 @@ function AppBodyWrapper() {
 
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
-  const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
   const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
@@ -147,21 +148,13 @@ function App() {
   `;
 
   useEffect(() => {
-    let mounted = true;
-
     const queryBlocks = async () => {
       const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
-      if (mounted) {
-        setBlockNumber(response.data.blocks[0].number);
-      }
+      setBlockNumber(response.data.blocks[0].number);
     };
     if (blockNumber === null) {
       queryBlocks();
     }
-
-    return () => {
-      mounted = false;
-    };
   });
 
   return (
