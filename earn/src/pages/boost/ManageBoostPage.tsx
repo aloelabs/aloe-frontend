@@ -24,6 +24,7 @@ import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { MarginAccount } from '../../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../../data/Uniboost';
+import { getProminentColor, rgb } from '../../util/Colors';
 
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
@@ -80,6 +81,7 @@ export default function ManageBoostPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const [cardInfo, setCardInfo] = useChainDependentState<BoostCardInfo | null>(null, activeChain.id);
   const [tokenQuotes, setTokenQuotes] = useState<TokenPairQuotes>();
+  const [colors, setColors] = useState<{ token0: string; token1: string }>();
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -111,6 +113,22 @@ export default function ManageBoostPage() {
       mounted = false;
     };
   }, [pendingTxn]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!cardInfo) return;
+      const tokenColors = await Promise.all(
+        [cardInfo.token0.logoURI, cardInfo.token1.logoURI].map((logoURI) => {
+          return getProminentColor(logoURI);
+        })
+      );
+      if (mounted) setColors({ token0: rgb(tokenColors[0]), token1: rgb(tokenColors[1]) });
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [cardInfo]);
 
   useEffect(() => {
     let mounted = true;
@@ -207,6 +225,14 @@ export default function ManageBoostPage() {
       mounted = false;
     };
   }, [activeChain.id, borrowerAddress, nftTokenId, provider, setCardInfo]);
+
+  // Handled separately from the above useEffect because we don't want to re-fetch the borrower
+  useEffect(() => {
+    if (!cardInfo || !colors?.token0 || !colors?.token1) return;
+    if (cardInfo.color0 === colors.token0 || cardInfo.color1 === colors.token1) return;
+    const boostCardWithColors = BoostCardInfo.withColors(cardInfo, colors.token0, colors.token1);
+    setCardInfo(boostCardWithColors);
+  }, [cardInfo, colors?.token0, colors?.token1, setCardInfo]);
 
   const isLoading = !cardInfo || !nftTokenId;
   return (
