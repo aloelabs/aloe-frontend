@@ -17,6 +17,7 @@ import {
   ALOE_II_ORACLE_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
@@ -185,11 +186,17 @@ export default function BorrowPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress, isConnected } = useAccount();
 
-  const [availablePools, setAvailablePools] = useSafeState(new Map<string, UniswapPoolInfo>());
+  const [availablePools, setAvailablePools] = useChainDependentState(
+    new Map<string, UniswapPoolInfo>(),
+    activeChain.id
+  );
   const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
   const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
-  const [marginAccounts, setMarginAccounts] = useSafeState<MarginAccount[] | null>(null);
-  const [selectedMarginAccount, setSelectedMarginAccount] = useState<MarginAccount | undefined>(undefined);
+  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
+  const [selectedMarginAccount, setSelectedMarginAccount] = useChainDependentState<MarginAccount | undefined>(
+    undefined,
+    activeChain.id
+  );
   const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useSafeState<
     Map<string, readonly UniswapPosition[]>
   >(new Map());
@@ -281,8 +288,8 @@ export default function BorrowPage() {
     (async () => {
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const chainId = (await provider.getNetwork()).chainId;
-      const marginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
-      setMarginAccounts(marginAccounts);
+      const fetchedMarginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
+      setMarginAccounts(fetchedMarginAccounts);
     })();
   }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
 
@@ -291,7 +298,7 @@ export default function BorrowPage() {
     if (selectedMarginAccount == null && marginAccounts?.length) {
       setSelectedMarginAccount(marginAccounts[0]);
     }
-  }, [marginAccounts, selectedMarginAccount]);
+  }, [marginAccounts, selectedMarginAccount, setSelectedMarginAccount]);
 
   // MARK: Fetch market info
   useEffect(() => {
