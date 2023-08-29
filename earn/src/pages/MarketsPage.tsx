@@ -59,7 +59,6 @@ export default function MarketsPage() {
   }, [lendingPairs]);
 
   useEffect(() => {
-    let mounted = true;
     async function fetch() {
       // fetch token quotes
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
@@ -78,46 +77,29 @@ export default function MarketsPage() {
           price: value.price,
         };
       });
-      if (mounted && tokenQuotes.length === 0) {
+      if (tokenQuotes.length === 0) {
         setTokenQuotes(tokenQuoteData);
       }
     }
     if (uniqueSymbols.length > 0 && tokenQuotes.length === 0) {
       fetch();
     }
-    return () => {
-      mounted = false;
-    };
   }, [activeChain, tokenQuotes, uniqueSymbols, setTokenQuotes]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       const chainId = (await provider.getNetwork()).chainId;
       const results = await getAvailableLendingPairs(chainId, provider);
-      if (mounted) {
-        setLendingPairs(results);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
+      setLendingPairs(results);
+    })();
   }, [provider, address, setLendingPairs]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       if (!address) return;
       const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
-      if (mounted) {
-        setLendingPairBalances(results);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
+      setLendingPairBalances(results);
+    })();
   }, [provider, address, lendingPairs, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
