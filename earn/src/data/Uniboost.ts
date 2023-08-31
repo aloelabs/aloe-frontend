@@ -5,6 +5,7 @@ import JSBI from 'jsbi';
 import {
   ALOE_II_BOOST_NFT_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
@@ -15,6 +16,7 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { Address } from 'wagmi';
 
 import BoostNftAbi from '../assets/abis/BoostNFT.json';
+import FactoryAbi from '../assets/abis/Factory.json';
 import BorrowerAbi from '../assets/abis/MarginAccount.json';
 import BorrowerLensAbi from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolAbi from '../assets/abis/UniswapV3Pool.json';
@@ -284,6 +286,18 @@ export async function fetchBoostBorrower(
         { reference: 'positions', methodName: 'positions', methodParameters: [uniswapKey] },
       ],
     },
+    {
+      reference: 'nSgima',
+      contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
+      abi: FactoryAbi,
+      calls: [
+        {
+          reference: 'getParameters',
+          methodName: 'getParameters',
+          methodParameters: [uniswapPool],
+        },
+      ],
+    },
   ];
 
   const extraResults = (await multicall.call(extraContext)).results;
@@ -293,6 +307,8 @@ export async function fetchBoostBorrower(
   const iv = hexToGn(consultResult[1].hex, 18).toNumber();
   const feeTier = NumericFeeTierToEnum(extraResults['uniswap'].callsReturnContext[0].returnValues[0]);
   const liquidity = ethers.BigNumber.from(extraResults['uniswap'].callsReturnContext[1].returnValues[0].hex);
+  // TODO: Fix
+  const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1];
 
   const borrower: MarginAccount = {
     address: borrowerAddress,
@@ -307,6 +323,7 @@ export async function fetchBoostBorrower(
     lender0,
     lender1,
     iv,
+    nSigma,
   };
 
   const uniswapPosition: UniswapPosition = {

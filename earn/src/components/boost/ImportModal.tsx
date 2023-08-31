@@ -350,6 +350,7 @@ export default function ImportModal(props: ImportModalProps) {
         lender0: '0x',
         lender1: '0x',
         iv: 0,
+        nSigma: 0,
       },
       {
         ...position,

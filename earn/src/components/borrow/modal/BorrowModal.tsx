@@ -3,16 +3,17 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
@@ -56,6 +57,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 type BorrowButtonProps = {
   marginAccount: MarginAccount;
+  ante: GN;
   userAddress: string;
   borrowToken: Token;
   borrowAmount: GN;
@@ -69,6 +71,7 @@ type BorrowButtonProps = {
 function BorrowButton(props: BorrowButtonProps) {
   const {
     marginAccount,
+    ante,
     userAddress,
     borrowToken,
     borrowAmount,
@@ -81,8 +84,6 @@ function BorrowButton(props: BorrowButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-
-  const ante = ANTES[activeChain.id];
 
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
@@ -198,6 +199,19 @@ export default function BorrowModal(props: BorrowModalProps) {
     setBorrowToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
 
+  const { data: anteData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [marginAccount.uniswapPool as Address],
+    chainId: activeChain.id,
+  });
+
+  const ante = useMemo(() => {
+    if (!anteData) return GN.zero(18);
+    return GN.fromBigNumber(anteData[0], 18);
+  }, [anteData]);
+
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
   const isToken0 = borrowToken.address === marginAccount.token0.address;
 
@@ -208,8 +222,6 @@ export default function BorrowModal(props: BorrowModalProps) {
   const newLiability = existingLiability.add(borrowAmount);
 
   const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
-
-  const ante = ANTES[activeChain.id];
 
   const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
 
@@ -228,6 +240,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
@@ -249,6 +262,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
@@ -337,6 +351,7 @@ export default function BorrowModal(props: BorrowModalProps) {
         <div className='w-full'>
           <BorrowButton
             marginAccount={marginAccount}
+            ante={ante}
             userAddress={userAddress}
             borrowToken={borrowToken}
             borrowAmount={borrowAmount}

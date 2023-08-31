@@ -246,6 +246,7 @@ export default function RepayModal(props: RepayModalProps) {
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );

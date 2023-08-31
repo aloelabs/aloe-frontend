@@ -184,6 +184,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
@@ -206,6 +207,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );

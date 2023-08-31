@@ -160,7 +160,8 @@ export default function ImportBoostPage() {
         health: 0,
         lender0: '0x',
         lender1: '0x',
-        iv: 0,
+        iv: 0, // TODO: FIXME
+        nSigma: 0, // TODO: FIXME
       },
       {
         ...position,
