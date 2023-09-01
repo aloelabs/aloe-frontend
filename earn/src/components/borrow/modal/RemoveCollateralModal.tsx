@@ -81,7 +81,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   useEffectOnce(() => {
     (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider);
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
       setOracleSeed(seed);
     })();
   });

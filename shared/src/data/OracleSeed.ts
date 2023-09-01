@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { UniswapV3PoolABI } from '../abis/UniswapV3Pool';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { Q32 } from './constants/Values';
 
 /**
  * Returns the first n levels of a binary search tree
@@ -20,7 +21,7 @@ export function getFirstNLevelsOfBinarySearchTree(n: number, l: number, r: numbe
   const midPlusOne = mid + 1;
   levels.push(mid);
   levels.push(midPlusOne);
-  getFirstNLevelsOfBinarySearchTree(n - 1, l, mid, levels);
+  getFirstNLevelsOfBinarySearchTree(n - 1, l, mid - 1, levels);
   getFirstNLevelsOfBinarySearchTree(n - 1, mid + 1, r, levels);
 
   return levels;
@@ -119,7 +120,11 @@ async function binarySearch(
   return mid;
 }
 
-export async function computeOracleSeed(uniswapPool: string, provider: ethers.providers.Provider) {
+export async function computeOracleSeed(uniswapPool: string, provider: ethers.providers.Provider, chainId: number) {
+  // If it's not mainnet, just return Q32
+  if (chainId !== 1) {
+    return Q32;
+  }
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const thirtyMinutesAgo = currentTimestamp - 1800;
   const oneHourAgo = currentTimestamp - 3600;
@@ -127,7 +132,12 @@ export async function computeOracleSeed(uniswapPool: string, provider: ethers.pr
   const { left, right, observationCardinality } = await getInitialBounds(uniswapPool, provider);
 
   const initialIndices = getFirstNLevelsOfBinarySearchTree(5, left, right);
-  const initialObservationCache = await getObservationsForIndices(uniswapPool, initialIndices, provider, right - left);
+  const initialObservationCache = await getObservationsForIndices(
+    uniswapPool,
+    initialIndices,
+    provider,
+    observationCardinality
+  );
 
   const thirtyMinutesAgoIndex = await binarySearch(
     uniswapPool,

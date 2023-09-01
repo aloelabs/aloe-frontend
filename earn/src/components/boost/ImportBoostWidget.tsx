@@ -174,7 +174,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   useEffectOnce(() => {
     (async () => {
-      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider);
+      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider, activeChain.id);
       setOracleSeed(seed);
     })();
   });

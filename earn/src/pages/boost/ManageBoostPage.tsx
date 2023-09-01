@@ -143,10 +143,10 @@ export default function ManageBoostPage() {
   useEffect(() => {
     if (!cardInfo?.uniswapPool) return;
     (async () => {
-      const seed = await computeOracleSeed(cardInfo?.uniswapPool, provider);
+      const seed = await computeOracleSeed(cardInfo?.uniswapPool, provider, activeChain.id);
       setOracleSeed(seed);
     })();
-  }, [cardInfo?.uniswapPool, provider, setOracleSeed]);
+  }, [activeChain.id, cardInfo?.uniswapPool, provider, setOracleSeed]);
 
   const { data: boostNftAttributes } = useContractRead({
     abi: boostNftAbi,

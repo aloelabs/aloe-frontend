@@ -105,7 +105,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
   useEffectOnce(() => {
     (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider);
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
       setOracleSeed(seed);
     })();
   });

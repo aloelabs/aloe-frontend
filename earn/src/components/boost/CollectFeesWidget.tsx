@@ -57,7 +57,7 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
 
   useEffectOnce(() => {
     (async () => {
-      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider);
+      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider, activeChain.id);
       setOracleSeed(seed);
     })();
   });
