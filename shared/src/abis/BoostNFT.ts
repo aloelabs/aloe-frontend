@@ -245,8 +245,41 @@ export const boostNftAbi = [
         name: 'initializationData',
         type: 'bytes',
       },
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
     ],
     name: 'mint',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'id',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint8',
+        name: 'action',
+        type: 'uint8',
+      },
+      {
+        internalType: 'bytes',
+        name: 'data',
+        type: 'bytes',
+      },
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
+    ],
+    name: 'modify',
     outputs: [],
     stateMutability: 'payable',
     type: 'function',
@@ -274,37 +307,9 @@ export const boostNftAbi = [
         type: 'bytes',
       },
       {
-        internalType: 'bool[2]',
-        name: 'allowances',
-        type: 'bool[2]',
-      },
-    ],
-    name: 'modify',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'id',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint8',
-        name: 'action',
-        type: 'uint8',
-      },
-      {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
-      },
-      {
-        internalType: 'bool[2]',
-        name: 'allowances',
-        type: 'bool[2]',
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
       },
     ],
     name: 'modify',

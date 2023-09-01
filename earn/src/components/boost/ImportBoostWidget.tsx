@@ -3,17 +3,21 @@ import { useContext, useEffect, useMemo } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
-  ANTES,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import {
@@ -154,6 +158,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
   const provider = useProvider({ chainId: activeChain.id });
 
@@ -166,6 +171,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       labels.push('');
     }
   }
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider);
+      setOracleSeed(seed);
+    })();
+  });
 
   useEffect(() => {
     async function fetchMarketInfo() {
@@ -187,6 +199,19 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     }
     fetchMarketInfo();
   }, [activeChain.id, cardInfo.lender0, cardInfo.lender1, cardInfo.token0, cardInfo.token1, provider, setMarketInfo]);
+
+  const { data: anteData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [cardInfo.uniswapPool],
+    chainId: activeChain.id,
+  });
+
+  const ante = useMemo(() => {
+    if (!anteData) return GN.zero(18);
+    return GN.fromBigNumber(anteData[0], 18);
+  }, [anteData]);
 
   const { apr0, apr1 } = useMemo(() => {
     if (!marketInfo) {
@@ -266,7 +291,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
   const managerIsCorrect = !!manager && manager === necessaryManager;
   const shouldWriteManager = !isFetchingManager && !!manager && !managerIsCorrect;
-  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect;
+  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect && !!oracleSeed && !!ante;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
@@ -309,8 +334,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'mint',
-    args: [cardInfo?.uniswapPool ?? '0x', initializationData ?? '0x'],
-    overrides: { value: ANTES[activeChain.id].recklessAdd(1).toBigNumber() },
+    args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? 0],
+    overrides: { value: ante.toBigNumber() },
     chainId: activeChain.id,
     enabled: enableHooks && shouldMint,
   });

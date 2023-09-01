@@ -13,6 +13,7 @@ import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecif
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import styled from 'styled-components';
 import { Address, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
@@ -86,6 +87,7 @@ export default function ManageBoostPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
   const navigate = useNavigate();
 
@@ -138,6 +140,14 @@ export default function ManageBoostPage() {
     })();
   }, [cardInfo, setTokenQuotes]);
 
+  useEffect(() => {
+    if (!cardInfo?.uniswapPool) return;
+    (async () => {
+      const seed = await computeOracleSeed(cardInfo?.uniswapPool, provider);
+      setOracleSeed(seed);
+    })();
+  }, [cardInfo?.uniswapPool, provider, setOracleSeed]);
+
   const { data: boostNftAttributes } = useContractRead({
     abi: boostNftAbi,
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
@@ -166,9 +176,13 @@ export default function ManageBoostPage() {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, [true, true]],
+    args: [ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? 0],
     chainId: activeChain.id,
-    enabled: nftTokenId !== undefined && cardInfo != null && !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
+    enabled:
+      nftTokenId !== undefined &&
+      cardInfo != null &&
+      !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) &&
+      !!oracleSeed,
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const { write: burn, isLoading: burnIsLoading } = useContractWrite({
