@@ -221,10 +221,6 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
-    console.log('gas limit', contractWriteConfig.request.gasLimit.toString());
-    if (contractWriteConfig.request.gasLimit.gt(1_000_000)) {
-      console.log('gas limit too high', contractWriteConfig.request.gasLimit.toString());
-    }
     contractWriteConfig.request.gasLimit = contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   }
   const {

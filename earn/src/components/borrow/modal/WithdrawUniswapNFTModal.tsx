@@ -1,18 +1,21 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
 import { MarginAccount } from '../../../data/MarginAccount';
 import {
@@ -90,26 +93,40 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
-  const data = ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'int24', 'int24', 'int128', 'uint144'],
-    [
-      uniswapNFTPosition[0],
-      uniswapNFTPosition[1].lower,
-      uniswapNFTPosition[1].upper,
-      uniswapPosition.liquidity.toString(10),
-      zip(
-        existingUniswapPositions.filter((position) => {
-          return position.lower !== uniswapPosition.lower || position.upper !== uniswapPosition.upper;
-        })
-      ),
-    ]
-  );
+  const provider = useProvider({ chainId: activeChain.id });
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
+  const data = useMemo(() => {
+    return ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'int24', 'int24', 'int128', 'uint144'],
+      [
+        uniswapNFTPosition[0],
+        uniswapNFTPosition[1].lower,
+        uniswapNFTPosition[1].upper,
+        uniswapPosition.liquidity.toString(10),
+        zip(
+          existingUniswapPositions.filter((position) => {
+            return position.lower !== uniswapPosition.lower || position.upper !== uniswapPosition.upper;
+          })
+        ),
+      ]
+    ) as `0x${string}`;
+  }, [uniswapNFTPosition, uniswapPosition, existingUniswapPositions]);
+
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, [true, true]],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, oracleSeed ?? 0],
+    enabled: !!oracleSeed,
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
