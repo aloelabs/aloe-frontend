@@ -11,9 +11,12 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
@@ -84,6 +87,9 @@ function BorrowButton(props: BorrowButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
 
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
@@ -97,13 +103,20 @@ function BorrowButton(props: BorrowButtonProps) {
     userAddress,
   ]);
 
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider);
+      setOracleSeed(seed);
+    })();
+  });
+
   const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as Address, [false, false]],
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as Address, oracleSeed ?? 0],
     overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
-    enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
+    enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && !!oracleSeed,
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -142,7 +155,7 @@ function BorrowButton(props: BorrowButtonProps) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if (prepareContractIsLoading && !removeCollateralConfig.request) {
+  } else if ((prepareContractIsLoading && !removeCollateralConfig.request) || oracleSeed === undefined) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (!removeCollateralConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
