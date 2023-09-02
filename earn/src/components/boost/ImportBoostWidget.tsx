@@ -291,7 +291,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
   const managerIsCorrect = !!manager && manager === necessaryManager;
   const shouldWriteManager = !isFetchingManager && !!manager && !managerIsCorrect;
-  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect && !!oracleSeed && !!ante;
+  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
@@ -335,9 +335,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     abi: boostNftAbi,
     functionName: 'mint',
     args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? 0],
-    overrides: { value: ante.toBigNumber() },
+    overrides: { value: ante.toBigNumber().add(1) },
     chainId: activeChain.id,
-    enabled: enableHooks && shouldMint,
+    enabled: enableHooks && shouldMint && !!oracleSeed && !!ante,
   });
   gasLimit = configMint.request?.gasLimit.mul(110).div(100);
   const { write: mint, isLoading: isAskingUserToMint } = useContractWrite({
