@@ -104,7 +104,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     })();
   });
 
-  const data = useMemo(() => {
+  const encodedData = useMemo(() => {
     return ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'int128', 'uint144'],
       [
@@ -125,7 +125,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, oracleSeed ?? 0],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? 0],
     enabled: !!oracleSeed,
     chainId: activeChain.id,
   });
