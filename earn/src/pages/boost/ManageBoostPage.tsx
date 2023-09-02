@@ -10,6 +10,7 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
@@ -176,7 +177,7 @@ export default function ManageBoostPage() {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? 0],
+    args: [ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? Q32],
     chainId: activeChain.id,
     enabled:
       nftTokenId !== undefined &&

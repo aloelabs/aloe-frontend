@@ -13,6 +13,7 @@ import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
@@ -335,7 +336,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'mint',
-    args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? 0],
+    args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? Q32],
     overrides: { value: ante.toBigNumber().add(1) },
     chainId: activeChain.id,
     enabled: enableHooks && shouldMint && !!oracleSeed && !!ante,

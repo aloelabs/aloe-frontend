@@ -8,6 +8,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
@@ -125,7 +126,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? 0],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
     enabled: !!oracleSeed,
     chainId: activeChain.id,
   });
