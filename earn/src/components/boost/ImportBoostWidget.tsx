@@ -12,7 +12,7 @@ import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -33,6 +33,7 @@ import { BoostCardInfo } from '../../data/Uniboost';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 
 const SECONDARY_COLOR = '#CCDFED';
+const TERTIARY_COLOR = '#4b6980';
 
 const Container = styled.div`
   display: flex;
@@ -416,6 +417,30 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         </div>
       </div>
       <div className='mt-6 mx-6'>
+        <div className='flex flex-col gap-1 w-full text-start mb-4'>
+          <Text size='M' weight='bold'>
+            Summary
+          </Text>
+          <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+            You're borrowing{' '}
+            <strong>
+              {formatTokenAmount(cardInfo.borrower?.liabilities.amount0 ?? 0, 3)} {cardInfo.token0.symbol}
+            </strong>{' '}
+            and{' '}
+            <strong>
+              {formatTokenAmount(cardInfo.borrower?.liabilities.amount1 ?? 0, 3)} {cardInfo.token1.symbol}
+            </strong>{' '}
+            in a new{' '}
+            <strong>
+              {cardInfo.token0.symbol}/{cardInfo.token1.symbol}
+            </strong>{' '}
+            smart wallet.
+          </Text>
+          <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
+            You will need to provide an additional {ANTES[activeChain.id].toString(GNFormat.LOSSY_HUMAN)} ETH to cover
+            the gas fees in the event that you are liquidated.
+          </Text>
+        </div>
         <FilledGradientButton
           size='M'
           onClick={() => {
@@ -430,6 +455,14 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         >
           {buttonState.label}
         </FilledGradientButton>
+        <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
+          By using our service, you agree to our{' '}
+          <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            Terms of Service
+          </a>{' '}
+          and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+          your duty to educate yourself and be aware of the risks.
+        </Text>
       </div>
     </Container>
   );
