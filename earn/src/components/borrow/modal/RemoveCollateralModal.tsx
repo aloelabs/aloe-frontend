@@ -96,7 +96,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as Address, oracleSeed ?? 0],
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? 0],
     enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && !!oracleSeed,
     chainId: activeChain.id,
   });
