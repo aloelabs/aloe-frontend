@@ -61,6 +61,12 @@ async function getObservationsForIndices(
   return observationCache;
 }
 
+/**
+ * Returns the initial bounds for the binary search
+ * @param uniswapPool the uniswap pool address
+ * @param provider the ethers provider
+ * @returns the initial bounds for the binary search
+ */
 async function getInitialBounds(uniswapPool: string, provider: ethers.providers.Provider) {
   const uniswapContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
   const slot0 = await uniswapContract.slot0();
@@ -75,6 +81,17 @@ async function getInitialBounds(uniswapPool: string, provider: ethers.providers.
   };
 }
 
+/**
+ * Performs a binary search to find the index of the timestamp
+ * @param uniswapPool the uniswap pool address
+ * @param timestamp the timestamp to search for
+ * @param provider the ethers provider
+ * @param observationCardinality the observation cardinality
+ * @param left the left edge of the binary search tree
+ * @param right the right edge of the binary search tree
+ * @param initialObservationCache the initial observation cache
+ * @returns the index of the timestamp closest to the given timestamp (but not greater than it)
+ */
 async function binarySearch(
   uniswapPool: string,
   timestamp: number,
@@ -123,6 +140,13 @@ async function binarySearch(
   return mid;
 }
 
+/**
+ * Computes the oracle seed for a given uniswap pool
+ * @param uniswapPool the uniswap pool address
+ * @param provider the ethers provider
+ * @param chainId the chain id
+ * @returns the oracle seed for a given uniswap pool (Q32 if it's not mainnet)
+ */
 export async function computeOracleSeed(uniswapPool: string, provider: ethers.providers.Provider, chainId: number) {
   // If it's not mainnet, just return Q32
   if (chainId !== 1) {
@@ -160,5 +184,7 @@ export async function computeOracleSeed(uniswapPool: string, provider: ethers.pr
     right,
     initialObservationCache
   );
+
+  // The oracle seed is the concatenation of the indices (16 bits each)
   return oneHourAgoIndex * 2 ** 16 + thirtyMinutesAgoIndex;
 }
