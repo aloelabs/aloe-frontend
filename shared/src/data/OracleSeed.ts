@@ -89,25 +89,28 @@ async function binarySearch(
 
   let observationCache = initialObservationCache;
 
+  // We only need to do 16 attempts because the max number of observations is 2^16 - 1
   while (attempt < 16) {
     attempt++;
-    if (attempt % 5 === 0) {
+    if (attempt % 4 === 0) {
       // Update the cache
-      const indices = getFirstNLevelsOfBinarySearchTree(5, left, right);
+      const indices = getFirstNLevelsOfBinarySearchTree(4, left, right);
       observationCache = await getObservationsForIndices(uniswapPool, indices, provider, observationCardinality);
     }
 
     mid = Math.floor((left + right) / 2);
 
-    // Turn it back into in terms of ring buffer
     const midTimestampLeft = observationCache[mid % observationCardinality];
     const midTimestampRight = observationCache[(mid + 1) % observationCardinality];
 
     if (midTimestampLeft === timestamp) {
+      // We found the exact timestamp
       return mid % observationCardinality;
     } else if (midTimestampRight === timestamp) {
+      // We found the exact timestamp
       return (mid + 1) % observationCardinality;
     } else if (midTimestampLeft < timestamp && timestamp < midTimestampRight) {
+      // We found the closest timestamp (take the one to the left)
       return mid % observationCardinality;
     }
 
@@ -131,7 +134,7 @@ export async function computeOracleSeed(uniswapPool: string, provider: ethers.pr
 
   const { left, right, observationCardinality } = await getInitialBounds(uniswapPool, provider);
 
-  const initialIndices = getFirstNLevelsOfBinarySearchTree(5, left, right);
+  const initialIndices = getFirstNLevelsOfBinarySearchTree(4, left, right);
   const initialObservationCache = await getObservationsForIndices(
     uniswapPool,
     initialIndices,
