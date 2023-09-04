@@ -170,7 +170,7 @@ export default function ImportBoostPage() {
     );
   }, [cardInfo, boostFactor]);
 
-  const isLoading = !updatedCardInfo || !tokenId;
+  const isLoading = !cardInfo || !updatedCardInfo || !tokenId;
   return (
     <AppPage>
       <div className='mb-4'>
@@ -181,7 +181,7 @@ export default function ImportBoostPage() {
           <BoostCard info={updatedCardInfo} uniqueId={tokenId} isDisplayOnly={true} />
           <div className='flex-grow'>
             <ImportBoostWidget
-              cardInfo={updatedCardInfo}
+              cardInfo={cardInfo}
               boostFactor={boostFactor}
               setBoostFactor={setBoostFactor}
               setPendingTxn={setPendingTxn}

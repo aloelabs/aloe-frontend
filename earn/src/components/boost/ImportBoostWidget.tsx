@@ -247,10 +247,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     if (!apr0 || !apr1) {
       return { dailyInterest0: null, dailyInterest1: null };
     }
-    const dailyInterest0 = (apr0 / 365) * (cardInfo.borrower?.liabilities.amount0 || 0);
-    const dailyInterest1 = (apr1 / 365) * (cardInfo.borrower?.liabilities.amount1 || 0);
+    const dailyInterest0 = (apr0 / 365) * (cardInfo.amount0() * (boostFactor - 1));
+    const dailyInterest1 = (apr1 / 365) * (cardInfo.amount1() * (boostFactor - 1));
     return { dailyInterest0, dailyInterest1 };
-  }, [apr0, apr1, cardInfo.borrower?.liabilities.amount0, cardInfo.borrower?.liabilities.amount1]);
+  }, [apr0, apr1, boostFactor, cardInfo]);
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
   const initializationData = useMemo(() => {
