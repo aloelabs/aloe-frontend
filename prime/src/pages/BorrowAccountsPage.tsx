@@ -8,7 +8,6 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
-import { base } from 'shared/lib/data/BaseChain';
 import { ALOE_II_FACTORY_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
@@ -28,7 +27,6 @@ import { createBorrower } from '../connector/FactoryActions';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
-import { makeEtherscanRequest } from '../util/Etherscan';
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -78,25 +76,12 @@ export default function BorrowAccountsPage() {
     async function fetchAvailablePools() {
       let createMarketLogs: ethers.providers.Log[] = [];
       try {
-        // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-        if (activeChain.id === base.id) {
-          const res = await makeEtherscanRequest(
-            2284814,
-            ALOE_II_FACTORY_ADDRESS[activeChain.id],
-            [TOPIC0_CREATE_MARKET_EVENT],
-            true,
-            activeChain
-          );
-          if (res.data.status !== '1') return;
-          createMarketLogs = res.data.result;
-        } else {
-          createMarketLogs = await provider.getLogs({
-            fromBlock: 0,
-            toBlock: 'latest',
-            address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-            topics: [TOPIC0_CREATE_MARKET_EVENT],
-          });
-        }
+        createMarketLogs = await provider.getLogs({
+          fromBlock: 0,
+          toBlock: 'latest',
+          address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+          topics: [TOPIC0_CREATE_MARKET_EVENT],
+        });
       } catch (e) {
         console.error(e);
       }

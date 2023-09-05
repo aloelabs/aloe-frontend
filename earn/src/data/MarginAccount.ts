@@ -1,7 +1,6 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
-import { base } from 'shared/lib/data/BaseChain';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -17,7 +16,6 @@ import { Address } from 'wagmi';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
-import { makeEtherscanRequest } from '../util/Etherscan';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 
@@ -64,24 +62,12 @@ export async function getMarginAccountsForUser(
 ): Promise<{ address: string; uniswapPool: string }[]> {
   let logs: ethers.providers.Log[] = [];
   try {
-    // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-    if (chainId === base.id) {
-      const res = await makeEtherscanRequest(
-        2284814,
-        ALOE_II_FACTORY_ADDRESS[chainId],
-        [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
-        true,
-        chainId
-      );
-      logs = res.data.result;
-    } else {
-      logs = await provider.getLogs({
-        fromBlock: 0,
-        toBlock: 'latest',
-        address: ALOE_II_FACTORY_ADDRESS[chainId],
-        topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
-      });
-    }
+    logs = await provider.getLogs({
+      fromBlock: 0,
+      toBlock: 'latest',
+      address: ALOE_II_FACTORY_ADDRESS[chainId],
+      topics: [TOPIC0_CREATE_BORROWER_EVENT, null, `0x000000000000000000000000${userAddress.slice(2)}`],
+    });
   } catch (e) {
     console.error(e);
   }
