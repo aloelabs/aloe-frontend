@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo } from 'react';
 
 import { ApolloQueryResult } from '@apollo/react-hooks';
-import { arbitrum, optimism, goerli, mainnet } from '@wagmi/chains';
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import Big from 'big.js';
@@ -31,13 +30,7 @@ import {
   useWaitForTransaction,
 } from 'wagmi';
 
-import {
-  ChainContext,
-  theGraphUniswapV3ArbitrumClient,
-  theGraphUniswapV3Client,
-  theGraphUniswapV3GoerliClient,
-  theGraphUniswapV3OptimismClient,
-} from '../../App';
+import { ChainContext } from '../../App';
 import KittyLensAbi from '../../assets/abis/KittyLens.json';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
@@ -46,7 +39,7 @@ import { RateModel, yieldPerSecondToAPR } from '../../data/RateModel';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
-import { Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
+import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -274,21 +267,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   useEffect(() => {
     (async () => {
-      let theGraphClient = theGraphUniswapV3Client;
-      switch (activeChain.id) {
-        case arbitrum.id:
-          theGraphClient = theGraphUniswapV3ArbitrumClient;
-          break;
-        case optimism.id:
-          theGraphClient = theGraphUniswapV3OptimismClient;
-          break;
-        case goerli.id:
-          theGraphClient = theGraphUniswapV3GoerliClient;
-          break;
-        case mainnet.id:
-        default:
-          break;
-      }
+      const theGraphClient = getTheGraphClient(activeChain.id);
       const unixTwoDaysAgo = Math.floor(Date.now() / 1000) - 86400 * 2;
       const initialQueryResponse = (await theGraphClient.query({
         query: Uniswap24HourPoolDataQuery,

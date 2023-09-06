@@ -9,7 +9,6 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { base } from 'shared/lib/data/BaseChain';
 import {
   MULTICALL_ADDRESS,
   UNISWAP_FACTORY_ADDRESS,
@@ -19,18 +18,10 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
-import {
-  theGraphUniswapV3ArbitrumClient,
-  theGraphUniswapV3BaseClient,
-  theGraphUniswapV3Client,
-  theGraphUniswapV3GoerliClient,
-  theGraphUniswapV3OptimismClient,
-} from '../App';
 import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import { UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
+import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { BIGQ96, Q96 } from './constants/Values';
 
@@ -421,25 +412,7 @@ async function fetchTickData(poolAddress: string, chainId: number, minTick?: num
   if (minTick === undefined) minTick = TickMath.MIN_TICK;
   if (maxTick === undefined) maxTick = TickMath.MAX_TICK;
 
-  let theGraphClient = theGraphUniswapV3Client;
-  switch (chainId) {
-    case arbitrum.id:
-      theGraphClient = theGraphUniswapV3ArbitrumClient;
-      break;
-    case optimism.id:
-      theGraphClient = theGraphUniswapV3OptimismClient;
-      break;
-    case base.id:
-      theGraphClient = theGraphUniswapV3BaseClient;
-      break;
-    case goerli.id:
-      theGraphClient = theGraphUniswapV3GoerliClient;
-      break;
-    case mainnet.id:
-      break;
-    default:
-      throw new Error(`TheGraph endpoint is unknown for chainId ${chainId}`);
-  }
+  const theGraphClient = getTheGraphClient(chainId);
 
   const initialQueryResponse = (await theGraphClient.query({
     query: UniswapTicksQueryWithMetadata,
