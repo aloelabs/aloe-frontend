@@ -96,6 +96,14 @@ export type UniswapV3GraphQLTicksQueryResponse = {
   }[];
 };
 
+export type UniswapV3GraphQL24HourPoolDataQueryResponse = {
+  poolDayDatas: {
+    liquidity: string;
+    feesUSD: string;
+    __typename: string;
+  }[];
+};
+
 function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const res = JSBI.BigInt(96);
   const numerator = JSBI.multiply(JSBI.leftShift(liquidity, res), JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));

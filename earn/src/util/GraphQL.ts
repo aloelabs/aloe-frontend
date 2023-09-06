@@ -83,3 +83,12 @@ export const UniswapTicksQuery = gql`
     }
   }
 `;
+
+export const Uniswap24HourPoolDataQuery = gql`
+  query GetUniswap24HourPoolData($poolAddress: String!, $date: Int!) {
+    poolDayDatas(first: 10, orderBy: date, where: { pool: $poolAddress, date_gt: $date }, subgraphError: allow) {
+      liquidity
+      feesUSD
+    }
+  }
+`;
