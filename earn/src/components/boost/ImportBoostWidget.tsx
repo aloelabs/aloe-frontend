@@ -20,7 +20,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
-import { formatTokenAmount, formatUSD } from 'shared/lib/util/Numbers';
+import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import {
   erc721ABI,
@@ -310,7 +310,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   const dailyInterestUSD = useMemo(() => {
     if (!apr0 || !apr1 || !tokenQuotes) {
-      return 0;
+      return null;
     }
     const dailyInterest0 = (apr0 / 365) * (cardInfo.amount0() * (boostFactor - 1));
     const dailyInterest1 = (apr1 / 365) * (cardInfo.amount1() * (boostFactor - 1));
@@ -420,8 +420,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     },
   });
 
-  const feesEarnedByUser = useMemo(() => {
-    if (!twentyFourHourPoolData || !cardInfo) return 0;
+  const dailyFeesEarned = useMemo(() => {
+    if (!twentyFourHourPoolData || !cardInfo) return null;
     const { liquidity } = cardInfo.position;
     const userLiquidity = new Big(liquidity.toString());
     const { liquidity: totalLiquidity, feesUSD } = twentyFourHourPoolData;
@@ -474,7 +474,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         <div className='w-full'>
           <div className='flex flex-row justify-center items-end'>
             <Display size='S' color={SECONDARY_COLOR}>
-              {formatUSD(feesEarnedByUser)}
+              {formatUSD(dailyFeesEarned)}
             </Display>
             <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
               / day
