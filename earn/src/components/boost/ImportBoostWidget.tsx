@@ -300,7 +300,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       if (initialQueryResponse.data.poolDayDatas) {
         const poolDayData = initialQueryResponse.data.poolDayDatas[0];
         setTwentyFourHourPoolData({
-          liquidity: GN.fromDecimalString(poolDayData.liquidity, 18).toDecimalBig(),
+          liquidity: new Big(poolDayData.liquidity),
           feesUSD: parseInt(poolDayData.feesUSD),
         });
       }
