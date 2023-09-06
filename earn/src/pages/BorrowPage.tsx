@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { base } from 'shared/lib/data/BaseChain';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
@@ -237,24 +236,12 @@ export default function BorrowPage() {
       const chainId = (await provider.getNetwork()).chainId;
       let logs: ethers.providers.Log[] = [];
       try {
-        // TODO: remove this once the RPC providers (preferably Alchemy) support better eth_getLogs on Base
-        if (chainId === base.id) {
-          const res = await makeEtherscanRequest(
-            2284814,
-            ALOE_II_FACTORY_ADDRESS[chainId],
-            [TOPIC0_CREATE_MARKET_EVENT],
-            true,
-            chainId
-          );
-          logs = res.data.result;
-        } else {
-          logs = await provider.getLogs({
-            fromBlock: 0,
-            toBlock: 'latest',
-            address: ALOE_II_FACTORY_ADDRESS[chainId],
-            topics: [TOPIC0_CREATE_MARKET_EVENT],
-          });
-        }
+        logs = await provider.getLogs({
+          fromBlock: 0,
+          toBlock: 'latest',
+          address: ALOE_II_FACTORY_ADDRESS[chainId],
+          topics: [TOPIC0_CREATE_MARKET_EVENT],
+        });
       } catch (e) {
         console.error(e);
       }

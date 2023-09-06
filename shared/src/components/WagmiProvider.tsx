@@ -75,6 +75,19 @@ function fallbackProvider({ chainId }: { chainId?: number }) {
 const providers = [publicProvider({ priority: 2 })];
 if (process.env.REACT_APP_ALCHEMY_API_KEY) {
   providers.push(alchemyProvider({ apiKey: process.env.REACT_APP_ALCHEMY_API_KEY, priority: 0 }));
+  // Since ethers/wagmi don't support base chain yet, we need to add it manually
+  providers.push(
+    jsonRpcProvider({
+      rpc: (chain) => {
+        if (chain.id !== base.id) return null;
+        return {
+          http: `https://base-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`,
+          ws: `wss://base-mainnet.ws.alchemyapi.io/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`,
+        };
+      },
+      priority: 0,
+    })
+  );
 }
 if (process.env.REACT_APP_ANKR_API_KEY) {
   providers.push(

@@ -215,12 +215,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     return GN.fromBigNumber(anteData[0], 18);
   }, [anteData]);
 
+  const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
+  const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
+
   const { apr0, apr1 } = useMemo(() => {
     if (!marketInfo) {
       return { apr0: null, apr1: null };
     }
-    const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
-    const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
 
     const availableAssets0 = marketInfo.lender0AvailableAssets;
     const availableAssets1 = marketInfo.lender1AvailableAssets;
@@ -241,7 +242,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization0)) * 100;
     const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization1)) * 100;
     return { apr0, apr1 };
-  }, [cardInfo, boostFactor, marketInfo]);
+  }, [marketInfo, borrowAmount0, borrowAmount1]);
 
   const { dailyInterest0, dailyInterest1 } = useMemo(() => {
     if (!apr0 || !apr1) {
@@ -450,11 +451,11 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're borrowing{' '}
             <strong>
-              {formatTokenAmount(cardInfo.borrower?.liabilities.amount0 ?? 0, 3)} {cardInfo.token0.symbol}
+              {borrowAmount0.toString(GNFormat.LOSSY_HUMAN)} {cardInfo.token0.symbol}
             </strong>{' '}
             and{' '}
             <strong>
-              {formatTokenAmount(cardInfo.borrower?.liabilities.amount1 ?? 0, 3)} {cardInfo.token1.symbol}
+              {borrowAmount1.toString(GNFormat.LOSSY_HUMAN)} {cardInfo.token1.symbol}
             </strong>{' '}
             in a new{' '}
             <strong>
