@@ -159,7 +159,9 @@ async function binarySearch(
  * @returns the oracle seed for a given uniswap pool (Q32 if it's not mainnet)
  */
 export async function computeOracleSeed(uniswapPool: string, provider: ethers.providers.Provider, chainId: number) {
-  // If it's not mainnet, just return Q32
+  // If it's not mainnet, just return Q32 as fast block times means the seed is more likely to be out of date,
+  // and since L2 gas is based on calldata, there isn't much an efficiency gain anyway,
+  // so we might as well do on-chain binary search
   if (chainId !== 1) {
     return Q32;
   }
