@@ -35,11 +35,6 @@
     "name": "cachedMetadata",
     "outputs": [
       {
-        "internalType": "uint32",
-        "name": "maxSecondsAgo",
-        "type": "uint32"
-      },
-      {
         "internalType": "uint24",
         "name": "gamma0",
         "type": "uint24"
@@ -64,10 +59,20 @@
         "internalType": "contract IUniswapV3Pool",
         "name": "pool",
         "type": "address"
+      },
+      {
+        "internalType": "uint40",
+        "name": "seed",
+        "type": "uint40"
       }
     ],
     "name": "consult",
     "outputs": [
+      {
+        "internalType": "uint56",
+        "name": "",
+        "type": "uint56"
+      },
       {
         "internalType": "uint160",
         "name": "",
@@ -164,10 +169,20 @@
         "internalType": "contract IUniswapV3Pool",
         "name": "pool",
         "type": "address"
+      },
+      {
+        "internalType": "uint40",
+        "name": "seed",
+        "type": "uint40"
       }
     ],
     "name": "update",
     "outputs": [
+      {
+        "internalType": "uint56",
+        "name": "",
+        "type": "uint56"
+      },
       {
         "internalType": "uint160",
         "name": "",

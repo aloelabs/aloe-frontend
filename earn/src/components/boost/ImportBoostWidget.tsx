@@ -6,17 +6,22 @@ import axios, { AxiosResponse } from 'axios';
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
-  ANTES,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD } from 'shared/lib/util/Numbers';
@@ -174,6 +179,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useSafeState<TwentyFourHourPoolData | undefined>(
     undefined
   );
@@ -190,6 +196,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       labels.push('');
     }
   }
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
 
   useEffect(() => {
     (async () => {
@@ -235,6 +248,19 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     }
     fetchMarketInfo();
   }, [activeChain.id, cardInfo.lender0, cardInfo.lender1, cardInfo.token0, cardInfo.token1, provider, setMarketInfo]);
+
+  const { data: anteData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [cardInfo.uniswapPool],
+    chainId: activeChain.id,
+  });
+
+  const ante = useMemo(() => {
+    if (!anteData) return GN.zero(18);
+    return GN.fromBigNumber(anteData[0], 18);
+  }, [anteData]);
 
   const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
   const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
@@ -382,10 +408,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'mint',
-    args: [cardInfo?.uniswapPool ?? '0x', initializationData ?? '0x'],
-    overrides: { value: ANTES[activeChain.id].recklessAdd(1).toBigNumber() },
+    args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? Q32],
+    overrides: { value: ante.toBigNumber().add(1) },
     chainId: activeChain.id,
-    enabled: enableHooks && shouldMint,
+    enabled: enableHooks && shouldMint && !!oracleSeed && !!ante,
   });
   gasLimit = configMint.request?.gasLimit.mul(110).div(100);
   const { write: mint, isLoading: isAskingUserToMint } = useContractWrite({
@@ -497,8 +523,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             smart wallet.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {ANTES[activeChain.id].toString(GNFormat.LOSSY_HUMAN)} ETH to cover
-            the gas fees in the event that you are liquidated.
+            You will need to provide an additional {ante.toString(GNFormat.LOSSY_HUMAN)} ETH to cover the gas fees in
+            the event that you are liquidated.
           </Text>
         </div>
         <FilledGradientButton

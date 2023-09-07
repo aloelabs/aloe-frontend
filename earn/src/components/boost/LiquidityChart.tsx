@@ -237,6 +237,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
         [info.position],
         info.borrower.sqrtPriceX96,
         info.borrower.iv,
+        info.borrower.nSigma,
         info.token0.decimals,
         info.token1.decimals
       );

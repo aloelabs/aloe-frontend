@@ -6,6 +6,7 @@ import {
   ALOE_II_ORACLE_ADDRESS,
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -133,7 +134,7 @@ export async function getAvailableLendingPairs(
         {
           reference: `${market.pool}-oracle`,
           methodName: 'consult',
-          methodParameters: [market.pool],
+          methodParameters: [market.pool, Q32],
         },
       ],
     });
@@ -208,7 +209,7 @@ export async function getAvailableLendingPairs(
     const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
     const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
-    let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
+    let IV = oracleResult[2].div(1e12).toNumber() / 1e6;
     // Annualize it
     IV *= Math.sqrt(365);
 

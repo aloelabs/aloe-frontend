@@ -8,11 +8,15 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
@@ -30,6 +34,7 @@ enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
   PENDING,
   READY,
+  LOADING,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
@@ -43,6 +48,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.LOADING:
+      return { text: 'Loading...', enabled: false };
     default:
       return { text: 'Confirm', enabled: false };
   }
@@ -64,25 +71,37 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
 
   const isToken0Collateral = collateralToken.address === marginAccount.token0.address;
 
   const amount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
   const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
 
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
+  const encodedData = useMemo(() => {
+    const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+    return borrowerInterface.encodeFunctionData('transfer', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+      userAddress,
+    ]);
+  }, [amount0, amount1, userAddress]);
+
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
     abi: borrowerABI,
     functionName: 'modify',
-    args: [
-      ALOE_II_WITHDRAW_MANAGER_ADDRESS[activeChain.id],
-      ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'address'],
-        [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]
-      ) as Address,
-      [isToken0Collateral, !isToken0Collateral],
-    ],
-    enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
+    enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && !!oracleSeed,
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -120,6 +139,8 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (oracleSeed === undefined) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, collateralToken);
@@ -184,6 +205,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
@@ -206,6 +228,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );

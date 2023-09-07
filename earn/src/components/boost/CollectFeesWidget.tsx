@@ -9,10 +9,14 @@ import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { BoostCardInfo } from '../../data/Uniboost';
@@ -48,6 +52,17 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
   const { cardInfo, tokenQuotes, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
   const modifyData = useMemo(() => {
     return ethers.utils.defaultAbiCoder.encode(
       ['int24', 'int24'],
@@ -59,9 +74,9 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
     abi: boostNftAbi,
     functionName: 'modify',
-    args: [ethers.BigNumber.from(cardInfo.nftTokenId || 0), 1, modifyData, [true, true]],
+    args: [ethers.BigNumber.from(cardInfo.nftTokenId || 0), 1, modifyData, oracleSeed ?? Q32],
     chainId: activeChain.id,
-    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
+    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) && !!oracleSeed,
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const {

@@ -8,25 +8,24 @@ import {
   ALOE_II_MAX_LEVERAGE,
   ALOE_II_SIGMA_MAX,
   ALOE_II_SIGMA_MIN,
-  ALOE_II_SIGMA_SCALER,
   BIGQ96,
 } from './constants/Values';
 import { Assets, Liabilities } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, UniswapPosition } from './Uniswap';
 
-const MIN_TICK = new Big('4295128740');
-const MAX_TICK = new Big('1461446703485210103287273052203988822378723970341');
+const MIN_SQRT_RATIO = new Big('4295128740');
+const MAX_SQRT_RATIO = new Big('1461446703485210103287273052203988822378723970341');
 
-function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number): [Big, Big] {
+function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number, nSigma: number): [Big, Big] {
   sigma = Math.min(Math.max(ALOE_II_SIGMA_MIN, sigma), ALOE_II_SIGMA_MAX);
-  sigma *= ALOE_II_SIGMA_SCALER;
+  sigma *= nSigma;
 
-  let a = sqrtMeanPriceX96.mul(new Big((1 - sigma) * 1e18).sqrt()).div(1e9);
-  let b = sqrtMeanPriceX96.mul(new Big((1 + sigma) * 1e18).sqrt()).div(1e9);
+  let a = sqrtMeanPriceX96.mul(new Big(1 - sigma).mul(1e18).sqrt()).div(1e9);
+  let b = sqrtMeanPriceX96.mul(new Big(1 + sigma).mul(1e18).sqrt()).div(1e9);
 
   // Constrain to be within TickMath's MIN_TICK and MAX_TICK
-  if (a.lt(MIN_TICK)) a = MIN_TICK;
-  if (b.gt(MAX_TICK)) b = MAX_TICK;
+  if (a.lt(MIN_SQRT_RATIO)) a = MIN_SQRT_RATIO;
+  if (b.gt(MAX_SQRT_RATIO)) b = MAX_SQRT_RATIO;
 
   return [a, b];
 }
@@ -60,10 +59,11 @@ function _computeSolvencyBasics(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const [a, b] = _computeProbePrices(sqrtPriceX96, iv);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
 
@@ -170,6 +170,7 @@ export function isSolvent(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -179,6 +180,7 @@ export function isSolvent(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -213,6 +215,7 @@ export function maxBorrows(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -222,6 +225,7 @@ export function maxBorrows(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -240,6 +244,7 @@ function _maxWithdraws(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   coeff = 1
@@ -250,6 +255,7 @@ function _maxWithdraws(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -337,6 +343,7 @@ export function maxWithdraws(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -346,6 +353,7 @@ export function maxWithdraws(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals,
     1
@@ -359,6 +367,7 @@ export function maxBorrowAndWithdraw(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -368,6 +377,7 @@ export function maxBorrowAndWithdraw(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals,
     1 + 1 / ALOE_II_MAX_LEVERAGE
@@ -387,13 +397,14 @@ export function computeLiquidationThresholds(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   iterations: number = 120,
   precision: number = 7
 ): LiquidationThresholds {
-  const MINPRICE = new Big(TickMath.MIN_SQRT_RATIO.toString(10)).mul(1.23);
-  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(1.23);
+  const MINPRICE = new Big(2 ** 40);
+  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(1.0863 * 1e9);
 
   let result: LiquidationThresholds = {
     lowerSqrtRatio: new Big('0'),
@@ -403,7 +414,16 @@ export function computeLiquidationThresholds(
   };
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, MINPRICE, iv, token0Decimals, token1Decimals);
+  const isSolventAtMin = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    MINPRICE,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lowerSqrtRatio = MINPRICE;
@@ -425,6 +445,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );
@@ -441,7 +462,16 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, MAXPRICE, iv, token0Decimals, token1Decimals);
+  const isSolventAtMax = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    MAXPRICE,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upperSqrtRatio = MAXPRICE;
@@ -463,6 +493,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );

@@ -2,6 +2,7 @@ import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { erc721ABI, SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -10,12 +11,15 @@ import {
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import MarginAccountABI from '../../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
 import { MarginAccount } from '../../../../data/MarginAccount';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
@@ -162,6 +166,16 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 
   const [isPending, setIsPending] = useState(false);
   const [approvingTxn, setApprovingTxn] = useState<SendTransactionResult | null>(null);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
 
   // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
   const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
@@ -179,29 +193,32 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     chainId: activeChain.id,
   });
 
-  const data = ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'int24', 'int24', 'int128', 'uint144'],
-    [
-      uniswapNFTPosition[0],
-      uniswapNFTPosition[1].lower,
-      uniswapNFTPosition[1].upper,
-      `-${uniswapNFTPosition[1].liquidity.toString(10)}`,
-      zip([
-        ...existingUniswapPositions,
-        {
-          lower: uniswapNFTPosition[1].lower,
-          upper: uniswapNFTPosition[1].upper,
-          liquidity: uniswapNFTPosition[1].liquidity,
-        },
-      ]),
-    ]
-  );
+  const encodedData = useMemo(() => {
+    return ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'int24', 'int24', 'int128', 'uint144'],
+      [
+        uniswapNFTPosition[0],
+        uniswapNFTPosition[1].lower,
+        uniswapNFTPosition[1].upper,
+        `-${uniswapNFTPosition[1].liquidity.toString(10)}`,
+        zip([
+          ...existingUniswapPositions,
+          {
+            lower: uniswapNFTPosition[1].lower,
+            upper: uniswapNFTPosition[1].upper,
+            liquidity: uniswapNFTPosition[1].liquidity,
+          },
+        ]),
+      ]
+    ) as `0x${string}`;
+  }, [uniswapNFTPosition, existingUniswapPositions]);
+
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: borrowerABI,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], data, [true, true]],
-    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
+    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] && !!oracleSeed,
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {

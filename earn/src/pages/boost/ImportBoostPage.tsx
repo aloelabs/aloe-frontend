@@ -5,9 +5,11 @@ import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
@@ -133,6 +135,26 @@ export default function ImportBoostPage() {
     );
   }, [uniswapNftPosition, poolAddress, slot0, marketData, colors]);
 
+  const { data: consultData } = useContractRead({
+    abi: volatilityOracleAbi,
+    address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
+    functionName: 'consult',
+    args: [cardInfo?.uniswapPool ?? '0x', Q32],
+    enabled: !!cardInfo,
+  });
+
+  const { data: parametersData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [cardInfo?.uniswapPool ?? '0x'],
+    enabled: !!cardInfo,
+  });
+
+  let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 18).toNumber();
+
+  const nSigma = parametersData?.['nSigma'] ?? 0;
+
   const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
@@ -160,14 +182,15 @@ export default function ImportBoostPage() {
         health: 0,
         lender0: '0x',
         lender1: '0x',
-        iv: 0,
+        iv,
+        nSigma,
       },
       {
         ...position,
         liquidity: updatedLiquidity,
       }
     );
-  }, [cardInfo, boostFactor]);
+  }, [cardInfo, boostFactor, iv, nSigma]);
 
   const isLoading = !cardInfo || !updatedCardInfo || !tokenId;
   return (

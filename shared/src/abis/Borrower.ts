@@ -2,6 +2,11 @@ export const borrowerABI = [
   {
     inputs: [
       {
+        internalType: 'contract VolatilityOracle',
+        name: 'oracle',
+        type: 'address',
+      },
+      {
         internalType: 'contract IUniswapV3Pool',
         name: 'pool',
         type: 'address',
@@ -21,26 +26,50 @@ export const borrowerABI = [
     type: 'constructor',
   },
   {
-    inputs: [],
-    name: 'ANTE',
-    outputs: [
+    anonymous: false,
+    inputs: [
       {
+        indexed: false,
         internalType: 'uint256',
-        name: '',
+        name: 'repay0',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'repay1',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'incentive1',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'priceX128',
         type: 'uint256',
       },
     ],
-    stateMutability: 'view',
-    type: 'function',
+    name: 'Liquidate',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [],
+    name: 'Warn',
+    type: 'event',
   },
   {
     inputs: [],
-    name: 'B',
+    name: 'FACTORY',
     outputs: [
       {
-        internalType: 'uint8',
+        internalType: 'contract Factory',
         name: '',
-        type: 'uint8',
+        type: 'address',
       },
     ],
     stateMutability: 'view',
@@ -74,25 +103,12 @@ export const borrowerABI = [
   },
   {
     inputs: [],
-    name: 'MAX_SIGMA',
+    name: 'ORACLE',
     outputs: [
       {
-        internalType: 'uint256',
+        internalType: 'contract VolatilityOracle',
         name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'MIN_SIGMA',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
+        type: 'address',
       },
     ],
     stateMutability: 'view',
@@ -161,18 +177,36 @@ export const borrowerABI = [
     type: 'function',
   },
   {
-    inputs: [],
-    name: 'getLiabilities',
+    inputs: [
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
+    ],
+    name: 'getPrices',
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
+        components: [
+          {
+            internalType: 'uint160',
+            name: 'a',
+            type: 'uint160',
+          },
+          {
+            internalType: 'uint160',
+            name: 'b',
+            type: 'uint160',
+          },
+          {
+            internalType: 'uint160',
+            name: 'c',
+            type: 'uint160',
+          },
+        ],
+        internalType: 'struct Prices',
+        name: 'prices',
+        type: 'tuple',
       },
     ],
     stateMutability: 'view',
@@ -216,6 +250,16 @@ export const borrowerABI = [
         name: 'data',
         type: 'bytes',
       },
+      {
+        internalType: 'uint256',
+        name: 'strain',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
     ],
     name: 'liquidate',
     outputs: [],
@@ -235,32 +279,14 @@ export const borrowerABI = [
         type: 'bytes',
       },
       {
-        internalType: 'bool[2]',
-        name: 'allowances',
-        type: 'bool[2]',
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
       },
     ],
     name: 'modify',
     outputs: [],
     stateMutability: 'payable',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'packedSlot',
-    outputs: [
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        internalType: 'bool',
-        name: 'isInCallback',
-        type: 'bool',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -296,6 +322,65 @@ export const borrowerABI = [
       },
     ],
     name: 'repay',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract ERC20',
+        name: 'token',
+        type: 'address',
+      },
+    ],
+    name: 'rescue',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'slot0',
+    outputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint88',
+        name: 'unleashLiquidationTime',
+        type: 'uint88',
+      },
+      {
+        internalType: 'enum Borrower.State',
+        name: 'state',
+        type: 'uint8',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'amount0',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'amount1',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: 'recipient',
+        type: 'address',
+      },
+    ],
+    name: 'transfer',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -374,6 +459,11 @@ export const borrowerABI = [
         name: 'liquidity',
         type: 'uint128',
       },
+      {
+        internalType: 'address',
+        name: 'recipient',
+        type: 'address',
+      },
     ],
     name: 'uniswapWithdraw',
     outputs: [
@@ -400,5 +490,35 @@ export const borrowerABI = [
     ],
     stateMutability: 'nonpayable',
     type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
+    ],
+    name: 'warn',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address payable',
+        name: 'recipient',
+        type: 'address',
+      },
+    ],
+    name: 'withdrawAnte',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    stateMutability: 'payable',
+    type: 'receive',
   },
 ] as const;
