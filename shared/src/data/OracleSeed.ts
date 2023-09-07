@@ -3,6 +3,7 @@ import { UniswapV3PoolABI } from '../abis/UniswapV3Pool';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { Q32 } from './constants/Values';
+import { MULTICALL_ADDRESS } from './constants/ChainSpecific';
 
 /**
  * Returns the indices for the first n levels of a binary search tree
@@ -38,7 +39,12 @@ async function getObservationsForIndices(
   provider: ethers.providers.Provider,
   observationCardinality: number
 ) {
-  const multicall = new Multicall({ ethersProvider: provider });
+  const chainId = (await provider.getNetwork()).chainId;
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
   const calls: ContractCallContext[] = indices.map((index) => ({
     reference: index.toString(),
     contractAddress: uniswapPool,
