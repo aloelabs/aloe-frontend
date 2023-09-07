@@ -1,6 +1,9 @@
 import { useContext, useEffect, useMemo } from 'react';
 
+import { ApolloQueryResult } from '@apollo/react-hooks';
 import { SendTransactionResult } from '@wagmi/core';
+import axios, { AxiosResponse } from 'axios';
+import Big from 'big.js';
 import { ethers } from 'ethers';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import { factoryAbi } from 'shared/lib/abis/Factory';
@@ -19,7 +22,9 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
-import { formatTokenAmount } from 'shared/lib/util/Numbers';
+import { Token } from 'shared/lib/data/Token';
+import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import {
   erc721ABI,
@@ -32,10 +37,14 @@ import {
 
 import { ChainContext } from '../../App';
 import KittyLensAbi from '../../assets/abis/KittyLens.json';
+import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
+import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { RateModel, yieldPerSecondToAPR } from '../../data/RateModel';
 import { BoostCardInfo } from '../../data/Uniboost';
+import { UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
+import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -119,6 +128,16 @@ const LeverageSlider = styled.input`
   }
 `;
 
+type TwentyFourHourPoolData = {
+  liquidity: Big;
+  feesUSD: number;
+};
+
+type TokenQuote = {
+  token: Token;
+  price: number;
+};
+
 enum ImportState {
   READY_TO_APPROVE,
   ASKING_USER_TO_APPROVE,
@@ -161,6 +180,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { activeChain } = useContext(ChainContext);
   const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
   const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+  const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useSafeState<TwentyFourHourPoolData | undefined>(
+    undefined
+  );
+  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[] | undefined>(undefined);
 
   const provider = useProvider({ chainId: activeChain.id });
 
@@ -180,6 +203,30 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       setOracleSeed(seed);
     })();
   });
+
+  useEffect(() => {
+    (async () => {
+      let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
+      try {
+        quoteDataResponse = await axios.get(
+          `${API_PRICE_RELAY_LATEST_URL}?symbols=${cardInfo.token0.symbol},${cardInfo.token1.symbol}`
+        );
+      } catch {
+        return;
+      }
+      const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
+      if (!prResponse) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
+        return {
+          token: getTokenBySymbol(activeChain.id, key),
+          price: value.price,
+        };
+      });
+      setTokenQuotes(tokenQuoteData);
+    })();
+  }, [activeChain.id, cardInfo.token0.symbol, cardInfo.token1.symbol, setTokenQuotes]);
 
   useEffect(() => {
     async function fetchMarketInfo() {
@@ -244,14 +291,38 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     return { apr0, apr1 };
   }, [marketInfo, borrowAmount0, borrowAmount1]);
 
-  const { dailyInterest0, dailyInterest1 } = useMemo(() => {
-    if (!apr0 || !apr1) {
-      return { dailyInterest0: null, dailyInterest1: null };
+  useEffect(() => {
+    (async () => {
+      const theGraphClient = getTheGraphClient(activeChain.id);
+      const unixTwoDaysAgo = Math.floor(Date.now() / 1000) - 86400 * 2;
+      const initialQueryResponse = (await theGraphClient.query({
+        query: Uniswap24HourPoolDataQuery,
+        variables: {
+          poolAddress: cardInfo.uniswapPool.toLowerCase(),
+          date: unixTwoDaysAgo,
+        },
+        errorPolicy: 'ignore',
+      })) as ApolloQueryResult<UniswapV3GraphQL24HourPoolDataQueryResponse>;
+      if (initialQueryResponse.data.poolDayDatas) {
+        const poolDayData = initialQueryResponse.data.poolDayDatas[0];
+        setTwentyFourHourPoolData({
+          liquidity: new Big(poolDayData.liquidity),
+          feesUSD: parseInt(poolDayData.feesUSD),
+        });
+      }
+    })();
+  }, [activeChain.id, cardInfo, setTwentyFourHourPoolData]);
+
+  const dailyInterestUSD = useMemo(() => {
+    if (!apr0 || !apr1 || !tokenQuotes) {
+      return null;
     }
     const dailyInterest0 = (apr0 / 365) * (cardInfo.amount0() * (boostFactor - 1));
     const dailyInterest1 = (apr1 / 365) * (cardInfo.amount1() * (boostFactor - 1));
-    return { dailyInterest0, dailyInterest1 };
-  }, [apr0, apr1, boostFactor, cardInfo]);
+    const dailyInterestUSD0 = dailyInterest0 * tokenQuotes[0].price;
+    const dailyInterestUSD1 = dailyInterest1 * tokenQuotes[1].price;
+    return dailyInterestUSD0 + dailyInterestUSD1;
+  }, [apr0, apr1, boostFactor, cardInfo, tokenQuotes]);
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
   const initializationData = useMemo(() => {
@@ -354,6 +425,14 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     },
   });
 
+  const dailyFeesEarned = useMemo(() => {
+    if (!twentyFourHourPoolData || !cardInfo) return null;
+    const { liquidity } = cardInfo.position;
+    const userLiquidity = new Big(liquidity.toString());
+    const { liquidity: totalLiquidity, feesUSD } = twentyFourHourPoolData;
+    return userLiquidity.div(totalLiquidity).toNumber() * feesUSD * boostFactor;
+  }, [twentyFourHourPoolData, cardInfo, boostFactor]);
+
   let state: ImportState = ImportState.LOADING;
   if (isWritingManager) {
     state = ImportState.APPROVING;
@@ -400,20 +479,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         <div className='w-full'>
           <div className='flex flex-row justify-center items-end'>
             <Display size='S' color={SECONDARY_COLOR}>
-              {formatTokenAmount(0, 2)}
+              {formatUSD(dailyFeesEarned)}
             </Display>
             <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
-              {cardInfo.token0.symbol} / day
-            </Text>
-          </div>
-        </div>
-        <div className='w-full'>
-          <div className='flex flex-row justify-center items-end'>
-            <Display size='S' color={SECONDARY_COLOR}>
-              {formatTokenAmount(0, 2)}
-            </Display>
-            <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
-              {cardInfo.token1.symbol} / day
+              / day
             </Text>
           </div>
         </div>
@@ -425,20 +494,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         <div className='w-full'>
           <div className='flex flex-row justify-center items-end'>
             <Display size='S' color={SECONDARY_COLOR}>
-              -{formatTokenAmount(dailyInterest0 ?? 0, 2)}
+              -{formatUSD(dailyInterestUSD)}
             </Display>
             <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
-              {cardInfo.token0.symbol} / day
-            </Text>
-          </div>
-        </div>
-        <div className='w-full'>
-          <div className='flex flex-row justify-center items-end'>
-            <Display size='S' color={SECONDARY_COLOR}>
-              -{formatTokenAmount(dailyInterest1 ?? 0, 2)}
-            </Display>
-            <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
-              {cardInfo.token1.symbol} / day
+              / day
             </Text>
           </div>
         </div>
