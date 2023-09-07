@@ -39,15 +39,15 @@ async function getObservationsForIndices(
   observationCardinality: number
 ) {
   const multicall = new Multicall({ ethersProvider: provider });
-  const calls: ContractCallContext[] = indices.map((level) => ({
-    reference: level.toString(),
+  const calls: ContractCallContext[] = indices.map((index) => ({
+    reference: index.toString(),
     contractAddress: uniswapPool,
     abi: UniswapV3PoolABI as any,
     calls: [
       {
         reference: 'observations',
         methodName: 'observations',
-        methodParameters: [level % observationCardinality],
+        methodParameters: [index % observationCardinality],
       },
     ],
   }));
