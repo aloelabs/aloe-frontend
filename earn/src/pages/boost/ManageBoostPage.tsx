@@ -141,6 +141,10 @@ export default function ManageBoostPage() {
     })();
   }, [cardInfo, setTokenQuotes]);
 
+  // TODO: we should fetch this whenever a new block comes in,
+  // because that's the condition that could cause it to be stale.
+  // On L2's it'll remain Q32 anyway, so doesn't matter. Therefore
+  // we should probably move the "if chainId === 1" logic here.
   useEffect(() => {
     if (!cardInfo?.uniswapPool) return;
     (async () => {
