@@ -87,11 +87,14 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     })();
   });
 
-  const borrowerInterface = useMemo(() => new ethers.utils.Interface(borrowerABI), []);
-  const encodedData = useMemo(
-    () => borrowerInterface.encodeFunctionData('transfer', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]),
-    [amount0, amount1, borrowerInterface, userAddress]
-  );
+  const encodedData = useMemo(() => {
+    const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+    return borrowerInterface.encodeFunctionData('transfer', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+      userAddress,
+    ]);
+  }, [amount0, amount1, userAddress]);
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
