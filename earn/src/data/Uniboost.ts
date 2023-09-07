@@ -241,28 +241,24 @@ export async function fetchBoostBorrower(
     throw new Error(`Error while fetching Borrower information in multicall (${borrowerAddress})`);
   }
 
-  const hexToGn = (hex: string, decimals: number) => {
-    return GN.fromBigNumber(ethers.BigNumber.from(hex), decimals, 10);
-  };
-
   const assets: Assets = {
-    token0Raw: hexToGn(lensResults[0].returnValues[0], token0.decimals).toNumber(),
-    token1Raw: hexToGn(lensResults[0].returnValues[1], token1.decimals).toNumber(),
-    uni0: hexToGn(lensResults[0].returnValues[4], token0.decimals).toNumber(),
-    uni1: hexToGn(lensResults[0].returnValues[5], token1.decimals).toNumber(),
+    token0Raw: GN.hexToGn(lensResults[0].returnValues[0], token0.decimals).toNumber(),
+    token1Raw: GN.hexToGn(lensResults[0].returnValues[1], token1.decimals).toNumber(),
+    uni0: GN.hexToGn(lensResults[0].returnValues[4], token0.decimals).toNumber(),
+    uni1: GN.hexToGn(lensResults[0].returnValues[5], token1.decimals).toNumber(),
   };
   const liabilities: Liabilities = {
-    amount0: hexToGn(lensResults[1].returnValues[0], token0.decimals).toNumber(),
-    amount1: hexToGn(lensResults[1].returnValues[1], token1.decimals).toNumber(),
+    amount0: GN.hexToGn(lensResults[1].returnValues[0], token0.decimals).toNumber(),
+    amount1: GN.hexToGn(lensResults[1].returnValues[1], token1.decimals).toNumber(),
   };
   const health = GN.min(
-    hexToGn(lensResults[2].returnValues[0], 18),
-    hexToGn(lensResults[2].returnValues[1], 18)
+    GN.hexToGn(lensResults[2].returnValues[0], 18),
+    GN.hexToGn(lensResults[2].returnValues[1], 18)
   ).toNumber();
   const uniswapKey = lensResults[3].returnValues[0][0];
   const uniswapFees = {
-    amount0: hexToGn(lensResults[3].returnValues[1][0], token0.decimals),
-    amount1: hexToGn(lensResults[3].returnValues[1][1], token1.decimals),
+    amount0: GN.hexToGn(lensResults[3].returnValues[1][0], token0.decimals),
+    amount1: GN.hexToGn(lensResults[3].returnValues[1][1], token1.decimals),
   };
 
   // ---
@@ -304,10 +300,9 @@ export async function fetchBoostBorrower(
 
   const consultResult = extraResults['oracle'].callsReturnContext[0].returnValues;
   const sqrtPriceX96 = new Big(ethers.BigNumber.from(consultResult[0].hex).toString());
-  const iv = hexToGn(consultResult[1].hex, 18).toNumber();
+  const iv = GN.hexToGn(consultResult[2].hex, 18).toNumber();
   const feeTier = NumericFeeTierToEnum(extraResults['uniswap'].callsReturnContext[0].returnValues[0]);
   const liquidity = ethers.BigNumber.from(extraResults['uniswap'].callsReturnContext[1].returnValues[0].hex);
-  // TODO: Fix
   const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1];
 
   const borrower: MarginAccount = {
