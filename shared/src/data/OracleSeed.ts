@@ -5,14 +5,19 @@ import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { Q32 } from './constants/Values';
 
 /**
- * Returns the first n levels of a binary search tree
+ * Returns the indices for the first n levels of a binary search tree
  * @param n the number of levels to return
  * @param l the left edge of the binary search tree
  * @param r the right edge of the binary search tree
  * @param levels the levels of the binary search tree
- * @returns the first n levels of a binary search tree
+ * @returns the indices for the first n levels of a binary search tree
  */
-export function getFirstNLevelsOfBinarySearchTree(n: number, l: number, r: number, levels: number[] = []): number[] {
+export function getIndicesForFirstNLevelsOfBinarySearch(
+  n: number,
+  l: number,
+  r: number,
+  levels: number[] = []
+): number[] {
   if (n === 0) {
     return levels;
   }
@@ -21,8 +26,8 @@ export function getFirstNLevelsOfBinarySearchTree(n: number, l: number, r: numbe
   const midPlusOne = mid + 1;
   levels.push(mid);
   levels.push(midPlusOne);
-  getFirstNLevelsOfBinarySearchTree(n - 1, l, mid - 1, levels);
-  getFirstNLevelsOfBinarySearchTree(n - 1, mid + 1, r, levels);
+  getIndicesForFirstNLevelsOfBinarySearch(n - 1, l, mid - 1, levels);
+  getIndicesForFirstNLevelsOfBinarySearch(n - 1, mid + 1, r, levels);
 
   return levels;
 }
@@ -111,7 +116,7 @@ async function binarySearch(
     attempt++;
     if (attempt % 4 === 0) {
       // Update the cache
-      const indices = getFirstNLevelsOfBinarySearchTree(4, left, right);
+      const indices = getIndicesForFirstNLevelsOfBinarySearch(4, left, right);
       observationCache = await getObservationsForIndices(uniswapPool, indices, provider, observationCardinality);
     }
 
@@ -158,7 +163,7 @@ export async function computeOracleSeed(uniswapPool: string, provider: ethers.pr
 
   const { left, right, observationCardinality } = await getInitialBounds(uniswapPool, provider);
 
-  const initialIndices = getFirstNLevelsOfBinarySearchTree(4, left, right);
+  const initialIndices = getIndicesForFirstNLevelsOfBinarySearch(4, left, right);
   const initialObservationCache = await getObservationsForIndices(
     uniswapPool,
     initialIndices,
