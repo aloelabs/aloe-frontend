@@ -314,7 +314,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   }, [activeChain.id, cardInfo, setTwentyFourHourPoolData]);
 
   const dailyInterestUSD = useMemo(() => {
-    if (!apr0 || !apr1 || !tokenQuotes) {
+    if (apr0 == null || apr1 == null || !tokenQuotes) {
       return null;
     }
     const dailyInterest0 = (apr0 / 365) * (cardInfo.amount0() * (boostFactor - 1));
