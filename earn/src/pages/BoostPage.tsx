@@ -10,6 +10,7 @@ import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import styled from 'styled-components';
 import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
@@ -22,6 +23,29 @@ import { getProminentColor, rgb } from '../util/Colors';
 
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+
+export const BackButtonWrapper = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 32px;
+    height: 32px;
+    path {
+      stroke: ${SECONDARY_COLOR};
+    }
+  }
+
+  &:hover {
+    svg {
+      path {
+        stroke: rgb(255, 255, 255);
+      }
+    }
+  }
+`;
 
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);
