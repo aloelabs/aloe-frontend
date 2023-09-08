@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -24,6 +25,7 @@ import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from '../../data/Uniswap';
 import { getProminentColor, rgb } from '../../util/Colors';
+import { BackButtonWrapper } from '../BoostPage';
 
 export const BOOST_MIN = 1;
 export const BOOST_MAX = 5;
@@ -195,7 +197,10 @@ export default function ImportBoostPage() {
   const isLoading = !cardInfo || !updatedCardInfo || !tokenId;
   return (
     <AppPage>
-      <div className='mb-4'>
+      <div className='flex items-center gap-2 mb-4'>
+        <BackButtonWrapper>
+          <ArrowLeft onClick={() => navigate('/boost')} />
+        </BackButtonWrapper>
         <Text size='XL'>Import Uniswap Position</Text>
       </div>
       {!isLoading && (

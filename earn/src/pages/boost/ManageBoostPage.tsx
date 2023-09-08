@@ -6,6 +6,7 @@ import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -28,6 +29,7 @@ import { MarginAccount } from '../../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../../data/Uniboost';
 import { getProminentColor, rgb } from '../../util/Colors';
+import { BackButtonWrapper } from '../BoostPage';
 
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
@@ -235,7 +237,10 @@ export default function ManageBoostPage() {
   const isLoading = !cardInfo || !nftTokenId;
   return (
     <AppPage>
-      <div className='flex gap-10 mb-4'>
+      <div className='flex items-center gap-2 mb-4'>
+        <BackButtonWrapper>
+          <ArrowLeft onClick={() => navigate('/boost')} />
+        </BackButtonWrapper>
         <Text size='XL'>Manage Boost</Text>
         <FilledGradientButton
           size='S'
@@ -244,6 +249,7 @@ export default function ManageBoostPage() {
               burn?.();
             }
           }}
+          className='ml-8'
         >
           Burn
         </FilledGradientButton>
