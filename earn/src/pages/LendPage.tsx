@@ -10,6 +10,7 @@ import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Paginatio
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -92,6 +93,7 @@ export default function LendPage() {
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
+  const isAllowed = useGeoFencing(activeChain);
 
   // MARK: wagmi hooks
   const account = useAccount();
@@ -142,11 +144,11 @@ export default function LendPage() {
   useEffect(() => {
     (async () => {
       const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
+      const results = await getAvailableLendingPairs(chainId, provider, isAllowed);
       setLendingPairs(results);
       setIsLoading(false);
     })();
-  }, [provider, address, setLendingPairs, setIsLoading]);
+  }, [provider, address, setLendingPairs, setIsLoading, isAllowed]);
 
   useEffect(() => {
     let uniqueTokens = new Set<Token>();

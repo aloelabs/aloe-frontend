@@ -4,6 +4,7 @@ import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider } from 'wagmi';
@@ -43,6 +44,7 @@ export default function MarketsPage() {
     [],
     activeChain.id
   );
+  const isAllowed = useGeoFencing(activeChain);
 
   // MARK: wagmi hooks
   const account = useAccount();
@@ -89,10 +91,10 @@ export default function MarketsPage() {
   useEffect(() => {
     (async () => {
       const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
+      const results = await getAvailableLendingPairs(chainId, provider, isAllowed);
       setLendingPairs(results);
     })();
-  }, [provider, address, setLendingPairs]);
+  }, [provider, address, setLendingPairs, isAllowed]);
 
   useEffect(() => {
     (async () => {

@@ -7,6 +7,7 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -132,6 +133,7 @@ export default function PortfolioPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
+  const isAllowed = useGeoFencing(activeChain);
 
   useEffect(() => {
     setIsLoading(true);
@@ -212,11 +214,11 @@ export default function PortfolioPage() {
   useEffect(() => {
     (async () => {
       const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
+      const results = await getAvailableLendingPairs(chainId, provider, isAllowed);
       setLendingPairs(results);
       setIsLoading(false);
     })();
-  }, [provider, setIsLoading, setLendingPairs]);
+  }, [provider, setIsLoading, setLendingPairs, isAllowed]);
 
   useEffect(() => {
     (async () => {

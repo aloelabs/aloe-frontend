@@ -60,7 +60,8 @@ export type LendingPairBalances = {
 
 export async function getAvailableLendingPairs(
   chainId: number,
-  provider: ethers.providers.BaseProvider
+  provider: ethers.providers.BaseProvider,
+  isAllowed: boolean
 ): Promise<LendingPair[]> {
   const multicall = new Multicall({
     ethersProvider: provider,
@@ -172,6 +173,7 @@ export async function getAvailableLendingPairs(
     const token0 = getToken(chainId, basics0[0]);
     const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
+    if (!isAllowed && (token0.isRestricted || token1.isRestricted)) return;
     const kitty0 = new Kitty(
       chainId,
       kitty0Address as Address,
