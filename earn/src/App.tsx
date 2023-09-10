@@ -8,6 +8,9 @@ import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
@@ -84,6 +87,7 @@ function AppBodyWrapper() {
   const account = useAccount();
   const network = useNetwork();
   const navigate = useNavigate();
+  const isAllowed = useGeoFencing(activeChain);
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -107,10 +111,14 @@ function AppBodyWrapper() {
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
-          <Route path='/boost' element={<BoostPage />} />
-          <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
-          <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
-          <Route path='/borrow' element={<BorrowPage />} />
+          {isAllowed && (
+            <>
+              <Route path='/boost' element={<BoostPage />} />
+              <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
+              <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
+              <Route path='/borrow' element={<BorrowPage />} />
+            </>
+          )}
           <Route path='/claim' element={<ClaimPage />} />
           <Route path='/' element={<Navigate replace to='/portfolio' />} />
           <Route path='*' element={<Navigate to='/' />} />
@@ -133,6 +141,7 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
+  const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
   const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
@@ -146,6 +155,19 @@ function App() {
     }
   }
   `;
+
+  useEffectOnce(() => {
+    let mounted = true;
+    (async () => {
+      const result = await fetchGeoFencing();
+      if (mounted) {
+        setGeoFencingResponse(result);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  });
 
   useEffect(() => {
     const queryBlocks = async () => {
@@ -161,10 +183,12 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <ChainContext.Provider value={value}>
-            <ScrollToTop />
-            <AppBodyWrapper />
-          </ChainContext.Provider>
+          <GeoFencingContext.Provider value={geoFencingResponse}>
+            <ChainContext.Provider value={value}>
+              <ScrollToTop />
+              <AppBodyWrapper />
+            </ChainContext.Provider>
+          </GeoFencingContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>

@@ -11,12 +11,13 @@ import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSp
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useContract, useContractRead, useProvider } from 'wagmi';
 
-import { ChainContext, useGeoFencing } from '../App';
+import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
 import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
