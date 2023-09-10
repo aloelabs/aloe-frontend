@@ -2,24 +2,25 @@ import { useContext } from 'react';
 
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
 
-const NAV_LINKS: NavBarLink[] = [
+const DEFAULT_NAV_LINKS: NavBarLink[] = [
   {
     label: 'Portfolio',
     to: '/portfolio',
   },
-  // {
-  //   label: 'Markets',
-  //   to: '/lend',
-  // },
   {
     label: 'Markets',
     to: '/markets',
   },
+];
+
+const EXTENDED_NAV_LINKS: NavBarLink[] = [
+  ...DEFAULT_NAV_LINKS,
   {
     label: 'Boost',
     to: '/boost',
@@ -44,11 +45,13 @@ export type HeaderProps = {
 export default function Header(props: HeaderProps) {
   const { checkboxes } = props;
   const { activeChain, setActiveChain } = useContext(ChainContext);
+  const isAllowed = useGeoFencing(activeChain);
+  const navLinks = isAllowed ? EXTENDED_NAV_LINKS : DEFAULT_NAV_LINKS;
 
   return (
     <Nav>
       <NavBar
-        links={NAV_LINKS}
+        links={navLinks}
         activeChain={activeChain}
         checkboxes={checkboxes}
         setActiveChain={setActiveChain}

@@ -1,7 +1,6 @@
-import React, { Suspense, createContext, useContext, useEffect, useState } from 'react';
+import React, { Suspense, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import Footer from 'shared/lib/components/common/Footer';
@@ -9,17 +8,16 @@ import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
-import { API_GEO_FENCING_URL } from './data/constants/Values';
-import { GeoFencingResponse } from './data/GeoFencingResponse';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
 
@@ -75,14 +73,6 @@ export const ChainContext = React.createContext({
   setActiveChain: (chain: Chain) => {},
   setIsChainLoading: (isLoading: boolean) => {},
 });
-
-export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
-
-export function useGeoFencing(activeChain: Chain) {
-  const ctxt = useContext(GeoFencingContext);
-  const isDev = isDevelopment();
-  return isDev || ctxt?.isAllowed || !!activeChain.testnet;
-}
 
 function AppBodyWrapper() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
@@ -145,19 +135,12 @@ function App() {
 
   useEffectOnce(() => {
     let mounted = true;
-    async function fetch() {
-      try {
-        if (isDappnet() && mounted) {
-          setGeoFencingResponse({ isAllowed: true });
-          return;
-        }
-        const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
-        if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
-      } catch (error) {
-        console.error(error);
+    (async () => {
+      const result = await fetchGeoFencing();
+      if (mounted) {
+        setGeoFencingResponse(result);
       }
-    }
-    fetch();
+    })();
     return () => {
       mounted = false;
     };
