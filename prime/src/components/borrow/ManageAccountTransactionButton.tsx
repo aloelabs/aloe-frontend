@@ -1,10 +1,15 @@
-import { ReactElement, useContext, useEffect, useState } from 'react';
+import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import {
   Address,
@@ -14,10 +19,10 @@ import {
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
+  useProvider,
 } from 'wagmi';
 
 import { ChainContext } from '../../App';
-import MarginAccountAbi from '../../assets/abis/MarginAccount.json';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
 import { ReactComponent as LoaderIcon } from '../../assets/svg/loader.svg';
@@ -25,7 +30,6 @@ import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
-import { ANTE } from '../../data/constants/Values';
 import FailedTxnModal from './modal/FailedTxnModal';
 import PendingTxnModal from './modal/PendingTxnModal';
 import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
@@ -111,6 +115,7 @@ function useAllowanceWrite(onChain: Chain, token: Token, spender: Address, onSuc
 export type ManageAccountTransactionButtonProps = {
   userAddress: Address | undefined;
   accountAddress: Address;
+  uniswapPool: string;
   token0: Token;
   token1: Token;
   userBalances: Balances;
@@ -125,6 +130,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const {
     userAddress,
     accountAddress,
+    uniswapPool,
     token0,
     token1,
     userBalances,
@@ -142,7 +148,9 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   // transaction state
   const [pendingTxnHash, setPendingTxnHash] = useState<string | undefined>(undefined);
+  const [oracleSeed, setOracleSeed] = useState<number | undefined>(undefined);
 
+  const provider = useProvider({ chainId: activeChain.id });
   const navigate = useNavigate();
 
   const { data: accountEtherBalance, refetch: refetchEtherBalance } = useBalance({
@@ -177,6 +185,13 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
     refetchAllowance1
   );
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
 
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
@@ -218,49 +233,27 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     positions = zip(accountState.uniswapPositions);
   }
 
+  const { data: anteData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [uniswapPool as Address],
+    chainId: activeChain.id,
+    enabled: enabled,
+  });
+
+  const ante = useMemo(() => {
+    if (!anteData) return GN.zero(18);
+    return GN.fromBigNumber(anteData[0], 18);
+  }, [anteData]);
+
+  const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
+
   // provide ante if necessary
   const shouldProvideAnte =
     accountEtherBalance &&
-    accountEtherBalance.value.toNumber() < ANTE &&
+    gnAccountEtherBalance.lt(ante) &&
     (accountState.liabilities.amount0.isGtZero() || accountState.liabilities.amount1.isGtZero());
-
-  const isRemovingToken0Collateral = actionIds.some((id, idx) => {
-    if (id === 1) {
-      const actionArg: string = actionArgs[idx];
-      if (!actionArg) return false;
-      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
-      return firstArg === token0.address;
-    }
-    return false;
-  });
-  const isSwappingToken0ForToken1 = actionIds.some((id, idx) => {
-    if (id === 6) {
-      const actionArg: string = actionArgs[idx];
-      if (!actionArg) return false;
-      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
-      return firstArg === token0.address;
-    }
-    return false;
-  });
-
-  const isRemovingToken1Collateral = actionIds.some((id, idx) => {
-    if (id === 1) {
-      const actionArg: string = actionArgs[idx];
-      if (!actionArg) return false;
-      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
-      return firstArg === token1.address;
-    }
-    return false;
-  });
-  const isSwappingToken1ForToken0 = actionIds.some((id, idx) => {
-    if (id === 6) {
-      const actionArg: string = actionArgs[idx];
-      if (!actionArg) return false;
-      const firstArg: string = `0x${actionArg.slice(26, 66).toLowerCase()}`;
-      return firstArg === token1.address;
-    }
-    return false;
-  });
 
   const calldata = canConstructTransaction
     ? ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes[]', 'uint144'], [actionIds, actionArgs, positions])
@@ -268,19 +261,19 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
   const { config: contractConfig } = usePrepareContractWrite({
     address: accountAddress,
-    abi: MarginAccountAbi,
+    abi: borrowerABI,
     functionName: 'modify',
     chainId: activeChain.id,
-    args: [
-      ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
-      calldata,
-      [
-        isRemovingToken0Collateral || isSwappingToken0ForToken1,
-        isRemovingToken1Collateral || isSwappingToken1ForToken0,
-      ],
-    ],
-    overrides: { value: shouldProvideAnte ? ANTE + 1 : undefined },
-    enabled: canConstructTransaction && enabled && !transactionWillFail && !needsApproval[0] && !needsApproval[1],
+    args: [ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id], calldata as `0x${string}`, oracleSeed ?? Q32],
+    overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
+    enabled:
+      canConstructTransaction &&
+      enabled &&
+      !transactionWillFail &&
+      !needsApproval[0] &&
+      !needsApproval[1] &&
+      !!oracleSeed &&
+      !!ante,
   });
   const contract = useContractWrite({
     ...contractConfig,

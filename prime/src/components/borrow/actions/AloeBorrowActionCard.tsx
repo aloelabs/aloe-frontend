@@ -73,6 +73,7 @@ export function AloeBorrowActionCard(prop: ActionCardProps) {
     accountState.uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     token0.decimals,
     token1.decimals
   );
