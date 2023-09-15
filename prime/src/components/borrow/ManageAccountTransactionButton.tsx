@@ -242,7 +242,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     enabled: enabled,
   });
 
-  const ante = !anteData ? GN.zero(18) : GN.fromBigNumber(anteData[0], 18);
+  const ante = !anteData ? GN.zero(18) : GN.fromBigNumber(anteData.ante, 18);
 
   const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
 
