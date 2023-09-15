@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
@@ -242,10 +242,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
     enabled: enabled,
   });
 
-  const ante = useMemo(() => {
-    if (!anteData) return GN.zero(18);
-    return GN.fromBigNumber(anteData[0], 18);
-  }, [anteData]);
+  const ante = !anteData ? GN.zero(18) : GN.fromBigNumber(anteData[0], 18);
 
   const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
 
