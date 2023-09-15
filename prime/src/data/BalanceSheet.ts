@@ -348,8 +348,8 @@ export function computeLiquidationThresholds(
     upper: 0,
   };
 
-  const BOUND_L = MIN_SQRT_RATIO.recklessMul('123').recklessDiv('100');
-  const BOUND_R = MAX_SQRT_RATIO.recklessDiv('123').recklessMul('100');
+  const BOUND_L = GN.one(136, 2).setResolution(96);
+  const BOUND_R = MAX_SQRT_RATIO.recklessMul(1e6).recklessDiv(1376408);
   const scaler = 10 ** (token0Decimals - token1Decimals);
 
   // Find lower liquidation threshold
