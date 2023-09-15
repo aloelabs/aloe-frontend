@@ -38,6 +38,7 @@ export type MarginAccountParams = {
   lender0: Address;
   lender1: Address;
   iv: string;
+  nSigma: number;
 };
 
 export type CalculateLiquidationThresholdsParams = {

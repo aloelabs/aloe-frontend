@@ -4,6 +4,7 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { BigNumber, Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
+import { borrowerABI } from 'shared/lib/abis/Borrower';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -19,7 +20,6 @@ import { Address, useContract, useContractRead, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
 import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
@@ -256,7 +256,7 @@ export default function BorrowActionsPage() {
   });
   const { data: uniswapPositionTicks } = useContractRead({
     address: (accountAddressParam ?? '0x') as Address, // TODO better optional resolution
-    abi: MarginAccountABI,
+    abi: borrowerABI,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
     enabled: !!marginAccount,
@@ -288,6 +288,7 @@ export default function BorrowActionsPage() {
           setMarginAccount(result.marginAccount);
         }
       } catch (error) {
+        console.error(error);
         if (mounted) {
           setIsInvalidAddress(true);
         }
@@ -537,6 +538,7 @@ export default function BorrowActionsPage() {
     displayedUniswapPositions,
     displayedMarginAccount.sqrtPriceX96,
     displayedMarginAccount.iv,
+    displayedMarginAccount.nSigma,
     token0.decimals,
     token1.decimals
   );

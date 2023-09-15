@@ -306,6 +306,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     finalState.uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     token0.decimals,
     token1.decimals
   );
@@ -431,6 +432,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
+            uniswapPool={marginAccount.uniswapPool}
             token0={token0}
             token1={token1}
             userBalances={userBalances}

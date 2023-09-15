@@ -8,7 +8,6 @@ import {
   ALOE_II_MAX_LEVERAGE,
   ALOE_II_SIGMA_MAX,
   ALOE_II_SIGMA_MIN,
-  ALOE_II_SIGMA_SCALER,
 } from './constants/Values';
 import { Assets, Liabilities, LiquidationThresholds } from './MarginAccount';
 
@@ -16,11 +15,11 @@ const MIN_SQRT_RATIO = GN.fromJSBI(TickMath.MIN_SQRT_RATIO, 96, 2);
 const MAX_SQRT_RATIO = GN.fromJSBI(TickMath.MAX_SQRT_RATIO, 96, 2);
 const ONE = GN.one(18);
 
-function _computeProbePrices(sqrtMeanPriceX96: GN, sigma: GN): [GN, GN] {
+function _computeProbePrices(sqrtMeanPriceX96: GN, sigma: GN, nSigma: number): [GN, GN] {
   if (sigma.lt(ALOE_II_SIGMA_MIN)) sigma = ALOE_II_SIGMA_MIN;
   else if (sigma.gt(ALOE_II_SIGMA_MAX)) sigma = ALOE_II_SIGMA_MAX;
 
-  sigma = sigma.recklessMul(ALOE_II_SIGMA_SCALER);
+  sigma = sigma.recklessMul(nSigma);
 
   let a = sqrtMeanPriceX96.mul(ONE.sub(sigma).sqrt());
   let b = sqrtMeanPriceX96.mul(ONE.add(sigma).sqrt());
@@ -59,10 +58,11 @@ function _computeSolvencyBasics(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const [a, b] = _computeProbePrices(sqrtPriceX96, iv);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
   const priceA = a.square();
   const priceB = b.square();
 
@@ -146,6 +146,7 @@ export function isSolvent(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -155,6 +156,7 @@ export function isSolvent(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -189,6 +191,7 @@ export function maxBorrows(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -198,6 +201,7 @@ export function maxBorrows(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -223,6 +227,7 @@ export function maxWithdraws(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   coeff = 1
@@ -233,6 +238,7 @@ export function maxWithdraws(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -329,6 +335,7 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   iterations: number = 120,
@@ -341,12 +348,21 @@ export function computeLiquidationThresholds(
     upper: 0,
   };
 
-  const BOUND_L = MIN_SQRT_RATIO.recklessMul('123').recklessDiv('100');
-  const BOUND_R = MAX_SQRT_RATIO.recklessDiv('123').recklessMul('100');
+  const BOUND_L = GN.one(136, 2).setResolution(96);
+  const BOUND_R = MAX_SQRT_RATIO.recklessMul(1e6).recklessDiv(1376408);
   const scaler = 10 ** (token0Decimals - token1Decimals);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, BOUND_L, iv, token0Decimals, token1Decimals);
+  const isSolventAtMin = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    BOUND_L,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lower = priceToNumber(BOUND_L.square(), scaler, false);
@@ -368,6 +384,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );
@@ -384,7 +401,16 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, BOUND_R, iv, token0Decimals, token1Decimals);
+  const isSolventAtMax = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    BOUND_R,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upper = BOUND_R.square().toNumber();
@@ -406,6 +432,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );
