@@ -288,7 +288,7 @@ export default function BorrowActionsPage() {
           setMarginAccount(result.marginAccount);
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
         if (mounted) {
           setIsInvalidAddress(true);
         }
