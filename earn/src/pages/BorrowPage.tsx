@@ -493,11 +493,13 @@ export default function BorrowPage() {
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
 
-  const isUnableToWithdrawAnte =
-    Object.values(selectedMarginAccount?.liabilities ?? {}).some((liability) => {
-      return liability > 0;
-    }) ||
-    (accountEtherBalance?.isZero() ?? true);
+  const hasLiabilities = Object.values(selectedMarginAccount?.liabilities ?? {}).some((liability) => {
+    return liability > 0;
+  });
+
+  const accountHasEther = accountEtherBalance?.isGtZero() ?? false;
+
+  const isUnableToWithdrawAnte = hasLiabilities || !accountHasEther;
 
   return (
     <AppPage>
