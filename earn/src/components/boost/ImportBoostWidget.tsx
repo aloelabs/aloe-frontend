@@ -257,10 +257,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     chainId: activeChain.id,
   });
 
-  const ante = useMemo(() => {
-    if (!anteData) return GN.zero(18);
-    return GN.fromBigNumber(anteData[0], 18);
-  }, [anteData]);
+  const ante = !anteData ? GN.zero(18) : GN.fromBigNumber(anteData.ante, 18);
 
   const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
   const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
