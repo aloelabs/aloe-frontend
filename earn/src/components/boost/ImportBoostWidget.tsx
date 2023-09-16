@@ -153,13 +153,13 @@ function getImportButtonState(state?: ImportState) {
     case ImportState.READY_TO_APPROVE:
       return { isDisabled: false, label: 'Approve' };
     case ImportState.ASKING_USER_TO_APPROVE:
-      return { isDisabled: true, label: 'Approve' };
+      return { isDisabled: true, label: 'Check Wallet' };
     case ImportState.APPROVING:
       return { isDisabled: true, label: 'Approving...' };
     case ImportState.READY_TO_MINT:
       return { isDisabled: false, label: 'Mint' };
     case ImportState.ASKING_USER_TO_MINT:
-      return { isDisabled: true, label: 'Mint' };
+      return { isDisabled: true, label: 'Check Wallet' };
     case ImportState.UNABLE_TO_MINT:
       return { isDisabled: true, label: 'Unable to Mint' };
     case ImportState.LOADING:
