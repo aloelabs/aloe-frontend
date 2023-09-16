@@ -1,6 +1,7 @@
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 
 import { ReactComponent as CreditCardIcon } from '../../assets/svg/credit_card.svg';
+import { ReactComponent as FrownIcon } from '../../assets/svg/frown.svg';
 import { ReactComponent as MinusIcon } from '../../assets/svg/minus.svg';
 import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
@@ -12,10 +13,20 @@ export type ManageAccountButtonsProps = {
   onBorrow: () => void;
   onRepay: () => void;
   onGetLeverage: () => void;
+  onWithdrawAnte: () => void;
+  isWithdrawAnteDisabled: boolean;
 };
 
 export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
-  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onGetLeverage } = props;
+  const {
+    onAddCollateral,
+    onRemoveCollateral,
+    onBorrow,
+    onRepay,
+    onGetLeverage,
+    onWithdrawAnte,
+    isWithdrawAnteDisabled,
+  } = props;
   return (
     <div className='flex flex-col gap-3 w-max'>
       <OutlinedWhiteButtonWithIcon
@@ -62,6 +73,16 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         svgColorType='stroke'
       >
         Get Leverage
+      </OutlinedWhiteButtonWithIcon>
+      <OutlinedWhiteButtonWithIcon
+        Icon={<FrownIcon />}
+        position='leading'
+        onClick={onWithdrawAnte}
+        size='S'
+        svgColorType='stroke'
+        disabled={isWithdrawAnteDisabled}
+      >
+        Withdraw Ante
       </OutlinedWhiteButtonWithIcon>
     </div>
   );

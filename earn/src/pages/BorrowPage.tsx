@@ -16,6 +16,7 @@ import {
   ALOE_II_ORACLE_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
@@ -23,7 +24,7 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useAccount, useContract, useProvider, useContractRead } from 'wagmi';
+import { Address, useAccount, useContract, useProvider, useContractRead, useBalance } from 'wagmi';
 
 import { ChainContext } from '../App';
 import KittyLensAbi from '../assets/abis/KittyLens.json';
@@ -41,6 +42,7 @@ import BorrowModal from '../components/borrow/modal/BorrowModal';
 import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
 import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralModal';
 import RepayModal from '../components/borrow/modal/RepayModal';
+import WithdrawAnteModal from '../components/borrow/modal/WithdrawAnteModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -209,6 +211,7 @@ export default function BorrowPage() {
   const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
   const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
+  const [isWithdrawAnteModalOpen, setIsWithdrawAnteModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
@@ -440,6 +443,15 @@ export default function BorrowPage() {
     })();
   }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  const { data: accountEtherBalanceResult } = useBalance({
+    address: selectedMarginAccount?.address as Address,
+    chainId: activeChain.id,
+    watch: false,
+    enabled: selectedMarginAccount !== undefined,
+  });
+
+  const accountEtherBalance = accountEtherBalanceResult && GN.fromBigNumber(accountEtherBalanceResult.value, 18);
+
   const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
@@ -480,6 +492,12 @@ export default function BorrowPage() {
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
+
+  const isUnableToWithdrawAnte =
+    Object.values(selectedMarginAccount?.liabilities ?? {}).some((liability) => {
+      return liability > 0;
+    }) ||
+    (accountEtherBalance?.isZero() ?? true);
 
   return (
     <AppPage>
@@ -536,6 +554,10 @@ export default function BorrowPage() {
                   window.open(primeAccountUrl, '_blank');
                 }
               }}
+              onWithdrawAnte={() => {
+                if (isConnected) setIsWithdrawAnteModalOpen(true);
+              }}
+              isWithdrawAnteDisabled={isUnableToWithdrawAnte}
             />
           </MonitorContainer>
           <GraphContainer>
@@ -615,6 +637,7 @@ export default function BorrowPage() {
             marginAccount={selectedMarginAccount}
             uniswapPositions={uniswapPositions}
             marketInfo={selectedMarketInfo}
+            accountEtherBalance={accountEtherBalance}
             isOpen={isBorrowModalOpen}
             setIsOpen={setIsBorrowModalOpen}
             setPendingTxn={setPendingTxn}
@@ -624,6 +647,13 @@ export default function BorrowPage() {
             uniswapPositions={uniswapPositions}
             isOpen={isRepayModalOpen}
             setIsOpen={setIsRepayModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+          <WithdrawAnteModal
+            marginAccount={selectedMarginAccount}
+            accountEthBalance={accountEtherBalance}
+            isOpen={isWithdrawAnteModalOpen}
+            setIsOpen={setIsWithdrawAnteModalOpen}
             setPendingTxn={setPendingTxn}
           />
         </>

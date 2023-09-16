@@ -17,7 +17,7 @@ import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
@@ -185,26 +185,20 @@ export type BorrowModalProps = {
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
+  accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, uniswapPositions, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, marketInfo, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
   const [borrowToken, setBorrowToken] = useState<Token>(marginAccount.token0);
 
   const { address: userAddress } = useAccount();
-
-  const { data: accountEtherBalance } = useBalance({
-    address: marginAccount.address as Address,
-    chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen,
-  });
 
   // Reset borrow amount and token when modal is opened/closed
   // or when the margin account token0 changes
@@ -235,9 +229,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const newLiability = existingLiability.add(borrowAmount);
 
-  const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
-
-  const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
+  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.lt(ante)) || false;
 
   // TODO: use GN (this is an odd case where Big may make more sense)
   const formattedAnte = ante.toString(GNFormat.DECIMAL);
