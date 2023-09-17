@@ -15,7 +15,6 @@ import {
   ALOE_II_LENDER_LENS_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
@@ -54,7 +53,6 @@ const Container = styled.div`
   flex-direction: column;
   padding: 16px;
   width: 100%;
-  background-color: ${GREY_800};
   border-radius: 8px;
   max-width: 450px;
   text-align: center;
