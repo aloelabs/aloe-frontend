@@ -9,7 +9,9 @@ import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_TABLET } from 'shared/lib/data/constants/Breakpoints';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -35,8 +37,27 @@ const DEFAULT_COLOR1 = 'white';
 
 const Container = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-direction: row;
+  justify-content: center;
+  max-width: fit-content;
+  margin: 0 auto;
+  background-color: ${GREY_800};
+  border-radius: 8px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const BoostCardWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  padding-left: 40px;
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+    padding: 0px;
+    padding-top: 20px;
+  }
 `;
 
 export default function ImportBoostPage() {
@@ -197,7 +218,7 @@ export default function ImportBoostPage() {
   const isLoading = !cardInfo || !updatedCardInfo || !tokenId;
   return (
     <AppPage>
-      <div className='flex items-center gap-2 mb-4'>
+      <div className='flex items-center gap-2 mb-6'>
         <BackButtonWrapper>
           <ArrowLeft onClick={() => navigate('/boost')} />
         </BackButtonWrapper>
@@ -205,15 +226,15 @@ export default function ImportBoostPage() {
       </div>
       {!isLoading && (
         <Container>
-          <BoostCard info={updatedCardInfo} uniqueId={tokenId} isDisplayOnly={true} />
-          <div className='flex-grow'>
-            <ImportBoostWidget
-              cardInfo={cardInfo}
-              boostFactor={boostFactor}
-              setBoostFactor={setBoostFactor}
-              setPendingTxn={setPendingTxn}
-            />
-          </div>
+          <BoostCardWrapper>
+            <BoostCard info={updatedCardInfo} uniqueId={tokenId} isDisplayOnly={true} />
+          </BoostCardWrapper>
+          <ImportBoostWidget
+            cardInfo={cardInfo}
+            boostFactor={boostFactor}
+            setBoostFactor={setBoostFactor}
+            setPendingTxn={setPendingTxn}
+          />
         </Container>
       )}
       <PendingTxnModal
