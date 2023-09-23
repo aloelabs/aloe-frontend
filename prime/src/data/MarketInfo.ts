@@ -26,13 +26,13 @@ export async function fetchMarketInfoFor(
   token1Decimals: number
 ): Promise<MarketInfo> {
   // TODO: get types for these
-  const lender0Contract = new ethers.Contract(lender0, lenderABI, lenderLensContract.provider);
-  const lender1Contract = new ethers.Contract(lender1, lenderABI, lenderLensContract.provider);
+  const lenderContract0 = new ethers.Contract(lender0, lenderABI, lenderLensContract.provider);
+  const lenderContract1 = new ethers.Contract(lender1, lenderABI, lenderLensContract.provider);
   const [lender0Basics, lender1Basics, reserveFactorData0, reserveFactorData1] = await Promise.all([
     lenderLensContract.readBasics(lender0),
     lenderLensContract.readBasics(lender1),
-    lender0Contract.reserveFactor(),
-    lender1Contract.reserveFactor(),
+    lenderContract0.reserveFactor(),
+    lenderContract1.reserveFactor(),
   ]);
 
   const reserveFactor0 = (1 / reserveFactorData0) * 100;
