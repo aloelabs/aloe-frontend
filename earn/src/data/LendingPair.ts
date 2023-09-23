@@ -1,5 +1,6 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { lenderABI } from 'shared/lib/abis/Lender';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
@@ -138,6 +139,32 @@ export async function getAvailableLendingPairs(
         },
       ],
     });
+
+    contractCallContexts.push({
+      reference: `${market.pool}-lender0`,
+      contractAddress: market.kitty0,
+      abi: lenderABI as any,
+      calls: [
+        {
+          reference: `${market.pool}-lender0`,
+          methodName: 'reserveFactor',
+          methodParameters: [],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
+      reference: `${market.pool}-lender1`,
+      contractAddress: market.kitty1,
+      abi: lenderABI as any,
+      calls: [
+        {
+          reference: `${market.pool}-lender1`,
+          methodName: 'reserveFactor',
+          methodParameters: [],
+        },
+      ],
+    });
   });
 
   const lendingPairResults = (await multicall.call(contractCallContexts)).results;
@@ -159,7 +186,13 @@ export async function getAvailableLendingPairs(
   const lendingPairs: LendingPair[] = [];
 
   correspondingLendingPairResults.forEach((value) => {
-    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults } = value;
+    const {
+      basics: basicsResults,
+      feeTier: feeTierResults,
+      oracle: oracleResults,
+      lender0: lender0Results,
+      lender1: lender1Results,
+    } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
     const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
     const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
@@ -169,6 +202,8 @@ export async function getAvailableLendingPairs(
     const basics1 = basicsReturnContexts[1].returnValues;
     const feeTier = feeTierReturnContexts[0].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
+    const reserveFactor0 = lender0Results.callsReturnContext[0].returnValues[0];
+    const reserveFactor1 = lender1Results.callsReturnContext[0].returnValues[0];
     const token0 = getToken(chainId, basics0[0]);
     const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
@@ -204,8 +239,8 @@ export async function getAvailableLendingPairs(
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
     // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
-    const APR0 = utilization0 * (1 - 1 / 8) * (interestRate0 - 1.0);
-    const APR1 = utilization1 * (1 - 1 / 8) * (interestRate1 - 1.0);
+    const APR0 = utilization0 * (1 - 1 / reserveFactor0) * (interestRate0 - 1.0);
+    const APR1 = utilization1 * (1 - 1 / reserveFactor1) * (interestRate1 - 1.0);
     const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
     const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
