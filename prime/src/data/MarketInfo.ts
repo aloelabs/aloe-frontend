@@ -1,9 +1,9 @@
 import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
+import { lenderABI } from 'shared/lib/abis/Lender';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
-const RESERVE_FACTOR = 0.825; // (1 - 1/8)
 
 export type MarketInfo = {
   lender0: Address;
@@ -26,19 +26,26 @@ export async function fetchMarketInfoFor(
   token1Decimals: number
 ): Promise<MarketInfo> {
   // TODO: get types for these
-  const [lender0Basics, lender1Basics] = await Promise.all([
+  const lender0Contract = new ethers.Contract(lender0, lenderABI, lenderLensContract.provider);
+  const lender1Contract = new ethers.Contract(lender1, lenderABI, lenderLensContract.provider);
+  const [lender0Basics, lender1Basics, reserveFactorData0, reserveFactorData1] = await Promise.all([
     lenderLensContract.readBasics(lender0),
     lenderLensContract.readBasics(lender1),
+    lender0Contract.reserveFactor(),
+    lender1Contract.reserveFactor(),
   ]);
+
+  const reserveFactor0 = (1 / reserveFactorData0) * 100;
+  const reserveFactor1 = (1 / reserveFactorData1) * 100;
 
   const interestRate0 = toBig(lender0Basics.interestRate);
   const borrowAPR0 = interestRate0.eq('0')
     ? 0
-    : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear * RESERVE_FACTOR;
+    : interestRate0.sub(1e12).div(1e12).toNumber() * secondsInYear * reserveFactor0;
   const interestRate1 = toBig(lender1Basics.interestRate);
   const borrowAPR1 = interestRate1.eq('0')
     ? 0
-    : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear * RESERVE_FACTOR;
+    : interestRate1.sub(1e12).div(1e12).toNumber() * secondsInYear * reserveFactor1;
   const lender0Utilization = toImpreciseNumber(lender0Basics.utilization, 18);
   const lender1Utilization = toImpreciseNumber(lender1Basics.utilization, 18);
   const lender0Inventory = GN.fromBigNumber(lender0Basics.inventory, token0Decimals);
