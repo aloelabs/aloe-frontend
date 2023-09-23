@@ -75,6 +75,7 @@ type RepayButtonProps = {
   marginAccount: MarginAccount;
   userAddress: Address;
   lender: Address;
+  shouldRepayMax: boolean;
   repayAmount: GN;
   repayToken: Token;
   repayTokenBalance: GN;
@@ -88,12 +89,14 @@ function RepayButton(props: RepayButtonProps) {
     marginAccount,
     userAddress,
     lender,
-    repayAmount,
+    shouldRepayMax,
+    repayAmount: repayAmountSpecified,
     repayToken,
     repayTokenBalance,
     setIsOpen,
     setPendingTxn,
   } = props;
+  const repayAmount = shouldRepayMax ? repayAmountSpecified.recklessMul(1.005) : repayAmountSpecified;
 
   const [isPending, setIsPending] = useState(false);
 
@@ -109,6 +112,7 @@ function RepayButton(props: RepayButtonProps) {
     functionName: 'repayWithPermit2',
     args: [
       lender,
+      shouldRepayMax,
       permit2Result.amount.toBigNumber(),
       marginAccount.address,
       BigNumber.from(permit2Result.nonce ?? '0'),
@@ -155,7 +159,7 @@ function RepayButton(props: RepayButtonProps) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (repayAmount.gt(repayTokenBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
-  } else if (repayAmount.gt(existingLiabilityGN)) {
+  } else if (repayAmountSpecified.gt(existingLiabilityGN)) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -227,7 +231,10 @@ export default function RepayModal(props: RepayModalProps) {
   const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayToken.decimals);
   const remainingLiability = existingLiability.sub(repayAmount);
 
-  const maxRepay = GN.min(existingLiability, tokenBalance);
+  const maxRepayStr = GN.min(existingLiability, tokenBalance).toString(GNFormat.DECIMAL);
+  // NOTE: Don't just use `repayAmountStr === maxRepayStr` because the max repay flow will fail
+  // if `tokenBalance` is the constraint.
+  const shouldRepayMax = repayAmountStr === existingLiability.toString(GNFormat.DECIMAL);
 
   const newLiabilities: Liabilities = {
     amount0:
@@ -266,7 +273,7 @@ export default function RepayModal(props: RepayModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setRepayAmountStr(maxRepay.toString(GNFormat.DECIMAL));
+                setRepayAmountStr(maxRepayStr);
               }}
             >
               MAX
@@ -314,6 +321,7 @@ export default function RepayModal(props: RepayModalProps) {
             marginAccount={marginAccount}
             userAddress={userAddress}
             lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
+            shouldRepayMax={shouldRepayMax}
             repayAmount={repayAmount}
             repayToken={repayToken}
             repayTokenBalance={tokenBalance}
