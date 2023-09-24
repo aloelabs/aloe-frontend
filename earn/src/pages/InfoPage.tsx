@@ -21,6 +21,7 @@ import { Address, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
+import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../data/constants/Values';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
 type AloeMarketInfo = {
@@ -30,10 +31,12 @@ type AloeMarketInfo = {
   lenderRateModels: [Address, Address];
   lenderReserveFactors: [number, number];
   lenderTotalSupplies: [GN, GN];
-  nSigma: string;
+  nSigma: number;
   iv: number;
   ltv: number;
   ante: GN;
+  manipulationMetric: number;
+  manipulationThreshold: number;
 };
 
 type LenderInfo = {
@@ -235,10 +238,21 @@ export default function InfoPage() {
           .returnValues;
         const factoryResult = convertBigNumbersForReturnContexts(poolResult?.factory?.callsReturnContext ?? [])?.[0]
           .returnValues;
-        const iv = (ethers.BigNumber.from(oracleResult[2]).div(1e12).toNumber() / 1e6) * Math.sqrt(365) * 100;
-        const ltv = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005)) * 100;
-        const nSigma = factoryResult[1] as string;
+
+        // Factory parameters
         const ante = GN.fromBigNumber(factoryResult[0], 18);
+        const nSigma = (factoryResult[1] as number) / 10;
+        const manipulationThresholdDivisor = factoryResult[2] as number;
+
+        // Oracle results
+        const manipulationMetric = ethers.BigNumber.from(oracleResult[0]).toNumber();
+        const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
+
+        // Stuff we can compute from other stuff
+        let ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(nSigma * iv));
+        ltv = Math.max(0.1, Math.min(ltv, 0.9));
+        const manipulationThreshold = -Math.log(ltv) / Math.log(1.0001) / manipulationThresholdDivisor;
+
         poolInfoMap.set(addr, {
           lenders: [lender0, lender1],
           lenderSymbols: [lender0Info.symbol, lender1Info.symbol],
@@ -247,9 +261,11 @@ export default function InfoPage() {
           lenderReserveFactors: [lender0Info.reserveFactor, lender1Info.reserveFactor],
           lenderTotalSupplies: [lender0Info.totalSupply, lender1Info.totalSupply],
           nSigma,
-          iv,
+          iv: iv * Math.sqrt(365),
           ltv,
           ante,
+          manipulationMetric,
+          manipulationThreshold,
         });
       });
       setPoolInfo(poolInfoMap);
@@ -288,8 +304,8 @@ export default function InfoPage() {
                     </a>
                   </td>
                   <td rowSpan={2}>{info.nSigma}</td>
-                  <td rowSpan={2}>{info.iv.toFixed(2)}%</td>
-                  <td rowSpan={2}>{info.ltv.toFixed(2)}%</td>
+                  <td rowSpan={2}>{(info.iv * 100).toFixed(2)}%</td>
+                  <td rowSpan={2}>{(info.ltv * 100).toFixed(2)}%</td>
                   <td rowSpan={2}>{info.ante.toString(GNFormat.LOSSY_HUMAN)} ETH</td>
                   <td>{info.lenderSymbols[0]}</td>
                   <td>{info.lenderDecimals[0]}</td>
@@ -302,7 +318,7 @@ export default function InfoPage() {
                       {info.lenderRateModels[0].slice(0, 8)}...
                     </a>
                   </td>
-                  <td>{info.lenderReserveFactors[0].toFixed(1)}%</td>
+                  <td>{info.lenderReserveFactors[0].toFixed(2)}%</td>
                   <td>{info.lenderTotalSupplies[0].toString(GNFormat.LOSSY_HUMAN)}</td>
                 </tr>
                 <tr>
@@ -317,7 +333,7 @@ export default function InfoPage() {
                       {info.lenderRateModels[1].slice(0, 8)}...
                     </a>
                   </td>
-                  <td>{info.lenderReserveFactors[1].toFixed(1)}%</td>
+                  <td>{info.lenderReserveFactors[1].toFixed(2)}%</td>
                   <td>{info.lenderTotalSupplies[1].toString(GNFormat.LOSSY_HUMAN)}</td>
                 </tr>
               </Fragment>

@@ -112,7 +112,7 @@ function AppBodyWrapper() {
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
-          <Route path='/info' element={<InfoPage />} />
+          <Route path='/stats' element={<InfoPage />} />
           {isAllowed && (
             <>
               <Route path='/boost' element={<BoostPage />} />
