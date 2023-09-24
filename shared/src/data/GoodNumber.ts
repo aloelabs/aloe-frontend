@@ -34,7 +34,7 @@ export class GN {
 
   private readonly base: 2 | 10;
 
-  private readonly resolution: number;
+  public readonly resolution: number;
 
   private readonly scaler: string;
 

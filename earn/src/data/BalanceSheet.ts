@@ -3,54 +3,29 @@ import Big from 'big.js';
 import JSBI from 'jsbi';
 import { areWithinNSigDigs } from 'shared/lib/util/Numbers';
 
-import {
-  ALOE_II_LIQUIDATION_INCENTIVE,
-  ALOE_II_MAX_LEVERAGE,
-  ALOE_II_SIGMA_MAX,
-  ALOE_II_SIGMA_MIN,
-  BIGQ96,
-} from './constants/Values';
+import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, BIGQ96 } from './constants/Values';
 import { Assets, Liabilities } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, UniswapPosition } from './Uniswap';
 
 const MIN_SQRT_RATIO = new Big('4295128740');
 const MAX_SQRT_RATIO = new Big('1461446703485210103287273052203988822378723970341');
 
-function _computeProbePrices(sqrtMeanPriceX96: Big, sigma: number, nSigma: number): [Big, Big] {
-  sigma = Math.min(Math.max(ALOE_II_SIGMA_MIN, sigma), ALOE_II_SIGMA_MAX);
-  sigma *= nSigma;
+const PROBE_SQRT_SCALER_MIN = 1.026248453011;
+const PROBE_SQRT_SCALER_MAX = 3.078745359035;
 
-  let a = sqrtMeanPriceX96.mul(new Big(1 - sigma).mul(1e18).sqrt()).div(1e9);
-  let b = sqrtMeanPriceX96.mul(new Big(1 + sigma).mul(1e18).sqrt()).div(1e9);
+function _computeProbePrices(sqrtMeanPriceX96: Big, iv: number, nSigma: number): [Big, Big] {
+  const sqrtScaler = Math.max(PROBE_SQRT_SCALER_MIN, Math.min(Math.exp((nSigma * iv) / 2), PROBE_SQRT_SCALER_MAX));
 
-  // Constrain to be within TickMath's MIN_TICK and MAX_TICK
-  if (a.lt(MIN_SQRT_RATIO)) a = MIN_SQRT_RATIO;
-  if (b.gt(MAX_SQRT_RATIO)) b = MAX_SQRT_RATIO;
+  const prices = {
+    a: sqrtMeanPriceX96.div(sqrtScaler),
+    b: sqrtMeanPriceX96.mul(sqrtScaler),
+    c: sqrtMeanPriceX96,
+  };
 
-  return [a, b];
-}
-
-function _computeLiquidationIncentive(
-  assets0: number,
-  assets1: number,
-  liabilities0: number,
-  liabilities1: number,
-  token0Decimals: number,
-  token1Decimals: number,
-  sqrtPriceX96: Big
-): number {
-  const price = sqrtRatioToPrice(sqrtPriceX96, token0Decimals, token1Decimals);
-
-  let reward = 0;
-  if (liabilities0 > assets0) {
-    const shortfall = liabilities0 - assets0;
-    reward += (shortfall * price) / ALOE_II_LIQUIDATION_INCENTIVE;
-  }
-  if (liabilities1 > assets1) {
-    const shortfall = liabilities1 - assets1;
-    reward += shortfall / ALOE_II_LIQUIDATION_INCENTIVE;
-  }
-  return reward;
+  return [
+    prices.a.gt(MIN_SQRT_RATIO) ? prices.a : MIN_SQRT_RATIO,
+    prices.b.lt(MAX_SQRT_RATIO) ? prices.b : MAX_SQRT_RATIO,
+  ];
 }
 
 function _computeSolvencyBasics(
@@ -69,19 +44,12 @@ function _computeSolvencyBasics(
 
   const mem = getAssets(assets, uniswapPositions, a, b, sqrtPriceX96, token0Decimals, token1Decimals);
 
-  const liquidationIncentive = _computeLiquidationIncentive(
-    mem.fixed0 + mem.fluid0C,
-    mem.fixed1 + mem.fluid1C,
-    liabilities.amount0,
-    liabilities.amount1,
-    token0Decimals,
-    token1Decimals,
-    sqrtPriceX96
-  );
+  const shortfall0 = Math.max(0, liabilities.amount0 - (mem.fixed0 + mem.fluid0C));
+  const shortfall1 = Math.max(0, liabilities.amount1 - (mem.fixed1 + mem.fluid1C));
 
   const coeff = 1 + 1 / ALOE_II_MAX_LEVERAGE;
-  const liabilities0 = liabilities.amount0 * coeff;
-  const liabilities1 = liabilities.amount1 * coeff + liquidationIncentive;
+  const liabilities0 = liabilities.amount0 * coeff + shortfall0 / ALOE_II_LIQUIDATION_INCENTIVE;
+  const liabilities1 = liabilities.amount1 * coeff + shortfall1 / ALOE_II_LIQUIDATION_INCENTIVE;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
@@ -92,8 +60,9 @@ function _computeSolvencyBasics(
     priceA,
     priceB,
     mem,
-    liquidationIncentive,
     coeff,
+    shortfall0,
+    shortfall1,
     surplusA: assetsA - liabilitiesA,
     surplusB: assetsB - liabilitiesB,
   };
@@ -174,7 +143,7 @@ export function isSolvent(
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const { priceA, priceB, mem, liquidationIncentive, coeff } = _computeSolvencyBasics(
+  const { priceA, priceB, mem, coeff, shortfall0, shortfall1 } = _computeSolvencyBasics(
     assets,
     liabilities,
     uniswapPositions,
@@ -185,8 +154,8 @@ export function isSolvent(
     token1Decimals
   );
 
-  const liabilities0 = liabilities.amount0 * coeff;
-  const liabilities1 = liabilities.amount1 * coeff + liquidationIncentive;
+  const liabilities0 = liabilities.amount0 * coeff + shortfall0 / ALOE_II_LIQUIDATION_INCENTIVE;
+  const liabilities1 = liabilities.amount1 * coeff + shortfall1 / ALOE_II_LIQUIDATION_INCENTIVE;
 
   const liabilitiesA = liabilities1 + liabilities0 * priceA;
   const assetsA = mem.fluid1A + mem.fixed1 + mem.fixed0 * priceA;
@@ -404,7 +373,7 @@ export function computeLiquidationThresholds(
   precision: number = 7
 ): LiquidationThresholds {
   const MINPRICE = new Big(2 ** 40);
-  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(1.0863 * 1e9);
+  const MAXPRICE = new Big(TickMath.MAX_SQRT_RATIO.toString(10)).div(PROBE_SQRT_SCALER_MAX);
 
   let result: LiquidationThresholds = {
     lowerSqrtRatio: new Big('0'),
