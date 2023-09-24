@@ -5,7 +5,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -64,6 +64,7 @@ import { makeEtherscanRequest } from '../util/Etherscan';
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
 const FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS = 500;
+const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
 
 const Container = styled.div`
   display: flex;
@@ -194,10 +195,6 @@ export default function BorrowPage() {
   const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
   const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
   const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
-  const [selectedMarginAccount, setSelectedMarginAccount] = useChainDependentState<MarginAccount | undefined>(
-    undefined,
-    activeChain.id
-  );
   const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useSafeState<
     Map<string, readonly UniswapPosition[]>
   >(new Map());
@@ -216,7 +213,15 @@ export default function BorrowPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const navigate = useNavigate();
+
+  const selectedMarginAccount = useMemo(() => {
+    const marginAccountSearchParam = searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY);
+    if (!marginAccountSearchParam) return marginAccounts?.[0];
+    return marginAccounts?.find((account) => account.address === marginAccountSearchParam) ?? marginAccounts?.[0];
+  }, [marginAccounts, searchParams]);
 
   const borrowerLensContract = useContract({
     abi: MarginAccountLensABI,
@@ -283,12 +288,13 @@ export default function BorrowPage() {
     })();
   }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
 
-  // If no margin account is selected, select the first one
+  // MARK: Reset search param if margin account doesn't exist
   useEffect(() => {
-    if (selectedMarginAccount == null && marginAccounts?.length) {
-      setSelectedMarginAccount(marginAccounts[0]);
+    if (marginAccounts?.length && selectedMarginAccount?.address !== searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY)) {
+      searchParams.delete(SELECTED_MARGIN_ACCOUNT_KEY);
+      setSearchParams(searchParams);
     }
-  }, [marginAccounts, selectedMarginAccount, setSelectedMarginAccount]);
+  }, [marginAccounts?.length, searchParams, selectedMarginAccount, setSearchParams]);
 
   // MARK: Fetch market info
   useEffect(() => {
@@ -517,7 +523,8 @@ export default function BorrowPage() {
                 onClick={() => {
                   // When a new account is selected, we need to update the
                   // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
-                  setSelectedMarginAccount(account);
+                  // setSelectedMarginAccount(account);
+                  setSearchParams({ [SELECTED_MARGIN_ACCOUNT_KEY]: account.address });
                   setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
                   setUniswapPositions(cachedUniswapPositionsMap.get(account.address) ?? []);
                 }}
