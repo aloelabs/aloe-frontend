@@ -25,20 +25,50 @@ const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
+const ExplainerWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  position: relative;
+
+  padding: 16px;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+
+  background-color: rgba(10, 20, 27, 1);
+  border-radius: 8px;
+
+  &:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 8px;
+    /* 1.25px instead of 1px since it avoids tbe buggy appearance */
+    padding: 1.25px;
+    background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+`;
+
 export const BackButtonWrapper = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 
+  color: ${SECONDARY_COLOR};
   svg {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     path {
       stroke: ${SECONDARY_COLOR};
     }
   }
 
   &:hover {
+    color: white;
     svg {
       path {
         stroke: rgb(255, 255, 255);
@@ -235,11 +265,17 @@ export default function BoostPage() {
 
   return (
     <AppPage>
-      <Text size='XL'>Boost</Text>
+      <ExplainerWrapper>
+        <Text size='M' weight='regular' color={SECONDARY_COLOR}>
+          Aloe Boost puts your Uniswap positions on steroids－earn up to 5x more swap fees and spend less on gas. Click
+          a lightning bolt to get started.
+        </Text>
+      </ExplainerWrapper>
+      <Text size='XL'>Positions</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
         {isLoading &&
           allCardInfos.length === 0 &&
-          [...Array(4)].map((_, index) => <BoostCardPlaceholder key={index} />)}
+          [...Array(1)].map((_, index) => <BoostCardPlaceholder key={index} />)}
         {allCardInfos.map((info, index) => {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;

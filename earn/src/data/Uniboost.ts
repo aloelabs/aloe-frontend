@@ -271,7 +271,7 @@ export async function fetchBoostBorrower(
       reference: 'oracle',
       contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
       abi: VolatilityOracleAbi,
-      calls: [{ reference: 'consult', methodName: 'consult', methodParameters: [uniswapPool] }],
+      calls: [{ reference: 'consult', methodName: 'consult', methodParameters: [uniswapPool, 1 << 32] }],
     },
     {
       reference: 'uniswap',
@@ -299,11 +299,11 @@ export async function fetchBoostBorrower(
   const extraResults = (await multicall.call(extraContext)).results;
 
   const consultResult = extraResults['oracle'].callsReturnContext[0].returnValues;
-  const sqrtPriceX96 = new Big(ethers.BigNumber.from(consultResult[0].hex).toString());
-  const iv = GN.hexToGn(consultResult[2].hex, 18).toNumber();
+  const sqrtPriceX96 = new Big(ethers.BigNumber.from(consultResult[1].hex).toString());
+  const iv = GN.hexToGn(consultResult[2].hex, 12).toNumber();
   const feeTier = NumericFeeTierToEnum(extraResults['uniswap'].callsReturnContext[0].returnValues[0]);
   const liquidity = ethers.BigNumber.from(extraResults['uniswap'].callsReturnContext[1].returnValues[0].hex);
-  const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1];
+  const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1] / 10;
 
   const borrower: MarginAccount = {
     address: borrowerAddress,

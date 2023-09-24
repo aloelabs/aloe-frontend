@@ -207,9 +207,18 @@ const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
   MimLogo
 );
 
-const USDC_ARBITRUM = new Token(
+const BRIDGED_USDC_ARBITRUM = new Token(
   arbitrum.id,
   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  6,
+  'USDC.e',
+  'Bridged USDC',
+  UsdcLogo
+);
+
+const USDC_ARBITRUM = new Token(
+  arbitrum.id,
+  '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
   6,
   'USDC',
   'USD Coin',
@@ -302,6 +311,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
     [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
+    [BRIDGED_USDC_ARBITRUM.address]: BRIDGED_USDC_ARBITRUM,
     [USDT_ARBITRUM.address]: USDT_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,

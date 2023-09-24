@@ -174,9 +174,8 @@ export default function ImportBoostPage() {
     enabled: !!cardInfo,
   });
 
-  let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 18).toNumber();
-
-  const nSigma = parametersData?.['nSigma'] ?? 0;
+  let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 12).toNumber();
+  const nSigma = (parametersData?.['nSigma'] ?? 0) / 10;
 
   const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!cardInfo) return undefined;
@@ -219,10 +218,12 @@ export default function ImportBoostPage() {
   return (
     <AppPage>
       <div className='flex items-center gap-2 mb-6'>
-        <BackButtonWrapper>
-          <ArrowLeft onClick={() => navigate('/boost')} />
+        <BackButtonWrapper onClick={() => navigate('/boost')}>
+          <ArrowLeft />
+          <Text size='L' weight='regular' color='inherit'>
+            Positions
+          </Text>
         </BackButtonWrapper>
-        <Text size='XL'>Import Uniswap Position</Text>
       </div>
       {!isLoading && (
         <Container>
@@ -232,6 +233,7 @@ export default function ImportBoostPage() {
           <ImportBoostWidget
             cardInfo={cardInfo}
             boostFactor={boostFactor}
+            iv={iv}
             setBoostFactor={setBoostFactor}
             setPendingTxn={setPendingTxn}
           />
