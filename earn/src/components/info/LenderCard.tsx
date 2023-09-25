@@ -56,7 +56,7 @@ export default function LenderCard(props: LenderCardProps) {
   const baseEthEtherscanLink = getEtherscanUrlForChain(activeChain);
   const lenderEtherscanLink = `${baseEthEtherscanLink}/address/${address}`;
   const rateModelEtherscanLink = `${baseEthEtherscanLink}/address/${rateModel}`;
-  const rateModelName = ALOE_II_RATE_MODEL_NAMES[rateModel.toLowerCase()];
+  const rateModelName = ALOE_II_RATE_MODEL_NAMES[rateModel.toLowerCase()] ?? 'Unknown';
 
   return (
     <Wrapper>
