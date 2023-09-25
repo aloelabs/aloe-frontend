@@ -53,7 +53,9 @@ export default function LenderCard(props: LenderCardProps) {
   const { address, symbol, reserveFactor, rateModel } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${address}`;
+  const baseEthEtherscanLink = getEtherscanUrlForChain(activeChain);
+  const lenderEtherscanLink = `${baseEthEtherscanLink}/address/${address}`;
+  const rateModelEtherscanLink = `${baseEthEtherscanLink}/address/${rateModel}`;
   const rateModelName = ALOE_II_RATE_MODEL_NAMES[rateModel.toLowerCase()];
 
   return (
@@ -62,7 +64,7 @@ export default function LenderCard(props: LenderCardProps) {
         <Text size='M' weight='bold'>
           {symbol}
         </Text>
-        <OpenIconLink href={etherscanLink} target='_blank' rel='noreferrer'>
+        <OpenIconLink href={lenderEtherscanLink} target='_blank' rel='noreferrer'>
           <OpenIcon width={20} height={20} />
         </OpenIconLink>
       </div>
@@ -71,7 +73,12 @@ export default function LenderCard(props: LenderCardProps) {
           <Text size='M' color={SECONDARY_COLOR}>
             Rate Model
           </Text>
-          <Text size='M'>{rateModelName}</Text>
+          <div className='flex items-center gap-2'>
+            <Text size='M'>{rateModelName}</Text>
+            <OpenIconLink href={rateModelEtherscanLink} target='_blank' rel='noreferrer'>
+              <OpenIcon width={16} height={16} />
+            </OpenIconLink>
+          </div>
         </div>
         <div className='text-center'>
           <Text size='M' color={SECONDARY_COLOR}>
