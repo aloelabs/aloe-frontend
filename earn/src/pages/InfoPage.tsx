@@ -1,9 +1,10 @@
-import { Fragment, useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { lenderABI } from 'shared/lib/abis/Lender';
+import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import AppPage from 'shared/lib/components/common/AppPage';
 import {
@@ -12,13 +13,13 @@ import {
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
-import styled from 'styled-components';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import MarketCard from '../components/info/MarketCard';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../data/constants/Values';
@@ -37,6 +38,7 @@ type AloeMarketInfo = {
   ante: GN;
   manipulationMetric: number;
   manipulationThreshold: number;
+  feeTier: FeeTier;
 };
 
 type LenderInfo = {
@@ -46,33 +48,6 @@ type LenderInfo = {
   decimals: number;
   totalSupply: GN;
 };
-
-const InfoTable = styled.table`
-  border-collapse: collapse;
-  border: 1px solid #e5e7eb;
-
-  th,
-  td {
-    padding: 0.5rem;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  th,
-  tr:not(:last-child) {
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  td:first-child:not([rowspan]),
-  td:nth-last-child(5):not([rowspan]) {
-    border-left: 1px solid #e5e7eb;
-    text-align: start;
-  }
-
-  a {
-    text-decoration: underline;
-  }
-`;
 
 export default function InfoPage() {
   const { activeChain } = useContext(ChainContext);
@@ -186,6 +161,18 @@ export default function InfoPage() {
 
       poolAddresses.forEach((addr) => {
         poolCallContexts.push({
+          reference: `${addr}-uniswap`,
+          contractAddress: addr,
+          abi: UniswapV3PoolABI as any,
+          calls: [
+            {
+              reference: 'fee',
+              methodName: 'fee',
+              methodParameters: [],
+            },
+          ],
+        });
+        poolCallContexts.push({
           reference: `${addr}-oracle`,
           contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
           abi: volatilityOracleAbi as any,
@@ -229,15 +216,20 @@ export default function InfoPage() {
 
       const poolInfoMap = new Map<Address, AloeMarketInfo>();
       poolAddresses.forEach((addr, i) => {
+        console.log();
         const lender0 = lenderAddresses[i][0] as Address;
         const lender1 = lenderAddresses[i][1] as Address;
         const lender0Info = lenderResults.get(lender0)!;
         const lender1Info = lenderResults.get(lender1)!;
         const poolResult = correspondingPoolResults.get(addr);
+        const uniswapResult = poolResult?.uniswap?.callsReturnContext?.[0].returnValues;
         const oracleResult = convertBigNumbersForReturnContexts(poolResult?.oracle?.callsReturnContext ?? [])?.[0]
           .returnValues;
         const factoryResult = convertBigNumbersForReturnContexts(poolResult?.factory?.callsReturnContext ?? [])?.[0]
           .returnValues;
+
+        // Uniswap parameters
+        const feeTier = NumericFeeTierToEnum(uniswapResult?.[0] as number);
 
         // Factory parameters
         const ante = GN.fromBigNumber(factoryResult[0], 18);
@@ -266,6 +258,7 @@ export default function InfoPage() {
           ante,
           manipulationMetric,
           manipulationThreshold,
+          feeTier,
         });
       });
       setPoolInfo(poolInfoMap);
@@ -274,73 +267,24 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <InfoTable>
-        <thead>
-          <tr>
-            <th>Uniswap Pool</th>
-            <th>nSigma</th>
-            <th>IV</th>
-            <th>LTV</th>
-            <th>Ante</th>
-            <th>Lender</th>
-            <th>Decimals</th>
-            <th>Rate Model</th>
-            <th>Reserve Factor</th>
-            <th>Total Supply</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
-            return (
-              <Fragment key={addr}>
-                <tr>
-                  <td rowSpan={2} className='font-mono'>
-                    <a
-                      href={`${getEtherscanUrlForChain(activeChain)}/address/${addr}`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      {addr.slice(0, 8)}...
-                    </a>
-                  </td>
-                  <td rowSpan={2}>{info.nSigma}</td>
-                  <td rowSpan={2}>{(info.iv * 100).toFixed(2)}%</td>
-                  <td rowSpan={2}>{(info.ltv * 100).toFixed(2)}%</td>
-                  <td rowSpan={2}>{info.ante.toString(GNFormat.LOSSY_HUMAN)} ETH</td>
-                  <td>{info.lenderSymbols[0]}</td>
-                  <td>{info.lenderDecimals[0]}</td>
-                  <td className='font-mono'>
-                    <a
-                      href={`${getEtherscanUrlForChain(activeChain)}/address/${info.lenderRateModels[0]}`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      {info.lenderRateModels[0].slice(0, 8)}...
-                    </a>
-                  </td>
-                  <td>{info.lenderReserveFactors[0].toFixed(2)}%</td>
-                  <td>{info.lenderTotalSupplies[0].toString(GNFormat.LOSSY_HUMAN)}</td>
-                </tr>
-                <tr>
-                  <td>{info.lenderSymbols[1]}</td>
-                  <td>{info.lenderDecimals[1]}</td>
-                  <td className='font-mono'>
-                    <a
-                      href={`${getEtherscanUrlForChain(activeChain)}/address/${info.lenderRateModels[1]}`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      {info.lenderRateModels[1].slice(0, 8)}...
-                    </a>
-                  </td>
-                  <td>{info.lenderReserveFactors[1].toFixed(2)}%</td>
-                  <td>{info.lenderTotalSupplies[1].toString(GNFormat.LOSSY_HUMAN)}</td>
-                </tr>
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </InfoTable>
+      <div className='flex flex-col gap-4'>
+        {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
+          return (
+            <div key={addr}>
+              <MarketCard
+                ante={info.ante}
+                ltv={info.ltv}
+                manipulationMetric={info.manipulationMetric}
+                manipulationThreshold={info.manipulationThreshold}
+                nSigma={info.nSigma}
+                lenderSymbols={info.lenderSymbols}
+                poolAddress={addr}
+                feeTier={info.feeTier}
+              />
+            </div>
+          );
+        })}
+      </div>
     </AppPage>
   );
 }
