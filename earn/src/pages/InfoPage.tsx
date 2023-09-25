@@ -19,6 +19,7 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import LenderCard from '../components/info/LenderCard';
 import MarketCard from '../components/info/MarketCard';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
@@ -267,10 +268,10 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-4'>
+      <div className='flex flex-col gap-8'>
         {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
           return (
-            <div key={addr}>
+            <div key={addr} className='flex'>
               <MarketCard
                 ante={info.ante}
                 ltv={info.ltv}
@@ -280,6 +281,22 @@ export default function InfoPage() {
                 lenderSymbols={info.lenderSymbols}
                 poolAddress={addr}
                 feeTier={info.feeTier}
+              />
+              <LenderCard
+                address={info.lenders[0]}
+                symbol={info.lenderSymbols[0]}
+                reserveFactor={info.lenderReserveFactors[0]}
+                totalSupply={info.lenderTotalSupplies[0]}
+                rateModel={info.lenderRateModels[0]}
+                decimals={info.lenderDecimals[0]}
+              />
+              <LenderCard
+                address={info.lenders[1]}
+                symbol={info.lenderSymbols[1]}
+                reserveFactor={info.lenderReserveFactors[1]}
+                totalSupply={info.lenderTotalSupplies[1]}
+                rateModel={info.lenderRateModels[1]}
+                decimals={info.lenderDecimals[1]}
               />
             </div>
           );
