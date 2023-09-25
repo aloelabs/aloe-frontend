@@ -44,7 +44,11 @@ const Container = styled.div`
   background-color: ${GREY_800};
   border: 2px solid ${GREY_700};
   border-radius: 8px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
   padding: 20px;
+  flex-grow: 1;
+  white-space: nowrap;
 `;
 
 const OpenIconLink = styled.a`

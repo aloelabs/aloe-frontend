@@ -31,3 +31,7 @@ export function primeUrl() {
   // NOTE: trailing `/` is important for .eth domain resolution to work
   return isDappnet() ? 'https://prime.aloe.eth/' : 'https://prime.aloe.capital/';
 }
+
+export const ALOE_II_RATE_MODEL_NAMES: { [key: string]: string } = {
+  '0x0000002cc49fcbad890ba9e600d5ba4570eb92ae': 'Linear Kink V0',
+};
