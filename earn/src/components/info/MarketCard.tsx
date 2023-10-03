@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 
+import { formatDistanceToNow } from 'date-fns';
 import OpenIcon from 'shared/lib/assets/svg/Open';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -68,10 +69,21 @@ export type MarketCardProps = {
   lenderSymbols: [string, string];
   poolAddress: string;
   feeTier: FeeTier;
+  lastUpdatedAt?: number;
 };
 
 export default function MarketCard(props: MarketCardProps) {
-  const { nSigma, ltv, ante, manipulationMetric, manipulationThreshold, lenderSymbols, poolAddress, feeTier } = props;
+  const {
+    nSigma,
+    ltv,
+    ante,
+    manipulationMetric,
+    manipulationThreshold,
+    lenderSymbols,
+    poolAddress,
+    feeTier,
+    lastUpdatedAt,
+  } = props;
   const { activeChain } = useContext(ChainContext);
 
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
@@ -81,6 +93,10 @@ export default function MarketCard(props: MarketCardProps) {
   const manipulationInequality = manipulationMetric < manipulationThreshold ? '<' : '>';
 
   const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
+
+  const lastUpdated = lastUpdatedAt
+    ? formatDistanceToNow(new Date(lastUpdatedAt * 1000), { includeSeconds: false, addSuffix: true })
+    : 'Never';
 
   return (
     <Wrapper>
@@ -141,7 +157,7 @@ export default function MarketCard(props: MarketCardProps) {
               Last Updated
             </Text>
             <div>
-              <Text size='M'>6 hours ago</Text>
+              <Text size='M'>{lastUpdated}</Text>
             </div>
           </div>
           <div className='text-center'>

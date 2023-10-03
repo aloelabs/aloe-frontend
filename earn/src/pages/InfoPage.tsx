@@ -22,7 +22,7 @@ import { ChainContext } from '../App';
 import LenderCard from '../components/info/LenderCard';
 import MarketCard from '../components/info/MarketCard';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
-import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
+import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../data/constants/Values';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
@@ -40,6 +40,7 @@ type AloeMarketInfo = {
   manipulationMetric: number;
   manipulationThreshold: number;
   feeTier: FeeTier;
+  lastUpdatedAt?: number;
 };
 
 type LenderInfo = {
@@ -215,9 +216,29 @@ export default function InfoPage() {
         }
       });
 
+      // Get the time at which each pool was last updated via the oracle (using the update event and getLogs)
+      const latestTimestamps = await Promise.all(
+        poolAddresses.map(async (addr) => {
+          let updateLogs: ethers.providers.Log[] = [];
+          try {
+            updateLogs = await provider.getLogs({
+              address: ALOE_II_ORACLE_ADDRESS[chainId],
+              topics: [TOPIC0_UPDATE_ORACLE, null, `0x000000000000000000000000${addr.slice(2)}`],
+              fromBlock: 0,
+              toBlock: 'latest',
+            });
+            if (updateLogs.length > 0) {
+              const latestUpdate = updateLogs[updateLogs.length - 1].blockNumber;
+              return (await provider.getBlock(latestUpdate)).timestamp;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        })
+      );
+
       const poolInfoMap = new Map<Address, AloeMarketInfo>();
       poolAddresses.forEach((addr, i) => {
-        console.log();
         const lender0 = lenderAddresses[i][0] as Address;
         const lender1 = lenderAddresses[i][1] as Address;
         const lender0Info = lenderResults.get(lender0)!;
@@ -246,6 +267,8 @@ export default function InfoPage() {
         ltv = Math.max(0.1, Math.min(ltv, 0.9));
         const manipulationThreshold = -Math.log(ltv) / Math.log(1.0001) / manipulationThresholdDivisor;
 
+        const lastUpdatedAt = latestTimestamps[i];
+
         poolInfoMap.set(addr, {
           lenders: [lender0, lender1],
           lenderSymbols: [lender0Info.symbol, lender1Info.symbol],
@@ -260,11 +283,14 @@ export default function InfoPage() {
           manipulationMetric,
           manipulationThreshold,
           feeTier,
+          lastUpdatedAt,
         });
       });
       setPoolInfo(poolInfoMap);
     })();
   }, [provider, setPoolInfo]);
+
+  console.log(poolInfo);
 
   return (
     <AppPage>
@@ -281,6 +307,7 @@ export default function InfoPage() {
                 lenderSymbols={info.lenderSymbols}
                 poolAddress={addr}
                 feeTier={info.feeTier}
+                lastUpdatedAt={info.lastUpdatedAt}
               />
               <LenderCard
                 address={info.lenders[0]}
