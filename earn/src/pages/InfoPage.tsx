@@ -290,8 +290,6 @@ export default function InfoPage() {
     })();
   }, [provider, setPoolInfo]);
 
-  console.log(poolInfo);
-
   return (
     <AppPage>
       <div className='flex flex-col gap-8'>
