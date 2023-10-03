@@ -228,14 +228,15 @@ export default function InfoPage() {
       } catch (e) {
         console.error(e);
       }
-      const filteredLogs = updateLogs.filter((log) => log.removed === false);
+      const reversedLogs = updateLogs.filter((log) => log.removed === false).reverse();
       const latestTimestamps = await Promise.all(
         poolAddresses.map(async (addr) => {
-          const associatedLogs = filteredLogs.filter((log) => log.topics[1] === `0x000000000000000000000000${addr}`);
+          const latestUpdate = reversedLogs.find(
+            (log) => log.topics[1] === `0x000000000000000000000000${addr.slice(2)}`
+          );
           try {
-            if (associatedLogs.length > 0) {
-              const latestUpdate = associatedLogs[associatedLogs.length - 1].blockNumber;
-              return (await provider.getBlock(latestUpdate)).timestamp;
+            if (latestUpdate) {
+              return (await provider.getBlock(latestUpdate.blockNumber)).timestamp;
             }
           } catch (e) {
             console.error(e);
