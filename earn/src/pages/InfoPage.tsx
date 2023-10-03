@@ -217,18 +217,24 @@ export default function InfoPage() {
       });
 
       // Get the time at which each pool was last updated via the oracle (using the update event and getLogs)
+      let updateLogs: ethers.providers.Log[] = [];
+      try {
+        updateLogs = await provider.getLogs({
+          address: ALOE_II_ORACLE_ADDRESS[chainId],
+          topics: [TOPIC0_UPDATE_ORACLE],
+          fromBlock: 0,
+          toBlock: 'latest',
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      const filteredLogs = updateLogs.filter((log) => log.removed === false);
       const latestTimestamps = await Promise.all(
         poolAddresses.map(async (addr) => {
-          let updateLogs: ethers.providers.Log[] = [];
+          const associatedLogs = filteredLogs.filter((log) => log.topics[1] === `0x000000000000000000000000${addr}`);
           try {
-            updateLogs = await provider.getLogs({
-              address: ALOE_II_ORACLE_ADDRESS[chainId],
-              topics: [TOPIC0_UPDATE_ORACLE, null, `0x000000000000000000000000${addr.slice(2)}`],
-              fromBlock: 0,
-              toBlock: 'latest',
-            });
-            if (updateLogs.length > 0) {
-              const latestUpdate = updateLogs[updateLogs.length - 1].blockNumber;
+            if (associatedLogs.length > 0) {
+              const latestUpdate = associatedLogs[associatedLogs.length - 1].blockNumber;
               return (await provider.getBlock(latestUpdate)).timestamp;
             }
           } catch (e) {
