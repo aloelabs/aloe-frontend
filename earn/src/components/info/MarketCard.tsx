@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 
 import { formatDistanceToNow } from 'date-fns';
-import OpenIcon from 'shared/lib/assets/svg/Open';
+import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
@@ -9,6 +9,7 @@ import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
+import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
 
@@ -40,14 +41,14 @@ const Wrapper = styled.div`
 const Container = styled.div`
   display: flex;
   flex-direction: row;
-  gap: 24px;
+  gap: 32px;
   width: fit-content;
   background-color: ${GREY_800};
   border: 2px solid ${GREY_700};
   border-radius: 8px;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  padding: 20px;
+  padding: 20px 32px;
   flex-grow: 1;
   white-space: nowrap;
 `;
@@ -58,6 +59,14 @@ const OpenIconLink = styled.a`
       stroke: ${SECONDARY_COLOR};
     }
   }
+`;
+
+const Column = styled.div`
+  ${tw`flex flex-col gap-4`}
+`;
+
+const Cell = styled.div`
+  ${tw`flex flex-col gap-1 text-center`}
 `;
 
 export type MarketCardProps = {
@@ -100,77 +109,72 @@ export default function MarketCard(props: MarketCardProps) {
 
   return (
     <Wrapper>
-      <div className='flex gap-2 items-center'>
-        <Text size='M' weight='bold'>
-          Uniswap Pool - {token0Symbol}/{token1Symbol} {PrintFeeTier(feeTier)}
+      <div className='flex gap-2 items-baseline'>
+        <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+          {token0Symbol}/{token1Symbol} {PrintFeeTier(feeTier)}
         </Text>
         <OpenIconLink href={etherscanLink} target='_blank' rel='noreferrer'>
-          <OpenIcon width={20} height={20} />
+          <OpenIcon width={12} height={12} />
         </OpenIconLink>
       </div>
       <Container>
-        <div className='flex flex-col gap-2 flex-grow'>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
+        <Column>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
               Ante
             </Text>
-            <div className='flex justify-center items-end gap-1'>
-              <Display size='S'>{ante.toString(GNFormat.LOSSY_HUMAN)}</Display>
-              <Text size='XS'>ETH</Text>
+            <div className='flex justify-center items-baseline gap-1'>
+              <Display size='M'>{ante.toString(GNFormat.LOSSY_HUMAN)}</Display>
+              <Text size='S'>ETH</Text>
             </div>
-          </div>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
-              N Sigma
+          </Cell>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
+              # Sigma
             </Text>
             <div>
-              <Display size='S'>{nSigma}</Display>
+              <Display size='M'>{nSigma}</Display>
             </div>
-          </div>
-        </div>
-        <div className='flex flex-col gap-2'>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
+          </Cell>
+        </Column>
+        <Column>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
               LTV
             </Text>
-            <div className='flex items-center justify-center'>
-              <Display size='S'>{(ltv * 100).toFixed(2)}</Display>
-              <Text size='XS'>%</Text>
-            </div>
-          </div>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
+            <Display size='M'>{(ltv * 100).toFixed(2)}%</Display>
+          </Cell>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
               Oracle Manipulation
             </Text>
             <div className='flex justify-center items-center gap-1'>
-              <Display size='S' color={manipulationColor}>
+              <Display size='M' color={manipulationColor}>
                 {manipulationMetric.toFixed(0)}
               </Display>
-              <Text size='S'>{manipulationInequality}</Text>
-              <Display size='S'>{manipulationThreshold.toFixed(0)}</Display>
+              <Text size='M'>{manipulationInequality}</Text>
+              <Display size='M'>{manipulationThreshold.toFixed(0)}</Display>
             </div>
-          </div>
-        </div>
-        <div className='flex flex-col gap-2'>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
+          </Cell>
+        </Column>
+        <Column>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
               Last Updated
             </Text>
-            <div>
-              <Text size='M'>{lastUpdated}</Text>
-            </div>
-          </div>
-          <div className='text-center'>
-            <Text size='M' color={SECONDARY_COLOR}>
-              Borrowing
+            <Display size='M'>{lastUpdated}</Display>
+          </Cell>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
+              Borrowing Status
             </Text>
-            <div className='flex justify-center'>
+            <div className='flex justify-center mt-[-2px] mb-[-4px]'>
               <OutlinedWhiteButton size='S' disabled={true}>
                 Enabled
               </OutlinedWhiteButton>
             </div>
-          </div>
-        </div>
+          </Cell>
+        </Column>
       </Container>
     </Wrapper>
   );
