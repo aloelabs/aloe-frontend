@@ -6,7 +6,6 @@ import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 import { Address } from 'wagmi';
 
 import { ChainContext } from '../../App';
@@ -43,11 +42,18 @@ const OpenIconLink = styled.a`
 `;
 
 const Column = styled.div`
-  ${tw`flex flex-col gap-4 justify-evenly h-full`}
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-evenly;
+  height: 100%;
 `;
 
 const Cell = styled.div`
-  ${tw`flex flex-col gap-1 text-center`}
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
 `;
 
 export type LenderCardProps = {

@@ -9,7 +9,6 @@ import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import tw from 'twin.macro';
 
 import { ChainContext } from '../../App';
 
@@ -62,11 +61,16 @@ const OpenIconLink = styled.a`
 `;
 
 const Column = styled.div`
-  ${tw`flex flex-col gap-4`}
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 `;
 
 const Cell = styled.div`
-  ${tw`flex flex-col gap-1 text-center`}
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
 `;
 
 export type MarketCardProps = {
