@@ -49,7 +49,7 @@ import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/Pen
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
-import { primeUrl } from '../data/constants/Values';
+import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, primeUrl } from '../data/constants/Values';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import {
@@ -351,11 +351,15 @@ export default function BorrowPage() {
         // TODO: abstract this out
         const { data, timeStamp } = result;
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
-        const iv = ethers.BigNumber.from(decoded[1]).div(1e12).toNumber() / 1e6;
-        const collateralFactor = Math.max(0.0948, Math.min((1 - 5 * iv) / 1.055, 0.9005));
+        const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
+
+        const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+        let ltv = 1 / (Math.exp(selectedMarginAccount.nSigma * iv) * fact);
+        ltv = Math.max(0.1, Math.min(ltv, 0.9));
+
         const resultData: BorrowGraphData = {
           IV: iv * Math.sqrt(365) * 100,
-          'Collateral Factor': collateralFactor * 100,
+          'Collateral Factor': ltv * 100,
           x: new Date(parseInt(timeStamp.toString(), 16) * 1000),
         };
         return resultData;
