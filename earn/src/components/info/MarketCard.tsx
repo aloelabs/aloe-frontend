@@ -69,7 +69,7 @@ export type MarketCardProps = {
   lenderSymbols: [string, string];
   poolAddress: string;
   feeTier: FeeTier;
-  lastUpdatedAt?: number;
+  lastUpdatedTimestamp?: number;
 };
 
 export default function MarketCard(props: MarketCardProps) {
@@ -82,7 +82,7 @@ export default function MarketCard(props: MarketCardProps) {
     lenderSymbols,
     poolAddress,
     feeTier,
-    lastUpdatedAt,
+    lastUpdatedTimestamp,
   } = props;
   const { activeChain } = useContext(ChainContext);
 
@@ -94,8 +94,8 @@ export default function MarketCard(props: MarketCardProps) {
 
   const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
 
-  const lastUpdated = lastUpdatedAt
-    ? formatDistanceToNow(new Date(lastUpdatedAt * 1000), { includeSeconds: false, addSuffix: true })
+  const lastUpdated = lastUpdatedTimestamp
+    ? formatDistanceToNow(new Date(lastUpdatedTimestamp * 1000), { includeSeconds: false, addSuffix: true })
     : 'Never';
 
   return (
