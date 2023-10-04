@@ -239,8 +239,8 @@ export async function getAvailableLendingPairs(
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
     // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
-    const APR0 = utilization0 * (1 - 1 / reserveFactor0) * (interestRate0 - 1.0);
-    const APR1 = utilization1 * (1 - 1 / reserveFactor1) * (interestRate1 - 1.0);
+    const APR0 = utilization0 * (1 - 1 / reserveFactor0) * interestRate0;
+    const APR1 = utilization1 * (1 - 1 / reserveFactor1) * interestRate1;
     const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
     const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 

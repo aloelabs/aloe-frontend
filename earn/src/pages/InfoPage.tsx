@@ -40,7 +40,7 @@ type AloeMarketInfo = {
   manipulationMetric: number;
   manipulationThreshold: number;
   feeTier: FeeTier;
-  lastUpdatedAt?: number;
+  lastUpdatedTimestamp?: number;
 };
 
 type LenderInfo = {
@@ -274,7 +274,7 @@ export default function InfoPage() {
         ltv = Math.max(0.1, Math.min(ltv, 0.9));
         const manipulationThreshold = -Math.log(ltv) / Math.log(1.0001) / manipulationThresholdDivisor;
 
-        const lastUpdatedAt = latestTimestamps[i];
+        const lastUpdatedTimestamp = latestTimestamps[i];
 
         poolInfoMap.set(addr, {
           lenders: [lender0, lender1],
@@ -290,7 +290,7 @@ export default function InfoPage() {
           manipulationMetric,
           manipulationThreshold,
           feeTier,
-          lastUpdatedAt,
+          lastUpdatedTimestamp,
         });
       });
       setPoolInfo(poolInfoMap);
@@ -312,7 +312,7 @@ export default function InfoPage() {
                 lenderSymbols={info.lenderSymbols}
                 poolAddress={addr}
                 feeTier={info.feeTier}
-                lastUpdatedAt={info.lastUpdatedAt}
+                lastUpdatedTimestamp={info.lastUpdatedTimestamp}
               />
               <LenderCard
                 address={info.lenders[0]}
