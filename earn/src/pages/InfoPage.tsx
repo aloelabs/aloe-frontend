@@ -22,7 +22,7 @@ import { ChainContext } from '../App';
 import LenderCard from '../components/info/LenderCard';
 import MarketCard from '../components/info/MarketCard';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
-import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
+import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../data/constants/Values';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
@@ -40,6 +40,7 @@ type AloeMarketInfo = {
   manipulationMetric: number;
   manipulationThreshold: number;
   feeTier: FeeTier;
+  lastUpdatedTimestamp?: number;
 };
 
 type LenderInfo = {
@@ -215,9 +216,36 @@ export default function InfoPage() {
         }
       });
 
+      // Get the time at which each pool was last updated via the oracle (using the update event and getLogs)
+      let updateLogs: ethers.providers.Log[] = [];
+      try {
+        updateLogs = await provider.getLogs({
+          address: ALOE_II_ORACLE_ADDRESS[chainId],
+          topics: [TOPIC0_UPDATE_ORACLE],
+          fromBlock: 0,
+          toBlock: 'latest',
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      const reversedLogs = updateLogs.filter((log) => log.removed === false).reverse();
+      const latestTimestamps = await Promise.all(
+        poolAddresses.map(async (addr) => {
+          const latestUpdate = reversedLogs.find(
+            (log) => log.topics[1] === `0x000000000000000000000000${addr.slice(2)}`
+          );
+          try {
+            if (latestUpdate) {
+              return (await provider.getBlock(latestUpdate.blockNumber)).timestamp;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        })
+      );
+
       const poolInfoMap = new Map<Address, AloeMarketInfo>();
       poolAddresses.forEach((addr, i) => {
-        console.log();
         const lender0 = lenderAddresses[i][0] as Address;
         const lender1 = lenderAddresses[i][1] as Address;
         const lender0Info = lenderResults.get(lender0)!;
@@ -246,6 +274,8 @@ export default function InfoPage() {
         ltv = Math.max(0.1, Math.min(ltv, 0.9));
         const manipulationThreshold = -Math.log(ltv) / Math.log(1.0001) / manipulationThresholdDivisor;
 
+        const lastUpdatedTimestamp = latestTimestamps[i];
+
         poolInfoMap.set(addr, {
           lenders: [lender0, lender1],
           lenderSymbols: [lender0Info.symbol, lender1Info.symbol],
@@ -260,6 +290,7 @@ export default function InfoPage() {
           manipulationMetric,
           manipulationThreshold,
           feeTier,
+          lastUpdatedTimestamp,
         });
       });
       setPoolInfo(poolInfoMap);
@@ -281,6 +312,7 @@ export default function InfoPage() {
                 lenderSymbols={info.lenderSymbols}
                 poolAddress={addr}
                 feeTier={info.feeTier}
+                lastUpdatedTimestamp={info.lastUpdatedTimestamp}
               />
               <LenderCard
                 address={info.lenders[0]}
