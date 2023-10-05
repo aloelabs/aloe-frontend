@@ -2,18 +2,28 @@ export const factoryAbi = [
   {
     inputs: [
       {
+        internalType: 'address',
+        name: 'governor',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'reserve',
+        type: 'address',
+      },
+      {
         internalType: 'contract VolatilityOracle',
         name: 'oracle',
         type: 'address',
       },
       {
-        internalType: 'contract IRateModel',
-        name: 'rateModel',
+        internalType: 'contract BorrowerDeployer',
+        name: 'borrowerDeployer',
         type: 'address',
       },
       {
-        internalType: 'contract ERC20',
-        name: 'rewardsToken',
+        internalType: 'contract IRateModel',
+        name: 'defaultRateModel',
         type: 'address',
       },
     ],
@@ -37,7 +47,7 @@ export const factoryAbi = [
       },
       {
         indexed: false,
-        internalType: 'address',
+        internalType: 'contract Borrower',
         name: 'account',
         type: 'address',
       },
@@ -96,6 +106,88 @@ export const factoryAbi = [
     type: 'event',
   },
   {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        components: [
+          {
+            internalType: 'uint208',
+            name: 'ante',
+            type: 'uint208',
+          },
+          {
+            internalType: 'uint8',
+            name: 'nSigma',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'manipulationThresholdDivisor',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'reserveFactor0',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'reserveFactor1',
+            type: 'uint8',
+          },
+          {
+            internalType: 'contract IRateModel',
+            name: 'rateModel0',
+            type: 'address',
+          },
+          {
+            internalType: 'contract IRateModel',
+            name: 'rateModel1',
+            type: 'address',
+          },
+        ],
+        indexed: false,
+        internalType: 'struct Factory.MarketConfig',
+        name: 'config',
+        type: 'tuple',
+      },
+    ],
+    name: 'SetMarketConfig',
+    type: 'event',
+  },
+  {
+    inputs: [],
+    name: 'DEFAULT_RATE_MODEL',
+    outputs: [
+      {
+        internalType: 'contract IRateModel',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'GOVERNOR',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'LENDER_IMPLEMENTATION',
     outputs: [
@@ -114,32 +206,6 @@ export const factoryAbi = [
     outputs: [
       {
         internalType: 'contract VolatilityOracle',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'RATE_MODEL',
-    outputs: [
-      {
-        internalType: 'contract IRateModel',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'REWARDS_TOKEN',
-    outputs: [
-      {
-        internalType: 'contract ERC20',
         name: '',
         type: 'address',
       },
@@ -207,12 +273,17 @@ export const factoryAbi = [
         name: 'owner',
         type: 'address',
       },
+      {
+        internalType: 'bytes12',
+        name: 'salt',
+        type: 'bytes12',
+      },
     ],
     name: 'createBorrower',
     outputs: [
       {
-        internalType: 'address payable',
-        name: 'account',
+        internalType: 'contract Borrower',
+        name: 'borrower',
         type: 'address',
       },
     ],
@@ -290,13 +361,18 @@ export const factoryAbi = [
     name: 'getParameters',
     outputs: [
       {
-        internalType: 'uint216',
+        internalType: 'uint208',
         name: 'ante',
-        type: 'uint216',
+        type: 'uint208',
       },
       {
         internalType: 'uint8',
         name: 'nSigma',
+        type: 'uint8',
+      },
+      {
+        internalType: 'uint8',
+        name: 'manipulationThresholdDivisor',
         type: 'uint8',
       },
       {
@@ -306,6 +382,92 @@ export const factoryAbi = [
       },
     ],
     stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        components: [
+          {
+            internalType: 'uint208',
+            name: 'ante',
+            type: 'uint208',
+          },
+          {
+            internalType: 'uint8',
+            name: 'nSigma',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'manipulationThresholdDivisor',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'reserveFactor0',
+            type: 'uint8',
+          },
+          {
+            internalType: 'uint8',
+            name: 'reserveFactor1',
+            type: 'uint8',
+          },
+          {
+            internalType: 'contract IRateModel',
+            name: 'rateModel0',
+            type: 'address',
+          },
+          {
+            internalType: 'contract IRateModel',
+            name: 'rateModel1',
+            type: 'address',
+          },
+        ],
+        internalType: 'struct Factory.MarketConfig',
+        name: 'config',
+        type: 'tuple',
+      },
+    ],
+    name: 'governMarketConfig',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract Lender',
+        name: 'lender',
+        type: 'address',
+      },
+      {
+        internalType: 'uint56',
+        name: 'rate',
+        type: 'uint56',
+      },
+    ],
+    name: 'governRewardsRate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract ERC20',
+        name: 'rewardsToken_',
+        type: 'address',
+      },
+    ],
+    name: 'governRewardsToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -349,33 +511,51 @@ export const factoryAbi = [
   {
     inputs: [
       {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        internalType: 'uint40',
+        name: 'oracleSeed',
+        type: 'uint40',
+      },
+    ],
+    name: 'pause',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
         internalType: 'address',
         name: '',
         type: 'address',
       },
     ],
-    name: 'isLender',
+    name: 'peer',
     outputs: [
       {
-        internalType: 'bool',
+        internalType: 'address',
         name: '',
-        type: 'bool',
+        type: 'address',
       },
     ],
     stateMutability: 'view',
     type: 'function',
   },
   {
-    inputs: [
+    inputs: [],
+    name: 'rewardsToken',
+    outputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
-        name: 'pool',
+        internalType: 'contract ERC20',
+        name: '',
         type: 'address',
       },
     ],
-    name: 'pause',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
     type: 'function',
   },
 ] as const;

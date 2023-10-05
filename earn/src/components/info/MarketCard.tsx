@@ -7,6 +7,7 @@ import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -129,7 +130,8 @@ export default function MarketCard(props: MarketCardProps) {
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     abi: factoryAbi,
     functionName: 'pause',
-    args: [poolAddress as Address],
+    // We don't care as much about gas here as we prioritize it working
+    args: [poolAddress as Address, Q32],
     enabled: canBorrowingBeDisabled,
     chainId: activeChain.id,
   });
