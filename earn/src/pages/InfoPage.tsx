@@ -299,10 +299,10 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-8'>
+      <div className='flex flex-col gap-8 w-full'>
         {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
           return (
-            <div key={addr} className='flex'>
+            <div key={addr} className='flex justify-center'>
               <MarketCard
                 ante={info.ante}
                 ltv={info.ltv}

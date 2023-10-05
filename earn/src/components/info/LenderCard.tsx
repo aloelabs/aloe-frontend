@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import OpenIcon from 'shared/lib/assets/svg/Open';
+import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -17,17 +17,18 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-left: -2px;
 `;
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 32px;
   width: fit-content;
   background-color: ${GREY_800};
   border: 2px solid ${GREY_700};
   border-radius: 8px;
-  padding: 20px;
+  padding: 20px 32px;
   flex-grow: 1;
   white-space: nowrap;
 `;
@@ -38,6 +39,21 @@ const OpenIconLink = styled.a`
       stroke: ${SECONDARY_COLOR};
     }
   }
+`;
+
+const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-evenly;
+  height: 100%;
+`;
+
+const Cell = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
 `;
 
 export type LenderCardProps = {
@@ -60,35 +76,34 @@ export default function LenderCard(props: LenderCardProps) {
 
   return (
     <Wrapper>
-      <div className='flex gap-2 items-center'>
-        <Text size='M' weight='bold'>
+      <div className='flex gap-2 items-baseline'>
+        <Text size='M' weight='medium' color={SECONDARY_COLOR}>
           {symbol}
         </Text>
         <OpenIconLink href={lenderEtherscanLink} target='_blank' rel='noreferrer'>
-          <OpenIcon width={20} height={20} />
+          <OpenIcon width={12} height={12} />
         </OpenIconLink>
       </div>
       <Container>
-        <div className='text-center'>
-          <Text size='M' color={SECONDARY_COLOR}>
-            Rate Model
-          </Text>
-          <div className='flex items-center gap-2'>
-            <Text size='M'>{rateModelName}</Text>
-            <OpenIconLink href={rateModelEtherscanLink} target='_blank' rel='noreferrer'>
-              <OpenIcon width={16} height={16} />
-            </OpenIconLink>
-          </div>
-        </div>
-        <div className='text-center'>
-          <Text size='M' color={SECONDARY_COLOR}>
-            Reserve Factor
-          </Text>
-          <div className='flex items-center justify-center'>
-            <Display size='S'>{reserveFactor.toFixed(2)}</Display>
-            <Text size='XS'>%</Text>
-          </div>
-        </div>
+        <Column>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
+              Rate Model
+            </Text>
+            <div className='flex gap-2 items-baseline'>
+              <Display size='S'>{rateModelName}</Display>
+              <OpenIconLink href={rateModelEtherscanLink} target='_blank' rel='noreferrer'>
+                <OpenIcon width={12} height={12} />
+              </OpenIconLink>
+            </div>
+          </Cell>
+          <Cell>
+            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
+              Reserve Factor
+            </Text>
+            <Display size='S'>{reserveFactor.toFixed(2)}%</Display>
+          </Cell>
+        </Column>
       </Container>
     </Wrapper>
   );
