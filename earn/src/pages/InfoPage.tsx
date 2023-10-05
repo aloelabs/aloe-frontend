@@ -37,6 +37,7 @@ type AloeMarketInfo = {
   iv: number;
   ltv: number;
   ante: GN;
+  pausedUntilTime: number;
   manipulationMetric: number;
   manipulationThreshold: number;
   feeTier: FeeTier;
@@ -264,6 +265,7 @@ export default function InfoPage() {
         const ante = GN.fromBigNumber(factoryResult[0], 18);
         const nSigma = (factoryResult[1] as number) / 10;
         const manipulationThresholdDivisor = factoryResult[2] as number;
+        const pausedUntilTime = factoryResult[3] as number;
 
         // Oracle results
         const manipulationMetric = ethers.BigNumber.from(oracleResult[0]).toNumber();
@@ -287,6 +289,7 @@ export default function InfoPage() {
           iv: iv * Math.sqrt(365),
           ltv,
           ante,
+          pausedUntilTime,
           manipulationMetric,
           manipulationThreshold,
           feeTier,
@@ -304,11 +307,12 @@ export default function InfoPage() {
           return (
             <div key={addr} className='flex justify-center'>
               <MarketCard
-                ante={info.ante}
+                nSigma={info.nSigma}
                 ltv={info.ltv}
+                ante={info.ante}
+                pausedUntilTime={info.pausedUntilTime}
                 manipulationMetric={info.manipulationMetric}
                 manipulationThreshold={info.manipulationThreshold}
-                nSigma={info.nSigma}
                 lenderSymbols={info.lenderSymbols}
                 poolAddress={addr}
                 feeTier={info.feeTier}
