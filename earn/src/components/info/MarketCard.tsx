@@ -1,14 +1,17 @@
 import { useContext } from 'react';
 
 import { formatDistanceToNow } from 'date-fns';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
+import { Address, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 
@@ -73,10 +76,18 @@ const Cell = styled.div`
   align-items: center;
 `;
 
+const PausedStatus = styled.div<{ $color: string }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: ${(props) => props.$color};
+`;
+
 export type MarketCardProps = {
   nSigma: number;
   ltv: number;
   ante: GN;
+  pausedUntilTime: number;
   manipulationMetric: number;
   manipulationThreshold: number;
   lenderSymbols: [string, string];
@@ -90,6 +101,7 @@ export default function MarketCard(props: MarketCardProps) {
     nSigma,
     ltv,
     ante,
+    pausedUntilTime,
     manipulationMetric,
     manipulationThreshold,
     lenderSymbols,
@@ -110,6 +122,29 @@ export default function MarketCard(props: MarketCardProps) {
   const lastUpdated = lastUpdatedTimestamp
     ? formatDistanceToNow(new Date(lastUpdatedTimestamp * 1000), { includeSeconds: false, addSuffix: true })
     : 'Never';
+
+  const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
+
+  const { config: pauseConfig } = usePrepareContractWrite({
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    abi: factoryAbi,
+    functionName: 'pause',
+    args: [poolAddress as Address],
+    enabled: canBorrowingBeDisabled,
+    chainId: activeChain.id,
+  });
+
+  const gasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
+
+  const { write: pause, isLoading: contractIsLoading } = useContractWrite({
+    ...pauseConfig,
+    request: {
+      ...pauseConfig.request,
+      gasLimit,
+    },
+  });
+
+  const isPaused = pausedUntilTime > Date.now() / 1000;
 
   return (
     <Wrapper>
@@ -169,12 +204,15 @@ export default function MarketCard(props: MarketCardProps) {
             <Display size='M'>{lastUpdated}</Display>
           </Cell>
           <Cell>
-            <Text size='S' weight='bold' color={SECONDARY_COLOR}>
-              Borrowing Status
-            </Text>
+            <div className='flex items-center gap-1.5'>
+              <Text size='S' weight='bold' color={SECONDARY_COLOR}>
+                Borrowing Status
+              </Text>
+              <PausedStatus $color={isPaused ? RED_COLOR : GREEN_COLOR} />
+            </div>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
-              <OutlinedWhiteButton size='S' disabled={true}>
-                Enabled
+              <OutlinedWhiteButton size='S' disabled={!contractIsLoading && !canBorrowingBeDisabled} onClick={pause}>
+                {contractIsLoading ? 'Loading...' : 'Pause'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
