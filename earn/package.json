@@ -50,8 +50,8 @@
   },
   "scripts": {
     "git-info": "node src/scripts/gitInfo.js",
-    "start": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco start",
-    "build": "yarn git-info && cd ../shared && yarn build && cd ../earn && craco build",
+    "start": "yarn git-info && yarn --cwd ../shared build && yarn --cwd ../earn craco start",
+    "build": "yarn git-info && yarn --cwd ../shared build && yarn --cwd ../earn craco build",
     "clean": "rm -rf build",
     "test": "craco test --watchAll=false",
     "lint": "eslint --fix --ext .tsx,.ts ."
