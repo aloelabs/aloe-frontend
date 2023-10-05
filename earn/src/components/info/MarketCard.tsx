@@ -124,6 +124,7 @@ export default function MarketCard(props: MarketCardProps) {
     ? formatDistanceToNow(new Date(lastUpdatedTimestamp * 1000), { includeSeconds: false, addSuffix: true })
     : 'Never';
 
+  const isPaused = pausedUntilTime > Date.now() / 1000;
   const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
 
   const { config: pauseConfig } = usePrepareContractWrite({
@@ -145,8 +146,6 @@ export default function MarketCard(props: MarketCardProps) {
       gasLimit,
     },
   });
-
-  const isPaused = pausedUntilTime > Date.now() / 1000;
 
   return (
     <Wrapper>
@@ -214,7 +213,7 @@ export default function MarketCard(props: MarketCardProps) {
             </div>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
               <OutlinedWhiteButton size='S' disabled={!contractIsLoading && !canBorrowingBeDisabled} onClick={pause}>
-                {contractIsLoading ? 'Loading...' : 'Pause'}
+                {contractIsLoading ? 'Loading' : 'Pause'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
