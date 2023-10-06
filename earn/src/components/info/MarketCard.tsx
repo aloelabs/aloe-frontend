@@ -11,12 +11,9 @@ import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { Address, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 
@@ -116,17 +113,6 @@ export default function MarketCard(props: MarketCardProps) {
   } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
-
-  const provider = useProvider({ chainId: activeChain.id });
-
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(poolAddress, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
-
   const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
   const token1Symbol = lenderSymbols[1].slice(0, lenderSymbols[1].length - 1);
@@ -155,7 +141,7 @@ export default function MarketCard(props: MarketCardProps) {
 
   const pauseGasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
 
-  const { write: pause, isLoading: contractIsLoading } = useContractWrite({
+  const { write: pause, isLoading: isPauseLoading } = useContractWrite({
     ...pauseConfig,
     request: {
       ...pauseConfig.request,
@@ -167,14 +153,14 @@ export default function MarketCard(props: MarketCardProps) {
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     abi: volatilityOracleAbi,
     functionName: 'update',
-    args: [poolAddress as Address, oracleSeed ?? Q32],
+    args: [poolAddress as Address, Q32],
     enabled: canUpdateLTV,
     chainId: activeChain.id,
   });
 
   const updateLTVGasLimit = updateLTVConfig.request?.gasLimit.mul(110).div(100);
 
-  const { write: updateLTV } = useContractWrite({
+  const { write: updateLTV, isLoading: isUpdateLTVLoading } = useContractWrite({
     ...updateLTVConfig,
     request: {
       ...updateLTVConfig.request,
@@ -238,8 +224,8 @@ export default function MarketCard(props: MarketCardProps) {
               Last Updated: {lastUpdated}
             </Text>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
-              <OutlinedWhiteButton size='S' disabled={!canUpdateLTV} onClick={updateLTV}>
-                Update LTV
+              <OutlinedWhiteButton size='S' disabled={!isUpdateLTVLoading && !canUpdateLTV} onClick={updateLTV}>
+                {isUpdateLTVLoading ? 'Loading' : 'Update LTV'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
@@ -251,8 +237,8 @@ export default function MarketCard(props: MarketCardProps) {
               <PausedStatus $color={isPaused ? RED_COLOR : GREEN_COLOR} />
             </div>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
-              <OutlinedWhiteButton size='S' disabled={!contractIsLoading && !canBorrowingBeDisabled} onClick={pause}>
-                {contractIsLoading ? 'Loading' : isPaused ? 'Extend Pause' : 'Pause'}
+              <OutlinedWhiteButton size='S' disabled={!isPauseLoading && !canBorrowingBeDisabled} onClick={pause}>
+                {isPauseLoading ? 'Loading' : isPaused ? 'Extend Pause' : 'Pause'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
