@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNowStrict, format } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
@@ -112,17 +112,18 @@ export default function MarketCard(props: MarketCardProps) {
   } = props;
   const { activeChain } = useContext(ChainContext);
 
+  const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
   const token1Symbol = lenderSymbols[1].slice(0, lenderSymbols[1].length - 1);
 
   const manipulationColor = getManipulationColor(manipulationMetric, manipulationThreshold);
   const manipulationInequality = manipulationMetric < manipulationThreshold ? '<' : '>';
 
-  const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
-
   const lastUpdated = lastUpdatedTimestamp
-    ? formatDistanceToNow(new Date(lastUpdatedTimestamp * 1000), { includeSeconds: false, addSuffix: true })
+    ? formatDistanceToNowStrict(new Date(lastUpdatedTimestamp * 1000), { addSuffix: true, roundingMethod: 'round' })
     : 'Never';
+  const minutesSinceLastUpdate = lastUpdatedTimestamp ? (Date.now() / 1000 - lastUpdatedTimestamp) / 60 : 0;
+  const canUpdateLTV = minutesSinceLastUpdate > 60;
 
   const isPaused = pausedUntilTime > Date.now() / 1000;
   const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
@@ -200,20 +201,24 @@ export default function MarketCard(props: MarketCardProps) {
         <Column>
           <Cell>
             <Text size='S' weight='bold' color={SECONDARY_COLOR}>
-              Last Updated
+              Last Updated: {lastUpdated}
             </Text>
-            <Display size='M'>{lastUpdated}</Display>
+            <div className='flex justify-center mt-[-2px] mb-[-4px]'>
+              <OutlinedWhiteButton size='S' disabled={!canUpdateLTV}>
+                Update LTV
+              </OutlinedWhiteButton>
+            </div>
           </Cell>
           <Cell>
             <div className='flex items-center gap-1.5'>
               <Text size='S' weight='bold' color={SECONDARY_COLOR}>
-                Borrowing Status
+                Borrows: {isPaused ? `Paused Until ${format(pausedUntilTime * 1000, 'h:mmaaa')}` : 'Enabled'}
               </Text>
               <PausedStatus $color={isPaused ? RED_COLOR : GREEN_COLOR} />
             </div>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
               <OutlinedWhiteButton size='S' disabled={!contractIsLoading && !canBorrowingBeDisabled} onClick={pause}>
-                {contractIsLoading ? 'Loading' : 'Pause'}
+                {contractIsLoading ? 'Loading' : isPaused ? 'Extend Pause' : 'Pause'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
