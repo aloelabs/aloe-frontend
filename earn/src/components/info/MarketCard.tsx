@@ -2,17 +2,21 @@ import { useContext } from 'react';
 
 import { formatDistanceToNowStrict, format } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 
@@ -112,6 +116,17 @@ export default function MarketCard(props: MarketCardProps) {
   } = props;
   const { activeChain } = useContext(ChainContext);
 
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(poolAddress, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
   const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
   const token1Symbol = lenderSymbols[1].slice(0, lenderSymbols[1].length - 1);
@@ -138,13 +153,32 @@ export default function MarketCard(props: MarketCardProps) {
     chainId: activeChain.id,
   });
 
-  const gasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
+  const pauseGasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
 
   const { write: pause, isLoading: contractIsLoading } = useContractWrite({
     ...pauseConfig,
     request: {
       ...pauseConfig.request,
-      gasLimit,
+      gasLimit: pauseGasLimit,
+    },
+  });
+
+  const { config: updateLTVConfig } = usePrepareContractWrite({
+    address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
+    abi: volatilityOracleAbi,
+    functionName: 'update',
+    args: [poolAddress as Address, oracleSeed ?? Q32],
+    enabled: canUpdateLTV,
+    chainId: activeChain.id,
+  });
+
+  const updateLTVGasLimit = updateLTVConfig.request?.gasLimit.mul(110).div(100);
+
+  const { write: updateLTV } = useContractWrite({
+    ...updateLTVConfig,
+    request: {
+      ...updateLTVConfig.request,
+      gasLimit: updateLTVGasLimit,
     },
   });
 
@@ -204,7 +238,7 @@ export default function MarketCard(props: MarketCardProps) {
               Last Updated: {lastUpdated}
             </Text>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
-              <OutlinedWhiteButton size='S' disabled={!canUpdateLTV}>
+              <OutlinedWhiteButton size='S' disabled={!canUpdateLTV} onClick={updateLTV}>
                 Update LTV
               </OutlinedWhiteButton>
             </div>
