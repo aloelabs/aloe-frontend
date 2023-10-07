@@ -172,6 +172,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             options={tokens}
             selectedOption={selectedToken}
             onSelect={(option) => {
+              // Reset the selected pair
+              setSelectedPairIdx(0);
               setSelectedToken(option);
               setInputValue(['', false]);
             }}
