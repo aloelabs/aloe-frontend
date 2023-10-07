@@ -145,8 +145,6 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
 
-  // const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
-
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
       return {
@@ -156,7 +154,6 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     });
   }, [lendingPairs]);
 
-  // const [numberOfUsers, setNumberOfUsers] = useState(0);
   const [selectedOption, setSelectedOption] = useState<DropdownOption<LendingPair>>(options[0]);
   useEffect(() => {
     setSelectedOption(options[0]);
