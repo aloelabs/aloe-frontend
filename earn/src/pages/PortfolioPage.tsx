@@ -455,6 +455,7 @@ export default function PortfolioPage() {
             tokens={uniqueTokens}
             defaultToken={activeAsset}
             lendingPairs={lendingPairs}
+            tokenBalances={combinedBalances}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}

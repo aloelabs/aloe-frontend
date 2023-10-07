@@ -15,6 +15,7 @@ import { ChainContext } from '../../../App';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { LendingPair } from '../../../data/LendingPair';
+import { TokenBalance } from '../../../pages/PortfolioPage';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
@@ -68,12 +69,13 @@ export type WithdrawModalProps = {
   tokens: Token[];
   defaultToken: Token;
   lendingPairs: LendingPair[];
+  tokenBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
-  const { isOpen, tokens, defaultToken, lendingPairs, setIsOpen, setPendingTxn } = props;
+  const { isOpen, tokens, defaultToken, lendingPairs, tokenBalances, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
 
@@ -83,7 +85,15 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const account = useAccount();
 
   const filteredPairs = lendingPairs.filter((p) => doesLendingPairContainToken(p, selectedToken));
-  const selectedPair = filteredPairs.at(selectedPairIdx);
+  const filteredTokenBalances = tokenBalances.filter((tb) => tb.isKitty && tb.token.underlying.equals(selectedToken));
+  const sortedPairs = filteredPairs.sort((a, b) => {
+    const aBalance =
+      filteredTokenBalances.find((tb) => tb.token.equals(a.kitty0) || tb.token.equals(a.kitty1))?.balance ?? 0;
+    const bBalance =
+      filteredTokenBalances.find((tb) => tb.token.equals(b.kitty0) || tb.token.equals(b.kitty1))?.balance ?? 0;
+    return bBalance - aBalance;
+  });
+  const selectedPair = sortedPairs.at(selectedPairIdx);
   const lender = selectedPair?.token0.equals(selectedToken) ? selectedPair.kitty0 : selectedPair?.kitty1;
   const amount = GN.fromDecimalString(inputValue[0] || '0', selectedToken.decimals);
 
@@ -201,8 +211,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             />
           </div>
           <PairDropdown
-            options={filteredPairs}
-            onSelect={(a) => setSelectedPairIdx(filteredPairs.findIndex((b) => a.equals(b)))}
+            options={sortedPairs}
+            onSelect={(a) => setSelectedPairIdx(sortedPairs.findIndex((b) => a.equals(b)))}
             selectedOption={selectedPair}
             size='L'
             compact={false}
