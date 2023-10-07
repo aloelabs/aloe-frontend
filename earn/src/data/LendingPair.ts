@@ -1,5 +1,6 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { lenderABI } from 'shared/lib/abis/Lender';
 import {
   ALOE_II_FACTORY_ADDRESS,
@@ -22,6 +23,7 @@ import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
+import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from './constants/Values';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -44,7 +46,9 @@ export class LendingPair {
     public kitty0Info: KittyInfo,
     public kitty1Info: KittyInfo,
     public uniswapFeeTier: FeeTier,
-    public iv: number
+    public iv: number,
+    public nSigma: number,
+    public ltv: number
   ) {}
 
   equals(other: LendingPair) {
@@ -141,6 +145,19 @@ export async function getAvailableLendingPairs(
     });
 
     contractCallContexts.push({
+      reference: `${market.pool}-factory`,
+      contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
+      abi: factoryAbi as any,
+      calls: [
+        {
+          reference: `${market.pool}-factory`,
+          methodName: 'getParameters',
+          methodParameters: [market.pool],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
       reference: `${market.pool}-lender0`,
       contractAddress: market.kitty0,
       abi: lenderABI as any,
@@ -190,18 +207,21 @@ export async function getAvailableLendingPairs(
       basics: basicsResults,
       feeTier: feeTierResults,
       oracle: oracleResults,
+      factory: factoryResults,
       lender0: lender0Results,
       lender1: lender1Results,
     } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
     const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
     const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
+    const factoryReturnContexts = convertBigNumbersForReturnContexts(factoryResults.callsReturnContext);
     const { kitty0Address, kitty1Address } = basicsResults.originalContractCallContext.context;
 
     const basics0 = basicsReturnContexts[0].returnValues;
     const basics1 = basicsReturnContexts[1].returnValues;
     const feeTier = feeTierReturnContexts[0].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
+    const factoryResult = factoryReturnContexts[0].returnValues;
     const reserveFactor0 = lender0Results.callsReturnContext[0].returnValues[0];
     const reserveFactor1 = lender1Results.callsReturnContext[0].returnValues[0];
     const token0 = getToken(chainId, basics0[0]);
@@ -244,9 +264,12 @@ export async function getAvailableLendingPairs(
     const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
     const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
-    let IV = oracleResult[2].div(1e12).toNumber() / 1e6;
-    // Annualize it
-    IV *= Math.sqrt(365);
+    const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
+
+    const nSigma = (factoryResult[1] as number) / 10;
+
+    let ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(nSigma * iv));
+    ltv = Math.max(0.1, Math.min(ltv, 0.9));
 
     lendingPairs.push(
       new LendingPair(
@@ -267,7 +290,9 @@ export async function getAvailableLendingPairs(
           utilization: utilization1 * 100.0, // Percentage
         },
         NumericFeeTierToEnum(feeTier[0]),
-        IV * 100
+        iv * Math.sqrt(365),
+        nSigma,
+        ltv
       )
     );
   });
