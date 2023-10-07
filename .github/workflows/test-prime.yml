@@ -16,4 +16,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - run: cd shared && yarn install && yarn build && cd ../prime && yarn install && yarn test
+      - run: |
+          yarn global add node-gyp
+          cd shared && yarn install && yarn build && cd ../prime && yarn install && yarn test
