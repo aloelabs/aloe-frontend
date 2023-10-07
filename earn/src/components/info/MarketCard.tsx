@@ -1,11 +1,12 @@
 import { useContext } from 'react';
 
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNowStrict, format } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
 import { OutlinedWhiteButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
@@ -112,17 +113,18 @@ export default function MarketCard(props: MarketCardProps) {
   } = props;
   const { activeChain } = useContext(ChainContext);
 
+  const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
   const token1Symbol = lenderSymbols[1].slice(0, lenderSymbols[1].length - 1);
 
   const manipulationColor = getManipulationColor(manipulationMetric, manipulationThreshold);
   const manipulationInequality = manipulationMetric < manipulationThreshold ? '<' : '>';
 
-  const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
-
   const lastUpdated = lastUpdatedTimestamp
-    ? formatDistanceToNow(new Date(lastUpdatedTimestamp * 1000), { includeSeconds: false, addSuffix: true })
+    ? formatDistanceToNowStrict(new Date(lastUpdatedTimestamp * 1000), { addSuffix: true, roundingMethod: 'round' })
     : 'Never';
+  const minutesSinceLastUpdate = lastUpdatedTimestamp ? (Date.now() / 1000 - lastUpdatedTimestamp) / 60 : 0;
+  const canUpdateLTV = minutesSinceLastUpdate > 60;
 
   const isPaused = pausedUntilTime > Date.now() / 1000;
   const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
@@ -137,13 +139,32 @@ export default function MarketCard(props: MarketCardProps) {
     chainId: activeChain.id,
   });
 
-  const gasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
+  const pauseGasLimit = pauseConfig.request?.gasLimit.mul(110).div(100);
 
-  const { write: pause, isLoading: contractIsLoading } = useContractWrite({
+  const { write: pause, isLoading: isPauseLoading } = useContractWrite({
     ...pauseConfig,
     request: {
       ...pauseConfig.request,
-      gasLimit,
+      gasLimit: pauseGasLimit,
+    },
+  });
+
+  const { config: updateLTVConfig } = usePrepareContractWrite({
+    address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
+    abi: volatilityOracleAbi,
+    functionName: 'update',
+    args: [poolAddress as Address, Q32],
+    enabled: canUpdateLTV,
+    chainId: activeChain.id,
+  });
+
+  const updateLTVGasLimit = updateLTVConfig.request?.gasLimit.mul(110).div(100);
+
+  const { write: updateLTV, isLoading: isUpdateLTVLoading } = useContractWrite({
+    ...updateLTVConfig,
+    request: {
+      ...updateLTVConfig.request,
+      gasLimit: updateLTVGasLimit,
     },
   });
 
@@ -200,20 +221,24 @@ export default function MarketCard(props: MarketCardProps) {
         <Column>
           <Cell>
             <Text size='S' weight='bold' color={SECONDARY_COLOR}>
-              Last Updated
+              Last Updated: {lastUpdated}
             </Text>
-            <Display size='M'>{lastUpdated}</Display>
+            <div className='flex justify-center mt-[-2px] mb-[-4px]'>
+              <OutlinedWhiteButton size='S' disabled={!isUpdateLTVLoading && !canUpdateLTV} onClick={updateLTV}>
+                {isUpdateLTVLoading ? 'Loading' : 'Update LTV'}
+              </OutlinedWhiteButton>
+            </div>
           </Cell>
           <Cell>
             <div className='flex items-center gap-1.5'>
               <Text size='S' weight='bold' color={SECONDARY_COLOR}>
-                Borrowing Status
+                Borrows: {isPaused ? `Paused Until ${format(pausedUntilTime * 1000, 'h:mmaaa')}` : 'Enabled'}
               </Text>
               <PausedStatus $color={isPaused ? RED_COLOR : GREEN_COLOR} />
             </div>
             <div className='flex justify-center mt-[-2px] mb-[-4px]'>
-              <OutlinedWhiteButton size='S' disabled={!contractIsLoading && !canBorrowingBeDisabled} onClick={pause}>
-                {contractIsLoading ? 'Loading' : 'Pause'}
+              <OutlinedWhiteButton size='S' disabled={!isPauseLoading && !canBorrowingBeDisabled} onClick={pause}>
+                {isPauseLoading ? 'Loading' : isPaused ? 'Extend Pause' : 'Pause'}
               </OutlinedWhiteButton>
             </div>
           </Cell>
