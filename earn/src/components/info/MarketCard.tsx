@@ -46,7 +46,8 @@ const Container = styled.div`
   display: flex;
   flex-direction: row;
   gap: 32px;
-  width: fit-content;
+  width: 100%;
+  justify-content: space-around;
   background-color: ${GREY_800};
   border: 2px solid ${GREY_700};
   border-radius: 8px;
