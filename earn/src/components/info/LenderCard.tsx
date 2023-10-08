@@ -24,7 +24,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 32px;
-  width: fit-content;
+  width: 100%;
   background-color: ${GREY_800};
   border: 2px solid ${GREY_700};
   border-radius: 8px;

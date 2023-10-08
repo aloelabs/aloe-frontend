@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { Fragment, useContext, useEffect } from 'react';
 
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
@@ -16,6 +16,7 @@ import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import styled from 'styled-components';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
@@ -51,6 +52,16 @@ type LenderInfo = {
   decimals: number;
   totalSupply: GN;
 };
+
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  gap: 0px;
+  row-gap: 32px;
+  width: 100%;
+  justify-content: safe center;
+  margin-left: auto;
+`;
 
 export default function InfoPage() {
   const { activeChain } = useContext(ChainContext);
@@ -302,10 +313,10 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-8 w-full'>
+      <InfoGrid className='flex flex-col gap-8 w-full overflow-auto'>
         {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
           return (
-            <div key={addr} className='flex justify-center'>
+            <Fragment key={addr}>
               <MarketCard
                 nSigma={info.nSigma}
                 ltv={info.ltv}
@@ -334,10 +345,10 @@ export default function InfoPage() {
                 rateModel={info.lenderRateModels[1]}
                 decimals={info.lenderDecimals[1]}
               />
-            </div>
+            </Fragment>
           );
         })}
-      </div>
+      </InfoGrid>
     </AppPage>
   );
 }
