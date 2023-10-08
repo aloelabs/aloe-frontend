@@ -61,6 +61,7 @@ const InfoGrid = styled.div`
   width: 100%;
   justify-content: safe center;
   margin-left: auto;
+  overflow: auto;
 `;
 
 export default function InfoPage() {
@@ -313,7 +314,7 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <InfoGrid className='flex flex-col gap-8 w-full overflow-auto'>
+      <InfoGrid>
         {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
           return (
             <Fragment key={addr}>
