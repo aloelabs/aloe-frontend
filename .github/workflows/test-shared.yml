@@ -12,6 +12,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          path: shared
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
@@ -19,4 +23,5 @@ jobs:
           cache: 'yarn'
       - run: |
           yarn global add node-gyp
-          cd shared && yarn install --frozen-lockfile && yarn test
+          yarn install --frozen-lockfile && yarn test
+        working-directory: shared
