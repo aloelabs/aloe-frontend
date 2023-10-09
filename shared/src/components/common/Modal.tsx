@@ -233,7 +233,6 @@ const ModalPanelWrapper = styled.div.attrs((props: { maxHeight?: string; maxWidt
   max-height: min(${(props) => props.maxHeight || '570px'}, 90vh);
   min-width: 400px;
   max-width: ${(props) => props.maxWidth || '450px'};
-  max-height: ${(props) => props.maxHeight || '570px'};
   height: max-content;
   &::-webkit-scrollbar {
     width: 8px;
