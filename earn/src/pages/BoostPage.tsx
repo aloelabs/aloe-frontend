@@ -43,7 +43,7 @@ const ExplainerWrapper = styled.div`
     inset: 0;
     pointer-events: none;
     border-radius: 8px;
-    /* 1.25px instead of 1px since it avoids tbe buggy appearance */
+    /* 1.25px instead of 1px since it avoids the buggy appearance */
     padding: 1.25px;
     background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
