@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
+          cache: 'yarn'
       - run: |
           yarn global add node-gyp
-          cd shared && yarn install && yarn test
+          cd shared && yarn install --frozen-lockfile && yarn test
