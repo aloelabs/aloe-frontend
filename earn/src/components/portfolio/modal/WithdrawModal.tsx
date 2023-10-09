@@ -106,7 +106,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     maxAmount: maxAmountBN,
   } = useRedeem(
     activeChain.id,
-    lender?.address ?? ZERO_ADDRESS,
+    lender?.address,
     inputValue[1] ? GN.Q(112) : amount,
     isOpen && account.address ? account.address : ZERO_ADDRESS
   );
