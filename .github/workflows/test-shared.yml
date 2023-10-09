@@ -19,4 +19,6 @@ jobs:
           cache: 'yarn'
       - run: |
           yarn global add node-gyp
-          cd shared && yarn install --frozen-lockfile && yarn test
+          cd shared
+          yarn install --frozen-lockfile
+          yarn test
