@@ -168,7 +168,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
-    enabled: !!accountAddress,
+    enabled: Boolean(accountAddress),
   });
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
@@ -177,7 +177,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
-    enabled: !!accountAddress,
+    enabled: Boolean(accountAddress),
   });
 
   const gnWithdrawAmount = GN.fromDecimalString(withdrawAmount || '0', token.decimals);

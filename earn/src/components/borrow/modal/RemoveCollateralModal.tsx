@@ -101,7 +101,8 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && !!oracleSeed,
+    enabled:
+      Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {

@@ -124,7 +124,7 @@ export default function ImportBoostPage() {
     address: poolAddress,
     functionName: 'slot0',
     chainId: activeChain.id,
-    enabled: !!poolAddress,
+    enabled: Boolean(poolAddress),
   });
 
   const { data: marketData } = useContractRead({
@@ -132,7 +132,7 @@ export default function ImportBoostPage() {
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getMarket',
     args: [poolAddress || '0x'],
-    enabled: !!poolAddress,
+    enabled: Boolean(poolAddress),
   });
 
   const cardInfo: BoostCardInfo | undefined = useMemo(() => {
@@ -163,7 +163,7 @@ export default function ImportBoostPage() {
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     functionName: 'consult',
     args: [cardInfo?.uniswapPool ?? '0x', Q32],
-    enabled: !!cardInfo,
+    enabled: Boolean(cardInfo),
   });
 
   const { data: parametersData } = useContractRead({
@@ -171,7 +171,7 @@ export default function ImportBoostPage() {
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getParameters',
     args: [cardInfo?.uniswapPool ?? '0x'],
-    enabled: !!cardInfo,
+    enabled: Boolean(cardInfo),
   });
 
   let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 12).toNumber();

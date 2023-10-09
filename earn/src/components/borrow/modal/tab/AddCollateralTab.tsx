@@ -64,7 +64,7 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
     abi: erc20ABI,
     functionName: 'transfer',
     args: [marginAccount.address, collateralAmount.toBigNumber()],
-    enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
+    enabled: Boolean(collateralAmount) && Boolean(userBalance) && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
   const contractWriteConfigUpdatedRequest = useMemo(() => {

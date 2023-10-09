@@ -259,7 +259,7 @@ export default function BorrowActionsPage() {
     abi: borrowerABI,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
-    enabled: !!marginAccount,
+    enabled: Boolean(marginAccount),
   });
   const uniswapV3PoolContract = useContract({
     address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution

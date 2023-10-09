@@ -47,7 +47,7 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
     abi: FactoryABI,
     functionName: 'createBorrower',
     args: [poolAddress, userAddress],
-    enabled: !!poolAddress && !!userAddress,
+    enabled: Boolean(poolAddress) && Boolean(userAddress),
     chainId: activeChain.id,
   });
   const createBorrowerUpdatedRequest = useMemo(() => {

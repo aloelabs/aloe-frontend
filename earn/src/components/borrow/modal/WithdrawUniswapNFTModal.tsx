@@ -127,7 +127,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
-    enabled: !!oracleSeed,
+    enabled: Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
