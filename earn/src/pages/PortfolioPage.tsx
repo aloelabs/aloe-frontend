@@ -213,7 +213,6 @@ export default function PortfolioPage() {
     (async () => {
       const chainId = (await provider.getNetwork()).chainId;
       const results = await getAvailableLendingPairs(chainId, provider);
-      console.log(results);
       setLendingPairs(results);
       setIsLoading(false);
     })();
