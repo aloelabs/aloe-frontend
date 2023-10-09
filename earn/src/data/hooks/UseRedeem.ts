@@ -11,6 +11,8 @@ import {
   usePrepareContractWrite,
 } from 'wagmi';
 
+import { ZERO_ADDRESS } from '../constants/Addresses';
+
 export enum RedeemState {
   WAITING_FOR_INPUT,
   FETCHING_DATA,
@@ -23,7 +25,13 @@ export enum RedeemState {
 const BN0 = BigNumber.from('0');
 const GAS_LIMIT_CUSHION = 110;
 
-export function useRedeem(chainId: number, lender: Address, amount: GN, owner: Address, recipient?: Address) {
+export function useRedeem(
+  chainId: number,
+  lender: Address | undefined,
+  amount: GN,
+  owner: Address,
+  recipient?: Address
+) {
   if (!recipient) recipient = owner;
 
   const erc4626 = {
@@ -46,9 +54,10 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     contracts: [
       { ...erc4626, functionName: 'maxWithdraw', args: [owner] },
       { ...erc4626, functionName: 'maxRedeem', args: [owner] },
-      { ...router, functionName: 'isMaxRedeemDynamic', args: [lender, owner] },
+      { ...router, functionName: 'isMaxRedeemDynamic', args: [lender ?? ZERO_ADDRESS, owner] },
     ] as const,
     allowFailure: false,
+    enabled: lender !== undefined,
   });
   const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [BN0, BN0, false];
 
@@ -59,6 +68,7 @@ export function useRedeem(chainId: number, lender: Address, amount: GN, owner: A
     ...erc4626,
     functionName: 'convertToShares',
     args: [amountToConvert.toBigNumber()],
+    enabled: lender !== undefined,
   });
   const shares = sharesData ?? BN0;
 
