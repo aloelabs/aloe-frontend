@@ -8,5 +8,5 @@ export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
 export function useGeoFencing(activeChain: Chain) {
   const ctxt = useContext(GeoFencingContext);
   const isDev = isDevelopment();
-  return isDev || ctxt?.isAllowed || !!activeChain.testnet;
+  return isDev || ctxt?.isAllowed || Boolean(activeChain.testnet);
 }

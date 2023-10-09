@@ -218,7 +218,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
-    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] && !!oracleSeed,
+    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {

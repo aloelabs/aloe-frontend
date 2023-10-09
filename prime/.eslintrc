@@ -25,6 +25,7 @@
     "object-curly-spacing": ["error", "always"],
     "eqeqeq": ["warn", "smart"],
     "no-return-await": "warn",
+    "no-implicit-coercion": "error",
     "comma-dangle": ["warn", {
       "arrays": "always-multiline",
       "objects": "always-multiline",

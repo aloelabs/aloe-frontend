@@ -8,7 +8,7 @@ export function getLocalStorageBoolean(key: string): boolean {
     return false;
   }
   try {
-    return !!window.localStorage.getItem(key);
+    return Boolean(window.localStorage.getItem(key));
   } catch (error) {
     console.error(error);
     return false;

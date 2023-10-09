@@ -117,7 +117,7 @@ function BorrowButton(props: BorrowButtonProps) {
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
     overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
-    enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && !!oracleSeed,
+    enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {

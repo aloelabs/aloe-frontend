@@ -13,7 +13,8 @@
     "no-var": "warn",
     "max-len": ["warn", { "code": 120 }],
     "no-eval": "error",
-    "eqeqeq": ["warn", "smart"]
+    "eqeqeq": ["warn", "smart"],
+    "no-implicit-coercion": "error"
   },
   "ignorePatterns": ["lib/"]
 }

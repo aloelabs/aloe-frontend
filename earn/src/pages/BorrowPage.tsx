@@ -233,7 +233,7 @@ export default function BorrowPage() {
     abi: MarginAccountABI,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
-    enabled: !!selectedMarginAccount,
+    enabled: Boolean(selectedMarginAccount),
   });
 
   // MARK: Fetch available pools

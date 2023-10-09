@@ -269,8 +269,8 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
       !transactionWillFail &&
       !needsApproval[0] &&
       !needsApproval[1] &&
-      !!oracleSeed &&
-      !!ante,
+      Boolean(oracleSeed) &&
+      Boolean(ante),
   });
   const contract = useContractWrite({
     ...contractConfig,

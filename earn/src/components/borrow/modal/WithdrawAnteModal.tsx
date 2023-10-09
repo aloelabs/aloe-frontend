@@ -76,7 +76,7 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
     abi: borrowerABI,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    enabled: !!userAddress && !!oracleSeed,
+    enabled: Boolean(userAddress) && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   const gasLimit = withdrawAnteConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);

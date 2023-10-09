@@ -523,7 +523,7 @@ export function FilledGradientButtonWithIcon(props: ButtonWithIconProps) {
         {children}
       </FilledGradientButton>
       <SVGWrapper size={props.size} position={props.position} color={DEFAULT_BLACK} disabledColor={DISABLED_BLACK}>
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
@@ -549,7 +549,7 @@ export function FilledGreyButtonWithIcon(props: ButtonWithIconProps) {
         {children}
       </FilledGreyButton>
       <SVGWrapper size={props.size} position={props.position} color={DEFAULT_WHITE} disabledColor={DISABLED_WHITE}>
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
@@ -593,7 +593,7 @@ export function OutlinedGradientButtonWithIcon(props: ButtonWithIconProps) {
         disabledColor={DISABLED_WHITE}
         activeColor={activeGradientId}
       >
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
@@ -619,7 +619,7 @@ export function OutlinedWhiteButtonWithIcon(props: ButtonWithIconProps) {
         {children}
       </OutlinedWhiteButton>
       <SVGWrapper size={props.size} position={props.position} color={DEFAULT_WHITE} disabledColor={DISABLED_WHITE}>
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
@@ -645,7 +645,7 @@ export function FilledStylizedButtonWithIcon(props: ButtonWithIconProps) {
         {children}
       </FilledStylizedButton>
       <SVGWrapper size={props.size} position={props.position} color={DEFAULT_BLACK} disabledColor={DISABLED_BLACK}>
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );
@@ -689,7 +689,7 @@ export function OutlinedGradientRoundedButtonWithIcon(props: ButtonWithIconProps
         disabledColor={DISABLED_WHITE}
         activeColor={activeGradientId}
       >
-        {!!Icon && Icon}
+        {Boolean(Icon) && Icon}
       </SVGWrapper>
     </ButtonWithIconWrapper>
   );

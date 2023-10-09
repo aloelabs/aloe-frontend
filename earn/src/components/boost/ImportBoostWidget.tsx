@@ -361,9 +361,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     chainId: activeChain.id,
     enabled: enableHooks,
   });
-  const managerIsCorrect = !!manager && manager === necessaryManager;
-  const shouldWriteManager = !isFetchingManager && !!manager && !managerIsCorrect;
-  const shouldMint = !isFetchingManager && !!initializationData && managerIsCorrect;
+  const managerIsCorrect = Boolean(manager) && manager === necessaryManager;
+  const shouldWriteManager = !isFetchingManager && Boolean(manager) && !managerIsCorrect;
+  const shouldMint = !isFetchingManager && Boolean(initializationData) && managerIsCorrect;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
@@ -409,7 +409,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? Q32],
     overrides: { value: ante.toBigNumber().add(1) },
     chainId: activeChain.id,
-    enabled: enableHooks && shouldMint && !!oracleSeed && !!ante,
+    enabled: enableHooks && shouldMint && Boolean(oracleSeed) && Boolean(ante),
   });
   gasLimit = configMint.request?.gasLimit.mul(110).div(100);
   const { write: mint, isLoading: isAskingUserToMint } = useContractWrite({

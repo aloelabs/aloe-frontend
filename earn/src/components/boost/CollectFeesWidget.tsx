@@ -76,7 +76,7 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
     functionName: 'modify',
     args: [ethers.BigNumber.from(cardInfo.nftTokenId || 0), 1, modifyData, oracleSeed ?? Q32],
     chainId: activeChain.id,
-    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) && !!oracleSeed,
+    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) && Boolean(oracleSeed),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const {

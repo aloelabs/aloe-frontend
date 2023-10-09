@@ -189,7 +189,7 @@ export default function ManageBoostPage() {
       nftTokenId !== undefined &&
       cardInfo != null &&
       !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) &&
-      !!oracleSeed,
+      Boolean(oracleSeed),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const { write: burn, isLoading: burnIsLoading } = useContractWrite({
