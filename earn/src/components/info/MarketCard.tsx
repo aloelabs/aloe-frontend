@@ -224,7 +224,7 @@ export default function MarketCard(props: MarketCardProps) {
             <Text size='S' weight='bold' color={SECONDARY_COLOR}>
               Last Updated: {lastUpdated}
             </Text>
-            <div className='flex justify-center mt-[-2px] mb-[-4px]'>
+            <div className='flex justify-center mt-[-2.9px]'>
               <OutlinedWhiteButton size='S' disabled={!isUpdateLTVLoading && !canUpdateLTV} onClick={updateLTV}>
                 {isUpdateLTVLoading ? 'Loading' : 'Update LTV'}
               </OutlinedWhiteButton>
@@ -237,7 +237,7 @@ export default function MarketCard(props: MarketCardProps) {
               </Text>
               <PausedStatus $color={isPaused ? RED_COLOR : GREEN_COLOR} />
             </div>
-            <div className='flex justify-center mt-[-2px] mb-[-4px]'>
+            <div className='flex justify-center mt-[-2.9px]'>
               <OutlinedWhiteButton size='S' disabled={!isPauseLoading && !canBorrowingBeDisabled} onClick={pause}>
                 {isPauseLoading ? 'Loading' : isPaused ? 'Extend Pause' : 'Pause'}
               </OutlinedWhiteButton>
