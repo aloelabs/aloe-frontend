@@ -1,10 +1,12 @@
 import { useContext, useEffect, useMemo } from 'react';
 
 import { ApolloQueryResult } from '@apollo/react-hooks';
+import { TickMath } from '@uniswap/v3-sdk';
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import Big from 'big.js';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
@@ -41,7 +43,7 @@ import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { RateModel, yieldPerSecondToAPR } from '../../data/RateModel';
 import { BoostCardInfo } from '../../data/Uniboost';
-import { UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
+import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
 
@@ -54,7 +56,7 @@ const Container = styled.div`
   padding: 16px;
   width: 100%;
   border-radius: 8px;
-  max-width: 450px;
+  max-width: 500px;
   text-align: center;
 `;
 
@@ -169,12 +171,13 @@ function getImportButtonState(state?: ImportState) {
 export type ImportBoostWidgetProps = {
   cardInfo: BoostCardInfo;
   boostFactor: number;
+  iv: number;
   setBoostFactor: (boostFactor: number) => void;
   setPendingTxn: (txn: SendTransactionResult | null) => void;
 };
 
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
-  const { cardInfo, boostFactor, setBoostFactor, setPendingTxn } = props;
+  const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
   const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
@@ -422,11 +425,37 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   const dailyFeesEarned = useMemo(() => {
     if (!twentyFourHourPoolData || !cardInfo) return null;
+    if (!cardInfo.isInRange()) return 0;
+
     const { liquidity } = cardInfo.position;
     const userLiquidity = new Big(liquidity.toString());
     const { liquidity: totalLiquidity, feesUSD } = twentyFourHourPoolData;
     return userLiquidity.div(totalLiquidity).toNumber() * feesUSD * boostFactor;
   }, [twentyFourHourPoolData, cardInfo, boostFactor]);
+
+  const dailyILSuffered = useMemo(() => {
+    if (!cardInfo || !tokenQuotes) return null;
+
+    const log10001E = Math.log(Math.E) / Math.log(1.0001);
+    const tick24hLow = Math.max(cardInfo.currentTick - 3 * iv * log10001E, TickMath.MIN_TICK + 1);
+    const tick24hHigh = Math.min(cardInfo.currentTick + 3 * iv * log10001E, TickMath.MAX_TICK - 1);
+
+    const position: UniswapPosition = {
+      lower: cardInfo.position.lower,
+      upper: cardInfo.position.upper,
+      liquidity: JSBI.divide(
+        JSBI.multiply(cardInfo.position.liquidity, JSBI.BigInt((boostFactor * 10000).toFixed(0))),
+        JSBI.BigInt(10000)
+      ),
+    };
+
+    const valueCurrent = getValueOfLiquidity(position, cardInfo.currentTick, cardInfo.token1.decimals);
+    const value24hLow = getValueOfLiquidity(position, Math.round(tick24hLow), cardInfo.token1.decimals);
+    const value24hHigh = getValueOfLiquidity(position, Math.round(tick24hHigh), cardInfo.token1.decimals);
+
+    const lossEstimate = valueCurrent - Math.min(value24hLow, value24hHigh);
+    return lossEstimate * tokenQuotes[1].price;
+  }, [cardInfo, tokenQuotes, boostFactor, iv]);
 
   let state: ImportState = ImportState.LOADING;
   if (isWritingManager) {
@@ -468,25 +497,36 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         </StyledDatalist>
       </SliderContainer>
       <Text size='M' color={SECONDARY_COLOR} className='mt-4'>
-        Estimated Fees
+        Estimated Earnings
       </Text>
       <div className='flex justify-center gap-2 mt-2'>
-        <div className='w-full'>
+        <div className='flex flex-row justify-center items-end'>
+          <Display size='S' color={SECONDARY_COLOR}>
+            {formatUSD(dailyFeesEarned)}
+          </Display>
+          <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
+            / day
+          </Text>
+        </div>
+      </div>
+      <div className='flex flex-row justify-center gap-12'>
+        <div className='flex flex-col justify-center gap-2 mt-6'>
+          <Text size='M' color={SECONDARY_COLOR}>
+            3σ IL
+          </Text>
           <div className='flex flex-row justify-center items-end'>
             <Display size='S' color={SECONDARY_COLOR}>
-              {formatUSD(dailyFeesEarned)}
+              -{formatUSD(dailyILSuffered)}
             </Display>
             <Text size='S' color={SECONDARY_COLOR} className='ml-1'>
               / day
             </Text>
           </div>
         </div>
-      </div>
-      <Text size='M' color={SECONDARY_COLOR} className='mt-4'>
-        Estimated Interest
-      </Text>
-      <div className='flex justify-center gap-2 mt-2'>
-        <div className='w-full'>
+        <div className='flex flex-col justify-center gap-2 mt-6'>
+          <Text size='M' color={SECONDARY_COLOR}>
+            Estimated Interest
+          </Text>
           <div className='flex flex-row justify-center items-end'>
             <Display size='S' color={SECONDARY_COLOR}>
               -{formatUSD(dailyInterestUSD)}
@@ -503,14 +543,15 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
-            You're moving your liquidity from a Uniswap NFT to an Aloe NFT and are applying a{' '}
-            <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but you
-            will also be paying interest to Aloe lenders and risk liquidation. Liquidation thresholds are shown in the
+            You're moving liquidity from a Uniswap NFT to an Aloe NFT and applying a{' '}
+            <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but also
+            pay interest to Aloe lenders and risk liquidation. Liquidation thresholds are indicated with (!) in the
             graph to the left.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {ante.toString(GNFormat.LOSSY_HUMAN)} ETH to cover the gas fees in
-            the event that you are liquidated.
+            You will need to provide an additional {ante.toString(GNFormat.LOSSY_HUMAN)} ETH to cover gas fees in the
+            event that you get liquidated. If you don't get liquidated, the ETH will be returned to you when you close
+            the position.
           </Text>
         </div>
         <FilledGradientButton

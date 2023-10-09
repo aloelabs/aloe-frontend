@@ -238,10 +238,12 @@ export default function ManageBoostPage() {
   return (
     <AppPage>
       <div className='flex items-center gap-2 mb-4'>
-        <BackButtonWrapper>
-          <ArrowLeft onClick={() => navigate('/boost')} />
+        <BackButtonWrapper onClick={() => navigate('/boost')}>
+          <ArrowLeft />
+          <Text size='L' weight='regular' color='inherit'>
+            Positions
+          </Text>
         </BackButtonWrapper>
-        <Text size='XL'>Manage Boost</Text>
         <FilledGradientButton
           size='S'
           onClick={() => {
