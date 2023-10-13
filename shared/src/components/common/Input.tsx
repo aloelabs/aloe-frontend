@@ -197,6 +197,7 @@ const TrailingUnit = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => prop
   pointer-events: none;
   font-size: ${(props) => INPUT_FONT_SIZE[props.size]}px;
   line-height: ${(props) => INPUT_LINE_HEIGHT[props.size]}px;
+  color: ${INPUT_TEXT_COLOR};
 `;
 
 export const BaseMaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
