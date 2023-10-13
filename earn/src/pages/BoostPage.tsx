@@ -244,20 +244,10 @@ export default function BoostPage() {
   //////////////////////////////////////////////////////////////*/
   const boostedCardInfos: BoostCardInfo[] = useMemo(() => {
     return initialBoostedCardInfos.map((info, index) => {
-      return new BoostCardInfo(
-        BoostCardType.BOOST_NFT,
-        info.nftTokenId,
-        info.uniswapPool,
-        info.currentTick,
-        info.token0,
-        info.token1,
-        info.lender0,
-        info.lender1,
+      return BoostCardInfo.withColors(
+        info,
         colors.get(info.token0.logoURI) ?? info.color0,
-        colors.get(info.token1.logoURI) ?? info.color1,
-        info.position,
-        info.feesEarned,
-        info.borrower
+        colors.get(info.token1.logoURI) ?? info.color1
       );
     });
   }, [initialBoostedCardInfos, colors]);
