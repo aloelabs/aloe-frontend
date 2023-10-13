@@ -88,7 +88,7 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
   const { isOpen, cardInfo, nftTokenId, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
-  const [slippage, setSlippage] = useState('0.10');
+  const [slippagePercentage, setSlippagePercentage] = useState('0.10');
   const [oracleSeed, setOracleSeed] = useState<number | undefined>(undefined);
 
   // TODO: we should fetch this whenever a new block comes in,
@@ -104,10 +104,10 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
   }, [activeChain.id, cardInfo?.uniswapPool, provider, setOracleSeed]);
 
   const modifyData = useMemo(() => {
-    const slippagePercentage = parseFloat(slippage) / 100;
+    const slippage = parseFloat(slippagePercentage) / 100;
     const { maxSpend, zeroForOne } = computeData(
       cardInfo?.borrower || undefined,
-      isNaN(slippagePercentage) ? undefined : slippagePercentage
+      isNaN(slippage) ? undefined : slippage
     );
     return ethers.utils.defaultAbiCoder.encode(
       ['int24', 'int24', 'uint128', 'uint128', 'bool'],
@@ -119,7 +119,13 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
         zeroForOne,
       ]
     ) as `0x${string}`;
-  }, [cardInfo?.borrower, cardInfo?.position.liquidity, cardInfo?.position.lower, cardInfo?.position.upper, slippage]);
+  }, [
+    cardInfo?.borrower,
+    cardInfo?.position.liquidity,
+    cardInfo?.position.lower,
+    cardInfo?.position.upper,
+    slippagePercentage,
+  ]);
 
   const { config: configBurn, isLoading: isCheckingIfAbleToBurn } = usePrepareContractWrite({
     address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
@@ -162,7 +168,7 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
           <MaxSlippageInput
             tooltipContent={SLIPPAGE_TOOLTIP_TEXT}
             updateMaxSlippage={(value: string) => {
-              setSlippage(value);
+              setSlippagePercentage(value);
             }}
             disabled={burnIsLoading}
           />
@@ -180,7 +186,7 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
             <strong>
               {cardInfo.amount1()} {cardInfo.token1.symbol}
             </strong>{' '}
-            in return. You have selected a slippage tolerance of <strong>{slippage}%</strong>.
+            in return. You have selected a slippage tolerance of <strong>{slippagePercentage}%</strong>.
           </Text>
         </div>
         <FilledGradientButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={burn}>

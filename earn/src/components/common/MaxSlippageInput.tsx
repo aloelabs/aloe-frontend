@@ -127,15 +127,15 @@ export type MaxSlippageInputProps = {
 
 export default function MaxSlippageInput(props: MaxSlippageInputProps) {
   const { updateMaxSlippage, tooltipContent, disabled } = props;
-  const [tempSlippage, setTempSlippage] = useState('0.10');
-  const [slippage, setSlippage] = useState('0.10');
+  const [tempSlippagePercentage, setTempSlippage] = useState('0.10');
+  const [slippagePercentage, setSlippage] = useState('0.10');
 
   useEffect(() => {
-    if (slippage !== tempSlippage) {
-      setTempSlippage(slippage);
+    if (slippagePercentage !== tempSlippagePercentage) {
+      setTempSlippage(slippagePercentage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slippage]);
+  }, [slippagePercentage]);
 
   return (
     <div className='w-full flex flex-col gap-y-2 mt-6'>
@@ -172,13 +172,13 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                             }
                           }}
                           onBlur={() => {
-                            let currentValue = parseFloat(tempSlippage);
+                            let currentValue = parseFloat(tempSlippagePercentage);
                             currentValue =
                               currentValue > MAX_SLIPPAGE_PERCENTAGE ? MAX_SLIPPAGE_PERCENTAGE : currentValue;
                             const output = isNaN(currentValue)
                               ? DEFAULT_CUSTOM_SLIPPAGE_PERCENTAGE
                               : currentValue.toFixed(2);
-                            if (slippage !== output) {
+                            if (slippagePercentage !== output) {
                               setSlippage(output);
                               updateMaxSlippage(output);
                             } else {
@@ -188,7 +188,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                           type='text'
                           className={selected ? 'selected' : ''}
                           autoFocus={true}
-                          value={tempSlippage}
+                          value={tempSlippagePercentage}
                           placeholder='0'
                           disabled={disabled}
                         />
@@ -198,7 +198,7 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
                   );
                 } else {
                   return (
-                    <SlippageButton onClick={() => updateMaxSlippage(slippage)} disabled={disabled}>
+                    <SlippageButton onClick={() => updateMaxSlippage(slippagePercentage)} disabled={disabled}>
                       <span>Custom</span>
                     </SlippageButton>
                   );
