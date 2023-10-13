@@ -278,7 +278,7 @@ export default function BoostPage() {
           lightning bolt to get started.
         </Text>
       </ExplainerWrapper>
-      <Text size='XL'>Imported Positions</Text>
+      <Text size='XL'>Boosted Positions</Text>
       <div className='flex flex-wrap gap-4 mt-4 mb-8'>
         {isLoading &&
           boostedCardInfos.length === 0 &&
@@ -288,7 +288,7 @@ export default function BoostPage() {
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
       </div>
-      <Text size='XL'>Importable Positions</Text>
+      <Text size='XL'>Uniswap Positions</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
         {isLoading &&
           uniswapCardInfos.length === 0 &&
