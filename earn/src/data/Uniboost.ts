@@ -142,7 +142,12 @@ export async function fetchBoostBorrowersList(
   const boostNftContract = new ethers.Contract(ALOE_II_BOOST_NFT_ADDRESS[chainId], BoostNftAbi, provider);
 
   // Figure out how many Boost NFTs the user has
-  const numBoostNfts: number = (await boostNftContract.balanceOf(userAddress)).toNumber();
+  let numBoostNfts: number = 0;
+  try {
+    numBoostNfts = (await boostNftContract.balanceOf(userAddress)).toNumber();
+  } catch (e) {
+    return { borrowers: [], tokenIds: [] };
+  }
   // We can compute the `id` of each NFT offline using this hashing thingy
   const tokenIds: string[] = [];
   for (let i = 0; i < numBoostNfts; i += 1) {
