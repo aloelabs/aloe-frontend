@@ -13,7 +13,6 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import styled from 'styled-components';
 import { Address, useContractRead, useProvider } from 'wagmi';
 
@@ -53,7 +52,6 @@ export default function ManageBoostPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
   const [isBurnModalOpen, setIsBurnModalOpen] = useState(false);
 
   const navigate = useNavigate();
@@ -106,18 +104,6 @@ export default function ManageBoostPage() {
       setTokenQuotes({ token0Price, token1Price });
     })();
   }, [cardInfo, setTokenQuotes]);
-
-  // TODO: we should fetch this whenever a new block comes in,
-  // because that's the condition that could cause it to be stale.
-  // On L2's it'll remain Q32 anyway, so doesn't matter. Therefore
-  // we should probably move the "if chainId === 1" logic here.
-  useEffect(() => {
-    if (!cardInfo?.uniswapPool) return;
-    (async () => {
-      const seed = await computeOracleSeed(cardInfo?.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  }, [activeChain.id, cardInfo?.uniswapPool, provider, setOracleSeed]);
 
   const { data: boostNftAttributes } = useContractRead({
     abi: boostNftAbi,
@@ -182,11 +168,10 @@ export default function ManageBoostPage() {
           </div>
         </Container>
       )}
-      {cardInfo && (
+      {cardInfo && isBurnModalOpen && (
         <BurnBoostModal
           isOpen={isBurnModalOpen}
           cardInfo={cardInfo}
-          oracleSeed={oracleSeed}
           nftTokenId={nftTokenId}
           setIsOpen={() => {
             setIsBurnModalOpen(false);
