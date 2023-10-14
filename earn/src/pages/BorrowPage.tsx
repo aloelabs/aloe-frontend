@@ -571,6 +571,7 @@ export default function BorrowPage() {
                 if (isConnected) setIsWithdrawAnteModalOpen(true);
               }}
               isWithdrawAnteDisabled={isUnableToWithdrawAnte}
+              isDisabled={!selectedMarginAccount}
             />
           </MonitorContainer>
           <GraphContainer>
