@@ -27,16 +27,17 @@ const MetricCardContainer = styled.div`
   padding: 16px;
 `;
 
-const MetricCardPlaceholder = styled.div.attrs((props: { height: number }) => props)`
+const MetricCardPlaceholder = styled.div.attrs((props: { height: number; $animate: boolean }) => props)`
   display: inline-block;
   border-radius: 8px;
   padding: 16px;
   height: ${(props) => props.height}px;
   background-color: #0d171e;
-  background-image: linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%);
+  animation: ${(props) => (props.$animate ? 'metricCardShimmer 0.75s forwards linear infinite' : '')};
+  background-image: ${(props) =>
+    props.$animate ? 'linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%)' : ''};
   background-repeat: no-repeat;
   background-size: 200% 100%;
-  animation: metricCardShimmer 0.75s forwards linear infinite;
   overflow: hidden;
   position: relative;
 
@@ -161,10 +162,11 @@ export type BorrowMetricsProps = {
   dailyInterest0: number;
   dailyInterest1: number;
   uniswapPositions: readonly UniswapPosition[];
+  userHasNoMarginAccounts: boolean;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccount, dailyInterest0, dailyInterest1, uniswapPositions } = props;
+  const { marginAccount, dailyInterest0, dailyInterest1, uniswapPositions, userHasNoMarginAccounts } = props;
 
   const maxSafeCollateralFall = useMemo(() => {
     if (!marginAccount) return null;
@@ -230,15 +232,15 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     return (
       <MetricsGrid>
         <MetricsGridUpper>
-          <MetricCardPlaceholder height={96} />
-          <MetricCardPlaceholder height={96} />
-          <MetricCardPlaceholder height={96} />
-          <MetricCardPlaceholder height={96} />
+          <MetricCardPlaceholder height={96} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={96} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={96} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={96} $animate={!userHasNoMarginAccounts} />
         </MetricsGridUpper>
         <MetricsGridLower>
-          <MetricCardPlaceholder height={56} />
-          <MetricCardPlaceholder height={56} />
-          <MetricCardPlaceholder height={56} />
+          <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
         </MetricsGridLower>
       </MetricsGrid>
     );
