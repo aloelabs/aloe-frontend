@@ -15,6 +15,7 @@ export type ManageAccountButtonsProps = {
   onGetLeverage: () => void;
   onWithdrawAnte: () => void;
   isWithdrawAnteDisabled: boolean;
+  isDisabled: boolean;
 };
 
 export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
@@ -26,6 +27,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
     onGetLeverage,
     onWithdrawAnte,
     isWithdrawAnteDisabled,
+    isDisabled,
   } = props;
   return (
     <div className='flex flex-col gap-3 w-max'>
@@ -35,6 +37,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onAddCollateral}
         size='S'
         svgColorType='stroke'
+        disabled={isDisabled}
       >
         Add Collateral
       </OutlinedWhiteButtonWithIcon>
@@ -44,6 +47,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onRemoveCollateral}
         size='S'
         svgColorType='stroke'
+        disabled={isDisabled}
       >
         Remove Collateral
       </OutlinedWhiteButtonWithIcon>
@@ -53,6 +57,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onBorrow}
         size='S'
         svgColorType='stroke'
+        disabled={isDisabled}
       >
         Borrow
       </OutlinedWhiteButtonWithIcon>
@@ -62,6 +67,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onRepay}
         size='S'
         svgColorType='stroke'
+        disabled={isDisabled}
       >
         Repay
       </OutlinedWhiteButtonWithIcon>
@@ -71,6 +77,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onGetLeverage}
         size='S'
         svgColorType='stroke'
+        disabled={isDisabled}
       >
         Get Leverage
       </OutlinedWhiteButtonWithIcon>
@@ -80,7 +87,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         onClick={onWithdrawAnte}
         size='S'
         svgColorType='stroke'
-        disabled={isWithdrawAnteDisabled}
+        disabled={isWithdrawAnteDisabled || isDisabled}
       >
         Withdraw Ante
       </OutlinedWhiteButtonWithIcon>
