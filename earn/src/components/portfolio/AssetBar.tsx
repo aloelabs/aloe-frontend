@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { RESPONSIVE_BREAKPOINT_SM } from 'shared/lib/data/constants/Breakpoints';
-import { GREY_900 } from 'shared/lib/data/constants/Colors';
 import useHover from 'shared/lib/data/hooks/UseHover';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -50,10 +49,11 @@ const AssetChunkContainer = styled.div.attrs((props: { percentage: number; color
   }
 `;
 
-const AssetIcon = styled.img`
+const AssetIcon = styled.img<{ $outlineColor: string }>`
   width: 32px;
   height: 32px;
-  border: 1px solid ${GREY_900};
+  outline: 1px solid ${(props) => props.$outlineColor};
+  outline-offset: -0.5px;
   border-radius: 50%;
   background-color: #ffffff;
 
@@ -95,6 +95,7 @@ export function AssetChunk(props: AssetChunkProps) {
         src={token.logoURI || ''}
         alt={token.symbol}
         className={selected ? 'selected' : ''}
+        $outlineColor={color}
         width={32}
         height={32}
       />
