@@ -511,6 +511,8 @@ export default function BorrowPage() {
 
   const isUnableToWithdrawAnte = hasLiabilities || !accountHasEther;
 
+  const userHasNoMarginAccounts = marginAccounts?.length === 0;
+
   return (
     <AppPage>
       <Container>
@@ -536,6 +538,7 @@ export default function BorrowPage() {
               />
             ))}
             <NewSmartWalletButton
+              userHasNoMarginAccounts={userHasNoMarginAccounts}
               onClick={() => {
                 setNewSmartWalletModalOpen(true);
               }}
@@ -576,7 +579,11 @@ export default function BorrowPage() {
           </MonitorContainer>
           <GraphContainer>
             <div>
-              {graphData && graphData.length > 0 ? <BorrowGraph graphData={graphData} /> : <BorrowGraphPlaceholder />}
+              {graphData && graphData.length > 0 ? (
+                <BorrowGraph graphData={graphData} />
+              ) : (
+                <BorrowGraphPlaceholder $animate={!userHasNoMarginAccounts} />
+              )}
               <div className='text-center opacity-50 pl-8'>
                 <Text size='S' weight='regular' color={LABEL_TEXT_COLOR}>
                   <em>
@@ -593,6 +600,7 @@ export default function BorrowPage() {
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
               uniswapPositions={uniswapPositions}
+              userHasNoMarginAccounts={userHasNoMarginAccounts}
             />
           </MetricsContainer>
           <UniswapPositionsContainer>

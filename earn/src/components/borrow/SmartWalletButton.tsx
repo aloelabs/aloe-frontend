@@ -9,7 +9,9 @@ import useProminentColor from '../../data/hooks/UseProminentColor';
 import { rgba } from '../../util/Colors';
 import TokenPairIcons from '../common/TokenPairIcons';
 
-export const Container = styled.button.attrs((props: { backgroundGradient: string; active: boolean }) => props)`
+const Container = styled.button.attrs(
+  (props: { backgroundGradient: string; active: boolean; $animate: boolean }) => props
+)`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -26,6 +28,32 @@ export const Container = styled.button.attrs((props: { backgroundGradient: strin
     background: ${(props) => props.backgroundGradient};
     filter: none;
     opacity: 1;
+  }
+
+  ${(props) => {
+    if (props.$animate) {
+      return `
+        animation: pulse 2s infinite;
+        background: ${props.backgroundGradient};
+        filter: none;
+        opacity: 1;
+      `;
+    }
+  }}
+
+  @keyframes pulse {
+    0% {
+      background: rgba(255, 255, 255, 0.25);
+      box-shadow: 0px 0px 0px 0px rgba(255, 255, 255, 0.5);
+    }
+    50% {
+      background: rgba(255, 255, 255, 0.25);
+      box-shadow: 0px 0px 0px 4px rgba(255, 255, 255, 0);
+    }
+    100% {
+      background: rgba(255, 255, 255, 0.25);
+      box-shadow: 0px 0px 0px 0px rgba(255, 255, 255, 0.5);
+    }
   }
 `;
 
@@ -74,19 +102,20 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
 }
 
 export type NewSmartWalletButtonProps = {
+  userHasNoMarginAccounts: boolean;
   onClick: () => void;
 };
 
 export function NewSmartWalletButton(props: NewSmartWalletButtonProps) {
-  const { onClick } = props;
+  const { userHasNoMarginAccounts, onClick } = props;
   return (
-    <Container backgroundGradient={'transparent'} active={false} onClick={onClick}>
+    <Container backgroundGradient={'transparent'} active={false} onClick={onClick} $animate={userHasNoMarginAccounts}>
       <div className='flex items-center gap-4 m-auto'>
         <PlusIconWrapper>
           <PlusIcon />
         </PlusIconWrapper>
         <Display size='S' weight='semibold'>
-          New
+          Create
         </Display>
       </div>
     </Container>
