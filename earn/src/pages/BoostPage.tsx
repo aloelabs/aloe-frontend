@@ -16,6 +16,7 @@ import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
+import NoPositions from '../components/boost/NoPositions';
 import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
@@ -277,6 +278,14 @@ export default function BoostPage() {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
+        {boostedCardInfos.length === 0 && (
+          <NoPositions
+            primaryText='Your Boosted positions will appear here.'
+            secondaryText={`If you have any Uniswap V3 positions that are eligible for boosting,
+             they will appear in the section below. You can import positions by clicking on the
+             lightning bolt icon in the top right corner.`}
+          />
+        )}
       </div>
       <Text size='XL'>Uniswap Positions</Text>
       <div className='flex flex-wrap gap-4 mt-4'>
@@ -287,6 +296,13 @@ export default function BoostPage() {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
+        {uniswapCardInfos.length === 0 && (
+          <NoPositions
+            primaryText='Your Uniswap positions will appear here.'
+            secondaryText={`Eligible Uniswap V3 positions will appear in this section.
+             You can create positions via the Uniswap interface.`}
+          />
+        )}
       </div>
     </AppPage>
   );
