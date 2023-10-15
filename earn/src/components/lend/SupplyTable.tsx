@@ -8,6 +8,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
+import SupplyModal from './modal/SupplyModal';
 import OptimizeButton from './OptimizeButton';
 
 const PAGE_SIZE = 10;
@@ -51,6 +52,7 @@ export type SupplyTableProps = {
 export default function SupplyTable(props: SupplyTableProps) {
   const { rows } = props;
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRow, setSelectedRow] = useState<SupplyTableRow | null>(null);
   const pages: SupplyTableRow[][] = useMemo(() => {
     const pages: SupplyTableRow[][] = [];
     for (let i = 0; i < rows.length; i += PAGE_SIZE) {
@@ -62,85 +64,101 @@ export default function SupplyTable(props: SupplyTableProps) {
     return null;
   }
   return (
-    <TableContainer>
-      <Table>
-        <TableHeader>
-          <tr>
-            <th className='px-4 py-2 text-start whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                Asset
-              </Text>
-            </th>
-            <th className='px-4 py-2 text-start whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                Collateral Assets
-              </Text>
-            </th>
-            <th className='px-4 py-2 text-end whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                APY
-              </Text>
-            </th>
-            <th className='px-4 py-2 text-end whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                Balance
-              </Text>
-            </th>
-            <th className='px-4 py-2 text-center whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                Optimized
-              </Text>
-            </th>
-          </tr>
-        </TableHeader>
-        <tbody>
-          {pages[currentPage - 1].map((row, index) => (
-            <HoverableRow key={index} onClick={() => {}}>
-              <td className='px-4 py-2 text-start whitespace-nowrap'>
-                <div className='flex items-center gap-2'>
-                  <TokenIcon token={row.asset} />
-                  <Text size='M'>{row.asset.symbol}</Text>
-                </div>
-              </td>
-              <td className='px-4 py-2 text-start whitespace-nowrap'>
-                <div className='flex items-center gap-2'>
-                  <TokenIconsWithTooltip tokens={row.collateralAssets} />
-                </div>
-              </td>
-              <td className='px-4 py-2 text-end whitespace-nowrap'>
-                <Display size='XS'>{row.apy.toFixed(2)}%</Display>
-              </td>
-              <td className='px-4 py-2 text-end whitespace-nowrap'>
-                <Display size='XS'>${row.supplyBalanceUsd.toFixed(2)}</Display>
-                <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                  {formatTokenAmount(row.supplyBalance)} {row.asset.symbol}
-                </Display>
-              </td>
-              <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
-                <OptimizeButton
-                  isOptimized={row.isOptimized}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
+    <>
+      <TableContainer>
+        <Table>
+          <TableHeader>
+            <tr>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Asset
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Collateral Assets
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-end whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  APY
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-end whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Balance
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-center whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Optimized
+                </Text>
+              </th>
+            </tr>
+          </TableHeader>
+          <tbody>
+            {pages[currentPage - 1].map((row, index) => (
+              <HoverableRow
+                key={index}
+                onClick={() => {
+                  setSelectedRow(row);
+                }}
+              >
+                <td className='px-4 py-2 text-start whitespace-nowrap'>
+                  <div className='flex items-center gap-2'>
+                    <TokenIcon token={row.asset} />
+                    <Text size='M'>{row.asset.symbol}</Text>
+                  </div>
+                </td>
+                <td className='px-4 py-2 text-start whitespace-nowrap'>
+                  <div className='flex items-center gap-2'>
+                    <TokenIconsWithTooltip tokens={row.collateralAssets} />
+                  </div>
+                </td>
+                <td className='px-4 py-2 text-end whitespace-nowrap'>
+                  <Display size='XS'>{row.apy.toFixed(2)}%</Display>
+                </td>
+                <td className='px-4 py-2 text-end whitespace-nowrap'>
+                  <Display size='XS'>${row.supplyBalanceUsd.toFixed(2)}</Display>
+                  <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                    {formatTokenAmount(row.supplyBalance)} {row.asset.symbol}
+                  </Display>
+                </td>
+                <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
+                  <OptimizeButton
+                    isOptimized={row.isOptimized}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  />
+                </td>
+              </HoverableRow>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className='px-4 py-2' colSpan={5}>
+                <Pagination
+                  currentPage={currentPage}
+                  itemsPerPage={10}
+                  totalItems={rows.length}
+                  loading={false}
+                  onPageChange={(page) => setCurrentPage(page)}
                 />
               </td>
-            </HoverableRow>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td className='px-4 py-2' colSpan={5}>
-              <Pagination
-                currentPage={currentPage}
-                itemsPerPage={10}
-                totalItems={rows.length}
-                loading={false}
-                onPageChange={(page) => setCurrentPage(page)}
-              />
-            </td>
-          </tr>
-        </tfoot>
-      </Table>
-    </TableContainer>
+            </tr>
+          </tfoot>
+        </Table>
+      </TableContainer>
+      {selectedRow && (
+        <SupplyModal
+          isOpen={true}
+          selectedRow={selectedRow}
+          setIsOpen={() => {
+            setSelectedRow(null);
+          }}
+        />
+      )}
+    </>
   );
 }
