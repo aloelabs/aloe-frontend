@@ -108,7 +108,7 @@ export default function SupplyModal(props: SupplyModalProps) {
           <Text size='M' weight='bold'>
             Collateral Assets
           </Text>
-          <div className='w-full flex justify-center'>
+          <div className='w-full flex justify-start p-2'>
             <TokenIconsWithTooltip tokens={selectedRow.collateralAssets} width={24} height={24} />
           </div>
         </div>
