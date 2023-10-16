@@ -23,15 +23,17 @@ const Container = styled.div`
 
 export type TokenIconsProps = {
   tokens: Token[];
+  width?: number;
+  height?: number;
 };
 
 export default function TokenIcons(props: TokenIconsProps) {
-  const { tokens } = props;
+  const { tokens, width, height } = props;
   return (
     <Container>
       {tokens.map((token, index) => (
         <div key={index}>
-          <TokenIcon key={index} token={token} width={16} height={16} />
+          <TokenIcon key={index} token={token} width={width || 16} height={height || 16} />
         </div>
       ))}
     </Container>
