@@ -89,6 +89,7 @@ export default function SupplyModal(props: SupplyModalProps) {
     type: 'disjunction',
   });
   const formattedCollateral = format.format(selectedRow.collateralAssets.map((token) => token.symbol));
+
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Supply'>
       <div className='w-full flex flex-col gap-4'>
