@@ -17,11 +17,7 @@ import EllipsisIcon from '../../assets/svg/Ellipsis';
 import AccountInfo from './AccountInfo';
 import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
-import {
-  RESPONSIVE_BREAKPOINTS,
-  RESPONSIVE_BREAKPOINT_TABLET,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
 import { GREY_700, GREY_800 } from '../../data/constants/Colors';
@@ -32,7 +28,7 @@ const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
   height: 40px;
   margin-right: 32px;
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
 `;
@@ -41,7 +37,7 @@ const MobileLogo = styled(AloeMobileLogo)`
   width: 40px;
   height: 40px;
   margin-right: 32px;
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.TABLET + 1}px) {
     display: none;
   }
 `;
@@ -69,11 +65,11 @@ const TabletBottomNav = styled.div`
   border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.TABLET + 1}px) {
     display: none;
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.XS}px) {
     display: none;
   }
 `;
@@ -90,7 +86,7 @@ const MobileBottomNav = styled.div`
   border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.XS + 1}px) {
     display: none;
   }
 `;
@@ -100,7 +96,7 @@ const VerticalDivider = styled.div`
   height: 64px;
   background-color: ${GREY_700};
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     height: 1px;
   }
@@ -135,7 +131,7 @@ const ExternalFooterLinkWithIcon = styled.a`
 const DesktopNavLinks = styled.div`
   display: flex;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
 `;
@@ -158,7 +154,7 @@ const DesktopNavLink = styled(NavLink)`
     border-bottom: 1px solid ${GREY_700};
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     padding: 12px 0px;
   }
@@ -182,7 +178,7 @@ const ExternalDesktopLink = styled.a`
     border-bottom: 1px solid ${GREY_700};
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     padding: 12px 0px;
   }
@@ -244,7 +240,7 @@ const NavOverlay = styled.div`
   padding: 16px;
   overflow-y: scroll;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.XS + 1}px) {
     display: none;
   }
 `;
