@@ -1,7 +1,9 @@
-import { Fragment, useContext, useEffect } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { useNavigate } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { lenderABI } from 'shared/lib/abis/Lender';
 import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
@@ -20,6 +22,7 @@ import styled from 'styled-components';
 import { Address, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import LenderCard from '../components/info/LenderCard';
 import MarketCard from '../components/info/MarketCard';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
@@ -67,10 +70,29 @@ const InfoGrid = styled.div`
 export default function InfoPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [poolInfo, setPoolInfo] = useChainDependentState<Map<Address, AloeMarketInfo> | undefined>(
     undefined,
     activeChain.id
   );
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    (async () => {
+      if (!pendingTxn) return;
+      setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (receipt.status === 1) {
+        setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
+      } else {
+        setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
+      }
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+
   useEffect(() => {
     (async () => {
       const chainId = (await provider.getNetwork()).chainId;
@@ -329,6 +351,7 @@ export default function InfoPage() {
                 poolAddress={addr}
                 feeTier={info.feeTier}
                 lastUpdatedTimestamp={info.lastUpdatedTimestamp}
+                setPendingTxn={setPendingTxn}
               />
               <LenderCard
                 address={info.lenders[0]}
@@ -350,6 +373,23 @@ export default function InfoPage() {
           );
         })}
       </InfoGrid>
+      <PendingTxnModal
+        isOpen={isPendingTxnModalOpen}
+        txnHash={pendingTxn?.hash}
+        setIsOpen={(isOpen: boolean) => {
+          setIsPendingTxnModalOpen(isOpen);
+          if (!isOpen) {
+            setPendingTxn(null);
+          }
+        }}
+        onConfirm={() => {
+          setIsPendingTxnModalOpen(false);
+          setTimeout(() => {
+            navigate(0);
+          }, 100);
+        }}
+        status={pendingTxnModalStatus}
+      />
     </AppPage>
   );
 }
