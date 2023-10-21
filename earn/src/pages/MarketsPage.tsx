@@ -1,16 +1,23 @@
 import { useContext, useEffect, useMemo } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
+import { ethers } from 'ethers';
+import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
-import { getTokenBySymbol } from 'shared/lib/data/TokenData';
-import { useAccount, useProvider } from 'wagmi';
+import { getToken, getTokenBySymbol } from 'shared/lib/data/TokenData';
+import { Address, useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
+import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
+import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
+import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import {
   getAvailableLendingPairs,
@@ -18,6 +25,7 @@ import {
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
+import { fetchMarginAccounts, MarginAccount, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 
 export type TokenQuote = {
@@ -43,11 +51,16 @@ export default function MarketsPage() {
     [],
     activeChain.id
   );
+  const [availablePools, setAvailablePools] = useChainDependentState(
+    new Map<string, UniswapPoolInfo>(),
+    activeChain.id
+  );
+  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
 
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
-  const address = account.address;
+  const userAddress = account.address;
 
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
@@ -92,15 +105,73 @@ export default function MarketsPage() {
       const results = await getAvailableLendingPairs(chainId, provider);
       setLendingPairs(results);
     })();
-  }, [provider, address, setLendingPairs]);
+  }, [provider, userAddress, setLendingPairs]);
 
   useEffect(() => {
     (async () => {
-      if (!address) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
+      if (!userAddress) return;
+      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, userAddress, provider)));
       setLendingPairBalances(results);
     })();
-  }, [provider, address, lendingPairs, setLendingPairBalances]);
+  }, [provider, userAddress, lendingPairs, setLendingPairBalances]);
+
+  // MARK: Fetch available pools
+  useEffect(() => {
+    (async () => {
+      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
+      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
+      const chainId = (await provider.getNetwork()).chainId;
+      let logs: ethers.providers.Log[] = [];
+      try {
+        logs = await provider.getLogs({
+          fromBlock: 0,
+          toBlock: 'latest',
+          address: ALOE_II_FACTORY_ADDRESS[chainId],
+          topics: [TOPIC0_CREATE_MARKET_EVENT],
+        });
+      } catch (e) {
+        console.error(e);
+      }
+
+      const poolAddresses = logs
+        .map((e) => `0x${e.topics[1].slice(-40)}`)
+        .filter((addr) => {
+          return !UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase());
+        });
+      const poolInfoTuples = await Promise.all(
+        poolAddresses.map((addr) => {
+          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
+          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
+        })
+      );
+
+      const poolInfoMap = new Map<string, UniswapPoolInfo>();
+      poolAddresses.forEach((addr, i) => {
+        const token0 = getToken(chainId, poolInfoTuples[i][0] as Address);
+        const token1 = getToken(chainId, poolInfoTuples[i][1] as Address);
+        const fee = poolInfoTuples[i][2] as number;
+        if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
+      });
+
+      setAvailablePools(poolInfoMap);
+    })();
+  }, [provider, setAvailablePools]);
+
+  const borrowerLensContract = useContract({
+    abi: MarginAccountLensABI,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
+    signerOrProvider: provider,
+  });
+
+  // MARK: Fetch margin accounts
+  useEffect(() => {
+    (async () => {
+      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
+      const chainId = (await provider.getNetwork()).chainId;
+      const fetchedMarginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
+      setMarginAccounts(fetchedMarginAccounts);
+    })();
+  }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
@@ -209,12 +280,69 @@ export default function MarketsPage() {
     return rows;
   }, [tokenBalances]);
 
+  const collateralEntries = useMemo(() => {
+    const entries: CollateralEntry[] = [];
+    tokenBalances.forEach((tokenBalance) => {
+      if (tokenBalance.balance !== 0) {
+        const matchingPairs = lendingPairs.filter((pair) => {
+          return (
+            pair.token0.address === tokenBalance.token.address || pair.token1.address === tokenBalance.token.address
+          );
+        });
+        entries.push({
+          asset: tokenBalance.token,
+          balance: tokenBalance.balance,
+          matchingPairs: matchingPairs,
+        });
+      }
+    });
+    return entries;
+  }, [lendingPairs, tokenBalances]);
+
+  const borrowEntries = useMemo(() => {
+    const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
+      const kitty0Balance = combinedBalances.find(
+        (balance) => balance.token.address === (lendingPair.kitty0?.address || lendingPair.kitty0.address)
+      );
+      const kitty1Balance = combinedBalances.find(
+        (balance) => balance.token.address === (lendingPair.kitty1?.address || lendingPair.kitty1.address)
+      );
+      acc.push({
+        asset: lendingPair.token0,
+        collateral: lendingPair.token1,
+        apy: lendingPair.kitty0Info.apy,
+        supply: kitty0Balance?.balance || 0,
+      });
+      acc.push({
+        asset: lendingPair.token1,
+        collateral: lendingPair.token0,
+        apy: lendingPair.kitty1Info.apy,
+        supply: kitty1Balance?.balance || 0,
+      });
+      return acc;
+    }, []);
+    return borrowable.reduce((acc: { [key: string]: BorrowEntry[] }, borrowable) => {
+      const existing = acc[borrowable.asset.symbol];
+      if (existing && borrowable.supply > 0) {
+        existing.push(borrowable);
+      } else if (borrowable.supply > 0) {
+        acc[borrowable.asset.symbol] = [borrowable];
+      }
+      return acc;
+    }, {});
+  }, [combinedBalances, lendingPairs]);
+
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
         <Text size='XL'>Supply</Text>
         <SupplyTable rows={supplyRows} />
         <div className='flex flex-col gap-6'>
+          <BorrowingWidget
+            marginAccounts={marginAccounts}
+            collateralEntries={collateralEntries}
+            borrowEntries={borrowEntries}
+          />
           <Text size='XL'>Collateral</Text>
           <CollateralTable rows={collateralRows} />
         </div>
