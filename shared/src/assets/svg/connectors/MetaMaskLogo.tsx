@@ -1,4 +1,4 @@
-import { SVGProps } from '.';
+import { SVGProps } from '..';
 import styled from 'styled-components';
 
 const StyledMetaMaskLogo = styled.svg`

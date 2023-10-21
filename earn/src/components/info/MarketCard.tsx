@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { formatDistanceToNowStrict, format } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
@@ -13,7 +14,7 @@ import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 
@@ -97,6 +98,7 @@ export type MarketCardProps = {
   poolAddress: string;
   feeTier: FeeTier;
   lastUpdatedTimestamp?: number;
+  setPendingTxn: (data: SendTransactionResult) => void;
 };
 
 export default function MarketCard(props: MarketCardProps) {
@@ -111,8 +113,10 @@ export default function MarketCard(props: MarketCardProps) {
     poolAddress,
     feeTier,
     lastUpdatedTimestamp,
+    setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
+  const { address: accountAddress } = useAccount();
 
   const etherscanLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
   const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
@@ -166,6 +170,9 @@ export default function MarketCard(props: MarketCardProps) {
     request: {
       ...updateLTVConfig.request,
       gasLimit: updateLTVGasLimit,
+    },
+    onSuccess: (data: SendTransactionResult) => {
+      setPendingTxn(data);
     },
   });
 
@@ -225,7 +232,11 @@ export default function MarketCard(props: MarketCardProps) {
               Last Updated: {lastUpdated}
             </Text>
             <div className='flex justify-center mt-[-2.9px]'>
-              <OutlinedWhiteButton size='S' disabled={!isUpdateLTVLoading && !canUpdateLTV} onClick={updateLTV}>
+              <OutlinedWhiteButton
+                size='S'
+                disabled={isUpdateLTVLoading || !canUpdateLTV || accountAddress === undefined}
+                onClick={updateLTV}
+              >
                 {isUpdateLTVLoading ? 'Loading' : 'Update LTV'}
               </OutlinedWhiteButton>
             </div>
