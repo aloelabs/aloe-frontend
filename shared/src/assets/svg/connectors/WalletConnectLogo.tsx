@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { SVGProps } from '.';
+import { SVGProps } from '..';
 
 export default function WalletConnectLogo(props: SVGProps) {
   return (
