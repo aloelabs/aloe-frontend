@@ -354,7 +354,7 @@ export default function BorrowPage() {
         const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
 
         const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
-        let ltv = 1 / (Math.exp(selectedMarginAccount.nSigma * iv) * fact);
+        let ltv = 1 / (Math.exp((selectedMarginAccount.nSigma * iv) / 10) * fact);
         ltv = Math.max(0.1, Math.min(ltv, 0.9));
 
         const resultData: BorrowGraphData = {

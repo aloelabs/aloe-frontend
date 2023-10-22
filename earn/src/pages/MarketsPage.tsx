@@ -27,6 +27,7 @@ import {
 } from '../data/LendingPair';
 import { fetchMarginAccounts, MarginAccount, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
+import { getProminentColor } from '../util/Colors';
 
 export type TokenQuote = {
   token: Token;
@@ -56,11 +57,21 @@ export default function MarketsPage() {
     activeChain.id
   );
   const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
+  const [tokenColors, setTokenColors] = useChainDependentState<Map<string, string>>(new Map(), activeChain.id);
 
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
   const userAddress = account.address;
+
+  const uniqueTokens = useMemo(() => {
+    const tokens = new Set<Token>();
+    lendingPairs.forEach((pair) => {
+      tokens.add(pair.token0);
+      tokens.add(pair.token1);
+    });
+    return Array.from(tokens.values());
+  }, [lendingPairs]);
 
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
@@ -70,6 +81,18 @@ export default function MarketsPage() {
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
+
+  useEffect(() => {
+    (async () => {
+      const tokenColorMap: Map<string, string> = new Map();
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
+      const colors = await Promise.all(colorPromises);
+      uniqueTokens.forEach((token: Token, index: number) => {
+        tokenColorMap.set(token.address, colors[index]);
+      });
+      setTokenColors(tokenColorMap);
+    })();
+  }, [lendingPairs, setTokenColors, uniqueTokens]);
 
   useEffect(() => {
     async function fetch() {
@@ -342,6 +365,7 @@ export default function MarketsPage() {
             marginAccounts={marginAccounts}
             collateralEntries={collateralEntries}
             borrowEntries={borrowEntries}
+            tokenColors={tokenColors}
           />
           <Text size='XL'>Collateral</Text>
           <CollateralTable rows={collateralRows} />
