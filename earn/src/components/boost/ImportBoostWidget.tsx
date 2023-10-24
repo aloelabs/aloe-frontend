@@ -7,28 +7,28 @@ import axios, { AxiosResponse } from 'axios';
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import {
-  ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_BOOST_MANAGER_ADDRESS,
+  ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
-import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD } from 'shared/lib/util/Numbers';
+import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
 import {
   erc721ABI,
+  useAccount,
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
@@ -37,7 +37,6 @@ import {
 } from 'wagmi';
 
 import { ChainContext } from '../../App';
-import KittyLensAbi from '../../assets/abis/KittyLens.json';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
@@ -180,13 +179,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useSafeState<TwentyFourHourPoolData | undefined>(
     undefined
   );
   const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[] | undefined>(undefined);
 
   const provider = useProvider({ chainId: activeChain.id });
+  const { address: userAddress } = useAccount();
 
   // Generate labels for input range (slider)
   const labels: string[] = [];
@@ -198,13 +197,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     }
   }
 
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(cardInfo.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
-
+  // TODO: use async effect?
   useEffect(() => {
     (async () => {
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
@@ -235,7 +228,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       if (!provider || !cardInfo.lender0 || !cardInfo.lender1 || !cardInfo.token0 || !cardInfo.token1) return;
       const lenderLensContract = new ethers.Contract(
         ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
-        KittyLensAbi,
+        lenderLensAbi,
         provider
       );
       const marketInfo = await fetchMarketInfoFor(
@@ -250,7 +243,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     fetchMarketInfo();
   }, [activeChain.id, cardInfo.lender0, cardInfo.lender1, cardInfo.token0, cardInfo.token1, provider, setMarketInfo]);
 
-  const { data: anteData } = useContractRead({
+  const { data: marketParameters } = useContractRead({
     abi: factoryAbi,
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getParameters',
@@ -258,7 +251,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     chainId: activeChain.id,
   });
 
-  const ante = !anteData ? GN.zero(18) : GN.fromBigNumber(anteData.ante, 18);
+  const ante = !marketParameters ? ethers.BigNumber.from(0) : marketParameters.ante;
 
   const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
   const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
@@ -340,13 +333,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const enableHooks = cardInfo !== undefined;
 
   // Read who the manager is supposed to be
-  const { data: necessaryManager } = useContractRead({
-    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
-    abi: boostNftAbi,
-    functionName: 'boostManager',
-    chainId: activeChain.id,
-    enabled: enableHooks,
-  });
+  const necessaryManager = ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id];
 
   // Read who is approved to manage this Uniswap NFT
   const {
@@ -398,18 +385,46 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
 
   // Prepare for actual import/mint transaction
+  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
+  // First, we `mint` so that they have a `Borrower` to put stuff in
+  const encodedMint = useMemo(() => {
+    if (!userAddress) return undefined;
+    const to = userAddress;
+    const pools = [cardInfo.uniswapPool];
+    const salts = [generateBytes12Salt()];
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+  }, [borrowerNft, userAddress, cardInfo]);
+  // Then we `modify`, calling the BoostManager to import the Uniswap position
+  const encodedModify = useMemo(() => {
+    if (!userAddress) return undefined;
+    const owner = userAddress;
+    const indices = [0]; // TODO:
+    const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
+    const datas = [
+      ethers.utils.defaultAbiCoder.encode(
+        ['uint8', 'bytes'],
+        [
+          0, // actionId 0 means mint
+          initializationData,
+        ]
+      ) as `0x${string}`,
+    ];
+    const antes = [ante.div(1e13)];
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+  }, [borrowerNft, userAddress, activeChain, initializationData, ante]);
+
   const {
     config: configMint,
     isError: isUnableToMint,
     isLoading: isCheckingIfAbleToMint,
   } = usePrepareContractWrite({
-    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
-    abi: boostNftAbi,
-    functionName: 'mint',
-    args: [cardInfo.uniswapPool, initializationData ?? '0x', oracleSeed ?? Q32],
-    overrides: { value: ante.toBigNumber().add(1) },
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'multicall',
+    args: [!encodedMint || !encodedModify ? [] : [encodedMint, encodedModify]],
+    overrides: { value: ante },
     chainId: activeChain.id,
-    enabled: enableHooks && shouldMint && Boolean(oracleSeed) && Boolean(ante),
+    enabled: userAddress && enableHooks && shouldMint && Boolean(encodedMint) && Boolean(encodedModify),
   });
   gasLimit = configMint.request?.gasLimit.mul(110).div(100);
   const { write: mint, isLoading: isAskingUserToMint } = useContractWrite({
@@ -549,9 +564,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             graph to the left.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {ante.toString(GNFormat.LOSSY_HUMAN)} ETH to cover gas fees in the
-            event that you get liquidated. If you don't get liquidated, the ETH will be returned to you when you close
-            the position.
+            You will need to provide an additional {GN.fromBigNumber(ante, 18).toString(GNFormat.LOSSY_HUMAN)} ETH to
+            cover gas fees in the event that you get liquidated. If you don't get liquidated, the ETH will be returned
+            to you when you close the position.
           </Text>
         </div>
         <FilledGradientButton

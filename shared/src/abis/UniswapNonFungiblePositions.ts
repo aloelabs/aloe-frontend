@@ -1,4 +1,4 @@
-export const uniswapNFTManagerAbi = [
+export const uniswapNonFungiblePositionsAbi = [
   {
     inputs: [
       { internalType: 'address', name: '_factory', type: 'address' },

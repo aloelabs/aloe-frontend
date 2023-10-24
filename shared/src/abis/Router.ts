@@ -1,4 +1,4 @@
-export const routerABI = [
+export const routerAbi = [
   {
     inputs: [
       {
@@ -129,30 +129,6 @@ export const routerABI = [
       },
     ],
     stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'contract Lender',
-        name: 'lender',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-    ],
-    name: 'isMaxRedeemDynamic',
-    outputs: [
-      {
-        internalType: 'bool',
-        name: '',
-        type: 'bool',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
   },
   {

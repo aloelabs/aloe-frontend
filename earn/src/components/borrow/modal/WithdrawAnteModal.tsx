@@ -2,7 +2,7 @@ import { useContext } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -64,7 +64,7 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
     })();
   });
 
-  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
   const encodedData = borrowerInterface.encodeFunctionData('withdrawAnte', [userAddress]);
 
   const {
@@ -73,7 +73,7 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
     isLoading: isCheckingIfAbleToWithdrawAnte,
   } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
     enabled: Boolean(userAddress) && Boolean(oracleSeed),

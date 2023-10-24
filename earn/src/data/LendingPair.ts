@@ -1,7 +1,11 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { lenderABI } from 'shared/lib/abis/Lender';
+import { lenderAbi } from 'shared/lib/abis/Lender';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
@@ -16,11 +20,6 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
 
-import ERC20ABI from '../assets/abis/ERC20.json';
-import KittyABI from '../assets/abis/Kitty.json';
-import KittyLensABI from '../assets/abis/KittyLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from './constants/Values';
@@ -102,7 +101,7 @@ export async function getAvailableLendingPairs(
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
       contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chainId],
-      abi: KittyLensABI,
+      abi: lenderLensAbi as any,
       calls: [
         {
           reference: `${market.pool}-basics0`,
@@ -121,7 +120,7 @@ export async function getAvailableLendingPairs(
     contractCallContexts.push({
       reference: `${market.pool}-feeTier`,
       contractAddress: market.pool,
-      abi: UniswapV3PoolABI,
+      abi: uniswapV3PoolAbi as any,
       calls: [
         {
           reference: `${market.pool}-feeTier`,
@@ -134,7 +133,7 @@ export async function getAvailableLendingPairs(
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
       contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
-      abi: VolatilityOracleABI,
+      abi: volatilityOracleAbi as any,
       calls: [
         {
           reference: `${market.pool}-oracle`,
@@ -153,32 +152,6 @@ export async function getAvailableLendingPairs(
           reference: `${market.pool}-factory`,
           methodName: 'getParameters',
           methodParameters: [market.pool],
-        },
-      ],
-    });
-
-    contractCallContexts.push({
-      reference: `${market.pool}-lender0`,
-      contractAddress: market.kitty0,
-      abi: lenderABI as any,
-      calls: [
-        {
-          reference: `${market.pool}-lender0`,
-          methodName: 'reserveFactor',
-          methodParameters: [],
-        },
-      ],
-    });
-
-    contractCallContexts.push({
-      reference: `${market.pool}-lender1`,
-      contractAddress: market.kitty1,
-      abi: lenderABI as any,
-      calls: [
-        {
-          reference: `${market.pool}-lender1`,
-          methodName: 'reserveFactor',
-          methodParameters: [],
         },
       ],
     });
@@ -203,14 +176,7 @@ export async function getAvailableLendingPairs(
   const lendingPairs: LendingPair[] = [];
 
   correspondingLendingPairResults.forEach((value) => {
-    const {
-      basics: basicsResults,
-      feeTier: feeTierResults,
-      oracle: oracleResults,
-      factory: factoryResults,
-      lender0: lender0Results,
-      lender1: lender1Results,
-    } = value;
+    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults, factory: factoryResults } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
     const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
     const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
@@ -222,8 +188,6 @@ export async function getAvailableLendingPairs(
     const feeTier = feeTierReturnContexts[0].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
     const factoryResult = factoryReturnContexts[0].returnValues;
-    const reserveFactor0 = lender0Results.callsReturnContext[0].returnValues[0];
-    const reserveFactor1 = lender1Results.callsReturnContext[0].returnValues[0];
     const token0 = getToken(chainId, basics0[0]);
     const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
@@ -257,6 +221,9 @@ export async function getAvailableLendingPairs(
 
     const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
+
+    const reserveFactor0 = basics0[6];
+    const reserveFactor1 = basics1[6];
 
     // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
     const APR0 = utilization0 * (1 - 1 / reserveFactor0) * interestRate0;
@@ -307,10 +274,10 @@ export async function getLendingPairBalances(
 ): Promise<LendingPairBalances> {
   const { token0, token1, kitty0, kitty1 } = lendingPair;
 
-  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
+  const token0Contract = new ethers.Contract(token0.address, erc20Abi as any, provider);
+  const token1Contract = new ethers.Contract(token1.address, erc20Abi as any, provider);
+  const kitty0Contract = new ethers.Contract(kitty0.address, lenderAbi, provider);
+  const kitty1Contract = new ethers.Contract(kitty1.address, lenderAbi, provider);
   const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
     token0Contract.balanceOf(userAddress),
     token1Contract.balanceOf(userAddress),

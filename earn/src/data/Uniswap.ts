@@ -9,6 +9,8 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { uniswapNonFungiblePositionsAbi } from 'shared/lib/abis/UniswapNonFungiblePositions';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import {
   MULTICALL_ADDRESS,
   UNISWAP_FACTORY_ADDRESS,
@@ -19,8 +21,6 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
 
-import UniswapNFTManagerABI from '../assets/abis/UniswapNFTManager.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { BIGQ96, Q96 } from './constants/Values';
@@ -232,7 +232,7 @@ export async function fetchUniswapPositions(
     contractCallContext.push({
       reference: key,
       contractAddress: uniswapV3PoolAddress,
-      abi: UniswapV3PoolABI,
+      abi: uniswapV3PoolAbi as any,
       calls: [
         {
           reference: 'positions',
@@ -275,7 +275,7 @@ export async function fetchUniswapPoolBasics(
     {
       reference: 'uniswapV3Pool',
       contractAddress: uniswapPoolAddress,
-      abi: UniswapV3PoolABI,
+      abi: uniswapV3PoolAbi as any,
       calls: [
         { reference: 'slot0', methodName: 'slot0', methodParameters: [] },
         { reference: 'tickSpacing', methodName: 'tickSpacing', methodParameters: [] },
@@ -309,7 +309,7 @@ export async function fetchUniswapNFTPosition(
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(
     UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
-    UniswapNFTManagerABI,
+    uniswapNonFungiblePositionsAbi,
     provider
   );
   const position = await nftManager.positions(tokenId);
@@ -336,7 +336,7 @@ export async function fetchUniswapNFTPositions(
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(
     UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
-    UniswapNFTManagerABI,
+    uniswapNonFungiblePositionsAbi,
     provider
   );
   const numPositions: BigNumber = await nftManager.balanceOf(userAddress);
@@ -360,7 +360,7 @@ export async function fetchUniswapNFTPositions(
     {
       reference: 'uniswapNFTManager',
       contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
-      abi: UniswapNFTManagerABI,
+      abi: uniswapNonFungiblePositionsAbi as any,
       calls: tokenIdCallContexts,
     },
   ];
@@ -380,7 +380,7 @@ export async function fetchUniswapNFTPositions(
     {
       reference: 'uniswapNFTManager',
       contractAddress: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chainId],
-      abi: UniswapNFTManagerABI,
+      abi: uniswapNonFungiblePositionsAbi as any,
       calls: positionsCallContexts,
     },
   ];

@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { lenderABI } from 'shared/lib/abis/Lender';
+import { lenderAbi } from 'shared/lib/abis/Lender';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -65,7 +65,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
   // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'convertToShares',
     args: [withdrawAmount.toBigNumber()],
     chainId: activeChain.id,
@@ -77,7 +77,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'redeem',
     args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress],
     chainId: activeChain.id,
@@ -164,7 +164,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
@@ -173,7 +173,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],

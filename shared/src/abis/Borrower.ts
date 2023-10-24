@@ -1,4 +1,4 @@
-export const borrowerABI = [
+export const borrowerAbi = [
   {
     inputs: [
       {
@@ -208,6 +208,11 @@ export const borrowerABI = [
         name: 'prices',
         type: 'tuple',
       },
+      {
+        internalType: 'bool',
+        name: 'seemsLegit',
+        type: 'bool',
+      },
     ],
     stateMutability: 'view',
     type: 'function',
@@ -223,19 +228,6 @@ export const borrowerABI = [
       },
     ],
     stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-    ],
-    name: 'initialize',
-    outputs: [],
-    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -290,22 +282,16 @@ export const borrowerABI = [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    name: 'positions',
+    inputs: [],
+    name: 'owner',
     outputs: [
       {
-        internalType: 'int24',
+        internalType: 'address',
         name: '',
-        type: 'int24',
+        type: 'address',
       },
     ],
-    stateMutability: 'view',
+    stateMutability: 'pure',
     type: 'function',
   },
   {
@@ -333,6 +319,16 @@ export const borrowerABI = [
         name: 'token',
         type: 'address',
       },
+      {
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: 'recipient',
+        type: 'address',
+      },
     ],
     name: 'rescue',
     outputs: [],
@@ -344,19 +340,9 @@ export const borrowerABI = [
     name: 'slot0',
     outputs: [
       {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        internalType: 'uint88',
-        name: 'unleashLiquidationTime',
-        type: 'uint88',
-      },
-      {
-        internalType: 'enum Borrower.State',
-        name: 'state',
-        type: 'uint8',
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
     stateMutability: 'view',

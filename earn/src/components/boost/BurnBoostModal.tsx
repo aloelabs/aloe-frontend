@@ -1,17 +1,15 @@
-import { Dispatch, useContext, useEffect, useMemo, useState } from 'react';
+import { Dispatch, useContext, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { Q32 } from 'shared/lib/data/constants/Values';
+import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
-import { useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { MarginAccount } from '../../data/MarginAccount';
@@ -87,21 +85,7 @@ export type BurnBoostModalProps = {
 export default function BurnBoostModal(props: BurnBoostModalProps) {
   const { isOpen, cardInfo, nftTokenId, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider({ chainId: activeChain.id });
   const [slippagePercentage, setSlippagePercentage] = useState('0.10');
-  const [oracleSeed, setOracleSeed] = useState<number | undefined>(undefined);
-
-  // TODO: we should fetch this whenever a new block comes in,
-  // because that's the condition that could cause it to be stale.
-  // On L2's it'll remain Q32 anyway, so doesn't matter. Therefore
-  // we should probably move the "if chainId === 1" logic here.
-  useEffect(() => {
-    if (!cardInfo?.uniswapPool) return;
-    (async () => {
-      const seed = await computeOracleSeed(cardInfo?.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  }, [activeChain.id, cardInfo?.uniswapPool, provider, setOracleSeed]);
 
   const modifyData = useMemo(() => {
     const slippage = parseFloat(slippagePercentage) / 100;
@@ -128,16 +112,12 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
   ]);
 
   const { config: configBurn, isLoading: isCheckingIfAbleToBurn } = usePrepareContractWrite({
-    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
-    abi: boostNftAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? Q32],
+    args: undefined, //[ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? Q32], // TODO:
     chainId: activeChain.id,
-    enabled:
-      nftTokenId !== undefined &&
-      cardInfo != null &&
-      !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)) &&
-      Boolean(oracleSeed),
+    enabled: nftTokenId !== undefined && cardInfo != null && !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const { write: burn, isLoading: burnIsLoading } = useContractWrite({
