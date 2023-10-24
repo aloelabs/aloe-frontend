@@ -2,7 +2,7 @@ import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { erc721ABI, SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -215,7 +215,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
     enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] && Boolean(oracleSeed),

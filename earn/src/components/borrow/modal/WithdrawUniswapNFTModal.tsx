@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -124,7 +124,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
     enabled: Boolean(oracleSeed),

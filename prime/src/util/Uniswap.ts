@@ -5,6 +5,7 @@ import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, Fee
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
@@ -17,7 +18,6 @@ import {
   theGraphUniswapV3GoerliClient,
   theGraphUniswapV3OptimismClient,
 } from '../App';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BIGQ96, Q96 } from '../data/constants/Values';
 import { UniswapTicksQuery } from './GraphQL';
 
@@ -229,7 +229,7 @@ export async function getUniswapPoolBasics(
   uniswapPoolAddress: string,
   provider: ethers.providers.BaseProvider
 ): Promise<UniswapV3PoolBasics> {
-  const pool = new ethers.Contract(uniswapPoolAddress, UniswapV3PoolABI, provider);
+  const pool = new ethers.Contract(uniswapPoolAddress, uniswapV3PoolAbi, provider);
 
   const [slot0, tickSpacing] = await Promise.all([pool.slot0(), pool.tickSpacing()]);
 

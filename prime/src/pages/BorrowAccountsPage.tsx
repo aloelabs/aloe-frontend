@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ContractReceipt, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
@@ -17,7 +18,6 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider, useSigner, Address } from 'wagmi';
 
 import { ChainContext } from '../App';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -102,7 +102,7 @@ export default function BorrowAccountsPage() {
         marginAccountCallContext.push({
           reference: poolAddress,
           contractAddress: poolAddress,
-          abi: UniswapV3PoolABI,
+          abi: uniswapV3PoolAbi as any,
           calls: [
             {
               reference: 'token0',
@@ -150,7 +150,7 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetch(userAddress: string) {
-      // Guard clause: if the margin account lens contract is null, don't fetch
+      // Guard clause: if the BorrowerLens contract is null, don't fetch
       if (!isAllowedToInteract) {
         setMarginAccounts([]);
         return;
@@ -232,7 +232,7 @@ export default function BorrowAccountsPage() {
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
         <Display size='L' weight='semibold'>
-          Your Margin Accounts
+          Your Borrow Vaults
         </Display>
         <FilledGradientButtonWithIcon
           Icon={<PlusIcon />}

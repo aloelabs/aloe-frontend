@@ -20,7 +20,7 @@ export default function CreatedMarginAccountModal(props: CreatedMarginAccountMod
       </div>
       <div className='w-full mt-4'>
         <Text size='M' weight='bold' color={LABEL_TEXT_COLOR} className='text-center'>
-          Your margin account has been created and will be available momentarily.
+          Your Borrow Vault has been created and will be available momentarily.
         </Text>
       </div>
       <FilledStylizedButton

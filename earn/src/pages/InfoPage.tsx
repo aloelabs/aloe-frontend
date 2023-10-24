@@ -3,10 +3,9 @@ import { Fragment, useContext, useEffect, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
-import { useNavigate } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { lenderABI } from 'shared/lib/abis/Lender';
-import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
+import { lenderAbi } from 'shared/lib/abis/Lender';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import AppPage from 'shared/lib/components/common/AppPage';
 import {
@@ -19,7 +18,7 @@ import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import styled from 'styled-components';
-import { Address, useProvider } from 'wagmi';
+import { Address, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -77,7 +76,10 @@ export default function InfoPage() {
     undefined,
     activeChain.id
   );
-  const navigate = useNavigate();
+
+  const { data: blockNumber, refetch } = useBlockNumber({
+    chainId: activeChain.id,
+  });
 
   useEffect(() => {
     (async () => {
@@ -137,7 +139,7 @@ export default function InfoPage() {
           lenderCallContexts.push({
             reference: addr,
             contractAddress: addr,
-            abi: lenderABI as any,
+            abi: lenderAbi as any,
             calls: [
               {
                 reference: 'reserveFactor',
@@ -200,7 +202,7 @@ export default function InfoPage() {
         poolCallContexts.push({
           reference: `${addr}-uniswap`,
           contractAddress: addr,
-          abi: UniswapV3PoolABI as any,
+          abi: uniswapV3PoolAbi as any,
           calls: [
             {
               reference: 'fee',
@@ -332,14 +334,14 @@ export default function InfoPage() {
       });
       setPoolInfo(poolInfoMap);
     })();
-  }, [provider, setPoolInfo]);
+  }, [provider, setPoolInfo, blockNumber /* just here to trigger refetch */]);
 
   return (
     <AppPage>
       <InfoGrid>
         {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
           return (
-            <Fragment key={addr}>
+            <Fragment key={addr.concat(activeChain.id.toFixed(0))}>
               <MarketCard
                 nSigma={info.nSigma}
                 ltv={info.ltv}
@@ -384,9 +386,7 @@ export default function InfoPage() {
         }}
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
-          setTimeout(() => {
-            navigate(0);
-          }, 100);
+          setTimeout(() => refetch(), 100);
         }}
         status={pendingTxnModalStatus}
       />

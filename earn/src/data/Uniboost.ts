@@ -1,13 +1,20 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
+import { factoryAbi } from 'shared/lib/abis/Factory';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import {
-  ALOE_II_BOOST_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   MULTICALL_ADDRESS,
+  ALOE_II_BOOST_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -15,12 +22,6 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { Address } from 'wagmi';
 
-import BoostNftAbi from '../assets/abis/BoostNFT.json';
-import FactoryAbi from '../assets/abis/Factory.json';
-import BorrowerAbi from '../assets/abis/MarginAccount.json';
-import BorrowerLensAbi from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolAbi from '../assets/abis/UniswapV3Pool.json';
-import VolatilityOracleAbi from '../assets/abis/VolatilityOracle.json';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
 
@@ -34,6 +35,7 @@ export class BoostCardInfo {
   constructor(
     public readonly cardType: BoostCardType,
     public readonly nftTokenId: number | string,
+    public readonly nftTokenPtr: number,
     public readonly uniswapPool: Address,
     public readonly currentTick: number,
     public readonly token0: Token,
@@ -51,6 +53,7 @@ export class BoostCardInfo {
     return new BoostCardInfo(
       boostCardInfo.cardType,
       boostCardInfo.nftTokenId,
+      boostCardInfo.nftTokenPtr,
       boostCardInfo.uniswapPool,
       boostCardInfo.currentTick,
       boostCardInfo.token0,
@@ -69,6 +72,7 @@ export class BoostCardInfo {
     return new BoostCardInfo(
       boostCardInfo.cardType,
       boostCardInfo.nftTokenId,
+      boostCardInfo.nftTokenPtr,
       boostCardInfo.uniswapPool,
       boostCardInfo.currentTick,
       boostCardInfo.token0,
@@ -139,49 +143,67 @@ export async function fetchBoostBorrowersList(
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ) {
-  const boostNftContract = new ethers.Contract(ALOE_II_BOOST_NFT_ADDRESS[chainId], BoostNftAbi, provider);
+  const borrowerNftContract = new ethers.Contract(ALOE_II_BORROWER_NFT_ADDRESS[chainId], borrowerNftAbi, provider);
 
-  // Figure out how many Boost NFTs the user has
-  let numBoostNfts: number = 0;
-  try {
-    numBoostNfts = (await boostNftContract.balanceOf(userAddress)).toNumber();
-  } catch (e) {
-    return { borrowers: [], tokenIds: [] };
-  }
-  // We can compute the `id` of each NFT offline using this hashing thingy
-  const tokenIds: string[] = [];
-  for (let i = 0; i < numBoostNfts; i += 1) {
-    tokenIds.push(ethers.utils.solidityKeccak256(['address', 'uint256'], [userAddress, i]));
-  }
-
-  // For each NFT `id`, we need to get some metadata. This is called "attributes" on the contract, and it
-  // returns a tuple: (borrower, isGeneralized)
-  // The borrower is the `Borrower` corresponding to the given NFT `id`, and `isGeneralized` indicates whether
-  // it is fully controlled by the Boost contract, or if the user has taken over with manual control.
-  const attributesCallContext: ContractCallContext[] = [
-    {
-      reference: 'attributes',
-      contractAddress: boostNftContract.address,
-      abi: BoostNftAbi,
-      calls: tokenIds.map((id) => ({
-        reference: `attributesOf(${id})`,
-        methodName: 'attributesOf',
-        methodParameters: [id],
-      })),
-    },
-  ];
-
-  // Parse multicall results. Note that I'm filtering out generalized borrowers, but we may want to find
-  // a way to show those in the future
-  const multicall = new Multicall({
-    ethersProvider: provider,
-    tryAggregate: true,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  const transfersFrom = await borrowerNftContract.queryFilter(
+    borrowerNftContract.filters.Transfer(userAddress, null, null),
+    0,
+    'latest'
+  );
+  const transfersTo = await borrowerNftContract.queryFilter(
+    borrowerNftContract.filters.Transfer(null, userAddress, null),
+    0,
+    'latest'
+  );
+  const transfers = transfersFrom.concat(transfersTo);
+  transfers.sort((a, b) => {
+    if (a.blockNumber === b.blockNumber) {
+      if (a.transactionIndex === b.transactionIndex) {
+        return a.logIndex - b.logIndex;
+      }
+      return a.transactionIndex - b.transactionIndex;
+    }
+    return a.blockNumber - b.blockNumber;
   });
-  const attributes = (await multicall.call(attributesCallContext)).results['attributes']?.callsReturnContext ?? [];
-  const borrowers = attributes.filter((v) => !v.success || !v.returnValues.at(1)).map((v) => v.returnValues[0]);
 
-  return { borrowers: borrowers as Address[], tokenIds };
+  let orderedTokenIds: BigNumber[] = [];
+  for (const transfer of transfers) {
+    if (transfer.args?.['to'] === userAddress) {
+      orderedTokenIds.push(transfer.args['tokenId']);
+      continue;
+    }
+
+    orderedTokenIds = orderedTokenIds.filter((tokenId) => !tokenId.eq(transfer.args?.['tokenId']));
+  }
+  const orderedTokenIdStrs = orderedTokenIds.map((id) => id.toHexString());
+
+  const modifys = await borrowerNftContract.queryFilter(
+    borrowerNftContract.filters.Modify(userAddress, null, null),
+    0,
+    'latest'
+  );
+
+  const borrowerManagersMap: Map<Address, Set<Address>> = new Map();
+  modifys.forEach((modify) => {
+    const borrower = modify.args!['borrower'] as Address;
+    const manager = modify.args!['manager'] as Address;
+    if (borrowerManagersMap.has(borrower)) {
+      borrowerManagersMap.get(borrower)?.add(manager);
+    } else {
+      borrowerManagersMap.set(borrower, new Set<Address>([manager]));
+    }
+  });
+
+  const borrowers = Array.from(borrowerManagersMap.entries())
+    .filter(([borrower, managerSet]) => managerSet.size === 1 && managerSet.has(ALOE_II_BOOST_MANAGER_ADDRESS[chainId]))
+    .map(([borrower, managerSet]) => borrower);
+
+  const tokenIds = borrowers.map((borrower) => orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!);
+  const indices = borrowers.map((borrower) =>
+    orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase()))
+  );
+
+  return { borrowers, tokenIds, indices };
 }
 
 export async function fetchBoostBorrower(
@@ -193,7 +215,7 @@ export async function fetchBoostBorrower(
     {
       reference: 'borrower',
       contractAddress: borrowerAddress,
-      abi: BorrowerAbi,
+      abi: borrowerAbi as any,
       calls: [
         { reference: 'token0', methodName: 'TOKEN0', methodParameters: [] },
         { reference: 'token1', methodName: 'TOKEN1', methodParameters: [] },
@@ -206,7 +228,7 @@ export async function fetchBoostBorrower(
     {
       reference: 'lens',
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
-      abi: BorrowerLensAbi,
+      abi: borrowerLensAbi as any,
       calls: [
         { reference: 'getAssets', methodName: 'getAssets', methodParameters: [borrowerAddress] },
         { reference: 'getLiabilities', methodName: 'getLiabilities', methodParameters: [borrowerAddress, true] },
@@ -275,13 +297,13 @@ export async function fetchBoostBorrower(
     {
       reference: 'oracle',
       contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
-      abi: VolatilityOracleAbi,
+      abi: volatilityOracleAbi as any,
       calls: [{ reference: 'consult', methodName: 'consult', methodParameters: [uniswapPool, 1 << 32] }],
     },
     {
       reference: 'uniswap',
       contractAddress: uniswapPool,
-      abi: UniswapV3PoolAbi,
+      abi: uniswapV3PoolAbi as any,
       calls: [
         { reference: 'fee', methodName: 'fee', methodParameters: [] },
         { reference: 'positions', methodName: 'positions', methodParameters: [uniswapKey] },
@@ -290,7 +312,7 @@ export async function fetchBoostBorrower(
     {
       reference: 'nSgima',
       contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
-      abi: FactoryAbi,
+      abi: factoryAbi as any,
       calls: [
         {
           reference: 'getParameters',

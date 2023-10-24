@@ -3,7 +3,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -88,7 +88,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   });
 
   const encodedData = useMemo(() => {
-    const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
     return borrowerInterface.encodeFunctionData('transfer', [
       amount0.toBigNumber(),
       amount1.toBigNumber(),
@@ -98,7 +98,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
     enabled:

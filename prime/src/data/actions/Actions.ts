@@ -54,7 +54,7 @@ export type ActionCardOutput = {
 };
 
 export type ActionCardProps = {
-  /** properties of the market as a whole, not specific to the margin account */
+  /** properties of the market as a whole, not specific to the Borrower */
   marketInfo: MarketInfo;
   /** holds values that don't change across actions, like account address and token data */
   marginAccount: Omit<MarginAccount, 'assets' | 'liabilities'>;
@@ -114,13 +114,13 @@ export const REPAY: Action = {
 
 export const WITHDRAW: Action = {
   id: ActionID.TRANSFER_OUT,
-  description: 'Send funds from your Margin Account to your wallet.',
+  description: 'Send funds from your Borrow Vault to your wallet.',
   actionCard: AloeWithdrawActionCard,
 };
 
 export const ADD_MARGIN: Action = {
   id: ActionID.TRANSFER_IN,
-  description: 'Send funds from your wallet to your Margin Account. You must do this before anything else.',
+  description: 'Send funds from your wallet to your Borrow Vault. You must do this before anything else.',
   actionCard: AloeAddMarginActionCard,
 };
 

@@ -2,7 +2,7 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
@@ -97,7 +97,7 @@ function BorrowButton(props: BorrowButtonProps) {
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
   const encodedData = borrowerInterface.encodeFunctionData('borrow', [
     amount0Big.toBigNumber(),
     amount1Big.toBigNumber(),
@@ -113,7 +113,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
   const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
     overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },

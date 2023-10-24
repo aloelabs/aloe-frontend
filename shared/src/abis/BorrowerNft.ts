@@ -1,11 +1,6 @@
-export const boostNftAbi = [
+export const borrowerNftAbi = [
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: 'owner_',
-        type: 'address',
-      },
       {
         internalType: 'contract Factory',
         name: 'factory',
@@ -14,6 +9,11 @@ export const boostNftAbi = [
     ],
     stateMutability: 'nonpayable',
     type: 'constructor',
+  },
+  {
+    inputs: [],
+    name: 'RemovalFailed',
+    type: 'error',
   },
   {
     anonymous: false,
@@ -33,7 +33,7 @@ export const boostNftAbi = [
       {
         indexed: true,
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
@@ -71,6 +71,31 @@ export const boostNftAbi = [
       {
         indexed: true,
         internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'contract Borrower',
+        name: 'borrower',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'contract IManager',
+        name: 'manager',
+        type: 'address',
+      },
+    ],
+    name: 'Modify',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
         name: 'from',
         type: 'address',
       },
@@ -83,7 +108,7 @@ export const boostNftAbi = [
       {
         indexed: true,
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
@@ -112,37 +137,13 @@ export const boostNftAbi = [
       },
       {
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
     name: 'approve',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    name: 'attributesOf',
-    outputs: [
-      {
-        internalType: 'contract Borrower',
-        name: 'borrower',
-        type: 'address',
-      },
-      {
-        internalType: 'bool',
-        name: 'isGeneralized',
-        type: 'bool',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -162,32 +163,6 @@ export const boostNftAbi = [
       },
     ],
     stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'boostManager',
-    outputs: [
-      {
-        internalType: 'contract IManager',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'contract IUniswapV3Pool',
-        name: 'pool',
-        type: 'address',
-      },
-    ],
-    name: 'createBorrower',
-    outputs: [],
-    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -236,47 +211,52 @@ export const boostNftAbi = [
   {
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
-        name: 'pool',
+        internalType: 'address',
+        name: 'to',
         type: 'address',
       },
       {
-        internalType: 'bytes',
-        name: 'initializationData',
-        type: 'bytes',
+        internalType: 'contract IUniswapV3Pool[]',
+        name: 'pools',
+        type: 'address[]',
       },
       {
-        internalType: 'uint40',
-        name: 'oracleSeed',
-        type: 'uint40',
+        internalType: 'bytes12[]',
+        name: 'salts',
+        type: 'bytes12[]',
       },
     ],
     name: 'mint',
     outputs: [],
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'id',
-        type: 'uint256',
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
       },
       {
-        internalType: 'uint8',
-        name: 'action',
-        type: 'uint8',
+        internalType: 'uint16[]',
+        name: 'indices',
+        type: 'uint16[]',
       },
       {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
+        internalType: 'contract IManager[]',
+        name: 'managers',
+        type: 'address[]',
       },
       {
-        internalType: 'uint40',
-        name: 'oracleSeed',
-        type: 'uint40',
+        internalType: 'bytes[]',
+        name: 'datas',
+        type: 'bytes[]',
+      },
+      {
+        internalType: 'uint16[]',
+        name: 'antes',
+        type: 'uint16[]',
       },
     ],
     name: 'modify',
@@ -287,32 +267,12 @@ export const boostNftAbi = [
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'id',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint8',
-        name: 'action',
-        type: 'uint8',
-      },
-      {
-        internalType: 'contract IManager',
-        name: 'manager',
-        type: 'address',
-      },
-      {
-        internalType: 'bytes',
+        internalType: 'bytes[]',
         name: 'data',
-        type: 'bytes',
-      },
-      {
-        internalType: 'uint40',
-        name: 'oracleSeed',
-        type: 'uint40',
+        type: 'bytes[]',
       },
     ],
-    name: 'modify',
+    name: 'multicall',
     outputs: [],
     stateMutability: 'payable',
     type: 'function',
@@ -327,27 +287,14 @@ export const boostNftAbi = [
         type: 'string',
       },
     ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'owner',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
+    stateMutability: 'pure',
     type: 'function',
   },
   {
     inputs: [
       {
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
@@ -376,7 +323,7 @@ export const boostNftAbi = [
       },
       {
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
@@ -399,7 +346,7 @@ export const boostNftAbi = [
       },
       {
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
       {
@@ -434,32 +381,6 @@ export const boostNftAbi = [
   {
     inputs: [
       {
-        internalType: 'contract IManager',
-        name: 'boostManager_',
-        type: 'address',
-      },
-    ],
-    name: 'setBoostManager',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'owner_',
-        type: 'address',
-      },
-    ],
-    name: 'setOwner',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
         internalType: 'bytes4',
         name: 'interfaceId',
         type: 'bytes4',
@@ -486,6 +407,49 @@ export const boostNftAbi = [
         type: 'string',
       },
     ],
+    stateMutability: 'pure',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'index',
+        type: 'uint256',
+      },
+    ],
+    name: 'tokenByIndex',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'index',
+        type: 'uint256',
+      },
+    ],
+    name: 'tokenOfOwnerByIndex',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
     stateMutability: 'view',
     type: 'function',
   },
@@ -493,7 +457,7 @@ export const boostNftAbi = [
     inputs: [
       {
         internalType: 'uint256',
-        name: 'id',
+        name: '',
         type: 'uint256',
       },
     ],
@@ -503,6 +467,19 @@ export const boostNftAbi = [
         internalType: 'string',
         name: '',
         type: 'string',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'totalSupply',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -522,7 +499,7 @@ export const boostNftAbi = [
       },
       {
         internalType: 'uint256',
-        name: 'id',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],

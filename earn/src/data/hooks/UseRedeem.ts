@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
-import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import {
   Address,
@@ -40,9 +40,9 @@ export function useRedeem(
     chainId,
   };
 
-  const router = {
-    address: ALOE_II_ROUTER_ADDRESS[chainId] as Address,
-    abi: routerABI,
+  const lenderLens = {
+    address: ALOE_II_LENDER_LENS_ADDRESS[chainId] as Address,
+    abi: lenderLensAbi,
     chainId,
   };
 
@@ -54,7 +54,7 @@ export function useRedeem(
     contracts: [
       { ...erc4626, functionName: 'maxWithdraw', args: [owner] },
       { ...erc4626, functionName: 'maxRedeem', args: [owner] },
-      { ...router, functionName: 'isMaxRedeemDynamic', args: [lender ?? ZERO_ADDRESS, owner] },
+      { ...lenderLens, functionName: 'isMaxRedeemDynamic', args: [lender ?? ZERO_ADDRESS, owner] },
     ] as const,
     allowFailure: false,
     enabled: lender !== undefined,

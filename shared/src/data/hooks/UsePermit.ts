@@ -1,6 +1,6 @@
 import { Address, useContractReads, useSignTypedData } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
-import { erc20ABI } from '../../abis/ERC20';
+import { erc20Abi } from '../../abis/ERC20';
 import { computeDomainSeparator } from '../../util/Permit';
 import { splitSignature } from 'ethers/lib/utils.js';
 
@@ -81,7 +81,7 @@ export function usePermit(
 
   const erc20 = {
     address: token,
-    abi: erc20ABI,
+    abi: erc20Abi,
     chainId: chainId,
   };
 

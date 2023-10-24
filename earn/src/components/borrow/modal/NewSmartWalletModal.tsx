@@ -1,17 +1,18 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import FactoryABI from '../../../assets/abis/Factory.json';
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
@@ -42,11 +43,12 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
+  const salt = useMemo(() => generateBytes12Salt(), []);
   const { config: createBorrowerConfig } = usePrepareContractWrite({
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    abi: FactoryABI,
+    abi: factoryAbi,
     functionName: 'createBorrower',
-    args: [poolAddress, userAddress],
+    args: [poolAddress as Address, userAddress as Address, salt],
     enabled: Boolean(poolAddress) && Boolean(userAddress),
     chainId: activeChain.id,
   });

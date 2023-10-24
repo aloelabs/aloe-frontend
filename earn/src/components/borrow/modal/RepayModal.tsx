@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -108,7 +108,7 @@ function RepayButton(props: RepayButtonProps) {
 
   const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
-    abi: routerABI,
+    abi: routerAbi,
     functionName: 'repayWithPermit2',
     args: [
       lender,
