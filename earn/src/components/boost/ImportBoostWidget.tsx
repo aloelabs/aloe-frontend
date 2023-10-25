@@ -197,7 +197,6 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     }
   }
 
-  // TODO: use async effect?
   useEffect(() => {
     (async () => {
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
@@ -316,10 +315,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   }, [apr0, apr1, boostFactor, cardInfo, tokenQuotes]);
 
   const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
-  const initializationData = useMemo(() => {
+  const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
-    return ethers.utils.defaultAbiCoder.encode(
+    const inner = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24'],
       [
         cardInfo.nftTokenId,
@@ -329,6 +328,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         (boostFactor * 10000).toFixed(0),
       ]
     ) as `0x${string}`;
+    const actionId = 0;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
   }, [cardInfo, boostFactor]);
   const enableHooks = cardInfo !== undefined;
 
@@ -350,7 +351,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
   const managerIsCorrect = Boolean(manager) && manager === necessaryManager;
   const shouldWriteManager = !isFetchingManager && Boolean(manager) && !managerIsCorrect;
-  const shouldMint = !isFetchingManager && Boolean(initializationData) && managerIsCorrect;
+  const shouldMint = !isFetchingManager && Boolean(modifyData) && managerIsCorrect;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
   const { config: configWriteManager } = usePrepareContractWrite({
@@ -384,6 +385,15 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     },
   });
 
+  const { data: nextNftPointerIndex } = useContractRead({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'balanceOf',
+    args: [userAddress ?? '0x'],
+    chainId: activeChain.id,
+    enabled: enableHooks && Boolean(userAddress),
+  });
+
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
   // First, we `mint` so that they have a `Borrower` to put stuff in
@@ -396,22 +406,14 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   }, [borrowerNft, userAddress, cardInfo]);
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
-    if (!userAddress) return undefined;
+    if (!userAddress || nextNftPointerIndex === undefined) return undefined;
     const owner = userAddress;
-    const indices = [0]; // TODO:
+    const indices = [nextNftPointerIndex];
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
-    const datas = [
-      ethers.utils.defaultAbiCoder.encode(
-        ['uint8', 'bytes'],
-        [
-          0, // actionId 0 means mint
-          initializationData,
-        ]
-      ) as `0x${string}`,
-    ];
+    const datas = [modifyData];
     const antes = [ante.div(1e13)];
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
-  }, [borrowerNft, userAddress, activeChain, initializationData, ante]);
+  }, [borrowerNft, userAddress, activeChain, nextNftPointerIndex, modifyData, ante]);
 
   const {
     config: configMint,

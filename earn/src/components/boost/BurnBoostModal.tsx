@@ -7,9 +7,9 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { MarginAccount } from '../../data/MarginAccount';
@@ -77,32 +77,34 @@ function computeData(borrower?: MarginAccount, slippage = 0.01) {
 export type BurnBoostModalProps = {
   isOpen: boolean;
   cardInfo: BoostCardInfo;
-  nftTokenId?: string;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: Dispatch<SendTransactionResult | null>;
 };
 
 export default function BurnBoostModal(props: BurnBoostModalProps) {
-  const { isOpen, cardInfo, nftTokenId, setIsOpen, setPendingTxn } = props;
+  const { isOpen, cardInfo, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [slippagePercentage, setSlippagePercentage] = useState('0.10');
+  const { address: userAddress } = useAccount();
 
   const modifyData = useMemo(() => {
     const slippage = parseFloat(slippagePercentage) / 100;
     const { maxSpend, zeroForOne } = computeData(
-      cardInfo?.borrower || undefined,
+      cardInfo.borrower || undefined,
       isNaN(slippage) ? undefined : slippage
     );
-    return ethers.utils.defaultAbiCoder.encode(
+    const inner = ethers.utils.defaultAbiCoder.encode(
       ['int24', 'int24', 'uint128', 'uint128', 'bool'],
       [
-        cardInfo?.position.lower || 0,
-        cardInfo?.position.upper || 0,
-        cardInfo?.position.liquidity.toString(10) || 0,
+        cardInfo.position.lower,
+        cardInfo.position.upper,
+        cardInfo.position.liquidity.toString(10),
         maxSpend.toBigNumber(),
         zeroForOne,
       ]
     ) as `0x${string}`;
+    const actionId = 2;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
   }, [
     cardInfo?.borrower,
     cardInfo?.position.liquidity,
@@ -115,9 +117,9 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
-    args: undefined, //[ethers.BigNumber.from(nftTokenId || 0), 2, modifyData, oracleSeed ?? Q32], // TODO:
+    args: [cardInfo.owner, [cardInfo.nftTokenPtr!], [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]], [modifyData], [0]],
     chainId: activeChain.id,
-    enabled: nftTokenId !== undefined && cardInfo != null && !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
+    enabled: userAddress && !JSBI.equal(cardInfo.position.liquidity, JSBI.BigInt(0)),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const { write: burn, isLoading: burnIsLoading } = useContractWrite({
