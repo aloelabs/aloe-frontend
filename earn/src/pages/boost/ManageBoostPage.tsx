@@ -75,7 +75,6 @@ export default function ManageBoostPage() {
     }
   }, [cardInfo, navigate]);
 
-  // TODO: useAsyncEffect?
   useEffect(() => {
     (async () => {
       if (!pendingTxn) return;
@@ -90,7 +89,6 @@ export default function ManageBoostPage() {
     })();
   }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
-  // TODO: useAsyncEffect?
   useEffect(() => {
     (async () => {
       if (!cardInfo) return;
@@ -103,7 +101,6 @@ export default function ManageBoostPage() {
     })();
   }, [cardInfo, setColors]);
 
-  // TODO: useAsyncEffect?
   useEffect(() => {
     if (!cardInfo) return;
     (async () => {
@@ -123,11 +120,9 @@ export default function ManageBoostPage() {
 
   const borrowerAddress = nftTokenId?.slice(0, 42);
 
-  // TODO: useAsyncEffect?
   useEffect(() => {
     if (!borrowerAddress || !nftTokenId || !userAddress) return;
     (async () => {
-      if (!userAddress) return;
       const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress as Address);
       const boostCardInfo = new BoostCardInfo(
         BoostCardType.BOOST_NFT,
