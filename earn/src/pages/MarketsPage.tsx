@@ -2,7 +2,8 @@ import { useContext, useEffect, useMemo } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
-import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -12,7 +13,6 @@ import { getToken, getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { Address, useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
@@ -163,7 +163,7 @@ export default function MarketsPage() {
         });
       const poolInfoTuples = await Promise.all(
         poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
+          const poolContract = new ethers.Contract(addr, uniswapV3PoolAbi, provider);
           return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
         })
       );
@@ -181,7 +181,7 @@ export default function MarketsPage() {
   }, [provider, setAvailablePools]);
 
   const borrowerLensContract = useContract({
-    abi: MarginAccountLensABI,
+    abi: borrowerLensAbi,
     address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     signerOrProvider: provider,
   });
