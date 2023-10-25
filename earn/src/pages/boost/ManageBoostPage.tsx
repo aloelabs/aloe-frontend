@@ -5,12 +5,12 @@ import axios, { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { boostNftAbi } from 'shared/lib/abis/BoostNFT';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BOOST_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
@@ -105,15 +105,7 @@ export default function ManageBoostPage() {
     })();
   }, [cardInfo, setTokenQuotes]);
 
-  const { data: boostNftAttributes } = useContractRead({
-    abi: boostNftAbi,
-    address: ALOE_II_BOOST_NFT_ADDRESS[activeChain.id],
-    functionName: 'attributesOf',
-    args: [ethers.BigNumber.from(nftTokenId || 0)],
-    enabled: nftTokenId !== undefined,
-  });
-
-  const borrowerAddress = boostNftAttributes?.borrower;
+  const borrowerAddress = nftTokenId?.slice(0, 42);
 
   useEffect(() => {
     if (!borrowerAddress || !nftTokenId) return;
@@ -122,6 +114,7 @@ export default function ManageBoostPage() {
       const boostCardInfo = new BoostCardInfo(
         BoostCardType.BOOST_NFT,
         nftTokenId,
+        -1, // TODO:
         res.borrower.uniswapPool as Address,
         sqrtRatioToTick(res.borrower.sqrtPriceX96),
         res.borrower.token0,

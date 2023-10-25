@@ -29,6 +29,7 @@ export function primeUrl() {
   return isDappnet() ? 'https://prime.aloe.eth/' : 'https://prime.aloe.capital/';
 }
 
+// NOTE: all lowercase!
 export const ALOE_II_RATE_MODEL_NAMES: { [key: string]: string } = {
-  '0x0000002cc49fcbad890ba9e600d5ba4570eb92ae': 'Linear Kink V0',
+  '0x000db1f64300d100468100d2e776da2d3cc58700': 'Rational V0',
 };

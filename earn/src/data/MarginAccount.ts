@@ -1,6 +1,10 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { factoryAbi } from 'shared/lib/abis/Factory';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -14,10 +18,6 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
 
-import FactoryAbi from '../assets/abis/Factory.json';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 
@@ -121,7 +121,7 @@ export async function fetchMarginAccounts(
     marginAccountCallContext.push({
       reference: `${accountAddress}-account`,
       contractAddress: accountAddress,
-      abi: MarginAccountABI,
+      abi: borrowerAbi as any,
       calls: [
         {
           reference: 'lender0',
@@ -138,7 +138,7 @@ export async function fetchMarginAccounts(
     marginAccountCallContext.push({
       reference: `${accountAddress}-oracle`,
       contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
-      abi: VolatilityOracleABI,
+      abi: volatilityOracleAbi as any,
       calls: [
         {
           reference: 'consult',
@@ -150,7 +150,7 @@ export async function fetchMarginAccounts(
     marginAccountCallContext.push({
       reference: `${accountAddress}-lens`,
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
-      abi: MarginAccountLensABI,
+      abi: borrowerLensAbi as any,
       calls: [
         {
           reference: 'getAssets',
@@ -180,7 +180,7 @@ export async function fetchMarginAccounts(
     marginAccountCallContext.push({
       reference: `${accountAddress}-nSigma`,
       contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
-      abi: FactoryAbi,
+      abi: factoryAbi as any,
       calls: [
         {
           reference: 'getParameters',

@@ -5,9 +5,9 @@ import { Address } from 'wagmi';
 import { ArbitrumLogo, BaseLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
 import {
-  ALOE_II_BOOST_NFT_ADDRESS_ARBITRUM,
-  ALOE_II_BOOST_NFT_ADDRESS_BASE,
-  ALOE_II_BOOST_NFT_ADDRESS_OPTIMISM,
+  ALOE_II_BORROWER_NFT_ADDRESS_ARBITRUM,
+  ALOE_II_BORROWER_NFT_ADDRESS_BASE,
+  ALOE_II_BORROWER_NFT_ADDRESS_OPTIMISM,
   ALOE_II_BORROWER_LENS_ADDRESS_ARBITRUM,
   ALOE_II_BORROWER_LENS_ADDRESS_BASE,
   ALOE_II_BORROWER_LENS_ADDRESS_OPTIMISM,
@@ -42,6 +42,9 @@ import {
   UNISWAP_PERMIT2_ADDRESS_ARBITRUM,
   UNISWAP_PERMIT2_ADDRESS_BASE,
   UNISWAP_PERMIT2_ADDRESS_OPTIMISM,
+  ALOE_II_BOOST_MANAGER_OPTIMISM,
+  ALOE_II_BOOST_MANAGER_ARBITRUM,
+  ALOE_II_BOOST_MANAGER_BASE,
 } from './Addresses';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
@@ -138,8 +141,14 @@ export const ALOE_II_FRONTEND_MANAGER_ADDRESS: { [chainId: number]: Address } = 
   [base.id]: ALOE_II_FRONTEND_MANAGER_ADDRESS_BASE,
 };
 
-export const ALOE_II_BOOST_NFT_ADDRESS: { [chainId: number]: Address } = {
-  [optimism.id]: ALOE_II_BOOST_NFT_ADDRESS_OPTIMISM,
-  [arbitrum.id]: ALOE_II_BOOST_NFT_ADDRESS_ARBITRUM,
-  [base.id]: ALOE_II_BOOST_NFT_ADDRESS_BASE,
+export const ALOE_II_BORROWER_NFT_ADDRESS: { [chainId: number]: Address } = {
+  [optimism.id]: ALOE_II_BORROWER_NFT_ADDRESS_OPTIMISM,
+  [arbitrum.id]: ALOE_II_BORROWER_NFT_ADDRESS_ARBITRUM,
+  [base.id]: ALOE_II_BORROWER_NFT_ADDRESS_BASE,
+};
+
+export const ALOE_II_BOOST_MANAGER_ADDRESS: { [chainId: number]: Address } = {
+  [optimism.id]: ALOE_II_BOOST_MANAGER_OPTIMISM,
+  [arbitrum.id]: ALOE_II_BOOST_MANAGER_ARBITRUM,
+  [base.id]: ALOE_II_BOOST_MANAGER_BASE,
 };

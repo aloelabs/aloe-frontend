@@ -16,6 +16,11 @@ import { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
 import { GREY_700, GREY_800 } from '../../data/constants/Colors';
+import Bell from '../../assets/svg/Bell';
+import { QRCodeSVG } from 'qrcode.react';
+import { NOTIFICATION_BOT_URL } from '../../data/constants/Values';
+
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -57,6 +62,16 @@ const ButtonTextContainer = styled.div`
   }
 `;
 
+const QRCodeContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 280px;
+  height: 280px;
+  border-radius: 8px;
+  background-color: white;
+`;
+
 export type AccountInfoProps = {
   account: GetAccountResult<Provider>;
   chain: Chain;
@@ -79,6 +94,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component state
   const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] = useState<boolean>(false);
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
+  const [enableNotificationsModalOpen, setEnableNotificationsModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect({ chainId: chain.id });
@@ -113,34 +129,55 @@ export default function AccountInfo(props: AccountInfoProps) {
               {open && (
                 <StyledPopoverPanel>
                   {account?.address !== undefined && (
-                    <div className='flex items-center justify-between'>
-                      <div className='flex gap-2 items-center'>
-                        <Identicon />
-                        <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
-                          {buttonText}
-                        </Text>
+                    <div className='flex flex-col gap-2 w-full'>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex gap-2 items-center'>
+                          <Identicon />
+                          <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
+                            {buttonText}
+                          </Text>
+                        </div>
+                        <div className='flex gap-2 items-center'>
+                          <FilledGreyButtonWithIcon
+                            Icon={<CopyIcon />}
+                            size='S'
+                            svgColorType='stroke'
+                            position='center'
+                            onClick={() => {
+                              if (account.address) {
+                                navigator.clipboard.writeText(account.address);
+                              }
+                            }}
+                          />
+                          <FilledGreyButtonWithIcon
+                            Icon={<PowerIcon />}
+                            size='S'
+                            svgColorType='stroke'
+                            position='center'
+                            onClick={() => {
+                              disconnect();
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className='flex gap-2 items-center'>
+                      <div className='flex flex-col gap-2'>
+                        <div>
+                          <Text size='S'>Notifications</Text>
+                          <Text size='XS' color={SECONDARY_COLOR}>
+                            Receive notifications when your positions are at risk of liquidation via Telegram
+                          </Text>
+                        </div>
                         <FilledGreyButtonWithIcon
-                          Icon={<CopyIcon />}
                           size='S'
+                          Icon={<Bell />}
                           svgColorType='stroke'
-                          position='center'
+                          position='leading'
                           onClick={() => {
-                            if (account.address) {
-                              navigator.clipboard.writeText(account.address);
-                            }
+                            setEnableNotificationsModalOpen(true);
                           }}
-                        />
-                        <FilledGreyButtonWithIcon
-                          Icon={<PowerIcon />}
-                          size='S'
-                          svgColorType='stroke'
-                          position='center'
-                          onClick={() => {
-                            disconnect();
-                          }}
-                        />
+                        >
+                          Enable Notifications
+                        </FilledGreyButtonWithIcon>
                       </div>
                     </div>
                   )}
@@ -182,7 +219,7 @@ export default function AccountInfo(props: AccountInfoProps) {
               .
             </Text>
             {connectors.map((connector) => (
-              <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
+              <div key={connector.id} className='py-2 w-full flex flex-row items-center justify-between'>
                 {getIconForWagmiConnectorNamed(connector.name)}
                 <FilledStylizedButton
                   name='Disconnect'
@@ -204,6 +241,27 @@ export default function AccountInfo(props: AccountInfoProps) {
               {error?.message ?? 'Failed to connect'}
             </Text>
           )}
+        </div>
+      </CloseableModal>
+      <CloseableModal
+        isOpen={enableNotificationsModalOpen}
+        setIsOpen={setEnableNotificationsModalOpen}
+        title={'Enable Notifications'}
+      >
+        <div className='flex flex-col justify-center items-center gap-4'>
+          <div className='max-w-[400px]'>
+            <Text size='M' weight='medium' className='text-center'>
+              Scan this QR code with Telegram to enable notifications.
+            </Text>
+          </div>
+          <QRCodeContainer>
+            <QRCodeSVG value={NOTIFICATION_BOT_URL} size={256} />
+          </QRCodeContainer>
+          <a href={NOTIFICATION_BOT_URL} target='_blank' rel='noreferrer'>
+            <FilledStylizedButton size='M' fillWidth={true}>
+              Open Telegram
+            </FilledStylizedButton>
+          </a>
         </div>
       </CloseableModal>
     </div>

@@ -3,7 +3,7 @@ import { useContext, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -108,7 +108,7 @@ export default function BoostPage() {
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;
-      const { borrowers, tokenIds } = await fetchBoostBorrowersList(chainId, provider, userAddress);
+      const { borrowers, tokenIds, indices } = await fetchBoostBorrowersList(chainId, provider, userAddress);
 
       const fetchedInfos = await Promise.all(
         borrowers.map(async (borrowerAddress, i) => {
@@ -116,6 +116,7 @@ export default function BoostPage() {
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
             tokenIds[i],
+            indices[i],
             res.borrower.uniswapPool as Address,
             sqrtRatioToTick(res.borrower.sqrtPriceX96),
             res.borrower.token0,
@@ -158,7 +159,7 @@ export default function BoostPage() {
   const poolContracts = useMemo(() => {
     return uniswapNFTPositions.map((position) => {
       return {
-        abi: UniswapV3PoolABI,
+        abi: uniswapV3PoolAbi,
         address: computePoolAddress({ ...position, chainId: activeChain.id }),
         functionName: 'slot0',
         chainId: activeChain.id,
@@ -223,6 +224,7 @@ export default function BoostPage() {
         return new BoostCardInfo(
           BoostCardType.UNISWAP_NFT,
           position.tokenId,
+          -1, // TODO:
           computePoolAddress({ ...position, chainId: activeChain.id }),
           currentTick,
           position.token0,

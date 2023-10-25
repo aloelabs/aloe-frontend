@@ -1,6 +1,6 @@
 import { secondsInYear } from 'date-fns';
 import { ethers } from 'ethers';
-import { lenderABI } from 'shared/lib/abis/Lender';
+import { lenderAbi } from 'shared/lib/abis/Lender';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
@@ -26,8 +26,8 @@ export async function fetchMarketInfoFor(
   token1Decimals: number
 ): Promise<MarketInfo> {
   // TODO: get types for these
-  const lenderContract0 = new ethers.Contract(lender0, lenderABI, lenderLensContract.provider);
-  const lenderContract1 = new ethers.Contract(lender1, lenderABI, lenderLensContract.provider);
+  const lenderContract0 = new ethers.Contract(lender0, lenderAbi, lenderLensContract.provider);
+  const lenderContract1 = new ethers.Contract(lender1, lenderAbi, lenderLensContract.provider);
   const [lender0Basics, lender1Basics, reserveFactorData0, reserveFactorData1] = await Promise.all([
     lenderLensContract.readBasics(lender0),
     lenderLensContract.readBasics(lender1),

@@ -4,7 +4,7 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { UniswapV3PoolABI } from 'shared/lib/abis/UniswapV3Pool';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -120,7 +120,7 @@ export default function ImportBoostPage() {
   }, [uniswapNftPosition, activeChain.id]);
 
   const { data: slot0 } = useContractRead({
-    abi: UniswapV3PoolABI,
+    abi: uniswapV3PoolAbi,
     address: poolAddress,
     functionName: 'slot0',
     chainId: activeChain.id,
@@ -141,6 +141,7 @@ export default function ImportBoostPage() {
     return new BoostCardInfo(
       BoostCardType.UNISWAP_NFT,
       uniswapNftPosition.tokenId,
+      -1, // TODO:
       poolAddress,
       currentTick,
       uniswapNftPosition.token0,

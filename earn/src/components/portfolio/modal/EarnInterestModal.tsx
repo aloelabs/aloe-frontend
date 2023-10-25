@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -97,7 +97,7 @@ function DepositButton(props: DepositButtonProps) {
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
-    abi: routerABI,
+    abi: routerAbi,
     functionName: 'depositWithPermit2',
     args: [
       kitty.address,

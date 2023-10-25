@@ -1,8 +1,8 @@
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { Chain } from 'wagmi';
 
-import FactoryABI from '../assets/abis/Factory.json';
 import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 
 export async function createMarginAccount(
@@ -12,7 +12,7 @@ export async function createMarginAccount(
   completionCallback: (receipt?: ContractReceipt) => void,
   chain: Chain
 ): Promise<void> {
-  const factory = new Contract(ALOE_II_FACTORY_ADDRESS[chain.id], FactoryABI, signer);
+  const factory = new Contract(ALOE_II_FACTORY_ADDRESS[chain.id], factoryAbi, signer);
 
   let transactionOptions: any = {};
 

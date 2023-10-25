@@ -23,7 +23,7 @@ export default function ActiveMarginAccounts(props: ActiveMarginAccountsProps) {
         marginAccounts.map((marginAccount, index) => <MarginAccountCard key={index} {...marginAccount} />)
       ) : (
         <Text size='M' weight='bold'>
-          Looks like you don't have any active margin accounts. Click the button above to create one.
+          Looks like you don't have any active Borrow Vaults. Click the button above to create one.
         </Text>
       )}
     </div>

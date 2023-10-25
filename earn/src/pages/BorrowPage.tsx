@@ -6,6 +6,10 @@ import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -27,10 +31,6 @@ import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead, useBalance } from 'wagmi';
 
 import { ChainContext } from '../App';
-import KittyLensAbi from '../assets/abis/KittyLens.json';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
 import { BorrowGraphPlaceholder } from '../components/borrow/BorrowGraphPlaceholder';
@@ -224,13 +224,13 @@ export default function BorrowPage() {
   }, [marginAccounts, searchParams]);
 
   const borrowerLensContract = useContract({
-    abi: MarginAccountLensABI,
+    abi: borrowerLensAbi,
     address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     signerOrProvider: provider,
   });
   const { data: uniswapPositionTicks } = useContractRead({
     address: selectedMarginAccount?.address ?? '0x',
-    abi: MarginAccountABI,
+    abi: borrowerAbi,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
     enabled: Boolean(selectedMarginAccount),
@@ -261,7 +261,7 @@ export default function BorrowPage() {
         });
       const poolInfoTuples = await Promise.all(
         poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, UniswapV3PoolABI, provider);
+          const poolContract = new ethers.Contract(addr, uniswapV3PoolAbi, provider);
           return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
         })
       );
@@ -307,7 +307,7 @@ export default function BorrowPage() {
       if (selectedMarginAccount == null) return;
       const lenderLensContract = new ethers.Contract(
         ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
-        KittyLensAbi,
+        lenderLensAbi,
         provider
       );
       const result = await fetchMarketInfoFor(

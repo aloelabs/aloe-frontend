@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { UniswapV3PoolABI } from '../abis/UniswapV3Pool';
+import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { Q32 } from './constants/Values';
@@ -48,7 +48,7 @@ async function getObservationsForIndices(
   const calls: ContractCallContext[] = indices.map((index) => ({
     reference: index.toString(),
     contractAddress: uniswapPool,
-    abi: UniswapV3PoolABI as any,
+    abi: uniswapV3PoolAbi as any,
     calls: [
       {
         reference: 'observations',
@@ -79,7 +79,7 @@ async function getObservationsForIndices(
  * @returns the initial bounds for the binary search
  */
 async function getInitialBounds(uniswapPool: string, provider: ethers.providers.Provider) {
-  const uniswapContract = new ethers.Contract(uniswapPool, UniswapV3PoolABI, provider);
+  const uniswapContract = new ethers.Contract(uniswapPool, uniswapV3PoolAbi, provider);
   const slot0 = await uniswapContract.slot0();
   const observationIndex = slot0[2];
   const observationCardinality = slot0[3];

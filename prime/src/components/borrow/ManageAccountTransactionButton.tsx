@@ -2,7 +2,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react';
 
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -258,7 +258,7 @@ export function ManageAccountTransactionButton(props: ManageAccountTransactionBu
 
   const { config: contractConfig } = usePrepareContractWrite({
     address: accountAddress,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
     chainId: activeChain.id,
     args: [ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id], calldata as `0x${string}`, oracleSeed ?? Q32],
