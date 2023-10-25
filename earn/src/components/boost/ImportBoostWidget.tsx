@@ -197,7 +197,6 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     }
   }
 
-  // TODO: use async effect?
   useEffect(() => {
     (async () => {
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
