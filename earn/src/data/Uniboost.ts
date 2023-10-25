@@ -34,8 +34,9 @@ export enum BoostCardType {
 export class BoostCardInfo {
   constructor(
     public readonly cardType: BoostCardType,
+    public readonly owner: Address,
     public readonly nftTokenId: number | string,
-    public readonly nftTokenPtr: number,
+    public readonly nftTokenPtr: number | null,
     public readonly uniswapPool: Address,
     public readonly currentTick: number,
     public readonly token0: Token,
@@ -52,6 +53,7 @@ export class BoostCardInfo {
   static from(boostCardInfo: BoostCardInfo, marginAccount: MarginAccount, position: UniswapPosition): BoostCardInfo {
     return new BoostCardInfo(
       boostCardInfo.cardType,
+      boostCardInfo.owner,
       boostCardInfo.nftTokenId,
       boostCardInfo.nftTokenPtr,
       boostCardInfo.uniswapPool,
@@ -71,6 +73,7 @@ export class BoostCardInfo {
   static withColors(boostCardInfo: BoostCardInfo, color0: string, color1: string): BoostCardInfo {
     return new BoostCardInfo(
       boostCardInfo.cardType,
+      boostCardInfo.owner,
       boostCardInfo.nftTokenId,
       boostCardInfo.nftTokenPtr,
       boostCardInfo.uniswapPool,

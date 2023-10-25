@@ -7,7 +7,7 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { formatUSD } from 'shared/lib/util/Numbers';
@@ -49,17 +49,19 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
   const { activeChain } = useContext(ChainContext);
 
   const modifyData = useMemo(() => {
-    return ethers.utils.defaultAbiCoder.encode(
+    const inner = ethers.utils.defaultAbiCoder.encode(
       ['int24', 'int24'],
       [cardInfo.position.lower, cardInfo.position.upper]
     ) as `0x${string}`;
+    const actionId = 1;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
   }, [cardInfo]);
 
   const { config: configBurn } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
-    args: undefined, // [ethers.BigNumber.from(cardInfo.nftTokenId || 0), 1, modifyData], // TODO:
+    args: [cardInfo.owner, [cardInfo.nftTokenPtr!], [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]], [modifyData], [0]],
     chainId: activeChain.id,
     enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
   });

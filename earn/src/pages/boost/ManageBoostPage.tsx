@@ -2,19 +2,16 @@ import { useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
-import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
-import { Address, useContractRead, useProvider } from 'wagmi';
+import { Address, useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
@@ -53,6 +50,7 @@ export default function ManageBoostPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
   const [isBurnModalOpen, setIsBurnModalOpen] = useState(false);
+  const { address: userAddress } = useAccount();
 
   const navigate = useNavigate();
 
@@ -62,6 +60,7 @@ export default function ManageBoostPage() {
     }
   }, [cardInfo, navigate]);
 
+  // TODO: useAsyncEffect?
   useEffect(() => {
     (async () => {
       if (!pendingTxn) return;
@@ -76,6 +75,7 @@ export default function ManageBoostPage() {
     })();
   }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  // TODO: useAsyncEffect?
   useEffect(() => {
     (async () => {
       if (!cardInfo) return;
@@ -88,6 +88,7 @@ export default function ManageBoostPage() {
     })();
   }, [cardInfo, setColors]);
 
+  // TODO: useAsyncEffect?
   useEffect(() => {
     if (!cardInfo) return;
     (async () => {
@@ -107,14 +108,17 @@ export default function ManageBoostPage() {
 
   const borrowerAddress = nftTokenId?.slice(0, 42);
 
+  // TODO: useAsyncEffect?
   useEffect(() => {
     if (!borrowerAddress || !nftTokenId) return;
     (async () => {
+      if (!userAddress) return;
       const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress as Address);
       const boostCardInfo = new BoostCardInfo(
         BoostCardType.BOOST_NFT,
+        userAddress,
         nftTokenId,
-        -1, // TODO:
+        1, // TODO:
         res.borrower.uniswapPool as Address,
         sqrtRatioToTick(res.borrower.sqrtPriceX96),
         res.borrower.token0,
@@ -129,7 +133,7 @@ export default function ManageBoostPage() {
       );
       setCardInfo(boostCardInfo);
     })();
-  }, [activeChain.id, borrowerAddress, nftTokenId, provider, setCardInfo]);
+  }, [userAddress, activeChain.id, borrowerAddress, nftTokenId, provider, setCardInfo]);
 
   // Handled separately from the above useEffect because we don't want to re-fetch the borrower
   useEffect(() => {
@@ -165,7 +169,6 @@ export default function ManageBoostPage() {
         <BurnBoostModal
           isOpen={isBurnModalOpen}
           cardInfo={cardInfo}
-          nftTokenId={nftTokenId}
           setIsOpen={() => {
             setIsBurnModalOpen(false);
           }}

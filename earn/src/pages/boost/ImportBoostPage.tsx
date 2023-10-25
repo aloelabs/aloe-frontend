@@ -140,8 +140,9 @@ export default function ImportBoostPage() {
     const currentTick = slot0.tick;
     return new BoostCardInfo(
       BoostCardType.UNISWAP_NFT,
+      uniswapNftPosition.owner,
       uniswapNftPosition.tokenId,
-      -1, // TODO:
+      null,
       poolAddress,
       currentTick,
       uniswapNftPosition.token0,

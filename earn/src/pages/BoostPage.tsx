@@ -115,6 +115,7 @@ export default function BoostPage() {
           const res = await fetchBoostBorrower(chainId, provider, borrowerAddress);
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
+            userAddress,
             tokenIds[i],
             indices[i],
             res.borrower.uniswapPool as Address,
@@ -178,6 +179,7 @@ export default function BoostPage() {
         address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
         functionName: 'getMarket',
         args: [computePoolAddress({ ...position, chainId: activeChain.id })],
+        chainId: activeChain.id,
       } as const;
     });
   }, [activeChain.id, uniswapNFTPositions]);
@@ -213,7 +215,12 @@ export default function BoostPage() {
                      CREATE UNISWAP CARD INFOS
   //////////////////////////////////////////////////////////////*/
   const uniswapCardInfos: BoostCardInfo[] = useMemo(() => {
-    if (slot0Data === undefined || slot0Data.length !== uniswapNFTPositions.length || marketDatas === undefined) {
+    if (
+      slot0Data === undefined ||
+      slot0Data.length !== uniswapNFTPositions.length ||
+      marketDatas === undefined ||
+      !userAddress
+    ) {
       return [];
     }
     return uniswapNFTPositions
@@ -223,8 +230,9 @@ export default function BoostPage() {
 
         return new BoostCardInfo(
           BoostCardType.UNISWAP_NFT,
+          userAddress,
           position.tokenId,
-          -1, // TODO:
+          null,
           computePoolAddress({ ...position, chainId: activeChain.id }),
           currentTick,
           position.token0,
@@ -240,7 +248,7 @@ export default function BoostPage() {
         );
       })
       .filter((info) => info.lender0 !== ethers.constants.AddressZero || info.lender1 !== ethers.constants.AddressZero);
-  }, [slot0Data, uniswapNFTPositions, marketDatas, activeChain.id, colors]);
+  }, [slot0Data, uniswapNFTPositions, marketDatas, userAddress, activeChain.id, colors]);
 
   /*//////////////////////////////////////////////////////////////
                       CREATE BOOSTED CARD INFOS

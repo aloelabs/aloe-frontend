@@ -37,6 +37,7 @@ export type UniswapPosition = {
 export type UniswapPositionPrior = Omit<UniswapPosition, 'liquidity'>;
 
 export type UniswapNFTPosition = UniswapPosition & {
+  owner: Address;
   operator: string;
   token0: Token;
   token1: Token;
@@ -313,10 +314,12 @@ export async function fetchUniswapNFTPosition(
     provider
   );
   const position = await nftManager.positions(tokenId);
+  const owner = await nftManager.ownerOf(tokenId);
   const token0 = getToken(chainId, position[2]);
   const token1 = getToken(chainId, position[3]);
   if (token0 === undefined || token1 === undefined) return undefined;
   const uniswapPosition: UniswapNFTPosition = {
+    owner,
     operator: position[1],
     token0,
     token1,
@@ -330,7 +333,7 @@ export async function fetchUniswapNFTPosition(
 }
 
 export async function fetchUniswapNFTPositions(
-  userAddress: string,
+  userAddress: Address,
   provider: Provider
 ): Promise<Map<number, UniswapNFTPosition>> {
   const chainId = (await provider.getNetwork()).chainId;
@@ -394,6 +397,7 @@ export async function fetchUniswapNFTPositions(
     const token1 = getToken(chainId, position[3]);
     if (token0 === undefined || token1 === undefined) continue;
     const uniswapPosition: UniswapNFTPosition = {
+      owner: userAddress,
       operator: position[1],
       token0,
       token1,
