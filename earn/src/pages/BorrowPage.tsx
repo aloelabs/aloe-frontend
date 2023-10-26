@@ -471,7 +471,7 @@ export default function BorrowPage() {
       <Container>
         <SmartWalletsContainer>
           <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
-            Smart Wallets
+            Borrow Vaults
           </Text>
           <SmartWalletsList>
             {marginAccounts?.map((account) => (
@@ -502,7 +502,7 @@ export default function BorrowPage() {
           <MonitorContainer>
             <Text size='XXL' weight='bold'>
               <p>Monitor and manage</p>
-              <p>your smart wallet</p>
+              <p>your borrow vault</p>
             </Text>
             <ManageAccountButtons
               onAddCollateral={() => {

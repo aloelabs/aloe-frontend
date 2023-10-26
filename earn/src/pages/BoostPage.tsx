@@ -275,8 +275,8 @@ export default function BoostPage() {
     <AppPage>
       <ExplainerWrapper>
         <Text size='M' weight='regular' color={SECONDARY_COLOR}>
-          Aloe Boost puts your Uniswap positions on steroids-earn up to 5x more swap fees and spend less on gas. Click a
-          lightning bolt to get started.
+          Aloe Boost puts your Uniswap positions on steroids. Earn up to 5x more swap fees with the same capital. Click
+          a lightning bolt to get started.
         </Text>
       </ExplainerWrapper>
       <Text size='XL'>Boosted Positions</Text>

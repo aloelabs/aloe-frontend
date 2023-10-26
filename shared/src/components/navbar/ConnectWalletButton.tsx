@@ -101,7 +101,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
           <div>
             <div className='flex flex-col gap-2'>
               <Text size='M' weight='regular' color='hsla(205, 47%, 87%, 1)' className='mb-4'>
-                At Aloe Labs, we believe everyone should be able to use financial services without being surveilled. But
+                At Aloe Labs, we believe everyone should be able to use financial services free of censorship. But
                 running a site like this makes some data collection inevitable, and the US Government feels differently
                 about financial access and surveillance.{' '}
                 <strong>As such, we have to ask you to confirm the following:</strong>

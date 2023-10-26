@@ -455,7 +455,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
     const log10001E = Math.log(Math.E) / Math.log(1.0001);
     const tick24hLow = Math.max(cardInfo.currentTick - 3 * iv * log10001E, TickMath.MIN_TICK + 1);
-    const tick24hHigh = Math.min(cardInfo.currentTick + 3 * iv * log10001E, TickMath.MAX_TICK - 1);
+    // const tick24hHigh = Math.min(cardInfo.currentTick + 3 * iv * log10001E, TickMath.MAX_TICK - 1);
 
     const position: UniswapPosition = {
       lower: cardInfo.position.lower,
@@ -468,9 +468,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
     const valueCurrent = getValueOfLiquidity(position, cardInfo.currentTick, cardInfo.token1.decimals);
     const value24hLow = getValueOfLiquidity(position, Math.round(tick24hLow), cardInfo.token1.decimals);
-    const value24hHigh = getValueOfLiquidity(position, Math.round(tick24hHigh), cardInfo.token1.decimals);
+    // const value24hHigh = getValueOfLiquidity(position, Math.round(tick24hHigh), cardInfo.token1.decimals);
 
-    const lossEstimate = valueCurrent - Math.min(value24hLow, value24hHigh);
+    const lossEstimate = valueCurrent - value24hLow;
     return lossEstimate * tokenQuotes[1].price;
   }, [cardInfo, tokenQuotes, boostFactor, iv]);
 

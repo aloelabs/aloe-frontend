@@ -12,7 +12,7 @@ import { Chain, mainnet } from 'wagmi/chains';
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
 import { formatAddress } from '../../util/FormatAddress';
-import { CloseableModal } from '../common/Modal';
+import Modal, { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
 import { GREY_700, GREY_800 } from '../../data/constants/Colors';
@@ -21,6 +21,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { NOTIFICATION_BOT_URL } from '../../data/constants/Values';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const TERTIARY_COLOR = '#4b6980';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -66,8 +67,8 @@ const QRCodeContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 280px;
-  height: 280px;
+  width: 162px;
+  height: 162px;
   border-radius: 8px;
   background-color: white;
 `;
@@ -164,7 +165,7 @@ export default function AccountInfo(props: AccountInfoProps) {
                         <div>
                           <Text size='S'>Notifications</Text>
                           <Text size='XS' color={SECONDARY_COLOR}>
-                            Receive notifications when your positions are at risk of liquidation via Telegram
+                            Receive Telegram messages when your positions are at risk of liquidation.
                           </Text>
                         </div>
                         <FilledGreyButtonWithIcon
@@ -243,27 +244,30 @@ export default function AccountInfo(props: AccountInfoProps) {
           )}
         </div>
       </CloseableModal>
-      <CloseableModal
+      <Modal
         isOpen={enableNotificationsModalOpen}
         setIsOpen={setEnableNotificationsModalOpen}
-        title={'Enable Notifications'}
+        title='Enable Notifications'
+        maxWidth='400px'
       >
-        <div className='flex flex-col justify-center items-center gap-4'>
-          <div className='max-w-[400px]'>
-            <Text size='M' weight='medium' className='text-center'>
-              Scan this QR code with Telegram to enable notifications.
-            </Text>
-          </div>
+        <div className='flex flex-col gap-4 items-center text-center'>
+          <Text size='M'>Sign up to receive Telegram messages two minutes before liquidation.</Text>
           <QRCodeContainer>
-            <QRCodeSVG value={NOTIFICATION_BOT_URL} size={256} />
+            <QRCodeSVG value={NOTIFICATION_BOT_URL} size={148} />
           </QRCodeContainer>
           <a href={NOTIFICATION_BOT_URL} target='_blank' rel='noreferrer'>
-            <FilledStylizedButton size='M' fillWidth={true}>
-              Open Telegram
-            </FilledStylizedButton>
+            <FilledStylizedButton size='M'>Open Telegram</FilledStylizedButton>
           </a>
+          <Text size='XS' color={TERTIARY_COLOR} className='mt-2'>
+            By enrolling, you agree to our{' '}
+            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+              Terms of Service
+            </a>
+            {''}, acknowledge that this service may not always work. Your address will be linked to your Telegram
+            username in our database.
+          </Text>
         </div>
-      </CloseableModal>
+      </Modal>
     </div>
   );
 }

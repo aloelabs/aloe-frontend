@@ -171,7 +171,12 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
         <CardHeader>
           <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
             Lending Pair Peer
-            <Tooltip buttonSize='S' content='Collateral Asset' position='bottom-center' />
+            <Tooltip
+              buttonSize='S'
+              // eslint-disable-next-line max-len
+              content='The information in this section relates to a Lending Pair. A given asset may be part of multiple Lending Pairs, so use the dropdown on the right to choose one to inspect.'
+              position='bottom-center'
+            />
           </Text>
         </CardHeader>
         <CardBody>

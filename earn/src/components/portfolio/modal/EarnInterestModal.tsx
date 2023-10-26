@@ -362,7 +362,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
               {selectedPairOption.token0.symbol}/{selectedPairOption.token1.symbol}
             </strong>{' '}
             lending market. Other users will be able to borrow your {selectedOption.symbol} by posting{' '}
-            {peerAsset.symbol} as collateral. When they pay interest, you earn interest.
+            {peerAsset.symbol} or {selectedOption.symbol} as collateral. When they pay interest, you earn interest.
           </Text>
         </div>
         <div className='w-full'>
