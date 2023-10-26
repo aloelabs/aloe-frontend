@@ -1,24 +1,31 @@
 import { useContext, useEffect, useMemo } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
-import { useAccount, useProvider } from 'wagmi';
+import { useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
+import useAvailablePools from '../data/hooks/UseAvailablePools';
 import {
+  filterLendingPairsByTokens,
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
+import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
+import { getProminentColor } from '../util/Colors';
 
 export type TokenQuote = {
   token: Token;
@@ -43,11 +50,22 @@ export default function MarketsPage() {
     [],
     activeChain.id
   );
+  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
+  const [tokenColors, setTokenColors] = useChainDependentState<Map<string, string>>(new Map(), activeChain.id);
 
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
-  const address = account.address;
+  const userAddress = account.address;
+
+  const uniqueTokens = useMemo(() => {
+    const tokens = new Set<Token>();
+    lendingPairs.forEach((pair) => {
+      tokens.add(pair.token0);
+      tokens.add(pair.token1);
+    });
+    return Array.from(tokens.values());
+  }, [lendingPairs]);
 
   const uniqueSymbols = useMemo(() => {
     const symbols = new Set<string>();
@@ -57,6 +75,20 @@ export default function MarketsPage() {
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
+
+  const availablePools = useAvailablePools();
+
+  useEffect(() => {
+    (async () => {
+      const tokenColorMap: Map<string, string> = new Map();
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
+      const colors = await Promise.all(colorPromises);
+      uniqueTokens.forEach((token: Token, index: number) => {
+        tokenColorMap.set(token.address, colors[index]);
+      });
+      setTokenColors(tokenColorMap);
+    })();
+  }, [lendingPairs, setTokenColors, uniqueTokens]);
 
   useEffect(() => {
     async function fetch() {
@@ -92,15 +124,31 @@ export default function MarketsPage() {
       const results = await getAvailableLendingPairs(chainId, provider);
       setLendingPairs(results);
     })();
-  }, [provider, address, setLendingPairs]);
+  }, [provider, userAddress, setLendingPairs]);
 
   useEffect(() => {
     (async () => {
-      if (!address) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
+      if (!userAddress) return;
+      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, userAddress, provider)));
       setLendingPairBalances(results);
     })();
-  }, [provider, address, lendingPairs, setLendingPairBalances]);
+  }, [provider, userAddress, lendingPairs, setLendingPairBalances]);
+
+  const borrowerLensContract = useContract({
+    abi: borrowerLensAbi,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
+    signerOrProvider: provider,
+  });
+
+  // MARK: Fetch margin accounts
+  useEffect(() => {
+    (async () => {
+      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
+      const chainId = (await provider.getNetwork()).chainId;
+      const fetchedMarginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
+      setMarginAccounts(fetchedMarginAccounts);
+    })();
+  }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
@@ -209,12 +257,68 @@ export default function MarketsPage() {
     return rows;
   }, [tokenBalances]);
 
+  const collateralEntries = useMemo(() => {
+    const entries: CollateralEntry[] = [];
+    tokenBalances.forEach((tokenBalance) => {
+      if (tokenBalance.balance !== 0) {
+        const matchingPairs = filterLendingPairsByTokens(lendingPairs, [tokenBalance.token]);
+        entries.push({
+          asset: tokenBalance.token,
+          balance: tokenBalance.balance,
+          matchingPairs: matchingPairs,
+        });
+      }
+    });
+    return entries;
+  }, [lendingPairs, tokenBalances]);
+
+  const borrowEntries = useMemo(() => {
+    const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
+      const kitty0Balance = combinedBalances.find(
+        (balance) => balance.token.address === (lendingPair.kitty0?.address || lendingPair.kitty0.address)
+      );
+      const kitty1Balance = combinedBalances.find(
+        (balance) => balance.token.address === (lendingPair.kitty1?.address || lendingPair.kitty1.address)
+      );
+      acc.push({
+        asset: lendingPair.token0,
+        collateral: lendingPair.token1,
+        apy: lendingPair.kitty0Info.apy,
+        supply: kitty0Balance?.balance || 0,
+      });
+      acc.push({
+        asset: lendingPair.token1,
+        collateral: lendingPair.token0,
+        apy: lendingPair.kitty1Info.apy,
+        supply: kitty1Balance?.balance || 0,
+      });
+      return acc;
+    }, []);
+    return borrowable.reduce((acc: { [key: string]: BorrowEntry[] }, borrowable) => {
+      const existing = acc[borrowable.asset.symbol];
+      if (existing && borrowable.supply > 0) {
+        // If the asset already exists in the accumulator, push the borrowable
+        existing.push(borrowable);
+      } else if (borrowable.supply > 0) {
+        // Otherwise, create a new array with the borrowable
+        acc[borrowable.asset.symbol] = [borrowable];
+      }
+      return acc;
+    }, {});
+  }, [combinedBalances, lendingPairs]);
+
   return (
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
         <Text size='XL'>Supply</Text>
         <SupplyTable rows={supplyRows} />
         <div className='flex flex-col gap-6'>
+          <BorrowingWidget
+            marginAccounts={marginAccounts}
+            collateralEntries={collateralEntries}
+            borrowEntries={borrowEntries}
+            tokenColors={tokenColors}
+          />
           <Text size='XL'>Collateral</Text>
           <CollateralTable rows={collateralRows} />
         </div>

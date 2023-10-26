@@ -9,12 +9,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
-  ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
@@ -25,7 +23,6 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
-import { getToken } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address, useAccount, useContract, useProvider, useContractRead, useBalance } from 'wagmi';
@@ -46,10 +43,10 @@ import WithdrawAnteModal from '../components/borrow/modal/WithdrawAnteModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_IV } from '../data/constants/Signatures';
+import { TOPIC0_IV } from '../data/constants/Signatures';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, primeUrl } from '../data/constants/Values';
+import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import {
@@ -188,10 +185,6 @@ export default function BorrowPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress, isConnected } = useAccount();
 
-  const [availablePools, setAvailablePools] = useChainDependentState(
-    new Map<string, UniswapPoolInfo>(),
-    activeChain.id
-  );
   const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
   const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
   const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
@@ -236,47 +229,7 @@ export default function BorrowPage() {
     enabled: Boolean(selectedMarginAccount),
   });
 
-  // MARK: Fetch available pools
-  useEffect(() => {
-    (async () => {
-      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
-      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
-      const chainId = (await provider.getNetwork()).chainId;
-      let logs: ethers.providers.Log[] = [];
-      try {
-        logs = await provider.getLogs({
-          fromBlock: 0,
-          toBlock: 'latest',
-          address: ALOE_II_FACTORY_ADDRESS[chainId],
-          topics: [TOPIC0_CREATE_MARKET_EVENT],
-        });
-      } catch (e) {
-        console.error(e);
-      }
-
-      const poolAddresses = logs
-        .map((e) => `0x${e.topics[1].slice(-40)}`)
-        .filter((addr) => {
-          return !UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase());
-        });
-      const poolInfoTuples = await Promise.all(
-        poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, uniswapV3PoolAbi, provider);
-          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
-        })
-      );
-
-      const poolInfoMap = new Map<string, UniswapPoolInfo>();
-      poolAddresses.forEach((addr, i) => {
-        const token0 = getToken(chainId, poolInfoTuples[i][0] as Address);
-        const token1 = getToken(chainId, poolInfoTuples[i][1] as Address);
-        const fee = poolInfoTuples[i][2] as number;
-        if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
-      });
-
-      setAvailablePools(poolInfoMap);
-    })();
-  }, [provider, setAvailablePools]);
+  const availablePools = useAvailablePools();
 
   // MARK: Fetch margin accounts
   useEffect(() => {
@@ -354,7 +307,7 @@ export default function BorrowPage() {
         const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
 
         const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
-        let ltv = 1 / (Math.exp(selectedMarginAccount.nSigma * iv) * fact);
+        let ltv = 1 / (Math.exp((selectedMarginAccount.nSigma * iv) / 10) * fact);
         ltv = Math.max(0.1, Math.min(ltv, 0.9));
 
         const resultData: BorrowGraphData = {
