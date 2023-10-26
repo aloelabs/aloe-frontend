@@ -6,6 +6,11 @@ export const borrowerNftAbi = [
         name: 'factory',
         type: 'address',
       },
+      {
+        internalType: 'contract IBorrowerURISource',
+        name: 'uriSource',
+        type: 'address',
+      },
     ],
     stateMutability: 'nonpayable',
     type: 'constructor',
@@ -129,6 +134,19 @@ export const borrowerNftAbi = [
     type: 'function',
   },
   {
+    inputs: [],
+    name: 'URI_SOURCE',
+    outputs: [
+      {
+        internalType: 'contract IBorrowerURISource',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [
       {
         internalType: 'address',
@@ -228,7 +246,7 @@ export const borrowerNftAbi = [
     ],
     name: 'mint',
     outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
     type: 'function',
   },
   {
@@ -457,7 +475,7 @@ export const borrowerNftAbi = [
     inputs: [
       {
         internalType: 'uint256',
-        name: '',
+        name: 'tokenId',
         type: 'uint256',
       },
     ],
@@ -467,6 +485,25 @@ export const borrowerNftAbi = [
         internalType: 'string',
         name: '',
         type: 'string',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+    ],
+    name: 'tokensOf',
+    outputs: [
+      {
+        internalType: 'uint256[]',
+        name: '',
+        type: 'uint256[]',
       },
     ],
     stateMutability: 'view',

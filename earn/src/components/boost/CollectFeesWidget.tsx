@@ -49,13 +49,10 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
   const { activeChain } = useContext(ChainContext);
 
   const modifyData = useMemo(() => {
-    const inner = ethers.utils.defaultAbiCoder.encode(
-      ['int24', 'int24'],
-      [cardInfo.position.lower, cardInfo.position.upper]
-    ) as `0x${string}`;
+    const inner = '0x';
     const actionId = 1;
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
-  }, [cardInfo]);
+  }, []);
 
   const { config: configBurn } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
@@ -63,7 +60,10 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
     functionName: 'modify',
     args: [cardInfo.owner, [cardInfo.nftTokenPtr!], [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]], [modifyData], [0]],
     chainId: activeChain.id,
-    enabled: !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
+    enabled:
+      cardInfo.nftTokenPtr != null &&
+      cardInfo.nftTokenPtr >= 0 &&
+      !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
   });
   let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
   const {

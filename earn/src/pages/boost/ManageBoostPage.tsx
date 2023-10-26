@@ -1,17 +1,19 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
-import { Address, useAccount, useProvider } from 'wagmi';
+import { Address, useAccount, useContractRead, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
@@ -53,6 +55,19 @@ export default function ManageBoostPage() {
   const { address: userAddress } = useAccount();
 
   const navigate = useNavigate();
+
+  const { data: tokenIds } = useContractRead({
+    abi: borrowerNftAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    functionName: 'tokensOf',
+    args: userAddress ? [userAddress] : undefined,
+    chainId: activeChain.id,
+    enabled: Boolean(userAddress),
+  });
+  const tokenPtr = useMemo(
+    () => tokenIds?.findIndex((id) => id.toHexString() === nftTokenId) ?? null,
+    [tokenIds, nftTokenId]
+  );
 
   useEffect(() => {
     if (cardInfo?.borrower && JSBI.equal(cardInfo.position.liquidity, JSBI.BigInt(0))) {
@@ -113,7 +128,7 @@ export default function ManageBoostPage() {
         BoostCardType.BOOST_NFT,
         userAddress,
         nftTokenId,
-        1, // TODO:
+        tokenPtr,
         res.borrower.uniswapPool as Address,
         sqrtRatioToTick(res.borrower.sqrtPriceX96),
         res.borrower.token0,
@@ -128,7 +143,7 @@ export default function ManageBoostPage() {
       );
       setCardInfo(boostCardInfo);
     })();
-  }, [userAddress, activeChain.id, borrowerAddress, nftTokenId, provider, setCardInfo]);
+  }, [userAddress, activeChain.id, tokenPtr, borrowerAddress, nftTokenId, provider, setCardInfo]);
 
   // Handled separately from the above useEffect because we don't want to re-fetch the borrower
   useEffect(() => {
