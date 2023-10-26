@@ -1,31 +1,29 @@
 import { useContext, useEffect, useMemo } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
-import { ethers } from 'ethers';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
-import { getToken, getTokenBySymbol } from 'shared/lib/data/TokenData';
-import { Address, useAccount, useContract, useProvider } from 'wagmi';
+import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import { useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
-import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
-import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
+import useAvailablePools from '../data/hooks/UseAvailablePools';
 import {
+  filterLendingPairsByTokens,
   getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { fetchMarginAccounts, MarginAccount, UniswapPoolInfo } from '../data/MarginAccount';
+import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -50,10 +48,6 @@ export default function MarketsPage() {
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
-    activeChain.id
-  );
-  const [availablePools, setAvailablePools] = useChainDependentState(
-    new Map<string, UniswapPoolInfo>(),
     activeChain.id
   );
   const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
@@ -81,6 +75,8 @@ export default function MarketsPage() {
     });
     return Array.from(symbols.values()).join(',');
   }, [lendingPairs]);
+
+  const availablePools = useAvailablePools();
 
   useEffect(() => {
     (async () => {
@@ -137,48 +133,6 @@ export default function MarketsPage() {
       setLendingPairBalances(results);
     })();
   }, [provider, userAddress, lendingPairs, setLendingPairBalances]);
-
-  // MARK: Fetch available pools
-  useEffect(() => {
-    (async () => {
-      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
-      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
-      const chainId = (await provider.getNetwork()).chainId;
-      let logs: ethers.providers.Log[] = [];
-      try {
-        logs = await provider.getLogs({
-          fromBlock: 0,
-          toBlock: 'latest',
-          address: ALOE_II_FACTORY_ADDRESS[chainId],
-          topics: [TOPIC0_CREATE_MARKET_EVENT],
-        });
-      } catch (e) {
-        console.error(e);
-      }
-
-      const poolAddresses = logs
-        .map((e) => `0x${e.topics[1].slice(-40)}`)
-        .filter((addr) => {
-          return !UNISWAP_POOL_DENYLIST.includes(addr.toLowerCase());
-        });
-      const poolInfoTuples = await Promise.all(
-        poolAddresses.map((addr) => {
-          const poolContract = new ethers.Contract(addr, uniswapV3PoolAbi, provider);
-          return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
-        })
-      );
-
-      const poolInfoMap = new Map<string, UniswapPoolInfo>();
-      poolAddresses.forEach((addr, i) => {
-        const token0 = getToken(chainId, poolInfoTuples[i][0] as Address);
-        const token1 = getToken(chainId, poolInfoTuples[i][1] as Address);
-        const fee = poolInfoTuples[i][2] as number;
-        if (token0 && token1) poolInfoMap.set(addr.toLowerCase(), { token0, token1, fee });
-      });
-
-      setAvailablePools(poolInfoMap);
-    })();
-  }, [provider, setAvailablePools]);
 
   const borrowerLensContract = useContract({
     abi: borrowerLensAbi,
@@ -307,11 +261,7 @@ export default function MarketsPage() {
     const entries: CollateralEntry[] = [];
     tokenBalances.forEach((tokenBalance) => {
       if (tokenBalance.balance !== 0) {
-        const matchingPairs = lendingPairs.filter((pair) => {
-          return (
-            pair.token0.address === tokenBalance.token.address || pair.token1.address === tokenBalance.token.address
-          );
-        });
+        const matchingPairs = filterLendingPairsByTokens(lendingPairs, [tokenBalance.token]);
         entries.push({
           asset: tokenBalance.token,
           balance: tokenBalance.balance,
@@ -347,8 +297,10 @@ export default function MarketsPage() {
     return borrowable.reduce((acc: { [key: string]: BorrowEntry[] }, borrowable) => {
       const existing = acc[borrowable.asset.symbol];
       if (existing && borrowable.supply > 0) {
+        // If the asset already exists in the accumulator, push the borrowable
         existing.push(borrowable);
       } else if (borrowable.supply > 0) {
+        // Otherwise, create a new array with the borrowable
         acc[borrowable.asset.symbol] = [borrowable];
       }
       return acc;

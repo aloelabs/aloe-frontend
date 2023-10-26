@@ -132,8 +132,10 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       return borrowEntries;
     }
     return Object.entries(borrowEntries).reduce((filtered, [key, entries]) => {
+      // Filter out entries that don't match the selected collateral
       const filteredEntries = entries.filter((entry) => entry.collateral.symbol === selectedCollateral.asset.symbol);
       if (filteredEntries.length > 0) {
+        // Only add the entry if there are any matching pairs left
         filtered[key] = filteredEntries;
       }
       return filtered;
