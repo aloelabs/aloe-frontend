@@ -204,8 +204,8 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             <Tooltip
               buttonSize='S'
               buttonText=''
-              content={`The lending pair is the combination of the asset you are withdrawing
-                and the collateral you are using to withdraw it.`}
+              content={`When you deposited ${selectedToken.symbol} to Aloe, you chose to lend to a particular pair.
+              Choose the same pair now in order to withdraw.`}
               position='top-center'
               filled={true}
             />
@@ -239,7 +239,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             {confirmButton.text}
           </FilledStylizedButton>
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By withdrawing, you agree to our{' '}
+            By using our interface, you agree to our{' '}
             <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}

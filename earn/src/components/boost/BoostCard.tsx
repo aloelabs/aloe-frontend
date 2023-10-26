@@ -154,6 +154,8 @@ export default function BoostCard(props: UniswapPositionCardProps) {
       </CardActionButton>
     );
 
+  if (info.position.lower === info.position.upper) return null;
+
   const minPrice = tickToPrice(info.position.lower, token0.decimals, token1.decimals, true);
   const maxPrice = tickToPrice(info.position.upper, token0.decimals, token1.decimals, true);
   const boostFactor = info.boostFactor();
