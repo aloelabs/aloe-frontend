@@ -148,36 +148,7 @@ export async function fetchBoostBorrowersList(
 ) {
   const borrowerNftContract = new ethers.Contract(ALOE_II_BORROWER_NFT_ADDRESS[chainId], borrowerNftAbi, provider);
 
-  const transfersFrom = await borrowerNftContract.queryFilter(
-    borrowerNftContract.filters.Transfer(userAddress, null, null),
-    0,
-    'latest'
-  );
-  const transfersTo = await borrowerNftContract.queryFilter(
-    borrowerNftContract.filters.Transfer(null, userAddress, null),
-    0,
-    'latest'
-  );
-  const transfers = transfersFrom.concat(transfersTo);
-  transfers.sort((a, b) => {
-    if (a.blockNumber === b.blockNumber) {
-      if (a.transactionIndex === b.transactionIndex) {
-        return a.logIndex - b.logIndex;
-      }
-      return a.transactionIndex - b.transactionIndex;
-    }
-    return a.blockNumber - b.blockNumber;
-  });
-
-  let orderedTokenIds: BigNumber[] = [];
-  for (const transfer of transfers) {
-    if (transfer.args?.['to'] === userAddress) {
-      orderedTokenIds.push(transfer.args['tokenId']);
-      continue;
-    }
-
-    orderedTokenIds = orderedTokenIds.filter((tokenId) => !tokenId.eq(transfer.args?.['tokenId']));
-  }
+  const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
   const orderedTokenIdStrs = orderedTokenIds.map((id) => id.toHexString());
 
   const modifys = await borrowerNftContract.queryFilter(
@@ -262,6 +233,7 @@ export async function fetchBoostBorrower(
   const token0 = getToken(chainId, token0Addr)!;
   const token1 = getToken(chainId, token1Addr)!;
   const [tickLower, tickUpper] = borrowerResults.at(-1)!.returnValues;
+  const hasPosition = tickLower !== undefined && tickUpper !== undefined;
 
   // ---
   // Parse results from lens
@@ -285,11 +257,15 @@ export async function fetchBoostBorrower(
     GN.hexToGn(lensResults[2].returnValues[0], 18),
     GN.hexToGn(lensResults[2].returnValues[1], 18)
   ).toNumber();
-  const uniswapKey = lensResults[3].returnValues[0][0];
-  const uniswapFees = {
-    amount0: GN.hexToGn(lensResults[3].returnValues[1][0], token0.decimals),
-    amount1: GN.hexToGn(lensResults[3].returnValues[1][1], token1.decimals),
-  };
+  let uniswapKey = '0x0000000000000000000000000000000000000000000000000000000000000000';
+  let uniswapFees = { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) };
+  if (hasPosition) {
+    uniswapKey = lensResults[3].returnValues[0][0];
+    uniswapFees = {
+      amount0: GN.hexToGn(lensResults[3].returnValues[1][0], token0.decimals),
+      amount1: GN.hexToGn(lensResults[3].returnValues[1][1], token1.decimals),
+    };
+  }
 
   // ---
   // Now we do another multicall to get:

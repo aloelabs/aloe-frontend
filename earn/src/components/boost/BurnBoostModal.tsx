@@ -94,24 +94,12 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
       isNaN(slippage) ? undefined : slippage
     );
     const inner = ethers.utils.defaultAbiCoder.encode(
-      ['int24', 'int24', 'uint128', 'uint128', 'bool'],
-      [
-        cardInfo.position.lower,
-        cardInfo.position.upper,
-        cardInfo.position.liquidity.toString(10),
-        maxSpend.toBigNumber(),
-        zeroForOne,
-      ]
+      ['uint128', 'bool'],
+      [maxSpend.toBigNumber(), zeroForOne]
     ) as `0x${string}`;
     const actionId = 2;
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
-  }, [
-    cardInfo?.borrower,
-    cardInfo?.position.liquidity,
-    cardInfo?.position.lower,
-    cardInfo?.position.upper,
-    slippagePercentage,
-  ]);
+  }, [cardInfo.borrower, slippagePercentage]);
 
   const { config: configBurn, isLoading: isCheckingIfAbleToBurn } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],

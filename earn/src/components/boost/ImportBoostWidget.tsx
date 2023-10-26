@@ -314,7 +314,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     return dailyInterestUSD0 + dailyInterestUSD1;
   }, [apr0, apr1, boostFactor, cardInfo, tokenQuotes]);
 
-  const nftTokenId = ethers.BigNumber.from(cardInfo?.nftTokenId || 0);
+  const nftTokenId = ethers.BigNumber.from(cardInfo.nftTokenId);
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
