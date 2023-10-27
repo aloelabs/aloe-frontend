@@ -82,7 +82,7 @@ export async function fetchListOfBorrowerNfts(
     });
     const lensResults = (await multicall.call(lensContext)).results['lens'].callsReturnContext;
     if (lensResults.find((v) => !v.success || !v.decoded)) {
-      throw new Error(`Multicall error while checking whether Borrowers are in use`);
+      throw new Error('Multicall error while checking whether Borrowers are in use');
     }
     lensResults.forEach((res) => {
       const [isInUse, pool] = res.returnValues;
