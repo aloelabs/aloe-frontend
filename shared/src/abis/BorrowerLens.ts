@@ -132,4 +132,28 @@ export const borrowerLensAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [
+      {
+        internalType: 'contract Borrower',
+        name: 'borrower',
+        type: 'address',
+      },
+    ],
+    name: 'isInUse',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
