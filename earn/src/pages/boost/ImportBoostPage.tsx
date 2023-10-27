@@ -1,6 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { TickMath } from '@uniswap/v3-sdk';
 import { SendTransactionResult } from '@wagmi/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
@@ -176,11 +175,12 @@ export default function ImportBoostPage() {
     enabled: Boolean(cardInfo),
   });
 
+  let sqrtPriceX96 = consultData ? GN.fromBigNumber(consultData[1], 96, 2) : undefined;
   let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 12).toNumber();
   const nSigma = (parametersData?.['nSigma'] ?? 0) / 10;
 
   const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
-    if (!cardInfo) return undefined;
+    if (!cardInfo || !sqrtPriceX96) return undefined;
     const { position } = cardInfo;
 
     const updatedLiquidity = GN.fromJSBI(position.liquidity, 0).recklessMul(boostFactor).toJSBI();
@@ -202,7 +202,7 @@ export default function ImportBoostPage() {
           amount1: cardInfo.amount1() * (boostFactor - 1),
         },
         feeTier: FeeTier.INVALID,
-        sqrtPriceX96: GN.fromJSBI(TickMath.getSqrtRatioAtTick(cardInfo.currentTick), 0).toDecimalBig(),
+        sqrtPriceX96: sqrtPriceX96.toDecimalBig(),
         health: 0,
         lender0: '0x',
         lender1: '0x',
@@ -214,7 +214,7 @@ export default function ImportBoostPage() {
         liquidity: updatedLiquidity,
       }
     );
-  }, [cardInfo, boostFactor, iv, nSigma]);
+  }, [cardInfo, boostFactor, iv, nSigma, sqrtPriceX96]);
 
   const isLoading = !cardInfo || !updatedCardInfo || !tokenId;
   return (

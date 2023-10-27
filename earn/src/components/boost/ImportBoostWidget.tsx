@@ -20,6 +20,7 @@ import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -27,8 +28,10 @@ import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
 import {
+  Address,
   erc721ABI,
   useAccount,
+  useBalance,
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
@@ -37,6 +40,7 @@ import {
 } from 'wagmi';
 
 import { ChainContext } from '../../App';
+import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
@@ -183,6 +187,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     undefined
   );
   const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[] | undefined>(undefined);
+  const [availableNft, setAvailableNft] = useChainDependentState<{ borrower: Address; ptrIdx: number } | undefined>(
+    undefined,
+    activeChain.id
+  );
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
@@ -249,8 +257,6 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     args: [cardInfo.uniswapPool],
     chainId: activeChain.id,
   });
-
-  const ante = !marketParameters ? ethers.BigNumber.from(0) : marketParameters.ante;
 
   const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
   const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
@@ -385,7 +391,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     },
   });
 
-  const { data: nextNftPointerIndex } = useContractRead({
+  // The NFT index we will use if minting
+  const { data: nextNftPtrIdx } = useContractRead({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'balanceOf',
@@ -394,11 +401,53 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     enabled: enableHooks && Boolean(userAddress),
   });
 
+  // The NFT indices we can use if the user has some unused BorrowerNFTs
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      if (!userAddress) return;
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
+        validUniswapPool: cardInfo.uniswapPool,
+        onlyCheckMostRecentModify: true,
+        includeFreshBorrowers: true,
+      });
+
+      if (mounted && results.borrowers.length > 0) {
+        setAvailableNft({ borrower: results.borrowers[0], ptrIdx: results.indices[0] });
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [provider, userAddress, cardInfo, setAvailableNft]);
+
+  // If we're reusing an old NFT, check whether it has ANTE
+  const { data: borrowerBalance } = useBalance({
+    address: availableNft?.borrower ?? '0x',
+    chainId: activeChain.id,
+    watch: false,
+    enabled: availableNft !== undefined,
+  });
+
+  const ethToSend = useMemo(() => {
+    if (!marketParameters) {
+      return ethers.BigNumber.from(0);
+    }
+    if (availableNft !== undefined && borrowerBalance !== undefined) {
+      if (borrowerBalance.value.lt(marketParameters.ante)) return marketParameters.ante.sub(borrowerBalance.value);
+      return ethers.BigNumber.from(0);
+    }
+    return marketParameters.ante;
+  }, [marketParameters, availableNft, borrowerBalance]);
+
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
   // First, we `mint` so that they have a `Borrower` to put stuff in
   const encodedMint = useMemo(() => {
-    if (!userAddress) return undefined;
+    if (!userAddress) return '0x';
     const to = userAddress;
     const pools = [cardInfo.uniswapPool];
     const salts = [generateBytes12Salt()];
@@ -406,14 +455,14 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   }, [borrowerNft, userAddress, cardInfo]);
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
-    if (!userAddress || nextNftPointerIndex === undefined) return undefined;
+    if (!userAddress || nextNftPtrIdx === undefined) return '0x';
     const owner = userAddress;
-    const indices = [nextNftPointerIndex];
+    const indices = [availableNft !== undefined ? availableNft.ptrIdx : nextNftPtrIdx];
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
     const datas = [modifyData];
-    const antes = [ante.div(1e13)];
+    const antes = [ethToSend.div(1e13)];
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
-  }, [borrowerNft, userAddress, activeChain, nextNftPointerIndex, modifyData, ante]);
+  }, [borrowerNft, userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
 
   const {
     config: configMint,
@@ -423,8 +472,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
-    args: [!encodedMint || !encodedModify ? [] : [encodedMint, encodedModify]],
-    overrides: { value: ante },
+    args: [availableNft !== undefined ? [encodedModify] : [encodedMint, encodedModify]],
+    overrides: { value: ethToSend },
     chainId: activeChain.id,
     enabled: userAddress && enableHooks && shouldMint && Boolean(encodedMint) && Boolean(encodedModify),
   });
@@ -566,9 +615,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             graph to the left.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {GN.fromBigNumber(ante, 18).toString(GNFormat.LOSSY_HUMAN)} ETH to
-            cover gas fees in the event that you get liquidated. If you don't get liquidated, the ETH will be returned
-            to you when you close the position.
+            You will need to provide an additional {GN.fromBigNumber(ethToSend, 18).toString(GNFormat.LOSSY_HUMAN)} ETH
+            to cover gas fees in the event that you get liquidated. If you don't get liquidated, the ETH will be
+            returned to you when you close the position.
           </Text>
         </div>
         <FilledGradientButton

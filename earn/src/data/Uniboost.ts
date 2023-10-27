@@ -1,15 +1,13 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import {
-  ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
@@ -22,6 +20,7 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { Address } from 'wagmi';
 
+import { fetchListOfBorrowerNfts } from './BorrowerNft';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
 
@@ -146,38 +145,12 @@ export async function fetchBoostBorrowersList(
   provider: ethers.providers.BaseProvider,
   userAddress: string
 ) {
-  const borrowerNftContract = new ethers.Contract(ALOE_II_BORROWER_NFT_ADDRESS[chainId], borrowerNftAbi, provider);
-
-  const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
-  const orderedTokenIdStrs = orderedTokenIds.map((id) => id.toHexString());
-
-  const modifys = await borrowerNftContract.queryFilter(
-    borrowerNftContract.filters.Modify(userAddress, null, null),
-    0,
-    'latest'
-  );
-
-  const borrowerManagersMap: Map<Address, Set<Address>> = new Map();
-  modifys.forEach((modify) => {
-    const borrower = modify.args!['borrower'] as Address;
-    const manager = modify.args!['manager'] as Address;
-    if (borrowerManagersMap.has(borrower)) {
-      borrowerManagersMap.get(borrower)?.add(manager);
-    } else {
-      borrowerManagersMap.set(borrower, new Set<Address>([manager]));
-    }
+  const validManagerSet = new Set<Address>([ALOE_II_BOOST_MANAGER_ADDRESS[chainId]]);
+  return fetchListOfBorrowerNfts(chainId, provider, userAddress, {
+    validManagerSet,
+    onlyCheckMostRecentModify: true,
+    includeFreshBorrowers: false,
   });
-
-  const borrowers = Array.from(borrowerManagersMap.entries())
-    .filter(([borrower, managerSet]) => managerSet.size === 1 && managerSet.has(ALOE_II_BOOST_MANAGER_ADDRESS[chainId]))
-    .map(([borrower, managerSet]) => borrower);
-
-  const tokenIds = borrowers.map((borrower) => orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!);
-  const indices = borrowers.map((borrower) =>
-    orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase()))
-  );
-
-  return { borrowers, tokenIds, indices };
 }
 
 export async function fetchBoostBorrower(
