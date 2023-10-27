@@ -9,7 +9,7 @@ import styled from 'styled-components';
 
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import SupplyModal from './modal/SupplyModal';
-import OptimizeButton from './OptimizeButton';
+// import OptimizeButton from './OptimizeButton';
 
 const PAGE_SIZE = 10;
 
@@ -89,11 +89,11 @@ export default function SupplyTable(props: SupplyTableProps) {
                   Balance
                 </Text>
               </th>
-              <th className='px-4 py-2 text-center whitespace-nowrap'>
+              {/* <th className='px-4 py-2 text-center whitespace-nowrap'>
                 <Text size='M' weight='bold'>
                   Optimized
                 </Text>
-              </th>
+              </th> */}
             </tr>
           </TableHeader>
           <tbody>
@@ -124,14 +124,14 @@ export default function SupplyTable(props: SupplyTableProps) {
                     {formatTokenAmount(row.supplyBalance)} {row.asset.symbol}
                   </Display>
                 </td>
-                <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
+                {/* <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
                   <OptimizeButton
                     isOptimized={row.isOptimized}
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
                   />
-                </td>
+                </td> */}
               </HoverableRow>
             ))}
           </tbody>
