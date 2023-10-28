@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -14,6 +14,9 @@ import { rgba } from '../../util/Colors';
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const CardWrapper = styled.div<{ $textAlignment: string }>`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   width: 100%;
   min-height: 200px;
   text-align: ${(props) => props.$textAlignment};
@@ -22,12 +25,11 @@ const CardWrapper = styled.div<{ $textAlignment: string }>`
 const CardContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background-color: ${GREY_800};
-  padding: 16px;
+  border: 2px solid #ffffff;
+  overflow: hidden;
 `;
 
 const AvailableContainerPlaceholder = styled.div`
@@ -46,8 +48,6 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   align-items: center;
   width: 100%;
   height: 52px;
-  border-radius: 8px;
-  background: ${GREY_700};
   padding-left: 16px;
   padding-right: 16px;
   cursor: pointer;
@@ -57,7 +57,7 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   }
 
   &.selected {
-    outline: 2px solid ${SECONDARY_COLOR};
+    background: ${GREY_700};
   }
 `;
 
@@ -83,6 +83,20 @@ const AvailableContainerConnectedRight = styled(AvailableContainer)`
     height: 10px;
     background-color: ${GREY_700};
   }
+`;
+
+const CardRow = styled.div`
+  &:not(:last-child) {
+    border-bottom: 2px solid #ffffff;
+  }
+`;
+
+const CardRowHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 2px solid #ffffff;
 `;
 
 const ClearButton = styled.button`
@@ -156,11 +170,13 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       <CardWrapper $textAlignment='start'>
         <Text size='XL'>Collateral</Text>
         <CardContainer>
-          <div>
-            <Text size='S' color={SECONDARY_COLOR}>
-              Active
-            </Text>
-            <div className='flex flex-col gap-2 mt-2'>
+          <CardRow>
+            <CardRowHeader>
+              <Text size='M' weight='bold'>
+                Active
+              </Text>
+            </CardRowHeader>
+            <div className='flex flex-col'>
               {marginAccounts &&
                 marginAccounts.map((account) => {
                   const hasAssetsForToken0 = account.assets.token0Raw > 0;
@@ -191,32 +207,20 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       {hasAssetsForToken0 && (
                         <AvailableContainerToken0 $backgroundGradient={token0Gradient}>
                           <div className='flex items-end gap-1'>
-                            <Display size='S' color={SECONDARY_COLOR}>
-                              {account.assets.token0Raw}
-                            </Display>
-                            <Display size='XS' color={SECONDARY_COLOR}>
-                              {account.token0.symbol}
-                            </Display>
+                            <Display size='S'>{account.assets.token0Raw}</Display>
+                            <Display size='XS'>{account.token0.symbol}</Display>
                           </div>
-                          <Display size='XXS' color={SECONDARY_COLOR}>
-                            {roundPercentage(ltv, 3)}% LTV
-                          </Display>
+                          <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
                         </AvailableContainerToken0>
                       )}
                       {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
                       {hasAssetsForToken1 && (
                         <AvailableContainerToken1 $backgroundGradient={token1Gradient}>
                           <div className='flex items-end gap-1'>
-                            <Display size='S' color={SECONDARY_COLOR}>
-                              {account.assets.token1Raw}
-                            </Display>
-                            <Display size='XS' color={SECONDARY_COLOR}>
-                              {account.token1.symbol}
-                            </Display>
+                            <Display size='S'>{account.assets.token1Raw}</Display>
+                            <Display size='XS'>{account.token1.symbol}</Display>
                           </div>
-                          <Display size='XXS' color={SECONDARY_COLOR}>
-                            {roundPercentage(ltv, 3)}% LTV
-                          </Display>
+                          <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
                         </AvailableContainerToken1>
                       )}
                       {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
@@ -224,10 +228,10 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   );
                 })}
             </div>
-          </div>
-          <div>
-            <div className='flex justify-between'>
-              <Text size='S' color={SECONDARY_COLOR}>
+          </CardRow>
+          <CardRow>
+            <CardRowHeader>
+              <Text size='M' weight='bold'>
                 Available
               </Text>
               <ClearButton
@@ -238,8 +242,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               >
                 Clear
               </ClearButton>
-            </div>
-            <div className='flex flex-col gap-2 mt-2'>
+            </CardRowHeader>
+            <div className='flex flex-col'>
               {filteredCollateralEntries.map((entry, index) => {
                 const minLtv = entry.matchingPairs.reduce((min, current) => Math.min(current.ltv * 100, min), Infinity);
                 const maxLtv = entry.matchingPairs.reduce(
@@ -258,31 +262,27 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     className={selectedCollateral === entry ? 'selected' : ''}
                   >
                     <div className='flex items-end gap-1'>
-                      <Display size='S' color={SECONDARY_COLOR}>
-                        {formatTokenAmount(entry.balance)}
-                      </Display>
-                      <Display size='XS' color={SECONDARY_COLOR}>
-                        {entry.asset.symbol}
-                      </Display>
+                      <Display size='S'>{formatTokenAmount(entry.balance)}</Display>
+                      <Display size='XS'>{entry.asset.symbol}</Display>
                     </div>
-                    <Display size='XXS' color={SECONDARY_COLOR}>
-                      {ltvText}
-                    </Display>
+                    <Display size='XXS'>{ltvText}</Display>
                   </AvailableContainer>
                 );
               })}
             </div>
-          </div>
+          </CardRow>
         </CardContainer>
       </CardWrapper>
       <CardWrapper $textAlignment='end'>
         <Text size='XL'>Borrows</Text>
         <CardContainer>
-          <div>
-            <Text size='S' color={SECONDARY_COLOR}>
-              Active
-            </Text>
-            <div className='flex flex-col gap-2 mt-2'>
+          <CardRow>
+            <CardRowHeader>
+              <Text size='M' weight='bold' className='ml-auto'>
+                Active
+              </Text>
+            </CardRowHeader>
+            <div className='flex flex-col'>
               {marginAccounts &&
                 marginAccounts.map((account) => {
                   const hasAssetsForToken0 = account.assets.token0Raw > 0;
@@ -335,9 +335,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   );
                 })}
             </div>
-          </div>
-          <div>
-            <div className='flex justify-between'>
+          </CardRow>
+          <CardRow>
+            <CardRowHeader>
               <ClearButton
                 disabled={selectedBorrows == null}
                 onClick={() => {
@@ -346,11 +346,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               >
                 Clear
               </ClearButton>
-              <Text size='S' color={SECONDARY_COLOR}>
+              <Text size='M' weight='bold'>
                 Available
               </Text>
-            </div>
-            <div className='flex flex-col gap-2 mt-2'>
+            </CardRowHeader>
+            <div className='flex flex-col'>
               {Object.entries(filteredBorrowEntries).map(([key, entry]) => {
                 const minApy = entry.reduce((min, current) => (current.apy < min ? current.apy : min), Infinity);
                 const maxApy = entry.reduce((max, current) => (current.apy > max ? current.apy : max), -Infinity);
@@ -367,17 +367,13 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       setSelectedBorrows(entry);
                     }}
                   >
-                    <Display size='XXS' color={SECONDARY_COLOR}>
-                      {apyText}
-                    </Display>
-                    <Display size='XS' color={SECONDARY_COLOR}>
-                      {key}
-                    </Display>
+                    <Display size='XXS'>{apyText}</Display>
+                    <Display size='XS'>{key}</Display>
                   </AvailableContainer>
                 );
               })}
             </div>
-          </div>
+          </CardRow>
         </CardContainer>
       </CardWrapper>
     </div>
