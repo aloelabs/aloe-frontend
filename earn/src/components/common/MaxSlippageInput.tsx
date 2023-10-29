@@ -140,7 +140,13 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
   return (
     <div className='w-full flex flex-col gap-y-2 mt-6'>
       <Text size='S' weight='medium' color='rgba(130, 160, 182, 1)' className='flex gap-x-2 mb-1'>
-        <Tooltip content={tooltipContent} buttonText='Max Slippage' buttonSize='S' position='top-left' filled={true} />
+        <Tooltip
+          content={tooltipContent}
+          buttonText='Max Slippage'
+          buttonSize='S'
+          position='bottom-left'
+          filled={true}
+        />
       </Text>
       <Tab.Group>
         <Tab.List>
