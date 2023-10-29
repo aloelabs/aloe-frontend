@@ -12,7 +12,6 @@ import { useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
-import CollateralTable, { CollateralTableRow } from '../components/lend/CollateralTable';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
@@ -243,20 +242,6 @@ export default function MarketsPage() {
     return rows;
   }, [combinedBalances, lendingPairs]);
 
-  const collateralRows = useMemo(() => {
-    const rows: CollateralTableRow[] = [];
-    tokenBalances.forEach((tokenBalance) => {
-      if (tokenBalance.balance !== 0) {
-        rows.push({
-          asset: tokenBalance.token,
-          balance: tokenBalance.balance,
-          balanceUsd: tokenBalance.balanceUSD,
-        });
-      }
-    });
-    return rows;
-  }, [tokenBalances]);
-
   const collateralEntries = useMemo(() => {
     const entries: CollateralEntry[] = [];
     tokenBalances.forEach((tokenBalance) => {
@@ -319,8 +304,6 @@ export default function MarketsPage() {
             borrowEntries={borrowEntries}
             tokenColors={tokenColors}
           />
-          <Text size='XL'>Collateral</Text>
-          <CollateralTable rows={collateralRows} />
         </div>
       </div>
     </AppPage>
