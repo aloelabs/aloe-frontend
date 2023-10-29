@@ -284,11 +284,11 @@ export default function BoostPage() {
         {isLoading &&
           boostedCardInfos.length === 0 &&
           [...Array(1)].map((_, index) => <BoostCardPlaceholder key={index} />)}
-        {boostedCardInfos.map((info, index) => {
+        {boostedCardInfos.map((info) => {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
-        {boostedCardInfos.length === 0 && (
+        {!isLoading && boostedCardInfos.length === 0 && (
           <NoPositions
             primaryText='Your Boosted positions will appear here.'
             secondaryText={`If you have any Uniswap V3 positions that are eligible for boosting,
@@ -302,11 +302,11 @@ export default function BoostPage() {
         {isLoading &&
           uniswapCardInfos.length === 0 &&
           [...Array(1)].map((_, index) => <BoostCardPlaceholder key={index} />)}
-        {uniswapCardInfos.map((info, index) => {
+        {uniswapCardInfos.map((info) => {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
-        {uniswapCardInfos.length === 0 && (
+        {!isLoading && uniswapCardInfos.length === 0 && (
           <NoPositions
             primaryText='Your Uniswap positions will appear here.'
             secondaryText={`Eligible Uniswap V3 positions will appear in this section.
