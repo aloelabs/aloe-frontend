@@ -149,9 +149,11 @@ export default function ManageBoostPage() {
   useEffect(() => {
     if (!cardInfo || !colors?.token0 || !colors?.token1) return;
     if (cardInfo.color0 === colors.token0 || cardInfo.color1 === colors.token1) return;
+    // Only update the card info if the tokenPtr matches
+    if (cardInfo.nftTokenPtr !== tokenPtr) return;
     const boostCardWithColors = BoostCardInfo.withColors(cardInfo, colors.token0, colors.token1);
     setCardInfo(boostCardWithColors);
-  }, [cardInfo, colors?.token0, colors?.token1, setCardInfo]);
+  }, [cardInfo, tokenPtr, colors?.token0, colors?.token1, setCardInfo]);
 
   const isLoading = !cardInfo || !nftTokenId;
   return (
