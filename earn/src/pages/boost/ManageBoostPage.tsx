@@ -149,11 +149,18 @@ export default function ManageBoostPage() {
   useEffect(() => {
     if (!cardInfo || !colors?.token0 || !colors?.token1) return;
     if (cardInfo.color0 === colors.token0 || cardInfo.color1 === colors.token1) return;
-    // Only update the card info if the tokenPtr matches
-    if (cardInfo.nftTokenPtr !== tokenPtr) return;
     const boostCardWithColors = BoostCardInfo.withColors(cardInfo, colors.token0, colors.token1);
     setCardInfo(boostCardWithColors);
-  }, [cardInfo, tokenPtr, colors?.token0, colors?.token1, setCardInfo]);
+  }, [cardInfo, colors?.token0, colors?.token1, setCardInfo]);
+
+  // Handle when the tokenPtr changes
+  useEffect(() => {
+    // Careful not to use a bang operator here, as we want to allow the tokenPtr to be 0
+    if (cardInfo == null || tokenPtr == null) return;
+    if (cardInfo.nftTokenPtr === tokenPtr) return;
+    const boostCardWithTokenPtr = BoostCardInfo.withNftTokenPtr(cardInfo, tokenPtr);
+    setCardInfo(boostCardWithTokenPtr);
+  }, [cardInfo, tokenPtr, setCardInfo]);
 
   const isLoading = !cardInfo || !nftTokenId;
   return (
