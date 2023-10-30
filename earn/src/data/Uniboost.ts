@@ -89,26 +89,6 @@ export class BoostCardInfo {
     );
   }
 
-  static withNftTokenPtr(boostCardInfo: BoostCardInfo, nftTokenPtr: number): BoostCardInfo {
-    return new BoostCardInfo(
-      boostCardInfo.cardType,
-      boostCardInfo.owner,
-      boostCardInfo.nftTokenId,
-      nftTokenPtr,
-      boostCardInfo.uniswapPool,
-      boostCardInfo.currentTick,
-      boostCardInfo.token0,
-      boostCardInfo.token1,
-      boostCardInfo.lender0,
-      boostCardInfo.lender1,
-      boostCardInfo.color0,
-      boostCardInfo.color1,
-      boostCardInfo.position,
-      boostCardInfo.feesEarned,
-      boostCardInfo.borrower
-    );
-  }
-
   boostFactor() {
     if (this.borrower === null || JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return null;
     // Compute total value in the Uniswap position
