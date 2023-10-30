@@ -121,7 +121,8 @@ export default function ManageBoostPage() {
   const borrowerAddress = nftTokenId?.slice(0, 42);
 
   useEffect(() => {
-    if (!borrowerAddress || !nftTokenId || !userAddress) return;
+    // Using tokenPtr == null rather than !tokenPtr because tokenPtr can be 0
+    if (!borrowerAddress || !nftTokenId || !userAddress || tokenPtr == null) return;
     (async () => {
       const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress as Address);
       const boostCardInfo = new BoostCardInfo(
@@ -152,15 +153,6 @@ export default function ManageBoostPage() {
     const boostCardWithColors = BoostCardInfo.withColors(cardInfo, colors.token0, colors.token1);
     setCardInfo(boostCardWithColors);
   }, [cardInfo, colors?.token0, colors?.token1, setCardInfo]);
-
-  // Handle when the tokenPtr changes
-  useEffect(() => {
-    // Careful not to use a bang operator here, as we want to allow the tokenPtr to be 0
-    if (cardInfo == null || tokenPtr == null) return;
-    if (cardInfo.nftTokenPtr === tokenPtr) return;
-    const boostCardWithTokenPtr = BoostCardInfo.withNftTokenPtr(cardInfo, tokenPtr);
-    setCardInfo(boostCardWithTokenPtr);
-  }, [cardInfo, tokenPtr, setCardInfo]);
 
   const isLoading = !cardInfo || !nftTokenId;
   return (
