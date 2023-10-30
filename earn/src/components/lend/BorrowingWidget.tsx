@@ -12,6 +12,7 @@ import { MarginAccount } from '../../data/MarginAccount';
 import { rgba } from '../../util/Colors';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
 
 const CardWrapper = styled.div<{ $textAlignment: string }>`
   display: flex;
@@ -53,11 +54,11 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   cursor: pointer;
 
   &:hover {
-    background: ${(props) => props.$backgroundGradient || GREY_700};
+    background: ${(props) => props.$backgroundGradient || SECONDARY_COLOR_LIGHT};
   }
 
   &.selected {
-    background: ${GREY_700};
+    background: ${SECONDARY_COLOR_LIGHT};
   }
 `;
 
