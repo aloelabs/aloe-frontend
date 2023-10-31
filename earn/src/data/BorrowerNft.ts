@@ -1,10 +1,13 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_PERMIT2_MANAGER_ADDRESS,
+  ALOE_II_SIMPLE_MANAGER_ADDRESS,
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Address } from 'wagmi';
@@ -119,4 +122,71 @@ export async function fetchListOfBorrowerNfts(
   );
 
   return { borrowers, tokenIds, indices };
+}
+
+export async function fetchListOfFuse2BorrowNfts(
+  chainId: number,
+  provider: ethers.providers.BaseProvider,
+  userAddress: Address,
+  uniswapPool?: Address
+): Promise<
+  Array<{
+    borrowerAddress: Address;
+    tokenId: string;
+    index: number;
+  }>
+> {
+  const originalBorrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
+    includeFreshBorrowers: false, // TODO: change later
+    onlyCheckMostRecentModify: true, // TODO: Hayden has concerns (as usual)
+    validManagerSet: new Set([ALOE_II_SIMPLE_MANAGER_ADDRESS[chainId], ALOE_II_PERMIT2_MANAGER_ADDRESS[chainId]]),
+    validUniswapPool: uniswapPool,
+  });
+
+  const slot0Contexts: ContractCallContext[] = originalBorrowerNfts.borrowers.map((borrower) => {
+    return {
+      abi: borrowerAbi as any,
+      calls: [
+        {
+          methodName: 'slot0',
+          methodParameters: [],
+          reference: 'slot0',
+        },
+      ],
+      contractAddress: borrower,
+      reference: borrower,
+    };
+  });
+
+  // Execute multicall fetch
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
+
+  const slot0Results = await multicall.call(slot0Contexts);
+
+  const filterMap = originalBorrowerNfts.borrowers.map((borrower) => {
+    const result = slot0Results.results[borrower];
+    const slot0Hex = result.callsReturnContext[0].returnValues[0].hex;
+    const extraDataHex: string = slot0Hex.slice(14, 30);
+    return extraDataHex.endsWith('83ee755b');
+  });
+
+  const borrowerNfts: Array<{
+    borrowerAddress: Address;
+    tokenId: string;
+    index: number;
+  }> = [];
+  for (let i = 0; i < originalBorrowerNfts.borrowers.length; i++) {
+    if (!filterMap[i]) continue;
+    borrowerNfts.push({
+      borrowerAddress: originalBorrowerNfts.borrowers[i],
+      index: originalBorrowerNfts.indices[i],
+      tokenId: originalBorrowerNfts.tokenIds[i],
+    });
+  }
+
+  return borrowerNfts;
 }

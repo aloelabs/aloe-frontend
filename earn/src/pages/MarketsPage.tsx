@@ -25,6 +25,7 @@ import {
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+// import { fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 
 export type TokenQuote = {
   token: Token;
@@ -148,6 +149,13 @@ export default function MarketsPage() {
       setMarginAccounts(fetchedMarginAccounts);
     })();
   }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
+
+  useEffect(() => {
+    (async () => {
+      if (userAddress === undefined) return;
+      //const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(activeChain.id, provider, userAddress);
+    })();
+  }, [activeChain.id, provider, userAddress]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
