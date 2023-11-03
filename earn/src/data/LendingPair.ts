@@ -44,6 +44,7 @@ export class LendingPair {
     public kitty1: Kitty,
     public kitty0Info: KittyInfo,
     public kitty1Info: KittyInfo,
+    public uniswapPool: Address,
     public uniswapFeeTier: FeeTier,
     public iv: number,
     public nSigma: number,
@@ -175,7 +176,7 @@ export async function getAvailableLendingPairs(
 
   const lendingPairs: LendingPair[] = [];
 
-  correspondingLendingPairResults.forEach((value) => {
+  Array.from(correspondingLendingPairResults.entries()).forEach(([uniswapPool, value]) => {
     const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults, factory: factoryResults } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
     const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
@@ -256,6 +257,7 @@ export async function getAvailableLendingPairs(
           totalSupply: totalSupply1,
           utilization: utilization1 * 100.0, // Percentage
         },
+        uniswapPool as Address,
         NumericFeeTierToEnum(feeTier[0]),
         iv * Math.sqrt(365),
         nSigma,

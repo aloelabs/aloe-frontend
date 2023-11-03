@@ -10,6 +10,7 @@ import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../../data/
 import { LendingPair } from '../../data/LendingPair';
 import { MarginAccount } from '../../data/MarginAccount';
 import { rgba } from '../../util/Colors';
+import BorrowModal from './modal/BorrowModal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
@@ -167,216 +168,232 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   }, [collateralEntries, selectedBorrows]);
 
   return (
-    <div className='flex gap-4'>
-      <CardWrapper $textAlignment='start'>
-        <Text size='XL'>Collateral</Text>
-        <CardContainer>
-          <CardRow>
-            <CardRowHeader>
-              <Text size='M' weight='bold'>
-                Active
-              </Text>
-            </CardRowHeader>
-            <div className='flex flex-col'>
-              {marginAccounts &&
-                marginAccounts.map((account) => {
-                  const hasAssetsForToken0 = account.assets.token0Raw > 0;
-                  const hasAssetsForToken1 = account.assets.token1Raw > 0;
-                  const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
-                  const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
-                  const AvailableContainerToken0 =
-                    hasAssetsForToken0 && !hasLiabilitiesForToken1
-                      ? AvailableContainer
-                      : AvailableContainerConnectedLeft;
-                  const AvailableContainerToken1 =
-                    hasAssetsForToken1 && !hasLiabilitiesForToken0
-                      ? AvailableContainer
-                      : AvailableContainerConnectedRight;
-                  const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
-                  let ltv = 1 / (Math.exp((account.nSigma * account.iv) / 10) * fact);
-                  ltv = Math.max(0.1, Math.min(ltv, 0.9)) * 100;
-                  const token0Color = tokenColors.get(account.token0.address);
-                  const token0Gradient = token0Color
-                    ? `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${GREY_700} 100%)`
-                    : undefined;
-                  const token1Color = tokenColors.get(account.token1.address);
-                  const token1Gradient = token1Color
-                    ? `linear-gradient(90deg, ${rgba(token1Color, 0.25)} 0%, ${GREY_700} 100%)`
-                    : undefined;
+    <>
+      <div className='flex gap-4'>
+        <CardWrapper $textAlignment='start'>
+          <Text size='XL'>Collateral</Text>
+          <CardContainer>
+            <CardRow>
+              <CardRowHeader>
+                <Text size='M' weight='bold'>
+                  Active
+                </Text>
+              </CardRowHeader>
+              <div className='flex flex-col'>
+                {marginAccounts &&
+                  marginAccounts.map((account) => {
+                    const hasAssetsForToken0 = account.assets.token0Raw > 0;
+                    const hasAssetsForToken1 = account.assets.token1Raw > 0;
+                    const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
+                    const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
+                    const AvailableContainerToken0 =
+                      hasAssetsForToken0 && !hasLiabilitiesForToken1
+                        ? AvailableContainer
+                        : AvailableContainerConnectedLeft;
+                    const AvailableContainerToken1 =
+                      hasAssetsForToken1 && !hasLiabilitiesForToken0
+                        ? AvailableContainer
+                        : AvailableContainerConnectedRight;
+                    const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
+                    let ltv = 1 / (Math.exp((account.nSigma * account.iv) / 10) * fact);
+                    ltv = Math.max(0.1, Math.min(ltv, 0.9)) * 100;
+                    const token0Color = tokenColors.get(account.token0.address);
+                    const token0Gradient = token0Color
+                      ? `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${GREY_700} 100%)`
+                      : undefined;
+                    const token1Color = tokenColors.get(account.token1.address);
+                    const token1Gradient = token1Color
+                      ? `linear-gradient(90deg, ${rgba(token1Color, 0.25)} 0%, ${GREY_700} 100%)`
+                      : undefined;
+                    return (
+                      <Fragment key={account.uniswapPool}>
+                        {hasAssetsForToken0 && (
+                          <AvailableContainerToken0 $backgroundGradient={token0Gradient}>
+                            <div className='flex items-end gap-1'>
+                              <Display size='S'>{account.assets.token0Raw}</Display>
+                              <Display size='XS'>{account.token0.symbol}</Display>
+                            </div>
+                            <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
+                          </AvailableContainerToken0>
+                        )}
+                        {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
+                        {hasAssetsForToken1 && (
+                          <AvailableContainerToken1 $backgroundGradient={token1Gradient}>
+                            <div className='flex items-end gap-1'>
+                              <Display size='S'>{account.assets.token1Raw}</Display>
+                              <Display size='XS'>{account.token1.symbol}</Display>
+                            </div>
+                            <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
+                          </AvailableContainerToken1>
+                        )}
+                        {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
+                      </Fragment>
+                    );
+                  })}
+              </div>
+            </CardRow>
+            <CardRow>
+              <CardRowHeader>
+                <Text size='M' weight='bold'>
+                  Available
+                </Text>
+                <ClearButton
+                  disabled={selectedCollateral == null}
+                  onClick={() => {
+                    setSelectedCollateral(null);
+                  }}
+                >
+                  Clear
+                </ClearButton>
+              </CardRowHeader>
+              <div className='flex flex-col'>
+                {filteredCollateralEntries.map((entry, index) => {
+                  const minLtv = entry.matchingPairs.reduce(
+                    (min, current) => Math.min(current.ltv * 100, min),
+                    Infinity
+                  );
+                  const maxLtv = entry.matchingPairs.reduce(
+                    (max, current) => Math.max(current.ltv * 100, max),
+                    -Infinity
+                  );
+                  const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv));
+                  const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
+                  const ltvText = areLtvsEqual ? `${roundedLtvs[0]}% LTV` : `${roundedLtvs[0]}-${roundedLtvs[1]}% LTV`;
                   return (
-                    <Fragment key={account.uniswapPool}>
-                      {hasAssetsForToken0 && (
-                        <AvailableContainerToken0 $backgroundGradient={token0Gradient}>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S'>{account.assets.token0Raw}</Display>
-                            <Display size='XS'>{account.token0.symbol}</Display>
-                          </div>
-                          <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
-                        </AvailableContainerToken0>
-                      )}
-                      {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
-                      {hasAssetsForToken1 && (
-                        <AvailableContainerToken1 $backgroundGradient={token1Gradient}>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S'>{account.assets.token1Raw}</Display>
-                            <Display size='XS'>{account.token1.symbol}</Display>
-                          </div>
-                          <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
-                        </AvailableContainerToken1>
-                      )}
-                      {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
-                    </Fragment>
+                    <AvailableContainer
+                      key={index}
+                      onClick={() => {
+                        setSelectedCollateral(entry);
+                      }}
+                      className={selectedCollateral === entry ? 'selected' : ''}
+                    >
+                      <div className='flex items-end gap-1'>
+                        <Display size='S'>{formatTokenAmount(entry.balance)}</Display>
+                        <Display size='XS'>{entry.asset.symbol}</Display>
+                      </div>
+                      <Display size='XXS'>{ltvText}</Display>
+                    </AvailableContainer>
                   );
                 })}
-            </div>
-          </CardRow>
-          <CardRow>
-            <CardRowHeader>
-              <Text size='M' weight='bold'>
-                Available
-              </Text>
-              <ClearButton
-                disabled={selectedCollateral == null}
-                onClick={() => {
-                  setSelectedCollateral(null);
-                }}
-              >
-                Clear
-              </ClearButton>
-            </CardRowHeader>
-            <div className='flex flex-col'>
-              {filteredCollateralEntries.map((entry, index) => {
-                const minLtv = entry.matchingPairs.reduce((min, current) => Math.min(current.ltv * 100, min), Infinity);
-                const maxLtv = entry.matchingPairs.reduce(
-                  (max, current) => Math.max(current.ltv * 100, max),
-                  -Infinity
-                );
-                const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv));
-                const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
-                const ltvText = areLtvsEqual ? `${roundedLtvs[0]}% LTV` : `${roundedLtvs[0]}-${roundedLtvs[1]}% LTV`;
-                return (
-                  <AvailableContainer
-                    key={index}
-                    onClick={() => {
-                      setSelectedCollateral(entry);
-                    }}
-                    className={selectedCollateral === entry ? 'selected' : ''}
-                  >
-                    <div className='flex items-end gap-1'>
-                      <Display size='S'>{formatTokenAmount(entry.balance)}</Display>
-                      <Display size='XS'>{entry.asset.symbol}</Display>
-                    </div>
-                    <Display size='XXS'>{ltvText}</Display>
-                  </AvailableContainer>
-                );
-              })}
-            </div>
-          </CardRow>
-        </CardContainer>
-      </CardWrapper>
-      <CardWrapper $textAlignment='end'>
-        <Text size='XL'>Borrows</Text>
-        <CardContainer>
-          <CardRow>
-            <CardRowHeader>
-              <Text size='M' weight='bold' className='ml-auto'>
-                Active
-              </Text>
-            </CardRowHeader>
-            <div className='flex flex-col'>
-              {marginAccounts &&
-                marginAccounts.map((account) => {
-                  const hasAssetsForToken0 = account.assets.token0Raw > 0;
-                  const hasAssetsForToken1 = account.assets.token1Raw > 0;
-                  const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
-                  const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
-                  const token0Color = tokenColors.get(account.token0.address);
-                  const token0Gradient = token0Color
-                    ? `linear-gradient(90deg, ${GREY_700} 0%, ${rgba(token0Color, 0.25)} 100%)`
-                    : undefined;
-                  const token1Color = tokenColors.get(account.token1.address);
-                  const token1Gradient = token1Color
-                    ? `linear-gradient(90deg, ${GREY_700}  0%, ${rgba(token1Color, 0.25)} 100%)`
-                    : undefined;
+              </div>
+            </CardRow>
+          </CardContainer>
+        </CardWrapper>
+        <CardWrapper $textAlignment='end'>
+          <Text size='XL'>Borrows</Text>
+          <CardContainer>
+            <CardRow>
+              <CardRowHeader>
+                <Text size='M' weight='bold' className='ml-auto'>
+                  Active
+                </Text>
+              </CardRowHeader>
+              <div className='flex flex-col'>
+                {marginAccounts &&
+                  marginAccounts.map((account) => {
+                    const hasAssetsForToken0 = account.assets.token0Raw > 0;
+                    const hasAssetsForToken1 = account.assets.token1Raw > 0;
+                    const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
+                    const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
+                    const token0Color = tokenColors.get(account.token0.address);
+                    const token0Gradient = token0Color
+                      ? `linear-gradient(90deg, ${GREY_700} 0%, ${rgba(token0Color, 0.25)} 100%)`
+                      : undefined;
+                    const token1Color = tokenColors.get(account.token1.address);
+                    const token1Gradient = token1Color
+                      ? `linear-gradient(90deg, ${GREY_700}  0%, ${rgba(token1Color, 0.25)} 100%)`
+                      : undefined;
+                    return (
+                      <Fragment key={account.uniswapPool}>
+                        {hasLiabilitiesForToken0 && (
+                          <AvailableContainerConnectedRight $backgroundGradient={token0Gradient}>
+                            <Display size='XXS' color={SECONDARY_COLOR}>
+                              3% APY
+                            </Display>
+                            <div className='flex items-end gap-1'>
+                              <Display size='S' color={SECONDARY_COLOR}>
+                                {formatTokenAmount(account.liabilities.amount0)}
+                              </Display>
+                              <Display size='XS' color={SECONDARY_COLOR}>
+                                {account.token0.symbol}
+                              </Display>
+                            </div>
+                          </AvailableContainerConnectedRight>
+                        )}
+                        {hasAssetsForToken0 && !hasLiabilitiesForToken1 && <AvailableContainerPlaceholder />}
+                        {hasLiabilitiesForToken1 && (
+                          <AvailableContainerConnectedRight $backgroundGradient={token1Gradient}>
+                            <Display size='XXS' color={SECONDARY_COLOR}>
+                              3% APY
+                            </Display>
+                            <div className='flex items-end gap-1'>
+                              <Display size='S' color={SECONDARY_COLOR}>
+                                {formatTokenAmount(account.liabilities.amount1)}
+                              </Display>
+                              <Display size='XS' color={SECONDARY_COLOR}>
+                                {account.token1.symbol}
+                              </Display>
+                            </div>
+                          </AvailableContainerConnectedRight>
+                        )}
+                        {hasAssetsForToken1 && !hasLiabilitiesForToken0 && <AvailableContainerPlaceholder />}
+                      </Fragment>
+                    );
+                  })}
+              </div>
+            </CardRow>
+            <CardRow>
+              <CardRowHeader>
+                <ClearButton
+                  disabled={selectedBorrows == null}
+                  onClick={() => {
+                    setSelectedBorrows(null);
+                  }}
+                >
+                  Clear
+                </ClearButton>
+                <Text size='M' weight='bold'>
+                  Available
+                </Text>
+              </CardRowHeader>
+              <div className='flex flex-col'>
+                {Object.entries(filteredBorrowEntries).map(([key, entry]) => {
+                  const minApy = entry.reduce((min, current) => (current.apy < min ? current.apy : min), Infinity);
+                  const maxApy = entry.reduce((max, current) => (current.apy > max ? current.apy : max), -Infinity);
+                  const roundedApys = [minApy, maxApy].map((apy) => Math.round(apy * 100) / 100);
+                  const areApysEqual = roundedApys[0] === roundedApys[1];
+                  const apyText = areApysEqual ? `${roundedApys[0]}% APY` : `${roundedApys[0]}-${roundedApys[1]}% APY`;
+                  const isSelected =
+                    selectedBorrows != null && selectedBorrows.some((borrow) => borrow.asset.symbol === key);
                   return (
-                    <Fragment key={account.uniswapPool}>
-                      {hasLiabilitiesForToken0 && (
-                        <AvailableContainerConnectedRight $backgroundGradient={token0Gradient}>
-                          <Display size='XXS' color={SECONDARY_COLOR}>
-                            3% APY
-                          </Display>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S' color={SECONDARY_COLOR}>
-                              {formatTokenAmount(account.liabilities.amount0)}
-                            </Display>
-                            <Display size='XS' color={SECONDARY_COLOR}>
-                              {account.token0.symbol}
-                            </Display>
-                          </div>
-                        </AvailableContainerConnectedRight>
-                      )}
-                      {hasAssetsForToken0 && !hasLiabilitiesForToken1 && <AvailableContainerPlaceholder />}
-                      {hasLiabilitiesForToken1 && (
-                        <AvailableContainerConnectedRight $backgroundGradient={token1Gradient}>
-                          <Display size='XXS' color={SECONDARY_COLOR}>
-                            3% APY
-                          </Display>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S' color={SECONDARY_COLOR}>
-                              {formatTokenAmount(account.liabilities.amount1)}
-                            </Display>
-                            <Display size='XS' color={SECONDARY_COLOR}>
-                              {account.token1.symbol}
-                            </Display>
-                          </div>
-                        </AvailableContainerConnectedRight>
-                      )}
-                      {hasAssetsForToken1 && !hasLiabilitiesForToken0 && <AvailableContainerPlaceholder />}
-                    </Fragment>
+                    <AvailableContainer
+                      key={key}
+                      className={isSelected ? 'selected' : ''}
+                      onClick={() => {
+                        setSelectedBorrows(entry);
+                      }}
+                    >
+                      <Display size='XXS'>{apyText}</Display>
+                      <Display size='XS'>{key}</Display>
+                    </AvailableContainer>
                   );
                 })}
-            </div>
-          </CardRow>
-          <CardRow>
-            <CardRowHeader>
-              <ClearButton
-                disabled={selectedBorrows == null}
-                onClick={() => {
-                  setSelectedBorrows(null);
-                }}
-              >
-                Clear
-              </ClearButton>
-              <Text size='M' weight='bold'>
-                Available
-              </Text>
-            </CardRowHeader>
-            <div className='flex flex-col'>
-              {Object.entries(filteredBorrowEntries).map(([key, entry]) => {
-                const minApy = entry.reduce((min, current) => (current.apy < min ? current.apy : min), Infinity);
-                const maxApy = entry.reduce((max, current) => (current.apy > max ? current.apy : max), -Infinity);
-                const roundedApys = [minApy, maxApy].map((apy) => Math.round(apy * 100) / 100);
-                const areApysEqual = roundedApys[0] === roundedApys[1];
-                const apyText = areApysEqual ? `${roundedApys[0]}% APY` : `${roundedApys[0]}-${roundedApys[1]}% APY`;
-                const isSelected =
-                  selectedBorrows != null && selectedBorrows.some((borrow) => borrow.asset.symbol === key);
-                return (
-                  <AvailableContainer
-                    key={key}
-                    className={isSelected ? 'selected' : ''}
-                    onClick={() => {
-                      setSelectedBorrows(entry);
-                    }}
-                  >
-                    <Display size='XXS'>{apyText}</Display>
-                    <Display size='XS'>{key}</Display>
-                  </AvailableContainer>
-                );
-              })}
-            </div>
-          </CardRow>
-        </CardContainer>
-      </CardWrapper>
-    </div>
+              </div>
+            </CardRow>
+          </CardContainer>
+        </CardWrapper>
+      </div>
+      {selectedBorrows != null && selectedCollateral != null && (
+        <BorrowModal
+          isOpen={selectedBorrows != null && selectedCollateral != null}
+          selectedBorrows={selectedBorrows}
+          selectedCollateral={selectedCollateral}
+          setIsOpen={() => {
+            setSelectedBorrows(null);
+            setSelectedCollateral(null);
+          }}
+        />
+      )}
+    </>
   );
 }
