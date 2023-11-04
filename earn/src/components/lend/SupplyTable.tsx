@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -38,6 +40,7 @@ const HoverableRow = styled.tr`
 
 export type SupplyTableRow = {
   asset: Token;
+  kitty: Kitty;
   collateralAssets: Token[];
   apy: number;
   supplyBalance: number;
@@ -47,10 +50,11 @@ export type SupplyTableRow = {
 
 export type SupplyTableProps = {
   rows: SupplyTableRow[];
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function SupplyTable(props: SupplyTableProps) {
-  const { rows } = props;
+  const { rows, setPendingTxn } = props;
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRow, setSelectedRow] = useState<SupplyTableRow | null>(null);
   const pages: SupplyTableRow[][] = useMemo(() => {
@@ -157,6 +161,7 @@ export default function SupplyTable(props: SupplyTableProps) {
           setIsOpen={() => {
             setSelectedRow(null);
           }}
+          setPendingTxn={setPendingTxn}
         />
       )}
     </>

@@ -1,6 +1,8 @@
-import { useContext, useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -11,6 +13,7 @@ import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { useAccount, useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
+import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
@@ -52,11 +55,15 @@ export default function MarketsPage() {
   );
   const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<string, string>>(new Map(), activeChain.id);
+  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
   const userAddress = account.address;
+  const navigate = useNavigate();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -77,6 +84,20 @@ export default function MarketsPage() {
   }, [lendingPairs]);
 
   const availablePools = useAvailablePools();
+
+  useEffect(() => {
+    (async () => {
+      if (!pendingTxn) return;
+      setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
+      setIsPendingTxnModalOpen(true);
+      const receipt = await pendingTxn.wait();
+      if (receipt.status === 1) {
+        setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
+      } else {
+        setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
+      }
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
     (async () => {
@@ -232,6 +253,7 @@ export default function MarketsPage() {
       );
       rows.push({
         asset: pair.token0,
+        kitty: pair.kitty0,
         apy: pair.kitty0Info.apy,
         collateralAssets: [pair.token1],
         supplyBalance: kitty0Balance?.balance || 0,
@@ -240,6 +262,7 @@ export default function MarketsPage() {
       });
       rows.push({
         asset: pair.token1,
+        kitty: pair.kitty1,
         apy: pair.kitty1Info.apy,
         collateralAssets: [pair.token0],
         supplyBalance: kitty1Balance?.balance || 0,
@@ -304,7 +327,7 @@ export default function MarketsPage() {
     <AppPage>
       <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
         <Text size='XL'>Supply</Text>
-        <SupplyTable rows={supplyRows} />
+        <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
         <div className='flex flex-col gap-6'>
           <BorrowingWidget
             marginAccounts={marginAccounts}
@@ -314,6 +337,23 @@ export default function MarketsPage() {
           />
         </div>
       </div>
+      <PendingTxnModal
+        isOpen={isPendingTxnModalOpen}
+        txnHash={pendingTxn?.hash}
+        setIsOpen={(isOpen: boolean) => {
+          setIsPendingTxnModalOpen(isOpen);
+          if (!isOpen) {
+            setPendingTxn(null);
+          }
+        }}
+        onConfirm={() => {
+          setIsPendingTxnModalOpen(false);
+          setTimeout(() => {
+            navigate(0);
+          }, 100);
+        }}
+        status={pendingTxnModalStatus}
+      />
     </AppPage>
   );
 }
