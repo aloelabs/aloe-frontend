@@ -254,7 +254,7 @@ export default function SupplyModal(props: SupplyModalProps) {
               filled={true}
             />
           </div>
-          <Text size='L' weight='bold' color={SECONDARY_COLOR}>
+          <Text size='M' weight='bold' color={SECONDARY_COLOR}>
             {apyPercentage}%
           </Text>
         </div>
