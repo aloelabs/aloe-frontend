@@ -85,6 +85,7 @@ export default function BoostPage() {
   const { address: userAddress } = useAccount();
 
   const [isLoading, setIsLoading] = useSafeState<boolean>(true);
+  const [isLoadingBoostedCardInfos, setIsLoadingBoostedCardInfos] = useSafeState<boolean>(true);
   const [initialBoostedCardInfos, setInitialBoostedCardInfos] = useChainDependentState<BoostCardInfo[]>(
     [],
     activeChain.id
@@ -97,7 +98,8 @@ export default function BoostPage() {
 
   useEffect(() => {
     setIsLoading(true);
-  }, [activeChain.id, setIsLoading]);
+    setIsLoadingBoostedCardInfos(true);
+  }, [activeChain.id, setIsLoading, setIsLoadingBoostedCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                       FETCH BOOSTED CARD INFOS
@@ -136,8 +138,9 @@ export default function BoostPage() {
       const filteredInfos = fetchedInfos.filter((info) => JSBI.greaterThan(info.position.liquidity, JSBI.BigInt(0)));
 
       setInitialBoostedCardInfos(filteredInfos);
+      setIsLoadingBoostedCardInfos(false);
     })();
-  }, [provider, userAddress, setInitialBoostedCardInfos]);
+  }, [provider, userAddress, setInitialBoostedCardInfos, setIsLoadingBoostedCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                     FETCH UNISWAP NFT POSITIONS
@@ -281,14 +284,14 @@ export default function BoostPage() {
       </ExplainerWrapper>
       <Text size='XL'>Boosted Positions</Text>
       <div className='flex flex-wrap gap-4 mt-4 mb-8'>
-        {isLoading &&
+        {isLoadingBoostedCardInfos &&
           boostedCardInfos.length === 0 &&
           [...Array(1)].map((_, index) => <BoostCardPlaceholder key={index} />)}
         {boostedCardInfos.map((info) => {
           const uniqueId = getUniqueId(info);
           return <BoostCard key={uniqueId} info={info} uniqueId={uniqueId} />;
         })}
-        {!isLoading && boostedCardInfos.length === 0 && (
+        {!isLoadingBoostedCardInfos && boostedCardInfos.length === 0 && (
           <NoPositions
             primaryText='Your Boosted positions will appear here.'
             secondaryText={`If you have any Uniswap V3 positions that are eligible for boosting,
