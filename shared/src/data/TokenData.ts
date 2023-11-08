@@ -124,9 +124,18 @@ const UNI_OPTIMISM = new Token(
   UniLogo
 );
 
-const USDC_OPTIMISM = new Token(
+const BRIDGED_USDC_OPTIMISM = new Token(
   optimism.id,
   '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
+  6,
+  'USDC.e',
+  'USD Coin',
+  UsdcLogo
+);
+
+const USDC_OPTIMISM = new Token(
+  optimism.id,
+  '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
   6,
   'USDC',
   'USD Coin',
@@ -291,6 +300,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WETH_GOERLI.address]: WETH_GOERLI,
   },
   [optimism.id]: {
+    [BRIDGED_USDC_OPTIMISM.address]: BRIDGED_USDC_OPTIMISM,
     [DAI_OPTIMISM.address]: DAI_OPTIMISM,
     [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
     [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
