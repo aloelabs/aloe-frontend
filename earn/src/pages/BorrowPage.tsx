@@ -43,9 +43,10 @@ import WithdrawAnteModal from '../components/borrow/modal/WithdrawAnteModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
+import { computeLTV } from '../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_IV } from '../data/constants/Signatures';
-import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, primeUrl } from '../data/constants/Values';
+import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
@@ -306,9 +307,7 @@ export default function BorrowPage() {
         const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
         const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
 
-        const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
-        let ltv = 1 / (Math.exp((selectedMarginAccount.nSigma * iv) / 10) * fact);
-        ltv = Math.max(0.1, Math.min(ltv, 0.9));
+        const ltv = computeLTV(iv, selectedMarginAccount.nSigma);
 
         const resultData: BorrowGraphData = {
           IV: iv * Math.sqrt(365) * 100,

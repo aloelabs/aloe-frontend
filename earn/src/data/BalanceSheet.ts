@@ -484,3 +484,8 @@ export function computeLiquidationThresholds(
 export function sumAssetsPerToken(assets: Assets): [number, number] {
   return [assets.token0Raw + assets.uni0, assets.token1Raw + assets.uni1];
 }
+
+export function computeLTV(iv: number, nSigma: number) {
+  const ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(iv * nSigma));
+  return Math.max(0.1, Math.min(ltv, 0.9));
+}

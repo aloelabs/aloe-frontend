@@ -14,7 +14,7 @@ import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { useContractRead } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../../../data/constants/Values';
+import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -83,8 +83,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     const sqrtPriceX96 = GN.fromBigNumber(consultData?.[1] ?? BigNumber.from('0'), 96, 2);
     const nSigma = selectedLendingPair?.nSigma ?? 0;
     const iv = consultData[2].div(1e6).toNumber() / 1e6;
-    let ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(nSigma * iv));
-    ltv = Math.max(0.1, Math.min(ltv, 0.9));
+    const ltv = computeLTV(iv, nSigma);
 
     let inTermsOfBorrow = collateralAmount;
     if (selectedLendingPair?.token0.address === selectedCollateral.asset.address) {
