@@ -17,6 +17,8 @@ import { ChainContext } from '../../../App';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../../../data/constants/Values';
 import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
+const MAX_BORROW_PERCENTAGE = 0.8;
+
 enum ConfirmButtonState {
   WAITING_FOR_USER,
   READY,
@@ -59,8 +61,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   );
 
   const selectedLendingPair = selectedCollateral.matchingPairs.find(
-    (pair) =>
-      pair.token0.address === selectedBorrow?.asset.address || pair.token1.address === selectedBorrow?.asset.address
+    (pair) => selectedBorrow?.asset?.equals(pair.token0) || selectedBorrow?.asset?.equals(pair.token1)
   );
 
   const { data: consultData } = useContractRead({
@@ -97,9 +98,9 @@ export default function BorrowModal(props: BorrowModalProps) {
         .div(sqrtPriceX96)
         .setResolution(selectedBorrow.asset.decimals);
     }
-    const maxBorrowSupply = GN.fromNumber(selectedBorrow.supply, selectedBorrow.asset.decimals);
-    const maxPotentialBorrow = inTermsOfBorrow.recklessMul(ltv);
-    return GN.min(maxPotentialBorrow, maxBorrowSupply).recklessMul(0.8);
+    const maxBorrowSupplyConstraint = GN.fromNumber(selectedBorrow.supply, selectedBorrow.asset.decimals);
+    const maxBorrowHealthConstraint = inTermsOfBorrow.recklessMul(ltv);
+    return GN.min(maxBorrowSupplyConstraint, maxBorrowHealthConstraint).recklessMul(MAX_BORROW_PERCENTAGE);
   }, [
     consultData,
     selectedBorrow,

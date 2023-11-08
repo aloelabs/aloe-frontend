@@ -206,6 +206,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? `linear-gradient(90deg, ${rgba(token1Color, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
                     return (
+                      // TODO: use borrowerNFT id as key
                       <Fragment key={account.uniswapPool}>
                         {hasAssetsForToken0 && (
                           <AvailableContainerToken0 $backgroundGradient={token0Gradient}>
@@ -304,6 +305,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? `linear-gradient(90deg, ${GREY_700}  0%, ${rgba(token1Color, 0.25)} 100%)`
                       : undefined;
                     return (
+                      // TODO: use borrowerNFT id as key
                       <Fragment key={account.uniswapPool}>
                         {hasLiabilitiesForToken0 && (
                           <AvailableContainerConnectedRight $backgroundGradient={token0Gradient}>
