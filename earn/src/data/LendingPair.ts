@@ -21,8 +21,8 @@ import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
-import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from './constants/Values';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -236,8 +236,7 @@ export async function getAvailableLendingPairs(
 
     const nSigma = (factoryResult[1] as number) / 10;
 
-    let ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(nSigma * iv));
-    ltv = Math.max(0.1, Math.min(ltv, 0.9));
+    const ltv = computeLTV(iv, nSigma);
 
     lendingPairs.push(
       new LendingPair(

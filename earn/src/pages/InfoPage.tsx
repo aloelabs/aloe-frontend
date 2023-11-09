@@ -24,9 +24,9 @@ import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import LenderCard from '../components/info/LenderCard';
 import MarketCard from '../components/info/MarketCard';
+import { computeLTV } from '../data/BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
-import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../data/constants/Values';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
 type AloeMarketInfo = {
@@ -308,8 +308,7 @@ export default function InfoPage() {
         const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
 
         // Stuff we can compute from other stuff
-        let ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(nSigma * iv));
-        ltv = Math.max(0.1, Math.min(ltv, 0.9));
+        const ltv = computeLTV(iv, nSigma);
         const manipulationThreshold = -Math.log(ltv) / Math.log(1.0001) / manipulationThresholdDivisor;
 
         const lastUpdatedTimestamp = latestTimestamps[i];

@@ -6,7 +6,7 @@ import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
-import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from '../../data/constants/Values';
+import { computeLTV } from '../../data/BalanceSheet';
 import { LendingPair } from '../../data/LendingPair';
 import { MarginAccount } from '../../data/MarginAccount';
 import { rgba } from '../../util/Colors';
@@ -194,9 +194,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       hasAssetsForToken1 && !hasLiabilitiesForToken0
                         ? AvailableContainer
                         : AvailableContainerConnectedRight;
-                    const fact = 1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE;
-                    let ltv = 1 / (Math.exp((account.nSigma * account.iv) / 10) * fact);
-                    ltv = Math.max(0.1, Math.min(ltv, 0.9)) * 100;
+                    const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     const token0Color = tokenColors.get(account.token0.address);
                     const token0Gradient = token0Color
                       ? `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${GREY_700} 100%)`
@@ -214,7 +212,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                               <Display size='S'>{account.assets.token0Raw}</Display>
                               <Display size='XS'>{account.token0.symbol}</Display>
                             </div>
-                            <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
+                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
                           </AvailableContainerToken0>
                         )}
                         {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
@@ -224,7 +222,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                               <Display size='S'>{account.assets.token1Raw}</Display>
                               <Display size='XS'>{account.token1.symbol}</Display>
                             </div>
-                            <Display size='XXS'>{roundPercentage(ltv, 3)}% LTV</Display>
+                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
                           </AvailableContainerToken1>
                         )}
                         {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
