@@ -92,10 +92,10 @@ export type UniswapPoolInfo = {
   fee: number;
 };
 
-export async function fetchMarginAccounts(
+export async function fetchBorrowerDatas(
   chainId: number,
   provider: ethers.providers.BaseProvider,
-  userAddress: string,
+  addresses: Address[],
   uniswapPoolDataMap: Map<string, UniswapPoolInfo>
 ): Promise<MarginAccount[]> {
   const multicall = new Multicall({
@@ -103,12 +103,20 @@ export async function fetchMarginAccounts(
     tryAggregate: true,
     multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
   });
-  const marginAccountsAddresses = await getMarginAccountsForUser(chainId, provider, userAddress);
+  const borrowerUniswapPoolCallContext: ContractCallContext[] = addresses.map((borrowerAddress) => ({
+    reference: `${borrowerAddress}`,
+    contractAddress: borrowerAddress,
+    abi: borrowerAbi as any,
+    calls: [{ reference: 'uniswapPool', methodName: 'UNISWAP_POOL', methodParameters: [] }],
+  }));
+  const borrowerUniswapPools = (await multicall.call(borrowerUniswapPoolCallContext)).results;
+
   const marginAccountCallContext: ContractCallContext[] = [];
 
   // Fetch all the data for the margin accounts
-  marginAccountsAddresses.forEach(({ address: accountAddress, uniswapPool }) => {
-    const uniswapPoolInfo = uniswapPoolDataMap.get(`0x${uniswapPool}`) ?? null;
+  addresses.forEach((accountAddress) => {
+    const uniswapPool = borrowerUniswapPools[accountAddress].callsReturnContext[0].returnValues[0];
+    const uniswapPoolInfo = uniswapPoolDataMap.get(uniswapPool.toLowerCase()) ?? null;
 
     if (uniswapPoolInfo === null) return;
 
@@ -258,4 +266,19 @@ export async function fetchMarginAccounts(
   });
 
   return marginAccounts;
+}
+
+export async function fetchMarginAccounts(
+  chainId: number,
+  provider: ethers.providers.BaseProvider,
+  userAddress: string,
+  uniswapPoolDataMap: Map<string, UniswapPoolInfo>
+): Promise<MarginAccount[]> {
+  const borrowers = await getMarginAccountsForUser(chainId, provider, userAddress);
+  return fetchBorrowerDatas(
+    chainId,
+    provider,
+    borrowers.map((b) => b.address as Address),
+    uniswapPoolDataMap
+  );
 }
