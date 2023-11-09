@@ -18,11 +18,10 @@ import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   ALOE_II_PERMIT2_MANAGER_ADDRESS,
-  ALOE_II_ROUTER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
+import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -152,7 +151,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     activeChain,
     selectedCollateral.asset,
     userAddress ?? '0x',
-    ALOE_II_ROUTER_ADDRESS[activeChain.id],
+    ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id],
     collateralAmount
   );
 
@@ -173,7 +172,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   });
 
   const encodedPermit2 = useMemo(() => {
-    if (!userAddress || !predictedAddress) return '0x';
+    if (!userAddress || !predictedAddress || !permit2Result.signature) return null;
     const permit2 = new ethers.utils.Interface(permit2Abi);
     return permit2.encodeFunctionData(
       'permitTransferFrom(((address,uint256),uint256,uint256),(address,uint256),address,bytes)',
@@ -191,18 +190,10 @@ export default function BorrowModal(props: BorrowModalProps) {
           requestedAmount: permit2Result.amount.toBigNumber(),
         },
         userAddress,
-        permit2Result.signature ?? '0x',
+        permit2Result.signature,
       ]
     );
-  }, [
-    permit2Result.amount,
-    permit2Result.deadline,
-    permit2Result.nonce,
-    permit2Result.signature,
-    predictedAddress,
-    selectedCollateral.asset.address,
-    userAddress,
-  ]);
+  }, [permit2Result, predictedAddress, selectedCollateral.asset.address, userAddress]);
 
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
@@ -239,7 +230,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       !encodedPermit2 ||
       !encodedBorrowCall
     )
-      return '0x';
+      return null;
     const owner = userAddress;
     const indices = [nextNftPtrIdx];
     const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
@@ -249,26 +240,27 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [userAddress, nextNftPtrIdx, parameterData, activeChain.id, encodedPermit2, encodedBorrowCall, borrowerNft]);
 
   const {
-    config: configBorrow,
-    isError: isUnableToBorrow,
-    isLoading: isCheckingIfAbleToBorrow,
+    config: configMulticallOps,
+    isError: isUnableToMulticallOps,
+    isLoading: isCheckingIfAbleToMulticallOps,
   } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
-    args: [[encodedMint ?? '0x', encodedModify]],
+    args: [[encodedMint ?? '0x', encodedModify ?? '0x']],
     overrides: { value: parameterData?.ante },
     chainId: activeChain.id,
     enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && parameterData !== undefined,
   });
-  const gasLimit = configBorrow.request?.gasLimit.mul(110).div(100);
-  const { write: borrow, isLoading: isAskingUserToBorrow } = useContractWrite({
-    ...configBorrow,
+  const gasLimit = configMulticallOps.request?.gasLimit.mul(110).div(100);
+  const { write: borrow, isLoading: isAskingUserToMulticallOps } = useContractWrite({
+    ...configMulticallOps,
     request: {
-      ...configBorrow.request,
+      ...configMulticallOps.request,
       gasLimit,
     },
     onSuccess(data) {
+      // TODO:
       // setPendingTxn(data);
     },
   });
@@ -341,7 +333,15 @@ export default function BorrowModal(props: BorrowModalProps) {
           fillWidth={true}
           disabled={!confirmButton.enabled}
           onClick={() => {
-            if (confirmButton.enabled && !isUnableToBorrow && !isCheckingIfAbleToBorrow && configBorrow) {
+            // TODO: clean this up
+            if (permit2State !== Permit2State.DONE) {
+              permit2Action?.();
+            } else if (
+              confirmButton.enabled &&
+              !isUnableToMulticallOps &&
+              !isCheckingIfAbleToMulticallOps &&
+              configMulticallOps
+            ) {
               borrow?.();
             }
           }}
