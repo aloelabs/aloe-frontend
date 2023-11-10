@@ -146,6 +146,7 @@ const DesktopNavLink = styled(NavLink)`
   &.active {
     color: white;
   }
+
   &:hover {
     color: white;
   }
