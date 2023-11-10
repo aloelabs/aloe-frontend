@@ -141,13 +141,13 @@ const DesktopNavLink = styled(NavLink)`
   padding: 20px 32px;
   cursor: pointer;
   user-select: none;
+  color: ${FOOTER_LINK_TEXT_COLOR};
 
   &.active {
-    color: rgba(255, 255, 255, 1);
+    color: white;
   }
-
-  :hover:not(&.active) {
-    color: ${FOOTER_LINK_TEXT_COLOR};
+  &:hover {
+    color: white;
   }
 
   &.mobile {
@@ -310,12 +310,10 @@ export function NavBar(props: NavBarProps) {
             <React.Fragment key={index}>
               {link.isExternal ? (
                 <ExternalDesktopLink href={link.to} target='_blank' rel='noopener noreferrer'>
-                  <Text size='M'>{link.label}</Text>
+                  {link.label}
                 </ExternalDesktopLink>
               ) : (
-                <DesktopNavLink to={link.to}>
-                  <Text size='M'>{link.label}</Text>
-                </DesktopNavLink>
+                <DesktopNavLink to={link.to}>{link.label}</DesktopNavLink>
               )}
               <VerticalDivider />
             </React.Fragment>

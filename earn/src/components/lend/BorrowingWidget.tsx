@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -30,7 +30,7 @@ const CardContainer = styled.div`
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  border: 2px solid #ffffff;
+  border: 2px solid ${GREY_600};
   overflow: hidden;
 `;
 
@@ -89,7 +89,7 @@ const AvailableContainerConnectedRight = styled(AvailableContainer)`
 
 const CardRow = styled.div`
   &:not(:last-child) {
-    border-bottom: 2px solid #ffffff;
+    border-bottom: 2px solid ${GREY_600};
   }
 `;
 
@@ -98,7 +98,7 @@ const CardRowHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px;
-  border-bottom: 2px solid #ffffff;
+  border-bottom: 2px solid ${GREY_600};
 `;
 
 const ClearButton = styled.button`
@@ -171,12 +171,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
     <>
       <div className='flex gap-4'>
         <CardWrapper $textAlignment='start'>
-          <Text size='XL'>Collateral</Text>
           <CardContainer>
             <CardRow>
               <CardRowHeader>
                 <Text size='M' weight='bold'>
-                  Active
+                  Active Collateral
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
@@ -279,12 +278,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           </CardContainer>
         </CardWrapper>
         <CardWrapper $textAlignment='end'>
-          <Text size='XL'>Borrows</Text>
           <CardContainer>
             <CardRow>
               <CardRowHeader>
                 <Text size='M' weight='bold' className='ml-auto'>
-                  Active
+                  Active Borrows
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
