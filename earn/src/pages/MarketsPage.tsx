@@ -3,19 +3,18 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
-import { useAccount, useContract, useProvider } from 'wagmi';
+import { useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
+import { fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import {
@@ -25,10 +24,9 @@ import {
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
+import { fetchBorrowerDatas, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
-// import { fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 
 export type TokenQuote = {
   token: Token;
@@ -155,28 +153,22 @@ export default function MarketsPage() {
     })();
   }, [provider, userAddress, lendingPairs, setLendingPairBalances]);
 
-  const borrowerLensContract = useContract({
-    abi: borrowerLensAbi,
-    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
-    signerOrProvider: provider,
-  });
-
   // MARK: Fetch margin accounts
   useEffect(() => {
     (async () => {
-      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
-      const chainId = (await provider.getNetwork()).chainId;
-      const fetchedMarginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
-      setMarginAccounts(fetchedMarginAccounts);
-    })();
-  }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
+      if (userAddress === undefined || availablePools.size === 0) return;
+      const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(activeChain.id, provider, userAddress);
 
-  useEffect(() => {
-    (async () => {
-      if (userAddress === undefined) return;
-      //const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(activeChain.id, provider, userAddress);
+      const chainId = (await provider.getNetwork()).chainId;
+      const borrowerDatas = await fetchBorrowerDatas(
+        chainId,
+        provider,
+        fuse2BorrowerNfts.map((b) => b.borrowerAddress),
+        availablePools
+      );
+      setMarginAccounts(borrowerDatas);
     })();
-  }, [activeChain.id, provider, userAddress]);
+  }, [activeChain.id, availablePools, provider, setMarginAccounts, userAddress]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {

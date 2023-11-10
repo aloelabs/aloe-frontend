@@ -1,17 +1,30 @@
 import { useContext, useMemo, useState } from 'react';
 
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
+import { factoryAbi } from 'shared/lib/abis/Factory';
+import { permit2Abi } from 'shared/lib/abis/Permit2';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_LENS_ADDRESS,
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  ALOE_II_PERMIT2_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { useContractRead } from 'wagmi';
+import { generateBytes12Salt } from 'shared/lib/util/Salt';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
@@ -56,6 +69,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
   const { activeChain } = useContext(ChainContext);
 
+  const { address: userAddress } = useAccount();
+
   const selectedBorrow = selectedBorrows.find(
     (borrow) => borrow.collateral.address === selectedCollateral.asset.address
   );
@@ -69,6 +84,14 @@ export default function BorrowModal(props: BorrowModalProps) {
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     args: [selectedLendingPair?.uniswapPool || '0x', Q32],
     functionName: 'consult',
+    enabled: selectedLendingPair !== undefined,
+  });
+
+  const { data: parameterData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    args: [selectedLendingPair?.uniswapPool || '0x'],
+    functionName: 'getParameters',
     enabled: selectedLendingPair !== undefined,
   });
 
@@ -108,6 +131,138 @@ export default function BorrowModal(props: BorrowModalProps) {
     collateralAmount,
     selectedCollateral.asset.address,
   ]);
+
+  // The NFT index we will use if minting
+  const { data: nextNftPtrIdx } = useContractRead({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'balanceOf',
+    args: [userAddress ?? '0x'],
+    chainId: activeChain.id,
+    enabled: Boolean(userAddress),
+  });
+
+  const {
+    state: permit2State,
+    action: permit2Action,
+    result: permit2Result,
+  } = usePermit2(
+    activeChain,
+    selectedCollateral.asset,
+    userAddress ?? '0x',
+    ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id],
+    collateralAmount
+  );
+
+  const generatedSalt = useMemo(() => generateBytes12Salt(), []);
+
+  const { data: predictedAddress } = useContractRead({
+    abi: borrowerLensAbi,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
+    functionName: 'predictBorrowerAddress',
+    args: [
+      selectedLendingPair?.uniswapPool ?? '0x',
+      ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+      generatedSalt,
+      ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+      ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    ],
+    enabled: selectedLendingPair !== undefined,
+  });
+
+  const encodedPermit2 = useMemo(() => {
+    if (!userAddress || !predictedAddress || !permit2Result.signature) return null;
+    const permit2 = new ethers.utils.Interface(permit2Abi);
+    return permit2.encodeFunctionData(
+      'permitTransferFrom(((address,uint256),uint256,uint256),(address,uint256),address,bytes)',
+      [
+        {
+          permitted: {
+            token: selectedCollateral.asset.address,
+            amount: permit2Result.amount.toBigNumber(),
+          },
+          nonce: BigNumber.from(permit2Result.nonce ?? '0'),
+          deadline: BigNumber.from(permit2Result.deadline),
+        },
+        {
+          to: predictedAddress,
+          requestedAmount: permit2Result.amount.toBigNumber(),
+        },
+        userAddress,
+        permit2Result.signature,
+      ]
+    );
+  }, [permit2Result, predictedAddress, selectedCollateral.asset.address, userAddress]);
+
+  // Prepare for actual import/mint transaction
+  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
+  // First, we `mint` so that they have a `Borrower` to put stuff in
+  const encodedMint = useMemo(() => {
+    if (!userAddress || selectedLendingPair?.uniswapPool === undefined) return null;
+    const to = userAddress;
+    const pools = [selectedLendingPair.uniswapPool ?? '0x'];
+    const salts = [generatedSalt];
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+  }, [userAddress, selectedLendingPair?.uniswapPool, generatedSalt, borrowerNft]);
+
+  const encodedBorrowCall = useMemo(() => {
+    if (!userAddress || !selectedLendingPair || !selectedBorrow) return null;
+    const borrower = new ethers.utils.Interface(borrowerAbi);
+    const amount0 =
+      selectedLendingPair.token0.address === selectedBorrow.asset.address
+        ? borrowAmount
+        : GN.zero(selectedBorrow.asset.decimals);
+    const amount1 =
+      selectedLendingPair.token1.address === selectedBorrow.asset.address
+        ? borrowAmount
+        : GN.zero(selectedBorrow.asset.decimals);
+
+    return borrower.encodeFunctionData('borrow', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]);
+  }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
+
+  // Then we `modify`, calling the BoostManager to import the Uniswap position
+  const encodedModify = useMemo(() => {
+    if (
+      !userAddress ||
+      nextNftPtrIdx === undefined ||
+      parameterData === undefined ||
+      !encodedPermit2 ||
+      !encodedBorrowCall
+    )
+      return null;
+    const owner = userAddress;
+    const indices = [nextNftPtrIdx];
+    const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
+    const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2))];
+    const antes = [parameterData.ante.div(1e13)];
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+  }, [userAddress, nextNftPtrIdx, parameterData, activeChain.id, encodedPermit2, encodedBorrowCall, borrowerNft]);
+
+  const {
+    config: configMulticallOps,
+    isError: isUnableToMulticallOps,
+    isLoading: isCheckingIfAbleToMulticallOps,
+  } = usePrepareContractWrite({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'multicall',
+    args: [[encodedMint ?? '0x', encodedModify ?? '0x']],
+    overrides: { value: parameterData?.ante },
+    chainId: activeChain.id,
+    enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && parameterData !== undefined,
+  });
+  const gasLimit = configMulticallOps.request?.gasLimit.mul(110).div(100);
+  const { write: borrow, isLoading: isAskingUserToMulticallOps } = useContractWrite({
+    ...configMulticallOps,
+    request: {
+      ...configMulticallOps.request,
+      gasLimit,
+    },
+    onSuccess(data) {
+      // TODO:
+      // setPendingTxn(data);
+    },
+  });
 
   let confirmButtonState: ConfirmButtonState;
   if (collateralAmount.gt(userBalance)) {
@@ -172,7 +327,24 @@ export default function BorrowModal(props: BorrowModalProps) {
             />
           </div>
         </div>
-        <FilledGradientButton size='M' fillWidth={true} disabled={!confirmButton.enabled}>
+        <FilledGradientButton
+          size='M'
+          fillWidth={true}
+          disabled={!confirmButton.enabled}
+          onClick={() => {
+            // TODO: clean this up
+            if (permit2State !== Permit2State.DONE) {
+              permit2Action?.();
+            } else if (
+              confirmButton.enabled &&
+              !isUnableToMulticallOps &&
+              !isCheckingIfAbleToMulticallOps &&
+              configMulticallOps
+            ) {
+              borrow?.();
+            }
+          }}
+        >
           {confirmButton.text}
         </FilledGradientButton>
       </div>

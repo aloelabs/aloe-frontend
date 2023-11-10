@@ -156,4 +156,43 @@ export const borrowerLensAbi = [
     stateMutability: 'view',
     type: 'function',
   },
-] as const;
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes12',
+        name: 'salt',
+        type: 'bytes12',
+      },
+      {
+        internalType: 'address',
+        name: 'caller',
+        type: 'address',
+      },
+      {
+        internalType: 'contract Factory',
+        name: 'factory',
+        type: 'address',
+      },
+    ],
+    name: 'predictBorrowerAddress',
+    outputs: [
+      {
+        internalType: 'address',
+        name: 'borrower',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
