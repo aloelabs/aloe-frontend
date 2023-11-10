@@ -1,5 +1,6 @@
 import { useContext, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
@@ -61,10 +62,11 @@ export type BorrowModalProps = {
   selectedBorrows: BorrowEntry[];
   selectedCollateral: CollateralEntry;
   setIsOpen: (isOpen: boolean) => void;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { isOpen, selectedBorrows, selectedCollateral, setIsOpen } = props;
+  const { isOpen, selectedBorrows, selectedCollateral, setIsOpen, setPendingTxn } = props;
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
   const { activeChain } = useContext(ChainContext);
@@ -259,13 +261,18 @@ export default function BorrowModal(props: BorrowModalProps) {
       gasLimit,
     },
     onSuccess(data) {
-      // TODO:
-      // setPendingTxn(data);
+      setPendingTxn(data);
     },
   });
 
   let confirmButtonState: ConfirmButtonState;
-  if (collateralAmount.gt(userBalance)) {
+  if (
+    isAskingUserToMulticallOps ||
+    permit2State === Permit2State.ASKING_USER_TO_SIGN ||
+    permit2State === Permit2State.ASKING_USER_TO_APPROVE
+  ) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
+  } else if (collateralAmount.gt(userBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (collateralAmountStr === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
