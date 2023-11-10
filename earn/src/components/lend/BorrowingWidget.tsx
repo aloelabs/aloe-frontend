@@ -31,7 +31,7 @@ const CardContainer = styled.div`
   height: 100%;
   border-radius: 8px;
   border: 2px solid ${GREY_600};
-  overflow: hidden;
+  /* overflow: hidden; */
 `;
 
 const AvailableContainerPlaceholder = styled.div`
@@ -68,10 +68,10 @@ const AvailableContainerConnectedLeft = styled(AvailableContainer)`
   &::after {
     content: '';
     position: absolute;
-    right: -25px;
-    width: 25px;
+    right: -10px;
+    width: 10px;
     height: 10px;
-    background-color: ${GREY_700};
+    background-color: ${GREY_600};
   }
 `;
 
@@ -80,10 +80,10 @@ const AvailableContainerConnectedRight = styled(AvailableContainer)`
   &::after {
     content: '';
     position: absolute;
-    left: -25px;
-    width: 25px;
+    left: -10px;
+    width: 10px;
     height: 10px;
-    background-color: ${GREY_700};
+    background-color: ${GREY_600};
   }
 `;
 
