@@ -323,16 +323,10 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         {hasAssetsForToken0 && !hasLiabilitiesForToken1 && <AvailableContainerPlaceholder />}
                         {hasLiabilitiesForToken1 && (
                           <AvailableContainerConnectedRight $backgroundGradient={token1Gradient}>
-                            <Display size='XXS' color={SECONDARY_COLOR}>
-                              3% APY
-                            </Display>
+                            <Display size='XXS'>3% APY</Display>
                             <div className='flex items-end gap-1'>
-                              <Display size='S' color={SECONDARY_COLOR}>
-                                {formatTokenAmount(account.liabilities.amount1)}
-                              </Display>
-                              <Display size='XS' color={SECONDARY_COLOR}>
-                                {account.token1.symbol}
-                              </Display>
+                              <Display size='S'>{formatTokenAmount(account.liabilities.amount1)}</Display>
+                              <Display size='XS'>{account.token1.symbol}</Display>
                             </div>
                           </AvailableContainerConnectedRight>
                         )}
