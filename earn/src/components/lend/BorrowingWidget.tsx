@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 
+import { SendTransactionResult } from '@wagmi/core';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
@@ -136,10 +137,11 @@ export type BorrowingWidgetProps = {
   collateralEntries: CollateralEntry[];
   borrowEntries: { [key: string]: BorrowEntry[] };
   tokenColors: Map<string, string>;
+  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { marginAccounts, collateralEntries, borrowEntries, tokenColors } = props;
+  const { marginAccounts, collateralEntries, borrowEntries, tokenColors, setPendingTxn } = props;
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
@@ -384,6 +386,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             setSelectedBorrows(null);
             setSelectedCollateral(null);
           }}
+          setPendingTxn={setPendingTxn}
         />
       )}
     </>

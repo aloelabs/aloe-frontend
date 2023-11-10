@@ -384,6 +384,7 @@ export default function MarketsPage() {
               collateralEntries={collateralEntries}
               borrowEntries={borrowEntries}
               tokenColors={tokenColors}
+              setPendingTxn={setPendingTxn}
             />
           </div>
         )}
