@@ -114,7 +114,7 @@ export async function fetchListOfBorrowerNfts(
 
   // Fetch decoded SSTORE2 data from the BorrowerNFT (tokenIds in a specific order)
   const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
-  const orderedTokenIdStrs = orderedTokenIds.map((id) => id.toHexString());
+  const orderedTokenIdStrs = orderedTokenIds.map((id) => '0x' + id.toHexString().slice(2).padStart(44, '0'));
 
   const tokenIds = borrowers.map((borrower) => orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!);
   const indices = borrowers.map((borrower) =>
