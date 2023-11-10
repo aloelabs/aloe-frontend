@@ -30,17 +30,17 @@ import { fetchBorrowerDatas, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
+const UNSELECTED_OPTION_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
-  background-color: ${GREY_600};
-
   height: 1px;
 `;
 
-const HeaderSegmentedControlOption = styled(Text).attrs((props: { isActive: boolean }) => props)`
-  height: 24px;
+const HeaderSegmentedControlOption = styled.button.attrs((props: { isActive: boolean }) => props)`
+  padding: 16px;
   cursor: pointer;
-  color: ${(props) => (props.isActive ? 'white' : GREY_600)};
+  color: ${(props) => (props.isActive ? 'white' : UNSELECTED_OPTION_TEXT_COLOR)};
 
   &:hover {
     color: white;
@@ -52,7 +52,7 @@ const HeaderSegmentedControlOption = styled(Text).attrs((props: { isActive: bool
     content: ${(props) => (props.isActive ? "''" : 'none')};
     background-color: white;
 
-    top: 40px;
+    top: 100%;
     left: 0px;
     width: 100%;
     height: 1px;
@@ -358,23 +358,27 @@ export default function MarketsPage() {
         <Text size='XXL' className='mb-4'>
           {activeChain.name} Markets
         </Text>
-        <div className='flex flex-row gap-8'>
-          <HeaderSegmentedControlOption
-            size='M'
-            isActive={selectedHeaderOption === HeaderOptions.Supply}
-            onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
-          >
-            Supply
-          </HeaderSegmentedControlOption>
-          <HeaderSegmentedControlOption
-            size='M'
-            isActive={selectedHeaderOption === HeaderOptions.Borrow}
-            onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
-          >
-            Borrow
-          </HeaderSegmentedControlOption>
+        <div>
+          <div className='flex flex-row' role='tablist'>
+            <HeaderSegmentedControlOption
+              isActive={selectedHeaderOption === HeaderOptions.Supply}
+              onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
+              role='tab'
+              aria-selected={selectedHeaderOption === HeaderOptions.Supply}
+            >
+              Supply
+            </HeaderSegmentedControlOption>
+            <HeaderSegmentedControlOption
+              isActive={selectedHeaderOption === HeaderOptions.Borrow}
+              onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
+              role='tab'
+              aria-selected={selectedHeaderOption === HeaderOptions.Borrow}
+            >
+              Borrow
+            </HeaderSegmentedControlOption>
+          </div>
+          <HeaderDividingLine />
         </div>
-        <HeaderDividingLine />
         {selectedHeaderOption === HeaderOptions.Supply ? (
           <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
         ) : (
