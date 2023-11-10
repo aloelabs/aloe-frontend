@@ -5,9 +5,11 @@ import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import styled from 'styled-components';
 import { useAccount, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
@@ -28,6 +30,35 @@ import { fetchBorrowerDatas, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
+const HeaderDividingLine = styled.hr`
+  color: ${GREY_600};
+  background-color: ${GREY_600};
+
+  height: 1px;
+`;
+
+const HeaderSegmentedControlOption = styled(Text).attrs((props: { isActive: boolean }) => props)`
+  height: 24px;
+  cursor: pointer;
+  color: ${(props) => (props.isActive ? 'white' : GREY_600)};
+
+  &:hover {
+    color: white;
+  }
+
+  position: relative;
+  &:after {
+    position: absolute;
+    content: ${(props) => (props.isActive ? "''" : 'none')};
+    background-color: white;
+
+    top: 40px;
+    left: 0px;
+    width: 100%;
+    height: 1px;
+  }
+`;
+
 export type TokenQuote = {
   token: Token;
   price: number;
@@ -41,6 +72,11 @@ export type TokenBalance = {
   apy: number;
   pairName: string;
 };
+
+enum HeaderOptions {
+  Supply,
+  Borrow,
+}
 
 export default function MarketsPage() {
   const { activeChain } = useContext(ChainContext);
@@ -56,6 +92,7 @@ export default function MarketsPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
 
   // MARK: wagmi hooks
   const account = useAccount();
@@ -317,17 +354,39 @@ export default function MarketsPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-6 max-w-screen-2xl m-auto'>
-        <Text size='XL'>Supply</Text>
-        <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
-        <div className='flex flex-col gap-6'>
-          <BorrowingWidget
-            marginAccounts={marginAccounts}
-            collateralEntries={collateralEntries}
-            borrowEntries={borrowEntries}
-            tokenColors={tokenColors}
-          />
+      <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
+        <Text size='XXL' className='mb-4'>
+          {activeChain.name} Markets
+        </Text>
+        <div className='flex flex-row gap-8'>
+          <HeaderSegmentedControlOption
+            size='M'
+            isActive={selectedHeaderOption === HeaderOptions.Supply}
+            onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
+          >
+            Supply
+          </HeaderSegmentedControlOption>
+          <HeaderSegmentedControlOption
+            size='M'
+            isActive={selectedHeaderOption === HeaderOptions.Borrow}
+            onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
+          >
+            Borrow
+          </HeaderSegmentedControlOption>
         </div>
+        <HeaderDividingLine />
+        {selectedHeaderOption === HeaderOptions.Supply ? (
+          <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
+        ) : (
+          <div className='flex flex-col gap-6'>
+            <BorrowingWidget
+              marginAccounts={marginAccounts}
+              collateralEntries={collateralEntries}
+              borrowEntries={borrowEntries}
+              tokenColors={tokenColors}
+            />
+          </div>
+        )}
       </div>
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}

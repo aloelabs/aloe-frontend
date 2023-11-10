@@ -4,6 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
@@ -18,7 +19,7 @@ const PAGE_SIZE = 10;
 const TableContainer = styled.div`
   width: 100%;
   overflow-x: auto;
-  border: 2px solid #ffffff;
+  border: 2px solid ${GREY_600};
   border-radius: 6px;
 `;
 
@@ -27,7 +28,7 @@ const Table = styled.table`
 `;
 
 const TableHeader = styled.thead`
-  border-bottom: 2px solid #ffffff;
+  border-bottom: 2px solid ${GREY_600};
   text-align: start;
 `;
 
