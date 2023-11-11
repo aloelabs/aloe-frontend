@@ -5,7 +5,7 @@ import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -30,8 +30,6 @@ import { fetchBorrowerDatas, MarginAccount } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
-const UNSELECTED_OPTION_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
-
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
   height: 1px;
@@ -40,7 +38,7 @@ const HeaderDividingLine = styled.hr`
 const HeaderSegmentedControlOption = styled.button.attrs((props: { isActive: boolean }) => props)`
   padding: 16px;
   cursor: pointer;
-  color: ${(props) => (props.isActive ? 'white' : UNSELECTED_OPTION_TEXT_COLOR)};
+  color: ${(props) => (props.isActive ? 'white' : GREY_400)};
 
   &:hover {
     color: white;

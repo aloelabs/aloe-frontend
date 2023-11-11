@@ -7,8 +7,7 @@ import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
 import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
 import { RESPONSIVE_BREAKPOINT_TABLET } from '../../data/constants/Breakpoints';
-
-const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+import { GREY_400 } from '../../data/constants/Colors';
 
 const StyledFooter = styled.footer`
   position: fixed;
@@ -53,7 +52,7 @@ export default function Footer() {
           as='a'
           size='S'
           weight='medium'
-          color={FOOTER_LINK_TEXT_COLOR}
+          color={GREY_400}
           href={'https://aloe.capital/'}
           target='_blank'
           rel='noopener noreferrer'
@@ -65,7 +64,7 @@ export default function Footer() {
           as='a'
           size='S'
           weight='medium'
-          color={FOOTER_LINK_TEXT_COLOR}
+          color={GREY_400}
           href={'https://docs.aloe.capital/'}
           target='_blank'
           rel='noopener noreferrer'
@@ -77,7 +76,7 @@ export default function Footer() {
           as='a'
           size='S'
           weight='medium'
-          color={FOOTER_LINK_TEXT_COLOR}
+          color={GREY_400}
           href={'/terms.pdf'}
           target='_blank'
           rel='noopener noreferrer'

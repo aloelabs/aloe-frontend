@@ -3,6 +3,7 @@ import React, { Fragment, useEffect, useState } from 'react';
 import { Tab } from '@headlessui/react';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { GREY_400 } from 'shared/lib/data/constants/Colors';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -31,7 +32,7 @@ const SlippageButton = styled.button`
   align-items: center;
   padding: 8px 12px;
   height: 35px;
-  color: rgba(75, 105, 128, 1);
+  color: ${GREY_400};
   background-color: rgba(13, 23, 30, 1);
   flex: 1;
   border-radius: 8px;
@@ -101,7 +102,7 @@ const CustomSlippageInput = styled.input`
   }
 
   &::placeholder {
-    color: rgba(75, 105, 128, 1);
+    color: ${GREY_400};
   }
 `;
 

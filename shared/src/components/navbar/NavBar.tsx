@@ -20,9 +20,7 @@ import ConnectWalletButton from './ConnectWalletButton';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
-import { GREY_700, GREY_800 } from '../../data/constants/Colors';
-
-const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -116,7 +114,7 @@ const ExternalFooterLinkWithIcon = styled.a`
   align-items: center;
 
   padding: 8px 16px;
-  color: ${FOOTER_LINK_TEXT_COLOR};
+  color: ${GREY_400};
   &:hover {
     color: rgba(255, 255, 255, 1);
 
@@ -141,7 +139,7 @@ const DesktopNavLink = styled(NavLink)`
   padding: 20px 32px;
   cursor: pointer;
   user-select: none;
-  color: ${FOOTER_LINK_TEXT_COLOR};
+  color: ${GREY_400};
 
   &.active {
     color: white;
@@ -171,7 +169,7 @@ const ExternalDesktopLink = styled.a`
   }
 
   :hover:not(&.active) {
-    color: ${FOOTER_LINK_TEXT_COLOR};
+    color: ${GREY_400};
   }
 
   &.mobile {
@@ -372,7 +370,7 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
+                color={GREY_400}
                 href={'https://aloe.capital/'}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -383,7 +381,7 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
+                color={GREY_400}
                 href={'https://docs.aloe.capital/'}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -394,7 +392,7 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
+                color={GREY_400}
                 href={'/terms.pdf'}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -480,7 +478,7 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
+                  color={GREY_400}
                   href={'https://aloe.capital/'}
                   target='_blank'
                   rel='noopener noreferrer'
@@ -491,7 +489,7 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
+                  color={GREY_400}
                   href={'https://docs.aloe.capital/'}
                   target='_blank'
                   rel='noopener noreferrer'
@@ -502,7 +500,7 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
+                  color={GREY_400}
                   href={'/terms.pdf'}
                   target='_blank'
                   rel='noopener noreferrer'
