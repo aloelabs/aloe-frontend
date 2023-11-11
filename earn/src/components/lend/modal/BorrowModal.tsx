@@ -25,7 +25,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
@@ -38,6 +38,7 @@ enum ConfirmButtonState {
   READY,
   LOADING,
   INSUFFICIENT_ASSET,
+  INSUFFICIENT_ANTE,
   DISABLED,
 }
 
@@ -51,6 +52,8 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
       return { text: 'Loading', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return { text: 'Insufficient Asset', enabled: false };
+    case ConfirmButtonState.INSUFFICIENT_ANTE:
+      return { text: 'Insufficient Ante', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
@@ -97,9 +100,18 @@ export default function BorrowModal(props: BorrowModalProps) {
     enabled: selectedLendingPair !== undefined,
   });
 
+  const { data: ethBalanceData } = useBalance({
+    address: userAddress,
+    chainId: activeChain.id,
+    enabled: Boolean(userAddress),
+    watch: false,
+  });
+
   const userBalance = GN.fromNumber(selectedCollateral.balance, selectedCollateral.asset.decimals);
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', selectedCollateral.asset.decimals);
   const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', selectedBorrow?.asset.decimals ?? 0);
+  const ante = parameterData !== undefined ? GN.fromBigNumber(parameterData.ante, 18) : undefined;
+  const ethBalance = GN.fromDecimalString(ethBalanceData?.formatted ?? '0', 18);
 
   const maxBorrowAmount = useMemo(() => {
     if (consultData === undefined || selectedBorrow === undefined) {
@@ -224,21 +236,15 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
-    if (
-      !userAddress ||
-      nextNftPtrIdx === undefined ||
-      parameterData === undefined ||
-      !encodedPermit2 ||
-      !encodedBorrowCall
-    )
+    if (!userAddress || nextNftPtrIdx === undefined || ante === undefined || !encodedPermit2 || !encodedBorrowCall)
       return null;
     const owner = userAddress;
     const indices = [nextNftPtrIdx];
     const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
     const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2))];
-    const antes = [parameterData.ante.div(1e13)];
+    const antes = [ante.toBigNumber().div(1e13)];
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
-  }, [userAddress, nextNftPtrIdx, parameterData, activeChain.id, encodedPermit2, encodedBorrowCall, borrowerNft]);
+  }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedPermit2, encodedBorrowCall, borrowerNft]);
 
   const {
     config: configMulticallOps,
@@ -249,7 +255,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     abi: borrowerNftAbi,
     functionName: 'multicall',
     args: [[encodedMint ?? '0x', encodedModify ?? '0x']],
-    overrides: { value: parameterData?.ante },
+    overrides: { value: ante?.toBigNumber() },
     chainId: activeChain.id,
     enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && parameterData !== undefined,
   });
@@ -266,7 +272,9 @@ export default function BorrowModal(props: BorrowModalProps) {
   });
 
   let confirmButtonState: ConfirmButtonState;
-  if (
+  if (ante === undefined) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (
     isAskingUserToMulticallOps ||
     permit2State === Permit2State.ASKING_USER_TO_SIGN ||
     permit2State === Permit2State.ASKING_USER_TO_APPROVE
@@ -274,6 +282,8 @@ export default function BorrowModal(props: BorrowModalProps) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
   } else if (collateralAmount.gt(userBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else if (ethBalance.lt(ante)) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ANTE;
   } else if (collateralAmountStr === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else {
