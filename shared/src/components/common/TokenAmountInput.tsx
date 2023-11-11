@@ -7,9 +7,10 @@ import { formatNumberInput, truncateDecimals } from '../../util/Numbers';
 import styled from 'styled-components';
 
 import ErrorIcon from '../../assets/svg/InteractionError';
+import { GREY_400 } from '../../data/constants/Colors';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
-const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+const BALANCE_VALUE_TEXT_COLOR = GREY_400;
 
 const ErrorMessageWrapper = styled.div`
   display: flex;

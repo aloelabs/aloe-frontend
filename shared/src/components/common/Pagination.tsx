@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
 import { Dropdown } from './Dropdown';
-import { GREY_800 } from '../../data/constants/Colors';
+import { GREY_400, GREY_800 } from '../../data/constants/Colors';
 
 const MAX_DISPLAYED_COUNT = 6;
 
@@ -41,18 +41,18 @@ const ChevronButton = styled.button`
 const ChevronLeft = styled(ChevronLeftIcon)`
   width: 24px;
   height: 24px;
-  fill: rgba(75, 105, 128, 1);
+  fill: ${GREY_400};
 `;
 
 const ChevronRight = styled(ChevronRightIcon)`
   width: 24px;
   height: 24px;
-  fill: rgba(75, 105, 128, 1);
+  fill: ${GREY_400};
 `;
 
 const PageButton = styled.button`
   background: transparent;
-  color: rgba(75, 105, 128, 1);
+  color: ${GREY_400};
   line-height: 24px;
   width: 40px;
   height: 40px;
@@ -67,7 +67,7 @@ const EllipsisWrapper = styled.span`
   justify-content: center;
   align-items: center;
   background: transparent;
-  color: rgba(75, 105, 128, 1);
+  color: ${GREY_400};
   line-height: 24px;
   width: 40px;
   height: 40px;
