@@ -12,6 +12,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Address } from 'wagmi';
 
+export type BorrowerNft = {
+  borrowerAddress: Address;
+  tokenId: string;
+  index: number;
+};
+
 type BorrowerNftFilterParams = {
   validManagerSet?: Set<Address>;
   validUniswapPool?: Address;
@@ -24,7 +30,7 @@ export async function fetchListOfBorrowerNfts(
   provider: ethers.providers.BaseProvider,
   userAddress: string,
   filterParams?: BorrowerNftFilterParams
-) {
+): Promise<Array<BorrowerNft>> {
   const borrowerNftContract = new ethers.Contract(ALOE_II_BORROWER_NFT_ADDRESS[chainId], borrowerNftAbi, provider);
 
   // Query all `Modify` events associated with `userAddress`
@@ -110,18 +116,18 @@ export async function fetchListOfBorrowerNfts(
       const isInCorrectPool = filterParams?.validUniswapPool === undefined || borrowersInCorrectPool.has(borrower);
       return (areManagersValid || (filterParams?.includeFreshBorrowers && !isInUse)) && isInCorrectPool;
     })
-    .map(([borrower, managerSet]) => borrower);
+    .map(([borrower, _managerSet]) => borrower);
 
-  // Fetch decoded SSTORE2 data from the BorrowerNFT (tokenIds in a specific order)
   const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
   const orderedTokenIdStrs = orderedTokenIds.map((id) => '0x' + id.toHexString().slice(2).padStart(44, '0'));
 
-  const tokenIds = borrowers.map((borrower) => orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!);
-  const indices = borrowers.map((borrower) =>
-    orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase()))
-  );
-
-  return { borrowers, tokenIds, indices };
+  return borrowers.map((borrower) => {
+    return {
+      borrowerAddress: borrower,
+      tokenId: orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!,
+      index: orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase())),
+    };
+  });
 }
 
 export async function fetchListOfFuse2BorrowNfts(
@@ -129,13 +135,7 @@ export async function fetchListOfFuse2BorrowNfts(
   provider: ethers.providers.BaseProvider,
   userAddress: Address,
   uniswapPool?: Address
-): Promise<
-  Array<{
-    borrowerAddress: Address;
-    tokenId: string;
-    index: number;
-  }>
-> {
+): Promise<Array<BorrowerNft>> {
   const originalBorrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
     includeFreshBorrowers: false, // TODO: change later
     onlyCheckMostRecentModify: true, // TODO: Hayden has concerns (as usual)
@@ -143,20 +143,22 @@ export async function fetchListOfFuse2BorrowNfts(
     validUniswapPool: uniswapPool,
   });
 
-  const slot0Contexts: ContractCallContext[] = originalBorrowerNfts.borrowers.map((borrower) => {
-    return {
-      abi: borrowerAbi as any,
-      calls: [
-        {
-          methodName: 'slot0',
-          methodParameters: [],
-          reference: 'slot0',
-        },
-      ],
-      contractAddress: borrower,
-      reference: borrower,
-    };
-  });
+  const slot0Contexts: ContractCallContext[] = originalBorrowerNfts
+    .map((borrowerNft) => borrowerNft.borrowerAddress)
+    .map((borrower) => {
+      return {
+        abi: borrowerAbi as any,
+        calls: [
+          {
+            methodName: 'slot0',
+            methodParameters: [],
+            reference: 'slot0',
+          },
+        ],
+        contractAddress: borrower,
+        reference: borrower,
+      };
+    });
 
   // Execute multicall fetch
   const multicall = new Multicall({
@@ -167,26 +169,10 @@ export async function fetchListOfFuse2BorrowNfts(
 
   const slot0Results = await multicall.call(slot0Contexts);
 
-  const filterMap = originalBorrowerNfts.borrowers.map((borrower) => {
-    const result = slot0Results.results[borrower];
+  return originalBorrowerNfts.filter((borrowerNft) => {
+    const result = slot0Results.results[borrowerNft.borrowerAddress];
     const slot0Hex = result.callsReturnContext[0].returnValues[0].hex;
     const extraDataHex: string = slot0Hex.slice(14, 30);
     return extraDataHex.endsWith('83ee755b');
   });
-
-  const borrowerNfts: Array<{
-    borrowerAddress: Address;
-    tokenId: string;
-    index: number;
-  }> = [];
-  for (let i = 0; i < originalBorrowerNfts.borrowers.length; i++) {
-    if (!filterMap[i]) continue;
-    borrowerNfts.push({
-      borrowerAddress: originalBorrowerNfts.borrowers[i],
-      index: originalBorrowerNfts.indices[i],
-      tokenId: originalBorrowerNfts.tokenIds[i],
-    });
-  }
-
-  return borrowerNfts;
 }

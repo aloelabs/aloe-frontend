@@ -414,8 +414,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         includeFreshBorrowers: true,
       });
 
-      if (mounted && results.borrowers.length > 0) {
-        setAvailableNft({ borrower: results.borrowers[0], ptrIdx: results.indices[0] });
+      if (mounted && results.length > 0) {
+        setAvailableNft({ borrower: results[0].borrowerAddress, ptrIdx: results[0].index });
       }
     })();
 
