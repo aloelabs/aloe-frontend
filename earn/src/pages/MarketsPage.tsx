@@ -183,10 +183,10 @@ export default function MarketsPage() {
   useEffect(() => {
     (async () => {
       if (!userAddress) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, userAddress, provider)));
+      const results = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
       setLendingPairBalances(results);
     })();
-  }, [provider, userAddress, lendingPairs, setLendingPairBalances]);
+  }, [activeChain.id, lendingPairs, provider, setLendingPairBalances, userAddress]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {

@@ -168,10 +168,10 @@ export default function LendPage() {
   useEffect(() => {
     (async () => {
       if (!address) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
+      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
       setLendingPairBalances(results);
     })();
-  }, [provider, address, lendingPairs, setLendingPairBalances]);
+  }, [activeChain.id, address, lendingPairs, provider, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {

@@ -269,32 +269,111 @@ export async function getAvailableLendingPairs(
 }
 
 export async function getLendingPairBalances(
-  lendingPair: LendingPair,
+  lendingPairs: LendingPair[],
   userAddress: string,
-  provider: ethers.providers.Provider
-): Promise<LendingPairBalances> {
-  const { token0, token1, kitty0, kitty1 } = lendingPair;
+  provider: ethers.providers.Provider,
+  chainId: number
+): Promise<LendingPairBalances[]> {
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
 
-  const token0Contract = new ethers.Contract(token0.address, erc20Abi as any, provider);
-  const token1Contract = new ethers.Contract(token1.address, erc20Abi as any, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, lenderAbi, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, lenderAbi, provider);
-  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
-    token0Contract.balanceOf(userAddress),
-    token1Contract.balanceOf(userAddress),
-    kitty0Contract.underlyingBalance(userAddress),
-    kitty1Contract.underlyingBalance(userAddress),
-  ]);
-  const token0Balance = toImpreciseNumber(token0BalanceBig, token0.decimals);
-  const token1Balance = toImpreciseNumber(token1BalanceBig, token1.decimals);
-  const kitty0Balance = toImpreciseNumber(kitty0BalanceBig, token0.decimals);
-  const kitty1Balance = toImpreciseNumber(kitty1BalanceBig, token1.decimals);
-  return {
-    token0Balance,
-    token1Balance,
-    kitty0Balance,
-    kitty1Balance,
-  };
+  const contractCallContexts: ContractCallContext[] = [];
+
+  lendingPairs.forEach((lendingPair) => {
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-token0`,
+      contractAddress: lendingPair.token0.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: `${lendingPair.token0.address}-balance`,
+          methodName: 'balanceOf',
+          methodParameters: [userAddress],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-token1`,
+      contractAddress: lendingPair.token1.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: `${lendingPair.token1.address}-balance`,
+          methodName: 'balanceOf',
+          methodParameters: [userAddress],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-kitty0`,
+      contractAddress: lendingPair.kitty0.address,
+      abi: lenderAbi as any,
+      calls: [
+        {
+          reference: `${lendingPair.kitty0.address}-balance`,
+          methodName: 'underlyingBalance',
+          methodParameters: [userAddress],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-kitty1`,
+      contractAddress: lendingPair.kitty1.address,
+      abi: lenderAbi as any,
+      calls: [
+        {
+          reference: `${lendingPair.kitty1.address}-balance`,
+          methodName: 'underlyingBalance',
+          methodParameters: [userAddress],
+        },
+      ],
+    });
+  });
+
+  const lendingPairResults = (await multicall.call(contractCallContexts)).results;
+
+  const correspondingLendingPairResults: Map<string, ContractCallReturnContextEntries> = new Map();
+
+  // Convert the results into a map of account address to the results
+  Object.entries(lendingPairResults).forEach(([key, value]) => {
+    const entryAccountAddress = key.split('-')[0];
+    const entryType = key.split('-')[1];
+    const existingValue = correspondingLendingPairResults.get(entryAccountAddress);
+    if (existingValue) {
+      existingValue[entryType] = value;
+      correspondingLendingPairResults.set(entryAccountAddress, existingValue);
+    } else {
+      correspondingLendingPairResults.set(entryAccountAddress, { [entryType]: value });
+    }
+  });
+
+  const lendingPairBalances: LendingPairBalances[] = [];
+
+  correspondingLendingPairResults.forEach((value) => {
+    const { token0, token1, kitty0, kitty1 } = value;
+    const token0ReturnContexts = convertBigNumbersForReturnContexts(token0.callsReturnContext);
+    const token1ReturnContexts = convertBigNumbersForReturnContexts(token1.callsReturnContext);
+    const kitty0ReturnContexts = convertBigNumbersForReturnContexts(kitty0.callsReturnContext);
+    const kitty1ReturnContexts = convertBigNumbersForReturnContexts(kitty1.callsReturnContext);
+    const token0Balance = toImpreciseNumber(token0ReturnContexts[0].returnValues[0], lendingPairs[0].token0.decimals);
+    const token1Balance = toImpreciseNumber(token1ReturnContexts[0].returnValues[0], lendingPairs[0].token1.decimals);
+    const kitty0Balance = toImpreciseNumber(kitty0ReturnContexts[0].returnValues[0], lendingPairs[0].token0.decimals);
+    const kitty1Balance = toImpreciseNumber(kitty1ReturnContexts[0].returnValues[0], lendingPairs[0].token1.decimals);
+
+    lendingPairBalances.push({
+      token0Balance,
+      token1Balance,
+      kitty0Balance,
+      kitty1Balance,
+    });
+  });
+
+  return lendingPairBalances;
 }
 
 /**
