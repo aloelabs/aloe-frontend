@@ -64,30 +64,6 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   }
 `;
 
-const AvailableContainerConnectedLeft = styled(AvailableContainer)`
-  position: relative;
-  &::after {
-    content: '';
-    position: absolute;
-    right: -25px;
-    width: 25px;
-    height: 10px;
-    background-color: ${GREY_700};
-  }
-`;
-
-const AvailableContainerConnectedRight = styled(AvailableContainer)`
-  position: relative;
-  &::after {
-    content: '';
-    position: absolute;
-    left: -25px;
-    width: 25px;
-    height: 10px;
-    background-color: ${GREY_700};
-  }
-`;
-
 const CardRow = styled.div`
   &:not(:last-child) {
     border-bottom: 2px solid ${GREY_600};
@@ -187,14 +163,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const hasAssetsForToken1 = account.assets.token1Raw > 0;
                     const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
                     const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
-                    const AvailableContainerToken0 =
-                      hasAssetsForToken0 && !hasLiabilitiesForToken1
-                        ? AvailableContainer
-                        : AvailableContainerConnectedLeft;
-                    const AvailableContainerToken1 =
-                      hasAssetsForToken1 && !hasLiabilitiesForToken0
-                        ? AvailableContainer
-                        : AvailableContainerConnectedRight;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     const token0Color = tokenColors.get(account.token0.address);
                     const token0Gradient = token0Color
@@ -208,23 +176,23 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       // TODO: use borrowerNFT id as key
                       <Fragment key={account.uniswapPool}>
                         {hasAssetsForToken0 && (
-                          <AvailableContainerToken0 $backgroundGradient={token0Gradient}>
+                          <AvailableContainer $backgroundGradient={token0Gradient}>
                             <div className='flex items-end gap-1'>
                               <Display size='S'>{account.assets.token0Raw}</Display>
                               <Display size='XS'>{account.token0.symbol}</Display>
                             </div>
                             <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
-                          </AvailableContainerToken0>
+                          </AvailableContainer>
                         )}
                         {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
                         {hasAssetsForToken1 && (
-                          <AvailableContainerToken1 $backgroundGradient={token1Gradient}>
+                          <AvailableContainer $backgroundGradient={token1Gradient}>
                             <div className='flex items-end gap-1'>
                               <Display size='S'>{account.assets.token1Raw}</Display>
                               <Display size='XS'>{account.token1.symbol}</Display>
                             </div>
                             <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
-                          </AvailableContainerToken1>
+                          </AvailableContainer>
                         )}
                         {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
                       </Fragment>
@@ -306,7 +274,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       // TODO: use borrowerNFT id as key
                       <Fragment key={account.uniswapPool}>
                         {hasLiabilitiesForToken0 && (
-                          <AvailableContainerConnectedRight $backgroundGradient={token0Gradient}>
+                          <AvailableContainer $backgroundGradient={token0Gradient}>
                             <Display size='XXS' color={SECONDARY_COLOR}>
                               3% APY
                             </Display>
@@ -318,17 +286,17 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                                 {account.token0.symbol}
                               </Display>
                             </div>
-                          </AvailableContainerConnectedRight>
+                          </AvailableContainer>
                         )}
                         {hasAssetsForToken0 && !hasLiabilitiesForToken1 && <AvailableContainerPlaceholder />}
                         {hasLiabilitiesForToken1 && (
-                          <AvailableContainerConnectedRight $backgroundGradient={token1Gradient}>
+                          <AvailableContainer $backgroundGradient={token1Gradient}>
                             <Display size='XXS'>3% APY</Display>
                             <div className='flex items-end gap-1'>
                               <Display size='S'>{formatTokenAmount(account.liabilities.amount1)}</Display>
                               <Display size='XS'>{account.token1.symbol}</Display>
                             </div>
-                          </AvailableContainerConnectedRight>
+                          </AvailableContainer>
                         )}
                         {hasAssetsForToken1 && !hasLiabilitiesForToken0 && <AvailableContainerPlaceholder />}
                       </Fragment>
