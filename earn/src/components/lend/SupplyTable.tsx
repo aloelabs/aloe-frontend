@@ -144,6 +144,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         setSelectedSupply(row);
                       }}
+                      disabled={row.suppliableBalance === 0}
                     >
                       Supply
                     </FilledGreyButton>
@@ -162,6 +163,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         setSelectedWithdraw(row);
                       }}
+                      disabled={row.suppliedBalance === 0}
                     >
                       Withdraw
                     </FilledGreyButton>
