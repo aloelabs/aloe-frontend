@@ -263,7 +263,7 @@ export default function SupplyModal(props: SupplyModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're supplying {amount} {selectedRow.asset.symbol} that users can borrow in exchange for{' '}
+            You're supplying {amount || '0'} {selectedRow.asset.symbol} that users can borrow in exchange for{' '}
             {formattedCollateral}. You will earn a variable <strong>{apyPercentage}%</strong> APY on your supplied{' '}
             {selectedRow.asset.symbol}.
           </Text>
