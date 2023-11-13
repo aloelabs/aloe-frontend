@@ -10,6 +10,7 @@ import {
   ALOE_II_SIMPLE_MANAGER_ADDRESS,
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
+import { filterNullishValues } from 'shared/lib/util/Arrays';
 import { Address } from 'wagmi';
 
 export type BorrowerNft = {
@@ -118,16 +119,24 @@ export async function fetchListOfBorrowerNfts(
     })
     .map(([borrower, _managerSet]) => borrower);
 
+  // Fetch decoded SSTORE2 data from the BorrowerNFT (tokenIds in a specific order)
   const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
   const orderedTokenIdStrs = orderedTokenIds.map((id) => '0x' + id.toHexString().slice(2).padStart(44, '0'));
 
-  return borrowers.map((borrower) => {
-    return {
-      borrowerAddress: borrower,
-      tokenId: orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!,
-      index: orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase())),
-    };
-  });
+  return filterNullishValues(
+    borrowers.map((borrower) => {
+      const tokenId = orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!;
+      const index = orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase()));
+      // If we can't find the tokenId or index, something is wrong (skip this borrower)
+      console.warn(`Borrower ${borrower} has no tokenId or index`);
+      if (tokenId === undefined || index === -1) return null;
+      return {
+        borrowerAddress: borrower,
+        tokenId,
+        index,
+      };
+    })
+  );
 }
 
 export async function fetchListOfFuse2BorrowNfts(
@@ -143,22 +152,20 @@ export async function fetchListOfFuse2BorrowNfts(
     validUniswapPool: uniswapPool,
   });
 
-  const slot0Contexts: ContractCallContext[] = originalBorrowerNfts
-    .map((borrowerNft) => borrowerNft.borrowerAddress)
-    .map((borrower) => {
-      return {
-        abi: borrowerAbi as any,
-        calls: [
-          {
-            methodName: 'slot0',
-            methodParameters: [],
-            reference: 'slot0',
-          },
-        ],
-        contractAddress: borrower,
-        reference: borrower,
-      };
-    });
+  const slot0Contexts: ContractCallContext[] = originalBorrowerNfts.map((borrowerNft) => {
+    return {
+      abi: borrowerAbi as any,
+      calls: [
+        {
+          methodName: 'slot0',
+          methodParameters: [],
+          reference: 'slot0',
+        },
+      ],
+      contractAddress: borrowerNft.borrowerAddress,
+      reference: borrowerNft.borrowerAddress,
+    };
+  });
 
   // Execute multicall fetch
   const multicall = new Multicall({
