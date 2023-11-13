@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
@@ -9,9 +10,11 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { useAccount } from 'wagmi';
 
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import SupplyModal from './modal/SupplyModal';
+import WithdrawModal from './modal/WithdrawModal';
 // import OptimizeButton from './OptimizeButton';
 
 const PAGE_SIZE = 10;
@@ -33,7 +36,6 @@ const TableHeader = styled.thead`
 `;
 
 const HoverableRow = styled.tr`
-  cursor: pointer;
   &:hover {
     background-color: rgba(130, 160, 182, 0.1);
   }
@@ -44,8 +46,10 @@ export type SupplyTableRow = {
   kitty: Kitty;
   collateralAssets: Token[];
   apy: number;
-  supplyBalance: number;
-  supplyBalanceUsd: number;
+  suppliedBalance: number;
+  suppliedBalanceUsd: number;
+  suppliableBalance: number;
+  suppliableBalanceUsd: number;
   isOptimized: boolean;
 };
 
@@ -57,7 +61,11 @@ export type SupplyTableProps = {
 export default function SupplyTable(props: SupplyTableProps) {
   const { rows, setPendingTxn } = props;
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRow, setSelectedRow] = useState<SupplyTableRow | null>(null);
+  const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
+  const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
+
+  const { address: userAddress } = useAccount();
+
   const pages: SupplyTableRow[][] = useMemo(() => {
     const pages: SupplyTableRow[][] = [];
     for (let i = 0; i < rows.length; i += PAGE_SIZE) {
@@ -91,7 +99,12 @@ export default function SupplyTable(props: SupplyTableProps) {
               </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
                 <Text size='M' weight='bold'>
-                  Balance
+                  Wallet Balance
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-end whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Aloe Balance
                 </Text>
               </th>
               {/* <th className='px-4 py-2 text-center whitespace-nowrap'>
@@ -103,12 +116,7 @@ export default function SupplyTable(props: SupplyTableProps) {
           </TableHeader>
           <tbody>
             {pages[currentPage - 1].map((row, index) => (
-              <HoverableRow
-                key={index}
-                onClick={() => {
-                  setSelectedRow(row);
-                }}
-              >
+              <HoverableRow key={index}>
                 <td className='px-4 py-2 text-start whitespace-nowrap'>
                   <div className='flex items-center gap-2'>
                     <TokenIcon token={row.asset} />
@@ -124,10 +132,40 @@ export default function SupplyTable(props: SupplyTableProps) {
                   <Display size='XS'>{row.apy.toFixed(2)}%</Display>
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
-                  <Display size='XS'>${row.supplyBalanceUsd.toFixed(2)}</Display>
-                  <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                    {formatTokenAmount(row.supplyBalance)} {row.asset.symbol}
-                  </Display>
+                  <div className='flex justify-end gap-4'>
+                    <div className='text-end'>
+                      <Display size='XS'>${row.suppliableBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {formatTokenAmount(row.suppliableBalance)} {row.asset.symbol}
+                      </Display>
+                    </div>
+                    <FilledGreyButton
+                      size='S'
+                      onClick={() => {
+                        setSelectedSupply(row);
+                      }}
+                    >
+                      Supply
+                    </FilledGreyButton>
+                  </div>
+                </td>
+                <td className='px-4 py-2 text-end whitespace-nowrap'>
+                  <div className='flex justify-end gap-4'>
+                    <div className='text-end'>
+                      <Display size='XS'>${row.suppliedBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {formatTokenAmount(row.suppliedBalance)} {row.asset.symbol}
+                      </Display>
+                    </div>
+                    <FilledGreyButton
+                      size='S'
+                      onClick={() => {
+                        setSelectedWithdraw(row);
+                      }}
+                    >
+                      Withdraw
+                    </FilledGreyButton>
+                  </div>
                 </td>
                 {/* <td className='px-4 py-2 flex justify-center whitespace-nowrap'>
                   <OptimizeButton
@@ -155,12 +193,23 @@ export default function SupplyTable(props: SupplyTableProps) {
           </tfoot>
         </Table>
       </TableContainer>
-      {selectedRow && (
+      {selectedSupply && (
         <SupplyModal
           isOpen={true}
-          selectedRow={selectedRow}
+          selectedRow={selectedSupply}
           setIsOpen={() => {
-            setSelectedRow(null);
+            setSelectedSupply(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {userAddress && selectedWithdraw && (
+        <WithdrawModal
+          isOpen={true}
+          selectedRow={selectedWithdraw}
+          userAddress={userAddress}
+          setIsOpen={() => {
+            setSelectedWithdraw(null);
           }}
           setPendingTxn={setPendingTxn}
         />

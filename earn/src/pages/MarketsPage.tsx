@@ -272,19 +272,31 @@ export default function MarketsPage() {
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
-      const kitty0Balance = combinedBalances.find(
-        (balance) => balance.token.address === (pair.kitty0?.address || pair.kitty0.address)
-      );
-      const kitty1Balance = combinedBalances.find(
-        (balance) => balance.token.address === (pair.kitty1?.address || pair.kitty1.address)
-      );
+      const token0Balance = combinedBalances.find((balance) => balance.token.address === pair.token0.address) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const token1Balance = combinedBalances.find((balance) => balance.token.address === pair.token1.address) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const kitty0Balance = combinedBalances.find((balance) => balance.token.address === pair.kitty0.address) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const kitty1Balance = combinedBalances.find((balance) => balance.token.address === pair.kitty1.address) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
       rows.push({
         asset: pair.token0,
         kitty: pair.kitty0,
         apy: pair.kitty0Info.apy,
         collateralAssets: [pair.token1],
-        supplyBalance: kitty0Balance?.balance || 0,
-        supplyBalanceUsd: kitty0Balance?.balanceUSD || 0,
+        suppliedBalance: kitty0Balance.balance,
+        suppliedBalanceUsd: kitty0Balance.balanceUSD,
+        suppliableBalance: token0Balance.balance,
+        suppliableBalanceUsd: token0Balance.balanceUSD,
         isOptimized: true,
       });
       rows.push({
@@ -292,8 +304,10 @@ export default function MarketsPage() {
         kitty: pair.kitty1,
         apy: pair.kitty1Info.apy,
         collateralAssets: [pair.token0],
-        supplyBalance: kitty1Balance?.balance || 0,
-        supplyBalanceUsd: kitty1Balance?.balanceUSD || 0,
+        suppliedBalance: kitty1Balance.balance,
+        suppliedBalanceUsd: kitty1Balance.balanceUSD,
+        suppliableBalance: token1Balance.balance,
+        suppliableBalanceUsd: token1Balance.balanceUSD,
         isOptimized: true,
       });
     });
