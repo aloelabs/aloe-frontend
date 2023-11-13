@@ -110,16 +110,16 @@ export default function BoostPage() {
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;
-      const { borrowers, tokenIds, indices } = await fetchBoostBorrowersList(chainId, provider, userAddress);
+      const borrowerNfts = await fetchBoostBorrowersList(chainId, provider, userAddress);
 
       const fetchedInfos = await Promise.all(
-        borrowers.map(async (borrowerAddress, i) => {
-          const res = await fetchBoostBorrower(chainId, provider, borrowerAddress);
+        borrowerNfts.map(async (borrowerNft) => {
+          const res = await fetchBoostBorrower(chainId, provider, borrowerNft.borrowerAddress);
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
             userAddress,
-            tokenIds[i],
-            indices[i],
+            borrowerNft.tokenId,
+            borrowerNft.index,
             res.borrower.uniswapPool as Address,
             sqrtRatioToTick(res.borrower.sqrtPriceX96),
             res.borrower.token0,
