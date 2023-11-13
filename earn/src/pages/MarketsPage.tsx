@@ -210,12 +210,8 @@ export default function MarketsPage() {
       return [];
     }
     let combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token0?.address || pair.token0.address)
-      );
-      const token1Quote = tokenQuotes.find(
-        (quote) => quote.token.address === (pair.token1?.address || pair.token1.address)
-      );
+      const token0Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token0));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token1));
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName = `${pair.token0.symbol}-${pair.token1.symbol}`;
@@ -257,7 +253,7 @@ export default function MarketsPage() {
     let distinct: TokenBalance[] = [];
     // We don't want to show duplicate tokens
     combined.forEach((balance) => {
-      const existing = distinct.find((d) => d.token.address === balance.token.address);
+      const existing = distinct.find((d) => d.token.equals(balance.token));
       if (!existing) {
         distinct.push(balance);
       }
@@ -272,19 +268,19 @@ export default function MarketsPage() {
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
-      const token0Balance = combinedBalances.find((balance) => balance.token.address === pair.token0.address) || {
+      const token0Balance = combinedBalances.find((balance) => balance.token.equals(pair.token0)) || {
         balance: 0,
         balanceUSD: 0,
       };
-      const token1Balance = combinedBalances.find((balance) => balance.token.address === pair.token1.address) || {
+      const token1Balance = combinedBalances.find((balance) => balance.token.equals(pair.token1)) || {
         balance: 0,
         balanceUSD: 0,
       };
-      const kitty0Balance = combinedBalances.find((balance) => balance.token.address === pair.kitty0.address) || {
+      const kitty0Balance = combinedBalances.find((balance) => balance.token.equals(pair.kitty0)) || {
         balance: 0,
         balanceUSD: 0,
       };
-      const kitty1Balance = combinedBalances.find((balance) => balance.token.address === pair.kitty1.address) || {
+      const kitty1Balance = combinedBalances.find((balance) => balance.token.equals(pair.kitty1)) || {
         balance: 0,
         balanceUSD: 0,
       };
@@ -331,12 +327,8 @@ export default function MarketsPage() {
 
   const borrowEntries = useMemo(() => {
     const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
-      const kitty0Balance = combinedBalances.find(
-        (balance) => balance.token.address === (lendingPair.kitty0?.address || lendingPair.kitty0.address)
-      );
-      const kitty1Balance = combinedBalances.find(
-        (balance) => balance.token.address === (lendingPair.kitty1?.address || lendingPair.kitty1.address)
-      );
+      const kitty0Balance = combinedBalances.find((balance) => balance.token.equals(lendingPair.kitty0));
+      const kitty1Balance = combinedBalances.find((balance) => balance.token.equals(lendingPair.kitty1));
       acc.push({
         asset: lendingPair.token0,
         collateral: lendingPair.token1,
