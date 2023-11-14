@@ -293,6 +293,7 @@ export async function getLendingPairBalances(
           methodParameters: [userAddress],
         },
       ],
+      context: { decimals: lendingPair.token0.decimals },
     });
 
     contractCallContexts.push({
@@ -306,6 +307,7 @@ export async function getLendingPairBalances(
           methodParameters: [userAddress],
         },
       ],
+      context: { decimals: lendingPair.token1.decimals },
     });
 
     contractCallContexts.push({
@@ -319,6 +321,7 @@ export async function getLendingPairBalances(
           methodParameters: [userAddress],
         },
       ],
+      context: { decimals: lendingPair.kitty0.decimals },
     });
 
     contractCallContexts.push({
@@ -332,6 +335,7 @@ export async function getLendingPairBalances(
           methodParameters: [userAddress],
         },
       ],
+      context: { decimals: lendingPair.kitty1.decimals },
     });
   });
 
@@ -360,10 +364,12 @@ export async function getLendingPairBalances(
     const token1ReturnContexts = convertBigNumbersForReturnContexts(token1.callsReturnContext);
     const kitty0ReturnContexts = convertBigNumbersForReturnContexts(kitty0.callsReturnContext);
     const kitty1ReturnContexts = convertBigNumbersForReturnContexts(kitty1.callsReturnContext);
-    const token0Balance = toImpreciseNumber(token0ReturnContexts[0].returnValues[0], lendingPairs[0].token0.decimals);
-    const token1Balance = toImpreciseNumber(token1ReturnContexts[0].returnValues[0], lendingPairs[0].token1.decimals);
-    const kitty0Balance = toImpreciseNumber(kitty0ReturnContexts[0].returnValues[0], lendingPairs[0].token0.decimals);
-    const kitty1Balance = toImpreciseNumber(kitty1ReturnContexts[0].returnValues[0], lendingPairs[0].token1.decimals);
+    const token0Decimals = token0.originalContractCallContext.context.decimals;
+    const token1Decimals = token1.originalContractCallContext.context.decimals;
+    const token0Balance = toImpreciseNumber(token0ReturnContexts[0].returnValues[0], token0Decimals);
+    const token1Balance = toImpreciseNumber(token1ReturnContexts[0].returnValues[0], token1Decimals);
+    const kitty0Balance = toImpreciseNumber(kitty0ReturnContexts[0].returnValues[0], token0Decimals);
+    const kitty1Balance = toImpreciseNumber(kitty1ReturnContexts[0].returnValues[0], token1Decimals);
 
     lendingPairBalances.push({
       token0Balance,
