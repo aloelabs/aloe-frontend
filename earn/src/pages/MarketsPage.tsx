@@ -307,6 +307,14 @@ export default function MarketsPage() {
         isOptimized: true,
       });
     });
+    rows.sort((a, b) => {
+      // Sort by supplied balance first, then suppliable balance
+      const suppliedBalanceUsdDiff = b.suppliedBalanceUsd - a.suppliedBalanceUsd;
+      if (suppliedBalanceUsdDiff !== 0) {
+        return suppliedBalanceUsdDiff;
+      }
+      return b.suppliableBalanceUsd - a.suppliableBalanceUsd;
+    });
     return rows;
   }, [combinedBalances, lendingPairs]);
 
