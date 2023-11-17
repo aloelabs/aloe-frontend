@@ -16,7 +16,7 @@ import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
-import { fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
+import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import {
@@ -26,7 +26,7 @@ import {
   LendingPair,
   LendingPairBalances,
 } from '../data/LendingPair';
-import { fetchBorrowerDatas, MarginAccount } from '../data/MarginAccount';
+import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -85,7 +85,7 @@ export default function MarketsPage() {
     [],
     activeChain.id
   );
-  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
+  const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<string, string>>(new Map(), activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
@@ -195,15 +195,24 @@ export default function MarketsPage() {
       const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(activeChain.id, provider, userAddress);
 
       const chainId = (await provider.getNetwork()).chainId;
-      const borrowerDatas = await fetchBorrowerDatas(
-        chainId,
-        provider,
-        fuse2BorrowerNfts.map((b) => b.borrowerAddress),
-        availablePools
-      );
-      setMarginAccounts(borrowerDatas);
+      const borrowerDatas = (
+        await fetchBorrowerDatas(
+          chainId,
+          provider,
+          fuse2BorrowerNfts.map((b) => b.borrowerAddress),
+          availablePools
+        )
+      ).map((borrowerData) => {
+        return {
+          ...borrowerData,
+          index: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.index || 0,
+          tokenId: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.tokenId || 0,
+        } as BorrowerNftBorrower;
+      });
+
+      setBorrowers(borrowerDatas);
     })();
-  }, [activeChain.id, availablePools, provider, setMarginAccounts, userAddress]);
+  }, [activeChain.id, availablePools, provider, userAddress, setBorrowers]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
@@ -388,7 +397,7 @@ export default function MarketsPage() {
         ) : (
           <div className='flex flex-col gap-6'>
             <BorrowingWidget
-              marginAccounts={marginAccounts}
+              borrowers={borrowers}
               collateralEntries={collateralEntries}
               borrowEntries={borrowEntries}
               tokenColors={tokenColors}
