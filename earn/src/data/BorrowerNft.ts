@@ -13,8 +13,15 @@ import {
 import { filterNullishValues } from 'shared/lib/util/Arrays';
 import { Address } from 'wagmi';
 
+import { MarginAccount } from './MarginAccount';
+
 export type BorrowerNft = {
   borrowerAddress: Address;
+  tokenId: string;
+  index: number;
+};
+
+export type BorrowerNftBorrower = MarginAccount & {
   tokenId: string;
   index: number;
 };

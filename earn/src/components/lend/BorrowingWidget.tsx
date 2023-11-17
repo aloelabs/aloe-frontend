@@ -8,8 +8,8 @@ import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { computeLTV } from '../../data/BalanceSheet';
+import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
-import { MarginAccount } from '../../data/MarginAccount';
 import { rgba } from '../../util/Colors';
 import BorrowModal from './modal/BorrowModal';
 
@@ -33,16 +33,6 @@ const CardContainer = styled.div`
   border-radius: 8px;
   border: 2px solid ${GREY_600};
   overflow: hidden;
-`;
-
-const AvailableContainerPlaceholder = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  height: 52px;
-  padding-left: 16px;
-  padding-right: 16px;
 `;
 
 const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
@@ -109,7 +99,7 @@ export type BorrowEntry = {
 };
 
 export type BorrowingWidgetProps = {
-  marginAccounts: MarginAccount[] | null;
+  borrowers: BorrowerNftBorrower[] | null;
   collateralEntries: CollateralEntry[];
   borrowEntries: { [key: string]: BorrowEntry[] };
   tokenColors: Map<string, string>;
@@ -117,7 +107,7 @@ export type BorrowingWidgetProps = {
 };
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { marginAccounts, collateralEntries, borrowEntries, tokenColors, setPendingTxn } = props;
+  const { borrowers, collateralEntries, borrowEntries, tokenColors, setPendingTxn } = props;
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
@@ -157,44 +147,28 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
-                {marginAccounts &&
-                  marginAccounts.map((account) => {
-                    const hasAssetsForToken0 = account.assets.token0Raw > 0;
-                    const hasAssetsForToken1 = account.assets.token1Raw > 0;
-                    const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
-                    const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
+                {borrowers &&
+                  borrowers.map((account) => {
+                    const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                    if (hasNoCollateral) return null;
+                    const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
+                    const collateralAmount = collateral.equals(account.token0)
+                      ? account.assets.token0Raw
+                      : account.assets.token1Raw;
+                    const collateralColor = tokenColors.get(collateral.address);
+                    const collateralGradient = collateralColor
+                      ? `linear-gradient(90deg, ${rgba(collateralColor, 0.25)} 0%, ${GREY_700} 100%)`
+                      : undefined;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
-                    const token0Color = tokenColors.get(account.token0.address);
-                    const token0Gradient = token0Color
-                      ? `linear-gradient(90deg, ${rgba(token0Color, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
-                    const token1Color = tokenColors.get(account.token1.address);
-                    const token1Gradient = token1Color
-                      ? `linear-gradient(90deg, ${rgba(token1Color, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
                     return (
-                      // TODO: use borrowerNFT id as key
-                      <Fragment key={account.uniswapPool}>
-                        {hasAssetsForToken0 && (
-                          <AvailableContainer $backgroundGradient={token0Gradient}>
-                            <div className='flex items-end gap-1'>
-                              <Display size='S'>{account.assets.token0Raw}</Display>
-                              <Display size='XS'>{account.token0.symbol}</Display>
-                            </div>
-                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
-                          </AvailableContainer>
-                        )}
-                        {hasLiabilitiesForToken0 && !hasAssetsForToken1 && <AvailableContainerPlaceholder />}
-                        {hasAssetsForToken1 && (
-                          <AvailableContainer $backgroundGradient={token1Gradient}>
-                            <div className='flex items-end gap-1'>
-                              <Display size='S'>{account.assets.token1Raw}</Display>
-                              <Display size='XS'>{account.token1.symbol}</Display>
-                            </div>
-                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
-                          </AvailableContainer>
-                        )}
-                        {hasLiabilitiesForToken1 && !hasAssetsForToken0 && <AvailableContainerPlaceholder />}
+                      <Fragment key={account.tokenId}>
+                        <AvailableContainer $backgroundGradient={collateralGradient}>
+                          <div className='flex items-end gap-1'>
+                            <Display size='S'>{collateralAmount}</Display>
+                            <Display size='XS'>{collateral.symbol}</Display>
+                          </div>
+                          <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
+                        </AvailableContainer>
                       </Fragment>
                     );
                   })}
@@ -256,49 +230,28 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
-                {marginAccounts &&
-                  marginAccounts.map((account) => {
-                    const hasAssetsForToken0 = account.assets.token0Raw > 0;
-                    const hasAssetsForToken1 = account.assets.token1Raw > 0;
-                    const hasLiabilitiesForToken0 = account.liabilities.amount0 > 0;
-                    const hasLiabilitiesForToken1 = account.liabilities.amount1 > 0;
-                    const token0Color = tokenColors.get(account.token0.address);
-                    const token0Gradient = token0Color
-                      ? `linear-gradient(90deg, ${GREY_700} 0%, ${rgba(token0Color, 0.25)} 100%)`
-                      : undefined;
-                    const token1Color = tokenColors.get(account.token1.address);
-                    const token1Gradient = token1Color
-                      ? `linear-gradient(90deg, ${GREY_700}  0%, ${rgba(token1Color, 0.25)} 100%)`
+                {borrowers &&
+                  borrowers.map((account) => {
+                    const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                    if (hasNoCollateral) return null;
+                    const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
+                    const liability = collateral.equals(account.token0) ? account.token1 : account.token0;
+                    const liabilityAmount = liability.equals(account.token0)
+                      ? account.liabilities.amount0
+                      : account.liabilities.amount1;
+                    const liabilityColor = tokenColors.get(liability.address);
+                    const liabilityGradient = liabilityColor
+                      ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
                     return (
-                      // TODO: use borrowerNFT id as key
-                      <Fragment key={account.uniswapPool}>
-                        {hasLiabilitiesForToken0 && (
-                          <AvailableContainer $backgroundGradient={token0Gradient}>
-                            <Display size='XXS' color={SECONDARY_COLOR}>
-                              3% APY
-                            </Display>
-                            <div className='flex items-end gap-1'>
-                              <Display size='S' color={SECONDARY_COLOR}>
-                                {formatTokenAmount(account.liabilities.amount0)}
-                              </Display>
-                              <Display size='XS' color={SECONDARY_COLOR}>
-                                {account.token0.symbol}
-                              </Display>
-                            </div>
-                          </AvailableContainer>
-                        )}
-                        {hasAssetsForToken0 && !hasLiabilitiesForToken1 && <AvailableContainerPlaceholder />}
-                        {hasLiabilitiesForToken1 && (
-                          <AvailableContainer $backgroundGradient={token1Gradient}>
-                            <Display size='XXS'>3% APY</Display>
-                            <div className='flex items-end gap-1'>
-                              <Display size='S'>{formatTokenAmount(account.liabilities.amount1)}</Display>
-                              <Display size='XS'>{account.token1.symbol}</Display>
-                            </div>
-                          </AvailableContainer>
-                        )}
-                        {hasAssetsForToken1 && !hasLiabilitiesForToken0 && <AvailableContainerPlaceholder />}
+                      <Fragment key={account.tokenId}>
+                        <AvailableContainer $backgroundGradient={liabilityGradient}>
+                          <Display size='XXS'>3% APY</Display>
+                          <div className='flex items-end gap-1'>
+                            <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
+                            <Display size='XS'>{liability.symbol}</Display>
+                          </div>
+                        </AvailableContainer>
                       </Fragment>
                     );
                   })}
