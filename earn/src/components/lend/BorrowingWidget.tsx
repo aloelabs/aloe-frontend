@@ -161,15 +161,13 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       : undefined;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     return (
-                      <Fragment key={account.tokenId}>
-                        <AvailableContainer $backgroundGradient={collateralGradient}>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S'>{collateralAmount}</Display>
-                            <Display size='XS'>{collateral.symbol}</Display>
-                          </div>
-                          <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
-                        </AvailableContainer>
-                      </Fragment>
+                      <AvailableContainer $backgroundGradient={collateralGradient} key={account.tokenId}>
+                        <div className='flex items-end gap-1'>
+                          <Display size='S'>{collateralAmount}</Display>
+                          <Display size='XS'>{collateral.symbol}</Display>
+                        </div>
+                        <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
+                      </AvailableContainer>
                     );
                   })}
               </div>
@@ -244,15 +242,13 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
                     return (
-                      <Fragment key={account.tokenId}>
-                        <AvailableContainer $backgroundGradient={liabilityGradient}>
-                          <Display size='XXS'>3% APY</Display>
-                          <div className='flex items-end gap-1'>
-                            <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
-                            <Display size='XS'>{liability.symbol}</Display>
-                          </div>
-                        </AvailableContainer>
-                      </Fragment>
+                      <AvailableContainer $backgroundGradient={liabilityGradient} key={account.tokenId}>
+                        <Display size='XXS'>3% APY</Display>
+                        <div className='flex items-end gap-1'>
+                          <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
+                          <Display size='XS'>{liability.symbol}</Display>
+                        </div>
+                      </AvailableContainer>
                     );
                   })}
               </div>
