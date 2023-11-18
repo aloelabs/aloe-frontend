@@ -45,6 +45,7 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   padding-right: 16px;
   cursor: pointer;
 
+  &.active,
   &:hover {
     background: ${(props) => props.$backgroundGradient || SECONDARY_COLOR_LIGHT};
   }
@@ -111,6 +112,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
+  const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
   const filteredBorrowEntries = useMemo(() => {
     if (selectedCollateral == null) {
       return borrowEntries;
@@ -161,7 +163,17 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       : undefined;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     return (
-                      <AvailableContainer $backgroundGradient={collateralGradient} key={account.tokenId}>
+                      <AvailableContainer
+                        $backgroundGradient={collateralGradient}
+                        key={account.tokenId}
+                        onMouseEnter={() => {
+                          setHoveredBorrower(account);
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredBorrower(null);
+                        }}
+                        className={account === hoveredBorrower ? 'active' : ''}
+                      >
                         <div className='flex items-end gap-1'>
                           <Display size='S'>{collateralAmount}</Display>
                           <Display size='XS'>{collateral.symbol}</Display>
@@ -242,7 +254,17 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
                     return (
-                      <AvailableContainer $backgroundGradient={liabilityGradient} key={account.tokenId}>
+                      <AvailableContainer
+                        $backgroundGradient={liabilityGradient}
+                        key={account.tokenId}
+                        onMouseEnter={() => {
+                          setHoveredBorrower(account);
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredBorrower(null);
+                        }}
+                        className={account === hoveredBorrower ? 'active' : ''}
+                      >
                         <Display size='XXS'>3% APY</Display>
                         <div className='flex items-end gap-1'>
                           <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
