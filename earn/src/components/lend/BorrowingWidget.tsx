@@ -1,17 +1,26 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { ethers } from 'ethers';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { useProvider } from 'wagmi';
 
+import { ChainContext } from '../../App';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
+import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
 import { rgba } from '../../util/Colors';
 import BorrowModal from './modal/BorrowModal';
+import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
+import UpdateCollateralModal from './modal/UpdateCollateralModal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
@@ -99,6 +108,11 @@ export type BorrowEntry = {
   supply: number;
 };
 
+type SelectedBorrower = {
+  borrower: BorrowerNftBorrower;
+  type: 'borrow' | 'supply';
+};
+
 export type BorrowingWidgetProps = {
   borrowers: BorrowerNftBorrower[] | null;
   collateralEntries: CollateralEntry[];
@@ -112,7 +126,42 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
+  const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
+  const [cachedMarketInfos, setCachedMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
+  const [selectedMarketInfo, setSelectedMarketInfo] = useSafeState<MarketInfo | undefined>(undefined);
+
+  const { activeChain } = useContext(ChainContext);
+  const provider = useProvider();
+
+  // MARK: Fetch market info
+  useEffect(() => {
+    const cachedMarketInfo = cachedMarketInfos.get(selectedBorrower?.borrower?.address ?? '');
+    if (cachedMarketInfo !== undefined) {
+      setSelectedMarketInfo(cachedMarketInfo);
+      return;
+    }
+    (async () => {
+      if (selectedBorrower == null) return;
+      const lenderLensContract = new ethers.Contract(
+        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
+        lenderLensAbi,
+        provider
+      );
+      const result = await fetchMarketInfoFor(
+        lenderLensContract,
+        selectedBorrower.borrower.lender0,
+        selectedBorrower.borrower.lender1,
+        selectedBorrower.borrower.token0.decimals,
+        selectedBorrower.borrower.token1.decimals
+      );
+      setCachedMarketInfos((prev) => {
+        return new Map(prev).set(selectedBorrower.borrower.address, result);
+      });
+      setSelectedMarketInfo(result);
+    })();
+  }, [selectedBorrower, provider, cachedMarketInfos, activeChain.id, setSelectedMarketInfo, setCachedMarketInfos]);
+
   const filteredBorrowEntries = useMemo(() => {
     if (selectedCollateral == null) {
       return borrowEntries;
@@ -173,6 +222,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           setHoveredBorrower(null);
                         }}
                         className={account === hoveredBorrower ? 'active' : ''}
+                        onClick={() => {
+                          setSelectedBorrower({
+                            borrower: account,
+                            type: 'supply',
+                          });
+                        }}
                       >
                         <div className='flex items-end gap-1'>
                           <Display size='S'>{collateralAmount}</Display>
@@ -263,6 +318,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         onMouseLeave={() => {
                           setHoveredBorrower(null);
                         }}
+                        onClick={() => {
+                          setSelectedBorrower({
+                            borrower: account,
+                            type: 'borrow',
+                          });
+                        }}
                         className={account === hoveredBorrower ? 'active' : ''}
                       >
                         <Display size='XXS'>3% APY</Display>
@@ -324,6 +385,27 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           setIsOpen={() => {
             setSelectedBorrows(null);
             setSelectedCollateral(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {selectedBorrower != null && selectedBorrower.type === 'borrow' && (
+        <UpdateBorrowerModal
+          isOpen={selectedBorrower != null}
+          borrower={selectedBorrower.borrower}
+          marketInfo={selectedMarketInfo}
+          setIsOpen={() => {
+            setSelectedBorrower(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {selectedBorrower != null && selectedBorrower.type === 'supply' && (
+        <UpdateCollateralModal
+          isOpen={selectedBorrower != null}
+          borrower={selectedBorrower.borrower}
+          setIsOpen={() => {
+            setSelectedBorrower(null);
           }}
           setPendingTxn={setPendingTxn}
         />

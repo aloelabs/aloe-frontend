@@ -234,7 +234,6 @@ export default function BorrowModal(props: BorrowModalProps) {
     return borrower.encodeFunctionData('borrow', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]);
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
 
-  // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
     if (!userAddress || nextNftPtrIdx === undefined || ante === undefined || !encodedPermit2 || !encodedBorrowCall)
       return null;
