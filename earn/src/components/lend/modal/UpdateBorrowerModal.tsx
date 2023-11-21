@@ -8,9 +8,9 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { MarketInfo } from '../../../data/MarketInfo';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
-import { MarketInfo } from '../../../data/MarketInfo';
 
 export enum ConfirmationType {
   BORROW = 'BORROW',
