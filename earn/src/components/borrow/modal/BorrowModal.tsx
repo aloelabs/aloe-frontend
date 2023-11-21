@@ -111,7 +111,7 @@ function BorrowButton(props: BorrowButtonProps) {
     })();
   });
 
-  const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
+  const { config: borrowConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
     abi: borrowerAbi,
     functionName: 'modify',
@@ -120,23 +120,23 @@ function BorrowButton(props: BorrowButtonProps) {
     enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
-  const removeCollateralUpdatedRequest = useMemo(() => {
-    if (removeCollateralConfig.request) {
+  const borrowUpdatedRequest = useMemo(() => {
+    if (borrowConfig.request) {
       return {
-        ...removeCollateralConfig.request,
-        gasLimit: removeCollateralConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+        ...borrowConfig.request,
+        gasLimit: borrowConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
-  }, [removeCollateralConfig.request]);
+  }, [borrowConfig.request]);
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
   } = useContractWrite({
-    ...removeCollateralConfig,
-    request: removeCollateralUpdatedRequest,
+    ...borrowConfig,
+    request: borrowUpdatedRequest,
   });
 
   useEffect(() => {
@@ -156,9 +156,9 @@ function BorrowButton(props: BorrowButtonProps) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if ((prepareContractIsLoading && !removeCollateralConfig.request) || oracleSeed === undefined) {
+  } else if ((prepareContractIsLoading && !borrowConfig.request) || oracleSeed === undefined) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!removeCollateralConfig.request) {
+  } else if (!borrowConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
