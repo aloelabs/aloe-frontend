@@ -1,6 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
+import { ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -10,12 +13,18 @@ import {
 } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount } from 'wagmi';
+import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
+import { maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
@@ -52,32 +61,72 @@ type ConfirmButtonProps = {
   maxWithdrawAmount: GN;
   borrower: BorrowerNftBorrower;
   token: Token;
+  isWithdrawingToken0: boolean;
   accountAddress: Address;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const { withdrawAmount, maxWithdrawAmount, borrower, token, accountAddress, setPendingTxn } = props;
+  const { withdrawAmount, maxWithdrawAmount, borrower, token, isWithdrawingToken0, accountAddress, setPendingTxn } =
+    props;
   const { activeChain } = useContext(ChainContext);
-  const [isPending, setIsPending] = useState(false);
 
-  let state: ConfirmButtonState = ConfirmButtonState.READY;
+  const isRedeemingTooMuch = withdrawAmount.gt(maxWithdrawAmount);
+
+  const encodedWithdrawCall = useMemo(() => {
+    if (!accountAddress) return null;
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+    const amount0 = isWithdrawingToken0 ? withdrawAmount : GN.zero(borrower.token0.decimals);
+    const amount1 = isWithdrawingToken0 ? GN.zero(borrower.token1.decimals) : withdrawAmount;
+
+    return borrowerInterface.encodeFunctionData('transfer', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+      accountAddress,
+    ]) as `0x${string}`;
+  }, [withdrawAmount, borrower.token0.decimals, borrower.token1.decimals, isWithdrawingToken0, accountAddress]);
+
+  const { config: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = usePrepareContractWrite({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'modify',
+    args: [
+      accountAddress ?? '0x',
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedWithdrawCall ?? '0x'],
+      [0],
+    ],
+    chainId: activeChain.id,
+    enabled: accountAddress && encodedWithdrawCall != null && !isRedeemingTooMuch,
+  });
+  const gasLimit = withdrawConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  const { write: withdraw, isLoading: isAskingUserToConfirm } = useContractWrite({
+    ...withdrawConfig,
+    request: {
+      ...withdrawConfig.request,
+      gasLimit,
+    },
+    onSuccess(data) {
+      setPendingTxn(data);
+    },
+  });
+
+  let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
   if (withdrawAmount.isZero()) {
-    state = ConfirmButtonState.DISABLED;
-  } else if (withdrawAmount.gt(maxWithdrawAmount)) {
-    state = ConfirmButtonState.REDEEM_TOO_MUCH;
+    confirmButtonState = ConfirmButtonState.DISABLED;
+  } else if (isRedeemingTooMuch) {
+    confirmButtonState = ConfirmButtonState.REDEEM_TOO_MUCH;
   }
 
-  const confirmButton = getConfirmButton(state, token);
+  const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
     <FilledStylizedButton
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => {
-        // TODO
-      }}
+      onClick={() => withdraw?.()}
       disabled={!confirmButton.enabled}
     >
       {confirmButton.text}
@@ -98,15 +147,41 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const { address: accountAddress } = useAccount();
 
   // TODO: This logic needs to change once we support more complex borrowing
-  const collateralToken = borrower.assets.token0Raw > 0 ? borrower.token0 : borrower.token1;
+  const isWithdrawingToken0 = borrower.assets.token0Raw > 0;
+
+  // TODO: This logic needs to change once we support more complex borrowing
+  const collateralToken = isWithdrawingToken0 ? borrower.token0 : borrower.token1;
+  const collateralLender = isWithdrawingToken0 ? borrower.lender0 : borrower.lender1;
+
+  const { data: collateralBalanceStr, refetch: refetchCollateralBalance } = useBalanceOfUnderlying(
+    collateralToken,
+    collateralLender,
+    accountAddress ?? '0x'
+  );
+
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
-  const currentCollateralAmount = GN.fromNumber(
-    borrower.assets.token0Raw + borrower.assets.token1Raw,
-    collateralToken.decimals
-  );
+  const numericExistingCollateral = isWithdrawingToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
+  const existingCollateral = GN.fromNumber(numericExistingCollateral, collateralToken.decimals);
   const withdrawAmount = GN.fromDecimalString(withdrawAmountStr || '0', collateralToken.decimals);
-  const newCollateralAmount = currentCollateralAmount.sub(withdrawAmount);
+  const newCollateralAmount = existingCollateral.sub(withdrawAmount);
+  const collateralBalance = GN.fromDecimalString(collateralBalanceStr || '0', collateralToken.decimals);
+
+  const numericMaxWithdrawAmount = maxWithdraws(
+    borrower.assets,
+    borrower.liabilities,
+    [], // TODO: Add uniswap positions
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
+  )[isWithdrawingToken0 ? 0 : 1];
+
+  const maxWithdrawAmount = GN.fromNumber(numericMaxWithdrawAmount, collateralToken.decimals);
+
+  const max = GN.min(maxWithdrawAmount, collateralBalance);
+  const maxStr = max.toString(GNFormat.DECIMAL);
 
   return (
     <>
@@ -117,6 +192,8 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
             setWithdrawAmountStr(updatedAmount);
           }}
           value={withdrawAmountStr}
+          max={maxStr}
+          maxed={withdrawAmountStr === maxStr}
         />
       </div>
       <div className='flex justify-between items-center mb-8'>
@@ -131,9 +208,10 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
       <div className='w-full ml-auto'>
         <ConfirmButton
           withdrawAmount={withdrawAmount}
-          maxWithdrawAmount={GN.zero(collateralToken.decimals)}
+          maxWithdrawAmount={maxWithdrawAmount}
           borrower={borrower}
           token={collateralToken}
+          isWithdrawingToken0={isWithdrawingToken0}
           accountAddress={accountAddress || '0x'}
           setPendingTxn={setPendingTxnResult}
         />

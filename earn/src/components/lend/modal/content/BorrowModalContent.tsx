@@ -16,8 +16,8 @@ import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_SIMPLE_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
@@ -110,7 +110,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     args: [
       accountAddress ?? '0x',
       [borrower.index],
-      [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
       [encodedBorrowCall ?? '0x'],
       [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
     ],

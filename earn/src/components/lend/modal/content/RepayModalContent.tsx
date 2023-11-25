@@ -1,6 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -10,13 +13,18 @@ import {
 } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { Address, useAccount } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 
+const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
@@ -60,14 +68,61 @@ type ConfirmButtonProps = {
   totalBorrowedAmount: GN;
   borrower: BorrowerNftBorrower;
   token: Token;
+  isRepayingToken0: boolean;
   accountAddress: Address;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const { repayAmount, repayTokenBalance, totalBorrowedAmount, borrower, token, accountAddress, setPendingTxn } = props;
+  const {
+    repayAmount,
+    repayTokenBalance,
+    totalBorrowedAmount,
+    borrower,
+    token,
+    isRepayingToken0,
+    accountAddress,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
-  const [isPending, setIsPending] = useState(false);
+
+  const encodedRepayCall = useMemo(() => {
+    if (!accountAddress) return null;
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+    const amount0 = isRepayingToken0 ? repayAmount : GN.zero(borrower.token0.decimals);
+    const amount1 = isRepayingToken0 ? GN.zero(borrower.token1.decimals) : repayAmount;
+
+    return borrowerInterface.encodeFunctionData('repay', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+    ]) as `0x${string}`;
+  }, [repayAmount, borrower.token0.decimals, borrower.token1.decimals, isRepayingToken0, accountAddress]);
+
+  const { config: repayConfig, isLoading: isCheckingIfAbleToRepay } = usePrepareContractWrite({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'modify',
+    args: [
+      accountAddress ?? '0x',
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedRepayCall ?? '0x'],
+      [0],
+    ],
+    chainId: activeChain.id,
+    enabled: accountAddress && encodedRepayCall != null,
+  });
+  const gasLimit = repayConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  const { write: repay, isLoading: isAskingUserToConfirm } = useContractWrite({
+    ...repayConfig,
+    request: {
+      ...repayConfig.request,
+      gasLimit,
+    },
+    onSuccess(data) {
+      setPendingTxn(data);
+    },
+  });
 
   let state: ConfirmButtonState = ConfirmButtonState.READY;
 
@@ -108,22 +163,24 @@ export default function RepayModalContent(props: RepayModalContentProps) {
 
   const { address: accountAddress } = useAccount();
 
-  // TODO: This logic needs to change once we support more complex borrowing
-  const repayingToken = borrower.assets.token0Raw > 0 ? borrower.token1 : borrower.token0;
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
-  const currentlyBorrowedAmount = GN.fromNumber(
-    borrower.liabilities.amount0 + borrower.liabilities.amount1,
-    repayingToken.decimals
-  );
-  const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayingToken.decimals);
-  const newBorrowedAmount = currentlyBorrowedAmount.sub(repayAmount);
+  const isRepayingToken0 = borrower.assets.token1Raw > 0;
+
+  // TODO: This logic needs to change once we support more complex borrowing
+  const repayToken = isRepayingToken0 ? borrower.token0 : borrower.token1;
+  // TODO: This assumes that the borrowing token is always the opposite of the collateral token
+  // and that only one token is borrowed and one token is collateralized
+  const numericExistingLiability = isRepayingToken0 ? borrower.liabilities.amount0 : borrower.liabilities.amount1;
+  const existingLiability = GN.fromNumber(numericExistingLiability, repayToken.decimals);
+  const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayToken.decimals);
+  const newLiability = existingLiability.sub(repayAmount);
 
   return (
     <>
       <div className='flex justify-between items-center mb-4'>
         <TokenAmountInput
-          token={repayingToken}
+          token={repayToken}
           onChange={(updatedAmount: string) => {
             setRepayAmountStr(updatedAmount);
           }}
@@ -136,16 +193,17 @@ export default function RepayModalContent(props: RepayModalContentProps) {
         </Text>
         <DashedDivider />
         <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {newBorrowedAmount.toString(GNFormat.LOSSY_HUMAN)} {repayingToken.symbol}
+          {newLiability.toString(GNFormat.LOSSY_HUMAN)} {repayToken.symbol}
         </Text>
       </div>
       <div className='w-full ml-auto'>
         <ConfirmButton
           repayAmount={repayAmount}
-          repayTokenBalance={GN.zero(repayingToken.decimals)}
-          totalBorrowedAmount={currentlyBorrowedAmount}
+          repayTokenBalance={GN.zero(repayToken.decimals)}
+          totalBorrowedAmount={existingLiability}
           borrower={borrower}
-          token={repayingToken}
+          token={repayToken}
+          isRepayingToken0={isRepayingToken0}
           accountAddress={accountAddress ?? '0x'}
           setPendingTxn={props.setPendingTxnResult}
         />

@@ -1,6 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
+import { ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -10,9 +13,13 @@ import {
 } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
@@ -52,33 +59,73 @@ type ConfirmButtonProps = {
   maxDepositAmount: GN;
   borrower: BorrowerNftBorrower;
   token: Token;
+  isDepositingToken0: boolean;
   accountAddress: Address;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const { depositAmount, maxDepositAmount, borrower, token, accountAddress, setPendingTxn } = props;
+  const { depositAmount, maxDepositAmount, borrower, token, isDepositingToken0, accountAddress, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
 
-  let state: ConfirmButtonState = ConfirmButtonState.READY;
+  const insufficientAssets = depositAmount.gt(maxDepositAmount);
+
+  const encodedDepositCall = useMemo(() => {
+    if (!accountAddress) return null;
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+    const amount0 = isDepositingToken0 ? depositAmount : GN.zero(borrower.token0.decimals);
+    const amount1 = isDepositingToken0 ? GN.zero(borrower.token1.decimals) : depositAmount;
+
+    return borrowerInterface.encodeFunctionData('transfer', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+      accountAddress,
+    ]) as `0x${string}`;
+  }, [depositAmount, borrower.token0.decimals, borrower.token1.decimals, isDepositingToken0, accountAddress]);
+
+  const { config: depositConfig, isLoading: isCheckingIfAbleToDeposit } = usePrepareContractWrite({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'modify',
+    args: [
+      accountAddress ?? '0x',
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedDepositCall ?? '0x'],
+      [0],
+    ],
+    chainId: activeChain.id,
+    enabled: accountAddress && encodedDepositCall != null && !insufficientAssets,
+  });
+  const gasLimit = depositConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  const { write: deposit, isLoading: isAskingUserToConfirm } = useContractWrite({
+    ...depositConfig,
+    request: {
+      ...depositConfig.request,
+      gasLimit,
+    },
+    onSuccess(data) {
+      setPendingTxn(data);
+    },
+  });
+
+  let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
   if (depositAmount.isZero()) {
-    state = ConfirmButtonState.DISABLED;
+    confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (depositAmount.gt(maxDepositAmount)) {
-    state = ConfirmButtonState.INSUFFICIENT_ASSET;
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   }
 
-  const confirmButton = getConfirmButton(state, token);
+  const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
     <FilledStylizedButton
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => {
-        // TODO
-      }}
+      onClick={() => deposit?.()}
       disabled={!confirmButton.enabled}
     >
       {confirmButton.text}
@@ -95,19 +142,29 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const { borrower, setPendingTxnResult } = props;
 
   const [depositAmountStr, setDepositAmountStr] = useState('');
+  const { activeChain } = useContext(ChainContext);
 
   const { address: accountAddress } = useAccount();
 
+  const { data: balanceData } = useBalance({
+    address: accountAddress,
+    token: borrower.token0.address,
+    enabled: accountAddress !== undefined,
+    chainId: activeChain.id,
+  });
+
+  // TODO this logic needs to change once we support more complex borrowing
+  const isDepositingToken0 = borrower.assets.token0Raw > 0;
+
   // TODO: This logic needs to change once we support more complex borrowing
-  const collateralToken = borrower.assets.token0Raw > 0 ? borrower.token0 : borrower.token1;
+  const collateralToken = isDepositingToken0 ? borrower.token0 : borrower.token1;
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
-  const currentCollateralAmount = GN.fromNumber(
-    borrower.assets.token0Raw + borrower.assets.token1Raw,
-    collateralToken.decimals
-  );
+  const numericCollateralAmount = isDepositingToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
+  const currentCollateralAmount = GN.fromNumber(numericCollateralAmount, collateralToken.decimals);
   const depositAmount = GN.fromDecimalString(depositAmountStr || '0', collateralToken.decimals);
   const newCollateralAmount = currentCollateralAmount.add(depositAmount);
+  const maxDepositAmount = GN.fromDecimalString(balanceData?.formatted || '0', collateralToken.decimals);
 
   return (
     <>
@@ -132,9 +189,10 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
       <div className='w-full ml-auto'>
         <ConfirmButton
           depositAmount={depositAmount}
-          maxDepositAmount={GN.zero(collateralToken.decimals)}
+          maxDepositAmount={maxDepositAmount}
           borrower={borrower}
           token={collateralToken}
+          isDepositingToken0={isDepositingToken0}
           accountAddress={accountAddress || '0x'}
           setPendingTxn={setPendingTxnResult}
         />

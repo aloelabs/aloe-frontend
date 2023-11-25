@@ -71,7 +71,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
 
   const { data: balanceResult, refetch: refetchBalance } = useBalanceOfUnderlying(
     selectedRow.asset,
-    selectedRow.kitty,
+    selectedRow.kitty.address,
     userAddress
   );
 
