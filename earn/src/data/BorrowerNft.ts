@@ -6,6 +6,7 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
   ALOE_II_PERMIT2_MANAGER_ADDRESS,
   ALOE_II_SIMPLE_MANAGER_ADDRESS,
   MULTICALL_ADDRESS,
@@ -155,7 +156,11 @@ export async function fetchListOfFuse2BorrowNfts(
   const originalBorrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
     includeFreshBorrowers: false, // TODO: change later
     onlyCheckMostRecentModify: true, // TODO: Hayden has concerns (as usual)
-    validManagerSet: new Set([ALOE_II_SIMPLE_MANAGER_ADDRESS[chainId], ALOE_II_PERMIT2_MANAGER_ADDRESS[chainId]]),
+    validManagerSet: new Set([
+      ALOE_II_SIMPLE_MANAGER_ADDRESS[chainId],
+      ALOE_II_PERMIT2_MANAGER_ADDRESS[chainId],
+      ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[chainId],
+    ]),
     validUniswapPool: uniswapPool,
   });
 

@@ -1,9 +1,7 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
+import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -13,10 +11,6 @@ import {
 } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
-import {
-  ALOE_II_BORROWER_NFT_ADDRESS,
-  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
-} from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -29,6 +23,7 @@ const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
+  WAITING_FOR_USER,
   PENDING,
   LOADING,
   DISABLED,
@@ -46,6 +41,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Confirm', enabled: false };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.DISABLED:
@@ -61,42 +58,32 @@ type ConfirmButtonProps = {
   token: Token;
   isDepositingToken0: boolean;
   accountAddress: Address;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const { depositAmount, maxDepositAmount, borrower, token, isDepositingToken0, accountAddress, setPendingTxn } = props;
+  const {
+    depositAmount,
+    maxDepositAmount,
+    borrower,
+    token,
+    isDepositingToken0,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
-  const [isPending, setIsPending] = useState(false);
 
   const insufficientAssets = depositAmount.gt(maxDepositAmount);
 
-  const encodedDepositCall = useMemo(() => {
-    if (!accountAddress) return null;
-    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-    const amount0 = isDepositingToken0 ? depositAmount : GN.zero(borrower.token0.decimals);
-    const amount1 = isDepositingToken0 ? GN.zero(borrower.token1.decimals) : depositAmount;
-
-    return borrowerInterface.encodeFunctionData('transfer', [
-      amount0.toBigNumber(),
-      amount1.toBigNumber(),
-      accountAddress,
-    ]) as `0x${string}`;
-  }, [depositAmount, borrower.token0.decimals, borrower.token1.decimals, isDepositingToken0, accountAddress]);
-
-  const { config: depositConfig, isLoading: isCheckingIfAbleToDeposit } = usePrepareContractWrite({
-    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
-    abi: borrowerNftAbi,
-    functionName: 'modify',
-    args: [
-      accountAddress ?? '0x',
-      [borrower.index],
-      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedDepositCall ?? '0x'],
-      [0],
-    ],
+  const { config: depositConfig } = usePrepareContractWrite({
+    address: token.address,
+    abi: erc20Abi,
+    functionName: 'transfer',
+    args: [borrower.address, depositAmount.toBigNumber()],
+    enabled: Boolean(depositAmount) && !insufficientAssets,
     chainId: activeChain.id,
-    enabled: accountAddress && encodedDepositCall != null && !insufficientAssets,
   });
   const gasLimit = depositConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const { write: deposit, isLoading: isAskingUserToConfirm } = useContractWrite({
@@ -106,6 +93,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       gasLimit,
     },
     onSuccess(data) {
+      setIsOpen(false);
       setPendingTxn(data);
     },
   });
@@ -116,6 +104,8 @@ function ConfirmButton(props: ConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (depositAmount.gt(maxDepositAmount)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else if (isAskingUserToConfirm) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -135,11 +125,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
 export type AddCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function AddCollateralModalContent(props: AddCollateralModalContentProps) {
-  const { borrower, setPendingTxnResult } = props;
+  const { borrower, setIsOpen, setPendingTxnResult } = props;
 
   const [depositAmountStr, setDepositAmountStr] = useState('');
   const { activeChain } = useContext(ChainContext);
@@ -165,6 +156,7 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const depositAmount = GN.fromDecimalString(depositAmountStr || '0', collateralToken.decimals);
   const newCollateralAmount = currentCollateralAmount.add(depositAmount);
   const maxDepositAmount = GN.fromDecimalString(balanceData?.formatted || '0', collateralToken.decimals);
+  const maxDepositAmountStr = maxDepositAmount.toString(GNFormat.DECIMAL);
 
   return (
     <>
@@ -175,6 +167,8 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
             setDepositAmountStr(updatedAmount);
           }}
           value={depositAmountStr}
+          max={maxDepositAmountStr}
+          maxed={depositAmountStr === maxDepositAmountStr}
         />
       </div>
       <div className='flex justify-between items-center mb-8'>
@@ -194,6 +188,7 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
           token={collateralToken}
           isDepositingToken0={isDepositingToken0}
           accountAddress={accountAddress || '0x'}
+          setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />
       </div>

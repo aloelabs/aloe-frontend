@@ -31,6 +31,7 @@ const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   REDEEM_TOO_MUCH,
+  WAITING_FOR_USER,
   PENDING,
   LOADING,
   DISABLED,
@@ -45,9 +46,11 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
         enabled: false,
       };
     case ConfirmButtonState.LOADING:
-      return { text: 'Confirm', enabled: false };
+      return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.DISABLED:
@@ -63,12 +66,21 @@ type ConfirmButtonProps = {
   token: Token;
   isWithdrawingToken0: boolean;
   accountAddress: Address;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const { withdrawAmount, maxWithdrawAmount, borrower, token, isWithdrawingToken0, accountAddress, setPendingTxn } =
-    props;
+  const {
+    withdrawAmount,
+    maxWithdrawAmount,
+    borrower,
+    token,
+    isWithdrawingToken0,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
 
   const isRedeemingTooMuch = withdrawAmount.gt(maxWithdrawAmount);
@@ -108,15 +120,22 @@ function ConfirmButton(props: ConfirmButtonProps) {
       gasLimit,
     },
     onSuccess(data) {
+      setIsOpen(false);
       setPendingTxn(data);
     },
   });
 
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
-  if (withdrawAmount.isZero()) {
+  if (isCheckingIfAbleToWithdraw) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (withdrawAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (isRedeemingTooMuch) {
     confirmButtonState = ConfirmButtonState.REDEEM_TOO_MUCH;
+  } else if (isAskingUserToConfirm) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
+  } else if (!withdrawConfig.request) {
+    confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -136,11 +155,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
 export type RemoveCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function RemoveCollateralModalContent(props: RemoveCollateralModalContentProps) {
-  const { borrower, setPendingTxnResult } = props;
+  const { borrower, setIsOpen, setPendingTxnResult } = props;
 
   const [withdrawAmountStr, setWithdrawAmountStr] = useState('');
 
@@ -213,6 +233,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
           token={collateralToken}
           isWithdrawingToken0={isWithdrawingToken0}
           accountAddress={accountAddress || '0x'}
+          setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />
       </div>

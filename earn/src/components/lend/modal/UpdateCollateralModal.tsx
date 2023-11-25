@@ -81,10 +81,18 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
           </Tab.List>
           <Tab.Panels as={Fragment}>
             <Tab.Panel className='w-full px-2'>
-              <AddCollateralModalContent borrower={borrower} setPendingTxnResult={setPendingTxn} />
+              <AddCollateralModalContent
+                borrower={borrower}
+                setIsOpen={setIsOpen}
+                setPendingTxnResult={setPendingTxn}
+              />
             </Tab.Panel>
             <Tab.Panel className='w-full px-2'>
-              <RemoveCollateralModalContent borrower={borrower} setPendingTxnResult={setPendingTxn} />
+              <RemoveCollateralModalContent
+                borrower={borrower}
+                setIsOpen={setIsOpen}
+                setPendingTxnResult={setPendingTxn}
+              />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
