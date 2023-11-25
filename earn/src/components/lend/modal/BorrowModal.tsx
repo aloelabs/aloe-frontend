@@ -38,6 +38,7 @@ enum ConfirmButtonState {
   READY,
   LOADING,
   INSUFFICIENT_ASSET,
+  INSUFFICIENT_COLLATERAL,
   INSUFFICIENT_ANTE,
   DISABLED,
 }
@@ -52,6 +53,8 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
       return { text: 'Loading', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return { text: 'Insufficient Asset', enabled: false };
+    case ConfirmButtonState.INSUFFICIENT_COLLATERAL:
+      return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ANTE:
       return { text: 'Insufficient Ante', enabled: false };
     case ConfirmButtonState.DISABLED:
@@ -113,7 +116,14 @@ export default function BorrowModal(props: BorrowModalProps) {
   const ante = parameterData !== undefined ? GN.fromBigNumber(parameterData.ante, 18) : undefined;
   const ethBalance = GN.fromDecimalString(ethBalanceData?.formatted ?? '0', 18);
 
-  const maxBorrowAmount = useMemo(() => {
+  const maxBorrowSupplyConstraint = useMemo(() => {
+    if (selectedBorrow === undefined) {
+      return null;
+    }
+    return GN.fromNumber(selectedBorrow.supply, selectedBorrow.asset.decimals);
+  }, [selectedBorrow]);
+
+  const maxBorrowHealthConstraint = useMemo(() => {
     if (consultData === undefined || selectedBorrow === undefined) {
       return null;
     }
@@ -134,17 +144,25 @@ export default function BorrowModal(props: BorrowModalProps) {
         .div(sqrtPriceX96)
         .setResolution(selectedBorrow.asset.decimals);
     }
-    const maxBorrowSupplyConstraint = GN.fromNumber(selectedBorrow.supply, selectedBorrow.asset.decimals);
-    const maxBorrowHealthConstraint = inTermsOfBorrow.recklessMul(ltv);
-    return GN.min(maxBorrowSupplyConstraint, maxBorrowHealthConstraint).recklessMul(MAX_BORROW_PERCENTAGE);
+    return inTermsOfBorrow.recklessMul(ltv);
   }, [
+    collateralAmount,
     consultData,
     selectedBorrow,
+    selectedCollateral.asset.address,
     selectedLendingPair?.nSigma,
     selectedLendingPair?.token0.address,
-    collateralAmount,
-    selectedCollateral.asset.address,
   ]);
+
+  const maxBorrowAmount = useMemo(() => {
+    if (maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) return null;
+    return GN.min(maxBorrowSupplyConstraint, maxBorrowHealthConstraint);
+  }, [maxBorrowSupplyConstraint, maxBorrowHealthConstraint]);
+
+  const eightyPercentMaxBorrowAmount = useMemo(() => {
+    if (maxBorrowAmount === null) return null;
+    return maxBorrowAmount.recklessMul(MAX_BORROW_PERCENTAGE);
+  }, [maxBorrowAmount]);
 
   // The NFT index we will use if minting
   const { data: nextNftPtrIdx } = useContractRead({
@@ -272,7 +290,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   });
 
   let confirmButtonState: ConfirmButtonState;
-  if (ante === undefined) {
+  if (ante === undefined || maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (
     isAskingUserToMulticallOps ||
@@ -282,9 +300,11 @@ export default function BorrowModal(props: BorrowModalProps) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
   } else if (collateralAmount.gt(userBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
+  } else if (borrowAmount.gt(maxBorrowSupplyConstraint) || borrowAmount.gt(maxBorrowHealthConstraint)) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_COLLATERAL;
   } else if (ethBalance.lt(ante)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ANTE;
-  } else if (collateralAmountStr === '') {
+  } else if (collateralAmountStr === '' || borrowAmountStr === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else {
     confirmButtonState = ConfirmButtonState.READY;
@@ -332,11 +352,11 @@ export default function BorrowModal(props: BorrowModalProps) {
               }}
               value={borrowAmountStr}
               onMaxClick={() => {
-                if (maxBorrowAmount) {
-                  setBorrowAmountStr(maxBorrowAmount.toString(GNFormat.DECIMAL));
+                if (eightyPercentMaxBorrowAmount) {
+                  setBorrowAmountStr(eightyPercentMaxBorrowAmount.toString(GNFormat.DECIMAL));
                 }
               }}
-              maxDisabled={maxBorrowAmount === null || borrowAmount.eq(maxBorrowAmount)}
+              maxDisabled={eightyPercentMaxBorrowAmount === null || borrowAmount.eq(eightyPercentMaxBorrowAmount)}
               maxButtonText='80% Max'
               placeholder='0.00'
               fullWidth={true}
