@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 
-import { Address, SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
@@ -38,7 +38,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
         enabled: false,
       };
     case ConfirmButtonState.LOADING:
-      return { text: 'Confirm', enabled: false };
+      return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.WAITING_FOR_USER:
@@ -56,28 +56,17 @@ type ConfirmButtonProps = {
   maxDepositAmount: GN;
   borrower: BorrowerNftBorrower;
   token: Token;
-  isDepositingToken0: boolean;
-  accountAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const {
-    depositAmount,
-    maxDepositAmount,
-    borrower,
-    token,
-    isDepositingToken0,
-    accountAddress,
-    setIsOpen,
-    setPendingTxn,
-  } = props;
+  const { depositAmount, maxDepositAmount, borrower, token, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const insufficientAssets = depositAmount.gt(maxDepositAmount);
 
-  const { config: depositConfig } = usePrepareContractWrite({
+  const { config: depositConfig, isLoading: isCheckingIfCanDeposit } = usePrepareContractWrite({
     address: token.address,
     abi: erc20Abi,
     functionName: 'transfer',
@@ -100,12 +89,16 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
-  if (depositAmount.isZero()) {
+  if (isCheckingIfCanDeposit) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (depositAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (depositAmount.gt(maxDepositAmount)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isAskingUserToConfirm) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
+  } else if (!depositConfig.request) {
+    confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -135,12 +128,12 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const [depositAmountStr, setDepositAmountStr] = useState('');
   const { activeChain } = useContext(ChainContext);
 
-  const { address: accountAddress } = useAccount();
+  const { address: userAddress } = useAccount();
 
   const { data: balanceData } = useBalance({
-    address: accountAddress,
+    address: userAddress,
     token: borrower.token0.address,
-    enabled: accountAddress !== undefined,
+    enabled: userAddress !== undefined,
     chainId: activeChain.id,
   });
 
@@ -186,8 +179,6 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
           maxDepositAmount={maxDepositAmount}
           borrower={borrower}
           token={collateralToken}
-          isDepositingToken0={isDepositingToken0}
-          accountAddress={accountAddress || '0x'}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />

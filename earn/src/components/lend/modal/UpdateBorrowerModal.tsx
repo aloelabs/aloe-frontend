@@ -86,7 +86,7 @@ export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
               <BorrowModalContent borrower={borrower} marketInfo={marketInfo} setPendingTxnResult={setPendingTxn} />
             </Tab.Panel>
             <Tab.Panel className='w-full px-2'>
-              <RepayModalContent borrower={borrower} setPendingTxnResult={setPendingTxn} />
+              <RepayModalContent borrower={borrower} setIsOpen={setIsOpen} setPendingTxnResult={setPendingTxn} />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
