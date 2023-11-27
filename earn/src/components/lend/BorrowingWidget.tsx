@@ -18,6 +18,7 @@ import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
 import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
 import { rgba } from '../../util/Colors';
+import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
@@ -188,7 +189,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   return (
     <>
-      <div className='flex gap-4'>
+      <div className='flex'>
         <CardWrapper $textAlignment='start'>
           <CardContainer>
             <CardRow>
@@ -286,6 +287,17 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             </CardRow>
           </CardContainer>
         </CardWrapper>
+        <div className='w-[52px] mt-[2px]'>
+          <div className='w-[52px] h-[42px]' />
+          {borrowers &&
+            borrowers.map((borrower) => {
+              return (
+                <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
+                  <HealthGauge health={borrower.health} size={36} />
+                </div>
+              );
+            })}
+        </div>
         <CardWrapper $textAlignment='end'>
           <CardContainer>
             <CardRow>
