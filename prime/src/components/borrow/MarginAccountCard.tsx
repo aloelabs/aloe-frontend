@@ -5,6 +5,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { getHealthColor } from 'shared/lib/util/Health';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -12,7 +13,6 @@ import { sumAssetsPerToken } from '../../data/BalanceSheet';
 import { MarginAccountPreview } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
-import { getHealthColor } from '../../util/Health';
 import TokenPairIcons from '../common/TokenPairIcons';
 
 const FEE_TIER_BG_COLOR = GREY_700;
