@@ -135,9 +135,12 @@ export async function fetchListOfBorrowerNfts(
     borrowers.map((borrower) => {
       const tokenId = orderedTokenIdStrs.find((x) => x.startsWith(borrower.toLowerCase()))!;
       const index = orderedTokenIdStrs.findIndex((x) => x.startsWith(borrower.toLowerCase()));
-      // If we can't find the tokenId or index, something is wrong (skip this borrower)
-      console.warn(`Borrower ${borrower} has no tokenId or index`);
-      if (tokenId === undefined || index === -1) return null;
+
+      if (tokenId === undefined || index === -1) {
+        // If we can't find the tokenId or index, something is wrong (skip this borrower)
+        console.warn(`Borrower ${borrower} has no tokenId or index`);
+        return null;
+      }
       return {
         borrowerAddress: borrower,
         tokenId,

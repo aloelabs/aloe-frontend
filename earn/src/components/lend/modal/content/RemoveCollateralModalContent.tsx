@@ -32,7 +32,6 @@ const TERTIARY_COLOR = '#4b6980';
 enum ConfirmButtonState {
   REDEEM_TOO_MUCH,
   WAITING_FOR_USER,
-  PENDING,
   LOADING,
   DISABLED,
   READY,
@@ -47,8 +46,6 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       };
     case ConfirmButtonState.LOADING:
       return { text: 'Loading...', enabled: false };
-    case ConfirmButtonState.PENDING:
-      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.WAITING_FOR_USER:
       return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
@@ -126,6 +123,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
   });
 
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
+
   if (isCheckingIfAbleToWithdraw) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (withdrawAmount.isZero()) {
@@ -173,7 +171,8 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const collateralToken = isWithdrawingToken0 ? borrower.token0 : borrower.token1;
   const collateralLender = isWithdrawingToken0 ? borrower.lender0 : borrower.lender1;
 
-  const { data: collateralBalanceStr, refetch: refetchCollateralBalance } = useBalanceOfUnderlying(
+  // TODO: automatically refresh this data
+  const { data: collateralBalanceStr } = useBalanceOfUnderlying(
     collateralToken,
     collateralLender,
     accountAddress ?? '0x'
