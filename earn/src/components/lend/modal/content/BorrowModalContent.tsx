@@ -28,6 +28,7 @@ import { isSolvent, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
+import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
@@ -273,7 +274,8 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           maxed={additionalBorrowAmountStr === maxString}
         />
       </div>
-      <div className='flex justify-between items-center mb-8'>
+      <HealthBar health={newHealth} />
+      <div className='flex justify-between items-center mb-8 mt-4'>
         <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
           Updated Borrowed Amount
         </Text>

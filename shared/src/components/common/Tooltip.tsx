@@ -86,7 +86,7 @@ const TooltipContainer = styled.div.attrs(
     }}
     width: 16px;
     height: 16px;
-    transform: rotate(135deg);
+    transform: rotate(-45deg);
     border-radius: 0 4px 0 0;
     background-color: ${(props) => (props.filled ? GREY_700 : GREY_900)};
     border-left: ${(props) => (props.filled ? 'none' : '1px solid rgba(43, 64, 80, 1)')};
