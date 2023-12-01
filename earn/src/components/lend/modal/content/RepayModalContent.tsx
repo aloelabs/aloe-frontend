@@ -180,7 +180,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
   } else if (repayAmount.gt(totalBorrowedAmount)) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
-  } else if (!repayConfig.request) {
+  } else if (permit2State === Permit2State.DONE && !repayConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
