@@ -21,7 +21,10 @@ import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
+import { isSolvent } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { Liabilities } from '../../../../data/MarginAccount';
+import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
@@ -244,6 +247,23 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   // if `tokenBalance` is the constraint.
   const shouldRepayMax = repayAmountStr === existingLiability.toString(GNFormat.DECIMAL);
 
+  // TODO: use GN
+  const newLiabilities: Liabilities = {
+    amount0: isRepayingToken0 ? newLiability.toNumber() : borrower.liabilities.amount0,
+    amount1: isRepayingToken0 ? borrower.liabilities.amount1 : newLiability.toNumber(),
+  };
+
+  const { health: newHealth } = isSolvent(
+    borrower.assets,
+    newLiabilities,
+    [], // TODO: add uniswap positions
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
+  );
+
   return (
     <>
       <div className='flex justify-between items-center mb-4'>
@@ -257,7 +277,8 @@ export default function RepayModalContent(props: RepayModalContentProps) {
           maxed={shouldRepayMax}
         />
       </div>
-      <div className='flex justify-between items-center mb-8'>
+      <HealthBar health={newHealth} />
+      <div className='flex justify-between items-center mb-8 mt-4'>
         <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
           Updated Borrowed Amount
         </Text>
