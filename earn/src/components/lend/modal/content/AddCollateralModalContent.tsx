@@ -16,7 +16,10 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
+import { isSolvent } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { Assets } from '../../../../data/MarginAccount';
+import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
@@ -151,6 +154,25 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const maxDepositAmount = GN.fromDecimalString(balanceData?.formatted || '0', collateralToken.decimals);
   const maxDepositAmountStr = maxDepositAmount.toString(GNFormat.DECIMAL);
 
+  // TODO: use GN
+  const newAssets: Assets = {
+    token0Raw: isDepositingToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
+    token1Raw: isDepositingToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
+    uni0: 0, // TODO: add uniswap positions
+    uni1: 0, // TODO: add uniswap positions
+  };
+
+  const { health: newHealth } = isSolvent(
+    newAssets,
+    borrower.liabilities,
+    [], // TODO: add uniswap positions
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
+  );
+
   return (
     <>
       <div className='flex justify-between items-center mb-4'>
@@ -164,7 +186,8 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
           maxed={depositAmountStr === maxDepositAmountStr}
         />
       </div>
-      <div className='flex justify-between items-center mb-8'>
+      <HealthBar health={newHealth} />
+      <div className='flex justify-between items-center mb-8 mt-4'>
         <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
           Updated Collateral Amount
         </Text>
