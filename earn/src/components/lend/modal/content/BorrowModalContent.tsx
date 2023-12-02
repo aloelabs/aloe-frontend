@@ -73,6 +73,7 @@ type ConfirmButtonProps = {
   token: Token;
   isBorrowingToken0: boolean;
   accountAddress?: Address;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
@@ -87,6 +88,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     token,
     isBorrowingToken0,
     accountAddress,
+    setIsOpen,
     setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
@@ -128,6 +130,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       gasLimit,
     },
     onSuccess(data) {
+      setIsOpen(false);
       setPendingTxn(data);
     },
   });
@@ -168,11 +171,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
 export type BorrowModalContentProps = {
   borrower: BorrowerNftBorrower;
   marketInfo?: MarketInfo;
+  setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModalContent(props: BorrowModalContentProps) {
-  const { borrower, marketInfo, setPendingTxnResult } = props;
+  const { borrower, marketInfo, setIsOpen, setPendingTxnResult } = props;
 
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
@@ -295,6 +299,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           token={borrowToken}
           isBorrowingToken0={isBorrowingToken0}
           accountAddress={accountAddress}
+          setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />
       </div>

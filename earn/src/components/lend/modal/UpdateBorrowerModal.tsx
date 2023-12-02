@@ -83,7 +83,12 @@ export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
           </Tab.List>
           <Tab.Panels as={Fragment}>
             <Tab.Panel className='w-full px-2'>
-              <BorrowModalContent borrower={borrower} marketInfo={marketInfo} setPendingTxnResult={setPendingTxn} />
+              <BorrowModalContent
+                borrower={borrower}
+                setIsOpen={setIsOpen}
+                marketInfo={marketInfo}
+                setPendingTxnResult={setPendingTxn}
+              />
             </Tab.Panel>
             <Tab.Panel className='w-full px-2'>
               <RepayModalContent borrower={borrower} setIsOpen={setIsOpen} setPendingTxnResult={setPendingTxn} />
