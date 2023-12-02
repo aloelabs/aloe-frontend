@@ -22,9 +22,11 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { maxWithdraws } from '../../../../data/BalanceSheet';
+import { isSolvent, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
+import { Assets } from '../../../../data/MarginAccount';
+import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const TERTIARY_COLOR = '#4b6980';
@@ -202,6 +204,25 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const max = GN.min(maxWithdrawAmount, collateralBalance);
   const maxStr = max.toString(GNFormat.DECIMAL);
 
+  // TODO: use GN
+  const newAssets: Assets = {
+    token0Raw: isWithdrawingToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
+    token1Raw: isWithdrawingToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
+    uni0: 0, // TODO: add uniswap positions
+    uni1: 0, // TODO: add uniswap positions
+  };
+
+  const { health: newHealth } = isSolvent(
+    newAssets,
+    borrower.liabilities,
+    [], // TODO: add uniswap positions
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
+  );
+
   return (
     <>
       <div className='flex justify-between items-center mb-4'>
@@ -215,7 +236,8 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
           maxed={withdrawAmountStr === maxStr}
         />
       </div>
-      <div className='flex justify-between items-center mb-8'>
+      <HealthBar health={newHealth} />
+      <div className='flex justify-between items-center mb-8 mt-4'>
         <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
           Updated Collateral Amount
         </Text>
