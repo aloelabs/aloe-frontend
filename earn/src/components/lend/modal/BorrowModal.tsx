@@ -285,6 +285,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       gasLimit,
     },
     onSuccess(data) {
+      setIsOpen(false);
       setPendingTxn(data);
     },
   });
