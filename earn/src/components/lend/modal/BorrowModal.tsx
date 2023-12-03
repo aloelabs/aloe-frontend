@@ -32,6 +32,7 @@ import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
+const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   WAITING_FOR_USER,
@@ -384,6 +385,14 @@ export default function BorrowModal(props: BorrowModalProps) {
           {confirmButton.text}
         </FilledGradientButton>
       </div>
+      <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+        By borrowing, you agree to our{' '}
+        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          Terms of Service
+        </a>{' '}
+        and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+        your duty to educate yourself and be aware of the risks.
+      </Text>
     </Modal>
   );
 }
