@@ -31,17 +31,40 @@ const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
   INSUFFICIENT_FUNDS,
+  PERMIT_ASSET,
+  APPROVE_ASSET,
   REPAYING_TOO_MUCH,
   WAITING_FOR_USER,
+  WAITING_FOR_TRANSACTION,
   READY,
   LOADING,
   DISABLED,
 }
 
+const permit2StateToButtonStateMap = {
+  [Permit2State.ASKING_USER_TO_APPROVE]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.DONE]: undefined,
+  [Permit2State.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [Permit2State.READY_TO_APPROVE]: ConfirmButtonState.APPROVE_ASSET,
+  [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
+  [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
+};
+
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_FUNDS:
       return { text: `Insufficient ${token.symbol}`, enabled: false };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return {
+        text: `Permit ${token.symbol}`,
+        enabled: true,
+      };
+    case ConfirmButtonState.APPROVE_ASSET:
+      return {
+        text: `Approve ${token.symbol}`,
+        enabled: true,
+      };
     case ConfirmButtonState.REPAYING_TOO_MUCH:
       return { text: 'Repaying too much', enabled: false };
     case ConfirmButtonState.WAITING_FOR_USER:
@@ -50,6 +73,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
       return { text: 'Loading...', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
@@ -164,7 +189,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     },
   });
 
-  let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
+  let confirmButtonState: ConfirmButtonState;
 
   if (isCheckingIfAbleToRepay) {
     confirmButtonState = ConfirmButtonState.LOADING;
@@ -182,6 +207,8 @@ function ConfirmButton(props: ConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
   } else if (permit2State === Permit2State.DONE && !repayConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
+  } else {
+    confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
