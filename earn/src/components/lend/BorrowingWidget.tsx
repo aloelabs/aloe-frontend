@@ -1,10 +1,7 @@
-import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { ethers } from 'ethers';
-import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
@@ -16,7 +13,7 @@ import { ChainContext } from '../../App';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
-import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
+import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
@@ -129,39 +126,34 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
-  const [cachedMarketInfos, setCachedMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
-  const [selectedMarketInfo, setSelectedMarketInfo] = useSafeState<MarketInfo | undefined>(undefined);
+  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
 
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider();
 
-  // MARK: Fetch market info
+  // Fetch market infos for all borrowers
   useEffect(() => {
-    const cachedMarketInfo = cachedMarketInfos.get(selectedBorrower?.borrower?.address ?? '');
-    if (cachedMarketInfo !== undefined) {
-      setSelectedMarketInfo(cachedMarketInfo);
-      return;
-    }
     (async () => {
-      if (selectedBorrower == null) return;
-      const lenderLensContract = new ethers.Contract(
-        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
-        lenderLensAbi,
-        provider
-      );
-      const result = await fetchMarketInfoFor(
-        lenderLensContract,
-        selectedBorrower.borrower.lender0,
-        selectedBorrower.borrower.lender1,
-        selectedBorrower.borrower.token0.decimals,
-        selectedBorrower.borrower.token1.decimals
-      );
-      setCachedMarketInfos((prev) => {
-        return new Map(prev).set(selectedBorrower.borrower.address, result);
+      const markets =
+        borrowers?.map((borrower) => {
+          return {
+            lender0: borrower.lender0,
+            lender1: borrower.lender1,
+            token0Decimals: borrower.token0.decimals,
+            token1Decimals: borrower.token1.decimals,
+          };
+        }) ?? [];
+      const uniqueMarkets = markets?.filter((market, index) => {
+        return markets.findIndex((m) => m.lender0 === market.lender0 && m.lender1 === market.lender1) === index;
       });
-      setSelectedMarketInfo(result);
+      const marketInfosData = await fetchMarketInfos(uniqueMarkets, activeChain.id, provider);
+      const marketInfosMapped = marketInfosData.reduce((acc, marketInfo) => {
+        acc.set(`${marketInfo.lender0}-${marketInfo.lender1}`, marketInfo);
+        return acc;
+      }, new Map<string, MarketInfo>());
+      setMarketInfos(marketInfosMapped);
     })();
-  }, [selectedBorrower, provider, cachedMarketInfos, activeChain.id, setSelectedMarketInfo, setCachedMarketInfos]);
+  }, [borrowers, activeChain.id, provider, setMarketInfos]);
 
   const filteredBorrowEntries = useMemo(() => {
     if (selectedCollateral == null) {
@@ -312,14 +304,18 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
                     if (hasNoCollateral) return null;
                     const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
-                    const liability = collateral.equals(account.token0) ? account.token1 : account.token0;
-                    const liabilityAmount = liability.equals(account.token0)
+                    const isBorrowingToken0 = !collateral.equals(account.token0);
+                    const liability = isBorrowingToken0 ? account.token0 : account.token1;
+                    const liabilityAmount = isBorrowingToken0
                       ? account.liabilities.amount0
                       : account.liabilities.amount1;
                     const liabilityColor = tokenColors.get(liability.address);
                     const liabilityGradient = liabilityColor
                       ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
+                    const marketInfo = marketInfos.get(`${account.lender0}-${account.lender1}`);
+                    const apy = ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
+                    const roundedApy = Math.round(apy * 100) / 100;
                     return (
                       <AvailableContainer
                         $backgroundGradient={liabilityGradient}
@@ -338,7 +334,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         }}
                         className={account === hoveredBorrower ? 'active' : ''}
                       >
-                        <Display size='XXS'>3% APY</Display>
+                        <Display size='XXS'>{roundedApy}% APR</Display>
                         <div className='flex items-end gap-1'>
                           <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
                           <Display size='XS'>{liability.symbol}</Display>
@@ -405,7 +401,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateBorrowerModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
-          marketInfo={selectedMarketInfo}
+          marketInfo={marketInfos.get(`${selectedBorrower.borrower.lender0}-${selectedBorrower.borrower.lender1}`)}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}
