@@ -21,6 +21,7 @@ import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import { SupplyTableRow } from '../SupplyTable';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const TERTIARY_COLOR = '#4b6980';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
@@ -278,6 +279,14 @@ export default function SupplyModal(props: SupplyModalProps) {
           setPendingTxn={setPendingTxn}
         />
       </div>
+      <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
+        By depositing, you agree to our{' '}
+        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          Terms of Service
+        </a>{' '}
+        and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is
+        your duty to educate yourself and be aware of the risks.
+      </Text>
     </Modal>
   );
 }
