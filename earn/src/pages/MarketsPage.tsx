@@ -2,7 +2,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
-import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
@@ -10,7 +9,7 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
-import { useAccount, useProvider } from 'wagmi';
+import { useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -92,11 +91,14 @@ export default function MarketsPage() {
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
 
+  const { data: blockNumber, refetch } = useBlockNumber({
+    chainId: activeChain.id,
+  });
+
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
   const userAddress = account.address;
-  const navigate = useNavigate();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -178,7 +180,7 @@ export default function MarketsPage() {
       const results = await getAvailableLendingPairs(chainId, provider);
       setLendingPairs(results);
     })();
-  }, [provider, userAddress, setLendingPairs]);
+  }, [provider, userAddress, blockNumber, setLendingPairs]);
 
   useEffect(() => {
     (async () => {
@@ -212,7 +214,7 @@ export default function MarketsPage() {
 
       setBorrowers(borrowerDatas);
     })();
-  }, [activeChain.id, availablePools, provider, userAddress, setBorrowers]);
+  }, [activeChain.id, availablePools, provider, userAddress, blockNumber, setBorrowers]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
@@ -417,9 +419,7 @@ export default function MarketsPage() {
         }}
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
-          setTimeout(() => {
-            navigate(0);
-          }, 100);
+          setTimeout(() => refetch(), 100);
         }}
         status={pendingTxnModalStatus}
       />
