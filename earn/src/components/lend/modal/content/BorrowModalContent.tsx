@@ -6,14 +6,9 @@ import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import {
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  MODAL_BLACK_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from 'shared/lib/components/common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -28,9 +23,11 @@ import { isSolvent, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
+import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
+const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
@@ -260,6 +257,17 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
     borrower.token1.decimals
   );
 
+  const availableAssets = isBorrowingToken0 ? marketInfo?.lender0AvailableAssets : marketInfo?.lender1AvailableAssets;
+  const remainingAvailableAssets = availableAssets?.sub(borrowAmount);
+
+  const lenderTotalAssets = isBorrowingToken0 ? marketInfo?.lender0TotalAssets : marketInfo?.lender1TotalAssets;
+  // TODO: use GN
+  const newUtilization =
+    lenderTotalAssets && remainingAvailableAssets && lenderTotalAssets.isGtZero()
+      ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
+      : 0;
+  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
+
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
@@ -278,17 +286,40 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           maxed={additionalBorrowAmountStr === maxString}
         />
       </div>
-      <HealthBar health={newHealth} />
-      <div className='flex justify-between items-center mb-8 mt-4'>
-        <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
-          Updated Borrowed Amount
+      <div className='flex flex-col gap-1 w-full'>
+        <Text size='M' weight='bold'>
+          Summary
         </Text>
-        <DashedDivider />
-        <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {newLiability.toString(GNFormat.LOSSY_HUMAN)} {borrowToken.symbol}
+        <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+          You're borrowing{' '}
+          <strong>
+            {additionalBorrowAmountStr || '0.00'} {borrowToken.symbol}
+          </strong>{' '}
+          using this{' '}
+          <strong>
+            {borrower.token0.symbol}/{borrower.token1.symbol}
+          </strong>{' '}
+          smart wallet. Your total borrows for this token in this smart wallet will be{' '}
+          <strong>
+            {newLiability.toString(GNFormat.DECIMAL)} {borrowToken.symbol}
+          </strong>
+          .
         </Text>
+        {requiredAnte.isGtZero() && (
+          <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
+            You will need to provide an additional {requiredAnte.toString(GNFormat.LOSSY_HUMAN)} ETH to cover the gas
+            fees in the event that you are liquidated.
+          </Text>
+        )}
+        <div className='flex gap-2 mt-2'>
+          <Text size='S'>APR:</Text>
+          <Display size='XS'>{apr.toFixed(2)}%</Display>
+        </div>
+        <div className='mt-2'>
+          <HealthBar health={newHealth} />
+        </div>
       </div>
-      <div className='w-full ml-auto'>
+      <div className='w-full ml-auto mt-8'>
         <ConfirmButton
           borrowAmount={borrowAmount}
           borrower={borrower}
