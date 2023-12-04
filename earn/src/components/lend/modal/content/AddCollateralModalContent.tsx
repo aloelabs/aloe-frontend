@@ -3,12 +3,7 @@ import { useContext, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import {
-  DashedDivider,
-  LABEL_TEXT_COLOR,
-  MODAL_BLACK_TEXT_COLOR,
-  VALUE_TEXT_COLOR,
-} from 'shared/lib/components/common/Modal';
+import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -22,6 +17,7 @@ import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
+const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
@@ -186,17 +182,30 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
           maxed={depositAmountStr === maxDepositAmountStr}
         />
       </div>
-      <HealthBar health={newHealth} />
-      <div className='flex justify-between items-center mb-8 mt-4'>
-        <Text size='S' weight='medium' color={LABEL_TEXT_COLOR}>
-          Updated Collateral Amount
+      <div className='flex flex-col gap-1 w-full'>
+        <Text size='M' weight='bold'>
+          Summary
         </Text>
-        <DashedDivider />
-        <Text size='L' weight='medium' color={VALUE_TEXT_COLOR}>
-          {newCollateralAmount.toString(GNFormat.LOSSY_HUMAN)} {collateralToken.symbol}
+        <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+          You're adding{' '}
+          <strong>
+            {depositAmountStr || '0.00'} {collateralToken.symbol}
+          </strong>{' '}
+          collateral to this{' '}
+          <strong>
+            {borrower.token0.symbol}/{borrower.token1.symbol}
+          </strong>{' '}
+          smart wallet. Your total collateral for this token in this smart wallet will be{' '}
+          <strong>
+            {newCollateralAmount.toString(GNFormat.DECIMAL)} {collateralToken.symbol}
+          </strong>
+          .
         </Text>
+        <div className='mt-2'>
+          <HealthBar health={newHealth} />
+        </div>
       </div>
-      <div className='w-full ml-auto'>
+      <div className='w-full ml-auto mt-8'>
         <ConfirmButton
           depositAmount={depositAmount}
           maxDepositAmount={maxDepositAmount}
