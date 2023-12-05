@@ -7,7 +7,7 @@ import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
@@ -24,11 +24,21 @@ import BorrowActionsPage from './pages/BorrowActionsPage';
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
     I have read, understood, and agreed to the{' '}
-    <a className='underline text-green-600 hover:text-green-700' href='/terms.pdf' target='_blank'>
+    <a
+      className='underline text-green-600 hover:text-green-700'
+      href={TERMS_OF_SERVICE_URL}
+      target='_blank'
+      rel='noreferrer'
+    >
       Terms of Service
     </a>{' '}
     and{' '}
-    <a className='underline text-green-600 hover:text-green-700' href='/privacy.pdf' target='_blank'>
+    <a
+      className='underline text-green-600 hover:text-green-700'
+      href={PRIVACY_POLICY_URL}
+      target='_blank'
+      rel='noreferrer'
+    >
       Privacy Policy
     </a>
     .

@@ -21,6 +21,7 @@ import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
+import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -394,7 +395,7 @@ export function NavBar(props: NavBarProps) {
                 size='S'
                 weight='medium'
                 color={GREY_400}
-                href={'/terms.pdf'}
+                href={TERMS_OF_SERVICE_URL}
                 target='_blank'
                 rel='noopener noreferrer'
               >
@@ -502,7 +503,7 @@ export function NavBar(props: NavBarProps) {
                   size='M'
                   weight='medium'
                   color={GREY_400}
-                  href={'/terms.pdf'}
+                  href={TERMS_OF_SERVICE_URL}
                   target='_blank'
                   rel='noopener noreferrer'
                 >

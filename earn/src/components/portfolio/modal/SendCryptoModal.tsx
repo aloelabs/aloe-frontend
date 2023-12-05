@@ -7,6 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -296,7 +297,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By sending, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

@@ -20,7 +20,7 @@ import {
   ALOE_II_ORACLE_ADDRESS,
   ALOE_II_PERMIT2_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
-import { Q32 } from 'shared/lib/data/constants/Values';
+import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
@@ -388,7 +388,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       </div>
       <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
         By borrowing, you agree to our{' '}
-        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+        <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
           Terms of Service
         </a>{' '}
         and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

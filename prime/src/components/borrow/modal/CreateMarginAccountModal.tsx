@@ -5,6 +5,7 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 import Modal, { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 
 const TERTIARY_COLOR = '#4b6980';
 
@@ -51,7 +52,7 @@ export default function CreateMarginAccountModal(props: CreateMarginAccountModal
       </FilledStylizedButton>
       <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
         By creating a Borrow Vault, you agree to our{' '}
-        <a href='/terms.pdf' rel='noreferrer' target='_blank' className='underline'>
+        <a href={TERMS_OF_SERVICE_URL} rel='noreferrer' target='_blank' className='underline'>
           Terms of Service
         </a>{' '}
         and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

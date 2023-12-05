@@ -18,7 +18,7 @@ import Identicon from './Identicon';
 import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 import Bell from '../../assets/svg/Bell';
 import { QRCodeSVG } from 'qrcode.react';
-import { NOTIFICATION_BOT_URL } from '../../data/constants/Values';
+import { NOTIFICATION_BOT_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';
@@ -201,7 +201,7 @@ export default function AccountInfo(props: AccountInfoProps) {
             <Text size='M' weight='medium'>
               By connecting a wallet, I agree to Aloe Labs, Inc's{' '}
               <a
-                href={'/terms.pdf'}
+                href={TERMS_OF_SERVICE_URL}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='underline text-green-600 hover:text-green-700'
@@ -210,7 +210,7 @@ export default function AccountInfo(props: AccountInfoProps) {
               </a>{' '}
               and{' '}
               <a
-                href={'/privacy.pdf'}
+                href={PRIVACY_POLICY_URL}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='underline text-green-600 hover:text-green-700'
@@ -260,7 +260,7 @@ export default function AccountInfo(props: AccountInfoProps) {
           </a>
           <Text size='XS' color={TERTIARY_COLOR} className='mt-2'>
             By enrolling, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>
             {''}, acknowledge that this service may not always work. Your address will be linked to your Telegram

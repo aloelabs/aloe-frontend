@@ -7,7 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { Q32 } from 'shared/lib/data/constants/Values';
+import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
@@ -158,7 +158,7 @@ export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It
