@@ -9,6 +9,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -382,7 +383,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By depositing, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

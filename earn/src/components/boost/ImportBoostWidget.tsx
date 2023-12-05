@@ -19,6 +19,7 @@ import {
   ALOE_II_LENDER_LENS_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
@@ -636,7 +637,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         </FilledGradientButton>
         <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
           By using our service, you agree to our{' '}
-          <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}
           and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

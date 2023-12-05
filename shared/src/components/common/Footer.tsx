@@ -8,6 +8,7 @@ import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
 import { RESPONSIVE_BREAKPOINT_TABLET } from '../../data/constants/Breakpoints';
 import { GREY_400 } from '../../data/constants/Colors';
+import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 
 const StyledFooter = styled.footer`
   position: fixed;
@@ -77,7 +78,7 @@ export default function Footer() {
           size='S'
           weight='medium'
           color={GREY_400}
-          href={'/terms.pdf'}
+          href={TERMS_OF_SERVICE_URL}
           target='_blank'
           rel='noopener noreferrer'
         >
