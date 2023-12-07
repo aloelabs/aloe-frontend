@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { ChangeEvent, useContext, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -6,8 +6,8 @@ import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
-import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
@@ -17,6 +17,7 @@ import {
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
+import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
@@ -238,8 +239,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket?.toNumber() ?? 0);
 
   // Mitigate the case when the number is represented in scientific notation
-  const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
-  const maxString = gnEightyPercentMax.toString(GNFormat.DECIMAL);
+  const eightyPercentMaxBorrowAmount = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
 
   // TODO: use GN
   const newLiabilities: Liabilities = {
@@ -276,15 +276,29 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
 
   return (
     <>
-      <div className='flex justify-between items-center mb-4'>
-        <TokenAmountInput
-          token={borrowToken}
-          onChange={(updatedAmount: string) => {
-            setAdditionalBorrowAmountStr(updatedAmount);
+      <div className='flex flex-col justify-between mb-4'>
+        <Text size='M' className='mb-2'>
+          {borrowToken.symbol}
+        </Text>
+        <SquareInputWithMax
+          size='L'
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            const output = formatNumberInput(event.target.value);
+            if (output != null) {
+              setAdditionalBorrowAmountStr(output);
+            }
           }}
           value={additionalBorrowAmountStr}
-          max={maxString}
-          maxed={additionalBorrowAmountStr === maxString}
+          onMaxClick={() => {
+            if (eightyPercentMaxBorrowAmount) {
+              setAdditionalBorrowAmountStr(eightyPercentMaxBorrowAmount.toString(GNFormat.DECIMAL));
+            }
+          }}
+          maxDisabled={eightyPercentMaxBorrowAmount === null || borrowAmount.eq(eightyPercentMaxBorrowAmount)}
+          maxButtonText='80% Max'
+          placeholder='0.00'
+          fullWidth={true}
+          inputClassName={additionalBorrowAmountStr !== '' ? 'active' : ''}
         />
       </div>
       <div className='flex flex-col gap-1 w-full'>
