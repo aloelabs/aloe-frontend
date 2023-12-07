@@ -1,8 +1,14 @@
 import { secondsInYear } from 'date-fns';
+import { Multicall } from 'ethereum-multicall';
+import { CallContext, ContractCallContext } from 'ethereum-multicall/dist/esm/models';
 import { ethers } from 'ethers';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { ALOE_II_LENDER_LENS_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'wagmi';
+
+import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 
 export type MarketInfo = {
   lender0: Address;
@@ -18,6 +24,85 @@ export type MarketInfo = {
   lender0AvailableAssets: GN;
   lender1AvailableAssets: GN;
 };
+
+export type Market = {
+  lender0: Address;
+  lender1: Address;
+  token0Decimals: number;
+  token1Decimals: number;
+};
+
+export async function fetchMarketInfos(
+  markets: Market[],
+  chainId: number,
+  provider: ethers.providers.Provider
+): Promise<Array<MarketInfo>> {
+  if (markets.length === 0) return [];
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    tryAggregate: true,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
+  const marketCallContexts: CallContext[] = [];
+  markets.forEach(({ lender0, lender1 }) => {
+    marketCallContexts.push({
+      methodName: 'readBasics',
+      methodParameters: [lender0],
+      reference: 'lender0',
+    });
+    marketCallContexts.push({
+      methodName: 'readBasics',
+      methodParameters: [lender1],
+      reference: 'lender1',
+    });
+  });
+
+  const marketCallContext: ContractCallContext[] = [
+    {
+      abi: lenderLensAbi as any,
+      calls: marketCallContexts,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chainId],
+      reference: 'lenderLens',
+    },
+  ];
+
+  const lenderLensResults = (await multicall.call(marketCallContext)).results['lenderLens'];
+
+  const marketInfoResults = convertBigNumbersForReturnContexts(lenderLensResults.callsReturnContext);
+
+  return markets.map(({ lender0, lender1, token0Decimals, token1Decimals }, index) => {
+    const lender0Basics = marketInfoResults[index * 2];
+    const lender1Basics = marketInfoResults[index * 2 + 1];
+
+    const interestRate0 = toBig(lender0Basics.returnValues[1]);
+    const borrowAPR0 = interestRate0.eq('0') ? 0 : interestRate0.div(1e12).toNumber() * secondsInYear;
+
+    const interestRate1 = toBig(lender1Basics.returnValues[1]);
+    const borrowAPR1 = interestRate1.eq('0') ? 0 : interestRate1.div(1e12).toNumber() * secondsInYear;
+
+    const lender0Utilization = toImpreciseNumber(lender0Basics.returnValues[2], 18);
+    const lender1Utilization = toImpreciseNumber(lender1Basics.returnValues[2], 18);
+    const lender0Inventory = GN.fromBigNumber(lender0Basics.returnValues[3], token0Decimals);
+    const lender1Inventory = GN.fromBigNumber(lender1Basics.returnValues[3], token1Decimals);
+    const lender0TotalBorrows = GN.fromBigNumber(lender0Basics.returnValues[4], token0Decimals);
+    const lender1TotalBorrows = GN.fromBigNumber(lender1Basics.returnValues[4], token1Decimals);
+
+    return {
+      lender0,
+      lender1,
+      borrowerAPR0: borrowAPR0,
+      borrowerAPR1: borrowAPR1,
+      lender0Utilization: lender0Utilization,
+      lender1Utilization: lender1Utilization,
+      lender0TotalAssets: lender0Inventory,
+      lender1TotalAssets: lender1Inventory,
+      lender0TotalBorrows: lender0TotalBorrows,
+      lender1TotalBorrows: lender1TotalBorrows,
+      lender0AvailableAssets: lender0Inventory.sub(lender0TotalBorrows),
+      lender1AvailableAssets: lender1Inventory.sub(lender1TotalBorrows),
+    } as MarketInfo;
+  });
+}
 
 export async function fetchMarketInfoFor(
   lenderLensContract: ethers.Contract,
