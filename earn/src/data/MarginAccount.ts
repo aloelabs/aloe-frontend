@@ -230,7 +230,7 @@ export async function fetchBorrowerDatas(
     const assetsData = lensReturnContexts[0].returnValues;
     const liabilitiesData = lensReturnContexts[1].returnValues;
     const healthData = lensReturnContexts[2].returnValues;
-    const nSigma = convertBigNumbersForReturnContexts(value.nSigma.callsReturnContext)[0].returnValues[1];
+    const nSigma = convertBigNumbersForReturnContexts(value.nSigma.callsReturnContext)[0].returnValues[1] / 10;
 
     const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
     const assets: Assets = {
@@ -250,7 +250,7 @@ export async function fetchBorrowerDatas(
     const marginAccount: MarginAccount = {
       address: accountAddress,
       sqrtPriceX96: toBig(oracleReturnValues[1]),
-      iv: toImpreciseNumber(oracleReturnValues[2], 18),
+      iv: toImpreciseNumber(oracleReturnValues[2], 12),
       uniswapPool,
       feeTier,
       assets,
