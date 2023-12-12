@@ -17,6 +17,10 @@ const DEFAULT_NAV_LINKS: NavBarLink[] = [
     label: 'Markets',
     to: '/markets',
   },
+  {
+    label: 'Leaderboard',
+    to: '/leaderboard',
+  },
 ];
 
 const EXTENDED_NAV_LINKS: NavBarLink[] = [
