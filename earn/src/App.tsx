@@ -24,6 +24,7 @@ import BoostPage from './pages/BoostPage';
 import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
 import InfoPage from './pages/InfoPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import LendPage from './pages/LendPage';
 import MarketsPage from './pages/MarketsPage';
 import PortfolioPage from './pages/PortfolioPage';
@@ -121,6 +122,7 @@ function AppBodyWrapper() {
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
           <Route path='/stats' element={<InfoPage />} />
+          <Route path='/leaderboard' element={<LeaderboardPage />} />
           {isAllowed && (
             <>
               <Route path='/boost' element={<BoostPage />} />

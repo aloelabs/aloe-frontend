@@ -23,6 +23,7 @@ export const API_PRICE_RELAY_LATEST_URL = 'https://api-price.aloe.capital/price-
 export const API_PRICE_RELAY_HISTORICAL_URL = 'https://api-price.aloe.capital/price-relay/v1/historical';
 export const API_PRICE_RELAY_CONSOLIDATED_URL = 'https://api-price.aloe.capital/price-relay/v1/consolidated';
 export const API_REDEEM_REWARD_URL = 'https://api-claim.aloe.capital/v1/claim';
+export const API_LEADERBOARD_URL = 'https://leaderboard.aloe.capital/v1/leaderboard';
 
 export function primeUrl() {
   // NOTE: trailing `/` is important for .eth domain resolution to work
