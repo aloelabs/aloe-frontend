@@ -2,12 +2,16 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
+import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
+import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
+import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
@@ -99,6 +103,7 @@ function AppBodyWrapper() {
   const network = useNetwork();
   const navigate = useNavigate();
   const isAllowed = useGeoFencing(activeChain);
+  const { isBlocked: isAccountBlocked } = useAccountRisk();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -146,6 +151,7 @@ function AppBodyWrapper() {
         onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
         onSkip={() => navigate('/markets')}
       />
+      <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
     </AppBody>
   );
 }
@@ -153,8 +159,10 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
+  const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
   const value = { activeChain, setActiveChain };
+  const { address: userAddress } = useAccount();
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {
@@ -182,6 +190,18 @@ function App() {
   });
 
   useEffect(() => {
+    (async () => {
+      if (userAddress === undefined) {
+        setAccountRisk({ isBlocked: false, isLoading: false });
+        return;
+      }
+      setAccountRisk({ isBlocked: false, isLoading: true });
+      const result = await screenAddress(userAddress);
+      setAccountRisk({ isBlocked: result.isBlocked, isLoading: false });
+    })();
+  }, [userAddress, setAccountRisk]);
+
+  useEffect(() => {
     const queryBlocks = async () => {
       const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
       setBlockNumber(response.data.blocks[0].number);
@@ -195,12 +215,14 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <GeoFencingContext.Provider value={geoFencingResponse}>
-            <ChainContext.Provider value={value}>
-              <ScrollToTop />
-              <AppBodyWrapper />
-            </ChainContext.Provider>
-          </GeoFencingContext.Provider>
+          <AccountRiskContext.Provider value={accountRisk}>
+            <GeoFencingContext.Provider value={geoFencingResponse}>
+              <ChainContext.Provider value={value}>
+                <ScrollToTop />
+                <AppBodyWrapper />
+              </ChainContext.Provider>
+            </GeoFencingContext.Provider>
+          </AccountRiskContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>
