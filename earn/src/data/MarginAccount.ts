@@ -3,6 +3,7 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import {
@@ -141,6 +142,11 @@ export async function fetchBorrowerDatas(
           methodName: 'LENDER1',
           methodParameters: [],
         },
+        {
+          reference: 'getLiabilities',
+          methodName: 'getLiabilities',
+          methodParameters: [],
+        },
       ],
     });
     marginAccountCallContext.push({
@@ -156,24 +162,43 @@ export async function fetchBorrowerDatas(
       ],
     });
     marginAccountCallContext.push({
+      reference: `${accountAddress}-token0`,
+      contractAddress: token0.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: 'balanceOf',
+          methodName: 'balanceOf',
+          methodParameters: [accountAddress],
+        },
+      ],
+    });
+    marginAccountCallContext.push({
+      reference: `${accountAddress}-token1`,
+      contractAddress: token1.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: 'balanceOf',
+          methodName: 'balanceOf',
+          methodParameters: [accountAddress],
+        },
+      ],
+    });
+    marginAccountCallContext.push({
       reference: `${accountAddress}-lens`,
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
       abi: borrowerLensAbi as any,
       calls: [
-        {
-          reference: 'getAssets',
-          methodName: 'getAssets',
-          methodParameters: [accountAddress],
-        },
-        {
-          reference: 'getLiabilities',
-          methodName: 'getLiabilities',
-          methodParameters: [accountAddress, true],
-        },
+        // {
+        //   reference: 'getLiabilities',
+        //   methodName: 'getLiabilities',
+        //   methodParameters: [accountAddress, true],
+        // },
         {
           reference: 'getHealth',
           methodName: 'getHealth',
-          methodParameters: [accountAddress, true],
+          methodParameters: [accountAddress],
         },
       ],
       context: {
@@ -219,33 +244,46 @@ export async function fetchBorrowerDatas(
   const marginAccounts: MarginAccount[] = [];
 
   correspondingMarginAccountResults.forEach((value) => {
-    const { lens: lensResults, account: accountResults, oracle: oracleResults } = value;
+    const {
+      lens: lensResults,
+      account: accountResults,
+      oracle: oracleResults,
+      token0: token0Results,
+      token1: token1Results,
+    } = value;
+    const accountReturnContexts = convertBigNumbersForReturnContexts(accountResults.callsReturnContext);
     const lensReturnContexts = convertBigNumbersForReturnContexts(lensResults.callsReturnContext);
+    const token0ReturnContexts = convertBigNumbersForReturnContexts(token0Results.callsReturnContext);
+    const token1ReturnContexts = convertBigNumbersForReturnContexts(token1Results.callsReturnContext);
     const { fee, token0Address, token1Address, chainId, accountAddress, uniswapPool } =
       lensResults.originalContractCallContext.context;
     // Reconstruct the objects (since we can't transfer them as is through the context)
     const feeTier = NumericFeeTierToEnum(fee);
     const token0 = getToken(chainId, token0Address)!;
     const token1 = getToken(chainId, token1Address)!;
-    const assetsData = lensReturnContexts[0].returnValues;
-    const liabilitiesData = lensReturnContexts[1].returnValues;
-    const healthData = lensReturnContexts[2].returnValues;
+    const liabilitiesData = accountReturnContexts[2].returnValues;
+    const token0Balance = token0ReturnContexts[0].returnValues[0];
+    const token1Balance = token1ReturnContexts[0].returnValues[0];
+    const healthData = lensReturnContexts[0].returnValues;
     const nSigma = convertBigNumbersForReturnContexts(value.nSigma.callsReturnContext)[0].returnValues[1] / 10;
 
     const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
     const assets: Assets = {
-      token0Raw: toImpreciseNumber(assetsData[0], token0.decimals),
-      token1Raw: toImpreciseNumber(assetsData[1], token1.decimals),
-      uni0: toImpreciseNumber(assetsData[4], token0.decimals),
-      uni1: toImpreciseNumber(assetsData[5], token1.decimals),
+      token0Raw: toImpreciseNumber(token0Balance, token0.decimals),
+      token1Raw: toImpreciseNumber(token1Balance, token1.decimals),
+      uni0: 0,
+      uni1: 0,
+      // TODO: Get the uniswap balances data again
+      // uni0: toImpreciseNumber(assetsData[4], token0.decimals),
+      // uni1: toImpreciseNumber(assetsData[5], token1.decimals),
     };
     const liabilities: Liabilities = {
       amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
       amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
     };
 
-    const lender0 = accountResults.callsReturnContext[0].returnValues[0];
-    const lender1 = accountResults.callsReturnContext[1].returnValues[0];
+    const lender0 = accountReturnContexts[0].returnValues[0];
+    const lender1 = accountReturnContexts[1].returnValues[0];
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,

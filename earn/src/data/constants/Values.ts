@@ -32,5 +32,5 @@ export function primeUrl() {
 
 // NOTE: all lowercase!
 export const ALOE_II_RATE_MODEL_NAMES: { [key: string]: string } = {
-  '0x000db1f64300d100468100d2e776da2d3cc58700': 'Rational V0',
+  '0x000000006b66e36407c709ad4808370d963f2aab': 'Rational V0',
 };
