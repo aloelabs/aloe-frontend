@@ -129,7 +129,7 @@ export default function MarketCard(props: MarketCardProps) {
     ? formatDistanceToNowStrict(new Date(lastUpdatedTimestamp * 1000), { addSuffix: true, roundingMethod: 'round' })
     : 'Never';
   const minutesSinceLastUpdate = lastUpdatedTimestamp ? (Date.now() / 1000 - lastUpdatedTimestamp) / 60 : 0;
-  const canUpdateLTV = minutesSinceLastUpdate > 60 || lastUpdatedTimestamp === undefined;
+  const canUpdateLTV = minutesSinceLastUpdate > 240 || lastUpdatedTimestamp === undefined;
 
   const isPaused = pausedUntilTime > Date.now() / 1000;
   const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;

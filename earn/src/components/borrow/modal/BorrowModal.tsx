@@ -117,7 +117,7 @@ function BorrowButton(props: BorrowButtonProps) {
     abi: borrowerAbi,
     functionName: 'modify',
     args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
+    overrides: { value: shouldProvideAnte ? ante.toBigNumber() : undefined },
     enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
