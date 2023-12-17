@@ -12,7 +12,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
-import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useProvider } from 'wagmi';
+import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useProvider, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { MarginAccount } from '../../../data/MarginAccount';
@@ -64,8 +64,15 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
     })();
   });
 
+  const { data: borrowerBalance } = useBalance({
+    address: marginAccount.address,
+    chainId: activeChain.id,
+    watch: false,
+    enabled: true,
+  });
+
   const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-  const encodedData = borrowerInterface.encodeFunctionData('withdrawAnte', [userAddress]);
+  const encodedData = borrowerInterface.encodeFunctionData('transferEth', [borrowerBalance?.value ?? 0, userAddress]);
 
   const {
     config: withdrawAnteConfig,

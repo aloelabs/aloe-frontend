@@ -4,6 +4,7 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   ArbLogo,
+  BaldLogo,
   CbEthLogo,
   DaiLogo,
   FraxLogo,
@@ -288,6 +289,8 @@ const CBETH_BASE = new Token(
   CbEthLogo
 );
 
+const BALD_BASE = new Token(optimism.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
+
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
@@ -329,6 +332,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [base.id]: {
     [WETH_BASE.address]: WETH_BASE,
     [CBETH_BASE.address]: CBETH_BASE,
+    [BALD_BASE.address]: BALD_BASE,
   },
 };
 
