@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import axios, { AxiosResponse } from 'axios';
 import { BigNumber } from 'ethers';
@@ -10,7 +10,6 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 
-import { ChainContext } from '../App';
 import { API_LEADERBOARD_URL } from '../data/constants/Values';
 import { LeaderboardResponseEntry } from '../data/LeaderboardResponse';
 
@@ -56,13 +55,12 @@ const TableBodyCell = styled.td`
 export default function LeaderboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [leaderboardEntries, setLeaderboardEntries] = useSafeState<Array<LeaderboardEntry> | null>(null);
-  const { activeChain } = useContext(ChainContext);
 
   useEffect(() => {
     (async () => {
       let leaderboardResponse: AxiosResponse<Array<LeaderboardResponseEntry>>;
       try {
-        leaderboardResponse = await axios.get(`${API_LEADERBOARD_URL}?chainId=${activeChain.id}`);
+        leaderboardResponse = await axios.get(API_LEADERBOARD_URL);
       } catch (e) {
         return;
       }
@@ -73,7 +71,7 @@ export default function LeaderboardPage() {
       }));
       setLeaderboardEntries(updatedLeaderboardEntries);
     })();
-  }, [activeChain.id, setLeaderboardEntries]);
+  }, [setLeaderboardEntries]);
 
   const pages: LeaderboardEntry[][] = useMemo(() => {
     if (leaderboardEntries == null) {
