@@ -6,6 +6,7 @@ import {
   ArbLogo,
   BaldLogo,
   CbEthLogo,
+  ConvexLogo,
   DaiLogo,
   FraxLogo,
   GmxLogo,
@@ -76,6 +77,15 @@ const WETH_MAINNET = new Token(
   'WETH',
   'Wrapped Ether',
   WethLogo
+);
+
+const CVX_MAINNET = new Token(
+  mainnet.id,
+  '0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b',
+  18,
+  'CVX',
+  'Convex Token',
+  ConvexLogo
 );
 
 const DAI_OPTIMISM = new Token(
@@ -296,6 +306,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_MAINNET.address]: USDC_MAINNET,
     [WBTC_MAINNET.address]: WBTC_MAINNET,
     [WETH_MAINNET.address]: WETH_MAINNET,
+    [CVX_MAINNET.address]: CVX_MAINNET,
   },
   [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,
