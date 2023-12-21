@@ -1,3 +1,4 @@
+import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
@@ -18,7 +19,8 @@ import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address } from 'wagmi';
+import { String1E } from 'shared/lib/util/Numbers';
+import { Address, erc20ABI } from 'wagmi';
 
 import { fetchListOfBorrowerNfts } from './BorrowerNft';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
@@ -93,11 +95,13 @@ export class BoostCardInfo {
     if (this.borrower === null || JSBI.equal(this.position.liquidity, JSBI.BigInt(0))) return null;
     // Compute total value in the Uniswap position
     const uniswapValue = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
+    console.log(uniswapValue);
 
     // Compute total debt
     const debt0 = this.borrower.liabilities.amount0 - this.borrower.assets.token0Raw;
     const debt1 = this.borrower.liabilities.amount1 - this.borrower.assets.token1Raw;
     const price = tickToPrice(this.currentTick, this.token0.decimals, this.token1.decimals, true);
+    console.log('raws', this.borrower.assets.token0Raw, this.borrower.assets.token1Raw);
     const debtValue = debt0 * price + debt1;
 
     return uniswapValue / (uniswapValue - debtValue);
@@ -170,6 +174,7 @@ export async function fetchBoostBorrower(
         { reference: 'lender1', methodName: 'LENDER1', methodParameters: [] },
         { reference: 'uniswapPool', methodName: 'UNISWAP_POOL', methodParameters: [] },
         { reference: 'position', methodName: 'getUniswapPositions', methodParameters: [] },
+        { reference: 'getLiabilities', methodName: 'getLiabilities', methodParameters: [] },
       ],
     },
     {
@@ -177,9 +182,7 @@ export async function fetchBoostBorrower(
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
       abi: borrowerLensAbi as any,
       calls: [
-        { reference: 'getAssets', methodName: 'getAssets', methodParameters: [borrowerAddress] },
-        { reference: 'getLiabilities', methodName: 'getLiabilities', methodParameters: [borrowerAddress, true] },
-        { reference: 'getHealth', methodName: 'getHealth', methodParameters: [borrowerAddress, true] },
+        { reference: 'getHealth', methodName: 'getHealth', methodParameters: [borrowerAddress] },
         { reference: 'getUniswapFees', methodName: 'getUniswapFees', methodParameters: [borrowerAddress] },
       ],
     },
@@ -201,12 +204,17 @@ export async function fetchBoostBorrower(
     throw new Error(`Error while fetching Borrower information in multicall (${borrowerAddress})`);
   }
   const [token0Addr, token1Addr, lender0, lender1, uniswapPool] = borrowerResults
-    .slice(0, -1)
+    .slice(0, 5)
     .map((v) => v.returnValues[0] as Address);
   const token0 = getToken(chainId, token0Addr)!;
   const token1 = getToken(chainId, token1Addr)!;
-  const [tickLower, tickUpper] = borrowerResults.at(-1)!.returnValues;
+  const [tickLower, tickUpper] = borrowerResults[5].returnValues;
   const hasPosition = tickLower !== undefined && tickUpper !== undefined;
+
+  const liabilities: Liabilities = {
+    amount0: GN.hexToGn(borrowerResults[6].returnValues[0], token0.decimals).toNumber(),
+    amount1: GN.hexToGn(borrowerResults[6].returnValues[1], token1.decimals).toNumber(),
+  };
 
   // ---
   // Parse results from lens
@@ -216,27 +224,17 @@ export async function fetchBoostBorrower(
     throw new Error(`Error while fetching Borrower information in multicall (${borrowerAddress})`);
   }
 
-  const assets: Assets = {
-    token0Raw: GN.hexToGn(lensResults[0].returnValues[0], token0.decimals).toNumber(),
-    token1Raw: GN.hexToGn(lensResults[0].returnValues[1], token1.decimals).toNumber(),
-    uni0: GN.hexToGn(lensResults[0].returnValues[4], token0.decimals).toNumber(),
-    uni1: GN.hexToGn(lensResults[0].returnValues[5], token1.decimals).toNumber(),
-  };
-  const liabilities: Liabilities = {
-    amount0: GN.hexToGn(lensResults[1].returnValues[0], token0.decimals).toNumber(),
-    amount1: GN.hexToGn(lensResults[1].returnValues[1], token1.decimals).toNumber(),
-  };
   const health = GN.min(
-    GN.hexToGn(lensResults[2].returnValues[0], 18),
-    GN.hexToGn(lensResults[2].returnValues[1], 18)
+    GN.hexToGn(lensResults[0].returnValues[0], 18),
+    GN.hexToGn(lensResults[0].returnValues[1], 18)
   ).toNumber();
   let uniswapKey = '0x0000000000000000000000000000000000000000000000000000000000000000';
   let uniswapFees = { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) };
   if (hasPosition) {
-    uniswapKey = lensResults[3].returnValues[0][0];
+    uniswapKey = lensResults[1].returnValues[0][0];
     uniswapFees = {
-      amount0: GN.hexToGn(lensResults[3].returnValues[1][0], token0.decimals),
-      amount1: GN.hexToGn(lensResults[3].returnValues[1][1], token1.decimals),
+      amount0: GN.hexToGn(lensResults[1].returnValues[1][0], token0.decimals),
+      amount1: GN.hexToGn(lensResults[1].returnValues[1][1], token1.decimals),
     };
   }
 
@@ -244,6 +242,8 @@ export async function fetchBoostBorrower(
   // Now we do another multicall to get:
   // - TWAP and IV from the VolatilityOracle
   // - numeric fee Uniswap fee tier
+  // - assets (token0.balanceOf, token1.balanceOf, and Uniswap liquidity)
+  // - nSigma from the Factory
   // ---
   const extraContext: ContractCallContext[] = [
     {
@@ -273,16 +273,57 @@ export async function fetchBoostBorrower(
         },
       ],
     },
+    {
+      reference: 'token0.balanceOf',
+      contractAddress: token0Addr,
+      abi: erc20ABI as any,
+      calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],
+    },
+    {
+      reference: 'token1.balanceOf',
+      contractAddress: token1Addr,
+      abi: erc20ABI as any,
+      calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],
+    },
   ];
 
   const extraResults = (await multicall.call(extraContext)).results;
 
   const consultResult = extraResults['oracle'].callsReturnContext[0].returnValues;
-  const sqrtPriceX96 = new Big(ethers.BigNumber.from(consultResult[1].hex).toString());
+  const sqrtPriceX96 = JSBI.BigInt(ethers.BigNumber.from(consultResult[1].hex).toString());
   const iv = GN.hexToGn(consultResult[2].hex, 12).toNumber();
   const feeTier = NumericFeeTierToEnum(extraResults['uniswap'].callsReturnContext[0].returnValues[0]);
   const liquidity = ethers.BigNumber.from(extraResults['uniswap'].callsReturnContext[1].returnValues[0].hex);
   const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1] / 10;
+
+  const uniswapPosition: UniswapPosition = {
+    lower: tickLower,
+    upper: tickUpper,
+    liquidity: JSBI.BigInt(liquidity.toString()),
+  };
+
+  const token0Raw = new Big(
+    ethers.BigNumber.from(extraResults['token0.balanceOf'].callsReturnContext[0].returnValues[0].hex).toString()
+  );
+  const token1Raw = new Big(
+    ethers.BigNumber.from(extraResults['token1.balanceOf'].callsReturnContext[0].returnValues[0].hex).toString()
+  );
+  let [uni0, uni1] = [0, 0];
+  if (hasPosition) {
+    [uni0, uni1] = getAmountsForLiquidity(
+      uniswapPosition,
+      TickMath.getTickAtSqrtRatio(sqrtPriceX96),
+      token0.decimals,
+      token1.decimals
+    );
+  }
+  console.log(borrowerAddress);
+  const assets: Assets = {
+    token0Raw: token0Raw.div(String1E(token0.decimals)).toNumber(),
+    token1Raw: token1Raw.div(String1E(token1.decimals)).toNumber(),
+    uni0,
+    uni1,
+  };
 
   const borrower: MarginAccount = {
     address: borrowerAddress,
@@ -292,18 +333,12 @@ export async function fetchBoostBorrower(
     token1,
     assets,
     liabilities,
-    sqrtPriceX96,
+    sqrtPriceX96: new Big(sqrtPriceX96.toString(10)),
     health,
     lender0,
     lender1,
     iv,
     nSigma,
-  };
-
-  const uniswapPosition: UniswapPosition = {
-    lower: tickLower,
-    upper: tickUpper,
-    liquidity: JSBI.BigInt(liquidity.toString()),
   };
 
   return {

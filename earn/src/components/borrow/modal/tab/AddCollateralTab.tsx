@@ -12,7 +12,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent } from '../../../../data/BalanceSheet';
+import { isHealthy } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import { UniswapPosition } from '../../../../data/Uniswap';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
@@ -190,7 +190,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
     uni1: marginAccount.assets.uni1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     marginAccount.liabilities,
     uniswapPositions,

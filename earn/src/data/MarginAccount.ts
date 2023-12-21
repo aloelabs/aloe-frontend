@@ -273,7 +273,7 @@ export async function fetchBorrowerDatas(
       token1Raw: toImpreciseNumber(token1Balance, token1.decimals),
       uni0: 0,
       uni1: 0,
-      // TODO: Get the uniswap balances data again
+      // TODO: BEFORE LAUNCH, Get the uniswap balances data again
       // uni0: toImpreciseNumber(assetsData[4], token0.decimals),
       // uni1: toImpreciseNumber(assetsData[5], token1.decimals),
     };
