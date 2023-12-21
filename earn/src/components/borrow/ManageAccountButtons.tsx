@@ -1,6 +1,5 @@
 import { OutlinedWhiteButtonWithIcon } from 'shared/lib/components/common/Buttons';
 
-import { ReactComponent as CreditCardIcon } from '../../assets/svg/credit_card.svg';
 import { ReactComponent as FrownIcon } from '../../assets/svg/frown.svg';
 import { ReactComponent as MinusIcon } from '../../assets/svg/minus.svg';
 import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
@@ -19,16 +18,8 @@ export type ManageAccountButtonsProps = {
 };
 
 export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
-  const {
-    onAddCollateral,
-    onRemoveCollateral,
-    onBorrow,
-    onRepay,
-    onGetLeverage,
-    onWithdrawAnte,
-    isWithdrawAnteDisabled,
-    isDisabled,
-  } = props;
+  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, isWithdrawAnteDisabled, isDisabled } =
+    props;
   return (
     <div className='flex flex-col gap-3 w-max'>
       <OutlinedWhiteButtonWithIcon
@@ -70,16 +61,6 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
         disabled={isDisabled}
       >
         Repay
-      </OutlinedWhiteButtonWithIcon>
-      <OutlinedWhiteButtonWithIcon
-        Icon={<CreditCardIcon />}
-        position='leading'
-        onClick={onGetLeverage}
-        size='S'
-        svgColorType='stroke'
-        disabled={isDisabled}
-      >
-        Get Leverage
       </OutlinedWhiteButtonWithIcon>
       <OutlinedWhiteButtonWithIcon
         Icon={<FrownIcon />}
