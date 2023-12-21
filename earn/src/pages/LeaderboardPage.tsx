@@ -64,6 +64,7 @@ export default function LeaderboardPage() {
       } catch (e) {
         return;
       }
+      if (!leaderboardResponse.data) return;
       const updatedLeaderboardEntries = leaderboardResponse.data.map((entry) => ({
         address: entry.address,
         score: GN.fromBigNumber(BigNumber.from(entry.score), 18),
@@ -83,67 +84,65 @@ export default function LeaderboardPage() {
     return pages;
   }, [leaderboardEntries]);
 
-  if (pages.length === 0) {
-    return null;
-  }
-
   return (
     <AppPage>
       <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
         <Text size='XXL' className='mb-4'>
           Aloe Leaderboard
         </Text>
-        <TableContainer>
-          <Table>
-            <TableHeader>
-              <tr>
-                <TableHeaderCell>
-                  <Text size='M' weight='bold'>
-                    Rank
-                  </Text>
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  <Text size='M' weight='bold'>
-                    Address
-                  </Text>
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  <Text size='M' weight='bold'>
-                    Rewards
-                  </Text>
-                </TableHeaderCell>
-              </tr>
-            </TableHeader>
-            <TableBody>
-              {pages[currentPage - 1]?.map((entry, index) => (
+        {pages.length > 0 && (
+          <TableContainer>
+            <Table>
+              <TableHeader>
                 <tr>
-                  <TableBodyCell>
-                    <Text size='M'>{(currentPage - 1) * PAGE_SIZE + index + 1}</Text>
-                  </TableBodyCell>
-                  <TableBodyCell>
-                    <Text size='M'>{entry.address}</Text>
-                  </TableBodyCell>
-                  <TableBodyCell>
-                    <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
-                  </TableBodyCell>
+                  <TableHeaderCell>
+                    <Text size='M' weight='bold'>
+                      Rank
+                    </Text>
+                  </TableHeaderCell>
+                  <TableHeaderCell>
+                    <Text size='M' weight='bold'>
+                      Address
+                    </Text>
+                  </TableHeaderCell>
+                  <TableHeaderCell>
+                    <Text size='M' weight='bold'>
+                      Rewards
+                    </Text>
+                  </TableHeaderCell>
                 </tr>
-              ))}
-            </TableBody>
-            <tfoot>
-              <tr>
-                <td className='px-4 py-2' colSpan={5}>
-                  <Pagination
-                    currentPage={currentPage}
-                    itemsPerPage={PAGE_SIZE}
-                    totalItems={leaderboardEntries?.length ?? 0}
-                    loading={false}
-                    onPageChange={(page) => setCurrentPage(page)}
-                  />
-                </td>
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+              </TableHeader>
+              <TableBody>
+                {pages[currentPage - 1]?.map((entry, index) => (
+                  <tr key={entry.address}>
+                    <TableBodyCell>
+                      <Text size='M'>{(currentPage - 1) * PAGE_SIZE + index + 1}</Text>
+                    </TableBodyCell>
+                    <TableBodyCell>
+                      <Text size='M'>{entry.address}</Text>
+                    </TableBodyCell>
+                    <TableBodyCell>
+                      <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
+                    </TableBodyCell>
+                  </tr>
+                ))}
+              </TableBody>
+              <tfoot>
+                <tr>
+                  <td className='px-4 py-2' colSpan={5}>
+                    <Pagination
+                      currentPage={currentPage}
+                      itemsPerPage={PAGE_SIZE}
+                      totalItems={leaderboardEntries?.length ?? 0}
+                      loading={false}
+                      onPageChange={(page) => setCurrentPage(page)}
+                    />
+                  </td>
+                </tr>
+              </tfoot>
+            </Table>
+          </TableContainer>
+        )}
       </div>
     </AppPage>
   );
