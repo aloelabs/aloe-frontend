@@ -315,7 +315,6 @@ export async function fetchBoostBorrower(
       token1.decimals
     );
   }
-  console.log(borrowerAddress);
   const assets: Assets = {
     token0Raw: token0Raw.div(String1E(token0.decimals)).toNumber(),
     token1Raw: token1Raw.div(String1E(token1.decimals)).toNumber(),
