@@ -189,9 +189,9 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     );
 
     const assets = getAssets(
-      marginAccount.assets,
+      marginAccount.assets.token0Raw,
+      marginAccount.assets.token1Raw,
       uniswapPositions,
-      marginAccount.sqrtPriceX96,
       lowerSqrtRatio,
       upperSqrtRatio,
       marginAccount.token0.decimals,
@@ -200,9 +200,12 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
 
     // Compute the value of all assets (collateral) at 3 different prices (current, lower, and upper)
     // Denominated in units of token1
-    let assetValueCurrent = (assets.fixed0 + assets.fluid0C) * current + assets.fixed1 + assets.fluid1C;
-    let assetValueAtLower = assets.fixed0 * lower + assets.fixed1 + assets.fluid1A;
-    let assetValueAtUpper = assets.fixed0 * upper + assets.fixed1 + assets.fluid1B;
+    let assetValueCurrent =
+      (marginAccount.assets.token0Raw + marginAccount.assets.uni0) * current +
+      marginAccount.assets.token1Raw +
+      marginAccount.assets.uni1;
+    let assetValueAtLower = assets.amount0AtA * lower + assets.amount1AtA;
+    let assetValueAtUpper = assets.amount0AtB * upper + assets.amount1AtB;
 
     // If there are no assets, further results would be spurious, so return null
     if (assetValueCurrent < Number.EPSILON) return null;

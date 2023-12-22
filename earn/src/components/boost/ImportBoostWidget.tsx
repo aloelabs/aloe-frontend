@@ -326,13 +326,14 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
     const inner = ethers.utils.defaultAbiCoder.encode(
-      ['uint256', 'int24', 'int24', 'uint128', 'uint24'],
+      ['uint256', 'int24', 'int24', 'uint128', 'uint24', 'uint224'],
       [
         cardInfo.nftTokenId,
         position.lower,
         position.upper,
         position.liquidity.toString(10),
         (boostFactor * 10000).toFixed(0),
+        GN.Q(224).recklessSub(1).toBigNumber(), // TODO: Implement slippage protection here
       ]
     ) as `0x${string}`;
     const actionId = 0;

@@ -20,7 +20,7 @@ const NUM_DATA_POINTS = 100;
 
 export type BorrowGraphData = {
   IV: number;
-  'Collateral Factor': number;
+  LTV: number;
   x: Date;
 };
 
@@ -32,14 +32,14 @@ export type BorrowGraphData = {
  * @returns A new point with x.getTime == x, IV between that of a and b, and collateral factor between that of a and b
  */
 function interpolate(a: BorrowGraphData, b: BorrowGraphData, x: number) {
-  const interpolated: BorrowGraphData = { x: new Date(x), IV: NaN, 'Collateral Factor': NaN };
+  const interpolated: BorrowGraphData = { x: new Date(x), IV: NaN, LTV: NaN };
   const deltaX = b.x.getTime() - a.x.getTime();
 
   const slopeIV = (b.IV - a.IV) / deltaX;
   interpolated.IV = slopeIV * (x - a.x.getTime()) + a.IV;
 
-  const slopeCF = (b['Collateral Factor'] - a['Collateral Factor']) / deltaX;
-  interpolated['Collateral Factor'] = slopeCF * (x - a.x.getTime()) + a['Collateral Factor'];
+  const slopeCF = (b.LTV - a.LTV) / deltaX;
+  interpolated.LTV = slopeCF * (x - a.x.getTime()) + a.LTV;
 
   return interpolated;
 }
@@ -97,7 +97,7 @@ function GraphLegend() {
       <LegendItem>
         <LegendItemBox color={GREEN_COLOR} />
         <Text size='M' weight='medium' color={TEXT_COLOR}>
-          Collateral Factor
+          LTV
         </Text>
       </LegendItem>
     </LegendWrapper>
@@ -166,7 +166,7 @@ export default function BorrowGraph(props: BorrowGraphProps) {
             type: 'monotone',
           },
           {
-            dataKey: 'Collateral Factor',
+            dataKey: 'LTV',
             fillOpacity: 0.2,
             stroke: GREEN_COLOR,
             fill: 'url(#cfGradient)',

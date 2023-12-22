@@ -21,7 +21,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
+import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
@@ -263,7 +263,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
     uniswapPositions,

@@ -2,7 +2,6 @@ import React, { Suspense, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import BetaBanner from 'shared/lib/components/banner/BetaBanner';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -119,7 +118,6 @@ function AppBodyWrapper() {
   return (
     <AppBody>
       <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-      <BetaBanner />
       {!isChainLoading && (
         <main className='flex-grow'>
           <Routes>

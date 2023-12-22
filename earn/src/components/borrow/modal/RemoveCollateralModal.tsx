@@ -20,7 +20,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address, useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
+import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapPosition } from '../../../data/Uniswap';
@@ -224,7 +224,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uni1: marginAccount.assets.uni1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     marginAccount.liabilities,
     uniswapPositions,

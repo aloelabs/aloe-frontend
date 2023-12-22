@@ -21,7 +21,7 @@ import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
+import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
@@ -247,7 +247,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
     amount1: isBorrowingToken0 ? borrower.liabilities.amount1 : newLiability.toNumber(),
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
     [], // TODO: add uniswap positions

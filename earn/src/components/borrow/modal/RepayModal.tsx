@@ -16,7 +16,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent } from '../../../data/BalanceSheet';
+import { isHealthy } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -248,7 +248,7 @@ export default function RepayModal(props: RepayModalProps) {
         : marginAccount.liabilities.amount1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
     uniswapPositions,

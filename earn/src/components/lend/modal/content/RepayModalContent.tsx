@@ -17,7 +17,7 @@ import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent } from '../../../../data/BalanceSheet';
+import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import HealthBar from '../../../borrow/HealthBar';
@@ -277,7 +277,7 @@ export default function RepayModalContent(props: RepayModalContentProps) {
     amount1: isRepayingToken0 ? borrower.liabilities.amount1 : newLiability.toNumber(),
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
     [], // TODO: add uniswap positions

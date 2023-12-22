@@ -18,7 +18,7 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent, maxWithdraws } from '../../../../data/BalanceSheet';
+import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { Assets } from '../../../../data/MarginAccount';
@@ -209,7 +209,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
     uni1: 0, // TODO: add uniswap positions
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
     [], // TODO: add uniswap positions

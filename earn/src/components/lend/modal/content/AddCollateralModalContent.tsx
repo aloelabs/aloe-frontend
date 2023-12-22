@@ -12,7 +12,7 @@ import { Token } from 'shared/lib/data/Token';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent } from '../../../../data/BalanceSheet';
+import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../borrow/HealthBar';
@@ -159,7 +159,7 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
     uni1: 0, // TODO: add uniswap positions
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
     [], // TODO: add uniswap positions

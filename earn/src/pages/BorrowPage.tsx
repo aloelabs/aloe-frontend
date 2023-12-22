@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useContext } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { AxiosResponse } from 'axios';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -45,7 +44,7 @@ import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { computeLTV } from '../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { TOPIC0_IV } from '../data/constants/Signatures';
+import { TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
 import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
@@ -57,7 +56,6 @@ import {
   UniswapPosition,
   UniswapPositionPrior,
 } from '../data/Uniswap';
-import { makeEtherscanRequest } from '../util/Etherscan';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
@@ -286,42 +284,38 @@ export default function BorrowPage() {
       return;
     }
     (async () => {
-      let etherscanResult: AxiosResponse<any, any> | null = null;
       if (selectedMarginAccount == null) return;
-      try {
-        // TODO: make this into a dedicated function
-        etherscanResult = await makeEtherscanRequest(
-          0,
-          ALOE_II_ORACLE_ADDRESS[activeChain.id],
-          [TOPIC0_IV, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool}`],
-          true,
-          activeChain.id
-        );
-      } catch (e) {
-        console.error(e);
-      }
-      if (etherscanResult == null || !Array.isArray(etherscanResult.data.result)) return [];
-      const results = etherscanResult.data.result.map((result: any) => {
-        // TODO: abstract this out
-        const { data, timeStamp } = result;
-        const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], data);
-        const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
 
-        const ltv = computeLTV(iv, selectedMarginAccount.nSigma);
-
-        const resultData: BorrowGraphData = {
-          IV: iv * Math.sqrt(365) * 100,
-          'Collateral Factor': ltv * 100,
-          x: new Date(parseInt(timeStamp.toString(), 16) * 1000),
-        };
-        return resultData;
+      const chainId = (await provider.getNetwork()).chainId;
+      const updateLogs = await provider.getLogs({
+        address: ALOE_II_ORACLE_ADDRESS[chainId],
+        topics: [TOPIC0_UPDATE_ORACLE, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool.slice(2)}`],
+        fromBlock: 0,
+        toBlock: 'latest',
       });
+
+      const results = await Promise.all(
+        updateLogs.map(async (result: any) => {
+          const timestamp = (await provider.getBlock(result.blockNumber)).timestamp;
+
+          const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], result.data);
+          const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
+          const ltv = computeLTV(iv, selectedMarginAccount.nSigma);
+
+          const resultData: BorrowGraphData = {
+            IV: iv * Math.sqrt(365) * 100,
+            LTV: ltv * 100,
+            x: new Date(timestamp * 1000),
+          };
+          return resultData;
+        })
+      );
       setCachedGraphDatas((prev) => {
         return new Map(prev).set(selectedMarginAccount.address, results);
       });
       setGraphData(results);
     })();
-  }, [activeChain, cachedGraphDatas, selectedMarginAccount, setCachedGraphDatas, setGraphData]);
+  }, [activeChain, cachedGraphDatas, provider, selectedMarginAccount, setCachedGraphDatas, setGraphData]);
 
   // MARK: Fetch Uniswap positions for this MarginAccount (debounced to avoid double-fetching)
   useDebouncedEffect(
