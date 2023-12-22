@@ -260,7 +260,7 @@ export async function fetchBoostBorrower(
       ],
     },
     {
-      reference: 'nSgima',
+      reference: 'nSigma',
       contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
       abi: factoryAbi as any,
       calls: [
@@ -292,7 +292,7 @@ export async function fetchBoostBorrower(
   const iv = GN.hexToGn(consultResult[2].hex, 12).toNumber();
   const feeTier = NumericFeeTierToEnum(extraResults['uniswap'].callsReturnContext[0].returnValues[0]);
   const liquidity = ethers.BigNumber.from(extraResults['uniswap'].callsReturnContext[1].returnValues[0].hex);
-  const nSigma = extraResults['nSgima'].callsReturnContext[0].returnValues[1] / 10;
+  const nSigma = extraResults['nSigma'].callsReturnContext[0].returnValues[1] / 10;
 
   const uniswapPosition: UniswapPosition = {
     lower: tickLower,
