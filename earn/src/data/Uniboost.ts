@@ -100,7 +100,6 @@ export class BoostCardInfo {
     const debt0 = this.borrower.liabilities.amount0 - this.borrower.assets.token0Raw;
     const debt1 = this.borrower.liabilities.amount1 - this.borrower.assets.token1Raw;
     const price = tickToPrice(this.currentTick, this.token0.decimals, this.token1.decimals, true);
-    console.log('raws', this.borrower.assets.token0Raw, this.borrower.assets.token1Raw);
     const debtValue = debt0 * price + debt1;
 
     return uniswapValue / (uniswapValue - debtValue);
