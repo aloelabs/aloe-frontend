@@ -20,7 +20,6 @@ import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { useBalanceOfUnderlying } from '../../../../data/hooks/UseUnderlyingBalanceOf';
 import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../borrow/HealthBar';
 
@@ -168,14 +167,6 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
 
   // TODO: This logic needs to change once we support more complex borrowing
   const collateralToken = isWithdrawingToken0 ? borrower.token0 : borrower.token1;
-  const collateralLender = isWithdrawingToken0 ? borrower.lender0 : borrower.lender1;
-
-  // TODO: automatically refresh this data
-  const { data: collateralBalanceStr } = useBalanceOfUnderlying(
-    collateralToken,
-    collateralLender,
-    accountAddress ?? '0x'
-  );
 
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
@@ -183,7 +174,6 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const existingCollateral = GN.fromNumber(numericExistingCollateral, collateralToken.decimals);
   const withdrawAmount = GN.fromDecimalString(withdrawAmountStr || '0', collateralToken.decimals);
   const newCollateralAmount = existingCollateral.sub(withdrawAmount);
-  const collateralBalance = GN.fromDecimalString(collateralBalanceStr || '0', collateralToken.decimals);
 
   const numericMaxWithdrawAmount = maxWithdraws(
     borrower.assets,
@@ -198,7 +188,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
 
   const maxWithdrawAmount = GN.fromNumber(numericMaxWithdrawAmount, collateralToken.decimals);
 
-  const max = GN.min(maxWithdrawAmount, collateralBalance);
+  const max = maxWithdrawAmount;
   const maxStr = max.toString(GNFormat.DECIMAL);
 
   // TODO: use GN
