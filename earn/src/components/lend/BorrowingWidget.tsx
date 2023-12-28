@@ -283,6 +283,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           <div className='w-[52px] h-[42px]' />
           {borrowers &&
             borrowers.map((borrower) => {
+              const hasNoCollateral = borrower.assets.token0Raw === 0 && borrower.assets.token1Raw === 0;
+              if (hasNoCollateral) return null;
               return (
                 <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
                   <HealthGauge health={borrower.health} size={36} />
