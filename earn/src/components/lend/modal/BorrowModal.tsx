@@ -23,6 +23,7 @@ import {
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
+import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
@@ -35,23 +36,42 @@ const MAX_BORROW_PERCENTAGE = 0.8;
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
-  WAITING_FOR_USER,
   READY,
+  PERMIT_ASSET,
+  APPROVE_ASSET,
   LOADING,
   INSUFFICIENT_ASSET,
   INSUFFICIENT_COLLATERAL,
+  WAITING_FOR_USER,
+  WAITING_FOR_TRANSACTION,
   INSUFFICIENT_ANTE,
   DISABLED,
 }
 
-function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: boolean } {
+const permit2StateToButtonStateMap = {
+  [Permit2State.ASKING_USER_TO_APPROVE]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.ASKING_USER_TO_SIGN]: ConfirmButtonState.WAITING_FOR_USER,
+  [Permit2State.DONE]: undefined,
+  [Permit2State.FETCHING_DATA]: ConfirmButtonState.LOADING,
+  [Permit2State.READY_TO_APPROVE]: ConfirmButtonState.APPROVE_ASSET,
+  [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
+  [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
+};
+
+function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
-    case ConfirmButtonState.WAITING_FOR_USER:
-      return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
       return { text: 'Loading', enabled: false };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return { text: `Permit ${token.symbol}`, enabled: true };
+    case ConfirmButtonState.APPROVE_ASSET:
+      return { text: `Approve ${token.symbol}`, enabled: true };
+    case ConfirmButtonState.WAITING_FOR_USER:
+      return { text: 'Check Wallet', enabled: false };
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
       return { text: 'Insufficient Asset', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_COLLATERAL:
@@ -308,10 +328,10 @@ export default function BorrowModal(props: BorrowModalProps) {
   } else if (collateralAmountStr === '' || borrowAmountStr === '') {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else {
-    confirmButtonState = ConfirmButtonState.READY;
+    confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState);
+  const confirmButton = getConfirmButton(confirmButtonState, selectedCollateral.asset);
 
   if (!selectedBorrow) return null;
 
