@@ -84,6 +84,20 @@ export default function LeaderboardPage() {
     return pages;
   }, [leaderboardEntries]);
 
+  const getRowEmoji = (page: number, index: number) => {
+    if (page > 1) return '';
+    switch (index) {
+      case 0:
+        return '🥇';
+      case 1:
+        return '🥈';
+      case 2:
+        return '🥉';
+      default:
+        return '';
+    }
+  };
+
   return (
     <AppPage>
       <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
@@ -107,7 +121,7 @@ export default function LeaderboardPage() {
                   </TableHeaderCell>
                   <TableHeaderCell>
                     <Text size='M' weight='bold'>
-                      Rewards
+                      Points
                     </Text>
                   </TableHeaderCell>
                 </tr>
@@ -116,10 +130,13 @@ export default function LeaderboardPage() {
                 {pages[currentPage - 1]?.map((entry, index) => (
                   <tr key={entry.address}>
                     <TableBodyCell>
-                      <Text size='M'>{(currentPage - 1) * PAGE_SIZE + index + 1}</Text>
+                      <Text size='M'>
+                        {(currentPage - 1) * PAGE_SIZE + index + 1}&emsp;{getRowEmoji(currentPage, index)}
+                      </Text>
                     </TableBodyCell>
                     <TableBodyCell>
-                      <Text size='M'>{entry.address}</Text>
+                      <code>{entry.address}</code>
+                      {/* <Text size='M'></Text> */}
                     </TableBodyCell>
                     <TableBodyCell>
                       <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
