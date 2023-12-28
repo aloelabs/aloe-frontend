@@ -62,6 +62,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
+      return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
