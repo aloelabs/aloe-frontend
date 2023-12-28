@@ -1,20 +1,17 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { permit2Abi } from 'shared/lib/abis/Permit2';
+import { BigNumber } from 'ethers';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_PERMIT2_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
-import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, Chain, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
@@ -52,26 +49,19 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   switch (state) {
     case ConfirmButtonState.INSUFFICIENT_FUNDS:
       return { text: `Insufficient ${token.symbol}`, enabled: false };
-    case ConfirmButtonState.PERMIT_ASSET:
-      return {
-        text: `Permit ${token.symbol}`,
-        enabled: true,
-      };
-    case ConfirmButtonState.APPROVE_ASSET:
-      return {
-        text: `Approve ${token.symbol}`,
-        enabled: true,
-      };
     case ConfirmButtonState.REPAYING_TOO_MUCH:
       return { text: 'Repaying too much', enabled: false };
+    case ConfirmButtonState.PERMIT_ASSET:
+      return { text: `Permit ${token.symbol}`, enabled: true };
+    case ConfirmButtonState.APPROVE_ASSET:
+      return { text: `Approve ${token.symbol}`, enabled: true };
+    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
+      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.WAITING_FOR_USER:
       return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
     case ConfirmButtonState.LOADING:
-      return { text: 'Loading...', enabled: false };
-    case ConfirmButtonState.WAITING_FOR_TRANSACTION:
-      return { text: 'Pending', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
@@ -79,151 +69,120 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type ConfirmButtonProps = {
-  repayAmount: GN;
-  repayTokenBalance: GN;
-  totalBorrowedAmount: GN;
+  activeChain: Chain;
   borrower: BorrowerNftBorrower;
-  token: Token;
-  isRepayingToken0: boolean;
   userAddress: Address;
+  shouldRepayMax: boolean;
+  isRepayingToken0: boolean;
+  existingLiabilityGN: GN;
+  repayAmount: GN;
+  repayToken: Token;
+  repayTokenBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
   const {
-    repayAmount,
+    activeChain,
+    shouldRepayMax,
+    repayAmount: repayAmountSpecified,
     repayTokenBalance,
-    totalBorrowedAmount,
+    existingLiabilityGN,
     borrower,
-    token,
+    repayToken,
     isRepayingToken0,
     userAddress,
     setIsOpen,
     setPendingTxn,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const repayAmount = shouldRepayMax ? repayAmountSpecified.recklessMul(1.005) : repayAmountSpecified;
+
+  const [isPending, setIsPending] = useState(false);
 
   const {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, userAddress, ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id], repayAmount);
+  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], repayAmount);
 
-  const encodedPermit2 = useMemo(() => {
-    if (!userAddress || !permit2Result.signature) return null;
-    const permit2 = new ethers.utils.Interface(permit2Abi);
-    return permit2.encodeFunctionData(
-      'permitTransferFrom(((address,uint256),uint256,uint256),(address,uint256),address,bytes)',
-      [
-        {
-          permitted: {
-            token: token.address,
-            amount: permit2Result.amount.toBigNumber(),
-          },
-          nonce: BigNumber.from(permit2Result.nonce ?? '0'),
-          deadline: BigNumber.from(permit2Result.deadline),
-        },
-        {
-          to: borrower.address,
-          requestedAmount: permit2Result.amount.toBigNumber(),
-        },
-        userAddress,
-        permit2Result.signature,
-      ]
-    );
-  }, [
-    borrower.address,
-    permit2Result.amount,
-    permit2Result.deadline,
-    permit2Result.nonce,
-    permit2Result.signature,
-    token.address,
-    userAddress,
-  ]);
-
-  const encodedRepayCall = useMemo(() => {
-    if (!userAddress) return null;
-    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-    const amount0 = isRepayingToken0 ? repayAmount : GN.zero(borrower.token0.decimals);
-    const amount1 = isRepayingToken0 ? GN.zero(borrower.token1.decimals) : repayAmount;
-
-    return borrowerInterface.encodeFunctionData('repay', [
-      amount0.toBigNumber(),
-      amount1.toBigNumber(),
-    ]) as `0x${string}`;
-  }, [repayAmount, borrower.token0.decimals, borrower.token1.decimals, isRepayingToken0, userAddress]);
-
-  const encodedModifyCall = useMemo(() => {
-    if (!encodedPermit2 || !encodedRepayCall) return null;
-    return encodedPermit2.concat(encodedRepayCall.slice(2)) as `0x${string}`;
-  }, [encodedPermit2, encodedRepayCall]);
-
-  const { config: repayConfig, isLoading: isCheckingIfAbleToRepay } = usePrepareContractWrite({
-    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
-    abi: borrowerNftAbi,
-    functionName: 'modify',
+  const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
+    abi: routerAbi,
+    functionName: 'repayWithPermit2',
     args: [
-      userAddress ?? '0x',
-      [borrower.index],
-      [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]],
-      [encodedModifyCall ?? '0x'],
-      [0],
+      isRepayingToken0 ? borrower.lender0 : borrower.lender1,
+      shouldRepayMax,
+      permit2Result.amount.toBigNumber(),
+      borrower.address,
+      BigNumber.from(permit2Result.nonce ?? '0'),
+      BigNumber.from(permit2Result.deadline),
+      permit2Result.signature ?? '0x',
     ],
     chainId: activeChain.id,
-    enabled: userAddress && encodedModifyCall != null,
+    enabled: permit2State === Permit2State.DONE,
   });
-  const gasLimit = repayConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: repay, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...repayConfig,
+  // NOTE: Not using `useMemo` to update the request
+  const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  const {
+    write: repayWithPermit2,
+    isError: contractDidError,
+    isSuccess: contractDidSucceed,
+    data: contractData,
+  } = useContractWrite({
+    ...repayWithPermit2Config,
     request: {
-      ...repayConfig.request,
+      ...repayWithPermit2Config.request,
       gasLimit,
     },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
   });
 
-  let confirmButtonState: ConfirmButtonState;
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
 
-  if (isCheckingIfAbleToRepay) {
-    confirmButtonState = ConfirmButtonState.LOADING;
+  // MARK: Determining button state -----------------------------------------------------------------------------------
+  let confirmButtonState: ConfirmButtonState;
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (repayAmount.isZero()) {
-    confirmButtonState = ConfirmButtonState.DISABLED;
-  } else if (
-    permit2State === Permit2State.ASKING_USER_TO_SIGN ||
-    permit2State === Permit2State.ASKING_USER_TO_APPROVE ||
-    isAskingUserToConfirm
-  ) {
-    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
+    confirmButtonState = ConfirmButtonState.LOADING;
   } else if (repayAmount.gt(repayTokenBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
-  } else if (repayAmount.gt(totalBorrowedAmount)) {
+  } else if (repayAmountSpecified.gt(existingLiabilityGN)) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
-  } else if (permit2State === Permit2State.DONE && !repayConfig.request) {
-    confirmButtonState = ConfirmButtonState.DISABLED;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState, token);
+  // MARK: Get the button itself --------------------------------------------------------------------------------------
+  // --> UI
+  const confirmButton = getConfirmButton(confirmButtonState, repayToken);
+  // --> action
+  const confirmButtonAction = () => {
+    if (permit2Action) {
+      permit2Action();
+      return;
+    }
+
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (!repayWithPermit2) {
+        refetchRepayWithPermit2();
+        return;
+      }
+      setIsPending(true);
+      repayWithPermit2();
+    }
+  };
 
   return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => {
-        if (permit2State !== Permit2State.DONE) {
-          permit2Action?.();
-        } else {
-          repay?.();
-        }
-      }}
-      disabled={!confirmButton.enabled}
-    >
+    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={confirmButtonAction}>
       {confirmButton.text}
     </FilledStylizedButton>
   );
@@ -326,13 +285,15 @@ export default function RepayModalContent(props: RepayModalContentProps) {
       </div>
       <div className='w-full ml-auto mt-8'>
         <ConfirmButton
-          repayAmount={repayAmount}
-          repayTokenBalance={tokenBalance}
-          totalBorrowedAmount={existingLiability}
+          activeChain={activeChain}
           borrower={borrower}
-          token={repayToken}
-          isRepayingToken0={isRepayingToken0}
           userAddress={userAddress ?? '0x'}
+          existingLiabilityGN={existingLiability}
+          shouldRepayMax={shouldRepayMax}
+          isRepayingToken0={isRepayingToken0}
+          repayAmount={repayAmount}
+          repayToken={repayToken}
+          repayTokenBalance={tokenBalance}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />
