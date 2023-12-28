@@ -136,7 +136,6 @@ export default function LeaderboardPage() {
                     </TableBodyCell>
                     <TableBodyCell>
                       <code>{entry.address}</code>
-                      {/* <Text size='M'></Text> */}
                     </TableBodyCell>
                     <TableBodyCell>
                       <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
