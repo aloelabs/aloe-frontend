@@ -122,7 +122,6 @@ function ConfirmButton(props: ConfirmButtonProps) {
     chainId: activeChain.id,
     enabled: permit2State === Permit2State.DONE,
   });
-  // NOTE: Not using `useMemo` to update the request
   const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
     write: repayWithPermit2,
