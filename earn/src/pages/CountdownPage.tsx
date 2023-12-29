@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import Logo from 'shared/lib/assets/svg/AloeCapitalLogo';
-import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { LAUNCH_DATE } from 'shared/lib/data/constants/Values';
 import styled, { keyframes } from 'styled-components';
@@ -40,6 +39,14 @@ const generateRandomFlicker = () => {
 const flicker = keyframes`${generateRandomFlicker()}`;
 const glitch1 = keyframes`${generateRandomKeyframes()}`;
 const glitch2 = keyframes`${generateRandomKeyframes()}`;
+
+const StyledAppPage = styled.div`
+  width: 100%;
+  height: calc(100vh - 128px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
 
 const GlitchDisplay = styled(Display)`
   position: relative;
@@ -183,13 +190,13 @@ function CountdownTimer() {
 
 export default function CountdownPage() {
   return (
-    <AppPage>
+    <StyledAppPage>
       <div className='flex flex-col items-center justify-center'>
         <GlitchLogo>
           <Logo />
         </GlitchLogo>
         <CountdownTimer />
       </div>
-    </AppPage>
+    </StyledAppPage>
   );
 }
