@@ -24,6 +24,7 @@ import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
@@ -115,29 +116,36 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
 
+  const isReady = false;
+
   return (
     <AppBody>
-      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-      {!isChainLoading && (
-        <main className='flex-grow'>
-          <Routes>
-            <Route path='/borrow' element={<BorrowAccountsPage />} />
-            <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-            <Route path='/' element={<Navigate replace to='/borrow' />} />
-            <Route path='*' element={<Navigate to='/' />} />
-          </Routes>
-        </main>
+      {!isReady && <ComingSoonPage />}
+      {isReady && (
+        <>
+          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+          {!isChainLoading && (
+            <main className='flex-grow'>
+              <Routes>
+                <Route path='/borrow' element={<BorrowAccountsPage />} />
+                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+                <Route path='/' element={<Navigate replace to='/borrow' />} />
+                <Route path='*' element={<Navigate to='/' />} />
+              </Routes>
+            </main>
+          )}
+          <Footer />
+          <WelcomeModal
+            isOpen={isWelcomeModalOpen}
+            activeChain={activeChain}
+            checkboxes={CONNECT_WALLET_CHECKBOXES}
+            account={account}
+            setIsOpen={() => setIsWelcomeModalOpen(false)}
+            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+          />
+          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+        </>
       )}
-      <Footer />
-      <WelcomeModal
-        isOpen={isWelcomeModalOpen}
-        activeChain={activeChain}
-        checkboxes={CONNECT_WALLET_CHECKBOXES}
-        account={account}
-        setIsOpen={() => setIsWelcomeModalOpen(false)}
-        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-      />
-      <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
     </AppBody>
   );
 }
