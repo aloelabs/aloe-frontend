@@ -3,19 +3,24 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent, maxWithdraws } from '../../../data/BalanceSheet';
-import { ALOE_II_WITHDRAW_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
+import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapPosition } from '../../../data/Uniswap';
@@ -30,6 +35,7 @@ enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
   PENDING,
   READY,
+  LOADING,
 }
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
@@ -43,6 +49,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
+    case ConfirmButtonState.LOADING:
+      return { text: 'Loading...', enabled: false };
     default:
       return { text: 'Confirm', enabled: false };
   }
@@ -64,25 +72,38 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
+
+  const provider = useProvider({ chainId: activeChain.id });
 
   const isToken0Collateral = collateralToken.address === marginAccount.token0.address;
 
   const amount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
   const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
 
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
+  const encodedData = useMemo(() => {
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+    return borrowerInterface.encodeFunctionData('transfer', [
+      amount0.toBigNumber(),
+      amount1.toBigNumber(),
+      userAddress,
+    ]);
+  }, [amount0, amount1, userAddress]);
+
   const { config: removeCollateralConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
-    args: [
-      ALOE_II_WITHDRAW_MANAGER_ADDRESS,
-      ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'address'],
-        [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]
-      ) as Address,
-      [isToken0Collateral, !isToken0Collateral],
-    ],
-    enabled: !!userAddress && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
+    enabled:
+      Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -120,6 +141,8 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
+  } else if (oracleSeed === undefined) {
+    confirmButtonState = ConfirmButtonState.LOADING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, collateralToken);
@@ -184,6 +207,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
@@ -200,12 +224,13 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
     uni1: marginAccount.assets.uni1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     marginAccount.liabilities,
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
@@ -279,7 +304,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

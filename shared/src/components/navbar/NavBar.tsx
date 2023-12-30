@@ -17,22 +17,17 @@ import EllipsisIcon from '../../assets/svg/Ellipsis';
 import AccountInfo from './AccountInfo';
 import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
-import {
-  RESPONSIVE_BREAKPOINTS,
-  RESPONSIVE_BREAKPOINT_TABLET,
-  RESPONSIVE_BREAKPOINT_XS,
-} from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
-import { GREY_700, GREY_800 } from '../../data/constants/Colors';
-
-const FOOTER_LINK_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
+import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
   height: 40px;
   margin-right: 32px;
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
 `;
@@ -41,7 +36,7 @@ const MobileLogo = styled(AloeMobileLogo)`
   width: 40px;
   height: 40px;
   margin-right: 32px;
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.TABLET + 1}px) {
     display: none;
   }
 `;
@@ -69,11 +64,11 @@ const TabletBottomNav = styled.div`
   border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.TABLET + 1}px) {
     display: none;
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.XS}px) {
     display: none;
   }
 `;
@@ -90,7 +85,7 @@ const MobileBottomNav = styled.div`
   border-top: 1px solid ${GREY_700};
   padding: 8px 16px;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.XS + 1}px) {
     display: none;
   }
 `;
@@ -100,7 +95,7 @@ const VerticalDivider = styled.div`
   height: 64px;
   background-color: ${GREY_700};
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     height: 1px;
   }
@@ -120,7 +115,7 @@ const ExternalFooterLinkWithIcon = styled.a`
   align-items: center;
 
   padding: 8px 16px;
-  color: ${FOOTER_LINK_TEXT_COLOR};
+  color: ${GREY_400};
   &:hover {
     color: rgba(255, 255, 255, 1);
 
@@ -135,7 +130,7 @@ const ExternalFooterLinkWithIcon = styled.a`
 const DesktopNavLinks = styled.div`
   display: flex;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
 `;
@@ -145,20 +140,21 @@ const DesktopNavLink = styled(NavLink)`
   padding: 20px 32px;
   cursor: pointer;
   user-select: none;
+  color: ${GREY_400};
 
   &.active {
-    color: rgba(255, 255, 255, 1);
+    color: white;
   }
 
-  :hover:not(&.active) {
-    color: ${FOOTER_LINK_TEXT_COLOR};
+  &:hover {
+    color: white;
   }
 
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     padding: 12px 0px;
   }
@@ -175,14 +171,14 @@ const ExternalDesktopLink = styled.a`
   }
 
   :hover:not(&.active) {
-    color: ${FOOTER_LINK_TEXT_COLOR};
+    color: ${GREY_400};
   }
 
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
   }
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     width: 100%;
     padding: 12px 0px;
   }
@@ -244,7 +240,7 @@ const NavOverlay = styled.div`
   padding: 16px;
   overflow-y: scroll;
 
-  @media (min-width: ${RESPONSIVE_BREAKPOINT_XS}) {
+  @media (min-width: ${RESPONSIVE_BREAKPOINTS.XS + 1}px) {
     display: none;
   }
 `;
@@ -314,12 +310,10 @@ export function NavBar(props: NavBarProps) {
             <React.Fragment key={index}>
               {link.isExternal ? (
                 <ExternalDesktopLink href={link.to} target='_blank' rel='noopener noreferrer'>
-                  <Text size='M'>{link.label}</Text>
+                  {link.label}
                 </ExternalDesktopLink>
               ) : (
-                <DesktopNavLink to={link.to}>
-                  <Text size='M'>{link.label}</Text>
-                </DesktopNavLink>
+                <DesktopNavLink to={link.to}>{link.label}</DesktopNavLink>
               )}
               <VerticalDivider />
             </React.Fragment>
@@ -378,7 +372,7 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
+                color={GREY_400}
                 href={'https://aloe.capital/'}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -389,7 +383,7 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
+                color={GREY_400}
                 href={'https://docs.aloe.capital/'}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -400,8 +394,8 @@ export function NavBar(props: NavBarProps) {
                 as='a'
                 size='S'
                 weight='medium'
-                color={FOOTER_LINK_TEXT_COLOR}
-                href={'/terms.pdf'}
+                color={GREY_400}
+                href={TERMS_OF_SERVICE_URL}
                 target='_blank'
                 rel='noopener noreferrer'
               >
@@ -486,7 +480,7 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
+                  color={GREY_400}
                   href={'https://aloe.capital/'}
                   target='_blank'
                   rel='noopener noreferrer'
@@ -497,7 +491,7 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
+                  color={GREY_400}
                   href={'https://docs.aloe.capital/'}
                   target='_blank'
                   rel='noopener noreferrer'
@@ -508,8 +502,8 @@ export function NavBar(props: NavBarProps) {
                   as='a'
                   size='M'
                   weight='medium'
-                  color={FOOTER_LINK_TEXT_COLOR}
-                  href={'/terms.pdf'}
+                  color={GREY_400}
+                  href={TERMS_OF_SERVICE_URL}
                   target='_blank'
                   rel='noopener noreferrer'
                 >

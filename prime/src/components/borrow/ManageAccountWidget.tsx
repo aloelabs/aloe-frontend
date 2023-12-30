@@ -225,13 +225,13 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     address: userAddress ?? '0x',
     token: token0.address,
     chainId: activeChain.id,
-    enabled: !!userAddress,
+    enabled: Boolean(userAddress),
   });
   const { data: userBalance1Asset, refetch: refetchBalance1 } = useBalance({
     address: userAddress ?? '0x',
     token: token1.address,
     chainId: activeChain.id,
-    enabled: !!userAddress,
+    enabled: Boolean(userAddress),
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
@@ -306,6 +306,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     finalState.uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     token0.decimals,
     token1.decimals
   );
@@ -431,6 +432,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
           <ManageAccountTransactionButton
             userAddress={userAddress}
             accountAddress={accountAddress as Address}
+            uniswapPool={marginAccount.uniswapPool}
             token0={token0}
             token1={token1}
             userBalances={userBalances}

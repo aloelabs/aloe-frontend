@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -106,26 +108,35 @@ export type TokenBalance = {
 
 export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
+
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
-  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
-  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
+  const [tokenColors, setTokenColors] = useSafeState<Map<string, string>>(new Map());
+  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
+  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
+  const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
+    [],
+    activeChain.id
+  );
+  const [tokenPriceData, setTokenPriceData] = useSafeState<TokenPriceData[]>([]);
+  const [isLoading, setIsLoading] = useSafeState(true);
+  const [isLoadingPrices, setIsLoadingPrices] = useSafeState(true);
+  const [errorLoadingPrices, setErrorLoadingPrices] = useSafeState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLoading(true);
+    setIsLoadingPrices(true);
+  }, [activeChain.id, setIsLoading, setIsLoadingPrices]);
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -140,8 +151,7 @@ export default function PortfolioPage() {
    * Get the latest and historical prices for all tokens
    */
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       // Only fetch prices for tokens if they are all on the same (active) chain
       if (uniqueTokens.length > 0 && uniqueTokens.some((token) => token.chainId !== activeChain.id)) {
         return;
@@ -181,94 +191,62 @@ export default function PortfolioPage() {
           priceEntries: data.prices,
         };
       });
-      if (mounted) {
-        setTokenQuotes(tokenQuoteData);
-        setTokenPriceData(tokenPriceData);
-        setIsLoadingPrices(false);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [activeChain, uniqueTokens]);
+      setTokenQuotes(tokenQuoteData);
+      setTokenPriceData(tokenPriceData);
+      setIsLoadingPrices(false);
+    })();
+  }, [activeChain, uniqueTokens, setTokenQuotes, setTokenPriceData, setIsLoadingPrices, setErrorLoadingPrices]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetchTokenColors() {
+    (async () => {
       const tokenColorMap: Map<string, string> = new Map();
       const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
       const colors = await Promise.all(colorPromises);
       uniqueTokens.forEach((token: Token, index: number) => {
         tokenColorMap.set(token.address, colors[index]);
       });
-      if (mounted) {
-        setTokenColors(tokenColorMap);
-      }
-    }
-    fetchTokenColors();
-    return () => {
-      mounted = false;
-    };
-  }, [lendingPairs, uniqueTokens]);
+      setTokenColors(tokenColorMap);
+    })();
+  }, [lendingPairs, setTokenColors, uniqueTokens]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      const results = await getAvailableLendingPairs(activeChain, provider);
-      if (mounted) {
-        setLendingPairs(results);
-        setIsLoading(false);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [activeChain, provider]);
+    (async () => {
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await getAvailableLendingPairs(chainId, provider);
+      setLendingPairs(results);
+      setIsLoading(false);
+    })();
+  }, [provider, setIsLoading, setLendingPairs]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
       if (!address || isLoading) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
-      if (mounted) {
-        setLendingPairBalances(results);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [provider, address, lendingPairs, isLoading]);
+      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      setLendingPairBalances(results);
+    })();
+  }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
 
   useEffect(() => {
-    let mounted = true;
-    async function waitForTxn() {
+    (async () => {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
       const receipt = await pendingTxn.wait();
-      if (!mounted) return;
       if (receipt.status === 1) {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
-    }
-    waitForTxn();
-    return () => {
-      mounted = false;
-    };
-  }, [pendingTxn]);
+    })();
+  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
     if (!isConnected && !isConnecting && lendingPairBalances.length > 0) {
       setLendingPairBalances([]);
       setActiveAsset(null);
     }
-  }, [isConnecting, isConnected, lendingPairBalances]);
+  }, [isConnecting, isConnected, lendingPairBalances, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
@@ -476,6 +454,7 @@ export default function PortfolioPage() {
             tokens={uniqueTokens}
             defaultToken={activeAsset}
             lendingPairs={lendingPairs}
+            tokenBalances={combinedBalances}
             isOpen={isWithdrawModalOpen}
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}

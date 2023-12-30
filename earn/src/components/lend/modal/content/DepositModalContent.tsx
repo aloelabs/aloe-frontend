@@ -2,11 +2,13 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { DashedDivider, LABEL_TEXT_COLOR, VALUE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -14,7 +16,6 @@ import { Token } from 'shared/lib/data/Token';
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../../data/constants/Addresses';
 
 const TERTIARY_COLOR = '#4b6980';
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
@@ -86,11 +87,11 @@ function DepositButton(props: DepositButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
 
   const { config: depositWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: routerABI,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
+    abi: routerAbi,
     functionName: 'depositWithPermit2',
     args: [
       kitty.address,
@@ -232,7 +233,7 @@ export default function DepositModalContent(props: DepositModalContentProps) {
         />
         <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
           By depositing, you agree to our{' '}
-          <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}
           and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

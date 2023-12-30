@@ -1,8 +1,7 @@
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { getHealthColor } from 'shared/lib/util/Health';
 import styled from 'styled-components';
-
-import { getHealthColor } from '../../util/Health';
 
 const MAX_HEALTH_BAR = 3;
 const MAX_HEALTH_LABEL = 5;
@@ -66,7 +65,7 @@ export default function HealthBar(props: HealthBarProps) {
         </Display>
       </div>
       <HealthBarContainer>
-        <HealthBarDial healthPercent={healthPercent} />
+        <HealthBarDial healthPercent={healthPercent} data-testid='health-bar-dial' />
       </HealthBarContainer>
     </div>
   );

@@ -145,8 +145,6 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
 
-  // const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
-
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
       return {
@@ -156,7 +154,6 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
     });
   }, [lendingPairs]);
 
-  // const [numberOfUsers, setNumberOfUsers] = useState(0);
   const [selectedOption, setSelectedOption] = useState<DropdownOption<LendingPair>>(options[0]);
   useEffect(() => {
     setSelectedOption(options[0]);
@@ -174,7 +171,12 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
         <CardHeader>
           <Text size='S' color='rgba(130, 160, 182, 1)' className='flex items-center gap-2'>
             Lending Pair Peer
-            <Tooltip buttonSize='S' content='Collateral Asset' position='bottom-center' />
+            <Tooltip
+              buttonSize='S'
+              // eslint-disable-next-line max-len
+              content='The information in this section relates to a Lending Pair. A given asset may be part of multiple Lending Pairs, so use the dropdown on the right to choose one to inspect.'
+              position='bottom-center'
+            />
           </Text>
         </CardHeader>
         <CardBody>
@@ -205,9 +207,9 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
           </SmallCardBodyItem>
           <SmallCardBodyItem>
             <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
-              IV
+              LTV
             </Text>
-            <Display size='L'>{roundPercentage(selectedLendingPair.iv, 1)}%</Display>
+            <Display size='L'>{roundPercentage(selectedLendingPair.ltv * 100, 1)}%</Display>
           </SmallCardBodyItem>
         </CardBody>
       </Container>

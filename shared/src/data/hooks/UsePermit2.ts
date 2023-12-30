@@ -12,11 +12,11 @@ import {
   useWaitForTransaction,
 } from 'wagmi';
 
-import { permit2ABI } from '../../abis/Permit2';
+import { permit2Abi } from '../../abis/Permit2';
 import { bigNumberToBinary } from '../../util/Bitmap';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
-import { UNISWAP_PERMIT2_ADDRESS } from '../constants/Addresses';
+import { UNISWAP_PERMIT2_ADDRESS } from '../constants/ChainSpecific';
 import { Token } from '../Token';
 
 export enum Permit2State {
@@ -111,7 +111,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     address: token.address,
     abi: erc20ABI,
     functionName: 'allowance',
-    args: [owner, UNISWAP_PERMIT2_ADDRESS] as const,
+    args: [owner, UNISWAP_PERMIT2_ADDRESS[chain.id]] as const,
     chainId: chain.id,
   });
 
@@ -124,7 +124,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     address: token.address,
     abi: erc20ABI,
     functionName: 'approve',
-    args: [UNISWAP_PERMIT2_ADDRESS, ethers.constants.MaxUint256],
+    args: [UNISWAP_PERMIT2_ADDRESS[chain.id], ethers.constants.MaxUint256],
     chainId: chain.id,
     enabled: shouldApprove,
   });
@@ -160,15 +160,15 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   const domain = {
     name: 'Permit2',
     chainId: chain.id,
-    verifyingContract: UNISWAP_PERMIT2_ADDRESS,
+    verifyingContract: UNISWAP_PERMIT2_ADDRESS[chain.id],
   } as const;
 
   // Verify that `domain` will produce the same domain separator that's stored in the contract.
   // This _should_ always be the case, but it's good to check our work.
   {
     const { data: domainSeparator } = useContractRead({
-      address: UNISWAP_PERMIT2_ADDRESS,
-      abi: permit2ABI,
+      address: UNISWAP_PERMIT2_ADDRESS[chain.id],
+      abi: permit2Abi,
       functionName: 'DOMAIN_SEPARATOR',
       chainId: chain.id,
     });
@@ -185,8 +185,8 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     refetch: refetchNonceBitmap,
     isFetching: isFetchingNonceBitmap,
   } = useContractRead({
-    address: UNISWAP_PERMIT2_ADDRESS,
-    abi: permit2ABI,
+    address: UNISWAP_PERMIT2_ADDRESS[chain.id],
+    abi: permit2Abi,
     functionName: 'nonceBitmap',
     args: [owner, BigNumber.from(nonceWordPos)],
     chainId: chain.id,

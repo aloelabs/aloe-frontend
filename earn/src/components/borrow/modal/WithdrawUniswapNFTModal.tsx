@@ -1,19 +1,23 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import MarginAccountABI from '../../../assets/abis/MarginAccount.json';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
-import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
 import { MarginAccount } from '../../../data/MarginAccount';
 import {
   getAmountsForLiquidity,
@@ -23,7 +27,7 @@ import {
   zip,
 } from '../../../data/Uniswap';
 import TokenPairIcons from '../../common/TokenPairIcons';
-import { InRangeBadge, OutOfRangeBadge } from '../UniswapPositionList';
+import { InRangeBadge, OutOfRangeBadge } from '../../common/UniswapPositionCard';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';
@@ -90,26 +94,40 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
-  const data = ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'int24', 'int24', 'int128', 'uint144'],
-    [
-      uniswapNFTPosition[0],
-      uniswapNFTPosition[1].tickLower,
-      uniswapNFTPosition[1].tickUpper,
-      uniswapPosition.liquidity.toString(10),
-      zip(
-        existingUniswapPositions.filter((position) => {
-          return position.lower !== uniswapPosition.lower || position.upper !== uniswapPosition.upper;
-        })
-      ),
-    ]
-  );
+  const provider = useProvider({ chainId: activeChain.id });
+
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
+  const encodedData = useMemo(() => {
+    return ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'int24', 'int24', 'int128', 'uint144'],
+      [
+        uniswapNFTPosition[0],
+        uniswapNFTPosition[1].lower,
+        uniswapNFTPosition[1].upper,
+        uniswapPosition.liquidity.toString(10),
+        zip(
+          existingUniswapPositions.filter((position) => {
+            return position.lower !== uniswapPosition.lower || position.upper !== uniswapPosition.upper;
+          })
+        ),
+      ]
+    ) as `0x${string}`;
+  }, [uniswapNFTPosition, uniswapPosition, existingUniswapPositions]);
+
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: MarginAccountABI,
+    abi: borrowerAbi,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS, data, [true, true]],
+    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
+    enabled: Boolean(oracleSeed),
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
@@ -267,7 +285,7 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

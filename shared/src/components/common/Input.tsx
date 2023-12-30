@@ -1,17 +1,17 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 import { classNames } from '../../util/ClassNames';
-import { GREY_700, GREY_800 } from '../../data/constants/Colors';
+import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 
 const INPUT_BG_COLOR = GREY_800;
 const INPUT_ACTIVE_BG_COLOR = GREY_700;
-const INPUT_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+const INPUT_TEXT_COLOR = GREY_400;
 const INPUT_TEXT_COLOR_HOVER = 'rgba(204, 223, 237, 1)';
 const INPUT_TEXT_COLOR_FOCUS = 'rgba(204, 223, 237, 1)';
-const INPUT_TEXT_COLOR_DISABLED = 'rgba(75, 105, 128, 1)';
+const INPUT_TEXT_COLOR_DISABLED = GREY_400;
 const INPUT_BORDER_COLOR = GREY_700;
 const INPUT_CARET_COLOR = 'rgba(82, 182, 154, 1)';
-const INPUT_ICON_COLOR_DISABLED = 'rgba(75, 105, 128, 1)';
+const INPUT_ICON_COLOR_DISABLED = GREY_400;
 
 const ICON_SIZES = {
   S: 19,
@@ -197,6 +197,7 @@ const TrailingUnit = styled.div.attrs((props: { size: 'S' | 'M' | 'L' }) => prop
   pointer-events: none;
   font-size: ${(props) => INPUT_FONT_SIZE[props.size]}px;
   line-height: ${(props) => INPUT_LINE_HEIGHT[props.size]}px;
+  color: ${INPUT_TEXT_COLOR};
 `;
 
 export const BaseMaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L' }) => props)`
@@ -210,7 +211,7 @@ export const BaseMaxButton = styled.button.attrs((props: { size: 'S' | 'M' | 'L'
   padding: 0px;
 
   &:disabled {
-    color: rgba(75, 105, 128, 1);
+    color: ${INPUT_TEXT_COLOR_DISABLED};
   }
 `;
 
@@ -225,7 +226,7 @@ export const CustomMaxButton = styled.button.attrs((props: { width?: string; hei
   padding: 0px;
 
   &:disabled {
-    color: rgba(75, 105, 128, 1);
+    color: ${INPUT_TEXT_COLOR_DISABLED};
   }
 `;
 

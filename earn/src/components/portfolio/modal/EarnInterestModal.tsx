@@ -2,12 +2,14 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -16,7 +18,6 @@ import { formatNumberInput, roundPercentage, truncateDecimals } from 'shared/lib
 import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -93,11 +94,11 @@ function DepositButton(props: DepositButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS, depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: routerABI,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
+    abi: routerAbi,
     functionName: 'depositWithPermit2',
     args: [
       kitty.address,
@@ -362,7 +363,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
               {selectedPairOption.token0.symbol}/{selectedPairOption.token1.symbol}
             </strong>{' '}
             lending market. Other users will be able to borrow your {selectedOption.symbol} by posting{' '}
-            {peerAsset.symbol} as collateral. When they pay interest, you earn interest.
+            {peerAsset.symbol} or {selectedOption.symbol} as collateral. When they pay interest, you earn interest.
           </Text>
         </div>
         <div className='w-full'>
@@ -382,7 +383,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By depositing, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

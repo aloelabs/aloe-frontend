@@ -1,5 +1,5 @@
 import Big, { BigConstructor, BigSource } from 'big.js';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 
 import { formatTokenAmount, formatTokenAmountCompact } from '../util/Numbers';
@@ -34,7 +34,7 @@ export class GN {
 
   private readonly base: 2 | 10;
 
-  private readonly resolution: number;
+  public readonly resolution: number;
 
   private readonly scaler: string;
 
@@ -396,5 +396,15 @@ export class GN {
   static fromNumber(x: number, decimals: number) {
     console.warn('GN.fromNumber should be avoided as much as possible');
     return GN.fromDecimalString(x.toFixed(decimals), decimals);
+  }
+
+  /**
+   * Converts a hexadecimal string to a `GN`. Useful for handling user input in text fields, e.g.
+   * @param hex The hexadecimal string
+   * @param decimals The number's precision, i.e. the number of decimal places that should be printed
+   * @returns Equivalent `GN`
+   */
+  static hexToGn(hex: string, decimals: number) {
+    return GN.fromBigNumber(ethers.BigNumber.from(hex), decimals, 10);
   }
 }

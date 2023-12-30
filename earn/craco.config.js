@@ -1,5 +1,5 @@
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const webpack = require('webpack');
-const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
 module.exports = {
   webpack: {
@@ -15,7 +15,7 @@ module.exports = {
           os: require.resolve('os-browserify/browser'),
           buffer: require.resolve('buffer'),
           stream: require.resolve('stream-browserify'),
-        }
+        },
       },
       plugins: [
         new webpack.ProvidePlugin({
@@ -32,9 +32,7 @@ module.exports = {
         rules: [
           {
             test: /\.m?js/,
-            resolve: {
-              fullySpecified: false,
-            },
+            resolve: { fullySpecified: false },
           },
         ],
       },
@@ -48,6 +46,14 @@ module.exports = {
           );
         },
       ],
+    },
+  },
+  jest: {
+    configure: {
+      displayName: {
+        name: 'EARN',
+        color: 'blue',
+      },
     },
   },
 };

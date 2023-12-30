@@ -1,18 +1,20 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import FactoryABI from '../../../assets/abis/Factory.json';
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
-import { ALOE_II_FACTORY_ADDRESS } from '../../../data/constants/Addresses';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
 
@@ -42,12 +44,13 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
 
   const [isPending, setIsPending] = useState(false);
 
+  const salt = useMemo(() => generateBytes12Salt(), []);
   const { config: createBorrowerConfig } = usePrepareContractWrite({
-    address: ALOE_II_FACTORY_ADDRESS,
-    abi: FactoryABI,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    abi: factoryAbi,
     functionName: 'createBorrower',
-    args: [poolAddress, userAddress],
-    enabled: !!poolAddress && !!userAddress,
+    args: [poolAddress as Address, userAddress as Address, salt],
+    enabled: Boolean(poolAddress) && Boolean(userAddress),
     chainId: activeChain.id,
   });
   const createBorrowerUpdatedRequest = useMemo(() => {
@@ -230,7 +233,7 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
             />
             <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
               By using our service, you agree to our{' '}
-              <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+              <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
                 Terms of Service
               </a>{' '}
               and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur.

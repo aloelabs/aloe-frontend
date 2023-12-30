@@ -17,6 +17,7 @@ import { SquareInput } from 'shared/lib/components/common/Input';
 import { SvgWrapper } from 'shared/lib/components/common/SvgWrapper';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
@@ -27,7 +28,6 @@ import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
 import { getAssets } from '../../data/BalanceSheet';
-import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from '../../data/constants/Addresses';
 import { TOPIC0_MODIFY_EVENT } from '../../data/constants/Signatures';
 import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
@@ -256,7 +256,7 @@ export default function PnLGraph(props: PnLGraphProps) {
       try {
         etherscanResult = await makeEtherscanRequest(
           0,
-          ALOE_II_FRONTEND_MANAGER_ADDRESS,
+          ALOE_II_FRONTEND_MANAGER_ADDRESS[activeChain.id],
           [TOPIC0_MODIFY_EVENT, `0x000000000000000000000000${marginAccount.address.slice(2)}`],
           true,
           activeChain
@@ -353,7 +353,28 @@ export default function PnLGraph(props: PnLGraphProps) {
 
   const off = gradientOffset();
   if (data.length === 0 || inTermsOfToken0 !== localInTermsOfToken0) {
-    return <PnLGraphPlaceholder />;
+    return (
+      <div className='w-full flex flex-col gap-4'>
+        <div className='flex justify-between items-center'>
+          <Text size='L' weight='medium'>
+            P&L
+          </Text>
+          <PnLGraphSettings
+            borrowInterestInputValue={borrowInterestInputValue}
+            setBorrowInterestInputValue={setBorrowInterestInputValue}
+            swapFeeInputValue={swapFeesInputValue}
+            setSwapFeesInputValue={setSwapFeesInputValue}
+            disabled={true}
+          />
+        </div>
+        <PnLGraphPlaceholder />
+        <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+          This graph estimates profit and losses arising solely from the structure of your positions. To include
+          time-based effects such as borrow interest (-) and swap fees (+), click on the cog on the top right of the
+          graph and enter your desired values.
+        </Text>
+      </div>
+    );
   }
 
   return (

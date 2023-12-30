@@ -16,7 +16,7 @@
     "object-curly-newline": [
       "error",
       {
-        "ObjectExpression": { "multiline": true, "minProperties": 4, "consistent": false },
+        "ObjectExpression": { "multiline": true, "minProperties": 4, "consistent": true },
         "ObjectPattern": { "multiline": true },
         "ImportDeclaration": { "multiline": true },
         "ExportDeclaration": { "multiline": true }
@@ -25,6 +25,7 @@
     "object-curly-spacing": ["error", "always"],
     "eqeqeq": ["warn", "smart"],
     "no-return-await": "warn",
+    "no-implicit-coercion": "error",
     "comma-dangle": ["warn", {
       "arrays": "always-multiline",
       "objects": "always-multiline",

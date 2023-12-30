@@ -1,17 +1,18 @@
 import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { erc20ABI } from 'shared/lib/abis/ERC20';
+import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
-import { isSolvent } from '../../../../data/BalanceSheet';
+import { isHealthy } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import { UniswapPosition } from '../../../../data/Uniswap';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
@@ -61,10 +62,10 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
     address: collateralToken.address,
-    abi: erc20ABI,
+    abi: erc20Abi,
     functionName: 'transfer',
     args: [marginAccount.address, collateralAmount.toBigNumber()],
-    enabled: !!collateralAmount && !!userBalance && collateralAmount.lte(userBalance),
+    enabled: Boolean(collateralAmount) && Boolean(userBalance) && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
   const contractWriteConfigUpdatedRequest = useMemo(() => {
@@ -189,12 +190,13 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
     uni1: marginAccount.assets.uni1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     newAssets,
     marginAccount.liabilities,
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
@@ -272,7 +274,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
         />
         <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
           By using our service, you agree to our{' '}
-          <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+          <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}
           and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

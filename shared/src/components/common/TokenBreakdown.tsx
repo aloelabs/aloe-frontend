@@ -1,9 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Text } from './Typography';
-import { GREY_700 } from '../../data/constants/Colors';
+import { GREY_400, GREY_700 } from '../../data/constants/Colors';
 
-const LABEL_TEXT_COLOR = 'rgba(75, 105, 128, 1)';
+const LABEL_TEXT_COLOR = GREY_400;
 const VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 
 const TokenBreakdownWrapper = styled.div`

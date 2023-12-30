@@ -1,36 +1,49 @@
-import React, { Suspense, createContext, useContext, useEffect, useState } from 'react';
+import React, { Suspense, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import axios, { AxiosResponse } from 'axios';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import BetaBanner from 'shared/lib/components/banner/BetaBanner';
+import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
-import { DEFAULT_CHAIN } from 'shared/lib/data/constants/Values';
+import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
+import { screenAddress } from 'shared/lib/data/AccountRisk';
+import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
+import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { isDappnet, isDevelopment } from 'shared/lib/util/Utils';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
-import { API_GEO_FENCING_URL } from './data/constants/Values';
-import { GeoFencingResponse } from './data/GeoFencingResponse';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
     I have read, understood, and agreed to the{' '}
-    <a className='underline text-green-600 hover:text-green-700' href='/terms.pdf' target='_blank'>
+    <a
+      className='underline text-green-600 hover:text-green-700'
+      href={TERMS_OF_SERVICE_URL}
+      target='_blank'
+      rel='noreferrer'
+    >
       Terms of Service
     </a>{' '}
     and{' '}
-    <a className='underline text-green-600 hover:text-green-700' href='/privacy.pdf' target='_blank'>
+    <a
+      className='underline text-green-600 hover:text-green-700'
+      href={PRIVACY_POLICY_URL}
+      target='_blank'
+      rel='noreferrer'
+    >
       Privacy Policy
     </a>
     .
@@ -76,19 +89,12 @@ export const ChainContext = React.createContext({
   setIsChainLoading: (isLoading: boolean) => {},
 });
 
-export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
-
-export function useGeoFencing(activeChain: Chain) {
-  const ctxt = useContext(GeoFencingContext);
-  const isDev = isDevelopment();
-  return isDev || ctxt?.isAllowed || !!activeChain.testnet;
-}
-
 function AppBodyWrapper() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
   const { activeChain, isChainLoading, setActiveChain, setIsChainLoading } = useContext(ChainContext);
   const account = useAccount();
   const network = useNetwork();
+  const { isBlocked: isAccountBlocked } = useAccountRisk();
 
   useEffect(() => {
     const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
@@ -110,29 +116,36 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
 
+  const isReady = false;
+
   return (
     <AppBody>
-      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-      <BetaBanner />
-      {!isChainLoading && (
-        <main className='flex-grow'>
-          <Routes>
-            <Route path='/borrow' element={<BorrowAccountsPage />} />
-            <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-            <Route path='/' element={<Navigate replace to='/borrow' />} />
-            <Route path='*' element={<Navigate to='/' />} />
-          </Routes>
-        </main>
+      {!isReady && <ComingSoonPage />}
+      {isReady && (
+        <>
+          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+          {!isChainLoading && (
+            <main className='flex-grow'>
+              <Routes>
+                <Route path='/borrow' element={<BorrowAccountsPage />} />
+                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+                <Route path='/' element={<Navigate replace to='/borrow' />} />
+                <Route path='*' element={<Navigate to='/' />} />
+              </Routes>
+            </main>
+          )}
+          <Footer />
+          <WelcomeModal
+            isOpen={isWelcomeModalOpen}
+            activeChain={activeChain}
+            checkboxes={CONNECT_WALLET_CHECKBOXES}
+            account={account}
+            setIsOpen={() => setIsWelcomeModalOpen(false)}
+            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+          />
+          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+        </>
       )}
-      <Footer />
-      <WelcomeModal
-        isOpen={isWelcomeModalOpen}
-        activeChain={activeChain}
-        checkboxes={CONNECT_WALLET_CHECKBOXES}
-        account={account}
-        setIsOpen={() => setIsWelcomeModalOpen(false)}
-        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-      />
     </AppBody>
   );
 }
@@ -141,27 +154,34 @@ function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [isChainLoading, setIsChainLoading] = React.useState(true);
   const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
+  const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
+  const { address: userAddress } = useAccount();
 
   useEffectOnce(() => {
     let mounted = true;
-    async function fetch() {
-      try {
-        if (isDappnet() && mounted) {
-          setGeoFencingResponse({ isAllowed: true });
-          return;
-        }
-        const geoFencingResponse: AxiosResponse<GeoFencingResponse> = await axios.get(API_GEO_FENCING_URL);
-        if (geoFencingResponse && mounted) setGeoFencingResponse(geoFencingResponse.data);
-      } catch (error) {
-        console.error(error);
+    (async () => {
+      const result = await fetchGeoFencing();
+      if (mounted) {
+        setGeoFencingResponse(result);
       }
-    }
-    fetch();
+    })();
     return () => {
       mounted = false;
     };
   });
+
+  useEffect(() => {
+    (async () => {
+      if (userAddress === undefined) {
+        setAccountRisk({ isBlocked: false, isLoading: false });
+        return;
+      }
+      setAccountRisk({ isBlocked: false, isLoading: true });
+      const result = await screenAddress(userAddress);
+      setAccountRisk({ isBlocked: result.isBlocked, isLoading: false });
+    })();
+  }, [userAddress, setAccountRisk]);
 
   const value = {
     activeChain,
@@ -204,12 +224,14 @@ function App() {
     <>
       <Suspense fallback={null}>
         <WagmiProvider>
-          <GeoFencingContext.Provider value={geoFencingResponse}>
-            <ChainContext.Provider value={value}>
-              <ScrollToTop />
-              <AppBodyWrapper />
-            </ChainContext.Provider>
-          </GeoFencingContext.Provider>
+          <AccountRiskContext.Provider value={accountRisk}>
+            <GeoFencingContext.Provider value={geoFencingResponse}>
+              <ChainContext.Provider value={value}>
+                <ScrollToTop />
+                <AppBodyWrapper />
+              </ChainContext.Provider>
+            </GeoFencingContext.Provider>
+          </AccountRiskContext.Provider>
         </WagmiProvider>
       </Suspense>
     </>

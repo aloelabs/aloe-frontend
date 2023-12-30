@@ -9,6 +9,8 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD, roundPercentage } from 'shared/lib/util/Numbers';
@@ -56,7 +58,7 @@ const LowerLendHeader = styled.div`
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     flex-direction: column-reverse;
     align-items: flex-start;
-  } ;
+  }
 `;
 
 const LendCards = styled.div`
@@ -82,10 +84,10 @@ export type TokenBalance = {
 export default function LendPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
-  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useState<LendingPair[]>([]);
-  const [lendingPairBalances, setLendingPairBalances] = useState<LendingPairBalances[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[]>([]);
+  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
+  const [lendingPairBalances, setLendingPairBalances] = useSafeState<LendingPairBalances[]>([]);
+  const [isLoading, setIsLoading] = useSafeState<boolean>(true);
   const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
@@ -110,7 +112,6 @@ export default function LendPage() {
   }, [lendingPairs]);
 
   useEffect(() => {
-    let mounted = true;
     async function fetch() {
       // fetch token quotes
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
@@ -129,32 +130,23 @@ export default function LendPage() {
           price: value.price,
         };
       });
-      if (mounted && tokenQuotes.length === 0) {
+      if (tokenQuotes.length === 0) {
         setTokenQuotes(tokenQuoteData);
       }
     }
     if (uniqueSymbols.length > 0 && tokenQuotes.length === 0) {
       fetch();
     }
-    return () => {
-      mounted = false;
-    };
-  }, [activeChain, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
+  }, [activeChain, setTokenQuotes, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      const results = await getAvailableLendingPairs(activeChain, provider);
-      if (mounted) {
-        setLendingPairs(results);
-        setIsLoading(false);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [provider, address, activeChain]);
+    (async () => {
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await getAvailableLendingPairs(chainId, provider);
+      setLendingPairs(results);
+      setIsLoading(false);
+    })();
+  }, [provider, address, setLendingPairs, setIsLoading]);
 
   useEffect(() => {
     let uniqueTokens = new Set<Token>();
@@ -174,19 +166,12 @@ export default function LendPage() {
   }, [lendingPairs]);
 
   useEffect(() => {
-    let mounted = true;
-    async function fetch() {
+    (async () => {
       if (!address) return;
-      const results = await Promise.all(lendingPairs.map((p) => getLendingPairBalances(p, address, provider)));
-      if (mounted) {
-        setLendingPairBalances(results);
-      }
-    }
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, [provider, address, lendingPairs]);
+      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      setLendingPairBalances(results);
+    })();
+  }, [activeChain.id, address, lendingPairs, provider, setLendingPairBalances]);
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     if (tokenQuotes.length === 0) {
@@ -354,7 +339,6 @@ export default function LendPage() {
                   );
                 }}
                 flipDirection={true}
-                maxHeight={275}
               />
               <BalanceSlider tokenBalances={combinedBalances} />
             </LowerLendHeader>

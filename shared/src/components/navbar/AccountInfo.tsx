@@ -12,10 +12,16 @@ import { Chain, mainnet } from 'wagmi/chains';
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
 import { formatAddress } from '../../util/FormatAddress';
-import { CloseableModal } from '../common/Modal';
+import Modal, { CloseableModal } from '../common/Modal';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
 import { GREY_700, GREY_800 } from '../../data/constants/Colors';
+import Bell from '../../assets/svg/Bell';
+import { QRCodeSVG } from 'qrcode.react';
+import { NOTIFICATION_BOT_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const TERTIARY_COLOR = '#4b6980';
 
 const StyledPopoverPanel = styled(Popover.Panel)`
   position: absolute;
@@ -57,6 +63,16 @@ const ButtonTextContainer = styled.div`
   }
 `;
 
+const QRCodeContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 162px;
+  height: 162px;
+  border-radius: 8px;
+  background-color: white;
+`;
+
 export type AccountInfoProps = {
   account: GetAccountResult<Provider>;
   chain: Chain;
@@ -79,6 +95,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component state
   const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] = useState<boolean>(false);
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
+  const [enableNotificationsModalOpen, setEnableNotificationsModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect({ chainId: chain.id });
@@ -113,34 +130,55 @@ export default function AccountInfo(props: AccountInfoProps) {
               {open && (
                 <StyledPopoverPanel>
                   {account?.address !== undefined && (
-                    <div className='flex items-center justify-between'>
-                      <div className='flex gap-2 items-center'>
-                        <Identicon />
-                        <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
-                          {buttonText}
-                        </Text>
+                    <div className='flex flex-col gap-2 w-full'>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex gap-2 items-center'>
+                          <Identicon />
+                          <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
+                            {buttonText}
+                          </Text>
+                        </div>
+                        <div className='flex gap-2 items-center'>
+                          <FilledGreyButtonWithIcon
+                            Icon={<CopyIcon />}
+                            size='S'
+                            svgColorType='stroke'
+                            position='center'
+                            onClick={() => {
+                              if (account.address) {
+                                navigator.clipboard.writeText(account.address);
+                              }
+                            }}
+                          />
+                          <FilledGreyButtonWithIcon
+                            Icon={<PowerIcon />}
+                            size='S'
+                            svgColorType='stroke'
+                            position='center'
+                            onClick={() => {
+                              disconnect();
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className='flex gap-2 items-center'>
+                      <div className='flex flex-col gap-2'>
+                        <div>
+                          <Text size='S'>Notifications</Text>
+                          <Text size='XS' color={SECONDARY_COLOR}>
+                            Receive Telegram messages when your positions are at risk of liquidation.
+                          </Text>
+                        </div>
                         <FilledGreyButtonWithIcon
-                          Icon={<CopyIcon />}
                           size='S'
+                          Icon={<Bell />}
                           svgColorType='stroke'
-                          position='center'
+                          position='leading'
                           onClick={() => {
-                            if (account.address) {
-                              navigator.clipboard.writeText(account.address);
-                            }
+                            setEnableNotificationsModalOpen(true);
                           }}
-                        />
-                        <FilledGreyButtonWithIcon
-                          Icon={<PowerIcon />}
-                          size='S'
-                          svgColorType='stroke'
-                          position='center'
-                          onClick={() => {
-                            disconnect();
-                          }}
-                        />
+                        >
+                          Enable Notifications
+                        </FilledGreyButtonWithIcon>
                       </div>
                     </div>
                   )}
@@ -163,7 +201,7 @@ export default function AccountInfo(props: AccountInfoProps) {
             <Text size='M' weight='medium'>
               By connecting a wallet, I agree to Aloe Labs, Inc's{' '}
               <a
-                href={'/terms.pdf'}
+                href={TERMS_OF_SERVICE_URL}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='underline text-green-600 hover:text-green-700'
@@ -172,7 +210,7 @@ export default function AccountInfo(props: AccountInfoProps) {
               </a>{' '}
               and{' '}
               <a
-                href={'/privacy.pdf'}
+                href={PRIVACY_POLICY_URL}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='underline text-green-600 hover:text-green-700'
@@ -182,7 +220,7 @@ export default function AccountInfo(props: AccountInfoProps) {
               .
             </Text>
             {connectors.map((connector) => (
-              <div key={connector.id} className=' py-2 w-full flex flex-row items-center justify-between'>
+              <div key={connector.id} className='py-2 w-full flex flex-row items-center justify-between'>
                 {getIconForWagmiConnectorNamed(connector.name)}
                 <FilledStylizedButton
                   name='Disconnect'
@@ -206,6 +244,30 @@ export default function AccountInfo(props: AccountInfoProps) {
           )}
         </div>
       </CloseableModal>
+      <Modal
+        isOpen={enableNotificationsModalOpen}
+        setIsOpen={setEnableNotificationsModalOpen}
+        title='Enable Notifications'
+        maxWidth='400px'
+      >
+        <div className='flex flex-col gap-4 items-center text-center'>
+          <Text size='M'>Sign up to receive Telegram messages two minutes before liquidation.</Text>
+          <QRCodeContainer>
+            <QRCodeSVG value={NOTIFICATION_BOT_URL} size={148} />
+          </QRCodeContainer>
+          <a href={NOTIFICATION_BOT_URL} target='_blank' rel='noreferrer'>
+            <FilledStylizedButton size='M'>Open Telegram</FilledStylizedButton>
+          </a>
+          <Text size='XS' color={TERTIARY_COLOR} className='mt-2'>
+            By enrolling, you agree to our{' '}
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
+              Terms of Service
+            </a>
+            {''}, acknowledge that this service may not always work. Your address will be linked to your Telegram
+            username in our database.
+          </Text>
+        </div>
+      </Modal>
     </div>
   );
 }

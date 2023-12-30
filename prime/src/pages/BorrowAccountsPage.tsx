@@ -3,18 +3,21 @@ import { useContext, useEffect, useState } from 'react';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ContractReceipt, ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
+import { ALOE_II_FACTORY_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { getToken } from 'shared/lib/data/TokenData';
 import { useAccount, useProvider, useSigner, Address } from 'wagmi';
 
-import { ChainContext, useGeoFencing } from '../App';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ChainContext } from '../App';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
@@ -22,7 +25,7 @@ import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAcc
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
 import { createBorrower } from '../connector/FactoryActions';
-import { ALOE_II_FACTORY_ADDRESS, UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
+import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
 
@@ -36,8 +39,11 @@ export default function BorrowAccountsPage() {
   const [showFailedModal, setShowFailedModal] = useState(false);
   const [showSubmittingModal, setShowSubmittingModal] = useState(false);
   // --> other
-  const [availablePools, setAvailablePools] = useState(new Map<string, UniswapPoolInfo>());
-  const [marginAccounts, setMarginAccounts] = useState<MarginAccountPreview[]>([]);
+  const [availablePools, setAvailablePools] = useChainDependentState(
+    new Map<string, UniswapPoolInfo>(),
+    activeChain.id
+  );
+  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccountPreview[]>([], activeChain.id);
   const [isLoadingMarginAccounts, setIsLoadingMarginAccounts] = useState(true);
   const [isTxnPending, setIsTxnPending] = useState(false);
   const [refetchCount, setRefetchCount] = useState(0);
@@ -72,16 +78,20 @@ export default function BorrowAccountsPage() {
       let createMarketLogs: ethers.providers.Log[] = [];
       try {
         createMarketLogs = await provider.getLogs({
-          address: ALOE_II_FACTORY_ADDRESS,
           fromBlock: 0,
           toBlock: 'latest',
+          address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
           topics: [TOPIC0_CREATE_MARKET_EVENT],
         });
       } catch (e) {
         console.error(e);
       }
 
-      const multicall = new Multicall({ ethersProvider: provider, tryAggregate: true });
+      const multicall = new Multicall({
+        ethersProvider: provider,
+        tryAggregate: true,
+        multicallCustomContractAddress: MULTICALL_ADDRESS[activeChain.id],
+      });
       const marginAccountCallContext: ContractCallContext[] = [];
 
       createMarketLogs.forEach((e) => {
@@ -92,7 +102,7 @@ export default function BorrowAccountsPage() {
         marginAccountCallContext.push({
           reference: poolAddress,
           contractAddress: poolAddress,
-          abi: UniswapV3PoolABI,
+          abi: uniswapV3PoolAbi as any,
           calls: [
             {
               reference: 'token0',
@@ -134,13 +144,13 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, provider]);
+  }, [activeChain, provider, setAvailablePools]);
 
   useEffect(() => {
     let mounted = true;
 
     async function fetch(userAddress: string) {
-      // Guard clause: if the margin account lens contract is null, don't fetch
+      // Guard clause: if the BorrowerLens contract is null, don't fetch
       if (!isAllowedToInteract) {
         setMarginAccounts([]);
         return;
@@ -171,7 +181,7 @@ export default function BorrowAccountsPage() {
     return () => {
       mounted = false;
     };
-  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools]);
+  }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools, setMarginAccounts]);
 
   function onCommencement() {
     setIsTxnPending(false);
@@ -222,7 +232,7 @@ export default function BorrowAccountsPage() {
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
         <Display size='L' weight='semibold'>
-          Your Margin Accounts
+          Your Borrow Vaults
         </Display>
         <FilledGradientButtonWithIcon
           Icon={<PlusIcon />}
@@ -258,7 +268,7 @@ export default function BorrowAccountsPage() {
             if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
               return;
             }
-            createBorrower(signer, selectedPool, accountAddress, onCommencement, onCompletion);
+            createBorrower(signer, selectedPool, accountAddress, activeChain, onCommencement, onCompletion);
           }}
         />
       )}

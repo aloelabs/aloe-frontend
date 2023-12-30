@@ -2,20 +2,26 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { borrowerABI } from 'shared/lib/abis/Borrower';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ANTES } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from '../../../data/constants/Addresses';
+import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
@@ -56,6 +62,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 type BorrowButtonProps = {
   marginAccount: MarginAccount;
+  ante: GN;
   userAddress: string;
   borrowToken: Token;
   borrowAmount: GN;
@@ -69,6 +76,7 @@ type BorrowButtonProps = {
 function BorrowButton(props: BorrowButtonProps) {
   const {
     marginAccount,
+    ante,
     userAddress,
     borrowToken,
     borrowAmount,
@@ -81,47 +89,55 @@ function BorrowButton(props: BorrowButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
+  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
-  const ante = ANTES[activeChain.id];
+  const provider = useProvider({ chainId: activeChain.id });
 
   const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
 
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const borrowerInterface = new ethers.utils.Interface(borrowerABI);
+  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
   const encodedData = borrowerInterface.encodeFunctionData('borrow', [
     amount0Big.toBigNumber(),
     amount1Big.toBigNumber(),
     userAddress,
   ]);
 
-  const { config: removeCollateralConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
+  useEffectOnce(() => {
+    (async () => {
+      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
+      setOracleSeed(seed);
+    })();
+  });
+
+  const { config: borrowConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
     address: marginAccount.address,
-    abi: borrowerABI,
+    abi: borrowerAbi,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS, encodedData as Address, [false, false]],
-    overrides: { value: shouldProvideAnte ? ante.recklessAdd(1).toBigNumber() : undefined },
-    enabled: !!userAddress && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
+    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
+    overrides: { value: shouldProvideAnte ? ante.toBigNumber() : undefined },
+    enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && Boolean(oracleSeed),
     chainId: activeChain.id,
   });
-  const removeCollateralUpdatedRequest = useMemo(() => {
-    if (removeCollateralConfig.request) {
+  const borrowUpdatedRequest = useMemo(() => {
+    if (borrowConfig.request) {
       return {
-        ...removeCollateralConfig.request,
-        gasLimit: removeCollateralConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
+        ...borrowConfig.request,
+        gasLimit: borrowConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
       };
     }
     return undefined;
-  }, [removeCollateralConfig.request]);
+  }, [borrowConfig.request]);
   const {
     write: contractWrite,
     isSuccess: contractDidSucceed,
     isLoading: contractIsLoading,
     data: contractData,
   } = useContractWrite({
-    ...removeCollateralConfig,
-    request: removeCollateralUpdatedRequest,
+    ...borrowConfig,
+    request: borrowUpdatedRequest,
   });
 
   useEffect(() => {
@@ -141,9 +157,9 @@ function BorrowButton(props: BorrowButtonProps) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if (prepareContractIsLoading && !removeCollateralConfig.request) {
+  } else if ((prepareContractIsLoading && !borrowConfig.request) || oracleSeed === undefined) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!removeCollateralConfig.request) {
+  } else if (!borrowConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
@@ -170,13 +186,14 @@ export type BorrowModalProps = {
   marginAccount: MarginAccount;
   uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
+  accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, uniswapPositions, marketInfo, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, uniswapPositions, marketInfo, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
@@ -184,19 +201,25 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const { address: userAddress } = useAccount();
 
-  const { data: accountEtherBalance } = useBalance({
-    address: marginAccount.address as Address,
-    chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen,
-  });
-
   // Reset borrow amount and token when modal is opened/closed
   // or when the margin account token0 changes
   useEffect(() => {
     setBorrowAmountStr('');
     setBorrowToken(marginAccount.token0);
   }, [isOpen, marginAccount.token0]);
+
+  const { data: anteData } = useContractRead({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+    functionName: 'getParameters',
+    args: [marginAccount.uniswapPool as Address],
+    chainId: activeChain.id,
+  });
+
+  const ante = useMemo(() => {
+    if (!anteData) return GN.zero(18);
+    return GN.fromBigNumber(anteData[0], 18);
+  }, [anteData]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
   const isToken0 = borrowToken.address === marginAccount.token0.address;
@@ -207,11 +230,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const newLiability = existingLiability.add(borrowAmount);
 
-  const gnAccountEtherBalance = accountEtherBalance ? GN.fromBigNumber(accountEtherBalance.value, 18) : GN.zero(18);
-
-  const ante = ANTES[activeChain.id];
-
-  const shouldProvideAnte = (accountEtherBalance && gnAccountEtherBalance.lt(ante)) || false;
+  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.lt(ante)) || false;
 
   // TODO: use GN (this is an odd case where Big may make more sense)
   const formattedAnte = ante.toString(GNFormat.DECIMAL);
@@ -228,6 +247,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   )[isToken0 ? 0 : 1];
@@ -243,12 +263,13 @@ export default function BorrowModal(props: BorrowModalProps) {
     amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
@@ -337,6 +358,7 @@ export default function BorrowModal(props: BorrowModalProps) {
         <div className='w-full'>
           <BorrowButton
             marginAccount={marginAccount}
+            ante={ante}
             userAddress={userAddress}
             borrowToken={borrowToken}
             borrowAmount={borrowAmount}
@@ -348,7 +370,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

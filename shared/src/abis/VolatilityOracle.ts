@@ -1,0 +1,200 @@
+export const volatilityOracleAbi = [
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint160',
+        name: 'sqrtMeanPriceX96',
+        type: 'uint160',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'iv',
+        type: 'uint256',
+      },
+    ],
+    name: 'Update',
+    type: 'event',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'cachedMetadata',
+    outputs: [
+      {
+        internalType: 'uint24',
+        name: 'gamma0',
+        type: 'uint24',
+      },
+      {
+        internalType: 'uint24',
+        name: 'gamma1',
+        type: 'uint24',
+      },
+      {
+        internalType: 'int24',
+        name: 'tickSpacing',
+        type: 'int24',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        internalType: 'uint40',
+        name: 'seed',
+        type: 'uint40',
+      },
+    ],
+    name: 'consult',
+    outputs: [
+      {
+        internalType: 'uint56',
+        name: '',
+        type: 'uint56',
+      },
+      {
+        internalType: 'uint160',
+        name: '',
+        type: 'uint160',
+      },
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: '',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    name: 'feeGrowthGlobals',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'feeGrowthGlobal0X128',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'feeGrowthGlobal1X128',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint32',
+        name: 'timestamp',
+        type: 'uint32',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'lastWrites',
+    outputs: [
+      {
+        internalType: 'uint8',
+        name: 'index',
+        type: 'uint8',
+      },
+      {
+        internalType: 'uint32',
+        name: 'time',
+        type: 'uint32',
+      },
+      {
+        internalType: 'uint216',
+        name: 'iv',
+        type: 'uint216',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+    ],
+    name: 'prepare',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniswapV3Pool',
+        name: 'pool',
+        type: 'address',
+      },
+      {
+        internalType: 'uint40',
+        name: 'seed',
+        type: 'uint40',
+      },
+    ],
+    name: 'update',
+    outputs: [
+      {
+        internalType: 'uint56',
+        name: '',
+        type: 'uint56',
+      },
+      {
+        internalType: 'uint160',
+        name: '',
+        type: 'uint160',
+      },
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;

@@ -4,6 +4,9 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   ArbLogo,
+  BaldLogo,
+  CbEthLogo,
+  ConvexLogo,
   DaiLogo,
   FraxLogo,
   GmxLogo,
@@ -20,6 +23,7 @@ import {
   WethLogo,
   WstEthLogo,
 } from '../assets/svg/tokens';
+import { base } from './BaseChain';
 
 const USDC_GOERLI = new Token(
   goerli.id,
@@ -75,6 +79,15 @@ const WETH_MAINNET = new Token(
   WethLogo
 );
 
+const CVX_MAINNET = new Token(
+  mainnet.id,
+  '0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b',
+  18,
+  'CVX',
+  'Convex Token',
+  ConvexLogo
+);
+
 const DAI_OPTIMISM = new Token(
   optimism.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
@@ -122,9 +135,18 @@ const UNI_OPTIMISM = new Token(
   UniLogo
 );
 
-const USDC_OPTIMISM = new Token(
+const BRIDGED_USDC_OPTIMISM = new Token(
   optimism.id,
   '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
+  6,
+  'USDC.e',
+  'USD Coin',
+  UsdcLogo
+);
+
+const USDC_OPTIMISM = new Token(
+  optimism.id,
+  '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
   6,
   'USDC',
   'USD Coin',
@@ -205,9 +227,18 @@ const MAGIC_INTERNET_MONEY_ARBITRUM = new Token(
   MimLogo
 );
 
-const USDC_ARBITRUM = new Token(
+const BRIDGED_USDC_ARBITRUM = new Token(
   arbitrum.id,
   '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+  6,
+  'USDC.e',
+  'Bridged USDC',
+  UsdcLogo
+);
+
+const USDC_ARBITRUM = new Token(
+  arbitrum.id,
+  '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
   6,
   'USDC',
   'USD Coin',
@@ -250,11 +281,32 @@ const ARB_ARBITRUM = new Token(
   ArbLogo
 );
 
+const WETH_BASE = new Token(
+  base.id,
+  '0x4200000000000000000000000000000000000006',
+  18,
+  'WETH',
+  'Wrapped Ether',
+  WethLogo
+);
+
+const CBETH_BASE = new Token(
+  base.id,
+  '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
+  18,
+  'cbETH',
+  'Coinbase Wrapped Staked ETH',
+  CbEthLogo
+);
+
+const BALD_BASE = new Token(optimism.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
+
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [mainnet.id]: {
     [USDC_MAINNET.address]: USDC_MAINNET,
     [WBTC_MAINNET.address]: WBTC_MAINNET,
     [WETH_MAINNET.address]: WETH_MAINNET,
+    [CVX_MAINNET.address]: CVX_MAINNET,
   },
   [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,
@@ -262,6 +314,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WETH_GOERLI.address]: WETH_GOERLI,
   },
   [optimism.id]: {
+    [BRIDGED_USDC_OPTIMISM.address]: BRIDGED_USDC_OPTIMISM,
     [DAI_OPTIMISM.address]: DAI_OPTIMISM,
     [FRAX_OPTIMISM.address]: FRAX_OPTIMISM,
     [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
@@ -282,9 +335,15 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [MAGIC_ARBITRUM.address]: MAGIC_ARBITRUM,
     [MAGIC_INTERNET_MONEY_ARBITRUM.address]: MAGIC_INTERNET_MONEY_ARBITRUM,
     [USDC_ARBITRUM.address]: USDC_ARBITRUM,
+    [BRIDGED_USDC_ARBITRUM.address]: BRIDGED_USDC_ARBITRUM,
     [USDT_ARBITRUM.address]: USDT_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
+  },
+  [base.id]: {
+    [WETH_BASE.address]: WETH_BASE,
+    [CBETH_BASE.address]: CBETH_BASE,
+    [BALD_BASE.address]: BALD_BASE,
   },
 };
 
@@ -292,7 +351,7 @@ export function getTokens(chainId: number): Token[] {
   return Array.from(Object.values(TOKEN_DATA[chainId]));
 }
 
-export function getToken(chainId: number, address: Address): Token {
+export function getToken(chainId: number, address: Address): Token | undefined {
   return TOKEN_DATA[chainId][getLowercaseAddress(address)];
 }
 

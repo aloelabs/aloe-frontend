@@ -1,24 +1,28 @@
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import { erc20Abi } from 'shared/lib/abis/ERC20';
+import { factoryAbi } from 'shared/lib/abis/Factory';
+import { lenderAbi } from 'shared/lib/abis/Lender';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
+import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import {
+  ALOE_II_FACTORY_ADDRESS,
+  ALOE_II_LENDER_LENS_ADDRESS,
+  ALOE_II_ORACLE_ADDRESS,
+  MULTICALL_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
+import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address, Chain } from 'wagmi';
+import { Address } from 'wagmi';
 
-import ERC20ABI from '../assets/abis/ERC20.json';
-import KittyABI from '../assets/abis/Kitty.json';
-import KittyLensABI from '../assets/abis/KittyLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
-import VolatilityOracleABI from '../assets/abis/VolatilityOracle.json';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import {
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  UNISWAP_POOL_DENYLIST,
-} from './constants/Addresses';
+import { computeLTV } from './BalanceSheet';
+import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 
 export interface KittyInfo {
   // The current APY being earned by Kitty token holders
@@ -40,8 +44,11 @@ export class LendingPair {
     public kitty1: Kitty,
     public kitty0Info: KittyInfo,
     public kitty1Info: KittyInfo,
+    public uniswapPool: Address,
     public uniswapFeeTier: FeeTier,
-    public iv: number
+    public iv: number,
+    public nSigma: number,
+    public ltv: number
   ) {}
 
   equals(other: LendingPair) {
@@ -57,16 +64,19 @@ export type LendingPairBalances = {
 };
 
 export async function getAvailableLendingPairs(
-  chain: Chain,
+  chainId: number,
   provider: ethers.providers.BaseProvider
 ): Promise<LendingPair[]> {
-  const multicall = new Multicall({ ethersProvider: provider });
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
   let logs: ethers.providers.Log[] = [];
   try {
     logs = await provider.getLogs({
-      fromBlock: 7537163,
+      fromBlock: 0,
       toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS,
+      address: ALOE_II_FACTORY_ADDRESS[chainId],
       topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
     });
   } catch (e) {
@@ -91,8 +101,8 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS,
-      abi: KittyLensABI,
+      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chainId],
+      abi: lenderLensAbi as any,
       calls: [
         {
           reference: `${market.pool}-basics0`,
@@ -111,7 +121,7 @@ export async function getAvailableLendingPairs(
     contractCallContexts.push({
       reference: `${market.pool}-feeTier`,
       contractAddress: market.pool,
-      abi: UniswapV3PoolABI,
+      abi: uniswapV3PoolAbi as any,
       calls: [
         {
           reference: `${market.pool}-feeTier`,
@@ -123,12 +133,25 @@ export async function getAvailableLendingPairs(
 
     contractCallContexts.push({
       reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS,
-      abi: VolatilityOracleABI,
+      contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
+      abi: volatilityOracleAbi as any,
       calls: [
         {
           reference: `${market.pool}-oracle`,
           methodName: 'consult',
+          methodParameters: [market.pool, Q32],
+        },
+      ],
+    });
+
+    contractCallContexts.push({
+      reference: `${market.pool}-factory`,
+      contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
+      abi: factoryAbi as any,
+      calls: [
+        {
+          reference: `${market.pool}-factory`,
+          methodName: 'getParameters',
           methodParameters: [market.pool],
         },
       ],
@@ -153,22 +176,24 @@ export async function getAvailableLendingPairs(
 
   const lendingPairs: LendingPair[] = [];
 
-  correspondingLendingPairResults.forEach((value) => {
-    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults } = value;
+  Array.from(correspondingLendingPairResults.entries()).forEach(([uniswapPool, value]) => {
+    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults, factory: factoryResults } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
     const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
     const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
+    const factoryReturnContexts = convertBigNumbersForReturnContexts(factoryResults.callsReturnContext);
     const { kitty0Address, kitty1Address } = basicsResults.originalContractCallContext.context;
 
     const basics0 = basicsReturnContexts[0].returnValues;
     const basics1 = basicsReturnContexts[1].returnValues;
     const feeTier = feeTierReturnContexts[0].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
-    const token0 = getToken(chain.id, basics0[0]);
-    const token1 = getToken(chain.id, basics1[0]);
+    const factoryResult = factoryReturnContexts[0].returnValues;
+    const token0 = getToken(chainId, basics0[0]);
+    const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
     const kitty0 = new Kitty(
-      chain.id,
+      chainId,
       kitty0Address as Address,
       token0.decimals,
       `${token0.symbol}+`,
@@ -177,7 +202,7 @@ export async function getAvailableLendingPairs(
       token0
     );
     const kitty1 = new Kitty(
-      chain.id,
+      chainId,
       kitty1Address as Address,
       token1.decimals,
       `${token1.symbol}+`,
@@ -198,15 +223,20 @@ export async function getAvailableLendingPairs(
     const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
+    const reserveFactor0 = basics0[6];
+    const reserveFactor1 = basics1[6];
+
     // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
-    const APR0 = utilization0 * (1 - 1 / 8) * (interestRate0 - 1.0);
-    const APR1 = utilization1 * (1 - 1 / 8) * (interestRate1 - 1.0);
+    const APR0 = utilization0 * (1 - 1 / reserveFactor0) * interestRate0;
+    const APR1 = utilization1 * (1 - 1 / reserveFactor1) * interestRate1;
     const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
     const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
 
-    let IV = oracleResult[1].div(1e9).toNumber() / 1e9;
-    // Annualize it
-    IV *= Math.sqrt(365);
+    const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
+
+    const nSigma = (factoryResult[1] as number) / 10;
+
+    const ltv = computeLTV(iv, nSigma);
 
     lendingPairs.push(
       new LendingPair(
@@ -226,8 +256,11 @@ export async function getAvailableLendingPairs(
           totalSupply: totalSupply1,
           utilization: utilization1 * 100.0, // Percentage
         },
+        uniswapPool as Address,
         NumericFeeTierToEnum(feeTier[0]),
-        IV * 100
+        iv * Math.sqrt(365),
+        nSigma,
+        ltv
       )
     );
   });
@@ -236,32 +269,117 @@ export async function getAvailableLendingPairs(
 }
 
 export async function getLendingPairBalances(
-  lendingPair: LendingPair,
+  lendingPairs: LendingPair[],
   userAddress: string,
-  provider: ethers.providers.Provider
-): Promise<LendingPairBalances> {
-  const { token0, token1, kitty0, kitty1 } = lendingPair;
+  provider: ethers.providers.Provider,
+  chainId: number
+): Promise<LendingPairBalances[]> {
+  const multicall = new Multicall({
+    ethersProvider: provider,
+    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+  });
 
-  const token0Contract = new ethers.Contract(token0.address, ERC20ABI, provider);
-  const token1Contract = new ethers.Contract(token1.address, ERC20ABI, provider);
-  const kitty0Contract = new ethers.Contract(kitty0.address, KittyABI, provider);
-  const kitty1Contract = new ethers.Contract(kitty1.address, KittyABI, provider);
-  const [token0BalanceBig, token1BalanceBig, kitty0BalanceBig, kitty1BalanceBig] = await Promise.all([
-    token0Contract.balanceOf(userAddress),
-    token1Contract.balanceOf(userAddress),
-    kitty0Contract.underlyingBalance(userAddress),
-    kitty1Contract.underlyingBalance(userAddress),
-  ]);
-  const token0Balance = toImpreciseNumber(token0BalanceBig, token0.decimals);
-  const token1Balance = toImpreciseNumber(token1BalanceBig, token1.decimals);
-  const kitty0Balance = toImpreciseNumber(kitty0BalanceBig, token0.decimals);
-  const kitty1Balance = toImpreciseNumber(kitty1BalanceBig, token1.decimals);
-  return {
-    token0Balance,
-    token1Balance,
-    kitty0Balance,
-    kitty1Balance,
-  };
+  const contractCallContexts: ContractCallContext[] = [];
+
+  lendingPairs.forEach((lendingPair) => {
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-token0`,
+      contractAddress: lendingPair.token0.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: `${lendingPair.token0.address}-balance`,
+          methodName: 'balanceOf',
+          methodParameters: [userAddress],
+        },
+      ],
+      context: { decimals: lendingPair.token0.decimals },
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-token1`,
+      contractAddress: lendingPair.token1.address,
+      abi: erc20Abi as any,
+      calls: [
+        {
+          reference: `${lendingPair.token1.address}-balance`,
+          methodName: 'balanceOf',
+          methodParameters: [userAddress],
+        },
+      ],
+      context: { decimals: lendingPair.token1.decimals },
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-kitty0`,
+      contractAddress: lendingPair.kitty0.address,
+      abi: lenderAbi as any,
+      calls: [
+        {
+          reference: `${lendingPair.kitty0.address}-balance`,
+          methodName: 'underlyingBalance',
+          methodParameters: [userAddress],
+        },
+      ],
+      context: { decimals: lendingPair.kitty0.decimals },
+    });
+
+    contractCallContexts.push({
+      reference: `${lendingPair.uniswapPool}-kitty1`,
+      contractAddress: lendingPair.kitty1.address,
+      abi: lenderAbi as any,
+      calls: [
+        {
+          reference: `${lendingPair.kitty1.address}-balance`,
+          methodName: 'underlyingBalance',
+          methodParameters: [userAddress],
+        },
+      ],
+      context: { decimals: lendingPair.kitty1.decimals },
+    });
+  });
+
+  const lendingPairResults = (await multicall.call(contractCallContexts)).results;
+
+  const correspondingLendingPairResults: Map<string, ContractCallReturnContextEntries> = new Map();
+
+  // Convert the results into a map of account address to the results
+  Object.entries(lendingPairResults).forEach(([key, value]) => {
+    const entryAccountAddress = key.split('-')[0];
+    const entryType = key.split('-')[1];
+    const existingValue = correspondingLendingPairResults.get(entryAccountAddress);
+    if (existingValue) {
+      existingValue[entryType] = value;
+      correspondingLendingPairResults.set(entryAccountAddress, existingValue);
+    } else {
+      correspondingLendingPairResults.set(entryAccountAddress, { [entryType]: value });
+    }
+  });
+
+  const lendingPairBalances: LendingPairBalances[] = [];
+
+  correspondingLendingPairResults.forEach((value) => {
+    const { token0, token1, kitty0, kitty1 } = value;
+    const token0ReturnContexts = convertBigNumbersForReturnContexts(token0.callsReturnContext);
+    const token1ReturnContexts = convertBigNumbersForReturnContexts(token1.callsReturnContext);
+    const kitty0ReturnContexts = convertBigNumbersForReturnContexts(kitty0.callsReturnContext);
+    const kitty1ReturnContexts = convertBigNumbersForReturnContexts(kitty1.callsReturnContext);
+    const token0Decimals = token0.originalContractCallContext.context.decimals;
+    const token1Decimals = token1.originalContractCallContext.context.decimals;
+    const token0Balance = toImpreciseNumber(token0ReturnContexts[0].returnValues[0], token0Decimals);
+    const token1Balance = toImpreciseNumber(token1ReturnContexts[0].returnValues[0], token1Decimals);
+    const kitty0Balance = toImpreciseNumber(kitty0ReturnContexts[0].returnValues[0], token0Decimals);
+    const kitty1Balance = toImpreciseNumber(kitty1ReturnContexts[0].returnValues[0], token1Decimals);
+
+    lendingPairBalances.push({
+      token0Balance,
+      token1Balance,
+      kitty0Balance,
+      kitty1Balance,
+    });
+  });
+
+  return lendingPairBalances;
 }
 
 /**

@@ -2,11 +2,13 @@ import { useContext, useState, useEffect } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { routerABI } from 'shared/lib/abis/Router';
+import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
@@ -14,8 +16,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { isSolvent } from '../../../data/BalanceSheet';
-import { ALOE_II_ROUTER_ADDRESS } from '../../../data/constants/Addresses';
+import { isHealthy } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -75,6 +76,7 @@ type RepayButtonProps = {
   marginAccount: MarginAccount;
   userAddress: Address;
   lender: Address;
+  shouldRepayMax: boolean;
   repayAmount: GN;
   repayToken: Token;
   repayTokenBalance: GN;
@@ -88,12 +90,14 @@ function RepayButton(props: RepayButtonProps) {
     marginAccount,
     userAddress,
     lender,
-    repayAmount,
+    shouldRepayMax,
+    repayAmount: repayAmountSpecified,
     repayToken,
     repayTokenBalance,
     setIsOpen,
     setPendingTxn,
   } = props;
+  const repayAmount = shouldRepayMax ? repayAmountSpecified.recklessMul(1.005) : repayAmountSpecified;
 
   const [isPending, setIsPending] = useState(false);
 
@@ -101,14 +105,15 @@ function RepayButton(props: RepayButtonProps) {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS, repayAmount);
+  } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], repayAmount);
 
   const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
-    address: ALOE_II_ROUTER_ADDRESS,
-    abi: routerABI,
+    address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
+    abi: routerAbi,
     functionName: 'repayWithPermit2',
     args: [
       lender,
+      shouldRepayMax,
       permit2Result.amount.toBigNumber(),
       marginAccount.address,
       BigNumber.from(permit2Result.nonce ?? '0'),
@@ -155,7 +160,7 @@ function RepayButton(props: RepayButtonProps) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (repayAmount.gt(repayTokenBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
-  } else if (repayAmount.gt(existingLiabilityGN)) {
+  } else if (repayAmountSpecified.gt(existingLiabilityGN)) {
     confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -227,7 +232,10 @@ export default function RepayModal(props: RepayModalProps) {
   const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayToken.decimals);
   const remainingLiability = existingLiability.sub(repayAmount);
 
-  const maxRepay = GN.min(existingLiability, tokenBalance);
+  const maxRepayStr = GN.min(existingLiability, tokenBalance).toString(GNFormat.DECIMAL);
+  // NOTE: Don't just use `repayAmountStr === maxRepayStr` because the max repay flow will fail
+  // if `tokenBalance` is the constraint.
+  const shouldRepayMax = repayAmountStr === existingLiability.toString(GNFormat.DECIMAL);
 
   const newLiabilities: Liabilities = {
     amount0:
@@ -240,12 +248,13 @@ export default function RepayModal(props: RepayModalProps) {
         : marginAccount.liabilities.amount1,
   };
 
-  const { health: newHealth } = isSolvent(
+  const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
     uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
+    marginAccount.nSigma,
     marginAccount.token0.decimals,
     marginAccount.token1.decimals
   );
@@ -265,7 +274,7 @@ export default function RepayModal(props: RepayModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                setRepayAmountStr(maxRepay.toString(GNFormat.DECIMAL));
+                setRepayAmountStr(maxRepayStr);
               }}
             >
               MAX
@@ -313,6 +322,7 @@ export default function RepayModal(props: RepayModalProps) {
             marginAccount={marginAccount}
             userAddress={userAddress}
             lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
+            shouldRepayMax={shouldRepayMax}
             repayAmount={repayAmount}
             repayToken={repayToken}
             repayTokenBalance={tokenBalance}
@@ -321,7 +331,7 @@ export default function RepayModal(props: RepayModalProps) {
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
-            <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+            <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
             and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It

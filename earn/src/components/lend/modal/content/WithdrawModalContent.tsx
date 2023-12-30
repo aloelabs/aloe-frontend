@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { BigNumber } from 'ethers';
-import { lenderABI } from 'shared/lib/abis/Lender';
+import { lenderAbi } from 'shared/lib/abis/Lender';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import {
   DashedDivider,
@@ -12,6 +12,7 @@ import {
 } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -65,7 +66,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
   // Doesn't need to be watched, just read once
   const { data: requestedShares, isLoading: convertToSharesIsLoading } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'convertToShares',
     args: [withdrawAmount.toBigNumber()],
     chainId: activeChain.id,
@@ -77,7 +78,7 @@ function WithdrawButton(props: WithdrawButtonProps) {
 
   const { config: redeemConfig } = usePrepareContractWrite({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'redeem',
     args: [numberOfSharesToRedeem.toBigNumber(), accountAddress, accountAddress],
     chainId: activeChain.id,
@@ -164,20 +165,20 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
 
   const { refetch: refetchMaxWithdraw, data: maxWithdraw } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'maxWithdraw',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
-    enabled: !!accountAddress,
+    enabled: Boolean(accountAddress),
   });
 
   const { refetch: refetchMaxRedeem, data: maxRedeem } = useContractRead({
     address: kitty.address,
-    abi: lenderABI,
+    abi: lenderAbi,
     functionName: 'maxRedeem',
     chainId: activeChain.id,
     args: [accountAddress || '0x'],
-    enabled: !!accountAddress,
+    enabled: Boolean(accountAddress),
   });
 
   const gnWithdrawAmount = GN.fromDecimalString(withdrawAmount || '0', token.decimals);
@@ -232,7 +233,7 @@ export default function WithdrawModalContent(props: WithdrawModalContentProps) {
       </div>
       <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
         By withdrawing, you agree to our{' '}
-        <a href='/terms.pdf' className='underline' rel='noreferrer' target='_blank'>
+        <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
           Terms of Service
         </a>{' '}
         and acknowledge that you may lose your money. Aloe Labs is not responsible for any losses you may incur. It is

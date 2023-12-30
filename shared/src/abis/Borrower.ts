@@ -1,404 +1,327 @@
-export const borrowerABI = [
+export const borrowerAbi = [
   {
+    type: 'constructor',
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
+        name: 'oracle',
+        type: 'address',
+        internalType: 'contract VolatilityOracle',
+      },
+      {
         name: 'pool',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
       {
-        internalType: 'contract Lender',
         name: 'lender0',
         type: 'address',
+        internalType: 'contract Lender',
       },
       {
-        internalType: 'contract Lender',
         name: 'lender1',
         type: 'address',
+        internalType: 'contract Lender',
       },
     ],
     stateMutability: 'nonpayable',
-    type: 'constructor',
   },
+  { type: 'receive', stateMutability: 'payable' },
   {
-    inputs: [],
-    name: 'ANTE',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
-  },
-  {
+    name: 'FACTORY',
     inputs: [],
-    name: 'B',
-    outputs: [
-      {
-        internalType: 'uint8',
-        name: '',
-        type: 'uint8',
-      },
-    ],
+    outputs: [{ name: '', type: 'address', internalType: 'contract Factory' }],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [],
+    type: 'function',
     name: 'LENDER0',
-    outputs: [
-      {
-        internalType: 'contract Lender',
-        name: '',
-        type: 'address',
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract Lender' }],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [],
+    type: 'function',
     name: 'LENDER1',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract Lender' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'ORACLE',
+    inputs: [],
     outputs: [
       {
-        internalType: 'contract Lender',
         name: '',
         type: 'address',
+        internalType: 'contract VolatilityOracle',
       },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [],
-    name: 'MAX_SIGMA',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'MIN_SIGMA',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
     name: 'TOKEN0',
-    outputs: [
-      {
-        internalType: 'contract ERC20',
-        name: '',
-        type: 'address',
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract ERC20' }],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [],
+    type: 'function',
     name: 'TOKEN1',
-    outputs: [
-      {
-        internalType: 'contract ERC20',
-        name: '',
-        type: 'address',
-      },
-    ],
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract ERC20' }],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [],
+    type: 'function',
     name: 'UNISWAP_POOL',
+    inputs: [],
     outputs: [
       {
+        name: '',
+        type: 'address',
         internalType: 'contract IUniswapV3Pool',
-        name: '',
-        type: 'address',
       },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: 'recipient',
-        type: 'address',
-      },
-    ],
+    type: 'function',
     name: 'borrow',
+    inputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
   {
-    inputs: [],
-    name: 'getLiabilities',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
     type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'getUniswapPositions',
-    outputs: [
-      {
-        internalType: 'int24[]',
-        name: '',
-        type: 'int24[]',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-    ],
-    name: 'initialize',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'contract ILiquidator',
-        name: 'callee',
-        type: 'address',
-      },
-      {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
-      },
-    ],
-    name: 'liquidate',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'contract IManager',
-        name: 'callee',
-        type: 'address',
-      },
-      {
-        internalType: 'bytes',
-        name: 'data',
-        type: 'bytes',
-      },
-      {
-        internalType: 'bool[2]',
-        name: 'allowances',
-        type: 'bool[2]',
-      },
-    ],
-    name: 'modify',
+    name: 'clear',
+    inputs: [{ name: 'oracleSeed', type: 'uint40', internalType: 'uint40' }],
     outputs: [],
     stateMutability: 'payable',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'getAssets',
     inputs: [],
-    name: 'packedSlot',
     outputs: [
       {
-        internalType: 'address',
-        name: 'owner',
+        name: '',
+        type: 'tuple',
+        internalType: 'struct Assets',
+        components: [
+          {
+            name: 'amount0AtA',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'amount1AtA',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'amount0AtB',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'amount1AtB',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getLiabilities',
+    inputs: [],
+    outputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getPrices',
+    inputs: [{ name: 'oracleSeed', type: 'uint40', internalType: 'uint40' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct Prices',
+        components: [
+          { name: 'a', type: 'uint160', internalType: 'uint160' },
+          { name: 'b', type: 'uint160', internalType: 'uint160' },
+          { name: 'c', type: 'uint160', internalType: 'uint160' },
+        ],
+      },
+      { name: '', type: 'bool', internalType: 'bool' },
+      { name: '', type: 'bool', internalType: 'bool' },
+      { name: '', type: 'uint208', internalType: 'uint208' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getUniswapPositions',
+    inputs: [],
+    outputs: [{ name: '', type: 'int24[]', internalType: 'int24[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'liquidate',
+    inputs: [
+      {
+        name: 'callee',
         type: 'address',
+        internalType: 'contract ILiquidator',
       },
-      {
-        internalType: 'bool',
-        name: 'isInCallback',
-        type: 'bool',
-      },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
+      { name: 'closeFactor', type: 'uint256', internalType: 'uint256' },
+      { name: 'oracleSeed', type: 'uint40', internalType: 'uint40' },
     ],
-    stateMutability: 'view',
-    type: 'function',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
+    type: 'function',
+    name: 'modify',
     inputs: [
       {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
+        name: 'callee',
+        type: 'address',
+        internalType: 'contract IManager',
       },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
+      { name: 'oracleSeed', type: 'uint40', internalType: 'uint40' },
     ],
-    name: 'positions',
-    outputs: [
-      {
-        internalType: 'int24',
-        name: '',
-        type: 'int24',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
+    outputs: [],
+    stateMutability: 'payable',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
-      },
-    ],
+    type: 'function',
+    name: 'owner',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
     name: 'repay',
+    inputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'rescue',
     inputs: [
       {
-        internalType: 'int24',
-        name: 'lower',
-        type: 'int24',
+        name: 'token',
+        type: 'address',
+        internalType: 'contract ERC20',
       },
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'slot0',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'transfer',
+    inputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'transferEth',
+    inputs: [
+      { name: 'amount', type: 'uint256', internalType: 'uint256' },
       {
-        internalType: 'int24',
-        name: 'upper',
-        type: 'int24',
-      },
-      {
-        internalType: 'uint128',
-        name: 'liquidity',
-        type: 'uint128',
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
       },
     ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'uniswapDeposit',
+    inputs: [
+      { name: 'lower', type: 'int24', internalType: 'int24' },
+      { name: 'upper', type: 'int24', internalType: 'int24' },
+      { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
+    ],
     outputs: [
-      {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
-      },
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'amount0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amount1',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: '',
-        type: 'bytes',
-      },
-    ],
+    type: 'function',
     name: 'uniswapV3MintCallback',
+    inputs: [
+      { name: 'amount0', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'bytes', internalType: 'bytes' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'int24',
-        name: 'lower',
-        type: 'int24',
-      },
-      {
-        internalType: 'int24',
-        name: 'upper',
-        type: 'int24',
-      },
-      {
-        internalType: 'uint128',
-        name: 'liquidity',
-        type: 'uint128',
-      },
-    ],
+    type: 'function',
     name: 'uniswapWithdraw',
+    inputs: [
+      { name: 'lower', type: 'int24', internalType: 'int24' },
+      { name: 'upper', type: 'int24', internalType: 'int24' },
+      { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
+      { name: 'recipient', type: 'address', internalType: 'address' },
+    ],
     outputs: [
-      {
-        internalType: 'uint256',
-        name: 'burned0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'burned1',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'collected0',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'collected1',
-        type: 'uint256',
-      },
+      { name: 'burned0', type: 'uint256', internalType: 'uint256' },
+      { name: 'burned1', type: 'uint256', internalType: 'uint256' },
+      { name: 'collected0', type: 'uint256', internalType: 'uint256' },
+      { name: 'collected1', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
+  {
+    type: 'function',
+    name: 'warn',
+    inputs: [{ name: 'oracleSeed', type: 'uint40', internalType: 'uint40' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'event', name: 'Liquidate', inputs: [], anonymous: false },
+  { type: 'event', name: 'Warn', inputs: [], anonymous: false },
 ] as const;

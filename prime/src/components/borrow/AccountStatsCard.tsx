@@ -75,7 +75,7 @@ export function AccountStatsCard(props: AccountStatsCardProps) {
           )}
           {boxColor !== undefined && (
             <div className='flex justify-center items-center'>
-              <Box color={boxColor} />
+              <Box color={boxColor} data-testid='Box' />
             </div>
           )}
         </div>

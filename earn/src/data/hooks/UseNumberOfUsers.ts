@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Provider } from '@wagmi/core';
 import { ethers } from 'ethers';
 
-import { ChainContext } from '../../App';
 import { LendingPair } from '../LendingPair';
 
 export default function useNumberOfUsers(
@@ -11,7 +10,6 @@ export default function useNumberOfUsers(
   selectedLendingPair: LendingPair,
   lendingPairLabel: string
 ) {
-  const activeChain = useContext(ChainContext);
   const [numberOfUsers, setNumberOfUsers] = useState<number>(0);
   const [cachedData, setCachedData] = useState<Map<string, number>>(new Map());
 
@@ -67,7 +65,7 @@ export default function useNumberOfUsers(
     return () => {
       mounted = false;
     };
-  }, [selectedLendingPair, activeChain, cachedData, lendingPairLabel, provider]);
+  }, [selectedLendingPair, cachedData, lendingPairLabel, provider]);
 
   return numberOfUsers;
 }

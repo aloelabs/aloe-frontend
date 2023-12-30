@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -17,13 +16,15 @@ import {
   UniswapPosition,
 } from '../../data/Uniswap';
 import TokenPairIcons from '../common/TokenPairIcons';
+import {
+  InRangeBadge,
+  OutOfRangeBadge,
+  UniswapPositionCardContainer,
+  UniswapPositionCardWrapper,
+} from '../common/UniswapPositionCard';
 import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
-const IN_RANGE_COLOR = '#00C143';
-const OUT_OF_RANGE_COLOR = '#EB5757';
-const IN_RANGE_BACKGROUND_COLOR = 'rgba(0, 193, 67, 0.1)';
-const OUT_OF_RANGE_BACKGROUND_COLOR = 'rgba(235, 87, 87, 0.1)';
 
 const UNISWAP_POSITION_SLOTS = ['Slot A', 'Slot B', 'Slot C'];
 
@@ -44,86 +45,6 @@ const PositionList = styled.div`
   gap: 16px;
   justify-content: space-between;
 `;
-
-const UniswapPositionCardContainer = styled.div`
-  width: 100%;
-  max-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const UniswapPositionCardWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: ${GREY_800};
-  border-radius: 8px;
-  padding: 16px;
-  width: 100%;
-`;
-
-const InRangeBadgeWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  background-color: ${IN_RANGE_BACKGROUND_COLOR};
-  align-items: center;
-  width: fit-content;
-  height: 28px;
-  padding: 4px 8px;
-  border-radius: 8px;
-
-  &:after {
-    content: '';
-    display: block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: ${IN_RANGE_COLOR};
-  }
-`;
-
-const OutOfRangeBadgeWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-  background-color: ${OUT_OF_RANGE_BACKGROUND_COLOR};
-  width: fit-content;
-  height: 28px;
-  padding: 4px 8px;
-  border-radius: 8px;
-
-  &:after {
-    content: '';
-    display: block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: ${OUT_OF_RANGE_COLOR};
-  }
-`;
-
-export function InRangeBadge() {
-  return (
-    <InRangeBadgeWrapper>
-      <Text size='S' color={IN_RANGE_COLOR}>
-        In Range
-      </Text>
-    </InRangeBadgeWrapper>
-  );
-}
-
-export function OutOfRangeBadge() {
-  return (
-    <OutOfRangeBadgeWrapper>
-      <Text size='S' color={OUT_OF_RANGE_COLOR}>
-        Out of Range
-      </Text>
-    </OutOfRangeBadgeWrapper>
-  );
-}
 
 type UniswapPositionCardProps = {
   marginAccount?: MarginAccount;
@@ -172,7 +93,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
   const isInRange = uniswapPosition && currentTick >= uniswapPosition.lower && currentTick <= uniswapPosition.upper;
 
   const withdrawableNFT = Array.from(withdrawableUniswapNFTs.entries()).find(([_, position]) => {
-    return position.tickLower === uniswapPosition?.lower && position.tickUpper === uniswapPosition?.upper;
+    return position.lower === uniswapPosition?.lower && position.upper === uniswapPosition?.upper;
   });
 
   return (

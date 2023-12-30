@@ -3,54 +3,28 @@ import { GN } from 'shared/lib/data/GoodNumber';
 
 import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
-import {
-  ALOE_II_LIQUIDATION_INCENTIVE,
-  ALOE_II_MAX_LEVERAGE,
-  ALOE_II_SIGMA_MAX,
-  ALOE_II_SIGMA_MIN,
-  ALOE_II_SIGMA_SCALER,
-} from './constants/Values';
+import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from './constants/Values';
 import { Assets, Liabilities, LiquidationThresholds } from './MarginAccount';
 
 const MIN_SQRT_RATIO = GN.fromJSBI(TickMath.MIN_SQRT_RATIO, 96, 2);
 const MAX_SQRT_RATIO = GN.fromJSBI(TickMath.MAX_SQRT_RATIO, 96, 2);
-const ONE = GN.one(18);
 
-function _computeProbePrices(sqrtMeanPriceX96: GN, sigma: GN): [GN, GN] {
-  if (sigma.lt(ALOE_II_SIGMA_MIN)) sigma = ALOE_II_SIGMA_MIN;
-  else if (sigma.gt(ALOE_II_SIGMA_MAX)) sigma = ALOE_II_SIGMA_MAX;
+const PROBE_SQRT_SCALER_MIN = 1.026248453011;
+const PROBE_SQRT_SCALER_MAX = 3.078745359035;
 
-  sigma = sigma.recklessMul(ALOE_II_SIGMA_SCALER);
+function _computeProbePrices(sqrtMeanPriceX96: GN, iv: GN, nSigma: number): [GN, GN] {
+  const sqrtScaler = Math.max(
+    PROBE_SQRT_SCALER_MIN,
+    Math.min(Math.exp((nSigma * iv.toNumber()) / 2), PROBE_SQRT_SCALER_MAX)
+  );
 
-  let a = sqrtMeanPriceX96.mul(ONE.sub(sigma).sqrt());
-  let b = sqrtMeanPriceX96.mul(ONE.add(sigma).sqrt());
+  const prices = {
+    a: GN.max(sqrtMeanPriceX96.recklessDiv(sqrtScaler), MIN_SQRT_RATIO.recklessAdd(1)),
+    b: GN.min(sqrtMeanPriceX96.recklessMul(sqrtScaler), MAX_SQRT_RATIO.recklessSub(1)),
+    c: sqrtMeanPriceX96,
+  };
 
-  if (a.lt(MIN_SQRT_RATIO)) a = MIN_SQRT_RATIO.recklessAdd(1);
-  if (b.gt(MAX_SQRT_RATIO)) b = MAX_SQRT_RATIO.recklessSub(1);
-
-  return [a, b];
-}
-
-function _computeLiquidationIncentive(
-  assets0: GN,
-  assets1: GN,
-  liabilities0: GN,
-  liabilities1: GN,
-  token1Decimals: number,
-  sqrtPriceX96: GN
-): GN {
-  const price = sqrtPriceX96.square();
-
-  let reward = GN.zero(token1Decimals);
-  if (liabilities0.gt(assets0)) {
-    const shortfall = liabilities0.sub(assets0);
-    reward = reward.add(shortfall.setResolution(token1Decimals).mul(price).recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
-  }
-  if (liabilities1.gt(assets1)) {
-    const shortfall = liabilities1.sub(assets1);
-    reward = reward.add(shortfall.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
-  }
-  return reward;
+  return [prices.a, prices.b];
 }
 
 function _computeSolvencyBasics(
@@ -59,27 +33,29 @@ function _computeSolvencyBasics(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const [a, b] = _computeProbePrices(sqrtPriceX96, iv);
+  const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
   const priceA = a.square();
   const priceB = b.square();
 
   const mem = getAssets(assets, uniswapPositions, a, b, sqrtPriceX96, token0Decimals, token1Decimals);
 
-  const liquidationIncentive = _computeLiquidationIncentive(
-    mem.fixed0.add(mem.fluid0C),
-    mem.fixed1.add(mem.fluid1C),
-    liabilities.amount0,
-    liabilities.amount1,
-    token1Decimals,
-    sqrtPriceX96
-  );
+  const shortfall0 = liabilities.amount0.sub(mem.fixed0.add(mem.fluid0C));
+  const shortfall1 = liabilities.amount1.sub(mem.fixed1.add(mem.fluid1C));
 
   const coeff = 1 + 1 / ALOE_II_MAX_LEVERAGE;
-  const liabilities0 = liabilities.amount0.recklessMul(coeff);
-  const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
+  let liabilities0 = liabilities.amount0.recklessMul(coeff);
+  let liabilities1 = liabilities.amount1.recklessMul(coeff);
+
+  if (shortfall0.isGtZero()) {
+    liabilities0 = liabilities0.add(shortfall0.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+  }
+  if (shortfall1.isGtZero()) {
+    liabilities1 = liabilities1.add(shortfall1.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+  }
 
   const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
   const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
@@ -90,8 +66,9 @@ function _computeSolvencyBasics(
     priceA,
     priceB,
     mem,
-    liquidationIncentive,
     coeff,
+    shortfall0,
+    shortfall1,
     surplusA: assetsA.sub(liabilitiesA),
     surplusB: assetsB.sub(liabilitiesB),
   };
@@ -146,21 +123,29 @@ export function isSolvent(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
-  const { priceA, priceB, mem, liquidationIncentive, coeff } = _computeSolvencyBasics(
+  const { priceA, priceB, mem, coeff, shortfall0, shortfall1 } = _computeSolvencyBasics(
     assets,
     liabilities,
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
 
-  const liabilities0 = liabilities.amount0.recklessMul(coeff);
-  const liabilities1 = liabilities.amount1.recklessMul(coeff).add(liquidationIncentive);
+  let liabilities0 = liabilities.amount0.recklessMul(coeff);
+  let liabilities1 = liabilities.amount1.recklessMul(coeff);
+  if (shortfall0.isGtZero()) {
+    liabilities0 = liabilities0.add(shortfall0.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+  }
+  if (shortfall1.isGtZero()) {
+    liabilities1 = liabilities1.add(shortfall1.recklessDiv(ALOE_II_LIQUIDATION_INCENTIVE));
+  }
 
   const liabilitiesA = liabilities1.add(liabilities0.setResolution(token1Decimals).mul(priceA));
   const assetsA = mem.fluid1A.add(mem.fixed1).add(mem.fixed0.setResolution(token1Decimals).mul(priceA));
@@ -189,6 +174,7 @@ export function maxBorrows(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number
 ) {
@@ -198,6 +184,7 @@ export function maxBorrows(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -223,6 +210,7 @@ export function maxWithdraws(
   uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   coeff = 1
@@ -233,6 +221,7 @@ export function maxWithdraws(
     uniswapPositions,
     sqrtPriceX96,
     iv,
+    nSigma,
     token0Decimals,
     token1Decimals
   );
@@ -329,6 +318,7 @@ export function computeLiquidationThresholds(
   uniswapPositions: UniswapPosition[],
   sqrtPriceX96: GN,
   iv: GN,
+  nSigma: number,
   token0Decimals: number,
   token1Decimals: number,
   iterations: number = 120,
@@ -341,12 +331,21 @@ export function computeLiquidationThresholds(
     upper: 0,
   };
 
-  const BOUND_L = MIN_SQRT_RATIO.recklessMul('123').recklessDiv('100');
-  const BOUND_R = MAX_SQRT_RATIO.recklessDiv('123').recklessMul('100');
+  const BOUND_L = GN.one(136, 2).setResolution(96);
+  const BOUND_R = MAX_SQRT_RATIO.recklessDiv(PROBE_SQRT_SCALER_MAX);
   const scaler = 10 ** (token0Decimals - token1Decimals);
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isSolvent(assets, liabilities, uniswapPositions, BOUND_L, iv, token0Decimals, token1Decimals);
+  const isSolventAtMin = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    BOUND_L,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lower = priceToNumber(BOUND_L.square(), scaler, false);
@@ -368,6 +367,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );
@@ -384,7 +384,16 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isSolvent(assets, liabilities, uniswapPositions, BOUND_R, iv, token0Decimals, token1Decimals);
+  const isSolventAtMax = isSolvent(
+    assets,
+    liabilities,
+    uniswapPositions,
+    BOUND_R,
+    iv,
+    nSigma,
+    token0Decimals,
+    token1Decimals
+  );
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upper = BOUND_R.square().toNumber();
@@ -406,6 +415,7 @@ export function computeLiquidationThresholds(
         uniswapPositions,
         searchPrice,
         iv,
+        nSigma,
         token0Decimals,
         token1Decimals
       );

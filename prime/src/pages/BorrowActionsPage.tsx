@@ -4,20 +4,24 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { BigNumber, Contract } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
+import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
+import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useContract, useContractRead, useProvider } from 'wagmi';
 
-import { ChainContext, useGeoFencing } from '../App';
-import KittyLensAbi from '../assets/abis/KittyLens.json';
-import MarginAccountABI from '../assets/abis/MarginAccount.json';
-import MarginAccountLensABI from '../assets/abis/MarginAccountLens.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
+import { ChainContext } from '../App';
 import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
 import { ReactComponent as PieChartIcon } from '../assets/svg/pie_chart.svg';
 import { ReactComponent as TrendingUpIcon } from '../assets/svg/trending_up.svg';
@@ -32,7 +36,6 @@ import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
 import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
 import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_LENDER_LENS_ADDRESS } from '../data/constants/Addresses';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
@@ -176,10 +179,11 @@ async function fetchUniswapPositions(
   const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
 
   const fetchedUniswapPositions = new Map<string, UniswapPosition>();
-  priors.forEach((prior, i) => {
+  for (let i = 0; i < priors.length; i++) {
     const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    fetchedUniswapPositions.set(keys[i], { ...prior, liquidity: liquidity });
-  });
+    if (JSBI.equal(liquidity, JSBI.BigInt(0))) continue;
+    fetchedUniswapPositions.set(keys[i], { ...priors[i], liquidity: liquidity });
+  }
 
   return fetchedUniswapPositions;
 }
@@ -198,8 +202,11 @@ export default function BorrowActionsPage() {
 
   // MARK: component state
   const [userWantsHypothetical, setUserWantsHypothetical] = useState<boolean>(false);
-  const [marginAccount, setMarginAccount] = useState<MarginAccount | null>(null);
-  const [uniswapPositions, setUniswapPositions] = useState<readonly UniswapPosition[]>([]);
+  const [marginAccount, setMarginAccount] = useChainDependentState<MarginAccount | null>(null, activeChain.id);
+  const [uniswapPositions, setUniswapPositions] = useChainDependentState<readonly UniswapPosition[]>(
+    [],
+    activeChain.id
+  );
   const [isToken0Selected, setIsToken0Selected] = useState(true);
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
   // --> state that could be computed in-line, but we use React so that we can debounce liquidation threshold calcs
@@ -238,25 +245,25 @@ export default function BorrowActionsPage() {
   // MARK: wagmi hooks
   const provider = useProvider({ chainId: activeChain.id });
   const marginAccountLensContract = useContract({
-    address: ALOE_II_BORROWER_LENS_ADDRESS,
-    abi: MarginAccountLensABI,
+    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
+    abi: borrowerLensAbi,
     signerOrProvider: provider,
   });
   const lenderLensContract = useContract({
-    address: ALOE_II_LENDER_LENS_ADDRESS,
-    abi: KittyLensAbi,
+    address: ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
+    abi: lenderLensAbi,
     signerOrProvider: provider,
   });
   const { data: uniswapPositionTicks } = useContractRead({
     address: (accountAddressParam ?? '0x') as Address, // TODO better optional resolution
-    abi: MarginAccountABI,
+    abi: borrowerAbi,
     functionName: 'getUniswapPositions',
     chainId: activeChain.id,
-    enabled: !!marginAccount,
+    enabled: Boolean(marginAccount),
   });
   const uniswapV3PoolContract = useContract({
     address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
-    abi: UniswapV3PoolABI,
+    abi: uniswapV3PoolAbi,
     signerOrProvider: provider,
   });
 
@@ -265,7 +272,7 @@ export default function BorrowActionsPage() {
     setSwapFeesInputValue('');
   }, [isToken0Selected]);
 
-  // MARK: fetch margin account
+  // MARK: fetch Borrower
   useEffect(() => {
     let mounted = true;
     // Ensure we have non-null values
@@ -281,6 +288,7 @@ export default function BorrowActionsPage() {
           setMarginAccount(result.marginAccount);
         }
       } catch (error) {
+        console.error(error);
         if (mounted) {
           setIsInvalidAddress(true);
         }
@@ -292,7 +300,7 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, provider, activeChain]);
+  }, [accountAddressParam, provider, activeChain, setMarginAccount]);
 
   // MARK: fetch MarketInfo
   useEffect(() => {
@@ -399,13 +407,13 @@ export default function BorrowActionsPage() {
       const selectedToken = isToken0Selected ? marginAccount.token0 : marginAccount.token1;
       const numericBorrowInterest = GN.fromDecimalString(borrowInterestInputValue || '0', selectedToken.decimals);
       const numericSwapFees = GN.fromDecimalString(swapFeesInputValue || '0', selectedToken.decimals);
-      // Apply the user's inputted swap fees to the displayed margin account's assets
+      // Apply the user's inputted swap fees to the displayed Borrowers's assets
       _marginAccount.assets = {
         ...assetsF,
         token0Raw: assetsF.token0Raw.add(isToken0Selected ? numericSwapFees : GN.zero(token0Decimals)),
         token1Raw: assetsF.token1Raw.add(isToken0Selected ? GN.zero(token1Decimals) : numericSwapFees),
       };
-      // Apply the user's inputted borrow interest to the displayed margin account's liabilities
+      // Apply the user's inputted borrow interest to the displayed Borrowers's liabilities
       _marginAccount.liabilities = {
         ...liabilitiesF,
         amount0: liabilitiesF.amount0.sub(isToken0Selected ? numericBorrowInterest : GN.zero(token0Decimals)),
@@ -530,6 +538,7 @@ export default function BorrowActionsPage() {
     displayedUniswapPositions,
     displayedMarginAccount.sqrtPriceX96,
     displayedMarginAccount.iv,
+    displayedMarginAccount.nSigma,
     token0.decimals,
     token1.decimals
   );
