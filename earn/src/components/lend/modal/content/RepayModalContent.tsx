@@ -152,7 +152,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
   if (isPending) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (repayAmount.isZero()) {
-    confirmButtonState = ConfirmButtonState.LOADING;
+    confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (repayAmount.gt(repayTokenBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
   } else if (repayAmountSpecified.gt(existingLiabilityGN)) {
