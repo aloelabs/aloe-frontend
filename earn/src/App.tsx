@@ -17,6 +17,7 @@ import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFe
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
+import { isDevelopment } from 'shared/lib/util/Utils';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
@@ -119,13 +120,15 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isConnected]);
 
+  const isDev = isDevelopment();
   const currentDateCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
   const hasLaunched = new Date(currentDateCST) >= LAUNCH_DATE;
+  const showCountdown = !isDev && !hasLaunched;
 
   return (
     <AppBody>
-      {!hasLaunched && <CountdownPage />}
-      {hasLaunched && (
+      {showCountdown && <CountdownPage />}
+      {!showCountdown && (
         <>
           <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
           <main className='flex-grow'>
