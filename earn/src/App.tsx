@@ -120,10 +120,10 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isConnected]);
 
-  const isDev = isDevelopment();
+  const shouldBypassCountdown = isDevelopment() || process.env.REACT_APP_BYPASS_COUNTDOWN === 'true';
   const currentDateCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
   const hasLaunched = new Date(currentDateCST) >= LAUNCH_DATE;
-  const showCountdown = !isDev && !hasLaunched;
+  const showCountdown = !shouldBypassCountdown && !hasLaunched;
 
   return (
     <AppBody>
@@ -187,6 +187,8 @@ function App() {
     }
   }
   `;
+
+  console.log(process.env.NODE_ENV);
 
   useEffectOnce(() => {
     let mounted = true;
