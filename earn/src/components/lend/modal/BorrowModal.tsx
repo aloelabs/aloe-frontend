@@ -12,7 +12,7 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_BORROWER_NFT_ADDRESS,
@@ -30,9 +30,11 @@ import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareCo
 
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
+import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
+const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
 enum ConfirmButtonState {
@@ -107,6 +109,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   const selectedLendingPair = selectedCollateral.matchingPairs.find(
     (pair) => selectedBorrow?.asset?.equals(pair.token0) || selectedBorrow?.asset?.equals(pair.token1)
   );
+
+  const isBorrowingToken0 = selectedLendingPair?.token0.address === selectedBorrow?.asset.address;
 
   const { data: consultData } = useContractRead({
     abi: volatilityOracleAbi,
@@ -184,6 +188,26 @@ export default function BorrowModal(props: BorrowModalProps) {
     if (maxBorrowAmount === null) return null;
     return maxBorrowAmount.recklessMul(MAX_BORROW_PERCENTAGE);
   }, [maxBorrowAmount]);
+
+  const estimatedApr = useMemo(() => {
+    if (selectedLendingPair === undefined || selectedBorrow === undefined) return 0;
+
+    const { kitty0Info, kitty1Info } = selectedLendingPair;
+    const { decimals } = selectedBorrow.asset;
+
+    const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
+    const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, decimals);
+
+    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization / 100 : kitty1Info.utilization / 100;
+    const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, decimals);
+
+    const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
+    const newUtilization = lenderTotalAssets.isGtZero()
+      ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
+      : 0;
+
+    return yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
+  }, [selectedLendingPair, selectedBorrow, isBorrowingToken0, borrowAmount]);
 
   // The NFT index we will use if minting
   const { data: nextNftPtrIdx } = useContractRead({
@@ -383,6 +407,32 @@ export default function BorrowModal(props: BorrowModalProps) {
               fullWidth={true}
               inputClassName={borrowAmountStr !== '' ? 'active' : ''}
             />
+          </div>
+          <div className='flex flex-col gap-1 w-full mt-4'>
+            <Text size='M' weight='bold'>
+              Summary
+            </Text>
+            <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
+              You're borrowing{' '}
+              <strong>
+                {borrowAmountStr || '0.00'} {selectedBorrow.asset.symbol}
+              </strong>{' '}
+              using a new{' '}
+              <strong>
+                {selectedLendingPair?.token0.symbol}/{selectedLendingPair?.token1.symbol}
+              </strong>{' '}
+              smart wallet.
+            </Text>
+            {ante?.isGtZero() && (
+              <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
+                You will need to provide an additional {ante.toString(GNFormat.LOSSY_HUMAN)} ETH to cover the gas fees
+                in the event that you are liquidated.
+              </Text>
+            )}
+            <div className='flex gap-2 mt-2'>
+              <Text size='S'>APR:</Text>
+              <Display size='XS'>{estimatedApr.toFixed(2)}%</Display>
+            </div>
           </div>
         </div>
         <FilledGradientButton
