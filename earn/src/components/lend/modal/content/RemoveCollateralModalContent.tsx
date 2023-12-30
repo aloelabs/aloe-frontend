@@ -10,12 +10,13 @@ import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
@@ -60,6 +61,7 @@ type ConfirmButtonProps = {
   borrower: BorrowerNftBorrower;
   token: Token;
   isWithdrawingToken0: boolean;
+  shouldWithdrawAnte: boolean;
   accountAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
@@ -72,6 +74,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     borrower,
     token,
     isWithdrawingToken0,
+    shouldWithdrawAnte,
     accountAddress,
     setIsOpen,
     setPendingTxn,
@@ -79,6 +82,13 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const isRedeemingTooMuch = withdrawAmount.gt(maxWithdrawAmount);
+
+  const { data: borrowerBalance } = useBalance({
+    address: borrower.address,
+    chainId: activeChain.id,
+    watch: false,
+    enabled: true,
+  });
 
   const encodedWithdrawCall = useMemo(() => {
     if (!accountAddress) return null;
@@ -93,6 +103,20 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ]) as `0x${string}`;
   }, [withdrawAmount, borrower.token0.decimals, borrower.token1.decimals, isWithdrawingToken0, accountAddress]);
 
+  const encodedWithdrawAnteCall = useMemo(() => {
+    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+    if (!accountAddress || !borrowerBalance) return null;
+    return borrowerInterface.encodeFunctionData('transferEth', [
+      borrowerBalance?.value,
+      accountAddress,
+    ]) as `0x${string}`;
+  }, [accountAddress, borrowerBalance]);
+
+  const combinedEncodingsForMultiManager = ethers.utils.defaultAbiCoder.encode(
+    ['bytes[]'],
+    [[encodedWithdrawCall, encodedWithdrawAnteCall]]
+  ) as `0x${string}`;
+
   const { config: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
@@ -100,8 +124,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
     args: [
       accountAddress ?? '0x',
       [borrower.index],
-      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedWithdrawCall ?? '0x'],
+      [
+        shouldWithdrawAnte
+          ? ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS[activeChain.id]
+          : ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id],
+      ],
+      [(shouldWithdrawAnte ? combinedEncodingsForMultiManager : encodedWithdrawCall) ?? '0x'],
       [0],
     ],
     chainId: activeChain.id,
@@ -210,6 +238,8 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
     borrower.token1.decimals
   );
 
+  const shouldWithdrawAnte = newAssets.token0Raw < Number.EPSILON && newAssets.token1Raw < Number.EPSILON;
+
   return (
     <>
       <div className='flex justify-between items-center mb-4'>
@@ -253,6 +283,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
           borrower={borrower}
           token={collateralToken}
           isWithdrawingToken0={isWithdrawingToken0}
+          shouldWithdrawAnte={shouldWithdrawAnte}
           accountAddress={accountAddress || '0x'}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}

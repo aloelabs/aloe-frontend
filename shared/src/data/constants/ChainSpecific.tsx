@@ -90,6 +90,13 @@ export const ALOE_II_SIMPLE_MANAGER_ADDRESS: { [chainId: number]: Address } = {
   [base.id]: '0xBb5A35B80b15A8E5933fDC11646A20f6159Dd061',
 };
 
+export const ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS: { [chainId: number]: Address } = {
+  [mainnet.id]: '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e',
+  [optimism.id]: '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e',
+  [arbitrum.id]: '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e',
+  [base.id]: '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e',
+};
+
 export const ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS: { [chainId: number]: Address } = {
   [mainnet.id]: '0xA07FD687882FfE7380A044e7542bDAc6F8672Bf7',
   [optimism.id]: '0xA07FD687882FfE7380A044e7542bDAc6F8672Bf7',
