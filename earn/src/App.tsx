@@ -188,8 +188,6 @@ function App() {
   }
   `;
 
-  console.log(process.env.NODE_ENV);
-
   useEffectOnce(() => {
     let mounted = true;
     (async () => {
