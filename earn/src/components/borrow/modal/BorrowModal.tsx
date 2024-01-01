@@ -3,26 +3,27 @@ import { useContext, useState, useMemo, useEffect } from 'react';
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+  ALOE_II_FACTORY_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { Liabilities } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { UniswapPosition } from '../../../data/Uniswap';
@@ -61,12 +62,11 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type BorrowButtonProps = {
-  marginAccount: MarginAccount;
-  ante: GN;
-  userAddress: string;
+  borrower: BorrowerNftBorrower;
+  etherToSend: GN;
+  userAddress: Address;
   borrowToken: Token;
   borrowAmount: GN;
-  shouldProvideAnte: boolean;
   isUnhealthy: boolean;
   notEnoughSupply: boolean;
   setIsOpen: (open: boolean) => void;
@@ -75,12 +75,11 @@ type BorrowButtonProps = {
 
 function BorrowButton(props: BorrowButtonProps) {
   const {
-    marginAccount,
-    ante,
+    borrower,
+    etherToSend,
     userAddress,
     borrowToken,
     borrowAmount,
-    shouldProvideAnte,
     isUnhealthy,
     notEnoughSupply,
     setIsOpen,
@@ -89,11 +88,8 @@ function BorrowButton(props: BorrowButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
-  const provider = useProvider({ chainId: activeChain.id });
-
-  const isBorrowingToken0 = borrowToken.address === marginAccount.token0.address;
+  const isBorrowingToken0 = borrowToken.address === borrower.token0.address;
 
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
@@ -105,20 +101,19 @@ function BorrowButton(props: BorrowButtonProps) {
     userAddress,
   ]);
 
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
-
   const { config: borrowConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: borrowerAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    overrides: { value: shouldProvideAnte ? ante.toBigNumber() : undefined },
-    enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply && Boolean(oracleSeed),
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [etherToSend.toBigNumber().div(1e13).toNumber()],
+    ],
+    overrides: { value: etherToSend.toBigNumber() },
+    enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
     chainId: activeChain.id,
   });
   const borrowUpdatedRequest = useMemo(() => {
@@ -157,7 +152,7 @@ function BorrowButton(props: BorrowButtonProps) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if ((prepareContractIsLoading && !borrowConfig.request) || oracleSeed === undefined) {
+  } else if (prepareContractIsLoading && !borrowConfig.request) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (!borrowConfig.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
@@ -183,7 +178,7 @@ function BorrowButton(props: BorrowButtonProps) {
 }
 
 export type BorrowModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   accountEtherBalance?: GN;
@@ -193,11 +188,11 @@ export type BorrowModalProps = {
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { marginAccount, uniswapPositions, marketInfo, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, uniswapPositions, marketInfo, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
-  const [borrowToken, setBorrowToken] = useState<Token>(marginAccount.token0);
+  const [borrowToken, setBorrowToken] = useState<Token>(borrower.token0);
 
   const { address: userAddress } = useAccount();
 
@@ -205,14 +200,14 @@ export default function BorrowModal(props: BorrowModalProps) {
   // or when the margin account token0 changes
   useEffect(() => {
     setBorrowAmountStr('');
-    setBorrowToken(marginAccount.token0);
-  }, [isOpen, marginAccount.token0]);
+    setBorrowToken(borrower.token0);
+  }, [isOpen, borrower.token0]);
 
   const { data: anteData } = useContractRead({
     abi: factoryAbi,
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getParameters',
-    args: [marginAccount.uniswapPool as Address],
+    args: [borrower.uniswapPool as Address],
     chainId: activeChain.id,
   });
 
@@ -221,19 +216,19 @@ export default function BorrowModal(props: BorrowModalProps) {
     return GN.fromBigNumber(anteData[0], 18);
   }, [anteData]);
 
-  const tokenOptions = [marginAccount.token0, marginAccount.token1];
-  const isToken0 = borrowToken.address === marginAccount.token0.address;
+  const tokenOptions = [borrower.token0, borrower.token1];
+  const isToken0 = borrowToken.address === borrower.token0.address;
 
-  const numericExistingLiability = isToken0 ? marginAccount.liabilities.amount0 : marginAccount.liabilities.amount1;
+  const numericExistingLiability = isToken0 ? borrower.liabilities.amount0 : borrower.liabilities.amount1;
   const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', borrowToken.decimals);
   const existingLiability = GN.fromNumber(numericExistingLiability, borrowToken.decimals);
 
   const newLiability = existingLiability.add(borrowAmount);
 
-  const shouldProvideAnte = (accountEtherBalance && accountEtherBalance.lt(ante)) || false;
-
-  // TODO: use GN (this is an odd case where Big may make more sense)
-  const formattedAnte = ante.toString(GNFormat.DECIMAL);
+  let etherToSend = GN.zero(18, 10);
+  if (accountEtherBalance !== undefined && accountEtherBalance.lt(ante)) {
+    etherToSend = ante.sub(accountEtherBalance);
+  }
 
   if (!userAddress || !isOpen) {
     return null;
@@ -242,14 +237,14 @@ export default function BorrowModal(props: BorrowModalProps) {
   const gnMaxBorrowsBasedOnMarket = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
   // TODO: use GN
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
-    marginAccount.assets,
-    marginAccount.liabilities,
+    borrower.assets,
+    borrower.liabilities,
     uniswapPositions,
-    marginAccount.sqrtPriceX96,
-    marginAccount.iv,
-    marginAccount.nSigma,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
   )[isToken0 ? 0 : 1];
   // TODO: use GN
   const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
@@ -259,19 +254,19 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   // TODO: use GN
   const newLiabilities: Liabilities = {
-    amount0: isToken0 ? newLiability.toNumber() : marginAccount.liabilities.amount0,
-    amount1: isToken0 ? marginAccount.liabilities.amount1 : newLiability.toNumber(),
+    amount0: isToken0 ? newLiability.toNumber() : borrower.liabilities.amount0,
+    amount1: isToken0 ? borrower.liabilities.amount1 : newLiability.toNumber(),
   };
 
   const { health: newHealth } = isHealthy(
-    marginAccount.assets,
+    borrower.assets,
     newLiabilities,
     uniswapPositions,
-    marginAccount.sqrtPriceX96,
-    marginAccount.iv,
-    marginAccount.nSigma,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
   );
 
   const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
@@ -333,7 +328,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             </strong>{' '}
             using this{' '}
             <strong>
-              {marginAccount.token0.symbol}/{marginAccount.token1.symbol}
+              {borrower.token0.symbol}/{borrower.token1.symbol}
             </strong>{' '}
             smart wallet. Your total borrows for this token in this smart wallet will be{' '}
             <strong>
@@ -341,10 +336,10 @@ export default function BorrowModal(props: BorrowModalProps) {
             </strong>
             .
           </Text>
-          {shouldProvideAnte && (
+          {etherToSend.isGtZero() && (
             <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-              You will need to provide an additional {formattedAnte} ETH to cover the gas fees in the event that you are
-              liquidated.
+              You will need to provide an additional {etherToSend.toString(GNFormat.DECIMAL)} ETH to cover the gas fees
+              in the event that you are liquidated.
             </Text>
           )}
           <div className='flex gap-2 mt-2'>
@@ -357,12 +352,11 @@ export default function BorrowModal(props: BorrowModalProps) {
         </div>
         <div className='w-full'>
           <BorrowButton
-            marginAccount={marginAccount}
-            ante={ante}
+            borrower={borrower}
+            etherToSend={etherToSend}
             userAddress={userAddress}
             borrowToken={borrowToken}
             borrowAmount={borrowAmount}
-            shouldProvideAnte={shouldProvideAnte}
             isUnhealthy={isUnhealthy}
             notEnoughSupply={notEnoughSupply}
             setIsOpen={setIsOpen}

@@ -4,24 +4,25 @@ import { SendTransactionResult } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
-import { Assets, MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { Assets } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapPosition } from '../../../data/Uniswap';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -57,7 +58,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type RemoveCollateralButtonProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   userAddress: Address;
   collateralToken: Token;
   collateralAmount: GN;
@@ -67,26 +68,15 @@ type RemoveCollateralButtonProps = {
 };
 
 function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
-  const { marginAccount, userAddress, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } =
-    props;
+  const { borrower, userAddress, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
 
-  const provider = useProvider({ chainId: activeChain.id });
-
-  const isToken0Collateral = collateralToken.address === marginAccount.token0.address;
+  const isToken0Collateral = collateralToken.address === borrower.token0.address;
 
   const amount0 = isToken0Collateral ? collateralAmount : GN.zero(collateralToken.decimals);
   const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
-
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
 
   const encodedData = useMemo(() => {
     const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
@@ -98,12 +88,17 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   }, [amount0, amount1, userAddress]);
 
   const { config: removeCollateralConfig } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: borrowerAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    enabled:
-      Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) && Boolean(oracleSeed),
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [0],
+    ],
+    enabled: Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),
     chainId: activeChain.id,
   });
   const removeCollateralUpdatedRequest = useMemo(() => {
@@ -141,8 +136,6 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isPending) {
     confirmButtonState = ConfirmButtonState.PENDING;
-  } else if (oracleSeed === undefined) {
-    confirmButtonState = ConfirmButtonState.LOADING;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, collateralToken);
@@ -165,7 +158,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 }
 
 export type RemoveCollateralModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   uniswapPositions: readonly UniswapPosition[];
   marketInfo: MarketInfo;
   isOpen: boolean;
@@ -174,23 +167,23 @@ export type RemoveCollateralModalProps = {
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmountStr, setCollateralAmountStr] = useState('');
-  const [collateralToken, setCollateralToken] = useState(marginAccount.token0);
+  const [collateralToken, setCollateralToken] = useState(borrower.token0);
 
   const { address: userAddress } = useAccount();
 
   // Reset the collateral amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
     setCollateralAmountStr('');
-    setCollateralToken(marginAccount.token0);
-  }, [isOpen, marginAccount.token0]);
+    setCollateralToken(borrower.token0);
+  }, [isOpen, borrower.token0]);
 
-  const tokenOptions = [marginAccount.token0, marginAccount.token1];
-  const isToken0 = collateralToken.address === marginAccount.token0.address;
+  const tokenOptions = [borrower.token0, borrower.token1];
+  const isToken0 = collateralToken.address === borrower.token0.address;
 
-  const existingCollateralRaw = isToken0 ? marginAccount.assets.token0Raw : marginAccount.assets.token1Raw;
+  const existingCollateralRaw = isToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
 
   const existingCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals);
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
@@ -202,14 +195,14 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   }
 
   const maxWithdrawBasedOnHealth = maxWithdraws(
-    marginAccount.assets,
-    marginAccount.liabilities,
+    borrower.assets,
+    borrower.liabilities,
     uniswapPositions,
-    marginAccount.sqrtPriceX96,
-    marginAccount.iv,
-    marginAccount.nSigma,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
   )[isToken0 ? 0 : 1];
   const max = Math.min(existingCollateralRaw, maxWithdrawBasedOnHealth);
   // Mitigate the case when the number is represented in scientific notation
@@ -218,21 +211,21 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
 
   // TODO: Utilize GN for this
   const newAssets: Assets = {
-    token0Raw: isToken0 ? newCollateralAmount.toNumber() : marginAccount.assets.token0Raw,
-    token1Raw: isToken0 ? marginAccount.assets.token1Raw : newCollateralAmount.toNumber(),
-    uni0: marginAccount.assets.uni0,
-    uni1: marginAccount.assets.uni1,
+    token0Raw: isToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
+    token1Raw: isToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
+    uni0: borrower.assets.uni0,
+    uni1: borrower.assets.uni1,
   };
 
   const { health: newHealth } = isHealthy(
     newAssets,
-    marginAccount.liabilities,
+    borrower.liabilities,
     uniswapPositions,
-    marginAccount.sqrtPriceX96,
-    marginAccount.iv,
-    marginAccount.nSigma,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
   );
 
   return (
@@ -280,7 +273,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
             </strong>{' '}
             collateral from this{' '}
             <strong>
-              {marginAccount.token0.symbol}/{marginAccount.token1.symbol}
+              {borrower.token0.symbol}/{borrower.token1.symbol}
             </strong>{' '}
             smart wallet. Your total collateral for this token in this smart wallet will be{' '}
             <strong>
@@ -294,7 +287,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
         </div>
         <div className='w-full'>
           <RemoveCollateralButton
-            marginAccount={marginAccount}
+            borrower={borrower}
             userAddress={userAddress}
             collateralToken={collateralToken}
             collateralAmount={collateralAmount}

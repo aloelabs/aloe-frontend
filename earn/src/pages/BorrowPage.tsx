@@ -43,11 +43,12 @@ import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/Sm
 import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { computeLTV } from '../data/BalanceSheet';
+import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
 import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
-import { fetchMarginAccounts, MarginAccount } from '../data/MarginAccount';
+import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
 import {
   fetchUniswapNFTPositions,
@@ -186,7 +187,10 @@ export default function BorrowPage() {
 
   const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
   const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
-  const [marginAccounts, setMarginAccounts] = useChainDependentState<MarginAccount[] | null>(null, activeChain.id);
+  const [borrowerNftBorrowers, setBorrowerNftBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(
+    null,
+    activeChain.id
+  );
   const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useSafeState<
     Map<string, readonly UniswapPosition[]>
   >(new Map());
@@ -211,9 +215,11 @@ export default function BorrowPage() {
 
   const selectedMarginAccount = useMemo(() => {
     const marginAccountSearchParam = searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY);
-    if (!marginAccountSearchParam) return marginAccounts?.[0];
-    return marginAccounts?.find((account) => account.address === marginAccountSearchParam) ?? marginAccounts?.[0];
-  }, [marginAccounts, searchParams]);
+    if (!marginAccountSearchParam) return borrowerNftBorrowers?.[0];
+    return (
+      borrowerNftBorrowers?.find((account) => account.address === marginAccountSearchParam) ?? borrowerNftBorrowers?.[0]
+    );
+  }, [borrowerNftBorrowers, searchParams]);
 
   const borrowerLensContract = useContract({
     abi: borrowerLensAbi,
@@ -235,18 +241,34 @@ export default function BorrowPage() {
     (async () => {
       if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
       const chainId = (await provider.getNetwork()).chainId;
-      const fetchedMarginAccounts = await fetchMarginAccounts(chainId, provider, userAddress, availablePools);
-      setMarginAccounts(fetchedMarginAccounts);
+
+      const borrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress);
+      const borrowers = await fetchBorrowerDatas(
+        chainId,
+        provider,
+        borrowerNfts.map((x) => x.borrowerAddress),
+        availablePools
+      );
+
+      const fetchedBorrowerNftBorrowers: BorrowerNftBorrower[] = borrowers.map((borrower, i) => ({
+        ...borrower,
+        tokenId: borrowerNfts[i].tokenId,
+        index: borrowerNfts[i].index,
+      }));
+      setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
     })();
-  }, [userAddress, borrowerLensContract, provider, availablePools, setMarginAccounts]);
+  }, [userAddress, borrowerLensContract, provider, availablePools, setBorrowerNftBorrowers]);
 
   // MARK: Reset search param if margin account doesn't exist
   useEffect(() => {
-    if (marginAccounts?.length && selectedMarginAccount?.address !== searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY)) {
+    if (
+      borrowerNftBorrowers?.length &&
+      selectedMarginAccount?.address !== searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY)
+    ) {
       searchParams.delete(SELECTED_MARGIN_ACCOUNT_KEY);
       setSearchParams(searchParams);
     }
-  }, [marginAccounts?.length, searchParams, selectedMarginAccount, setSearchParams]);
+  }, [borrowerNftBorrowers?.length, searchParams, selectedMarginAccount, setSearchParams]);
 
   // MARK: Fetch market info
   useEffect(() => {
@@ -457,17 +479,17 @@ export default function BorrowPage() {
 
   const isUnableToWithdrawAnte = hasLiabilities || !accountHasEther;
 
-  const userHasNoMarginAccounts = marginAccounts?.length === 0;
+  const userHasNoMarginAccounts = borrowerNftBorrowers?.length === 0;
 
   return (
     <AppPage>
       <Container>
         <SmartWalletsContainer>
           <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
-            Borrow Vaults
+            Borrower NFTs
           </Text>
           <SmartWalletsList>
-            {marginAccounts?.map((account) => (
+            {borrowerNftBorrowers?.map((account) => (
               <SmartWalletButton
                 token0={account.token0}
                 token1={account.token1}
@@ -493,10 +515,6 @@ export default function BorrowPage() {
         </SmartWalletsContainer>
         <PageGrid>
           <MonitorContainer>
-            <Text size='XXL' weight='bold'>
-              <p>Monitor and manage</p>
-              <p>your borrow vault</p>
-            </Text>
             <ManageAccountButtons
               onAddCollateral={() => {
                 if (isConnected) setIsAddCollateralModalOpen(true);
@@ -594,7 +612,7 @@ export default function BorrowPage() {
             setPendingTxn={setPendingTxn}
           />
           <RemoveCollateralModal
-            marginAccount={selectedMarginAccount}
+            borrower={selectedMarginAccount}
             uniswapPositions={uniswapPositions}
             marketInfo={selectedMarketInfo}
             isOpen={isRemoveCollateralModalOpen}
@@ -602,7 +620,7 @@ export default function BorrowPage() {
             setPendingTxn={setPendingTxn}
           />
           <BorrowModal
-            marginAccount={selectedMarginAccount}
+            borrower={selectedMarginAccount}
             uniswapPositions={uniswapPositions}
             marketInfo={selectedMarketInfo}
             accountEtherBalance={accountEtherBalance}
@@ -618,7 +636,7 @@ export default function BorrowPage() {
             setPendingTxn={setPendingTxn}
           />
           <WithdrawAnteModal
-            marginAccount={selectedMarginAccount}
+            borrower={selectedMarginAccount}
             accountEthBalance={accountEtherBalance}
             isOpen={isWithdrawAnteModalOpen}
             setIsOpen={setIsWithdrawAnteModalOpen}
