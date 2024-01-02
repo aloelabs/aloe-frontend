@@ -105,7 +105,7 @@ function AppBodyWrapper() {
   const network = useNetwork();
   const navigate = useNavigate();
   const isAllowed = useGeoFencing(activeChain);
-  const { isBlocked: isAccountBlocked } = useAccountRisk();
+  const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -124,6 +124,14 @@ function AppBodyWrapper() {
   const currentDateCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
   const hasLaunched = new Date(currentDateCST) >= LAUNCH_DATE;
   const showCountdown = !shouldBypassCountdown && !hasLaunched;
+
+  if (isAccountRiskLoading) {
+    return null;
+  }
+
+  if (isAccountBlocked) {
+    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
+  }
 
   return (
     <AppBody>
