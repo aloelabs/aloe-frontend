@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import LaunchBanner from 'shared/lib/components/banner/LaunchBanner';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -105,7 +106,7 @@ function AppBodyWrapper() {
   const network = useNetwork();
   const navigate = useNavigate();
   const isAllowed = useGeoFencing(activeChain);
-  const { isBlocked: isAccountBlocked } = useAccountRisk();
+  const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
     if (network.chain !== undefined && network.chain !== activeChain) {
@@ -125,6 +126,14 @@ function AppBodyWrapper() {
   const hasLaunched = new Date(currentDateCST) >= LAUNCH_DATE;
   const showCountdown = !shouldBypassCountdown && !hasLaunched;
 
+  if (isAccountRiskLoading) {
+    return null;
+  }
+
+  if (isAccountBlocked) {
+    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
+  }
+
   return (
     <AppBody>
       {showCountdown && <CountdownPage />}
@@ -132,6 +141,7 @@ function AppBodyWrapper() {
         <>
           <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
           <main className='flex-grow'>
+            <LaunchBanner />
             <Routes>
               <Route path='/portfolio' element={<PortfolioPage />} />
               <Route path='/markets' element={<MarketsPage />} />

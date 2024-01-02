@@ -94,7 +94,7 @@ function AppBodyWrapper() {
   const { activeChain, isChainLoading, setActiveChain, setIsChainLoading } = useContext(ChainContext);
   const account = useAccount();
   const network = useNetwork();
-  const { isBlocked: isAccountBlocked } = useAccountRisk();
+  const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
     const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
@@ -117,6 +117,14 @@ function AppBodyWrapper() {
   }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
 
   const isReady = false;
+
+  if (isAccountRiskLoading) {
+    return null;
+  }
+
+  if (isAccountBlocked) {
+    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
+  }
 
   return (
     <AppBody>

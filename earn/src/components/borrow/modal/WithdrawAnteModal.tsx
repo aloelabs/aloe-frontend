@@ -3,19 +3,20 @@ import { useContext } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
-import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useProvider, useBalance } from 'wagmi';
+import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import { MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
@@ -45,27 +46,17 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
 
 type WithdrawAnteButtonProps = {
   activeChain: Chain;
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
-  const { activeChain, marginAccount, userAddress, setIsOpen, setPendingTxn } = props;
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
-
-  const provider = useProvider({ chainId: activeChain.id });
-
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
+  const { activeChain, borrower, userAddress, setIsOpen, setPendingTxn } = props;
 
   const { data: borrowerBalance } = useBalance({
-    address: marginAccount.address,
+    address: borrower.address,
     chainId: activeChain.id,
     watch: false,
     enabled: true,
@@ -79,11 +70,17 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
     isError: isUnableToWithdrawAnte,
     isLoading: isCheckingIfAbleToWithdrawAnte,
   } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: borrowerAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ALOE_II_SIMPLE_MANAGER_ADDRESS[activeChain.id], encodedData as `0x${string}`, oracleSeed ?? Q32],
-    enabled: Boolean(userAddress) && Boolean(oracleSeed),
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [0],
+    ],
+    enabled: Boolean(userAddress),
     chainId: activeChain.id,
   });
   const gasLimit = withdrawAnteConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
@@ -127,7 +124,7 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
 }
 
 export type WithdrawAnteModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   accountEthBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -135,7 +132,7 @@ export type WithdrawAnteModalProps = {
 };
 
 export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
-  const { marginAccount, accountEthBalance, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, accountEthBalance, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
   const { address: userAddress } = useAccount();
 
@@ -158,7 +155,7 @@ export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
         <div className='w-full'>
           <WithdrawAnteButton
             activeChain={activeChain}
-            marginAccount={marginAccount}
+            borrower={borrower}
             userAddress={userAddress}
             setIsOpen={setIsOpen}
             setPendingTxn={setPendingTxn}

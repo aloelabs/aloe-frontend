@@ -148,7 +148,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       });
       const marketInfosData = await fetchMarketInfos(uniqueMarkets, activeChain.id, provider);
       const marketInfosMapped = marketInfosData.reduce((acc, marketInfo) => {
-        acc.set(`${marketInfo.lender0}-${marketInfo.lender1}`, marketInfo);
+        acc.set(`${marketInfo.lender0.toLowerCase()}-${marketInfo.lender1.toLowerCase()}`, marketInfo);
         return acc;
       }, new Map<string, MarketInfo>());
       setMarketInfos(marketInfosMapped);
@@ -315,7 +315,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const liabilityGradient = liabilityColor
                       ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
                       : undefined;
-                    const marketInfo = marketInfos.get(`${account.lender0}-${account.lender1}`);
+                    const marketInfo = marketInfos.get(
+                      `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
+                    );
                     const apy = ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
                     const roundedApy = Math.round(apy * 100) / 100;
                     return (
@@ -403,7 +405,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateBorrowerModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
-          marketInfo={marketInfos.get(`${selectedBorrower.borrower.lender0}-${selectedBorrower.borrower.lender1}`)}
+          marketInfo={marketInfos.get(
+            `${selectedBorrower.borrower.lender0.toLowerCase()}-${selectedBorrower.borrower.lender1.toLowerCase()}`
+          )}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}

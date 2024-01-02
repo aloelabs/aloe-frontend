@@ -2,23 +2,23 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
-import { MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import {
   getAmountsForLiquidity,
   tickToPrice,
@@ -79,31 +79,28 @@ export const UniswapNFTPositionButtonWrapper = styled.button.attrs((props: { act
 `;
 
 type WithdrawUniswapNFTButtonProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   uniswapPosition: UniswapPosition;
   existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPosition: UniswapNFTPositionEntry;
-  userAddress: string;
+  userAddress: Address;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
-  const { marginAccount, uniswapPosition, existingUniswapPositions, uniswapNFTPosition, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    borrower,
+    uniswapPosition,
+    existingUniswapPositions,
+    uniswapNFTPosition,
+    userAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
-
-  const provider = useProvider({ chainId: activeChain.id });
-
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
 
   const encodedData = useMemo(() => {
     return ethers.utils.defaultAbiCoder.encode(
@@ -123,11 +120,17 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
   }, [uniswapNFTPosition, uniswapPosition, existingUniswapPositions]);
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: borrowerAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
-    enabled: Boolean(oracleSeed),
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [0],
+    ],
+    enabled: true,
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
@@ -178,7 +181,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
 }
 
 export type WithdrawUniswapNFTModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   uniswapPosition: UniswapPosition;
   existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPosition: UniswapNFTPositionEntry;
@@ -188,18 +191,18 @@ export type WithdrawUniswapNFTModalProps = {
 };
 
 export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
-  const { marginAccount, uniswapPosition, uniswapNFTPosition, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, uniswapPosition, uniswapNFTPosition, isOpen, setIsOpen, setPendingTxn } = props;
 
   const { address: userAddress } = useAccount();
 
-  const { sqrtPriceX96, token0, token1 } = marginAccount;
+  const { sqrtPriceX96, token0, token1 } = borrower;
 
   const minPrice = uniswapPosition
-    ? tickToPrice(uniswapPosition.lower, marginAccount.token0.decimals, marginAccount.token1.decimals, true)
+    ? tickToPrice(uniswapPosition.lower, borrower.token0.decimals, borrower.token1.decimals, true)
     : 0;
 
   const maxPrice = uniswapPosition
-    ? tickToPrice(uniswapPosition.upper, marginAccount.token0.decimals, marginAccount.token1.decimals, true)
+    ? tickToPrice(uniswapPosition.upper, borrower.token0.decimals, borrower.token1.decimals, true)
     : 0;
 
   const [amount0, amount1] = uniswapPosition
@@ -242,14 +245,14 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                     {roundPercentage(amount0Percent, 1)}%
                   </Display>
                   <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
-                  <Text size='XS'>{marginAccount.token0.symbol}</Text>
+                  <Text size='XS'>{borrower.token0.symbol}</Text>
                 </div>
                 <div className='text-right'>
                   <Display size='XS' color={ACCENT_COLOR}>
                     {roundPercentage(amount1Percent, 1)}%
                   </Display>
                   <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
-                  <Text size='XS'>{marginAccount.token1.symbol}</Text>
+                  <Text size='XS'>{borrower.token1.symbol}</Text>
                 </div>
               </div>
               <div className='w-full flex justify-between'>
@@ -259,7 +262,7 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                   </Text>
                   <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
                   <Text size='XS'>
-                    {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+                    {borrower.token1.symbol} per {borrower.token0.symbol}
                   </Text>
                 </div>
                 <div className='text-right'>
@@ -268,14 +271,14 @@ export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {
                   </Text>
                   <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
                   <Text size='XS'>
-                    {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+                    {borrower.token1.symbol} per {borrower.token0.symbol}
                   </Text>
                 </div>
               </div>
             </div>
           </div>
           <WithdrawUniswapNFTButton
-            marginAccount={marginAccount}
+            borrower={borrower}
             uniswapPosition={uniswapPosition}
             existingUniswapPositions={props.existingUniswapPositions}
             uniswapNFTPosition={uniswapNFTPosition}

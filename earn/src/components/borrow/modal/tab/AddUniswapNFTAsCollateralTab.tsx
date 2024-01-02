@@ -2,26 +2,24 @@ import { useContext, useEffect, useState, useMemo } from 'react';
 
 import { erc721ABI, SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+  ALOE_II_BORROWER_NFT_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
+import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { Address, useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
-import { MarginAccount } from '../../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
@@ -85,14 +83,14 @@ export const UniswapNFTPositionButtonWrapper = styled.button.attrs((props: { act
 `;
 
 type UniswapNFTPositionButtonProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   uniswapNFTPosition: UniswapNFTPosition;
   isActive: boolean;
   onClick: () => void;
 };
 
 function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
-  const { marginAccount, uniswapNFTPosition, isActive, onClick } = props;
+  const { borrower, uniswapNFTPosition, isActive, onClick } = props;
 
   const { token0, token1 } = uniswapNFTPosition;
 
@@ -116,7 +114,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
       upper: uniswapNFTPosition.upper,
       liquidity: uniswapNFTPosition.liquidity,
     },
-    sqrtRatioToTick(marginAccount.sqrtPriceX96),
+    sqrtRatioToTick(borrower.sqrtPriceX96),
     uniswapNFTPosition.token1.decimals
   );
 
@@ -152,30 +150,20 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
 }
 
 type AddUniswapNFTAsCollateralButtonProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPosition: UniswapNFTPositionEntry;
-  userAddress: string;
+  userAddress: Address;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
 function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonProps) {
-  const { marginAccount, existingUniswapPositions, uniswapNFTPosition, setIsOpen, setPendingTxn } = props;
+  const { borrower, existingUniswapPositions, uniswapNFTPosition, userAddress, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
   const [approvingTxn, setApprovingTxn] = useState<SendTransactionResult | null>(null);
-  const [oracleSeed, setOracleSeed] = useChainDependentState<number | undefined>(undefined, activeChain.id);
-
-  const provider = useProvider({ chainId: activeChain.id });
-
-  useEffectOnce(() => {
-    (async () => {
-      const seed = await computeOracleSeed(marginAccount.uniswapPool, provider, activeChain.id);
-      setOracleSeed(seed);
-    })();
-  });
 
   // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
   const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
@@ -214,11 +202,17 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
   }, [uniswapNFTPosition, existingUniswapPositions]);
 
   const { config: contractWriteConfig } = usePrepareContractWrite({
-    address: marginAccount.address,
-    abi: borrowerAbi,
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
     functionName: 'modify',
-    args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], encodedData, oracleSeed ?? Q32],
-    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] && Boolean(oracleSeed),
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [0],
+    ],
+    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
     chainId: activeChain.id,
   });
   if (contractWriteConfig.request) {
@@ -296,7 +290,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
 }
 
 export type AddUniswapNFTAsCollateralTabProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   existingUniswapPositions: readonly UniswapPosition[];
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   defaultUniswapNFTPosition: [number, UniswapNFTPosition];
@@ -306,7 +300,7 @@ export type AddUniswapNFTAsCollateralTabProps = {
 
 export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTabProps) {
   const {
-    marginAccount,
+    borrower,
     existingUniswapPositions,
     uniswapNFTPositions,
     defaultUniswapNFTPosition,
@@ -354,7 +348,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
             {filteredPages[currentPage - 1].map(([tokenId, position]) => (
               <UniswapNFTPositionButton
                 key={tokenId}
-                marginAccount={marginAccount}
+                borrower={borrower}
                 uniswapNFTPosition={position}
                 isActive={tokenId === selectedTokenId}
                 onClick={() => setSelectedTokenId(tokenId)}
@@ -380,7 +374,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
       </div>
       <div className='w-full'>
         <AddUniswapNFTAsCollateralButton
-          marginAccount={marginAccount}
+          borrower={borrower}
           existingUniswapPositions={existingUniswapPositions}
           uniswapNFTPosition={[selectedTokenId, uniswapNFTPositions.get(selectedTokenId)!]}
           userAddress={userAddress}
