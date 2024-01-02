@@ -529,7 +529,7 @@ export default function BorrowPage() {
               <SmartWalletButton
                 token0={account.token0}
                 token1={account.token1}
-                tokenId={Number(account.tokenId.slice(-4))}
+                tokenId={parseInt(account.tokenId.slice(-4), 16)}
                 isActive={selectedMarginAccount?.address === account.address}
                 onClick={() => {
                   // When a new account is selected, we need to update the
