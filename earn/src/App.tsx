@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import LaunchBanner from 'shared/lib/components/banner/LaunchBanner';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -140,6 +141,7 @@ function AppBodyWrapper() {
         <>
           <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
           <main className='flex-grow'>
+            <LaunchBanner />
             <Routes>
               <Route path='/portfolio' element={<PortfolioPage />} />
               <Route path='/markets' element={<MarketsPage />} />
