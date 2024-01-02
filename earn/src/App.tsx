@@ -10,7 +10,7 @@ import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
-import { DEFAULT_CHAIN, LAUNCH_DATE, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
@@ -18,7 +18,6 @@ import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFe
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { isDevelopment } from 'shared/lib/util/Utils';
 import { useAccount, useNetwork } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
@@ -29,7 +28,6 @@ import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
 import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
-import CountdownPage from './pages/CountdownPage';
 import InfoPage from './pages/InfoPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import LendPage from './pages/LendPage';
@@ -121,11 +119,6 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isConnected]);
 
-  const shouldBypassCountdown = isDevelopment() || process.env.REACT_APP_BYPASS_COUNTDOWN === 'true';
-  const currentDateCST = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' });
-  const hasLaunched = new Date(currentDateCST) >= LAUNCH_DATE;
-  const showCountdown = !shouldBypassCountdown && !hasLaunched;
-
   if (isAccountRiskLoading) {
     return null;
   }
@@ -136,44 +129,39 @@ function AppBodyWrapper() {
 
   return (
     <AppBody>
-      {showCountdown && <CountdownPage />}
-      {!showCountdown && (
-        <>
-          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-          <main className='flex-grow'>
-            <LaunchBanner />
-            <Routes>
-              <Route path='/portfolio' element={<PortfolioPage />} />
-              <Route path='/markets' element={<MarketsPage />} />
-              <Route path='/lend' element={<LendPage />} />
-              <Route path='/stats' element={<InfoPage />} />
-              <Route path='/leaderboard' element={<LeaderboardPage />} />
-              {isAllowed && (
-                <>
-                  <Route path='/boost' element={<BoostPage />} />
-                  <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
-                  <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
-                  <Route path='/borrow' element={<BorrowPage />} />
-                </>
-              )}
-              <Route path='/claim' element={<ClaimPage />} />
-              <Route path='/' element={<Navigate replace to='/portfolio' />} />
-              <Route path='*' element={<Navigate to='/' />} />
-            </Routes>
-          </main>
-          <Footer />
-          <WelcomeModal
-            isOpen={isWelcomeModalOpen}
-            activeChain={activeChain}
-            checkboxes={CONNECT_WALLET_CHECKBOXES}
-            account={account}
-            setIsOpen={() => setIsWelcomeModalOpen(false)}
-            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-            onSkip={() => navigate('/markets')}
-          />
-          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
-        </>
-      )}
+      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+      <main className='flex-grow'>
+        <LaunchBanner />
+        <Routes>
+          <Route path='/portfolio' element={<PortfolioPage />} />
+          <Route path='/markets' element={<MarketsPage />} />
+          <Route path='/lend' element={<LendPage />} />
+          <Route path='/stats' element={<InfoPage />} />
+          <Route path='/leaderboard' element={<LeaderboardPage />} />
+          {isAllowed && (
+            <>
+              <Route path='/boost' element={<BoostPage />} />
+              <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
+              <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
+              <Route path='/borrow' element={<BorrowPage />} />
+            </>
+          )}
+          <Route path='/claim' element={<ClaimPage />} />
+          <Route path='/' element={<Navigate replace to='/portfolio' />} />
+          <Route path='*' element={<Navigate to='/' />} />
+        </Routes>
+      </main>
+      <Footer />
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        activeChain={activeChain}
+        checkboxes={CONNECT_WALLET_CHECKBOXES}
+        account={account}
+        setIsOpen={() => setIsWelcomeModalOpen(false)}
+        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+        onSkip={() => navigate('/markets')}
+      />
+      <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
     </AppBody>
   );
 }
