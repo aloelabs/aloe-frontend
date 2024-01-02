@@ -42,6 +42,10 @@ export async function fetchListOfBorrowerNfts(
 ): Promise<Array<BorrowerNft>> {
   const borrowerNftContract = new ethers.Contract(ALOE_II_BORROWER_NFT_ADDRESS[chainId], borrowerNftAbi, provider);
 
+  // Fetch decoded SSTORE2 data from the BorrowerNFT (tokenIds in a specific order)
+  const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
+  const orderedTokenIdStrs = orderedTokenIds.map((id) => '0x' + id.toHexString().slice(2).padStart(44, '0'));
+
   // Query all `Modify` events associated with `userAddress`
   // --> indexed args are: [address owner, address borrower, address manager]
   const modifys = await borrowerNftContract.queryFilter(
@@ -72,6 +76,10 @@ export async function fetchListOfBorrowerNfts(
       // If there's no managerSet yet, create one
       borrowerManagerSets.set(borrower, new Set<Address>([manager]));
     }
+  });
+  orderedTokenIdStrs.forEach((orderedTokenIdStr) => {
+    const borrower = ethers.utils.getAddress(orderedTokenIdStr.slice(0, 42)) as Address;
+    if (!borrowerManagerSets.has(borrower)) borrowerManagerSets.set(borrower, new Set<Address>());
   });
 
   const borrowersThatAreInUse = new Set<Address>();
@@ -126,10 +134,6 @@ export async function fetchListOfBorrowerNfts(
       return (areManagersValid || (filterParams?.includeFreshBorrowers && !isInUse)) && isInCorrectPool;
     })
     .map(([borrower, _managerSet]) => borrower);
-
-  // Fetch decoded SSTORE2 data from the BorrowerNFT (tokenIds in a specific order)
-  const orderedTokenIds = (await borrowerNftContract.tokensOf(userAddress)) as BigNumber[];
-  const orderedTokenIdStrs = orderedTokenIds.map((id) => '0x' + id.toHexString().slice(2).padStart(44, '0'));
 
   return filterNullishValues(
     borrowers.map((borrower) => {

@@ -1,13 +1,13 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { factoryAbi } from 'shared/lib/abis/Factory';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
@@ -33,7 +33,7 @@ const SmartWalletOptionsPage = styled.div`
 type CreateSmartWalletButtonProps = {
   poolAddress: string;
   uniswapPoolInfo: UniswapPoolInfo;
-  userAddress: string;
+  userAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
@@ -46,10 +46,10 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
 
   const salt = useMemo(() => generateBytes12Salt(), []);
   const { config: createBorrowerConfig } = usePrepareContractWrite({
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    abi: factoryAbi,
-    functionName: 'createBorrower',
-    args: [poolAddress as Address, userAddress as Address, salt],
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'mint',
+    args: [userAddress, [poolAddress as Address], [salt]],
     enabled: Boolean(poolAddress) && Boolean(userAddress),
     chainId: activeChain.id,
   });
@@ -198,6 +198,7 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
                   isActive={selectedPool === poolOption[0]}
                   token0={poolOption[1].token0}
                   token1={poolOption[1].token1}
+                  tokenId={null}
                   onClick={() => {
                     setSelectedPool(poolOption[0]);
                   }}
