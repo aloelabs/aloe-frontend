@@ -17,10 +17,6 @@ const DEFAULT_NAV_LINKS: NavBarLink[] = [
     label: 'Markets',
     to: '/markets',
   },
-  {
-    label: 'Leaderboard',
-    to: '/leaderboard',
-  },
 ];
 
 const EXTENDED_NAV_LINKS: NavBarLink[] = [
@@ -55,6 +51,10 @@ export default function Header(props: HeaderProps) {
     {
       label: 'Stats',
       to: '/stats',
+    },
+    {
+      label: 'Leaderboard',
+      to: '/leaderboard',
     },
   ];
 

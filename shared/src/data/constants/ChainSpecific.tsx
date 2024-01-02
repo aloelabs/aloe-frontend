@@ -112,10 +112,10 @@ export const ALOE_II_ORACLE_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x7516735395134BB9EbF75d908103b48eDF238B9f',
-  [optimism.id]: '0x7516735395134BB9EbF75d908103b48eDF238B9f',
-  [arbitrum.id]: '0x7516735395134BB9EbF75d908103b48eDF238B9f',
-  [base.id]: '0xf46e04796185322485314Dd607DA1cb69028d731',
+  [mainnet.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
+  [optimism.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
+  [arbitrum.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
+  [base.id]: '0x03a3f925Ccb761e5fE1e684a20a553BFe3D9B6e5',
 };
 
 export const ALOE_II_FRONTEND_MANAGER_ADDRESS: { [chainId: number]: Address } = {

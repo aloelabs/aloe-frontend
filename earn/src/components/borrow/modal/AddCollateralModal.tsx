@@ -5,8 +5,8 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { MAX_UNISWAP_POSITIONS } from '../../../data/constants/Values';
-import { MarginAccount } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapNFTPosition, UniswapPosition } from '../../../data/Uniswap';
 import { AddCollateralTab } from './tab/AddCollateralTab';
@@ -21,7 +21,7 @@ enum AddCollateralModalState {
 }
 
 export type AddCollateralModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   marketInfo: MarketInfo;
   isLoadingUniswapPositions: boolean;
   existingUniswapPositions: readonly UniswapPosition[];
@@ -33,7 +33,7 @@ export type AddCollateralModalProps = {
 
 export default function AddCollateralModal(props: AddCollateralModalProps) {
   const {
-    marginAccount,
+    borrower,
     isLoadingUniswapPositions,
     existingUniswapPositions,
     uniswapNFTPositions,
@@ -100,7 +100,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
       )}
       {modalState === AddCollateralModalState.TOKENS && (
         <AddCollateralTab
-          marginAccount={marginAccount}
+          marginAccount={borrower}
           uniswapPositions={existingUniswapPositions}
           isOpen={isOpen}
           setPendingTxn={setPendingTxn}
@@ -109,7 +109,7 @@ export default function AddCollateralModal(props: AddCollateralModalProps) {
       )}
       {modalState === AddCollateralModalState.UNISWAP_NFTS && defaultUniswapNFTPosition != null && (
         <AddUniswapNFTAsCollateralTab
-          marginAccount={marginAccount}
+          borrower={borrower}
           existingUniswapPositions={existingUniswapPositions}
           uniswapNFTPositions={uniswapNFTPositions}
           defaultUniswapNFTPosition={defaultUniswapNFTPosition}
