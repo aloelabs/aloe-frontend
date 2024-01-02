@@ -70,12 +70,13 @@ const PlusIconWrapper = styled.div`
 export type SmartWalletButtonProps = {
   token0: Token;
   token1: Token;
+  tokenId: number | null;
   isActive: boolean;
   onClick: () => void;
 };
 
 export default function SmartWalletButton(props: SmartWalletButtonProps) {
-  const { token0, token1, isActive, onClick } = props;
+  const { token0, token1, tokenId, isActive, onClick } = props;
   const token0Color = useProminentColor(token0.logoURI);
   const token1Color = useProminentColor(token1.logoURI);
   // Create the variables for the gradients.
@@ -95,6 +96,7 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
         />
         <Display size='S' weight='semibold'>
           {token0.symbol} / {token1.symbol}
+          {tokenId === null ? '' : ` (#${tokenId})`}
         </Display>
       </div>
     </Container>
