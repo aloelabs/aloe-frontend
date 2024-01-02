@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { BigNumber } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
+import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
@@ -103,6 +104,11 @@ export default function LeaderboardPage() {
       <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
         <Text size='XXL' className='mb-4'>
           Aloe Leaderboard
+        </Text>
+        <Text size='M' color={LABEL_TEXT_COLOR} className='mb-4'>
+          Points are intended to be a loyalty metric and have no financial value at this time. You{' '}
+          <strong>should not</strong> make any investment decisions based on perceived value of points or other
+          speculations.
         </Text>
         {pages.length > 0 && (
           <TableContainer>
