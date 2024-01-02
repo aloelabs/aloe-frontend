@@ -7,7 +7,7 @@ import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
-import { MarginAccount } from '../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import {
   getAmountsForLiquidity,
   tickToPrice,
@@ -47,7 +47,7 @@ const PositionList = styled.div`
 `;
 
 type UniswapPositionCardProps = {
-  marginAccount?: MarginAccount;
+  borrower?: BorrowerNftBorrower;
   uniswapPosition?: UniswapPosition;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setSelectedUniswapPosition: (uniswapPosition: SelectedUniswapPosition | null) => void;
@@ -55,9 +55,9 @@ type UniswapPositionCardProps = {
 };
 
 function UniswapPositionCard(props: UniswapPositionCardProps) {
-  const { marginAccount, uniswapPosition, withdrawableUniswapNFTs, setSelectedUniswapPosition } = props;
+  const { borrower, uniswapPosition, withdrawableUniswapNFTs, setSelectedUniswapPosition } = props;
 
-  if (!marginAccount || !uniswapPosition) {
+  if (!borrower || !uniswapPosition) {
     return (
       <UniswapPositionCardWrapper>
         <Text size='S' color={ACCENT_COLOR} className='text-center'>
@@ -67,14 +67,14 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
     );
   }
 
-  const { sqrtPriceX96, token0, token1 } = marginAccount;
+  const { sqrtPriceX96, token0, token1 } = borrower;
 
   const minPrice = uniswapPosition
-    ? tickToPrice(uniswapPosition.lower, marginAccount.token0.decimals, marginAccount.token1.decimals, true)
+    ? tickToPrice(uniswapPosition.lower, borrower.token0.decimals, borrower.token1.decimals, true)
     : 0;
 
   const maxPrice = uniswapPosition
-    ? tickToPrice(uniswapPosition.upper, marginAccount.token0.decimals, marginAccount.token1.decimals, true)
+    ? tickToPrice(uniswapPosition.upper, borrower.token0.decimals, borrower.token1.decimals, true)
     : 0;
 
   const [amount0, amount1] = uniswapPosition
@@ -101,10 +101,10 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
       <div className='flex flex-col gap-4'>
         <div className='flex justify-center items-center'>
           <TokenPairIcons
-            token0IconPath={marginAccount.token0.logoURI}
-            token1IconPath={marginAccount.token1.logoURI}
-            token0AltText={`${marginAccount.token0.symbol}'s icon`}
-            token1AltText={`${marginAccount.token1.symbol}'s icon`}
+            token0IconPath={borrower.token0.logoURI}
+            token1IconPath={borrower.token1.logoURI}
+            token0AltText={`${borrower.token0.symbol}'s icon`}
+            token1AltText={`${borrower.token1.symbol}'s icon`}
           />
         </div>
         <div className='flex justify-between'>
@@ -113,14 +113,14 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               {roundPercentage(amount0Percent, 1)}%
             </Display>
             <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
-            <Text size='XS'>{marginAccount.token0.symbol}</Text>
+            <Text size='XS'>{borrower.token0.symbol}</Text>
           </div>
           <div className='text-right'>
             <Display size='XS' color={ACCENT_COLOR}>
               {roundPercentage(amount1Percent, 1)}%
             </Display>
             <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
-            <Text size='XS'>{marginAccount.token1.symbol}</Text>
+            <Text size='XS'>{borrower.token1.symbol}</Text>
           </div>
         </div>
         <div className='flex justify-between'>
@@ -130,7 +130,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
             </Text>
             <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
             <Text size='XS'>
-              {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+              {borrower.token1.symbol} per {borrower.token0.symbol}
             </Text>
           </div>
           <div className='text-right'>
@@ -139,7 +139,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
             </Text>
             <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
             <Text size='XS'>
-              {marginAccount.token1.symbol} per {marginAccount.token0.symbol}
+              {borrower.token1.symbol} per {borrower.token0.symbol}
             </Text>
           </div>
         </div>
@@ -166,14 +166,14 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 }
 
 export type UniswapPositionListProps = {
-  marginAccount?: MarginAccount;
+  borrower?: BorrowerNftBorrower;
   uniswapPositions: readonly UniswapPosition[];
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {
-  const { marginAccount, uniswapPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
+  const { borrower, uniswapPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
 
   return (
@@ -185,7 +185,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
             <UniswapPositionCardContainer key={slot}>
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
-                marginAccount={marginAccount}
+                borrower={borrower}
                 uniswapPosition={uniswapPositions.length > index ? uniswapPositions[index] : undefined}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
@@ -195,10 +195,10 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           ))}
         </PositionList>
       </Container>
-      {marginAccount && selectedUniswapPosition && (
+      {borrower && selectedUniswapPosition && (
         <WithdrawUniswapNFTModal
           isOpen={selectedUniswapPosition !== null}
-          marginAccount={marginAccount}
+          borrower={borrower}
           uniswapPosition={selectedUniswapPosition.uniswapPosition}
           existingUniswapPositions={uniswapPositions}
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}

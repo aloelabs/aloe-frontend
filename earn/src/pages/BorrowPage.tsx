@@ -58,10 +58,39 @@ import {
   UniswapPositionPrior,
 } from '../data/Uniswap';
 
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const TOPIC1_PREFIX = '0x000000000000000000000000';
 const FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS = 500;
 const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
+
+const ExplainerWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  position: relative;
+
+  padding: 16px;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+
+  background-color: rgba(10, 20, 27, 1);
+  border-radius: 8px;
+
+  &:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 8px;
+    /* 1.25px instead of 1px since it avoids the buggy appearance */
+    padding: 1.25px;
+    background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+`;
 
 const Container = styled.div`
   display: flex;
@@ -483,6 +512,13 @@ export default function BorrowPage() {
 
   return (
     <AppPage>
+      <ExplainerWrapper>
+        <Text size='M' weight='regular' color={SECONDARY_COLOR}>
+          When you borrow on the Markets page or Boost page, Borrower NFTs are created behind the scenes. This page
+          gives you fine-grained control over those NFTs. However, once you make changes here, the NFTs won't show up
+          elsewhere.
+        </Text>
+      </ExplainerWrapper>
       <Container>
         <SmartWalletsContainer>
           <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
@@ -569,7 +605,7 @@ export default function BorrowPage() {
           </MetricsContainer>
           <UniswapPositionsContainer>
             <UniswapPositionList
-              marginAccount={selectedMarginAccount}
+              borrower={selectedMarginAccount}
               uniswapPositions={uniswapPositions}
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
@@ -602,7 +638,7 @@ export default function BorrowPage() {
       {selectedMarginAccount && selectedMarketInfo && (
         <>
           <AddCollateralModal
-            marginAccount={selectedMarginAccount}
+            borrower={selectedMarginAccount}
             marketInfo={selectedMarketInfo}
             isLoadingUniswapPositions={isLoadingUniswapPositions}
             existingUniswapPositions={uniswapPositions}
