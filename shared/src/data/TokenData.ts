@@ -4,6 +4,7 @@ import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
   ArbLogo,
+  BadgerLogo,
   BaldLogo,
   CbEthLogo,
   ConvexLogo,
@@ -86,6 +87,15 @@ const CVX_MAINNET = new Token(
   'CVX',
   'Convex Token',
   ConvexLogo
+);
+
+const BADGER_MAINNET = new Token(
+  mainnet.id,
+  '0x3472a5a71965499acd81997a54bba8d852c6e53d',
+  18,
+  'BADGER',
+  'Badger',
+  BadgerLogo
 );
 
 const DAI_OPTIMISM = new Token(
@@ -307,6 +317,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WBTC_MAINNET.address]: WBTC_MAINNET,
     [WETH_MAINNET.address]: WETH_MAINNET,
     [CVX_MAINNET.address]: CVX_MAINNET,
+    [BADGER_MAINNET.address]: BADGER_MAINNET,
   },
   [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,

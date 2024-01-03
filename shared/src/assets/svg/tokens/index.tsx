@@ -1,4 +1,5 @@
 import ArbLogo from './arb.svg';
+import BadgerLogo from './badger.svg';
 import BaldLogo from './bald.svg';
 import ConvexLogo from './convex.svg';
 import DaiLogo from './dai.svg';
@@ -24,6 +25,7 @@ import CbEthLogo from './cbeth.svg';
 
 export {
   ArbLogo,
+  BadgerLogo,
   BaldLogo,
   ConvexLogo,
   DaiLogo,
