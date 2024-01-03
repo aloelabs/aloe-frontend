@@ -6,15 +6,18 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
+import { DEAD_ADDRESS } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
+import { useAccount } from 'wagmi';
 
 import { API_LEADERBOARD_URL } from '../data/constants/Values';
 import { LeaderboardResponseEntry } from '../data/LeaderboardResponse';
 
 const PAGE_SIZE = 10;
+const GREEN_ACCENT = 'rgba(82, 182, 154, 1)';
 
 type LeaderboardEntry = {
   address: string;
@@ -53,9 +56,23 @@ const TableBodyCell = styled.td`
   white-space: nowrap;
 `;
 
+const TableRow = styled.tr<{ $selected: boolean }>`
+  background-color: ${(props) => (props.$selected ? GREY_700 : 'transparent')};
+`;
+
+const UserLabel = styled(Text)`
+  display: inline-block;
+  background-color: ${GREEN_ACCENT};
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-right: 8px;
+`;
+
 export default function LeaderboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [leaderboardEntries, setLeaderboardEntries] = useSafeState<Array<LeaderboardEntry> | null>(null);
+
+  const { address } = useAccount();
 
   useEffect(() => {
     (async () => {
@@ -66,10 +83,12 @@ export default function LeaderboardPage() {
         return;
       }
       if (!leaderboardResponse.data) return;
-      const updatedLeaderboardEntries = leaderboardResponse.data.map((entry) => ({
-        address: entry.address,
-        score: GN.fromBigNumber(BigNumber.from(entry.score), 18),
-      }));
+      const updatedLeaderboardEntries = leaderboardResponse.data
+        .map((entry) => ({
+          address: entry.address,
+          score: GN.fromBigNumber(BigNumber.from(entry.score), 18),
+        }))
+        .filter((entry) => entry.address.toLowerCase() !== DEAD_ADDRESS);
       setLeaderboardEntries(updatedLeaderboardEntries);
     })();
   }, [setLeaderboardEntries]);
@@ -133,21 +152,25 @@ export default function LeaderboardPage() {
                 </tr>
               </TableHeader>
               <TableBody>
-                {pages[currentPage - 1]?.map((entry, index) => (
-                  <tr key={entry.address}>
-                    <TableBodyCell>
-                      <Text size='M'>
-                        {(currentPage - 1) * PAGE_SIZE + index + 1}&emsp;{getRowEmoji(currentPage, index)}
-                      </Text>
-                    </TableBodyCell>
-                    <TableBodyCell>
-                      <code>{entry.address}</code>
-                    </TableBodyCell>
-                    <TableBodyCell>
-                      <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
-                    </TableBodyCell>
-                  </tr>
-                ))}
+                {pages[currentPage - 1]?.map((entry, index) => {
+                  const isUser = address?.toLowerCase() === entry.address.toLowerCase();
+                  return (
+                    <TableRow $selected={isUser} key={entry.address}>
+                      <TableBodyCell>
+                        <Text size='M'>
+                          {(currentPage - 1) * PAGE_SIZE + index + 1}&emsp;{getRowEmoji(currentPage, index)}
+                        </Text>
+                      </TableBodyCell>
+                      <TableBodyCell>
+                        {isUser && <UserLabel>You</UserLabel>}
+                        <code>{entry.address}</code>
+                      </TableBodyCell>
+                      <TableBodyCell>
+                        <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
+                      </TableBodyCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
               <tfoot>
                 <tr>
