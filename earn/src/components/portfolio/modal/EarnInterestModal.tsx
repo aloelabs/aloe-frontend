@@ -9,7 +9,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -103,6 +103,7 @@ function DepositButton(props: DepositButtonProps) {
     args: [
       kitty.address,
       permit2Result.amount.toBigNumber(),
+      ROUTER_TRANSMITTANCE,
       BigNumber.from(permit2Result.nonce ?? '0'),
       BigNumber.from(permit2Result.deadline),
       permit2Result.signature ?? '0x',

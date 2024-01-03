@@ -1,16 +1,23 @@
 import ArbLogo from './arb.svg';
+import ApeLogo from './apecoin.svg';
+import BadgerLogo from './badger.svg';
 import BaldLogo from './bald.svg';
+import BasedLogo from './based.svg';
 import ConvexLogo from './convex.svg';
 import DaiLogo from './dai.svg';
 import FraxLogo from './frax.svg';
 import GmxLogo from './gmx.svg';
+import LidoLogo from './lido.svg';
 import LooksLogo from './looks.svg';
 import LyraLogo from './lyra.svg';
 import MagicLogo from './magic.svg';
+import MakerLogo from './maker.svg';
+import MaticLogo from './matic.svg';
 import MimLogo from './mim.svg';
 import OpLogo from './op.svg';
 import PerpLogo from './perp.svg';
 import RaiLogo from './rai.svg';
+import RplLogo from './rpl.svg';
 import TribeLogo from './tribe.svg';
 import UniLogo from './uni.svg';
 import UnknownTokenLogo from './unknown_token.svg';
@@ -24,11 +31,17 @@ import CbEthLogo from './cbeth.svg';
 
 export {
   ArbLogo,
+  ApeLogo,
+  BadgerLogo,
   BaldLogo,
+  BasedLogo,
   ConvexLogo,
   DaiLogo,
   FraxLogo,
+  LidoLogo,
   LyraLogo,
+  MakerLogo,
+  MaticLogo,
   OpLogo,
   PerpLogo,
   UsdcLogo,
@@ -38,6 +51,7 @@ export {
   UnknownTokenLogo,
   TribeLogo,
   RaiLogo,
+  RplLogo,
   LooksLogo,
   VeloLogo,
   WstEthLogo,

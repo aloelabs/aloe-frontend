@@ -17,6 +17,7 @@ import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { getToken } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
 import { Address, useBlockNumber, useProvider } from 'wagmi';
 
@@ -166,6 +167,11 @@ export default function InfoPage() {
                 methodName: 'totalSupply',
                 methodParameters: [],
               },
+              {
+                reference: 'asset',
+                methodName: 'asset',
+                methodParameters: [],
+              },
             ],
           });
         });
@@ -179,7 +185,11 @@ export default function InfoPage() {
         const updatedCallsReturnContext = convertBigNumbersForReturnContexts(value.callsReturnContext);
         const reserveFactor = (1 / updatedCallsReturnContext[0].returnValues[0]) * 100;
         const rateModel = updatedCallsReturnContext[1].returnValues[0] as Address;
-        const symbol = updatedCallsReturnContext[2].returnValues[0] as string;
+        let symbol = updatedCallsReturnContext[2].returnValues[0] as string;
+        if (symbol === undefined) {
+          const assetSymbol = getToken(chainId, updatedCallsReturnContext[5].returnValues[0])?.symbol;
+          symbol = assetSymbol === undefined ? 'UNKNOWN' : `${assetSymbol}+`;
+        }
         const decimals = updatedCallsReturnContext[3].returnValues[0] as number;
         const totalSupply = GN.fromBigNumber(
           updatedCallsReturnContext[4].returnValues[0] as ethers.BigNumber,
