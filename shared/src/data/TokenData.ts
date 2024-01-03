@@ -3,18 +3,25 @@ import { Address } from 'wagmi';
 import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import {
+  ApeLogo,
   ArbLogo,
+  BadgerLogo,
   BaldLogo,
+  BasedLogo,
   CbEthLogo,
   ConvexLogo,
   DaiLogo,
   FraxLogo,
   GmxLogo,
+  LidoLogo,
   LyraLogo,
   MagicLogo,
+  MakerLogo,
+  MaticLogo,
   MimLogo,
   OpLogo,
   PerpLogo,
+  RplLogo,
   UniLogo,
   UsdcLogo,
   UsdtLogo,
@@ -79,6 +86,48 @@ const WETH_MAINNET = new Token(
   WethLogo
 );
 
+const WSTETH_MAINNET = new Token(
+  mainnet.id,
+  '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+  18,
+  'wstETH',
+  'Wrapped Liquid Staked Ether 2.0',
+  WstEthLogo
+);
+
+const MKR_MAINNET = new Token(mainnet.id, '0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2', 18, 'MKR', 'Maker', MakerLogo);
+
+const UNI_MAINNET = new Token(mainnet.id, '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', 18, 'UNI', 'Uniswap', UniLogo);
+
+const APE_MAINNET = new Token(mainnet.id, '0x4d224452801aced8b2f0aebe155379bb5d594381', 18, 'APE', 'ApeCoin', ApeLogo);
+
+const RPL_MAINNET = new Token(
+  mainnet.id,
+  '0xd33526068d116ce69f19a9ee46f0bd304f21a51f',
+  18,
+  'RPL',
+  'Rocket Pool Protocol',
+  RplLogo
+);
+
+const MATIC_MAINNET = new Token(
+  mainnet.id,
+  '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
+  18,
+  'MATIC',
+  'Matic Token',
+  MaticLogo
+);
+
+const LDO_MAINNET = new Token(
+  mainnet.id,
+  '0x5a98fcbea516cf06857215779fd812ca3bef1b32',
+  18,
+  'LDO',
+  'Lido DAO Token',
+  LidoLogo
+);
+
 const CVX_MAINNET = new Token(
   mainnet.id,
   '0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b',
@@ -86,6 +135,15 @@ const CVX_MAINNET = new Token(
   'CVX',
   'Convex Token',
   ConvexLogo
+);
+
+const BADGER_MAINNET = new Token(
+  mainnet.id,
+  '0x3472a5a71965499acd81997a54bba8d852c6e53d',
+  18,
+  'BADGER',
+  'Badger',
+  BadgerLogo
 );
 
 const DAI_OPTIMISM = new Token(
@@ -299,6 +357,15 @@ const CBETH_BASE = new Token(
   CbEthLogo
 );
 
+const BASED_BASE = new Token(
+  base.id,
+  '0xba5e6fa2f33f3955f0cef50c63dcc84861eab663',
+  18,
+  'BASED',
+  'based.markets',
+  BasedLogo
+);
+
 const BALD_BASE = new Token(optimism.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
@@ -306,7 +373,15 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDC_MAINNET.address]: USDC_MAINNET,
     [WBTC_MAINNET.address]: WBTC_MAINNET,
     [WETH_MAINNET.address]: WETH_MAINNET,
+    [WSTETH_MAINNET.address]: WSTETH_MAINNET,
     [CVX_MAINNET.address]: CVX_MAINNET,
+    [BADGER_MAINNET.address]: BADGER_MAINNET,
+    [MKR_MAINNET.address]: MKR_MAINNET,
+    [UNI_MAINNET.address]: UNI_MAINNET,
+    [APE_MAINNET.address]: APE_MAINNET,
+    [RPL_MAINNET.address]: RPL_MAINNET,
+    [MATIC_MAINNET.address]: MATIC_MAINNET,
+    [LDO_MAINNET.address]: LDO_MAINNET,
   },
   [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,
@@ -344,6 +419,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WETH_BASE.address]: WETH_BASE,
     [CBETH_BASE.address]: CBETH_BASE,
     [BALD_BASE.address]: BALD_BASE,
+    [BASED_BASE.address]: BASED_BASE,
   },
 };
 
