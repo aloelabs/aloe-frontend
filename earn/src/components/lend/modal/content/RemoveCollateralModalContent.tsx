@@ -112,10 +112,13 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ]) as `0x${string}`;
   }, [accountAddress, borrowerBalance]);
 
-  const combinedEncodingsForMultiManager = ethers.utils.defaultAbiCoder.encode(
-    ['bytes[]'],
-    [[encodedWithdrawCall, encodedWithdrawAnteCall]]
-  ) as `0x${string}`;
+  const combinedEncodingsForMultiManager = useMemo(() => {
+    if (!encodedWithdrawCall || !encodedWithdrawAnteCall) return null;
+    return ethers.utils.defaultAbiCoder.encode(
+      ['bytes[]'],
+      [[encodedWithdrawCall, encodedWithdrawAnteCall]]
+    ) as `0x${string}`;
+  }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
   const { config: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
@@ -133,7 +136,11 @@ function ConfirmButton(props: ConfirmButtonProps) {
       [0],
     ],
     chainId: activeChain.id,
-    enabled: accountAddress && encodedWithdrawCall != null && !isRedeemingTooMuch,
+    enabled:
+      accountAddress &&
+      encodedWithdrawCall != null &&
+      !isRedeemingTooMuch &&
+      !(shouldWithdrawAnte && !encodedWithdrawAnteCall),
   });
   const gasLimit = withdrawConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const { write: withdraw, isLoading: isAskingUserToConfirm } = useContractWrite({
