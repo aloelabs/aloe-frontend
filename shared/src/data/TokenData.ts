@@ -7,6 +7,7 @@ import {
   ArbLogo,
   BadgerLogo,
   BaldLogo,
+  BasedLogo,
   CbEthLogo,
   ConvexLogo,
   DaiLogo,
@@ -356,6 +357,15 @@ const CBETH_BASE = new Token(
   CbEthLogo
 );
 
+const BASED_BASE = new Token(
+  base.id,
+  '0xba5e6fa2f33f3955f0cef50c63dcc84861eab663',
+  18,
+  'BASED',
+  'based.markets',
+  BasedLogo
+);
+
 const BALD_BASE = new Token(optimism.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
@@ -409,6 +419,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WETH_BASE.address]: WETH_BASE,
     [CBETH_BASE.address]: CBETH_BASE,
     [BALD_BASE.address]: BALD_BASE,
+    [BASED_BASE.address]: BASED_BASE,
   },
 };
 

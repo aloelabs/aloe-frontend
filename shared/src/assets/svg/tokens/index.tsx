@@ -2,6 +2,7 @@ import ArbLogo from './arb.svg';
 import ApeLogo from './apecoin.svg';
 import BadgerLogo from './badger.svg';
 import BaldLogo from './bald.svg';
+import BasedLogo from './based.svg';
 import ConvexLogo from './convex.svg';
 import DaiLogo from './dai.svg';
 import FraxLogo from './frax.svg';
@@ -33,6 +34,7 @@ export {
   ApeLogo,
   BadgerLogo,
   BaldLogo,
+  BasedLogo,
   ConvexLogo,
   DaiLogo,
   FraxLogo,
