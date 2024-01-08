@@ -14,15 +14,15 @@ import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
 import { API_LEADERBOARD_URL } from '../data/constants/Values';
-import { LeaderboardResponseEntry } from '../data/LeaderboardResponse';
+import { LeaderboardEnsEntry, LeaderboardResponseEntry } from '../data/LeaderboardResponse';
 
 const PAGE_SIZE = 10;
 const GREEN_ACCENT = 'rgba(82, 182, 154, 1)';
 
 type LeaderboardEntry = {
   address: string;
-  enName?: string;
   score: GN;
+  ens?: LeaderboardEnsEntry;
 };
 
 const TableContainer = styled.div`
@@ -165,7 +165,7 @@ export default function LeaderboardPage() {
                       </TableBodyCell>
                       <TableBodyCell>
                         {isUser && <UserLabel>You</UserLabel>}
-                        <code>{entry.enName ?? entry.address}</code>
+                        <code>{entry?.ens?.name ?? entry.address}</code>
                       </TableBodyCell>
                       <TableBodyCell>
                         <Display size='XS'>{entry.score.toString(GNFormat.LOSSY_HUMAN)}</Display>
