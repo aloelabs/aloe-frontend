@@ -87,8 +87,8 @@ export default function LeaderboardPage() {
       const updatedLeaderboardEntries = leaderboardResponse.data
         .map((entry) => ({
           address: entry.address,
-          ensName: entry.ens?.name,
           score: GN.fromBigNumber(BigNumber.from(entry.score), 18),
+          ens: entry.ens,
         }))
         .filter((entry) => entry.address.toLowerCase() !== DEAD_ADDRESS);
       setLeaderboardEntries(updatedLeaderboardEntries);
