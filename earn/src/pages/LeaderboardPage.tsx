@@ -8,12 +8,12 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { DEAD_ADDRESS } from 'shared/lib/data/constants/Values';
+import { API_LEADERBOARD_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
-import { API_LEADERBOARD_URL } from '../data/constants/Values';
 import { LeaderboardEnsEntry, LeaderboardResponseEntry } from '../data/LeaderboardResponse';
 
 const PAGE_SIZE = 10;
