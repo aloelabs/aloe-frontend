@@ -82,7 +82,7 @@ export default function TokenSearchInput(props: TokenSearchInputProps) {
         svgColorType='stroke'
         leadingIcon={true}
         fullWidth={true}
-        placeholder='Search for an asset or enter a command'
+        placeholder='Search for an asset'
       />
       {matchingOptions.length > 0 && (
         <SearchInputDropdownContainer>

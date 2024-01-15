@@ -92,6 +92,8 @@ export type SupplyTableRow = {
   kitty: Kitty;
   collateralAssets: Token[];
   apy: number;
+  totalSupply: number;
+  totalSupplyUsd: number;
   suppliedBalance: number;
   suppliedBalanceUsd: number;
   suppliableBalance: number;
@@ -111,7 +113,7 @@ export default function SupplyTable(props: SupplyTableProps) {
   const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
   const { sortedRows, requestSort, sortConfig } = useSortableData(rows, {
     primaryKey: 'suppliedBalanceUsd',
-    secondaryKey: 'suppliableBalanceUsd',
+    secondaryKey: 'totalSupplyUsd',
     direction: 'descending',
   });
 
@@ -143,8 +145,8 @@ export default function SupplyTable(props: SupplyTableProps) {
                   Collateral Assets
                 </Text>
               </th>
-              <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('apy')}>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <SortButton onClick={() => requestSort('apy', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'apy' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
@@ -154,8 +156,19 @@ export default function SupplyTable(props: SupplyTableProps) {
                   </Text>
                 </SortButton>
               </th>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <SortButton onClick={() => requestSort('totalSupplyUsd', sortConfig?.primaryKey)}>
+                  <SortArrow
+                    isSorted={sortConfig?.primaryKey === 'totalSupplyUsd' ?? false}
+                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                  />
+                  <Text size='M' weight='bold'>
+                    Total Supply
+                  </Text>
+                </SortButton>
+              </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('suppliableBalanceUsd', 'suppliedBalanceUsd')}>
+                <SortButton onClick={() => requestSort('suppliableBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'suppliableBalanceUsd' || false}
                     isSortedDesc={sortConfig?.direction === 'descending' || false}
@@ -166,7 +179,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('suppliedBalanceUsd', 'suppliableBalanceUsd')}>
+                <SortButton onClick={() => requestSort('suppliedBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'suppliedBalanceUsd' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
@@ -197,8 +210,15 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <TokenIconsWithTooltip tokens={row.collateralAssets} />
                   </div>
                 </td>
-                <td className='px-4 py-2 text-end whitespace-nowrap'>
+                <td className='px-4 py-2 text-start whitespace-nowrap'>
                   <Display size='XS'>{row.apy.toFixed(2)}%</Display>
+                </td>
+                <td className='px-4 py-2 text-end whitespace-nowrap'>
+                  <div className='text-start'>
+                    <Display size='XS'>
+                      {formatTokenAmount(row.totalSupply)} {row.asset.symbol}
+                    </Display>
+                  </div>
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
@@ -251,7 +271,7 @@ export default function SupplyTable(props: SupplyTableProps) {
           </tbody>
           <tfoot>
             <tr>
-              <td className='px-4 py-2' colSpan={5}>
+              <td className='px-4 py-2' colSpan={6}>
                 <Pagination
                   currentPage={currentPage}
                   itemsPerPage={10}

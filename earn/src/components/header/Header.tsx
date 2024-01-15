@@ -52,10 +52,6 @@ export default function Header(props: HeaderProps) {
       label: 'Stats',
       to: '/stats',
     },
-    {
-      label: 'Leaderboard',
-      to: '/leaderboard',
-    },
   ];
 
   return (

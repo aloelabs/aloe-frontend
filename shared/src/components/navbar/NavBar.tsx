@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
 import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
@@ -21,7 +22,11 @@ import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import useLockScroll from '../../data/hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
-import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { OutlinedGradientRoundedButton } from '../common/Buttons';
+import useSafeState from '../../data/hooks/UseSafeState';
+import { GN, GNFormat } from '../../data/GoodNumber';
+import axios, { AxiosResponse } from 'axios';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -275,16 +280,39 @@ export type NavBarProps = {
 
 export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
-  const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
+  const navigate = useNavigate();
   const account = useAccount();
   const network = useNetwork();
   const { disconnect } = useDisconnect();
-  const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
   const { lockScroll, unlockScroll } = useLockScroll();
+
+  const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
+  const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
+  // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
+  const [leaderboardEntries, setLeaderboardEntries] = useSafeState<{ address: string; score: string }[]>([]);
+
   useEffect(() => {
     // Close the chain selector dropdown when the chain changes
     setIsSelectChainDropdownOpen(false);
   }, [network.chain]);
+
+  useEffect(() => {
+    (async () => {
+      let response: AxiosResponse<{ address: string; score: string }[]>;
+      try {
+        response = await axios.get(API_LEADERBOARD_URL);
+      } catch (e) {
+        return;
+      }
+      if (response.data) setLeaderboardEntries(response.data);
+    })();
+  });
+
+  const accountPoints = useMemo(() => {
+    if (account.address === undefined) return GN.zero(18);
+    const entry = leaderboardEntries.find((x) => x.address.toLowerCase() === account.address!.toLowerCase());
+    return entry === undefined ? GN.zero(18) : new GN(entry.score, 18, 10);
+  }, [account.address, leaderboardEntries]);
 
   const isOffline = !account.isConnected && !account.isConnecting;
 
@@ -327,6 +355,11 @@ export function NavBar(props: NavBarProps) {
             setIsOpen={setIsSelectChainDropdownOpen}
             setActiveChain={setActiveChain}
           />
+          {account.address !== undefined && (
+            <OutlinedGradientRoundedButton size='S' onClick={() => navigate('/leaderboard')}>
+              {accountPoints.toString(GNFormat.LOSSY_HUMAN)} points
+            </OutlinedGradientRoundedButton>
+          )}
           {!activeChain || !account.address ? (
             <ConnectWalletButton
               account={account}

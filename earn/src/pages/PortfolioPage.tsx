@@ -429,7 +429,7 @@ export default function PortfolioPage() {
         <div className='flex justify-center items-center gap-1 w-full mt-10'>
           <InfoIcon width={16} height={16} />
           <Text size='S' color='rgba(130, 160, 182, 1)'>
-            Hint: Click the space bar at any time to access search and shortcuts.
+            Hint: Click the space bar at any time to search for an asset.
           </Text>
         </div>
       </Container>

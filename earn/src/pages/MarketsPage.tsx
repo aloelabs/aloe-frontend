@@ -279,6 +279,10 @@ export default function MarketsPage() {
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
+      const token0Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token0));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token1));
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
       const token0Balance = combinedBalances.find((balance) => balance.token.equals(pair.token0)) || {
         balance: 0,
         balanceUSD: 0,
@@ -300,6 +304,8 @@ export default function MarketsPage() {
         kitty: pair.kitty0,
         apy: pair.kitty0Info.apy,
         collateralAssets: [pair.token1],
+        totalSupply: pair.kitty0Info.inventory,
+        totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
         suppliedBalance: kitty0Balance.balance,
         suppliedBalanceUsd: kitty0Balance.balanceUSD,
         suppliableBalance: token0Balance.balance,
@@ -311,6 +317,8 @@ export default function MarketsPage() {
         kitty: pair.kitty1,
         apy: pair.kitty1Info.apy,
         collateralAssets: [pair.token0],
+        totalSupply: pair.kitty1Info.inventory,
+        totalSupplyUsd: pair.kitty1Info.inventory * token1Price,
         suppliedBalance: kitty1Balance.balance,
         suppliedBalanceUsd: kitty1Balance.balanceUSD,
         suppliableBalance: token1Balance.balance,
@@ -319,7 +327,7 @@ export default function MarketsPage() {
       });
     });
     return rows;
-  }, [combinedBalances, lendingPairs]);
+  }, [combinedBalances, lendingPairs, tokenQuotes]);
 
   const collateralEntries = useMemo(() => {
     const entries: CollateralEntry[] = [];
