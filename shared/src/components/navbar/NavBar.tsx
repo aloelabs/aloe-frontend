@@ -306,7 +306,7 @@ export function NavBar(props: NavBarProps) {
       }
       if (response.data) setLeaderboardEntries(response.data);
     })();
-  });
+  }, [setLeaderboardEntries]);
 
   const accountPoints = useMemo(() => {
     if (account.address === undefined) return GN.zero(18);
