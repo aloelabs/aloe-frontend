@@ -2,11 +2,12 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
+import ShoppingCartIcon from 'shared/lib/assets/svg/ShoppingCart';
 import AppPage from 'shared/lib/components/common/AppPage';
+import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import ShoppingCartIcon from 'shared/lib/assets/svg/ShoppingCart';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -15,6 +16,7 @@ import { useAccount, useBlockNumber, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
+import OperationsModal from '../components/lend/modal/OperationsModal';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
@@ -27,11 +29,9 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
+import MulticallOperation from '../data/operations/MulticallOperation';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
-import { FilledGreyButton, FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
-import MulticallOperation from '../data/operations/MulticallOperation';
-import OperationsModal from '../components/lend/modal/OperationsModal';
 
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
