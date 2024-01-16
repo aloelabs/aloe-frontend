@@ -14,6 +14,7 @@ import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
 import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
+import MulticallOperation from '../../data/operations/MulticallOperation';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
@@ -116,11 +117,21 @@ export type BorrowingWidgetProps = {
   collateralEntries: CollateralEntry[];
   borrowEntries: { [key: string]: BorrowEntry[] };
   tokenColors: Map<string, string>;
+  chainedOperations: MulticallOperation[];
+  addChainedOperation: (operation: MulticallOperation) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { borrowers, collateralEntries, borrowEntries, tokenColors, setPendingTxn } = props;
+  const {
+    borrowers,
+    collateralEntries,
+    borrowEntries,
+    tokenColors,
+    chainedOperations,
+    addChainedOperation,
+    setPendingTxn,
+  } = props;
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
@@ -399,6 +410,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             setSelectedCollateral(null);
           }}
           setPendingTxn={setPendingTxn}
+          addChainedOperation={addChainedOperation}
         />
       )}
       {selectedBorrower != null && selectedBorrower.type === 'borrow' && (

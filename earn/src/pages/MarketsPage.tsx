@@ -6,6 +6,7 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import ShoppingCartIcon from 'shared/lib/assets/svg/ShoppingCart';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -28,6 +29,9 @@ import {
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+import { FilledGreyButton, FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
+import MulticallOperation from '../data/operations/MulticallOperation';
+import OperationsModal from '../components/lend/modal/OperationsModal';
 
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
@@ -90,6 +94,12 @@ export default function MarketsPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
+  const [chainOperations, setChainedOperations] = useState<MulticallOperation[]>([]);
+  const [isOperationsModalOpen, setIsOperationsModalOpen] = useState(false);
+
+  const addChainedOperation = (operation: MulticallOperation) => {
+    setChainedOperations((prev) => [...prev, operation]);
+  };
 
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
@@ -374,23 +384,35 @@ export default function MarketsPage() {
           {activeChain.name} Markets
         </Text>
         <div>
-          <div className='flex flex-row' role='tablist'>
-            <HeaderSegmentedControlOption
-              isActive={selectedHeaderOption === HeaderOptions.Supply}
-              onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
-              role='tab'
-              aria-selected={selectedHeaderOption === HeaderOptions.Supply}
+          <div className='flex flex-row justify-between items-center'>
+            <div className='flex flex-row' role='tablist'>
+              <HeaderSegmentedControlOption
+                isActive={selectedHeaderOption === HeaderOptions.Supply}
+                onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
+                role='tab'
+                aria-selected={selectedHeaderOption === HeaderOptions.Supply}
+              >
+                Supply
+              </HeaderSegmentedControlOption>
+              <HeaderSegmentedControlOption
+                isActive={selectedHeaderOption === HeaderOptions.Borrow}
+                onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
+                role='tab'
+                aria-selected={selectedHeaderOption === HeaderOptions.Borrow}
+              >
+                Borrow
+              </HeaderSegmentedControlOption>
+            </div>
+            <FilledGreyButtonWithIcon
+              size='S'
+              Icon={<ShoppingCartIcon />}
+              position='leading'
+              svgColorType='stroke'
+              disabled={chainOperations.length === 0}
+              onClick={() => setIsOperationsModalOpen(true)}
             >
-              Supply
-            </HeaderSegmentedControlOption>
-            <HeaderSegmentedControlOption
-              isActive={selectedHeaderOption === HeaderOptions.Borrow}
-              onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
-              role='tab'
-              aria-selected={selectedHeaderOption === HeaderOptions.Borrow}
-            >
-              Borrow
-            </HeaderSegmentedControlOption>
+              {chainOperations.length} Operations
+            </FilledGreyButtonWithIcon>
           </div>
           <HeaderDividingLine />
         </div>
@@ -403,6 +425,8 @@ export default function MarketsPage() {
               collateralEntries={collateralEntries}
               borrowEntries={borrowEntries}
               tokenColors={tokenColors}
+              chainedOperations={chainOperations}
+              addChainedOperation={addChainedOperation}
               setPendingTxn={setPendingTxn}
             />
           </div>
@@ -423,6 +447,14 @@ export default function MarketsPage() {
         }}
         status={pendingTxnModalStatus}
       />
+      {isOperationsModalOpen && (
+        <OperationsModal
+          chainOperations={chainOperations}
+          isOpen={isOperationsModalOpen}
+          setIsOpen={setIsOperationsModalOpen}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
     </AppPage>
   );
 }

@@ -29,6 +29,13 @@ export enum Permit2State {
   DONE,
 }
 
+export type Permit2Result = {
+  amount: GN;
+  nonce: uint256 | null;
+  deadline: uint256;
+  signature: `0x${string}` | undefined;
+};
+
 type uint256 = string;
 type address = string;
 
@@ -89,7 +96,17 @@ function evmCurrentTimePlus(secondsFromNow: number) {
   return (Date.now() / 1000 + secondsFromNow).toFixed(0);
 }
 
-export function usePermit2(chain: Chain, token: Token, owner: Address, spender: Address, amount: GN) {
+export function usePermit2(
+  chain: Chain,
+  token: Token,
+  owner: Address,
+  spender: Address,
+  amount: GN
+): {
+  state: Permit2State;
+  action: (() => void) | undefined;
+  result: Permit2Result;
+} {
   /*//////////////////////////////////////////////////////////////
                             REACT STATE
   //////////////////////////////////////////////////////////////*/
