@@ -49,7 +49,8 @@ export class LendingPair {
     public iv: number,
     public nSigma: number,
     public ltv: number
-  ) {}
+  ) // public rewardsRate: number,
+  {}
 
   equals(other: LendingPair) {
     return other.kitty0.address === this.kitty0.address && other.kitty1.address === this.kitty1.address;

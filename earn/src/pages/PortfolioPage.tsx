@@ -33,12 +33,8 @@ import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
-import {
-  getAvailableLendingPairs,
-  getLendingPairBalances,
-  LendingPair,
-  LendingPairBalances,
-} from '../data/LendingPair';
+import { useLendingPairs } from '../data/hooks/UseLendingPairs';
+import { getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -112,13 +108,11 @@ export default function PortfolioPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useSafeState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
   );
   const [tokenPriceData, setTokenPriceData] = useSafeState<TokenPriceData[]>([]);
-  const [isLoading, setIsLoading] = useSafeState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useSafeState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useSafeState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
@@ -129,14 +123,14 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
+  const { isLoading, lendingPairs } = useLendingPairs();
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
 
   useEffect(() => {
-    setIsLoading(true);
     setIsLoadingPrices(true);
-  }, [activeChain.id, setIsLoading, setIsLoadingPrices]);
+  }, [activeChain.id, setIsLoadingPrices]);
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -208,15 +202,6 @@ export default function PortfolioPage() {
       setTokenColors(tokenColorMap);
     })();
   }, [lendingPairs, setTokenColors, uniqueTokens]);
-
-  useEffect(() => {
-    (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
-      setLendingPairs(results);
-      setIsLoading(false);
-    })();
-  }, [provider, setIsLoading, setLendingPairs]);
 
   useEffect(() => {
     (async () => {
