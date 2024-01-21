@@ -70,10 +70,10 @@ export const ALOE_II_BORROWER_LENS_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_LENDER_LENS_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x2a1591e54315766e943382beF5E5C8e55c1b9C6C',
-  [optimism.id]: '0x2a1591e54315766e943382beF5E5C8e55c1b9C6C',
-  [arbitrum.id]: '0x2a1591e54315766e943382beF5E5C8e55c1b9C6C',
-  [base.id]: '0x2a1591e54315766e943382beF5E5C8e55c1b9C6C',
+  [mainnet.id]: '0x1f36838Ac6e3922dD26f1222d75af86185f2b798',
+  [optimism.id]: '0x1f36838Ac6e3922dD26f1222d75af86185f2b798',
+  [arbitrum.id]: '0x1f36838Ac6e3922dD26f1222d75af86185f2b798',
+  [base.id]: '0x1f36838Ac6e3922dD26f1222d75af86185f2b798',
 };
 
 export const ALOE_II_ROUTER_ADDRESS: { [chainId: number]: Address } = {
