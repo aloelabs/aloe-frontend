@@ -15,6 +15,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import { ApyWithTooltip } from '../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import SupplyModal from './modal/SupplyModal';
 import WithdrawModal from './modal/WithdrawModal';
@@ -92,6 +93,7 @@ export type SupplyTableRow = {
   kitty: Kitty;
   collateralAssets: Token[];
   apy: number;
+  rewardsRate: number;
   totalSupply: number;
   totalSupplyUsd: number;
   suppliedBalance: number;
@@ -211,7 +213,10 @@ export default function SupplyTable(props: SupplyTableProps) {
                   </div>
                 </td>
                 <td className='px-4 py-2 text-start whitespace-nowrap'>
-                  <Display size='XS'>{row.apy.toFixed(2)}%</Display>
+                  <ApyWithTooltip
+                    apy={row.apy}
+                    addOn={row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
+                  />
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='text-start'>
