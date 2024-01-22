@@ -335,34 +335,34 @@ export default function MarketsPage() {
 
   const borrowEntries = useMemo(() => {
     const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
-      const kitty0Balance = combinedBalances.find((balance) => balance.token.equals(lendingPair.kitty0));
-      const kitty1Balance = combinedBalances.find((balance) => balance.token.equals(lendingPair.kitty1));
+      const token0TotalSupply = lendingPair.kitty0Info.inventory;
+      const token1TotalSupply = lendingPair.kitty1Info.inventory;
       acc.push({
         asset: lendingPair.token0,
         collateral: lendingPair.token1,
         apy: lendingPair.kitty0Info.apy,
-        supply: kitty0Balance?.balance || 0,
+        totalSupply: token0TotalSupply,
       });
       acc.push({
         asset: lendingPair.token1,
         collateral: lendingPair.token0,
         apy: lendingPair.kitty1Info.apy,
-        supply: kitty1Balance?.balance || 0,
+        totalSupply: token1TotalSupply,
       });
       return acc;
     }, []);
     return borrowable.reduce((acc: { [key: string]: BorrowEntry[] }, borrowable) => {
       const existing = acc[borrowable.asset.symbol];
-      if (existing && borrowable.supply > 0) {
+      if (existing && borrowable.totalSupply > 0) {
         // If the asset already exists in the accumulator, push the borrowable
         existing.push(borrowable);
-      } else if (borrowable.supply > 0) {
+      } else if (borrowable.totalSupply > 0) {
         // Otherwise, create a new array with the borrowable
         acc[borrowable.asset.symbol] = [borrowable];
       }
       return acc;
     }, {});
-  }, [combinedBalances, lendingPairs]);
+  }, [lendingPairs]);
 
   return (
     <AppPage>
