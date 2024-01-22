@@ -103,7 +103,7 @@ export type BorrowEntry = {
   asset: Token;
   collateral: Token;
   apy: number;
-  supply: number;
+  totalSupply: number;
 };
 
 type SelectedBorrower = {

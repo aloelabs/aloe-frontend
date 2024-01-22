@@ -145,7 +145,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     if (selectedBorrow === undefined) {
       return null;
     }
-    return GN.fromNumber(selectedBorrow.supply, selectedBorrow.asset.decimals);
+    return GN.fromNumber(selectedBorrow.totalSupply, selectedBorrow.asset.decimals);
   }, [selectedBorrow]);
 
   const maxBorrowHealthConstraint = useMemo(() => {
