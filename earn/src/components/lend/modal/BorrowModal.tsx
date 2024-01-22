@@ -31,7 +31,7 @@ import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareCo
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
 import BorrowingOperation from '../../../data/operations/BorrowingOperation';
-import MulticallOperation from '../../../data/operations/MulticallOperation';
+import MulticallOperation from '../../../data/operations/MulticallOperator';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
@@ -94,11 +94,10 @@ export type BorrowModalProps = {
   selectedCollateral: CollateralEntry;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
-  addChainedOperation: (operation: MulticallOperation) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { isOpen, selectedBorrows, selectedCollateral, setIsOpen, setPendingTxn, addChainedOperation } = props;
+  const { isOpen, selectedBorrows, selectedCollateral, setIsOpen, setPendingTxn } = props;
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
 
@@ -438,7 +437,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             </div>
           </div>
         </div>
-        <FilledGradientButton
+        {/* <FilledGradientButton
           size='M'
           fillWidth={true}
           disabled={!confirmButton.enabled}
@@ -453,16 +452,15 @@ export default function BorrowModal(props: BorrowModalProps) {
                 ante,
                 selectedBorrow,
                 selectedCollateral,
-                permit2Result,
-                generatedSalt,
-                [encodedMint, encodedModify]
+                [encodedMint],
+                [encodedModify],
               )
             );
             setIsOpen(false);
           }}
         >
           Add Action
-        </FilledGradientButton>
+        </FilledGradientButton> */}
         <FilledGradientButton
           size='M'
           fillWidth={true}

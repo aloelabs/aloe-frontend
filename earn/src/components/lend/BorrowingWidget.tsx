@@ -14,12 +14,13 @@ import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
 import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
-import MulticallOperation from '../../data/operations/MulticallOperation';
+import MulticallOperation from '../../data/operations/MulticallOperator';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
+import MulticallOperator from '../../data/operations/MulticallOperator';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
@@ -117,21 +118,12 @@ export type BorrowingWidgetProps = {
   collateralEntries: CollateralEntry[];
   borrowEntries: { [key: string]: BorrowEntry[] };
   tokenColors: Map<string, string>;
-  chainedOperations: MulticallOperation[];
-  addChainedOperation: (operation: MulticallOperation) => void;
+  multicallOperator: MulticallOperator;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const {
-    borrowers,
-    collateralEntries,
-    borrowEntries,
-    tokenColors,
-    chainedOperations,
-    addChainedOperation,
-    setPendingTxn,
-  } = props;
+  const { borrowers, collateralEntries, borrowEntries, tokenColors, multicallOperator, setPendingTxn } = props;
 
   const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
@@ -410,7 +402,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             setSelectedCollateral(null);
           }}
           setPendingTxn={setPendingTxn}
-          addChainedOperation={addChainedOperation}
         />
       )}
       {selectedBorrower != null && selectedBorrower.type === 'borrow' && (
@@ -420,6 +411,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           marketInfo={marketInfos.get(
             `${selectedBorrower.borrower.lender0.toLowerCase()}-${selectedBorrower.borrower.lender1.toLowerCase()}`
           )}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}

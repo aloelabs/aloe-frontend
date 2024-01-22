@@ -9,8 +9,10 @@ import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { MarketInfo } from '../../../data/MarketInfo';
+import MulticallOperation from '../../../data/operations/MulticallOperator';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
+import MulticallOperator from '../../../data/operations/MulticallOperator';
 
 export enum ConfirmationType {
   BORROW = 'BORROW',
@@ -51,12 +53,13 @@ export type UpdateBorrowerModalProps = {
   isOpen: boolean;
   borrower: BorrowerNftBorrower;
   marketInfo?: MarketInfo;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
-  const { isOpen, borrower, marketInfo, setIsOpen, setPendingTxn } = props;
+  const { isOpen, borrower, marketInfo, multicallOperator, setIsOpen, setPendingTxn } = props;
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.BORROW);
 
   return (
@@ -85,8 +88,9 @@ export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
             <Tab.Panel className='w-full px-2'>
               <BorrowModalContent
                 borrower={borrower}
-                setIsOpen={setIsOpen}
                 marketInfo={marketInfo}
+                multicallOperator={multicallOperator}
+                setIsOpen={setIsOpen}
                 setPendingTxnResult={setPendingTxn}
               />
             </Tab.Panel>

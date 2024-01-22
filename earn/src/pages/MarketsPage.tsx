@@ -29,7 +29,7 @@ import {
   LendingPairBalances,
 } from '../data/LendingPair';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
-import MulticallOperation from '../data/operations/MulticallOperation';
+import MulticallOperation from '../data/operations/MulticallOperator';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -94,12 +94,9 @@ export default function MarketsPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
-  const [chainOperations, setChainedOperations] = useState<MulticallOperation[]>([]);
+  const [multicallOperator] = useState<MulticallOperation>(new MulticallOperation());
+  const [, forceUpdate] = useState({});
   const [isOperationsModalOpen, setIsOperationsModalOpen] = useState(false);
-
-  const addChainedOperation = (operation: MulticallOperation) => {
-    setChainedOperations((prev) => [...prev, operation]);
-  };
 
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
@@ -129,6 +126,14 @@ export default function MarketsPage() {
   }, [lendingPairs]);
 
   const availablePools = useAvailablePools();
+
+  useEffect(() => {
+    const update = () => forceUpdate({});
+    multicallOperator.subscribe(update);
+    return () => {
+      multicallOperator.unsubscribe(update);
+    };
+  }, [multicallOperator]);
 
   useEffect(() => {
     (async () => {
@@ -408,10 +413,10 @@ export default function MarketsPage() {
               Icon={<ShoppingCartIcon />}
               position='leading'
               svgColorType='stroke'
-              disabled={chainOperations.length === 0}
+              disabled={multicallOperator.getModifyOperations().length === 0}
               onClick={() => setIsOperationsModalOpen(true)}
             >
-              {chainOperations.length} Operations
+              {multicallOperator.getModifyOperations().length} Operations
             </FilledGreyButtonWithIcon>
           </div>
           <HeaderDividingLine />
@@ -425,8 +430,7 @@ export default function MarketsPage() {
               collateralEntries={collateralEntries}
               borrowEntries={borrowEntries}
               tokenColors={tokenColors}
-              chainedOperations={chainOperations}
-              addChainedOperation={addChainedOperation}
+              multicallOperator={multicallOperator}
               setPendingTxn={setPendingTxn}
             />
           </div>
@@ -449,7 +453,7 @@ export default function MarketsPage() {
       />
       {isOperationsModalOpen && (
         <OperationsModal
-          chainOperations={chainOperations}
+          multicallOperator={multicallOperator}
           isOpen={isOperationsModalOpen}
           setIsOpen={setIsOperationsModalOpen}
           setPendingTxn={setPendingTxn}

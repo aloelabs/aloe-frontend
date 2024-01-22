@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton, FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -27,6 +27,9 @@ import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
 import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../borrow/HealthBar';
+import BorrowingOperation from '../../../../data/operations/BorrowingOperation';
+import MulticallOperation from '../../../../data/operations/MulticallOperator';
+import MulticallOperator from '../../../../data/operations/MulticallOperator';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
@@ -72,6 +75,7 @@ type ConfirmButtonProps = {
   token: Token;
   isBorrowingToken0: boolean;
   accountAddress?: Address;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
@@ -87,12 +91,13 @@ function ConfirmButton(props: ConfirmButtonProps) {
     token,
     isBorrowingToken0,
     accountAddress,
+    multicallOperator,
     setIsOpen,
     setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const encodedBorrowCall = useMemo(() => {
+  const encodedModify = useMemo(() => {
     if (!accountAddress) return null;
     const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
     const amount0 = isBorrowingToken0 ? borrowAmount : GN.zero(borrower.token0.decimals);
@@ -113,13 +118,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       accountAddress ?? '0x',
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedBorrowCall ?? '0x'],
+      [encodedModify ?? '0x'],
       [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
     ],
     overrides: { value: requiredAnte?.toBigNumber() },
     chainId: activeChain.id,
-    enabled:
-      accountAddress && encodedBorrowCall != null && requiredAnte !== undefined && !isUnhealthy && !notEnoughSupply,
+    enabled: accountAddress && encodedModify != null && requiredAnte !== undefined && !isUnhealthy && !notEnoughSupply,
   });
   const gasLimit = borrowConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const { write: borrow, isLoading: isAskingUserToConfirm } = useContractWrite({
@@ -155,27 +159,48 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => borrow?.()}
-      disabled={!confirmButton.enabled}
-    >
-      {confirmButton.text}
-    </FilledStylizedButton>
+    <>
+      <FilledGradientButton
+        size='M'
+        fillWidth={true}
+        disabled={!confirmButton.enabled}
+        onClick={() => {
+          if (accountAddress === undefined || encodedModify == null) return;
+          multicallOperator.addModifyOperation({
+            owner: accountAddress,
+            indices: [borrower.index],
+            managers: [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+            data: [encodedModify],
+            antes: [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
+          });
+          setIsOpen(false);
+        }}
+      >
+        Add Action
+      </FilledGradientButton>
+      <FilledStylizedButton
+        size='M'
+        fillWidth={true}
+        color={MODAL_BLACK_TEXT_COLOR}
+        onClick={() => borrow?.()}
+        disabled={!confirmButton.enabled}
+      >
+        {confirmButton.text}
+      </FilledStylizedButton>
+    </>
   );
 }
 
 export type BorrowModalContentProps = {
   borrower: BorrowerNftBorrower;
   marketInfo?: MarketInfo;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModalContent(props: BorrowModalContentProps) {
-  const { borrower, marketInfo, setIsOpen, setPendingTxnResult } = props;
+  const { borrower, marketInfo, multicallOperator, setIsOpen, setPendingTxnResult } = props;
 
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
@@ -345,6 +370,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           token={borrowToken}
           isBorrowingToken0={isBorrowingToken0}
           accountAddress={accountAddress}
+          multicallOperator={multicallOperator}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />
