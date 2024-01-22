@@ -18,13 +18,8 @@ import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
-import {
-  filterLendingPairsByTokens,
-  getAvailableLendingPairs,
-  getLendingPairBalances,
-  LendingPair,
-  LendingPairBalances,
-} from '../data/LendingPair';
+import { useLendingPairs } from '../data/hooks/UseLendingPairs';
+import { filterLendingPairsByTokens, getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
@@ -79,7 +74,6 @@ export default function MarketsPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
@@ -91,6 +85,7 @@ export default function MarketsPage() {
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
 
+  const { lendingPairs } = useLendingPairs();
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
   });
@@ -173,14 +168,6 @@ export default function MarketsPage() {
       fetch();
     }
   }, [activeChain, tokenQuotes, uniqueSymbols, setTokenQuotes]);
-
-  useEffect(() => {
-    (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
-      setLendingPairs(results);
-    })();
-  }, [provider, userAddress, blockNumber, setLendingPairs]);
 
   useEffect(() => {
     (async () => {
@@ -303,6 +290,7 @@ export default function MarketsPage() {
         asset: pair.token0,
         kitty: pair.kitty0,
         apy: pair.kitty0Info.apy,
+        rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.inventory,
         totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
@@ -316,6 +304,7 @@ export default function MarketsPage() {
         asset: pair.token1,
         kitty: pair.kitty1,
         apy: pair.kitty1Info.apy,
+        rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.inventory,
         totalSupplyUsd: pair.kitty1Info.inventory * token1Price,

@@ -48,7 +48,9 @@ export class LendingPair {
     public uniswapFeeTier: FeeTier,
     public iv: number,
     public nSigma: number,
-    public ltv: number
+    public ltv: number,
+    public rewardsRate0: number,
+    public rewardsRate1: number
   ) {}
 
   equals(other: LendingPair) {
@@ -226,6 +228,9 @@ export async function getAvailableLendingPairs(
     const reserveFactor0 = basics0[6];
     const reserveFactor1 = basics1[6];
 
+    const rewardsRate0 = toImpreciseNumber(basics0[7], 18);
+    const rewardsRate1 = toImpreciseNumber(basics1[7], 18);
+
     // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
     const APR0 = utilization0 * (1 - 1 / reserveFactor0) * interestRate0;
     const APR1 = utilization1 * (1 - 1 / reserveFactor1) * interestRate1;
@@ -260,7 +265,9 @@ export async function getAvailableLendingPairs(
         NumericFeeTierToEnum(feeTier[0]),
         iv * Math.sqrt(365),
         nSigma,
-        ltv
+        ltv,
+        rewardsRate0,
+        rewardsRate1
       )
     );
   });
