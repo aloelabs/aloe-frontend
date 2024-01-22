@@ -1,7 +1,7 @@
 import { GN } from 'shared/lib/data/GoodNumber';
 
-import MulticallOperation from './MulticallOperator';
 import { BorrowerNftBorrower } from '../BorrowerNft';
+import MulticallOperation from './MulticallOperator';
 
 export default class BorrowingOperation extends MulticallOperation {
   // amount: GN;

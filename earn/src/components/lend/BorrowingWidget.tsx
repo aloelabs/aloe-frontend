@@ -15,12 +15,12 @@ import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair } from '../../data/LendingPair';
 import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
 import MulticallOperation from '../../data/operations/MulticallOperator';
+import MulticallOperator from '../../data/operations/MulticallOperator';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
-import MulticallOperator from '../../data/operations/MulticallOperator';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';

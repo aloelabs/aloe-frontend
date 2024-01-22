@@ -25,11 +25,11 @@ import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
-import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
-import HealthBar from '../../../borrow/HealthBar';
 import BorrowingOperation from '../../../../data/operations/BorrowingOperation';
 import MulticallOperation from '../../../../data/operations/MulticallOperator';
 import MulticallOperator from '../../../../data/operations/MulticallOperator';
+import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
+import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
