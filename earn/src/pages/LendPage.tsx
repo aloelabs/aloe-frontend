@@ -9,7 +9,6 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -28,9 +27,9 @@ import { LendCardPlaceholder } from '../components/lend/LendPairCardPlaceholder'
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
+import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import {
   filterLendingPairsByTokens,
-  getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
@@ -85,14 +84,13 @@ export default function LendPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useSafeState<LendingPairBalances[]>([]);
-  const [isLoading, setIsLoading] = useSafeState<boolean>(true);
   const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
 
+  const { isLoading, lendingPairs } = useLendingPairs();
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain?.id });
@@ -138,15 +136,6 @@ export default function LendPage() {
       fetch();
     }
   }, [activeChain, setTokenQuotes, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
-
-  useEffect(() => {
-    (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
-      setLendingPairs(results);
-      setIsLoading(false);
-    })();
-  }, [provider, address, setLendingPairs, setIsLoading]);
 
   useEffect(() => {
     let uniqueTokens = new Set<Token>();
