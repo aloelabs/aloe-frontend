@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
@@ -72,7 +73,7 @@ const CardRowHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px;
+  padding: 0.5rem 1rem;
   border-bottom: 2px solid ${GREY_600};
 `;
 
@@ -161,7 +162,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
     }
     return Object.entries(borrowEntries).reduce((filtered, [key, entries]) => {
       // Filter out entries that don't match the selected collateral
-      const filteredEntries = entries.filter((entry) => entry.collateral.symbol === selectedCollateral.asset.symbol);
+      const filteredEntries = entries.filter((entry) => entry.collateral.equals(selectedCollateral.asset));
       if (filteredEntries.length > 0) {
         // Only add the entry if there are any matching pairs left
         filtered[key] = filteredEntries;
@@ -174,9 +175,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
     if (selectedBorrows == null || selectedBorrows.length === 0) {
       return collateralEntries;
     }
-    return collateralEntries.filter((entry) =>
-      selectedBorrows.some((borrow) => borrow.collateral.symbol === entry.asset.symbol)
-    );
+    return collateralEntries.filter((entry) => selectedBorrows.some((borrow) => borrow.collateral.equals(entry.asset)));
   }, [collateralEntries, selectedBorrows]);
 
   return (
@@ -222,9 +221,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           });
                         }}
                       >
-                        <div className='flex items-end gap-1'>
-                          <Display size='S'>{collateralAmount}</Display>
-                          <Display size='XS'>{collateral.symbol}</Display>
+                        <div className='flex items-center gap-3'>
+                          <TokenIcon token={collateral} />
+                          <Display size='XS'>
+                            {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
+                          </Display>
                         </div>
                         <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
                       </AvailableContainer>
@@ -267,9 +268,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       }}
                       className={selectedCollateral === entry ? 'selected' : ''}
                     >
-                      <div className='flex items-end gap-1'>
-                        <Display size='S'>{formatTokenAmount(entry.balance)}</Display>
-                        <Display size='XS'>{entry.asset.symbol}</Display>
+                      <div className='flex items-center gap-3'>
+                        <TokenIcon token={entry.asset} />
+                        <Display size='XS'>
+                          {formatTokenAmount(entry.balance)}&nbsp;&nbsp;{entry.asset.symbol}
+                        </Display>
                       </div>
                       <Display size='XXS'>{ltvText}</Display>
                     </AvailableContainer>
@@ -339,9 +342,11 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         className={account === hoveredBorrower ? 'active' : ''}
                       >
                         <Display size='XXS'>{roundedApy}% APR</Display>
-                        <div className='flex items-end gap-1'>
-                          <Display size='S'>{formatTokenAmount(liabilityAmount)}</Display>
-                          <Display size='XS'>{liability.symbol}</Display>
+                        <div className='flex items-center gap-3'>
+                          <Display size='XS'>
+                            {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
+                          </Display>
+                          <TokenIcon token={liability} />
                         </div>
                       </AvailableContainer>
                     );
@@ -381,6 +386,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     >
                       <Display size='XXS'>{apyText}</Display>
                       <Display size='XS'>{key}</Display>
+                      {/* TODO: Add token logo here */}
                     </AvailableContainer>
                   );
                 })}

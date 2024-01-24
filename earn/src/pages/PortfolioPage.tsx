@@ -207,7 +207,12 @@ export default function PortfolioPage() {
     (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
       if (!address || isLoading) return;
-      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      const { lendingPairBalances: results } = await getLendingPairBalances(
+        lendingPairs,
+        address,
+        provider,
+        activeChain.id
+      );
       setLendingPairBalances(results);
     })();
   }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);

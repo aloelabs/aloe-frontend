@@ -32,7 +32,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   switch (state) {
     case ConfirmButtonState.INVALID_ADDRESS:
       return {
-        text: `Invalid Address`,
+        text: `Couldn't resolve ENS`,
         enabled: false,
       };
     case ConfirmButtonState.INSUFFICIENT_ASSET:
@@ -211,6 +211,11 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   const gnSendAmount = GN.fromDecimalString(sendAmountInputValue || '0', selectedOption.decimals);
   const gnSendBalance = GN.fromBigNumber(depositBalance?.value ?? BigNumber.from('0'), selectedOption.decimals);
   const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
+
+  const summaryText = isValidAddress
+    ? `You're sending ${sendAmountInputValue || '0.00'} ${selectedOption.symbol} to ${addressInputValue || '...'}`
+    : "You're not sending anything.";
+
   return (
     <Modal
       isOpen={isOpen}
@@ -277,7 +282,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're sending {sendAmountInputValue || '0.00'} {selectedOption.symbol} to {addressInputValue || '...'}
+            {summaryText}
           </Text>
         </div>
         <div className='w-full'>

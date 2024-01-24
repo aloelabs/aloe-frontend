@@ -157,7 +157,12 @@ export default function LendPage() {
   useEffect(() => {
     (async () => {
       if (!address) return;
-      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      const { lendingPairBalances: results } = await getLendingPairBalances(
+        lendingPairs,
+        address,
+        provider,
+        activeChain.id
+      );
       setLendingPairBalances(results);
     })();
   }, [activeChain.id, address, lendingPairs, provider, setLendingPairBalances]);
