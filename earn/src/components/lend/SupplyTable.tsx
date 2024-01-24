@@ -221,7 +221,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='text-start'>
                     <Display size='XS'>
-                      {formatTokenAmount(row.totalSupply)} {row.asset.symbol}
+                      {formatTokenAmount(row.totalSupply)}&nbsp;&nbsp;{row.asset.symbol}
                     </Display>
                   </div>
                 </td>
@@ -230,7 +230,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <div className='text-end'>
                       <Display size='XS'>${row.suppliableBalanceUsd.toFixed(2)}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                        {formatTokenAmount(row.suppliableBalance)} {row.asset.symbol}
+                        {formatTokenAmount(row.suppliableBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
                     </div>
                     <FilledGreyButton
@@ -249,7 +249,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <div className='text-end'>
                       <Display size='XS'>${row.suppliedBalanceUsd.toFixed(2)}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                        {formatTokenAmount(row.suppliedBalance)} {row.asset.symbol}
+                        {formatTokenAmount(row.suppliedBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
                     </div>
                     <FilledGreyButton
