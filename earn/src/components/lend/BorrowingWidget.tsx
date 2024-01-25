@@ -43,7 +43,7 @@ const CardContainer = styled.div`
   overflow: hidden;
 `;
 
-const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
+const AvailableContainer = styled.div<{ $gradDirection?: string; $gradColorA?: string; $gradColorB?: string }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -53,14 +53,31 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   padding-right: 16px;
   cursor: pointer;
 
+  @property --gradColorA {
+    syntax: '<color>';
+    initial-value: transparent;
+    inherits: false;
+  }
+
+  @property --gradColorB {
+    syntax: '<color>';
+    initial-value: transparent;
+    inherits: false;
+  }
+
+  background: linear-gradient(${(props) => props.$gradDirection || '45deg'}, var(--gradColorA), var(--gradColorB));
+
   &.active,
   &:hover {
-    background: ${(props) => props.$backgroundGradient || SECONDARY_COLOR_LIGHT};
+    --gradColorA: ${(props) => props.$gradColorA || SECONDARY_COLOR_LIGHT};
+    --gradColorB: ${(props) => props.$gradColorB || SECONDARY_COLOR_LIGHT};
   }
 
   &.selected {
     background: ${SECONDARY_COLOR_LIGHT};
   }
+
+  transition: --gradColorA 0.33s ease-out, --gradColorB 0.33s ease-out;
 `;
 
 const CardRow = styled.div`
@@ -131,11 +148,14 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
   const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
 
+  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
+  // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
+  const [hoveredPair, setHoveredPair] = useState<LendingPair | null>(null);
+  // selection/hover state for Active Table
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
-  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
 
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider();
@@ -195,13 +215,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? account.assets.token0Raw
                       : account.assets.token1Raw;
                     const collateralColor = tokenColors.get(collateral.address);
-                    const collateralGradient = collateralColor
-                      ? `linear-gradient(90deg, ${rgba(collateralColor, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     return (
                       <AvailableContainer
-                        $backgroundGradient={collateralGradient}
+                        $gradDirection='45deg'
+                        $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
+                        $gradColorB={GREY_700}
                         key={account.tokenId}
                         onMouseEnter={() => {
                           setHoveredBorrower(account);
@@ -245,25 +264,35 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               </CardRowHeader>
               <div className='flex flex-col'>
                 {filteredCollateralEntries.map((entry, index) => {
-                  const minLtv = entry.matchingPairs.reduce(
-                    (min, current) => Math.min(current.ltv * 100, min),
-                    Infinity
-                  );
-                  const maxLtv = entry.matchingPairs.reduce(
-                    (max, current) => Math.max(current.ltv * 100, max),
-                    -Infinity
-                  );
-                  const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv));
-                  const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
-                  const ltvText = areLtvsEqual ? `${roundedLtvs[0]}%` : `${roundedLtvs[0]}－${roundedLtvs[1]}%`;
+                  const isSelected = selectedCollateral === entry.token;
+
+                  let ltvText = '';
+                  if (isSelected && hoveredPair !== null) {
+                    ltvText = `${Math.round(hoveredPair.ltv * 100)}%`;
+                  } else {
+                    let minLtv = Infinity;
+                    let maxLtv = -Infinity;
+
+                    entry.matchingPairs.forEach((pair) => {
+                      minLtv = Math.min(minLtv, pair.ltv);
+                      maxLtv = Math.max(maxLtv, pair.ltv);
+                    });
+
+                    const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv * 100));
+                    const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
+                    ltvText = areLtvsEqual ? `${roundedLtvs[0]}%` : `${roundedLtvs[0]}－${roundedLtvs[1]}%`;
+                  }
                   const balance = tokenBalances.get(entry.token.address)?.value || 0; // TODO: could use GN
+
                   return (
                     <AvailableContainer
                       key={index}
-                      onClick={() => {
-                        setSelectedCollateral(entry.token);
+                      onClick={() => setSelectedCollateral(entry.token)}
+                      onMouseEnter={() => {
+                        if (selectedBorrows !== null) setHoveredPair(entry.matchingPairs[0]);
                       }}
-                      className={selectedCollateral === entry.token ? 'selected' : ''}
+                      onMouseLeave={() => setHoveredPair(null)}
+                      className={isSelected ? 'selected' : ''}
                     >
                       <div className='flex items-center gap-3'>
                         <TokenIcon token={entry.token} />
@@ -272,7 +301,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           {entry.token.symbol}
                         </Display>
                       </div>
-                      <Display size='XXS'>{ltvText}&nbsp;&nbsp;LTV</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {ltvText}&nbsp;&nbsp;LTV
+                      </Display>
                     </AvailableContainer>
                   );
                 })}
@@ -313,9 +344,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? account.liabilities.amount0
                       : account.liabilities.amount1;
                     const liabilityColor = tokenColors.get(liability.address);
-                    const liabilityGradient = liabilityColor
-                      ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
                     const marketInfo = marketInfos.get(
                       `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
                     );
@@ -323,7 +351,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const roundedApr = Math.round(apr * 100) / 100;
                     return (
                       <AvailableContainer
-                        $backgroundGradient={liabilityGradient}
+                        $gradDirection='-45deg'
+                        $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
+                        $gradColorB={GREY_700}
                         key={account.tokenId}
                         onMouseEnter={() => {
                           setHoveredBorrower(account);
@@ -367,28 +397,41 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               </CardRowHeader>
               <div className='flex flex-col'>
                 {filteredBorrowEntries.map((entry) => {
-                  let minApr = Infinity;
-                  let maxApr = -Infinity;
-
-                  entry.matchingPairs.forEach((pair) => {
-                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
-                    minApr = Math.min(minApr, apr);
-                    maxApr = Math.max(maxApr, apr);
-                  });
-
-                  const roundedAprs = [minApr, maxApr].map((apr) => Math.round(apr * 100) / 100);
-                  const areAprsEqual = roundedAprs[0] === roundedAprs[1];
-                  const aprText = areAprsEqual ? `${roundedAprs[0]}%` : `${roundedAprs[0]}－${roundedAprs[1]}%`;
                   const isSelected = selectedBorrows === entry.token;
+
+                  let aprText = '';
+                  if (isSelected && hoveredPair !== null) {
+                    const pair = hoveredPair;
+                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                    aprText = `${Math.round(apr * 100) / 100}%`;
+                  } else {
+                    let minApr = Infinity;
+                    let maxApr = -Infinity;
+
+                    entry.matchingPairs.forEach((pair) => {
+                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                      minApr = Math.min(minApr, apr);
+                      maxApr = Math.max(maxApr, apr);
+                    });
+
+                    const roundedAprs = [minApr, maxApr].map((apr) => Math.round(apr * 100) / 100);
+                    const areAprsEqual = roundedAprs[0] === roundedAprs[1];
+                    aprText = areAprsEqual ? `${roundedAprs[0]}%` : `${roundedAprs[0]}－${roundedAprs[1]}%`;
+                  }
+
                   return (
                     <AvailableContainer
                       key={entry.token.address + entry.token.chainId.toString()}
                       className={isSelected ? 'selected' : ''}
-                      onClick={() => {
-                        setSelectedBorrows(entry.token);
+                      onClick={() => setSelectedBorrows(entry.token)}
+                      onMouseEnter={() => {
+                        if (selectedCollateral !== null) setHoveredPair(entry.matchingPairs[0]);
                       }}
+                      onMouseLeave={() => setHoveredPair(null)}
                     >
-                      <Display size='XXS'>{aprText}&nbsp;&nbsp;APR</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {aprText}&nbsp;&nbsp;APR
+                      </Display>
                       <div className='flex items-center gap-3'>
                         <Display size='XS'>{entry.token.symbol}</Display>
                         <TokenIcon token={entry.token} />
