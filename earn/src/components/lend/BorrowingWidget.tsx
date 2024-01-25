@@ -13,7 +13,7 @@ import { useProvider } from 'wagmi';
 import { ChainContext } from '../../App';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import { LendingPair } from '../../data/LendingPair';
+import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
 import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
@@ -94,19 +94,6 @@ const ClearButton = styled.button`
   }
 `;
 
-export type CollateralEntry = {
-  asset: Token;
-  balance: number;
-  matchingPairs: LendingPair[];
-};
-
-export type BorrowEntry = {
-  asset: Token;
-  collateral: Token;
-  apy: number;
-  totalSupply: number;
-};
-
 type SelectedBorrower = {
   borrower: BorrowerNftBorrower;
   type: 'borrow' | 'supply';
@@ -114,17 +101,38 @@ type SelectedBorrower = {
 
 export type BorrowingWidgetProps = {
   borrowers: BorrowerNftBorrower[] | null;
-  collateralEntries: CollateralEntry[];
-  borrowEntries: { [key: string]: BorrowEntry[] };
+  lendingPairs: LendingPair[];
+  uniqueTokens: Token[];
+  // TODO: may be better to have the key be a full Token instead of just the address due to multichain issues
+  tokenBalances: LendingPairBalancesMap;
+  tokenQuotes: Map<string, number>;
   tokenColors: Map<string, string>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
-export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { borrowers, collateralEntries, borrowEntries, tokenColors, setPendingTxn } = props;
+function filterBySelection(lendingPairs: LendingPair[], selection: Token | null) {
+  const reverseTokenMap = new Map<Token, LendingPair[]>();
 
-  const [selectedCollateral, setSelectedCollateral] = useState<CollateralEntry | null>(null);
-  const [selectedBorrows, setSelectedBorrows] = useState<BorrowEntry[] | null>(null);
+  lendingPairs.forEach((pair) => {
+    const selectionIsPartOfPair = selection === null || pair.token0.equals(selection) || pair.token1.equals(selection);
+    if (!selectionIsPartOfPair) return;
+
+    if (reverseTokenMap.has(pair.token0)) reverseTokenMap.get(pair.token0)!.push(pair);
+    else reverseTokenMap.set(pair.token0, [pair]);
+
+    if (reverseTokenMap.has(pair.token1)) reverseTokenMap.get(pair.token1)!.push(pair);
+    else reverseTokenMap.set(pair.token1, [pair]);
+  });
+
+  if (selection !== null) reverseTokenMap.delete(selection);
+  return Array.from(reverseTokenMap.entries()).map((entry) => ({ token: entry[0], matchingPairs: entry[1] }));
+}
+
+export default function BorrowingWidget(props: BorrowingWidgetProps) {
+  const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
+
+  const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
+  const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
   const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
@@ -156,27 +164,15 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
     })();
   }, [borrowers, activeChain.id, provider, setMarketInfos]);
 
-  const filteredBorrowEntries = useMemo(() => {
-    if (selectedCollateral == null) {
-      return borrowEntries;
-    }
-    return Object.entries(borrowEntries).reduce((filtered, [key, entries]) => {
-      // Filter out entries that don't match the selected collateral
-      const filteredEntries = entries.filter((entry) => entry.collateral.equals(selectedCollateral.asset));
-      if (filteredEntries.length > 0) {
-        // Only add the entry if there are any matching pairs left
-        filtered[key] = filteredEntries;
-      }
-      return filtered;
-    }, {} as { [key: string]: BorrowEntry[] });
-  }, [borrowEntries, selectedCollateral]);
+  const filteredCollateralEntries = useMemo(
+    () => filterBySelection(lendingPairs, selectedBorrows),
+    [lendingPairs, selectedBorrows]
+  );
 
-  const filteredCollateralEntries = useMemo(() => {
-    if (selectedBorrows == null || selectedBorrows.length === 0) {
-      return collateralEntries;
-    }
-    return collateralEntries.filter((entry) => selectedBorrows.some((borrow) => borrow.collateral.equals(entry.asset)));
-  }, [collateralEntries, selectedBorrows]);
+  const filteredBorrowEntries = useMemo(
+    () => filterBySelection(lendingPairs, selectedCollateral),
+    [lendingPairs, selectedCollateral]
+  );
 
   return (
     <>
@@ -227,7 +223,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                             {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
                           </Display>
                         </div>
-                        <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}% LTV</Display>
+                        <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}%&nbsp;&nbsp;LTV</Display>
                       </AvailableContainer>
                     );
                   })}
@@ -259,22 +255,24 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   );
                   const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv));
                   const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
-                  const ltvText = areLtvsEqual ? `${roundedLtvs[0]}% LTV` : `${roundedLtvs[0]}-${roundedLtvs[1]}% LTV`;
+                  const ltvText = areLtvsEqual ? `${roundedLtvs[0]}%` : `${roundedLtvs[0]}－${roundedLtvs[1]}%`;
+                  const balance = tokenBalances.get(entry.token.address)?.value || 0; // TODO: could use GN
                   return (
                     <AvailableContainer
                       key={index}
                       onClick={() => {
-                        setSelectedCollateral(entry);
+                        setSelectedCollateral(entry.token);
                       }}
-                      className={selectedCollateral === entry ? 'selected' : ''}
+                      className={selectedCollateral === entry.token ? 'selected' : ''}
                     >
                       <div className='flex items-center gap-3'>
-                        <TokenIcon token={entry.asset} />
+                        <TokenIcon token={entry.token} />
                         <Display size='XS'>
-                          {formatTokenAmount(entry.balance)}&nbsp;&nbsp;{entry.asset.symbol}
+                          {formatTokenAmount(balance)}&nbsp;&nbsp;
+                          {entry.token.symbol}
                         </Display>
                       </div>
-                      <Display size='XXS'>{ltvText}</Display>
+                      <Display size='XXS'>{ltvText}&nbsp;&nbsp;LTV</Display>
                     </AvailableContainer>
                   );
                 })}
@@ -341,7 +339,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         }}
                         className={account === hoveredBorrower ? 'active' : ''}
                       >
-                        <Display size='XXS'>{roundedApy}% APR</Display>
+                        <Display size='XXS'>{roundedApy}%&nbsp;&nbsp;APR</Display>
                         <div className='flex items-center gap-3'>
                           <Display size='XS'>
                             {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
@@ -368,25 +366,34 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
-                {Object.entries(filteredBorrowEntries).map(([key, entry]) => {
-                  const minApy = entry.reduce((min, current) => (current.apy < min ? current.apy : min), Infinity);
-                  const maxApy = entry.reduce((max, current) => (current.apy > max ? current.apy : max), -Infinity);
+                {filteredBorrowEntries.map((entry) => {
+                  const minApy = entry.matchingPairs.reduce(
+                    (min, current) =>
+                      Math.min(min, current[entry.token.equals(current.token0) ? 'kitty1Info' : 'kitty0Info'].apy),
+                    Infinity
+                  );
+                  const maxApy = entry.matchingPairs.reduce(
+                    (max, current) =>
+                      Math.max(max, current[entry.token.equals(current.token0) ? 'kitty1Info' : 'kitty0Info'].apy),
+                    -Infinity
+                  );
                   const roundedApys = [minApy, maxApy].map((apy) => Math.round(apy * 100) / 100);
                   const areApysEqual = roundedApys[0] === roundedApys[1];
-                  const apyText = areApysEqual ? `${roundedApys[0]}% APY` : `${roundedApys[0]}-${roundedApys[1]}% APY`;
-                  const isSelected =
-                    selectedBorrows != null && selectedBorrows.some((borrow) => borrow.asset.symbol === key);
+                  const apyText = areApysEqual ? `${roundedApys[0]}%` : `${roundedApys[0]}－${roundedApys[1]}%`;
+                  const isSelected = selectedBorrows === entry.token;
                   return (
                     <AvailableContainer
-                      key={key}
+                      key={entry.token.address + entry.token.chainId.toString()}
                       className={isSelected ? 'selected' : ''}
                       onClick={() => {
-                        setSelectedBorrows(entry);
+                        setSelectedBorrows(entry.token);
                       }}
                     >
-                      <Display size='XXS'>{apyText}</Display>
-                      <Display size='XS'>{key}</Display>
-                      {/* TODO: Add token logo here */}
+                      <Display size='XXS'>{apyText}&nbsp;&nbsp;APY</Display>
+                      <div className='flex items-center gap-3'>
+                        <Display size='XS'>{entry.token.symbol}</Display>
+                        <TokenIcon token={entry.token} />
+                      </div>
                     </AvailableContainer>
                   );
                 })}
@@ -398,8 +405,13 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       {selectedBorrows != null && selectedCollateral != null && (
         <BorrowModal
           isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedBorrows={selectedBorrows}
+          selectedLendingPair={
+            // TODO: improve this
+            filteredCollateralEntries.find((x) => x.token.equals(selectedCollateral))!.matchingPairs[0]
+          }
           selectedCollateral={selectedCollateral}
+          selectedBorrow={selectedBorrows}
+          userBalance={tokenBalances.get(selectedCollateral.address)!.gn}
           setIsOpen={() => {
             setSelectedBorrows(null);
             setSelectedCollateral(null);

@@ -12,13 +12,13 @@ import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import BorrowingWidget, { BorrowEntry, CollateralEntry } from '../components/lend/BorrowingWidget';
+import BorrowingWidget from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
-import { filterLendingPairsByTokens, getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
+import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
@@ -246,52 +246,6 @@ export default function MarketsPage() {
     return rows;
   }, [balancesMap, lendingPairs, tokenQuotes]);
 
-  const collateralEntries = useMemo(() => {
-    const entries: CollateralEntry[] = [];
-    uniqueTokens.forEach((token) => {
-      const balance = balancesMap.get(token.address)?.value || 0;
-      if (balance > 0) {
-        entries.push({
-          asset: token,
-          balance,
-          matchingPairs: filterLendingPairsByTokens(lendingPairs, [token]),
-        });
-      }
-    });
-    return entries;
-  }, [uniqueTokens, balancesMap, lendingPairs]);
-
-  const borrowEntries = useMemo(() => {
-    const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
-      const token0TotalSupply = lendingPair.kitty0Info.inventory;
-      const token1TotalSupply = lendingPair.kitty1Info.inventory;
-      acc.push({
-        asset: lendingPair.token0,
-        collateral: lendingPair.token1,
-        apy: lendingPair.kitty0Info.apy,
-        totalSupply: token0TotalSupply,
-      });
-      acc.push({
-        asset: lendingPair.token1,
-        collateral: lendingPair.token0,
-        apy: lendingPair.kitty1Info.apy,
-        totalSupply: token1TotalSupply,
-      });
-      return acc;
-    }, []);
-    return borrowable.reduce((acc: { [key: string]: BorrowEntry[] }, borrowable) => {
-      const existing = acc[borrowable.asset.symbol];
-      if (existing && borrowable.totalSupply > 0) {
-        // If the asset already exists in the accumulator, push the borrowable
-        existing.push(borrowable);
-      } else if (borrowable.totalSupply > 0) {
-        // Otherwise, create a new array with the borrowable
-        acc[borrowable.asset.symbol] = [borrowable];
-      }
-      return acc;
-    }, {});
-  }, [lendingPairs]);
-
   return (
     <AppPage>
       <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
@@ -325,8 +279,10 @@ export default function MarketsPage() {
           <div className='flex flex-col gap-6'>
             <BorrowingWidget
               borrowers={borrowers}
-              collateralEntries={collateralEntries}
-              borrowEntries={borrowEntries}
+              lendingPairs={lendingPairs}
+              uniqueTokens={uniqueTokens}
+              tokenBalances={balancesMap}
+              tokenQuotes={tokenQuotes}
               tokenColors={tokenColors}
               setPendingTxn={setPendingTxn}
             />
