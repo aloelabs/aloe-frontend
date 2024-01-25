@@ -131,11 +131,14 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
   const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
 
+  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
+  // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
+  const [hoveredPair, setHoveredPair] = useState<LendingPair | null>(null);
+  // selection/hover state for Active Table
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
-  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
 
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider();
@@ -245,25 +248,35 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               </CardRowHeader>
               <div className='flex flex-col'>
                 {filteredCollateralEntries.map((entry, index) => {
-                  const minLtv = entry.matchingPairs.reduce(
-                    (min, current) => Math.min(current.ltv * 100, min),
-                    Infinity
-                  );
-                  const maxLtv = entry.matchingPairs.reduce(
-                    (max, current) => Math.max(current.ltv * 100, max),
-                    -Infinity
-                  );
-                  const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv));
-                  const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
-                  const ltvText = areLtvsEqual ? `${roundedLtvs[0]}%` : `${roundedLtvs[0]}－${roundedLtvs[1]}%`;
+                  const isSelected = selectedCollateral === entry.token;
+
+                  let ltvText = '';
+                  if (isSelected && hoveredPair !== null) {
+                    ltvText = `${Math.round(hoveredPair.ltv * 100)}%`;
+                  } else {
+                    let minLtv = Infinity;
+                    let maxLtv = -Infinity;
+
+                    entry.matchingPairs.forEach((pair) => {
+                      minLtv = Math.min(minLtv, pair.ltv);
+                      maxLtv = Math.max(maxLtv, pair.ltv);
+                    });
+
+                    const roundedLtvs = [minLtv, maxLtv].map((ltv) => Math.round(ltv * 100));
+                    const areLtvsEqual = roundedLtvs[0] === roundedLtvs[1];
+                    ltvText = areLtvsEqual ? `${roundedLtvs[0]}%` : `${roundedLtvs[0]}－${roundedLtvs[1]}%`;
+                  }
                   const balance = tokenBalances.get(entry.token.address)?.value || 0; // TODO: could use GN
+
                   return (
                     <AvailableContainer
                       key={index}
-                      onClick={() => {
-                        setSelectedCollateral(entry.token);
+                      onClick={() => setSelectedCollateral(entry.token)}
+                      onMouseEnter={() => {
+                        if (selectedBorrows !== null) setHoveredPair(entry.matchingPairs[0]);
                       }}
-                      className={selectedCollateral === entry.token ? 'selected' : ''}
+                      onMouseLeave={() => setHoveredPair(null)}
+                      className={isSelected ? 'selected' : ''}
                     >
                       <div className='flex items-center gap-3'>
                         <TokenIcon token={entry.token} />
@@ -272,7 +285,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           {entry.token.symbol}
                         </Display>
                       </div>
-                      <Display size='XXS'>{ltvText}&nbsp;&nbsp;LTV</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {ltvText}&nbsp;&nbsp;LTV
+                      </Display>
                     </AvailableContainer>
                   );
                 })}
@@ -367,28 +382,41 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               </CardRowHeader>
               <div className='flex flex-col'>
                 {filteredBorrowEntries.map((entry) => {
-                  let minApr = Infinity;
-                  let maxApr = -Infinity;
-
-                  entry.matchingPairs.forEach((pair) => {
-                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
-                    minApr = Math.min(minApr, apr);
-                    maxApr = Math.max(maxApr, apr);
-                  });
-
-                  const roundedAprs = [minApr, maxApr].map((apr) => Math.round(apr * 100) / 100);
-                  const areAprsEqual = roundedAprs[0] === roundedAprs[1];
-                  const aprText = areAprsEqual ? `${roundedAprs[0]}%` : `${roundedAprs[0]}－${roundedAprs[1]}%`;
                   const isSelected = selectedBorrows === entry.token;
+
+                  let aprText = '';
+                  if (isSelected && hoveredPair !== null) {
+                    const pair = hoveredPair;
+                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                    aprText = `${Math.round(apr * 100) / 100}%`;
+                  } else {
+                    let minApr = Infinity;
+                    let maxApr = -Infinity;
+
+                    entry.matchingPairs.forEach((pair) => {
+                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                      minApr = Math.min(minApr, apr);
+                      maxApr = Math.max(maxApr, apr);
+                    });
+
+                    const roundedAprs = [minApr, maxApr].map((apr) => Math.round(apr * 100) / 100);
+                    const areAprsEqual = roundedAprs[0] === roundedAprs[1];
+                    aprText = areAprsEqual ? `${roundedAprs[0]}%` : `${roundedAprs[0]}－${roundedAprs[1]}%`;
+                  }
+
                   return (
                     <AvailableContainer
                       key={entry.token.address + entry.token.chainId.toString()}
                       className={isSelected ? 'selected' : ''}
-                      onClick={() => {
-                        setSelectedBorrows(entry.token);
+                      onClick={() => setSelectedBorrows(entry.token)}
+                      onMouseEnter={() => {
+                        if (selectedCollateral !== null) setHoveredPair(entry.matchingPairs[0]);
                       }}
+                      onMouseLeave={() => setHoveredPair(null)}
                     >
-                      <Display size='XXS'>{aprText}&nbsp;&nbsp;APR</Display>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {aprText}&nbsp;&nbsp;APR
+                      </Display>
                       <div className='flex items-center gap-3'>
                         <Display size='XS'>{entry.token.symbol}</Display>
                         <TokenIcon token={entry.token} />
