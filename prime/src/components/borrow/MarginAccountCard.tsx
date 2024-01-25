@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { NavLink } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { getHealthColor } from 'shared/lib/util/Health';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { sumAssetsPerToken } from '../../data/BalanceSheet';
 import { MarginAccountPreview } from '../../data/MarginAccount';
 import { getBrighterColor, getProminentColor, rgb, rgba } from '../../util/Colors';
 import { formatAddressStart } from '../../util/FormatAddress';
@@ -118,11 +116,10 @@ function MetricContainer(props: MetricContainerProps) {
 export type MarginAccountCardProps = MarginAccountPreview;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { address, assets, feeTier, liabilities, token0, token1, health } = props;
+  const { address, feeTier, liabilities, token0, token1, health } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   const link = `/borrow/account/${address}`;
-  const [assets0, assets1] = sumAssetsPerToken(assets);
 
   useEffect(() => {
     let mounted = true;
@@ -172,14 +169,14 @@ export function MarginAccountCard(props: MarginAccountCardProps) {
       </CardTitleWrapper>
       <CardBodyWrapper>
         <div className='w-full flex flex-row justify-between'>
-          <MetricContainer
+          {/* <MetricContainer
             label={token0.symbol}
             value={assets0.sub(liabilities.amount0).toString(GNFormat.LOSSY_HUMAN_SHORT)}
           />
           <MetricContainer
             label={token1.symbol}
             value={assets1.sub(liabilities.amount1).toString(GNFormat.LOSSY_HUMAN_SHORT)}
-          />
+          /> */}
           <MetricContainer
             label='Health'
             value={health >= 5 ? '5+' : health.toFixed(2)}

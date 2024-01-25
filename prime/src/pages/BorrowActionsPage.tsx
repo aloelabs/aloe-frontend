@@ -1,13 +1,9 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
-import { TickMath } from '@uniswap/v3-sdk';
 import { BigNumber, Contract } from 'ethers';
-import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { PreviousPageButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -19,7 +15,7 @@ import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Address, useContract, useContractRead, useProvider } from 'wagmi';
+import { useContract, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import { ReactComponent as InboxIcon } from '../assets/svg/inbox.svg';
@@ -34,7 +30,7 @@ import TokenAllocationPieChartWidget from '../components/borrow/TokenAllocationP
 import UniswapPositionTable from '../components/borrow/uniswap/UniswapPositionsTable';
 import TokenChooser from '../components/common/TokenChooser';
 import PnLGraph from '../components/graph/PnLGraph';
-import { AccountState, UniswapPosition, UniswapPositionPrior } from '../data/actions/Actions';
+import { AccountState, UniswapPosition } from '../data/actions/Actions';
 import { isSolvent, sumAssetsPerToken } from '../data/BalanceSheet';
 import {
   RESPONSIVE_BREAKPOINT_MD,
@@ -49,7 +45,6 @@ import {
   stringifyMarginAccount,
   stringifyUniswapPositions,
 } from '../util/ComputeLiquidationThresholdUtils';
-import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export const GENERAL_DEBOUNCE_DELAY_MS = 250;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -170,24 +165,6 @@ type AccountParams = {
   account: string;
 };
 
-async function fetchUniswapPositions(
-  priors: UniswapPositionPrior[],
-  marginAccountAddress: string,
-  uniswapV3PoolContract: any
-) {
-  const keys = priors.map((prior) => uniswapPositionKey(marginAccountAddress, prior.lower!, prior.upper!));
-  const results = await Promise.all(keys.map((key) => uniswapV3PoolContract.positions(key)));
-
-  const fetchedUniswapPositions = new Map<string, UniswapPosition>();
-  for (let i = 0; i < priors.length; i++) {
-    const liquidity = JSBI.BigInt(results[i].liquidity.toString());
-    if (JSBI.equal(liquidity, JSBI.BigInt(0))) continue;
-    fetchedUniswapPositions.set(keys[i], { ...priors[i], liquidity: liquidity });
-  }
-
-  return fetchedUniswapPositions;
-}
-
 export default function BorrowActionsPage() {
   const { activeChain } = useContext(ChainContext);
   const isAllowedToInteract = useGeoFencing(activeChain);
@@ -254,18 +231,6 @@ export default function BorrowActionsPage() {
     abi: lenderLensAbi,
     signerOrProvider: provider,
   });
-  const { data: uniswapPositionTicks } = useContractRead({
-    address: (accountAddressParam ?? '0x') as Address, // TODO better optional resolution
-    abi: borrowerAbi,
-    functionName: 'getUniswapPositions',
-    chainId: activeChain.id,
-    enabled: Boolean(marginAccount),
-  });
-  const uniswapV3PoolContract = useContract({
-    address: marginAccount?.uniswapPool ?? '0x', // TODO better option resolution
-    abi: uniswapV3PoolAbi,
-    signerOrProvider: provider,
-  });
 
   useEffect(() => {
     setBorrowInterestInputValue('');
@@ -286,6 +251,7 @@ export default function BorrowActionsPage() {
         );
         if (mounted) {
           setMarginAccount(result.marginAccount);
+          setUniswapPositions(result.uniswapPositions);
         }
       } catch (error) {
         console.error(error);
@@ -300,7 +266,7 @@ export default function BorrowActionsPage() {
     return () => {
       mounted = false;
     };
-  }, [accountAddressParam, provider, activeChain, setMarginAccount]);
+  }, [accountAddressParam, provider, activeChain, setMarginAccount, setUniswapPositions]);
 
   // MARK: fetch MarketInfo
   useEffect(() => {
@@ -321,70 +287,6 @@ export default function BorrowActionsPage() {
       mounted = false;
     };
   }, [lenderLensContract, marginAccount]);
-
-  // MARK: fetch uniswap positions
-  useEffect(() => {
-    let mounted = true;
-    async function fetch() {
-      if (!marginAccount || !accountAddressParam || !Array.isArray(uniswapPositionTicks)) return;
-
-      const uniswapPositionPriors: UniswapPositionPrior[] = [];
-      for (let i = 0; i < uniswapPositionTicks.length; i += 2) {
-        uniswapPositionPriors.push({
-          lower: uniswapPositionTicks[i] as number,
-          upper: uniswapPositionTicks[i + 1] as number,
-        });
-      }
-
-      const fetchedUniswapPositions = await fetchUniswapPositions(
-        uniswapPositionPriors,
-        accountAddressParam,
-        uniswapV3PoolContract
-      );
-      const _uniswapPositions = Array.from(fetchedUniswapPositions.values());
-
-      if (mounted) {
-        setUniswapPositions(_uniswapPositions);
-        const token0 = marginAccount.token0;
-        const token1 = marginAccount.token1;
-        // there may be a slight discrepancy between Sum{uniswapPositions.amountX} and marginAccount.assets.uniX.
-        // this is because one is computed on-chain and cached, while the other is computed locally.
-        // if we've fetched both, prefer the uniswapPositions version (local & newer).
-        const i = { amount0: GN.zero(token0.decimals), amount1: GN.zero(token1.decimals) };
-        const { amount0, amount1 } = _uniswapPositions.reduce((p, c) => {
-          const [amount0, amount1] = getAmountsForLiquidity(
-            c.liquidity,
-            c.lower,
-            c.upper,
-            TickMath.getTickAtSqrtRatio(marginAccount.sqrtPriceX96.toJSBI()),
-            marginAccount.token0.decimals,
-            marginAccount.token1.decimals
-          );
-          return {
-            amount0: p.amount0.add(amount0),
-            amount1: p.amount1.add(amount1),
-          };
-        }, i);
-        setMarginAccount({
-          ...marginAccount,
-          assets: { ...marginAccount.assets, uni0: amount0, uni1: amount1 },
-        });
-      }
-    }
-    fetch();
-
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    accountAddressParam,
-    marginAccount?.sqrtPriceX96,
-    marginAccount?.token0,
-    marginAccount?.token1,
-    uniswapPositionTicks,
-    uniswapV3PoolContract,
-  ]);
 
   // MARK: compute hypothetical states
   useEffect(() => {
