@@ -319,8 +319,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const marketInfo = marketInfos.get(
                       `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
                     );
-                    const apy = ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
-                    const roundedApy = Math.round(apy * 100) / 100;
+                    const apr = ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
+                    const roundedApr = Math.round(apr * 100) / 100;
                     return (
                       <AvailableContainer
                         $backgroundGradient={liabilityGradient}
@@ -339,7 +339,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         }}
                         className={account === hoveredBorrower ? 'active' : ''}
                       >
-                        <Display size='XXS'>{roundedApy}%&nbsp;&nbsp;APR</Display>
+                        <Display size='XXS'>{roundedApr}%&nbsp;&nbsp;APR</Display>
                         <div className='flex items-center gap-3'>
                           <Display size='XS'>
                             {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
@@ -367,19 +367,18 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               </CardRowHeader>
               <div className='flex flex-col'>
                 {filteredBorrowEntries.map((entry) => {
-                  const minApy = entry.matchingPairs.reduce(
-                    (min, current) =>
-                      Math.min(min, current[entry.token.equals(current.token0) ? 'kitty1Info' : 'kitty0Info'].apy),
-                    Infinity
-                  );
-                  const maxApy = entry.matchingPairs.reduce(
-                    (max, current) =>
-                      Math.max(max, current[entry.token.equals(current.token0) ? 'kitty1Info' : 'kitty0Info'].apy),
-                    -Infinity
-                  );
-                  const roundedApys = [minApy, maxApy].map((apy) => Math.round(apy * 100) / 100);
-                  const areApysEqual = roundedApys[0] === roundedApys[1];
-                  const apyText = areApysEqual ? `${roundedApys[0]}%` : `${roundedApys[0]}－${roundedApys[1]}%`;
+                  let minApr = Infinity;
+                  let maxApr = -Infinity;
+
+                  entry.matchingPairs.forEach((pair) => {
+                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                    minApr = Math.min(minApr, apr);
+                    maxApr = Math.max(maxApr, apr);
+                  });
+
+                  const roundedAprs = [minApr, maxApr].map((apr) => Math.round(apr * 100) / 100);
+                  const areAprsEqual = roundedAprs[0] === roundedAprs[1];
+                  const aprText = areAprsEqual ? `${roundedAprs[0]}%` : `${roundedAprs[0]}－${roundedAprs[1]}%`;
                   const isSelected = selectedBorrows === entry.token;
                   return (
                     <AvailableContainer
@@ -389,7 +388,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         setSelectedBorrows(entry.token);
                       }}
                     >
-                      <Display size='XXS'>{apyText}&nbsp;&nbsp;APY</Display>
+                      <Display size='XXS'>{aprText}&nbsp;&nbsp;APR</Display>
                       <div className='flex items-center gap-3'>
                         <Display size='XS'>{entry.token.symbol}</Display>
                         <TokenIcon token={entry.token} />

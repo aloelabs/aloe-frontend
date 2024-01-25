@@ -217,7 +217,7 @@ export default function MarketsPage() {
       rows.push({
         asset: pair.token0,
         kitty: pair.kitty0,
-        apy: pair.kitty0Info.apy,
+        apy: pair.kitty0Info.lendAPY,
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.inventory,
@@ -231,7 +231,7 @@ export default function MarketsPage() {
       rows.push({
         asset: pair.token1,
         kitty: pair.kitty1,
-        apy: pair.kitty1Info.apy,
+        apy: pair.kitty1Info.lendAPY,
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.inventory,
