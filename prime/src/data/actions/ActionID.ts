@@ -34,7 +34,7 @@ export function getFrontendManagerCodeFor(id: ActionID) {
 export function getNameOfAction(id: ActionID): string {
   switch (id) {
     case ActionID.TRANSFER_IN:
-      return 'Add Margin';
+      return 'Add Collateral';
     case ActionID.TRANSFER_OUT:
       return 'Withdraw';
     case ActionID.BORROW:
