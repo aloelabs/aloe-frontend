@@ -207,7 +207,12 @@ export default function PortfolioPage() {
     (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
       if (!address || isLoading) return;
-      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      const { lendingPairBalances: results } = await getLendingPairBalances(
+        lendingPairs,
+        address,
+        provider,
+        activeChain.id
+      );
       setLendingPairBalances(results);
     })();
   }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
@@ -263,7 +268,7 @@ export default function PortfolioPage() {
           token: pair.kitty0,
           balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
-          apy: pair.kitty0Info.apy,
+          apy: pair.kitty0Info.lendAPY,
           isKitty: true,
           pairName,
           otherToken: pair.token1,
@@ -272,7 +277,7 @@ export default function PortfolioPage() {
           token: pair.kitty1,
           balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
-          apy: pair.kitty1Info.apy,
+          apy: pair.kitty1Info.lendAPY,
           isKitty: true,
           pairName,
           otherToken: pair.token0,
