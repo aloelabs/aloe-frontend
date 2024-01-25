@@ -43,7 +43,7 @@ const CardContainer = styled.div`
   overflow: hidden;
 `;
 
-const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
+const AvailableContainer = styled.div<{ $gradDirection?: string; $gradColorA?: string; $gradColorB?: string }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -53,14 +53,31 @@ const AvailableContainer = styled.div<{ $backgroundGradient?: string }>`
   padding-right: 16px;
   cursor: pointer;
 
+  @property --gradColorA {
+    syntax: '<color>';
+    initial-value: transparent;
+    inherits: false;
+  }
+
+  @property --gradColorB {
+    syntax: '<color>';
+    initial-value: transparent;
+    inherits: false;
+  }
+
+  background: linear-gradient(${(props) => props.$gradDirection || '45deg'}, var(--gradColorA), var(--gradColorB));
+
   &.active,
   &:hover {
-    background: ${(props) => props.$backgroundGradient || SECONDARY_COLOR_LIGHT};
+    --gradColorA: ${(props) => props.$gradColorA || SECONDARY_COLOR_LIGHT};
+    --gradColorB: ${(props) => props.$gradColorB || SECONDARY_COLOR_LIGHT};
   }
 
   &.selected {
     background: ${SECONDARY_COLOR_LIGHT};
   }
+
+  transition: --gradColorA 0.33s ease-out, --gradColorB 0.33s ease-out;
 `;
 
 const CardRow = styled.div`
@@ -198,13 +215,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? account.assets.token0Raw
                       : account.assets.token1Raw;
                     const collateralColor = tokenColors.get(collateral.address);
-                    const collateralGradient = collateralColor
-                      ? `linear-gradient(90deg, ${rgba(collateralColor, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
                     const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                     return (
                       <AvailableContainer
-                        $backgroundGradient={collateralGradient}
+                        $gradDirection='45deg'
+                        $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
+                        $gradColorB={GREY_700}
                         key={account.tokenId}
                         onMouseEnter={() => {
                           setHoveredBorrower(account);
@@ -328,9 +344,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                       ? account.liabilities.amount0
                       : account.liabilities.amount1;
                     const liabilityColor = tokenColors.get(liability.address);
-                    const liabilityGradient = liabilityColor
-                      ? `linear-gradient(90deg, ${rgba(liabilityColor, 0.25)} 0%, ${GREY_700} 100%)`
-                      : undefined;
                     const marketInfo = marketInfos.get(
                       `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
                     );
@@ -338,7 +351,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     const roundedApr = Math.round(apr * 100) / 100;
                     return (
                       <AvailableContainer
-                        $backgroundGradient={liabilityGradient}
+                        $gradDirection='-45deg'
+                        $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
+                        $gradColorB={GREY_700}
                         key={account.tokenId}
                         onMouseEnter={() => {
                           setHoveredBorrower(account);
