@@ -1,3 +1,4 @@
+import { secondsInYear } from 'date-fns';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
@@ -25,10 +26,11 @@ import { Address } from 'wagmi';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
+import { borrowAPRToLendAPY } from './RateModel';
 
 export interface KittyInfo {
-  // The current APY being earned by Kitty token holders
-  apy: number;
+  borrowAPR: number;
+  lendAPY: number;
   // The amount of underlying owed to all Kitty token holders
   // (both the amount currently sitting in contract, and the amount that has been lent out)
   inventory: number;
@@ -217,8 +219,8 @@ export async function getAvailableLendingPairs(
       token1
     );
 
-    const interestRate0 = toImpreciseNumber(basics0[1], 12);
-    const interestRate1 = toImpreciseNumber(basics1[1], 12);
+    const borrowAPR0 = toImpreciseNumber(basics0[1].mul(secondsInYear), 12);
+    const borrowAPR1 = toImpreciseNumber(basics1[1].mul(secondsInYear), 12);
 
     const utilization0 = toImpreciseNumber(basics0[2], 18);
     const utilization1 = toImpreciseNumber(basics1[2], 18);
@@ -235,12 +237,6 @@ export async function getAvailableLendingPairs(
     const rewardsRate0 = toImpreciseNumber(basics0[7], 18);
     const rewardsRate1 = toImpreciseNumber(basics1[7], 18);
 
-    // SupplyAPR = Utilization * (1 - reservePercentage) * BorrowAPR
-    const APR0 = utilization0 * (1 - 1 / reserveFactor0) * interestRate0;
-    const APR1 = utilization1 * (1 - 1 / reserveFactor1) * interestRate1;
-    const APY0 = (1 + APR0) ** (365 * 24 * 60 * 60) - 1.0;
-    const APY1 = (1 + APR1) ** (365 * 24 * 60 * 60) - 1.0;
-
     const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
 
     const nSigma = (factoryResult[1] as number) / 10;
@@ -254,13 +250,15 @@ export async function getAvailableLendingPairs(
         kitty0,
         kitty1,
         {
-          apy: APY0 * 100, // Percentage
+          borrowAPR: borrowAPR0 * 100,
+          lendAPY: borrowAPRToLendAPY(borrowAPR0, utilization0, reserveFactor0) * 100,
           inventory: inventory0,
           totalSupply: totalSupply0,
           utilization: utilization0 * 100.0, // Percentage
         },
         {
-          apy: APY1 * 100, // Percentage
+          borrowAPR: borrowAPR1 * 100,
+          lendAPY: borrowAPRToLendAPY(borrowAPR1, utilization1, reserveFactor1) * 100,
           inventory: inventory1,
           totalSupply: totalSupply1,
           utilization: utilization1 * 100.0, // Percentage
@@ -390,8 +388,8 @@ export function filterLendingPairsByTokens(lendingPairs: LendingPair[], tokens: 
 
 export function sortLendingPairsByAPY(lendingPairs: LendingPair[]): LendingPair[] {
   return lendingPairs.sort((a, b) => {
-    const apyA = a.kitty0Info.apy + a.kitty1Info.apy;
-    const apyB = b.kitty0Info.apy + b.kitty1Info.apy;
+    const apyA = a.kitty0Info.lendAPY + a.kitty1Info.lendAPY;
+    const apyB = b.kitty0Info.lendAPY + b.kitty1Info.lendAPY;
     return apyB - apyA;
   });
 }

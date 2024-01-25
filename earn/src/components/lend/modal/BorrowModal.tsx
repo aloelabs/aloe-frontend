@@ -30,8 +30,8 @@ import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareCo
 
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
+import { LendingPair } from '../../../data/LendingPair';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
-import { BorrowEntry, CollateralEntry } from '../BorrowingWidget';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
 const SECONDARY_COLOR = '#CCDFED';
@@ -88,29 +88,22 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 export type BorrowModalProps = {
   isOpen: boolean;
-  selectedBorrows: BorrowEntry[];
-  selectedCollateral: CollateralEntry;
+  selectedLendingPair: LendingPair;
+  selectedCollateral: Token;
+  selectedBorrow: Token;
+  userBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { isOpen, selectedBorrows, selectedCollateral, setIsOpen, setPendingTxn } = props;
+  const { isOpen, selectedLendingPair, selectedCollateral, selectedBorrow, userBalance, setIsOpen, setPendingTxn } =
+    props;
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
   const { activeChain } = useContext(ChainContext);
 
   const { address: userAddress } = useAccount();
-
-  const selectedBorrow = selectedBorrows.find(
-    (borrow) => borrow.collateral.address === selectedCollateral.asset.address
-  );
-
-  const selectedLendingPair = selectedCollateral.matchingPairs.find(
-    (pair) => selectedBorrow?.asset?.equals(pair.token0) || selectedBorrow?.asset?.equals(pair.token1)
-  );
-
-  const isBorrowingToken0 = selectedLendingPair?.token0.address === selectedBorrow?.asset.address;
 
   const { data: consultData } = useContractRead({
     abi: volatilityOracleAbi,
@@ -135,18 +128,25 @@ export default function BorrowModal(props: BorrowModalProps) {
     watch: false,
   });
 
-  const userBalance = GN.fromNumber(selectedCollateral.balance, selectedCollateral.asset.decimals);
-  const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', selectedCollateral.asset.decimals);
-  const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', selectedBorrow?.asset.decimals ?? 0);
+  const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', selectedCollateral.decimals);
+  const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', selectedBorrow.decimals);
   const ante = parameterData !== undefined ? GN.fromBigNumber(parameterData.ante, 18) : undefined;
   const ethBalance = GN.fromDecimalString(ethBalanceData?.formatted ?? '0', 18);
+
+  const isBorrowingToken0 = useMemo(
+    () => selectedBorrow.equals(selectedLendingPair.token0),
+    [selectedLendingPair, selectedBorrow]
+  );
 
   const maxBorrowSupplyConstraint = useMemo(() => {
     if (selectedBorrow === undefined) {
       return null;
     }
-    return GN.fromNumber(selectedBorrow.totalSupply, selectedBorrow.asset.decimals);
-  }, [selectedBorrow]);
+    return GN.fromNumber(
+      selectedLendingPair[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].totalSupply,
+      selectedBorrow.decimals
+    );
+  }, [selectedBorrow, selectedLendingPair, isBorrowingToken0]);
 
   const maxBorrowHealthConstraint = useMemo(() => {
     if (consultData === undefined || selectedBorrow === undefined) {
@@ -158,23 +158,17 @@ export default function BorrowModal(props: BorrowModalProps) {
     const ltv = computeLTV(iv, nSigma);
 
     let inTermsOfBorrow = collateralAmount;
-    if (selectedLendingPair?.token0.address === selectedCollateral.asset.address) {
-      inTermsOfBorrow = inTermsOfBorrow
-        .mul(sqrtPriceX96)
-        .mul(sqrtPriceX96)
-        .setResolution(selectedBorrow.asset.decimals);
+    if (selectedLendingPair?.token0.address === selectedCollateral.address) {
+      inTermsOfBorrow = inTermsOfBorrow.mul(sqrtPriceX96).mul(sqrtPriceX96).setResolution(selectedBorrow.decimals);
     } else {
-      inTermsOfBorrow = inTermsOfBorrow
-        .div(sqrtPriceX96)
-        .div(sqrtPriceX96)
-        .setResolution(selectedBorrow.asset.decimals);
+      inTermsOfBorrow = inTermsOfBorrow.div(sqrtPriceX96).div(sqrtPriceX96).setResolution(selectedBorrow.decimals);
     }
     return inTermsOfBorrow.recklessMul(ltv);
   }, [
     collateralAmount,
     consultData,
     selectedBorrow,
-    selectedCollateral.asset.address,
+    selectedCollateral.address,
     selectedLendingPair?.nSigma,
     selectedLendingPair?.token0.address,
   ]);
@@ -190,16 +184,13 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [maxBorrowAmount]);
 
   const estimatedApr = useMemo(() => {
-    if (selectedLendingPair === undefined || selectedBorrow === undefined) return 0;
-
     const { kitty0Info, kitty1Info } = selectedLendingPair;
-    const { decimals } = selectedBorrow.asset;
 
     const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
-    const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, decimals);
+    const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
 
     const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization / 100 : kitty1Info.utilization / 100;
-    const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, decimals);
+    const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, selectedBorrow.decimals);
 
     const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
     const newUtilization = lenderTotalAssets.isGtZero()
@@ -225,7 +216,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     result: permit2Result,
   } = usePermit2(
     activeChain,
-    selectedCollateral.asset,
+    selectedCollateral,
     userAddress ?? '0x',
     ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id],
     collateralAmount
@@ -255,7 +246,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       [
         {
           permitted: {
-            token: selectedCollateral.asset.address,
+            token: selectedCollateral.address,
             amount: permit2Result.amount.toBigNumber(),
           },
           nonce: BigNumber.from(permit2Result.nonce ?? '0'),
@@ -269,7 +260,7 @@ export default function BorrowModal(props: BorrowModalProps) {
         permit2Result.signature,
       ]
     );
-  }, [permit2Result, predictedAddress, selectedCollateral.asset.address, userAddress]);
+  }, [permit2Result, predictedAddress, selectedCollateral.address, userAddress]);
 
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
@@ -286,13 +277,9 @@ export default function BorrowModal(props: BorrowModalProps) {
     if (!userAddress || !selectedLendingPair || !selectedBorrow) return null;
     const borrower = new ethers.utils.Interface(borrowerAbi);
     const amount0 =
-      selectedLendingPair.token0.address === selectedBorrow.asset.address
-        ? borrowAmount
-        : GN.zero(selectedBorrow.asset.decimals);
+      selectedLendingPair.token0.address === selectedBorrow.address ? borrowAmount : GN.zero(selectedBorrow.decimals);
     const amount1 =
-      selectedLendingPair.token1.address === selectedBorrow.asset.address
-        ? borrowAmount
-        : GN.zero(selectedBorrow.asset.decimals);
+      selectedLendingPair.token1.address === selectedBorrow.address ? borrowAmount : GN.zero(selectedBorrow.decimals);
 
     return borrower.encodeFunctionData('borrow', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]);
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
@@ -355,7 +342,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
   }
 
-  const confirmButton = getConfirmButton(confirmButtonState, selectedCollateral.asset);
+  const confirmButton = getConfirmButton(confirmButtonState, selectedCollateral);
 
   if (!selectedBorrow) return null;
 
@@ -367,7 +354,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             Collateral
           </Text>
           <TokenAmountInput
-            token={selectedCollateral.asset}
+            token={selectedCollateral}
             value={collateralAmountStr}
             max={userBalance.toString(GNFormat.DECIMAL)}
             maxed={collateralAmount.eq(userBalance)}
@@ -385,7 +372,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           </Text>
           <div>
             <Text size='M' className='mb-2'>
-              {selectedBorrow.asset.symbol}
+              {selectedBorrow.symbol}
             </Text>
             <SquareInputWithMax
               size='L'
@@ -415,7 +402,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
               You're borrowing{' '}
               <strong>
-                {borrowAmountStr || '0.00'} {selectedBorrow.asset.symbol}
+                {borrowAmountStr || '0.00'} {selectedBorrow.symbol}
               </strong>{' '}
               using a new{' '}
               <strong>
