@@ -7,8 +7,9 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
+import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
-import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
+import { useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -18,7 +19,7 @@ import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/Borrowe
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
-import { filterLendingPairsByTokens, getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
+import { filterLendingPairsByTokens, getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
@@ -50,6 +51,11 @@ const HeaderSegmentedControlOption = styled.button.attrs((props: { isActive: boo
   }
 `;
 
+export type TokenQuote = {
+  token: Token;
+  price: number;
+};
+
 export type TokenBalance = {
   token: Token;
   balance: number;
@@ -64,40 +70,50 @@ enum HeaderOptions {
   Borrow,
 }
 
-type TokenSymbol = string;
-type Quote = number;
-
 export default function MarketsPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
-  const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
-  const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
+  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
+  const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
+    [],
+    activeChain.id
+  );
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
-  const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
+  const [tokenColors, setTokenColors] = useChainDependentState<Map<string, string>>(new Map(), activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
 
-  // MARK: custom hooks
-  const availablePools = useAvailablePools();
   const { lendingPairs } = useLendingPairs();
-
-  // MARK: wagmi hooks
-  const { address: userAddress } = useAccount();
-  const provider = useProvider({ chainId: activeChain.id });
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
   });
 
+  // MARK: wagmi hooks
+  const account = useAccount();
+  const provider = useProvider({ chainId: activeChain.id });
+  const userAddress = account.address;
+
   const uniqueTokens = useMemo(() => {
-    const tokenSet = new Set<Token>();
+    const tokens = new Set<Token>();
     lendingPairs.forEach((pair) => {
-      tokenSet.add(pair.token0);
-      tokenSet.add(pair.token1);
+      tokens.add(pair.token0);
+      tokens.add(pair.token1);
     });
-    return Array.from(tokenSet.values());
+    return Array.from(tokens.values());
   }, [lendingPairs]);
+
+  const uniqueSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    lendingPairs.forEach((pair) => {
+      symbols.add(pair.token0.symbol.toUpperCase());
+      symbols.add(pair.token1.symbol.toUpperCase());
+    });
+    return Array.from(symbols.values()).join(',');
+  }, [lendingPairs]);
+
+  const availablePools = useAvailablePools();
 
   useEffect(() => {
     (async () => {
@@ -113,79 +129,61 @@ export default function MarketsPage() {
     })();
   }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
-  // MARK: Computing token colors
   useEffect(() => {
     (async () => {
-      // Compute colors for each token logo (local, but still async)
+      const tokenColorMap: Map<string, string> = new Map();
       const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
       const colors = await Promise.all(colorPromises);
-
-      // Convert response to the desired Map format
-      const addressToColorMap: Map<Address, string> = new Map();
-      uniqueTokens.forEach((token, index) => addressToColorMap.set(token.address, colors[index]));
-      setTokenColors(addressToColorMap);
-    })();
-  }, [uniqueTokens, setTokenColors]);
-
-  // MARK: Fetching token prices
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      // Determine set of unique token symbols (tickers)
-      const symbolSet = new Set<string>();
-      lendingPairs.forEach((pair) => {
-        symbolSet.add(pair.token0.symbol);
-        symbolSet.add(pair.token1.symbol);
+      uniqueTokens.forEach((token: Token, index: number) => {
+        tokenColorMap.set(token.address, colors[index]);
       });
-      const uniqueSymbols = Array.from(symbolSet.values());
+      setTokenColors(tokenColorMap);
+    })();
+  }, [lendingPairs, setTokenColors, uniqueTokens]);
 
-      // Return early if there's nothing new to fetch
-      if (uniqueSymbols.length === 0 || uniqueSymbols.every((symbol) => tokenQuotes.has(symbol))) {
-        return;
-      }
-
-      // Query API for price data, returning early if request fails
+  useEffect(() => {
+    async function fetch() {
+      // fetch token quotes
       let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
       try {
-        quoteDataResponse = await axios.get(
-          `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols.join(',').toUpperCase()}`
-        );
+        quoteDataResponse = await axios.get(`${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols}`);
       } catch {
         return;
       }
       const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
-      if (!prResponse) return;
+      if (!prResponse) {
+        return;
+      }
+      const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
+        return {
+          token: getTokenBySymbol(activeChain.id, key),
+          price: value.price,
+        };
+      });
+      if (tokenQuotes.length === 0) {
+        setTokenQuotes(tokenQuoteData);
+      }
+    }
+    if (uniqueSymbols.length > 0 && tokenQuotes.length === 0) {
+      fetch();
+    }
+  }, [activeChain, tokenQuotes, uniqueSymbols, setTokenQuotes]);
 
-      // Convert response to the desired Map format
-      const symbolToPriceMap = new Map<TokenSymbol, Quote>();
-      Object.entries(prResponse).forEach(([k, v]) => symbolToPriceMap.set(k, v.price));
-
-      if (mounted) setTokenQuotes(symbolToPriceMap);
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [lendingPairs, tokenQuotes, setTokenQuotes]);
-
-  // MARK: Fetching token balances
   useEffect(() => {
     (async () => {
       if (!userAddress) return;
-      // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
-      // return value. Other usages should be updated similarly.
-      const { balancesMap: result } = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
-      setBalancesMap(result);
+      const results = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
+      setLendingPairBalances(results);
     })();
-  }, [activeChain.id, lendingPairs, provider, setBalancesMap, userAddress]);
+  }, [activeChain.id, lendingPairs, provider, setLendingPairBalances, userAddress]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
     (async () => {
       if (userAddress === undefined || availablePools.size === 0) return;
+      const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(activeChain.id, provider, userAddress);
 
       const chainId = (await provider.getNetwork()).chainId;
-      const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(chainId, provider, userAddress);
       const borrowerDatas = (
         await fetchBorrowerDatas(
           chainId,
@@ -203,17 +201,91 @@ export default function MarketsPage() {
 
       setBorrowers(borrowerDatas);
     })();
-  }, [userAddress, availablePools, provider, blockNumber, setBorrowers]);
+  }, [activeChain.id, availablePools, provider, userAddress, blockNumber, setBorrowers]);
+
+  const combinedBalances: TokenBalance[] = useMemo(() => {
+    if (tokenQuotes.length === 0) {
+      return [];
+    }
+    let combined = lendingPairs.flatMap((pair, i) => {
+      const token0Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token0));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token1));
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
+      const pairName = `${pair.token0.symbol}-${pair.token1.symbol}`;
+      return [
+        {
+          token: pair.token0,
+          balance: lendingPairBalances?.[i]?.token0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+        },
+        {
+          token: pair.token1,
+          balance: lendingPairBalances?.[i]?.token1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
+          apy: 0,
+          isKitty: false,
+          pairName,
+        },
+        {
+          token: pair.kitty0,
+          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
+          apy: pair.kitty0Info.apy,
+          isKitty: true,
+          pairName,
+        },
+        {
+          token: pair.kitty1,
+          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
+          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
+          apy: pair.kitty1Info.apy,
+          isKitty: true,
+          pairName,
+        },
+      ];
+    });
+    let distinct: TokenBalance[] = [];
+    // We don't want to show duplicate tokens
+    combined.forEach((balance) => {
+      const existing = distinct.find((d) => d.token.equals(balance.token));
+      if (!existing) {
+        distinct.push(balance);
+      }
+    });
+    return distinct;
+  }, [lendingPairBalances, lendingPairs, tokenQuotes]);
+
+  const tokenBalances: TokenBalance[] = useMemo(() => {
+    return Array.from(new Set(combinedBalances.filter((balance) => !balance.isKitty)).values());
+  }, [combinedBalances]);
 
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
-      const token0Balance = balancesMap.get(pair.token0.address)?.value || 0;
-      const token1Balance = balancesMap.get(pair.token1.address)?.value || 0;
-      const kitty0Balance = balancesMap.get(pair.kitty0.address)?.value || 0;
-      const kitty1Balance = balancesMap.get(pair.kitty1.address)?.value || 0;
+      const token0Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token0));
+      const token1Quote = tokenQuotes.find((quote) => quote.token.equals(pair.token1));
+      const token0Price = token0Quote?.price || 0;
+      const token1Price = token1Quote?.price || 0;
+      const token0Balance = combinedBalances.find((balance) => balance.token.equals(pair.token0)) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const token1Balance = combinedBalances.find((balance) => balance.token.equals(pair.token1)) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const kitty0Balance = combinedBalances.find((balance) => balance.token.equals(pair.kitty0)) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
+      const kitty1Balance = combinedBalances.find((balance) => balance.token.equals(pair.kitty1)) || {
+        balance: 0,
+        balanceUSD: 0,
+      };
       rows.push({
         asset: pair.token0,
         kitty: pair.kitty0,
@@ -222,10 +294,10 @@ export default function MarketsPage() {
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.inventory,
         totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
-        suppliedBalance: kitty0Balance,
-        suppliedBalanceUsd: kitty0Balance * token0Price,
-        suppliableBalance: token0Balance,
-        suppliableBalanceUsd: token0Balance * token0Price,
+        suppliedBalance: kitty0Balance.balance,
+        suppliedBalanceUsd: kitty0Balance.balanceUSD,
+        suppliableBalance: token0Balance.balance,
+        suppliableBalanceUsd: token0Balance.balanceUSD,
         isOptimized: true,
       });
       rows.push({
@@ -236,30 +308,30 @@ export default function MarketsPage() {
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.inventory,
         totalSupplyUsd: pair.kitty1Info.inventory * token1Price,
-        suppliedBalance: kitty1Balance,
-        suppliedBalanceUsd: kitty1Balance * token1Price,
-        suppliableBalance: token1Balance,
-        suppliableBalanceUsd: token1Balance * token1Price,
+        suppliedBalance: kitty1Balance.balance,
+        suppliedBalanceUsd: kitty1Balance.balanceUSD,
+        suppliableBalance: token1Balance.balance,
+        suppliableBalanceUsd: token1Balance.balanceUSD,
         isOptimized: true,
       });
     });
     return rows;
-  }, [balancesMap, lendingPairs, tokenQuotes]);
+  }, [combinedBalances, lendingPairs, tokenQuotes]);
 
   const collateralEntries = useMemo(() => {
     const entries: CollateralEntry[] = [];
-    uniqueTokens.forEach((token) => {
-      const balance = balancesMap.get(token.address)?.value || 0;
-      if (balance > 0) {
+    tokenBalances.forEach((tokenBalance) => {
+      if (tokenBalance.balance !== 0) {
+        const matchingPairs = filterLendingPairsByTokens(lendingPairs, [tokenBalance.token]);
         entries.push({
-          asset: token,
-          balance,
-          matchingPairs: filterLendingPairsByTokens(lendingPairs, [token]),
+          asset: tokenBalance.token,
+          balance: tokenBalance.balance,
+          matchingPairs: matchingPairs,
         });
       }
     });
     return entries;
-  }, [uniqueTokens, balancesMap, lendingPairs]);
+  }, [lendingPairs, tokenBalances]);
 
   const borrowEntries = useMemo(() => {
     const borrowable = lendingPairs.reduce((acc: BorrowEntry[], lendingPair) => {
