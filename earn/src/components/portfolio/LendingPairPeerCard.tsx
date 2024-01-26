@@ -214,7 +214,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
         </CardBody>
       </Container>
       <PlaceAboveContainer>
-        <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} small={true} />
+        <Dropdown options={options} selectedOption={selectedOption} onSelect={setSelectedOption} size={'M'} />
       </PlaceAboveContainer>
     </>
   );

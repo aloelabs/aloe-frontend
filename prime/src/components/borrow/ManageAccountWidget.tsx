@@ -321,7 +321,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
             Manage Account
           </Display>
           <Text size='S' weight='medium'>
-            Get started by clicking "Add Action" and transferring some funds as margin.
+            Get started by clicking "Add Action" and add some collateral.
           </Text>
         </ActionCardWrapper>
         <ActionsList>

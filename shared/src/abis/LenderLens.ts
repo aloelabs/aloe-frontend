@@ -1,75 +1,50 @@
 export const lenderLensAbi = [
   {
+    type: 'function',
+    name: 'isMaxRedeemDynamic',
     inputs: [
       {
-        internalType: 'contract Lender',
         name: 'lender',
         type: 'address',
+        internalType: 'contract Lender',
       },
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
+      { name: 'owner', type: 'address', internalType: 'address' },
     ],
-    name: 'isMaxRedeemDynamic',
-    outputs: [
-      {
-        internalType: 'bool',
-        name: '',
-        type: 'bool',
-      },
-    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'readBasics',
     inputs: [
       {
-        internalType: 'contract Lender',
         name: 'lender',
         type: 'address',
+        internalType: 'contract Lender',
       },
     ],
-    name: 'readBasics',
     outputs: [
       {
-        internalType: 'contract ERC20',
         name: 'asset',
         type: 'address',
+        internalType: 'contract ERC20',
       },
       {
-        internalType: 'uint256',
         name: 'interestRate',
         type: 'uint256',
-      },
-      {
         internalType: 'uint256',
-        name: 'utilization',
-        type: 'uint256',
       },
+      { name: 'utilization', type: 'uint256', internalType: 'uint256' },
+      { name: 'inventory', type: 'uint256', internalType: 'uint256' },
       {
-        internalType: 'uint256',
-        name: 'inventory',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
         name: 'totalBorrows',
         type: 'uint256',
-      },
-      {
         internalType: 'uint256',
-        name: 'totalSupply',
-        type: 'uint256',
       },
-      {
-        internalType: 'uint8',
-        name: 'reserveFactor',
-        type: 'uint8',
-      },
+      { name: 'totalSupply', type: 'uint256', internalType: 'uint256' },
+      { name: 'reserveFactor', type: 'uint8', internalType: 'uint8' },
+      { name: 'rewardsRate', type: 'uint64', internalType: 'uint64' },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
 ] as const;

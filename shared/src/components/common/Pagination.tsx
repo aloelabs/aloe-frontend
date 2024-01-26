@@ -141,7 +141,7 @@ export default function Pagination(props: PaginationProps) {
               onItemsPerPageChange(parseInt(updatedOption.value) as ItemsPerPage);
             }}
             placeAbove={true}
-            small={true}
+            size={'M'}
           />
         )}
         {!hidePageRange && (

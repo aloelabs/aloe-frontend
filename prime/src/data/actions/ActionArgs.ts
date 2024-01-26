@@ -11,10 +11,8 @@ export function getTransferInActionArgs(token: Token, amount: GN): string {
   return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, amount.toBigNumber()]);
 }
 
-export function getTransferOutActionArgs(token: Token, amount: GN): string {
-  const address = token.address;
-
-  return ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [address, amount.toBigNumber()]);
+export function getTransferOutActionArgs(amount0: GN, amount1: GN): string {
+  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [amount0.toBigNumber(), amount1.toBigNumber()]);
 }
 
 export function getBorrowActionArgs(token0: Token, amount0: GN, token1: Token, amount1: GN): string {

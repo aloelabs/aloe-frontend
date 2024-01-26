@@ -35,13 +35,14 @@ const HealthBarDial = styled.div.attrs((props: { healthPercent: number }) => pro
 
 export type HealthBarProps = {
   health: number;
+  minimal?: boolean;
 };
 
 // NOTE: This component's text is smaller than the version on prime.
 // This is because of where it is used in the UI. If this needs to be
 // used in other places, with different needs, we should make it more flexible.
 export default function HealthBar(props: HealthBarProps) {
-  const { health } = props;
+  const { health, minimal } = props;
   // Bound health between MIN_HEALTH and MAX_HEALTH
   const healthPercent =
     ((Math.max(Math.min(health, MAX_HEALTH), MIN_HEALTH) - MIN_HEALTH) / (MAX_HEALTH - MIN_HEALTH)) * 100;
@@ -49,15 +50,17 @@ export default function HealthBar(props: HealthBarProps) {
   return (
     <div className='w-full flex flex-col align-middle'>
       <div className='flex gap-2 items-center mb-4'>
-        <Tooltip
-          buttonSize='S'
-          content={`Health is a measure of how close your account is to being liquidated.
+        {!minimal && (
+          <Tooltip
+            buttonSize='S'
+            content={`Health is a measure of how close your account is to being liquidated.
               It is calculated by dividing your account's assets by its liabilities.
               If your health is at or below 1.0, your account may be liquidated.`}
-          position='top-left'
-        />
+            position='top-left'
+          />
+        )}
         <Text size='S' weight='medium'>
-          Account Health:
+          {minimal ? 'Health:' : 'Account Health:'}
         </Text>
         <Display size='XS' weight='medium' className='text-center'>
           {healthLabel}

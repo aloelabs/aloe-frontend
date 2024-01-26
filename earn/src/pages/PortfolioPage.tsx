@@ -33,12 +33,8 @@ import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
-import {
-  getAvailableLendingPairs,
-  getLendingPairBalances,
-  LendingPair,
-  LendingPairBalances,
-} from '../data/LendingPair';
+import { useLendingPairs } from '../data/hooks/UseLendingPairs';
+import { getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -112,13 +108,11 @@ export default function PortfolioPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [tokenColors, setTokenColors] = useSafeState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
   );
   const [tokenPriceData, setTokenPriceData] = useSafeState<TokenPriceData[]>([]);
-  const [isLoading, setIsLoading] = useSafeState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useSafeState(true);
   const [errorLoadingPrices, setErrorLoadingPrices] = useSafeState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
@@ -129,14 +123,14 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
+  const { isLoading, lendingPairs } = useLendingPairs();
   const provider = useProvider({ chainId: activeChain.id });
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
 
   useEffect(() => {
-    setIsLoading(true);
     setIsLoadingPrices(true);
-  }, [activeChain.id, setIsLoading, setIsLoadingPrices]);
+  }, [activeChain.id, setIsLoadingPrices]);
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -211,18 +205,14 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
-      setLendingPairs(results);
-      setIsLoading(false);
-    })();
-  }, [provider, setIsLoading, setLendingPairs]);
-
-  useEffect(() => {
-    (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
       if (!address || isLoading) return;
-      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      const { lendingPairBalances: results } = await getLendingPairBalances(
+        lendingPairs,
+        address,
+        provider,
+        activeChain.id
+      );
       setLendingPairBalances(results);
     })();
   }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
@@ -278,7 +268,7 @@ export default function PortfolioPage() {
           token: pair.kitty0,
           balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
-          apy: pair.kitty0Info.apy,
+          apy: pair.kitty0Info.lendAPY,
           isKitty: true,
           pairName,
           otherToken: pair.token1,
@@ -287,7 +277,7 @@ export default function PortfolioPage() {
           token: pair.kitty1,
           balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
-          apy: pair.kitty1Info.apy,
+          apy: pair.kitty1Info.lendAPY,
           isKitty: true,
           pairName,
           otherToken: pair.token0,
@@ -429,7 +419,7 @@ export default function PortfolioPage() {
         <div className='flex justify-center items-center gap-1 w-full mt-10'>
           <InfoIcon width={16} height={16} />
           <Text size='S' color='rgba(130, 160, 182, 1)'>
-            Hint: Click the space bar at any time to access search and shortcuts.
+            Hint: Click the space bar at any time to search for an asset.
           </Text>
         </div>
       </Container>

@@ -46,12 +46,15 @@ export function AloeWithdrawActionCard(prop: ActionCardProps) {
   const callbackWithFullResult = (token: TokenType, value: string) => {
     const formatted = formatNumberInput(value);
     if (formatted == null) return;
+
     const tokenDecimals = token === TokenType.ASSET0 ? token0.decimals : token1.decimals;
     const parsedValue = GN.fromDecimalString(value || '0', tokenDecimals);
+    const amount0 = token === TokenType.ASSET0 ? parsedValue : GN.zero(token0.decimals);
+    const amount1 = token === TokenType.ASSET1 ? parsedValue : GN.zero(token1.decimals);
     onChange(
       {
         actionId: ActionID.TRANSFER_OUT,
-        actionArgs: token && value !== '' ? getTransferOutActionArgs(tokenMap.get(token)!, parsedValue) : undefined,
+        actionArgs: token && value !== '' ? getTransferOutActionArgs(amount0, amount1) : undefined,
         operator(operand) {
           return transferOutOperator(operand, token, parsedValue);
         },

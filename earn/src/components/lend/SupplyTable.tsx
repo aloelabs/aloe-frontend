@@ -15,6 +15,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import { ApyWithTooltip } from '../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
 import SupplyModal from './modal/SupplyModal';
 import WithdrawModal from './modal/WithdrawModal';
@@ -92,6 +93,9 @@ export type SupplyTableRow = {
   kitty: Kitty;
   collateralAssets: Token[];
   apy: number;
+  rewardsRate: number;
+  totalSupply: number;
+  totalSupplyUsd: number;
   suppliedBalance: number;
   suppliedBalanceUsd: number;
   suppliableBalance: number;
@@ -111,7 +115,7 @@ export default function SupplyTable(props: SupplyTableProps) {
   const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
   const { sortedRows, requestSort, sortConfig } = useSortableData(rows, {
     primaryKey: 'suppliedBalanceUsd',
-    secondaryKey: 'suppliableBalanceUsd',
+    secondaryKey: 'totalSupplyUsd',
     direction: 'descending',
   });
 
@@ -143,8 +147,8 @@ export default function SupplyTable(props: SupplyTableProps) {
                   Collateral Assets
                 </Text>
               </th>
-              <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('apy')}>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <SortButton onClick={() => requestSort('apy', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'apy' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
@@ -154,8 +158,19 @@ export default function SupplyTable(props: SupplyTableProps) {
                   </Text>
                 </SortButton>
               </th>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <SortButton onClick={() => requestSort('totalSupplyUsd', sortConfig?.primaryKey)}>
+                  <SortArrow
+                    isSorted={sortConfig?.primaryKey === 'totalSupplyUsd' ?? false}
+                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                  />
+                  <Text size='M' weight='bold'>
+                    Total Supply
+                  </Text>
+                </SortButton>
+              </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('suppliableBalanceUsd', 'suppliedBalanceUsd')}>
+                <SortButton onClick={() => requestSort('suppliableBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'suppliableBalanceUsd' || false}
                     isSortedDesc={sortConfig?.direction === 'descending' || false}
@@ -166,7 +181,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('suppliedBalanceUsd', 'suppliableBalanceUsd')}>
+                <SortButton onClick={() => requestSort('suppliedBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'suppliedBalanceUsd' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
@@ -197,15 +212,25 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <TokenIconsWithTooltip tokens={row.collateralAssets} />
                   </div>
                 </td>
+                <td className='px-4 py-2 text-start whitespace-nowrap'>
+                  <ApyWithTooltip
+                    apy={row.apy}
+                    addOn={row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
+                  />
+                </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
-                  <Display size='XS'>{row.apy.toFixed(2)}%</Display>
+                  <div className='text-start'>
+                    <Display size='XS'>
+                      {formatTokenAmount(row.totalSupply)}&nbsp;&nbsp;{row.asset.symbol}
+                    </Display>
+                  </div>
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
                     <div className='text-end'>
                       <Display size='XS'>${row.suppliableBalanceUsd.toFixed(2)}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                        {formatTokenAmount(row.suppliableBalance)} {row.asset.symbol}
+                        {formatTokenAmount(row.suppliableBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
                     </div>
                     <FilledGreyButton
@@ -224,7 +249,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <div className='text-end'>
                       <Display size='XS'>${row.suppliedBalanceUsd.toFixed(2)}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                        {formatTokenAmount(row.suppliedBalance)} {row.asset.symbol}
+                        {formatTokenAmount(row.suppliedBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
                     </div>
                     <FilledGreyButton
@@ -251,7 +276,7 @@ export default function SupplyTable(props: SupplyTableProps) {
           </tbody>
           <tfoot>
             <tr>
-              <td className='px-4 py-2' colSpan={5}>
+              <td className='px-4 py-2' colSpan={6}>
                 <Pagination
                   currentPage={currentPage}
                   itemsPerPage={10}

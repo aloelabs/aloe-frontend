@@ -9,7 +9,6 @@ import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
 import Pagination, { ItemsPerPage } from 'shared/lib/components/common/Pagination';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -28,9 +27,9 @@ import { LendCardPlaceholder } from '../components/lend/LendPairCardPlaceholder'
 import LendPieChartWidget from '../components/lend/LendPieChartWidget';
 import { RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
+import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import {
   filterLendingPairsByTokens,
-  getAvailableLendingPairs,
   getLendingPairBalances,
   LendingPair,
   LendingPairBalances,
@@ -85,14 +84,13 @@ export default function LendPage() {
   const { activeChain } = useContext(ChainContext);
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[]>([]);
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useSafeState<LendingPairBalances[]>([]);
-  const [isLoading, setIsLoading] = useSafeState<boolean>(true);
   const [filterOptions, setFilterOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<MultiDropdownOption<Token>[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(MIN_PAGE_NUMBER);
   const [itemsPerPage, setItemsPerPage] = useState<ItemsPerPage>(10);
 
+  const { isLoading, lendingPairs } = useLendingPairs();
   // MARK: wagmi hooks
   const account = useAccount();
   const provider = useProvider({ chainId: activeChain?.id });
@@ -140,15 +138,6 @@ export default function LendPage() {
   }, [activeChain, setTokenQuotes, tokenQuotes, tokenQuotes.length, uniqueSymbols]);
 
   useEffect(() => {
-    (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await getAvailableLendingPairs(chainId, provider);
-      setLendingPairs(results);
-      setIsLoading(false);
-    })();
-  }, [provider, address, setLendingPairs, setIsLoading]);
-
-  useEffect(() => {
     let uniqueTokens = new Set<Token>();
     lendingPairs.forEach((pair) => {
       uniqueTokens.add(pair.token0);
@@ -168,7 +157,12 @@ export default function LendPage() {
   useEffect(() => {
     (async () => {
       if (!address) return;
-      const results = await getLendingPairBalances(lendingPairs, address, provider, activeChain.id);
+      const { lendingPairBalances: results } = await getLendingPairBalances(
+        lendingPairs,
+        address,
+        provider,
+        activeChain.id
+      );
       setLendingPairBalances(results);
     })();
   }, [activeChain.id, address, lendingPairs, provider, setLendingPairBalances]);
@@ -208,7 +202,7 @@ export default function LendPage() {
           token: pair.kitty0,
           balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
-          apy: pair.kitty0Info.apy,
+          apy: pair.kitty0Info.lendAPY,
           isKitty: true,
           pairName,
         },
@@ -216,7 +210,7 @@ export default function LendPage() {
           token: pair.kitty1,
           balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
-          apy: pair.kitty1Info.apy,
+          apy: pair.kitty1Info.lendAPY,
           isKitty: true,
           pairName,
         },

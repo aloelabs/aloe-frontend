@@ -2,7 +2,6 @@ import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
-import LaunchBanner from 'shared/lib/components/banner/LaunchBanner';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -13,16 +12,19 @@ import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { useAccount, useNetwork } from 'wagmi';
+import { useAccount, useNetwork, useProvider } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
+import { LendingPairsContext } from './data/hooks/UseLendingPairs';
+import { getAvailableLendingPairs, LendingPair } from './data/LendingPair';
 import ImportBoostPage from './pages/boost/ImportBoostPage';
 import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
@@ -131,7 +133,6 @@ function AppBodyWrapper() {
     <AppBody>
       <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
       <main className='flex-grow'>
-        <LaunchBanner />
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
@@ -171,8 +172,12 @@ function App() {
   const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
-  const value = { activeChain, setActiveChain };
+  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
+
   const { address: userAddress } = useAccount();
+  const provider = useProvider({ chainId: activeChain.id });
+
+  const value = { activeChain, setActiveChain };
   const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
   const BLOCK_QUERY = gql`
   {
@@ -221,6 +226,20 @@ function App() {
     }
   });
 
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      const chainId = (await provider.getNetwork()).chainId;
+      const res = await getAvailableLendingPairs(chainId, provider);
+      if (mounted) setLendingPairs(res);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [provider, setLendingPairs]);
+
   return (
     <>
       <Suspense fallback={null}>
@@ -228,8 +247,10 @@ function App() {
           <AccountRiskContext.Provider value={accountRisk}>
             <GeoFencingContext.Provider value={geoFencingResponse}>
               <ChainContext.Provider value={value}>
-                <ScrollToTop />
-                <AppBodyWrapper />
+                <LendingPairsContext.Provider value={lendingPairs}>
+                  <ScrollToTop />
+                  <AppBodyWrapper />
+                </LendingPairsContext.Provider>
               </ChainContext.Provider>
             </GeoFencingContext.Provider>
           </AccountRiskContext.Provider>

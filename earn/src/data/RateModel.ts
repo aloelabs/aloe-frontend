@@ -34,3 +34,8 @@ export class RateModel {
 export function yieldPerSecondToAPR(yieldPerSecond: JSBI): number {
   return (JSBI.toNumber(yieldPerSecond) / 1e12 - 1.0) * SECONDS_PER_YEAR;
 }
+
+export function borrowAPRToLendAPY(apr: number, utilization: number, reserveFactor: number) {
+  const lendAPR = utilization * (1 - 1 / reserveFactor) * apr;
+  return (1 + lendAPR / SECONDS_PER_YEAR) ** SECONDS_PER_YEAR - 1.0;
+}

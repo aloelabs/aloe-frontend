@@ -116,7 +116,7 @@ function AppBodyWrapper() {
     }
   }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
 
-  const isReady = false;
+  const isReady = true;
 
   if (isAccountRiskLoading) {
     return null;
