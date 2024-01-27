@@ -222,7 +222,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, key),
+          token: getTokenBySymbol(activeChain.id, key)!,
           price: value.price,
         };
       });

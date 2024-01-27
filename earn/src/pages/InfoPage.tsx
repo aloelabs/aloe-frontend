@@ -1,4 +1,4 @@
-import { Fragment, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
@@ -18,13 +18,11 @@ import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { getToken } from 'shared/lib/data/TokenData';
-import styled from 'styled-components';
 import { Address, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import LenderCard from '../components/info/LenderCard';
-import MarketCard from '../components/info/MarketCard';
+import StatsTable from '../components/info/StatsTable';
 import { computeLTV } from '../data/BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT, TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
@@ -55,17 +53,6 @@ type LenderInfo = {
   decimals: number;
   totalSupply: GN;
 };
-
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: max-content max-content max-content;
-  gap: 0px;
-  row-gap: 32px;
-  width: 100%;
-  justify-content: safe center;
-  margin-left: auto;
-  overflow: auto;
-`;
 
 export default function InfoPage() {
   const { activeChain } = useContext(ChainContext);
@@ -347,43 +334,16 @@ export default function InfoPage() {
 
   return (
     <AppPage>
-      <InfoGrid>
-        {Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => {
-          return (
-            <Fragment key={addr.concat(activeChain.id.toFixed(0))}>
-              <MarketCard
-                nSigma={info.nSigma}
-                ltv={info.ltv}
-                ante={info.ante}
-                pausedUntilTime={info.pausedUntilTime}
-                manipulationMetric={info.manipulationMetric}
-                manipulationThreshold={info.manipulationThreshold}
-                lenderSymbols={info.lenderSymbols}
-                poolAddress={addr}
-                feeTier={info.feeTier}
-                lastUpdatedTimestamp={info.lastUpdatedTimestamp}
-                setPendingTxn={setPendingTxn}
-              />
-              <LenderCard
-                address={info.lenders[0]}
-                symbol={info.lenderSymbols[0]}
-                reserveFactor={info.lenderReserveFactors[0]}
-                totalSupply={info.lenderTotalSupplies[0]}
-                rateModel={info.lenderRateModels[0]}
-                decimals={info.lenderDecimals[0]}
-              />
-              <LenderCard
-                address={info.lenders[1]}
-                symbol={info.lenderSymbols[1]}
-                reserveFactor={info.lenderReserveFactors[1]}
-                totalSupply={info.lenderTotalSupplies[1]}
-                rateModel={info.lenderRateModels[1]}
-                decimals={info.lenderDecimals[1]}
-              />
-            </Fragment>
-          );
-        })}
-      </InfoGrid>
+      <StatsTable
+        rows={Array.from(poolInfo?.entries() ?? []).map(([addr, info]) => ({
+          ...info,
+          poolAddress: addr,
+          reserveFactors: info.lenderReserveFactors,
+          rateModels: info.lenderRateModels,
+          lenderAddresses: info.lenders,
+          setPendingTxn,
+        }))}
+      />
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
         txnHash={pendingTxn?.hash}

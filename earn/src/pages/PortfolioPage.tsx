@@ -175,13 +175,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, symbol),
+          token: getTokenBySymbol(activeChain.id, symbol)!,
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, symbol),
+          token: getTokenBySymbol(activeChain.id, symbol)!,
           priceEntries: data.prices,
         };
       });
