@@ -12,6 +12,7 @@ import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
+import InfoTab from '../components/info/InfoTab';
 import BorrowingWidget from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
@@ -62,6 +63,7 @@ export type TokenBalance = {
 enum HeaderOptions {
   Supply,
   Borrow,
+  Monitor,
 }
 
 type TokenSymbol = string;
@@ -246,6 +248,39 @@ export default function MarketsPage() {
     return rows;
   }, [balancesMap, lendingPairs, tokenQuotes]);
 
+  let tabContent: JSX.Element;
+
+  switch (selectedHeaderOption) {
+    default:
+    case HeaderOptions.Supply:
+      tabContent = <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />;
+      break;
+    case HeaderOptions.Borrow:
+      tabContent = (
+        <BorrowingWidget
+          borrowers={borrowers}
+          lendingPairs={lendingPairs}
+          uniqueTokens={uniqueTokens}
+          tokenBalances={balancesMap}
+          tokenQuotes={tokenQuotes}
+          tokenColors={tokenColors}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
+    case HeaderOptions.Monitor:
+      tabContent = (
+        <InfoTab
+          chainId={activeChain.id}
+          provider={provider}
+          blockNumber={blockNumber}
+          lendingPairs={lendingPairs}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
+  }
+
   return (
     <AppPage>
       <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
@@ -270,24 +305,18 @@ export default function MarketsPage() {
             >
               Borrow
             </HeaderSegmentedControlOption>
+            <HeaderSegmentedControlOption
+              isActive={selectedHeaderOption === HeaderOptions.Monitor}
+              onClick={() => setSelectedHeaderOption(HeaderOptions.Monitor)}
+              role='tab'
+              aria-selected={selectedHeaderOption === HeaderOptions.Monitor}
+            >
+              Monitor
+            </HeaderSegmentedControlOption>
           </div>
           <HeaderDividingLine />
         </div>
-        {selectedHeaderOption === HeaderOptions.Supply ? (
-          <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
-        ) : (
-          <div className='flex flex-col gap-6'>
-            <BorrowingWidget
-              borrowers={borrowers}
-              lendingPairs={lendingPairs}
-              uniqueTokens={uniqueTokens}
-              tokenBalances={balancesMap}
-              tokenQuotes={tokenQuotes}
-              tokenColors={tokenColors}
-              setPendingTxn={setPendingTxn}
-            />
-          </div>
-        )}
+        {tabContent}
       </div>
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
