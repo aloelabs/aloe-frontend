@@ -29,17 +29,31 @@ import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
 import { borrowAPRToLendAPY } from './RateModel';
 
-export interface KittyInfo {
-  borrowAPR: number;
-  lendAPY: number;
-  // The amount of underlying owed to all Kitty token holders
-  // (both the amount currently sitting in contract, and the amount that has been lent out)
-  inventory: number;
-  // The total number of outstanding Kitty tokens
-  totalSupply: number;
-  // What percentage of inventory that has been lent out to borrowers
-  utilization: number;
+class KittyInfo {
+  public readonly lendAPY: number;
+
+  constructor(
+    public readonly inventory: number,
+    public readonly totalSupply: number,
+    public readonly borrowAPR: number,
+    public readonly utilization: number,
+    public readonly reserveFactor: number
+  ) {
+    this.lendAPY = borrowAPRToLendAPY(borrowAPR, utilization, reserveFactor);
+  }
 }
+
+type FactoryData = {
+  ante: GN;
+  nSigma: number;
+  manipulationThresholdDivisor: number;
+  pausedUntilTime: number;
+};
+
+type OracleData = {
+  iv: GN;
+  manipulationMetric: number;
+};
 
 export class LendingPair {
   constructor(
@@ -51,15 +65,26 @@ export class LendingPair {
     public kitty1Info: KittyInfo,
     public uniswapPool: Address,
     public uniswapFeeTier: FeeTier,
-    public iv: number,
-    public nSigma: number,
-    public ltv: number,
     public rewardsRate0: number,
-    public rewardsRate1: number
+    public rewardsRate1: number,
+    public factoryData: FactoryData,
+    public oracleData: OracleData
   ) {}
 
   equals(other: LendingPair) {
     return other.kitty0.address === this.kitty0.address && other.kitty1.address === this.kitty1.address;
+  }
+
+  get iv() {
+    return this.oracleData.iv.toNumber();
+  }
+
+  get ltv() {
+    return computeLTV(this.iv, this.factoryData.nSigma);
+  }
+
+  get manipulationThreshold() {
+    return -Math.log(this.ltv) / Math.log(1.0001) / this.factoryData.manipulationThresholdDivisor;
   }
 }
 
@@ -237,17 +262,17 @@ export async function getAvailableLendingPairs(
     const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
 
-    const reserveFactor0 = basics0[6];
-    const reserveFactor1 = basics1[6];
+    const oracleData = {
+      iv: GN.fromBigNumber(oracleResult[2], 12),
+      manipulationMetric: oracleResult[0].toNumber(),
+    };
 
-    const rewardsRate0 = toImpreciseNumber(basics0[7], 18);
-    const rewardsRate1 = toImpreciseNumber(basics1[7], 18);
-
-    const iv = ethers.BigNumber.from(oracleResult[2]).div(1e6).toNumber() / 1e6;
-
-    const nSigma = (factoryResult[1] as number) / 10;
-
-    const ltv = computeLTV(iv, nSigma);
+    const factoryData = {
+      ante: GN.fromBigNumber(factoryResult[0], 18),
+      nSigma: (factoryResult[1] as number) / 10,
+      manipulationThresholdDivisor: factoryResult[2],
+      pausedUntilTime: factoryResult[3],
+    };
 
     lendingPairs.push(
       new LendingPair(
@@ -255,27 +280,14 @@ export async function getAvailableLendingPairs(
         token1,
         kitty0,
         kitty1,
-        {
-          borrowAPR: borrowAPR0 * 100,
-          lendAPY: borrowAPRToLendAPY(borrowAPR0, utilization0, reserveFactor0) * 100,
-          inventory: inventory0,
-          totalSupply: totalSupply0,
-          utilization: utilization0 * 100.0, // Percentage
-        },
-        {
-          borrowAPR: borrowAPR1 * 100,
-          lendAPY: borrowAPRToLendAPY(borrowAPR1, utilization1, reserveFactor1) * 100,
-          inventory: inventory1,
-          totalSupply: totalSupply1,
-          utilization: utilization1 * 100.0, // Percentage
-        },
+        new KittyInfo(inventory0, totalSupply0, borrowAPR0, utilization0, basics0[6]),
+        new KittyInfo(inventory1, totalSupply1, borrowAPR1, utilization1, basics1[6]),
         uniswapPool as Address,
         NumericFeeTierToEnum(feeTier[0]),
-        iv * Math.sqrt(365),
-        nSigma,
-        ltv,
-        rewardsRate0,
-        rewardsRate1
+        toImpreciseNumber(basics0[7], 18), // rewardsRate0
+        toImpreciseNumber(basics1[7], 18), // rewardsRate1
+        factoryData,
+        oracleData
       )
     );
   });

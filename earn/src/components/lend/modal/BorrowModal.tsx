@@ -153,7 +153,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       return null;
     }
     const sqrtPriceX96 = GN.fromBigNumber(consultData?.[1] ?? BigNumber.from('0'), 96, 2);
-    const nSigma = selectedLendingPair?.nSigma ?? 0;
+    const nSigma = selectedLendingPair?.factoryData.nSigma ?? 0;
     const iv = consultData[2].div(1e6).toNumber() / 1e6;
     const ltv = computeLTV(iv, nSigma);
 
@@ -169,7 +169,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     consultData,
     selectedBorrow,
     selectedCollateral.address,
-    selectedLendingPair?.nSigma,
+    selectedLendingPair?.factoryData.nSigma,
     selectedLendingPair?.token0.address,
   ]);
 

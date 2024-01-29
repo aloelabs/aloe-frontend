@@ -6,7 +6,6 @@ import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
 import OpenIcon from 'shared/lib/assets/svg/OpenNoPad';
-import UnknownTokenIcon from 'shared/lib/assets/svg/tokens/unknown_token.svg';
 import UpArrow from 'shared/lib/assets/svg/UpArrow';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
@@ -15,15 +14,16 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
-import { FeeTier, PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { PrintFeeTier } from 'shared/lib/data/FeeTier';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
-import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, useContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
+import { LendingPair } from '../../data/LendingPair';
 
 const PAGE_SIZE = 20;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -119,75 +119,21 @@ function getManipulationColor(manipulationMetric: number, manipulationThreshold:
 }
 
 export type StatsTableRowProps = {
-  nSigma: number;
-  ltv: number;
-  ante: GN;
-  pausedUntilTime: number;
-  manipulationMetric: number;
-  manipulationThreshold: number;
-  lenderSymbols: [string, string];
-  lenderAddresses: [Address, Address];
-  poolAddress: string;
-  feeTier: FeeTier;
+  lendingPair: LendingPair;
   lastUpdatedTimestamp?: number;
-  reserveFactors: number[];
-  rateModels: Address[];
   setPendingTxn: (data: SendTransactionResult) => void;
 };
 
 function StatsTableRow(props: StatsTableRowProps) {
-  const {
-    nSigma,
-    ltv,
-    ante,
-    pausedUntilTime,
-    manipulationMetric,
-    manipulationThreshold,
-    lenderSymbols,
-    poolAddress,
-    feeTier,
-    lastUpdatedTimestamp,
-    reserveFactors,
-    lenderAddresses,
-    setPendingTxn,
-  } = props;
+  const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-
-  const uniswapLink = `${getEtherscanUrlForChain(activeChain)}/address/${poolAddress}`;
-  const token0Symbol = lenderSymbols[0].slice(0, lenderSymbols[0].length - 1);
-  const token1Symbol = lenderSymbols[1].slice(0, lenderSymbols[1].length - 1);
-
-  const manipulationColor = getManipulationColor(manipulationMetric, manipulationThreshold);
-  const manipulationInequality = manipulationMetric < manipulationThreshold ? '<' : '>';
-
-  const lastUpdated = lastUpdatedTimestamp
-    ? formatDistanceToNowStrict(new Date(lastUpdatedTimestamp * 1000), { addSuffix: true, roundingMethod: 'round' })
-    : 'Never';
-  const minutesSinceLastUpdate = lastUpdatedTimestamp ? (Date.now() / 1000 - lastUpdatedTimestamp) / 60 : 0;
-  const canUpdateLTV = minutesSinceLastUpdate > 240 || lastUpdatedTimestamp === undefined;
-
-  const isPaused = pausedUntilTime > Date.now() / 1000;
-  const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
-
-  const token0 = getTokenBySymbol(activeChain.id, token0Symbol) ?? {
-    name: 'Unknown Token',
-    symbol: token0Symbol,
-    logoURI: UnknownTokenIcon,
-  };
-  const token1 = getTokenBySymbol(activeChain.id, token1Symbol) ?? {
-    name: 'Unknown Token',
-    symbol: token1Symbol,
-    logoURI: UnknownTokenIcon,
-  };
-
-  const lenderLinks = lenderAddresses.map((addr) => `${getEtherscanUrlForChain(activeChain)}/address/${addr}`);
 
   const { writeAsync: pause } = useContractWrite({
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     abi: factoryAbi,
     functionName: 'pause',
     mode: 'recklesslyUnprepared',
-    args: [poolAddress as Address, Q32],
+    args: [pair.uniswapPool as Address, Q32],
     chainId: activeChain.id,
     onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
   });
@@ -197,41 +143,83 @@ function StatsTableRow(props: StatsTableRowProps) {
     abi: volatilityOracleAbi,
     functionName: 'update',
     mode: 'recklesslyUnprepared',
-    args: [poolAddress as Address, Q32],
+    args: [pair.uniswapPool as Address, Q32],
     chainId: activeChain.id,
     onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
   });
+
+  const uniswapLink = `${getEtherscanUrlForChain(activeChain)}/address/${pair.uniswapPool}`;
+
+  const manipulationMetric = pair.oracleData.manipulationMetric;
+  const manipulationThreshold = pair.manipulationThreshold;
+  const canBorrowingBeDisabled = manipulationMetric >= manipulationThreshold;
+  const manipulationColor = getManipulationColor(manipulationMetric, manipulationThreshold);
+  const manipulationInequality = manipulationMetric < manipulationThreshold ? '<' : '>';
+
+  let lastUpdatedText = '━━━━━━━━━━';
+  let canUpdateLTV: boolean | null = null;
+
+  if (lastUpdatedTimestamp === undefined) {
+    lastUpdatedText = '━━━━━━━━━━';
+    canUpdateLTV = null;
+  } else if (lastUpdatedTimestamp === -1) {
+    lastUpdatedText = 'Updated never';
+    canUpdateLTV = true;
+  } else if (lastUpdatedTimestamp === 0) {
+    lastUpdatedText = 'Missing update block';
+    canUpdateLTV = true;
+  } else {
+    lastUpdatedText = `Updated ${formatDistanceToNowStrict(new Date(lastUpdatedTimestamp * 1000), {
+      addSuffix: true,
+      roundingMethod: 'round',
+    })}`;
+    const minutesSinceLastUpdate = (Date.now() / 1000 - lastUpdatedTimestamp) / 60;
+    canUpdateLTV = minutesSinceLastUpdate > 240;
+  }
+
+  const pausedUntilTime = pair.factoryData.pausedUntilTime;
+  const isPaused = pausedUntilTime > Date.now() / 1000;
+
+  const lenderLinks = [pair.kitty0.address, pair.kitty1.address].map(
+    (addr) => `${getEtherscanUrlForChain(activeChain)}/address/${addr}`
+  );
+
+  const reserveFactorTexts = [pair.kitty0Info.reserveFactor, pair.kitty1Info.reserveFactor].map((rf) =>
+    roundPercentage(100 / rf, 2)
+  );
+  const reserveFactorText =
+    reserveFactorTexts[0] === reserveFactorTexts[1]
+      ? `${reserveFactorTexts[0]}%`
+      : `${reserveFactorTexts[0]}% / ${reserveFactorTexts[1]}%`;
 
   return (
     <HoverableRow>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex items-center gap-2'>
-          <TokenIcons tokens={[token0, token1]} links={lenderLinks} />
+          <TokenIcons tokens={[pair.token0, pair.token1]} links={lenderLinks} />
         </div>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex items-center gap-2'>
           <Text size='S'>
-            {token0Symbol}/{token1Symbol}
+            {pair.token0.symbol}/{pair.token1.symbol}
           </Text>
           <OpenIconLink href={uniswapLink} target='_blank' rel='noreferrer'>
             <OpenIcon width={12} height={12} />
           </OpenIconLink>
         </div>
         <Display size='XXS' color={SECONDARY_COLOR}>
-          {PrintFeeTier(feeTier)}
+          {PrintFeeTier(pair.uniswapFeeTier)}
         </Display>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
-        <Display size='XS'>{ante.toString(GNFormat.LOSSY_HUMAN)}&nbsp;&nbsp;ETH</Display>
+        <Display size='XS'>{pair.factoryData.ante.toString(GNFormat.LOSSY_HUMAN)}&nbsp;&nbsp;ETH</Display>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
-        <Display size='XS'>{nSigma}</Display>
+        <Display size='XS'>{pair.factoryData.nSigma}</Display>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
-        <Display size='XS'>
-          {reserveFactors[0]}% / {reserveFactors[1]}%
-        </Display>
+        <Display size='XS'>{reserveFactorText}</Display>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex gap-5 justify-between'>
@@ -263,9 +251,9 @@ function StatsTableRow(props: StatsTableRowProps) {
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex gap-5 justify-between'>
           <div>
-            <Display size='XS'>{(ltv * 100).toFixed(0)}%</Display>
+            <Display size='XS'>{(pair.ltv * 100).toFixed(0)}%</Display>
             <Display size='XXS' color={SECONDARY_COLOR}>
-              Updated {lastUpdated}
+              {lastUpdatedText}
             </Display>
           </div>
           {true && (
@@ -279,16 +267,21 @@ function StatsTableRow(props: StatsTableRowProps) {
   );
 }
 
-export type StatsTableProps = {
-  rows: StatsTableRowProps[];
-};
-
-export default function StatsTable(props: StatsTableProps) {
+export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
   const { rows } = props;
   const [currentPage, setCurrentPage] = useState(1);
-  const { sortedRows, requestSort, sortConfig } = useSortableData(rows, {
-    primaryKey: 'manipulationMetric',
-    secondaryKey: 'ltv',
+
+  // workaround to get sort data in the outermost scope
+  const sortableRows = useMemo(() => {
+    return rows.map((row) => ({
+      ...row,
+      sortA: row.lendingPair.oracleData.manipulationMetric,
+      sortB: row.lendingPair.ltv,
+    }));
+  }, [rows]);
+  const { sortedRows, requestSort, sortConfig } = useSortableData(sortableRows, {
+    primaryKey: 'sortA',
+    secondaryKey: 'sortB',
     direction: 'descending',
   });
 
@@ -332,23 +325,23 @@ export default function StatsTable(props: StatsTableProps) {
                 </Text>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('manipulationMetric')}>
+                <SortButton onClick={() => requestSort('sortA')}>
                   <Text size='M' weight='bold'>
                     Oracle Manipulation
                   </Text>
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'manipulationMetric' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'sortA' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
                   />
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <SortButton onClick={() => requestSort('ltv')}>
+                <SortButton onClick={() => requestSort('sortB')}>
                   <Text size='M' weight='bold'>
                     LTV
                   </Text>
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'ltv' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'sortB' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
                   />
                 </SortButton>
@@ -356,8 +349,8 @@ export default function StatsTable(props: StatsTableProps) {
             </tr>
           </TableHeader>
           <tbody>
-            {pages[currentPage - 1].map((row, index) => (
-              <StatsTableRow {...row} key={row.poolAddress} />
+            {pages[currentPage - 1].map((row) => (
+              <StatsTableRow {...row} key={row.lendingPair.uniswapPool} />
             ))}
           </tbody>
           <tfoot>
