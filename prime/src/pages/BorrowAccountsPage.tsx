@@ -228,6 +228,12 @@ export default function BorrowAccountsPage() {
     })
     .filter((opt) => opt !== null) as DropdownOption<string>[];
 
+  const loadingElement: JSX.Element = isAllowedToInteract ? (
+    <AltSpinner size='M' />
+  ) : (
+    <Display>Functionality unavailable in your jurisdiction</Display>
+  );
+
   return (
     <AppPage>
       <div className='flex gap-8 items-center mb-4'>
@@ -249,9 +255,7 @@ export default function BorrowAccountsPage() {
       </div>
       <div className='flex items-center justify-start flex-wrap gap-4'>
         {isLoadingMarginAccounts ? (
-          <div className='flex items-center justify-center w-full'>
-            <AltSpinner size='M' />
-          </div>
+          <div className='flex items-center justify-center w-full'>{loadingElement}</div>
         ) : (
           <ActiveMarginAccounts marginAccounts={marginAccounts} accountAddress={accountAddress} />
         )}
