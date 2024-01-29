@@ -26,6 +26,7 @@ import { Address } from 'wagmi';
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
+import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
 import { borrowAPRToLendAPY } from './RateModel';
 
 export interface KittyInfo {
@@ -78,32 +79,37 @@ export async function getAvailableLendingPairs(
   const multicall = new Multicall({
     ethersProvider: provider,
     multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
+    tryAggregate: true,
   });
+
+  // Fetch all the Aloe II markets
   let logs: ethers.providers.Log[] = [];
   try {
     logs = await provider.getLogs({
       fromBlock: 0,
       toBlock: 'latest',
       address: ALOE_II_FACTORY_ADDRESS[chainId],
-      topics: ['0x3f53d2c2743b2b162c0aa5d678be4058d3ae2043700424be52c04105df3e2411'],
+      topics: [TOPIC0_CREATE_MARKET_EVENT],
     });
   } catch (e) {
     console.error(e);
   }
   if (logs.length === 0) return [];
 
+  // Get all of the lender and pool addresses from the logs
   const addresses: { pool: string; kitty0: string; kitty1: string }[] = logs.map((item: any) => {
+    const lenderAddresses = ethers.utils.defaultAbiCoder.decode(['address', 'address'], item.data);
     return {
-      pool: item.topics[1].slice(26),
-      kitty0: `0x${item.data.slice(26, 66)}`,
-      kitty1: `0x${item.data.slice(90, 134)}`,
+      pool: `0x${item.topics[1].slice(-40)}` as Address,
+      kitty0: lenderAddresses[0],
+      kitty1: lenderAddresses[1],
     };
   });
 
   const contractCallContexts: ContractCallContext[] = [];
 
   addresses.forEach((market) => {
-    if (UNISWAP_POOL_DENYLIST.includes(`0x${market.pool.toLowerCase()}`)) {
+    if (UNISWAP_POOL_DENYLIST.includes(market.pool.toLowerCase())) {
       return;
     }
 
