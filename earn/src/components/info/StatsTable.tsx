@@ -327,7 +327,7 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('sortA')}>
                   <Text size='M' weight='bold'>
-                    Oracle Manipulation
+                    Oracle Guardian
                   </Text>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'sortA' ?? false}
