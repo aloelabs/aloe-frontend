@@ -25,8 +25,6 @@ import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { MarketInfo } from '../../../../data/MarketInfo';
-import BorrowingOperation from '../../../../data/operations/BorrowingOperation';
-import MulticallOperation from '../../../../data/operations/MulticallOperator';
 import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../borrow/HealthBar';
@@ -159,19 +157,19 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
-    <>
+    <div className='flex flex-col gap-4 w-full'>
       <FilledGradientButton
         size='M'
         fillWidth={true}
         disabled={!confirmButton.enabled}
         onClick={() => {
-          if (accountAddress === undefined || encodedModify == null) return;
+          if (accountAddress === undefined || encodedModify == null || requiredAnte === undefined) return;
           multicallOperator.addModifyOperation({
             owner: accountAddress,
             indices: [borrower.index],
             managers: [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
             data: [encodedModify],
-            antes: [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
+            antes: [requiredAnte],
           });
           setIsOpen(false);
         }}
@@ -187,7 +185,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       >
         {confirmButton.text}
       </FilledStylizedButton>
-    </>
+    </div>
   );
 }
 

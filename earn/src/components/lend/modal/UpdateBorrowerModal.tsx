@@ -9,7 +9,6 @@ import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { MarketInfo } from '../../../data/MarketInfo';
-import MulticallOperation from '../../../data/operations/MulticallOperator';
 import MulticallOperator from '../../../data/operations/MulticallOperator';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';

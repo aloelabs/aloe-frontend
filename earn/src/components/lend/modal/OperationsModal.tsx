@@ -1,17 +1,14 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import { ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
-import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { GN } from 'shared/lib/data/GoodNumber';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
-import BorrowingOperation from '../../../data/operations/BorrowingOperation';
-import MulticallOperation from '../../../data/operations/MulticallOperator';
 import MulticallOperator from '../../../data/operations/MulticallOperator';
 
 export type OperationsModalProps = {
@@ -27,50 +24,40 @@ export default function OperationsModal(props: OperationsModalProps) {
   const { address: userAddress } = useAccount();
   const { activeChain } = useContext(ChainContext);
 
-  // const mintDatas = chainOperations
-  //   .map((chainOperation) => chainOperation.mintData)
-  //   .flatMap((data) => data)
-  //   .reduce((acc, data) => {
-  //     return acc.concat(data.slice(2)) as `0x${string}`;
-  //   }, '0x');
-
-  // const modifyDatas = chainOperations
-  //   .map((chainOperation) => chainOperation.modifyData)
-  //   .flatMap((data) => data)
-  //   .reduce((acc, data) => {
-  //     return acc.concat(data.slice(2)) as `0x${string}`;
-  //   }, '0x');
-
+  const mintOperation = multicallOperator.combineMintOperations();
   const modifyOperation = multicallOperator.combineModifyOperations();
+  const combinedAnte = multicallOperator.getCombinedAnte();
 
-  // const { config: borrowConfig, isLoading: isCheckingIfAbleToBorrow } = usePrepareContractWrite({
-  //   address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
-  //   abi: borrowerNftAbi,
-  //   functionName: 'modify',
-  //   args: [
-  //     modifyOperation.owner,
-  //     modifyOperation.indices,
-  //     modifyOperation.managers,
-  //     modifyOperation.data,
-  //     modifyOperation.antes,
-  //   ],
-  //   overrides: { value: requiredAnte?.toBigNumber() },
-  //   chainId: activeChain.id,
-  //   enabled:
-  //     accountAddress && encodedModify != null && requiredAnte !== undefined && !isUnhealthy && !notEnoughSupply,
-  // });
-  // const gasLimit = borrowConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  // const { write: borrow, isLoading: isAskingUserToConfirm } = useContractWrite({
-  //   ...borrowConfig,
-  //   request: {
-  //     ...borrowConfig.request,
-  //     gasLimit,
-  //   },
-  //   onSuccess(data) {
-  //     setIsOpen(false);
-  //     setPendingTxn(data);
-  //   },
-  // });
+  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
+  const encodedMint =
+    mintOperation &&
+    (borrowerNft.encodeFunctionData('mint', [
+      mintOperation.to,
+      mintOperation.pools,
+      mintOperation.salts,
+    ]) as `0x${string}`);
+
+  const encodedModify =
+    modifyOperation &&
+    (borrowerNft.encodeFunctionData('modify', [
+      modifyOperation.owner,
+      modifyOperation.indices,
+      modifyOperation.managers,
+      modifyOperation.data,
+      modifyOperation.antes.map((ante) => ante.toBigNumber().div(1e13)),
+    ]) as `0x${string}`);
+
+  const functionName = mintOperation ? 'multicall' : 'modify';
+
+  const args = mintOperation
+    ? [[encodedMint ?? '0x', encodedModify]]
+    : [
+        modifyOperation.owner,
+        modifyOperation.indices,
+        modifyOperation.managers,
+        modifyOperation.data,
+        modifyOperation.antes.map((ante) => ante.toBigNumber().div(1e13)),
+      ];
 
   const {
     config: configMulticallOps,
@@ -79,9 +66,11 @@ export default function OperationsModal(props: OperationsModalProps) {
   } = usePrepareContractWrite({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
-    functionName: 'multicall',
-    args: [[]],
-    overrides: {},
+    functionName: functionName,
+    args: args as any,
+    overrides: {
+      value: combinedAnte.toBigNumber(),
+    },
     chainId: activeChain.id,
     enabled: userAddress !== undefined,
   });
@@ -100,19 +89,15 @@ export default function OperationsModal(props: OperationsModalProps) {
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Operations'>
-      {/* {chainOperations.map((chainOperation, index) => {
-        return (
-          <div key={index}>
-            <Text size='M'>Operation {index + 1}</Text>
-          </div>
-        );
-      })} */}
       <FilledStylizedButton
         size='M'
         fillWidth={true}
         onClick={() => {
           call?.();
         }}
+        disabled={
+          isAskingUserToMulticallOps || isCheckingIfAbleToMulticallOps || isUnableToMulticallOps || !userAddress
+        }
       >
         Confirm
       </FilledStylizedButton>

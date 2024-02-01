@@ -8,7 +8,7 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { permit2Abi } from 'shared/lib/abis/Permit2';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
-import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton, FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
@@ -31,6 +31,7 @@ import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareCo
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
 import { LendingPair } from '../../../data/LendingPair';
+import MulticallOperator from '../../../data/operations/MulticallOperator';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -92,13 +93,22 @@ export type BorrowModalProps = {
   selectedCollateral: Token;
   selectedBorrow: Token;
   userBalance: GN;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { isOpen, selectedLendingPair, selectedCollateral, selectedBorrow, userBalance, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    isOpen,
+    selectedLendingPair,
+    selectedCollateral,
+    selectedBorrow,
+    userBalance,
+    multicallOperator,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
 
@@ -268,7 +278,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const encodedMint = useMemo(() => {
     if (!userAddress || selectedLendingPair?.uniswapPool === undefined) return null;
     const to = userAddress;
-    const pools = [selectedLendingPair.uniswapPool ?? '0x'];
+    const pools = [selectedLendingPair.uniswapPool];
     const salts = [generatedSalt];
     return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
   }, [userAddress, selectedLendingPair?.uniswapPool, generatedSalt, borrowerNft]);
@@ -422,7 +432,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             </div>
           </div>
         </div>
-        {/* <FilledGradientButton
+        <FilledStylizedButton
           size='M'
           fillWidth={true}
           disabled={!confirmButton.enabled}
@@ -430,22 +440,25 @@ export default function BorrowModal(props: BorrowModalProps) {
             if (permit2State !== Permit2State.DONE) {
               permit2Action?.();
             }
-            if (!userAddress || !encodedMint || !encodedModify) return;
-            addChainedOperation(
-              new BorrowingOperation(
-                borrowAmount,
-                ante,
-                selectedBorrow,
-                selectedCollateral,
-                [encodedMint],
-                [encodedModify],
-              )
-            );
+            if (!userAddress || encodedPermit2 == null || encodedBorrowCall == null || ante === undefined) return;
+            multicallOperator
+              .addMintOperation({
+                to: userAddress,
+                pools: [selectedLendingPair.uniswapPool],
+                salts: [generatedSalt],
+              })
+              .addModifyOperation({
+                owner: userAddress,
+                indices: [nextNftPtrIdx?.toNumber() ?? 0],
+                managers: [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]],
+                data: [encodedPermit2.concat(encodedBorrowCall.slice(2)) as `0x${string}`],
+                antes: [ante],
+              });
             setIsOpen(false);
           }}
         >
           Add Action
-        </FilledGradientButton> */}
+        </FilledStylizedButton>
         <FilledGradientButton
           size='M'
           fillWidth={true}

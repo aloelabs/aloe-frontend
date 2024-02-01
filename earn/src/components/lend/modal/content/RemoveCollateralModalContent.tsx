@@ -22,6 +22,7 @@ import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Assets } from '../../../../data/MarginAccount';
+import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import HealthBar from '../../../borrow/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
@@ -63,6 +64,7 @@ type ConfirmButtonProps = {
   isWithdrawingToken0: boolean;
   shouldWithdrawAnte: boolean;
   accountAddress: Address;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
@@ -76,6 +78,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     isWithdrawingToken0,
     shouldWithdrawAnte,
     accountAddress,
+    multicallOperator,
     setIsOpen,
     setPendingTxn,
   } = props;
@@ -172,26 +175,47 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => withdraw?.()}
-      disabled={!confirmButton.enabled}
-    >
-      {confirmButton.text}
-    </FilledStylizedButton>
+    <div className='flex flex-col gap-4 w-full'>
+      <FilledStylizedButton
+        size='M'
+        fillWidth={true}
+        disabled={!confirmButton.enabled}
+        onClick={() => {
+          if (accountAddress === undefined) return;
+          multicallOperator.addModifyOperation({
+            owner: accountAddress,
+            indices: [borrower.index],
+            managers: [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+            data: [(shouldWithdrawAnte ? combinedEncodingsForMultiManager : encodedWithdrawCall) ?? '0x'],
+            antes: [GN.zero(18)],
+          });
+          setIsOpen(false);
+        }}
+      >
+        Add Action
+      </FilledStylizedButton>
+      <FilledStylizedButton
+        size='M'
+        fillWidth={true}
+        color={MODAL_BLACK_TEXT_COLOR}
+        onClick={() => withdraw?.()}
+        disabled={!confirmButton.enabled}
+      >
+        {confirmButton.text}
+      </FilledStylizedButton>
+    </div>
   );
 }
 
 export type RemoveCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function RemoveCollateralModalContent(props: RemoveCollateralModalContentProps) {
-  const { borrower, setIsOpen, setPendingTxnResult } = props;
+  const { borrower, multicallOperator, setIsOpen, setPendingTxnResult } = props;
 
   const [withdrawAmountStr, setWithdrawAmountStr] = useState('');
 
@@ -292,6 +316,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
           isWithdrawingToken0={isWithdrawingToken0}
           shouldWithdrawAnte={shouldWithdrawAnte}
           accountAddress={accountAddress || '0x'}
+          multicallOperator={multicallOperator}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />

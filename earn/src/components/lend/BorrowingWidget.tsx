@@ -456,6 +456,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           userBalance={tokenBalances.get(selectedCollateral.address)!.gn}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrows(null);
             setSelectedCollateral(null);
@@ -481,6 +482,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateCollateralModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}

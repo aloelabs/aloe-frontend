@@ -1,3 +1,4 @@
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'wagmi';
 
 export type ModifyOperation = {
@@ -5,5 +6,5 @@ export type ModifyOperation = {
   indices: number[];
   managers: Address[];
   data: `0x${string}`[];
-  antes: number[];
+  antes: GN[];
 };
