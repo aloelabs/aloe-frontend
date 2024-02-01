@@ -5,6 +5,7 @@ import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -16,10 +17,9 @@ import BorrowingWidget from '../components/lend/BorrowingWidget';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
-import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
-import { fetchBorrowerDatas } from '../data/MarginAccount';
+import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
@@ -80,8 +80,21 @@ export default function MarketsPage() {
   const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
 
   // MARK: custom hooks
-  const availablePools = useAvailablePools();
   const { lendingPairs } = useLendingPairs();
+
+  // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
+  // This saves a lot of data.
+  const availablePools = useMemo(() => {
+    const poolInfoMap = new Map<string, UniswapPoolInfo>();
+    lendingPairs.forEach((pair) =>
+      poolInfoMap.set(pair.uniswapPool.toLowerCase(), {
+        token0: pair.token0,
+        token1: pair.token1,
+        fee: GetNumericFeeTier(pair.uniswapFeeTier),
+      })
+    );
+    return poolInfoMap;
+  }, [lendingPairs]);
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
