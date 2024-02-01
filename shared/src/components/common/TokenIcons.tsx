@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { Token } from '../../data/Token';
 import TokenIcon from './TokenIcon';
 
 const Container = styled.div`
@@ -22,18 +21,20 @@ const Container = styled.div`
 `;
 
 export type TokenIconsProps = {
-  tokens: Token[];
+  tokens: { name: string; symbol: string; logoURI: string }[];
   width?: number;
   height?: number;
+  links?: string[];
 };
 
 export default function TokenIcons(props: TokenIconsProps) {
-  const { tokens, width, height } = props;
+  const { tokens, width, height, links } = props;
+
   return (
     <Container>
       {tokens.map((token, index) => (
         <div key={index}>
-          <TokenIcon key={index} token={token} width={width || 16} height={height || 16} />
+          <TokenIcon key={index} token={token} width={width || 16} height={height || 16} link={links?.at(index)} />
         </div>
       ))}
     </Container>

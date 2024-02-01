@@ -431,12 +431,8 @@ export function getToken(chainId: number, address: Address): Token | undefined {
   return TOKEN_DATA[chainId][getLowercaseAddress(address)];
 }
 
-export function getTokenBySymbol(chainId: number, symbol: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.symbol.toUpperCase() === symbol.toUpperCase());
-  if (!token) {
-    throw new Error(`Could not find token with symbol ${symbol}`);
-  }
-  return token;
+export function getTokenBySymbol(chainId: number, symbol: string): Token | undefined {
+  return Object.values(TOKEN_DATA[chainId]).find((token) => token.symbol.toUpperCase() === symbol.toUpperCase());
 }
 
 function getLowercaseAddress(address: Address): Address {
