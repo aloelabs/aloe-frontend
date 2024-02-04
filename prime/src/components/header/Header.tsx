@@ -44,7 +44,7 @@ export default function Header(props: HeaderProps) {
         activeChain={activeChain}
         checkboxes={checkboxes}
         setActiveChain={setActiveChain}
-        isAllowedToInteract={isAllowedToInteract}
+        isAllowedToInteract={isAllowedToInteract.isAllowed}
       />
     </Nav>
   );

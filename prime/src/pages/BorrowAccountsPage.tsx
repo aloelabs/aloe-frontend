@@ -31,7 +31,7 @@ import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } fro
 
 export default function BorrowAccountsPage() {
   const { activeChain } = useContext(ChainContext);
-  const isAllowedToInteract = useGeoFencing(activeChain);
+  const { isAllowed: isAllowedToInteract, isLoading: isLoadingGeoFencing } = useGeoFencing(activeChain);
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -254,7 +254,7 @@ export default function BorrowAccountsPage() {
         </FilledGradientButtonWithIcon>
       </div>
       <div className='flex items-center justify-start flex-wrap gap-4'>
-        {isLoadingMarginAccounts ? (
+        {isLoadingMarginAccounts || isLoadingGeoFencing || !isAllowedToInteract ? (
           <div className='flex items-center justify-center w-full'>{loadingElement}</div>
         ) : (
           <ActiveMarginAccounts marginAccounts={marginAccounts} accountAddress={accountAddress} />
