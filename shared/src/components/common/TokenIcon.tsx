@@ -1,4 +1,3 @@
-import { Token } from '../../data/Token';
 import styled from 'styled-components';
 
 const StyledTokenIcon = styled.img.attrs((props: { width: number; height: number; borderRadius: string }) => props)`
@@ -11,15 +10,17 @@ const StyledTokenIcon = styled.img.attrs((props: { width: number; height: number
 `;
 
 export type TokenIconProps = {
-  token: Token;
+  token: { name: string; logoURI: string };
   width?: number;
   height?: number;
   borderRadius?: string;
+  link?: string;
 };
 
 export default function TokenIcon(props: TokenIconProps) {
-  const { token, width, height, borderRadius } = props;
-  return (
+  const { token, width, height, borderRadius, link } = props;
+
+  const icon = (
     <StyledTokenIcon
       src={token.logoURI}
       alt={token.name}
@@ -27,5 +28,13 @@ export default function TokenIcon(props: TokenIconProps) {
       height={height || 16}
       borderRadius={borderRadius || '1px'}
     />
+  );
+
+  return link ? (
+    <a href={link} target='_blank' rel='noreferrer'>
+      {icon}
+    </a>
+  ) : (
+    icon
   );
 }

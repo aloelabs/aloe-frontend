@@ -347,7 +347,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             />
           </div>
           <Text size='L' weight='bold' color={SECONDARY_COLOR}>
-            {roundPercentage(activeKittyInfo?.lendAPY ?? 0, 2).toFixed(2)}%
+            {roundPercentage((activeKittyInfo?.lendAPY ?? 0) * 100, 2).toFixed(2)}%
           </Text>
         </div>
         <div className='flex flex-col gap-1 w-full'>
