@@ -1,12 +1,15 @@
 import { createContext, useContext } from 'react';
 import { isDevelopment } from '../../util/Utils';
 import { Chain } from 'wagmi';
-import { GeoFencingResponse } from '../GeoFencing';
+import { GeoFencingInfo } from '../GeoFencing';
 
-export const GeoFencingContext = createContext<GeoFencingResponse | null>(null);
+export const GeoFencingContext = createContext<GeoFencingInfo>({
+  isAllowed: false,
+  isLoading: true,
+});
 
 export function useGeoFencing(activeChain: Chain) {
   const ctxt = useContext(GeoFencingContext);
   const isDev = isDevelopment();
-  return isDev || ctxt?.isAllowed || Boolean(activeChain.testnet);
+  return { isAllowed: isDev || ctxt.isAllowed || Boolean(activeChain.testnet), isLoading: ctxt.isLoading };
 }
