@@ -11,11 +11,13 @@ import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINTS } from 'shared/lib/data/constants/Breakpoints';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { roundPercentage } from 'shared/lib/util/Numbers';
@@ -25,7 +27,6 @@ import { Address, useContractWrite } from 'wagmi';
 import { ChainContext } from '../../App';
 import { LendingPair } from '../../data/LendingPair';
 
-const PAGE_SIZE = 20;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const YELLOW_COLOR = 'rgba(242, 201, 76, 1)';
@@ -38,19 +39,9 @@ const TableContainer = styled.div`
   border-radius: 6px;
 `;
 
-const Table = styled.table`
-  width: 100%;
-`;
-
 const TableHeader = styled.thead`
   border-bottom: 2px solid ${GREY_600};
   text-align: start;
-`;
-
-const HoverableRow = styled.tr`
-  &:hover {
-    background-color: rgba(130, 160, 182, 0.1);
-  }
 `;
 
 const SortButton = styled.button`
@@ -122,10 +113,11 @@ export type StatsTableRowProps = {
   lendingPair: LendingPair;
   lastUpdatedTimestamp?: number;
   setPendingTxn: (data: SendTransactionResult) => void;
+  onMouseEnter: (pair: LendingPair | undefined) => void;
 };
 
 function StatsTableRow(props: StatsTableRowProps) {
-  const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn } = props;
+  const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn, onMouseEnter } = props;
   const { activeChain } = useContext(ChainContext);
 
   const { writeAsync: pause } = useContractWrite({
@@ -193,7 +185,11 @@ function StatsTableRow(props: StatsTableRowProps) {
       : `${reserveFactorTexts[0]}% / ${reserveFactorTexts[1]}%`;
 
   return (
-    <HoverableRow>
+    <tr
+      className='bg-background hover:bg-row-hover/10'
+      onMouseEnter={() => onMouseEnter(pair)}
+      onMouseLeave={() => onMouseEnter(undefined)}
+    >
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex items-center gap-2'>
           <TokenIcons tokens={[pair.token0, pair.token1]} links={lenderLinks} />
@@ -263,7 +259,7 @@ function StatsTableRow(props: StatsTableRowProps) {
           )}
         </div>
       </td>
-    </HoverableRow>
+    </tr>
   );
 }
 
@@ -271,11 +267,15 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
   const { rows } = props;
   const [currentPage, setCurrentPage] = useState(1);
 
+  const isTabletOrBigger = useMediaQuery(RESPONSIVE_BREAKPOINTS['TABLET']);
+  const pageSize = isTabletOrBigger ? 10 : 5;
+
   // workaround to get sort data in the outermost scope
   const sortableRows = useMemo(() => {
     return rows.map((row) => ({
       ...row,
-      sortA: row.lendingPair.oracleData.manipulationMetric,
+      // it's the ratio between these two that matters for oracle stability, so that's what we sort by
+      sortA: row.lendingPair.oracleData.manipulationMetric / row.lendingPair.manipulationThreshold,
       sortB: row.lendingPair.ltv,
     }));
   }, [rows]);
@@ -287,18 +287,18 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
 
   const pages: StatsTableRowProps[][] = useMemo(() => {
     const pages: StatsTableRowProps[][] = [];
-    for (let i = 0; i < sortedRows.length; i += PAGE_SIZE) {
-      pages.push(sortedRows.slice(i, i + PAGE_SIZE));
+    for (let i = 0; i < sortedRows.length; i += pageSize) {
+      pages.push(sortedRows.slice(i, i + pageSize));
     }
     return pages;
-  }, [sortedRows]);
+  }, [pageSize, sortedRows]);
   if (pages.length === 0) {
     return null;
   }
   return (
     <>
       <TableContainer>
-        <Table>
+        <table className='w-full'>
           <TableHeader>
             <tr>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
@@ -349,16 +349,22 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
             </tr>
           </TableHeader>
           <tbody>
-            {pages[currentPage - 1].map((row) => (
-              <StatsTableRow {...row} key={row.lendingPair.uniswapPool} />
-            ))}
+            {Array(pageSize)
+              .fill(0)
+              .map((_, i) => {
+                if (i < pages[currentPage - 1].length) {
+                  const row = pages[currentPage - 1][i];
+                  return <StatsTableRow {...row} key={row.lendingPair.uniswapPool} />;
+                }
+                return <tr key={i} className='h-[54px]' />;
+              })}
           </tbody>
           <tfoot>
             <tr>
               <td className='px-4 py-2' colSpan={7}>
                 <Pagination
                   currentPage={currentPage}
-                  itemsPerPage={PAGE_SIZE}
+                  itemsPerPage={pageSize}
                   totalItems={rows.length}
                   loading={false}
                   onPageChange={(page) => setCurrentPage(page)}
@@ -366,7 +372,7 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
               </td>
             </tr>
           </tfoot>
-        </Table>
+        </table>
       </TableContainer>
     </>
   );

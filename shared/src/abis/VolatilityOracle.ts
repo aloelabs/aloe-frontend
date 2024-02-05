@@ -1,200 +1,137 @@
 export const volatilityOracleAbi = [
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'contract IUniswapV3Pool',
-        name: 'pool',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'uint160',
-        name: 'sqrtMeanPriceX96',
-        type: 'uint160',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'iv',
-        type: 'uint256',
-      },
-    ],
-    name: 'Update',
-    type: 'event',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'contract IUniswapV3Pool',
-        name: '',
-        type: 'address',
-      },
-    ],
+    type: 'function',
     name: 'cachedMetadata',
-    outputs: [
-      {
-        internalType: 'uint24',
-        name: 'gamma0',
-        type: 'uint24',
-      },
-      {
-        internalType: 'uint24',
-        name: 'gamma1',
-        type: 'uint24',
-      },
-      {
-        internalType: 'int24',
-        name: 'tickSpacing',
-        type: 'int24',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
     inputs: [
       {
+        name: '',
+        type: 'address',
         internalType: 'contract IUniswapV3Pool',
+      },
+    ],
+    outputs: [
+      { name: 'gamma0', type: 'uint24', internalType: 'uint24' },
+      { name: 'gamma1', type: 'uint24', internalType: 'uint24' },
+      { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'consult',
+    inputs: [
+      {
         name: 'pool',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
-      {
-        internalType: 'uint40',
-        name: 'seed',
-        type: 'uint40',
-      },
+      { name: 'seed', type: 'uint40', internalType: 'uint40' },
     ],
-    name: 'consult',
     outputs: [
-      {
-        internalType: 'uint56',
-        name: '',
-        type: 'uint56',
-      },
-      {
-        internalType: 'uint160',
-        name: '',
-        type: 'uint160',
-      },
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
+      { name: '', type: 'uint56', internalType: 'uint56' },
+      { name: '', type: 'uint160', internalType: 'uint160' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'feeGrowthGlobals',
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
         name: '',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
+      { name: '', type: 'uint256', internalType: 'uint256' },
     ],
-    name: 'feeGrowthGlobals',
     outputs: [
       {
-        internalType: 'uint256',
         name: 'feeGrowthGlobal0X128',
         type: 'uint256',
+        internalType: 'uint256',
       },
       {
-        internalType: 'uint256',
         name: 'feeGrowthGlobal1X128',
         type: 'uint256',
+        internalType: 'uint256',
       },
-      {
-        internalType: 'uint32',
-        name: 'timestamp',
-        type: 'uint32',
-      },
+      { name: 'timestamp', type: 'uint32', internalType: 'uint32' },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'lastWrites',
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
         name: '',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
     ],
-    name: 'lastWrites',
     outputs: [
-      {
-        internalType: 'uint8',
-        name: 'index',
-        type: 'uint8',
-      },
-      {
-        internalType: 'uint32',
-        name: 'time',
-        type: 'uint32',
-      },
-      {
-        internalType: 'uint216',
-        name: 'iv',
-        type: 'uint216',
-      },
+      { name: 'index', type: 'uint8', internalType: 'uint8' },
+      { name: 'time', type: 'uint40', internalType: 'uint40' },
+      { name: 'oldIV', type: 'uint104', internalType: 'uint104' },
+      { name: 'newIV', type: 'uint104', internalType: 'uint104' },
     ],
     stateMutability: 'view',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'prepare',
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
         name: 'pool',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
     ],
-    name: 'prepare',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
   },
   {
+    type: 'function',
+    name: 'update',
     inputs: [
       {
-        internalType: 'contract IUniswapV3Pool',
         name: 'pool',
         type: 'address',
+        internalType: 'contract IUniswapV3Pool',
       },
-      {
-        internalType: 'uint40',
-        name: 'seed',
-        type: 'uint40',
-      },
+      { name: 'seed', type: 'uint40', internalType: 'uint40' },
     ],
-    name: 'update',
     outputs: [
-      {
-        internalType: 'uint56',
-        name: '',
-        type: 'uint56',
-      },
-      {
-        internalType: 'uint160',
-        name: '',
-        type: 'uint160',
-      },
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
+      { name: '', type: 'uint56', internalType: 'uint56' },
+      { name: '', type: 'uint160', internalType: 'uint160' },
+      { name: '', type: 'uint256', internalType: 'uint256' },
     ],
     stateMutability: 'nonpayable',
-    type: 'function',
+  },
+  {
+    type: 'event',
+    name: 'Update',
+    inputs: [
+      {
+        name: 'pool',
+        type: 'address',
+        indexed: true,
+        internalType: 'contract IUniswapV3Pool',
+      },
+      {
+        name: 'sqrtMeanPriceX96',
+        type: 'uint160',
+        indexed: false,
+        internalType: 'uint160',
+      },
+      {
+        name: 'iv',
+        type: 'uint104',
+        indexed: false,
+        internalType: 'uint104',
+      },
+    ],
+    anonymous: false,
   },
 ] as const;
