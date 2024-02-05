@@ -439,6 +439,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           onClick={() => {
             if (permit2State !== Permit2State.DONE) {
               permit2Action?.();
+              return;
             }
             if (!userAddress || encodedPermit2 == null || encodedBorrowCall == null || ante === undefined) return;
             multicallOperator

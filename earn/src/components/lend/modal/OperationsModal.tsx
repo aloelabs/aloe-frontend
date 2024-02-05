@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
+import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
@@ -89,18 +90,24 @@ export default function OperationsModal(props: OperationsModalProps) {
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Operations'>
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        onClick={() => {
-          call?.();
-        }}
-        disabled={
-          isAskingUserToMulticallOps || isCheckingIfAbleToMulticallOps || isUnableToMulticallOps || !userAddress
-        }
-      >
-        Confirm
-      </FilledStylizedButton>
+      <div className='w-full flex flex-col gap-4'>
+        <Text size='M'>
+          You are performing {mintOperation?.salts.length ?? 0} mint operations and{' '}
+          {modifyOperation?.indices.length ?? 0} modify operations in a single transaction. This will save you gas fees.
+        </Text>
+        <FilledStylizedButton
+          size='M'
+          fillWidth={true}
+          onClick={() => {
+            call?.();
+          }}
+          disabled={
+            isAskingUserToMulticallOps || isCheckingIfAbleToMulticallOps || isUnableToMulticallOps || !userAddress
+          }
+        >
+          Confirm
+        </FilledStylizedButton>
+      </div>
     </Modal>
   );
 }

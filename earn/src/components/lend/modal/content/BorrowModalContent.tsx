@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
-import { FilledGradientButton, FilledStylizedButton } from 'shared/lib/components/common/Buttons';
+import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -158,7 +158,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
   return (
     <div className='flex flex-col gap-4 w-full'>
-      <FilledGradientButton
+      <FilledStylizedButton
         size='M'
         fillWidth={true}
         disabled={!confirmButton.enabled}
@@ -175,7 +175,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
         }}
       >
         Add Action
-      </FilledGradientButton>
+      </FilledStylizedButton>
       <FilledStylizedButton
         size='M'
         fillWidth={true}

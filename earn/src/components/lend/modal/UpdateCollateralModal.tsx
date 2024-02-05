@@ -85,6 +85,7 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
             <Tab.Panel className='w-full px-2'>
               <AddCollateralModalContent
                 borrower={borrower}
+                multicallOperator={multicallOperator}
                 setIsOpen={setIsOpen}
                 setPendingTxnResult={setPendingTxn}
               />
