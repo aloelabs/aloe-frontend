@@ -16,8 +16,10 @@ import MaticLogo from './matic.svg';
 import MimLogo from './mim.svg';
 import OpLogo from './op.svg';
 import PerpLogo from './perp.svg';
+import PoolTogetherLogo from './pooltogether.svg';
 import RaiLogo from './rai.svg';
 import RplLogo from './rpl.svg';
+import SnxLogo from './snx.svg';
 import TribeLogo from './tribe.svg';
 import UniLogo from './uni.svg';
 import UnknownTokenLogo from './unknown_token.svg';
@@ -44,6 +46,8 @@ export {
   MaticLogo,
   OpLogo,
   PerpLogo,
+  PoolTogetherLogo,
+  SnxLogo,
   UsdcLogo,
   WbtcLogo,
   WethLogo,
