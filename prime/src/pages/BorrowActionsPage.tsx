@@ -167,7 +167,7 @@ type AccountParams = {
 
 export default function BorrowActionsPage() {
   const { activeChain } = useContext(ChainContext);
-  const isAllowedToInteract = useGeoFencing(activeChain);
+  const { isAllowed: isAllowedToInteract } = useGeoFencing(activeChain);
 
   const navigate = useNavigate();
   const params = useParams<AccountParams>();

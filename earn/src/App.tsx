@@ -10,7 +10,7 @@ import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
+import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
@@ -168,7 +168,10 @@ function AppBodyWrapper() {
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
-  const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
+  const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
+    isAllowed: false,
+    isLoading: true,
+  });
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
 
   const { address: userAddress } = useAccount();
@@ -177,16 +180,13 @@ function App() {
   const value = { activeChain, setActiveChain };
 
   useEffectOnce(() => {
-    let mounted = true;
     (async () => {
       const result = await fetchGeoFencing();
-      if (mounted) {
-        setGeoFencingResponse(result);
-      }
+      setGeoFencingInfo({
+        isAllowed: result.isAllowed,
+        isLoading: false,
+      });
     })();
-    return () => {
-      mounted = false;
-    };
   });
 
   useEffect(() => {
@@ -220,7 +220,7 @@ function App() {
       <Suspense fallback={null}>
         <WagmiProvider>
           <AccountRiskContext.Provider value={accountRisk}>
-            <GeoFencingContext.Provider value={geoFencingResponse}>
+            <GeoFencingContext.Provider value={geoFencingInfo}>
               <ChainContext.Provider value={value}>
                 <LendingPairsContext.Provider value={lendingPairs}>
                   <ScrollToTop />

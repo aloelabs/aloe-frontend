@@ -6,6 +6,10 @@ export type GeoFencingResponse = {
   isAllowed: boolean;
 };
 
+export type GeoFencingInfo = GeoFencingResponse & {
+  isLoading: boolean;
+};
+
 export async function fetchGeoFencing(): Promise<GeoFencingResponse> {
   if (isDappnet()) {
     return {
