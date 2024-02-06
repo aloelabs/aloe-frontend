@@ -345,15 +345,9 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
             </tr>
           </TableHeader>
           <tbody>
-            {Array(PAGE_SIZE)
-              .fill(0)
-              .map((_, i) => {
-                if (i < pages[currentPage - 1].length) {
-                  const row = pages[currentPage - 1][i];
-                  return <StatsTableRow {...row} key={row.lendingPair.uniswapPool} />;
-                }
-                return <tr key={i} className='h-[54px]' />;
-              })}
+            {pages[currentPage - 1].map((row) => (
+              <StatsTableRow {...row} key={row.lendingPair.uniswapPool} />
+            ))}
           </tbody>
           <tfoot>
             <tr>
