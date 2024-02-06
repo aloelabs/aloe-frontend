@@ -1,7 +1,6 @@
-import { SVGProps, useEffect, useMemo, useState } from 'react';
+import { SVGProps, useMemo } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
-import { RESPONSIVE_BREAKPOINTS, RESPONSIVE_BREAKPOINT_TABLET } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
@@ -9,44 +8,23 @@ import { LendingPair } from '../../data/LendingPair';
 import LineGraph, { GraphChart } from '../graph/LineGraph';
 import InfoGraphTooltip from './InfoGraphTooltip';
 
-const MOBILE_HEIGHT = '320';
-const FULL_HEIGHT = '642';
-const FULL_WIDTH = '260';
+const FULL_HEIGHT = '342';
 
-const TableContainer = styled.div`
-  overflow-x: auto;
+const Container = styled.div`
   border: 2px solid ${GREY_600};
   border-radius: 6px;
 
   height: 100%;
-  min-width: ${FULL_WIDTH}px;
-  max-width: ${FULL_WIDTH}px;
-  width: ${FULL_WIDTH}px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
-    min-width: 100%;
-    max-width: 100%;
-    width: 100%;
-  }
+  width: 100%;
 `;
 
-const Table = styled.table`
-  border-spacing: 0;
-  border-collapse: separate;
-`;
-
-const TableHeaderElement = styled.th`
+const Header = styled.div`
   border-bottom: 2px solid ${GREY_600};
 `;
 
 export type InfoGraphLabel = `${string}/${string}`;
 export type InfoGraphData = Map<InfoGraphLabel, { x: Date; ltv: number }[]>;
 export type InfoGraphColors = Map<InfoGraphLabel, { color0: string; color1: string }>;
-
-function getWindowDimensions() {
-  const { innerWidth: width, innerHeight: height } = window;
-  return { width, height };
-}
 
 export default function InfoGraph(props: {
   graphData: InfoGraphData | undefined;
@@ -56,44 +34,39 @@ export default function InfoGraph(props: {
   const { graphData, graphColors, hoveredPair } = props;
   const labels = Array.from(graphData?.keys() ?? []);
 
-  const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
-  const isTabletOrBigger = windowDimensions.width > RESPONSIVE_BREAKPOINTS['TABLET'];
+  const displayedGraphData = useMemo(() => {
+    const flattened: { [k: InfoGraphLabel]: number; x: Date }[] = [];
+    graphData?.forEach((arr, label) =>
+      arr.forEach((point) => {
+        const entry = {
+          x: point.x,
+          [label]: point.ltv * 100,
+        } as { [k: InfoGraphLabel]: number; x: Date };
 
-  useEffect(() => {
-    const handleResize = () => setWindowDimensions(getWindowDimensions());
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+        flattened.push(entry);
+      })
+    );
 
-  const flattenedGraphData: { [k: InfoGraphLabel]: number; x: Date }[] = [];
-  graphData?.forEach((arr, label) =>
-    arr.forEach((point) => {
-      const entry = {
-        x: point.x,
-        [label]: point.ltv * 100,
-      } as { [k: InfoGraphLabel]: number; x: Date };
+    flattened.sort((a, b) => a.x.getTime() - b.x.getTime());
 
-      flattenedGraphData.push(entry);
-    })
-  );
+    const displayed: { [k: InfoGraphLabel]: number; x: number }[] = [];
+    for (let i = 0; i < flattened.length; i++) {
+      const entry = { ...flattened[i], x: flattened[i].x.getTime() };
 
-  flattenedGraphData.sort((a, b) => a.x.getTime() - b.x.getTime());
+      if (entry.x !== displayed.at(-1)?.x) {
+        displayed.push({
+          ...(displayed.at(-1) ?? {}),
+          ...entry,
+        });
+        continue;
+      }
 
-  const displayedGraphData: { [k: InfoGraphLabel]: number; x: number }[] = [];
-  for (let i = 0; i < flattenedGraphData.length; i++) {
-    const entry = { ...flattenedGraphData[i], x: flattenedGraphData[i].x.getTime() };
-
-    if (entry.x !== displayedGraphData.at(-1)?.x) {
-      displayedGraphData.push({
-        ...(displayedGraphData.at(-1) ?? {}),
-        ...entry,
-      });
-      continue;
+      const previousEntry = displayed.at(-1)!;
+      Object.assign(previousEntry, entry);
     }
 
-    const previousEntry = displayedGraphData.at(-1)!;
-    Object.assign(previousEntry, entry);
-  }
+    return displayed;
+  }, [graphData]);
 
   const charts: GraphChart[] = useMemo(
     () =>
@@ -133,45 +106,25 @@ export default function InfoGraph(props: {
     return arr;
   }, [graphColors]);
 
+  if (!graphData) return null;
+
   return (
-    <TableContainer>
-      <Table>
-        <thead className='text-start'>
-          <tr>
-            <TableHeaderElement className='px-4 py-2 text-center whitespace-nowrap'>
-              <Text size='M' weight='bold'>
-                LTV History
-              </Text>
-            </TableHeaderElement>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              {graphData && (
-                <LineGraph
-                  linearGradients={linearGradients}
-                  CustomTooltip={<InfoGraphTooltip />}
-                  tooltipPosition={{ x: 0, y: 0 }}
-                  charts={charts}
-                  data={displayedGraphData}
-                  size={
-                    isTabletOrBigger
-                      ? {
-                          width: Number(FULL_WIDTH),
-                          height: Number(FULL_HEIGHT) - 48,
-                        }
-                      : {
-                          width: windowDimensions.width - 32,
-                          height: Number(MOBILE_HEIGHT) - 48,
-                        }
-                  }
-                />
-              )}
-            </td>
-          </tr>
-        </tbody>
-      </Table>
-    </TableContainer>
+    <Container>
+      <Header className='w-full px-4 py-2 text-center whitespace-nowrap'>
+        <Text size='M' weight='bold'>
+          LTV History
+        </Text>
+      </Header>
+      <LineGraph
+        linearGradients={linearGradients}
+        CustomTooltip={<InfoGraphTooltip />}
+        charts={charts}
+        data={displayedGraphData}
+        size={{
+          width: '100%',
+          height: Number(FULL_HEIGHT) - 48,
+        }}
+      />
+    </Container>
   );
 }

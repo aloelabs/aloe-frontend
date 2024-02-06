@@ -173,7 +173,7 @@ export default function InfoTab(props: InfoTabProps) {
   }, [lendingPairs, tokenColors]);
 
   return (
-    <div className='flex flex-col gap-4 lg:flex-row'>
+    <div className='flex flex-col gap-4'>
       <StatsTable
         rows={lendingPairs.map((lendingPair, i) => ({
           lendingPair,
