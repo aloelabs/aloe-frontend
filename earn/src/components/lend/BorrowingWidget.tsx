@@ -20,6 +20,7 @@ import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
+import { GN } from 'shared/lib/data/GoodNumber';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
@@ -453,7 +454,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           }
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
-          userBalance={tokenBalances.get(selectedCollateral.address)!.gn}
+          userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
           setIsOpen={() => {
             setSelectedBorrows(null);
             setSelectedCollateral(null);
