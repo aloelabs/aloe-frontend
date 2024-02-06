@@ -96,7 +96,7 @@ export default function InfoGraph(props: {
 
     graphColors.forEach((v, k) => {
       arr.push(
-        <linearGradient id={k.replace('/', '-')} x1='0' y1='0' x2='0' y2='1'>
+        <linearGradient id={k.replace('/', '-')} x1='0' y1='0' x2='100%' y2='0' gradientUnits='userSpaceOnUse'>
           <stop offset='-29%' stopColor={v.color0} stopOpacity={1} />
           <stop offset='75%' stopColor={v.color1} stopOpacity={1} />
         </linearGradient>
