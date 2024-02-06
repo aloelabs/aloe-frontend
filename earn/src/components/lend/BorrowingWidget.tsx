@@ -4,6 +4,7 @@ import { SendTransactionResult } from '@wagmi/core';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
+import { GN } from 'shared/lib/data/GoodNumber';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
@@ -20,7 +21,6 @@ import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
-import { GN } from 'shared/lib/data/GoodNumber';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';
@@ -403,14 +403,14 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   let aprText = '';
                   if (isSelected && hoveredPair !== null) {
                     const pair = hoveredPair;
-                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR * 100;
                     aprText = `${Math.round(apr * 100) / 100}%`;
                   } else {
                     let minApr = Infinity;
                     let maxApr = -Infinity;
 
                     entry.matchingPairs.forEach((pair) => {
-                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR * 100;
                       minApr = Math.min(minApr, apr);
                       maxApr = Math.max(maxApr, apr);
                     });
