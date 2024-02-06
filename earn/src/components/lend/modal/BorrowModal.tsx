@@ -47,6 +47,7 @@ enum ConfirmButtonState {
   WAITING_FOR_USER,
   WAITING_FOR_TRANSACTION,
   INSUFFICIENT_ANTE,
+  CONNECT_WALLET,
   DISABLED,
 }
 
@@ -80,6 +81,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ANTE:
       return { text: 'Insufficient Ante', enabled: false };
+    case ConfirmButtonState.CONNECT_WALLET:
+      return { text: 'Connect Wallet', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Confirm', enabled: false };
@@ -189,7 +192,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
     const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
 
-    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization / 100 : kitty1Info.utilization / 100;
+    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;
     const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, selectedBorrow.decimals);
 
     const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
@@ -322,7 +325,9 @@ export default function BorrowModal(props: BorrowModalProps) {
   });
 
   let confirmButtonState: ConfirmButtonState;
-  if (ante === undefined || maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) {
+  if (!userAddress) {
+    confirmButtonState = ConfirmButtonState.CONNECT_WALLET;
+  } else if (ante === undefined || maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (
     isAskingUserToMulticallOps ||

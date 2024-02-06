@@ -21,7 +21,9 @@ import {
   MimLogo,
   OpLogo,
   PerpLogo,
+  PoolTogetherLogo,
   RplLogo,
+  SnxLogo,
   UniLogo,
   UsdcLogo,
   UsdtLogo,
@@ -256,6 +258,24 @@ const WSTETH_OPTIMISM = new Token(
   WstEthLogo
 );
 
+const POOLTOGETHER_OPTIMISM = new Token(
+  optimism.id,
+  '0x395ae52bb17aef68c2888d941736a71dc6d4e125',
+  18,
+  'POOL',
+  'PoolTogether',
+  PoolTogetherLogo
+);
+
+const SNX_OPTIMISM = new Token(
+  optimism.id,
+  '0x8700daec35af8ff88c16bdf0418774cb3d7599b4',
+  18,
+  'SNX',
+  'Synthetix Network Token',
+  SnxLogo
+);
+
 const DAI_ARBITRUM = new Token(
   arbitrum.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
@@ -395,6 +415,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
     [OP_OPTIMISM.address]: OP_OPTIMISM,
     [PERP_OPTIMISM.address]: PERP_OPTIMISM,
+    [POOLTOGETHER_OPTIMISM.address]: POOLTOGETHER_OPTIMISM,
+    [SNX_OPTIMISM.address]: SNX_OPTIMISM,
     [UNI_OPTIMISM.address]: UNI_OPTIMISM,
     [USDC_OPTIMISM.address]: USDC_OPTIMISM,
     [USDT_OPTIMISM.address]: USDT_OPTIMISM,

@@ -98,6 +98,10 @@ export default function MarketsPage() {
     return poolInfoMap;
   }, [lendingPairs]);
 
+  const doesGuardianSenseManipulation = useMemo(() => {
+    return lendingPairs.some((pair) => pair.oracleData.manipulationMetric > pair.manipulationThreshold);
+  }, [lendingPairs]);
+
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
@@ -325,7 +329,7 @@ export default function MarketsPage() {
               role='tab'
               aria-selected={selectedHeaderOption === HeaderOptions.Monitor}
             >
-              Monitor
+              Monitor{doesGuardianSenseManipulation ? ' 🚨' : ''}
             </HeaderSegmentedControlOption>
           </div>
           <HeaderDividingLine />

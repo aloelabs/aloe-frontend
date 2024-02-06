@@ -10,6 +10,7 @@ import { Address } from 'wagmi';
 
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
 
+// TODO: This is completely unnecessary. All info is available in `lendingPairs` (just need to refactor for GN)
 export type MarketInfo = {
   lender0: Address;
   lender1: Address;
@@ -32,6 +33,7 @@ export type Market = {
   token1Decimals: number;
 };
 
+// TODO: This is completely unnecessary. All info is available in `lendingPairs` (just need to refactor for GN)
 export async function fetchMarketInfos(
   markets: Market[],
   chainId: number,

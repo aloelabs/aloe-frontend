@@ -149,24 +149,24 @@ export default function SupplyTable(props: SupplyTableProps) {
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('apy', sortConfig?.primaryKey)}>
+                  <Text size='M' weight='bold'>
+                    APY
+                  </Text>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'apy' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
                   />
-                  <Text size='M' weight='bold'>
-                    APY
-                  </Text>
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('totalSupplyUsd', sortConfig?.primaryKey)}>
+                  <Text size='M' weight='bold'>
+                    Total Supply
+                  </Text>
                   <SortArrow
                     isSorted={sortConfig?.primaryKey === 'totalSupplyUsd' ?? false}
                     isSortedDesc={sortConfig?.direction === 'descending' ?? false}
                   />
-                  <Text size='M' weight='bold'>
-                    Total Supply
-                  </Text>
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
