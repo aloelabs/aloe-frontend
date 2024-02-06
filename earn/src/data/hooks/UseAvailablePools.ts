@@ -46,7 +46,7 @@ export default function useAvailablePools() {
           const poolContract = new ethers.Contract(addr, uniswapV3PoolAbi, provider);
           return Promise.all([poolContract.token0(), poolContract.token1(), poolContract.fee()]);
         })
-      );
+      ); // TODO: multicall
 
       const poolInfoMap = new Map<string, UniswapPoolInfo>();
       poolAddresses.forEach((addr, i) => {
