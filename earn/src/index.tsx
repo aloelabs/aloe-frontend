@@ -14,10 +14,12 @@ if (process.env.REACT_APP_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.REACT_APP_SENTRY_DSN,
     environment: isProduction() ? PRODUCTION : DEVELOPMENT,
-    integrations: [new Sentry.BrowserTracing()],
+    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
     release: generatedGitInfo.commit || undefined,
     sampleRate: 1.0,
     tracesSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
+    replaysSessionSampleRate: 0.5,
   });
 }
 
