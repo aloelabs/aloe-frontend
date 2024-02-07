@@ -46,7 +46,7 @@ export default function InfoGraphTooltip(data: any, active = false) {
           {formattedDate}
         </Text>
         <Text size='XS' weight='medium' color={TOOLTIP_TEXT_COLOR}>
-          {formattedTime}
+          ~{formattedTime}
         </Text>
       </TooltipTitleContainer>
       <div className='flex flex-col justify-between gap-2 mt-1 px-3 pb-3'>{tooltipValues}</div>
