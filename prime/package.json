@@ -8,7 +8,7 @@
     "@headlessui/react": "^1.4.3",
     "@heroicons/react": "^1.0.5",
     "@metamask/jazzicon": "^2.0.0",
-    "@sentry/react": "^7.57.0",
+    "@sentry/react": "^7.100.0",
     "@sentry/webpack-plugin": "^2.4.0",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
