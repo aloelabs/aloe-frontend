@@ -292,6 +292,7 @@ export default function MarketsPage() {
           provider={provider}
           blockNumber={blockNumber}
           lendingPairs={lendingPairs}
+          tokenColors={tokenColors}
           setPendingTxn={setPendingTxn}
         />
       );
