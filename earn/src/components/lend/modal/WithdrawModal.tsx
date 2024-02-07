@@ -95,10 +95,15 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     action,
     txn,
     resetTxn,
-    maxAmount: maxAmountBN,
+    maxAmount,
   } = useRedeem(activeChain.id, selectedRow.kitty.address, inputValue[1] ? GN.Q(112) : withdrawAmount, userAddress);
 
-  const maxAmount = GN.fromBigNumber(maxAmountBN, selectedRow.asset.decimals);
+  const maxAmountGN = GN.fromBigNumber(maxAmount, selectedRow.asset.decimals);
+  const isConstrainedByUtilization =
+    inputValue[1] &&
+    userBalance.isGtZero() &&
+    maxAmountGN.isGtZero() &&
+    maxAmountGN.recklessMul(100).div(userBalance).toNumber() < 99;
 
   useEffect(() => {
     if (txn === undefined) return;
@@ -137,9 +142,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
           token={selectedRow.asset}
           value={inputValue[0]}
           max={userBalance.toString(GNFormat.DECIMAL)}
-          maxed={withdrawAmount.eq(maxAmount)}
+          maxed={withdrawAmount.eq(maxAmountGN)}
           onMax={() => {
-            setInputValue([maxAmount.toString(GNFormat.DECIMAL), true]);
+            setInputValue([maxAmountGN.toString(GNFormat.DECIMAL), true]);
           }}
           onChange={(value) => {
             const output = formatNumberInput(value);
@@ -161,7 +166,14 @@ export default function WithdrawModal(props: WithdrawModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're withdrawing {inputValue[0] || '0'} {selectedRow.asset.symbol}. Your new balance will be{' '}
+            You're withdrawing{' '}
+            <strong>
+              {inputValue[0] || '0'} {selectedRow.asset.symbol}.
+            </strong>{' '}
+            {isConstrainedByUtilization
+              ? // eslint-disable-next-line max-len
+                `This will cause the interest rate to spike, encouraging borrowers to repay. Once they do, you'll be able to withdraw your remaining `
+              : `Your remaining balance will be `}
             {newBalanceStr} {selectedRow.asset.symbol}.
           </Text>
         </div>
