@@ -6,8 +6,8 @@ module.exports = {
   theme: {
     extend: {
       transitionProperty: {
-        'height': 'height'
-      }
+        'height': 'height',
+      },
     },
     colors: {
       transparent: 'transparent',
@@ -48,6 +48,8 @@ module.exports = {
         900: '#E4EDF6',
         1000: '#FFFFFF',
       },
+      'background': '#070e12',
+      'row-hover': '#82a0b6',
       // ...
     },
   },

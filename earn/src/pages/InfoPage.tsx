@@ -86,6 +86,7 @@ export default function InfoPage() {
           lendingPair,
           lastUpdatedTimestamp: latestTimestamps.at(i),
           setPendingTxn,
+          onMouseEnter: () => {},
         }))}
       />
       <PendingTxnModal

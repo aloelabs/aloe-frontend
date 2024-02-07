@@ -25,7 +25,7 @@ import { Address, useContractWrite } from 'wagmi';
 import { ChainContext } from '../../App';
 import { LendingPair } from '../../data/LendingPair';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 5;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const YELLOW_COLOR = 'rgba(242, 201, 76, 1)';
@@ -38,19 +38,9 @@ const TableContainer = styled.div`
   border-radius: 6px;
 `;
 
-const Table = styled.table`
-  width: 100%;
-`;
-
 const TableHeader = styled.thead`
   border-bottom: 2px solid ${GREY_600};
   text-align: start;
-`;
-
-const HoverableRow = styled.tr`
-  &:hover {
-    background-color: rgba(130, 160, 182, 0.1);
-  }
 `;
 
 const SortButton = styled.button`
@@ -122,10 +112,11 @@ export type StatsTableRowProps = {
   lendingPair: LendingPair;
   lastUpdatedTimestamp?: number;
   setPendingTxn: (data: SendTransactionResult) => void;
+  onMouseEnter: (pair: LendingPair | undefined) => void;
 };
 
 function StatsTableRow(props: StatsTableRowProps) {
-  const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn } = props;
+  const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn, onMouseEnter } = props;
   const { activeChain } = useContext(ChainContext);
 
   const { writeAsync: pause } = useContractWrite({
@@ -193,7 +184,11 @@ function StatsTableRow(props: StatsTableRowProps) {
       : `${reserveFactorTexts[0]}% / ${reserveFactorTexts[1]}%`;
 
   return (
-    <HoverableRow>
+    <tr
+      className='bg-background hover:bg-row-hover/10'
+      onMouseEnter={() => onMouseEnter(pair)}
+      onMouseLeave={() => onMouseEnter(undefined)}
+    >
       <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex items-center gap-2'>
           <TokenIcons tokens={[pair.token0, pair.token1]} links={lenderLinks} />
@@ -263,7 +258,7 @@ function StatsTableRow(props: StatsTableRowProps) {
           )}
         </div>
       </td>
-    </HoverableRow>
+    </tr>
   );
 }
 
@@ -275,7 +270,8 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
   const sortableRows = useMemo(() => {
     return rows.map((row) => ({
       ...row,
-      sortA: row.lendingPair.oracleData.manipulationMetric,
+      // it's the ratio between these two that matters for oracle stability, so that's what we sort by
+      sortA: row.lendingPair.oracleData.manipulationMetric / row.lendingPair.manipulationThreshold,
       sortB: row.lendingPair.ltv,
     }));
   }, [rows]);
@@ -298,7 +294,7 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
   return (
     <>
       <TableContainer>
-        <Table>
+        <table className='w-full'>
           <TableHeader>
             <tr>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
@@ -366,7 +362,7 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
               </td>
             </tr>
           </tfoot>
-        </Table>
+        </table>
       </TableContainer>
     </>
   );

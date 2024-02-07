@@ -19,12 +19,11 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [base.id]: <BaseLogo width={16} height={16} />,
 };
 
-export const ANTES: { [chainId: number]: GN } = {
-  [mainnet.id]: GN.fromDecimalString('0.001', 18),
-  [goerli.id]: GN.fromDecimalString('0.001', 18),
-  [optimism.id]: GN.fromDecimalString('0.001', 18),
-  [arbitrum.id]: GN.fromDecimalString('0.001', 18),
-  [base.id]: GN.fromDecimalString('0.001', 18),
+export const APPROX_SECONDS_PER_BLOCK: { [chainId: number]: number } = {
+  [mainnet.id]: 12.07,
+  [optimism.id]: 2,
+  [arbitrum.id]: 0.25,
+  [base.id]: 2,
 };
 
 export const MULTICALL_ADDRESS: { [chainId: number]: Address } = {

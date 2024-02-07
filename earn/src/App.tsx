@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
@@ -146,7 +146,6 @@ function AppBodyWrapper() {
 
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
-  const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
     isAllowed: false,
@@ -158,18 +157,6 @@ function App() {
   const provider = useProvider({ chainId: activeChain.id });
 
   const value = { activeChain, setActiveChain };
-  const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
-  const BLOCK_QUERY = gql`
-  {
-    blocks(first: 1, orderBy: timestamp, orderDirection: asc, where: {timestamp_gt: "${twentyFourHoursAgo.toFixed(
-      0
-    )}"}) {
-      id
-      number
-      timestamp
-    }
-  }
-  `;
 
   useEffectOnce(() => {
     (async () => {
@@ -192,16 +179,6 @@ function App() {
       setAccountRisk({ isBlocked: result.isBlocked, isLoading: false });
     })();
   }, [userAddress, setAccountRisk]);
-
-  useEffect(() => {
-    const queryBlocks = async () => {
-      const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
-      setBlockNumber(response.data.blocks[0].number);
-    };
-    if (blockNumber === null) {
-      queryBlocks();
-    }
-  });
 
   useEffect(() => {
     let mounted = true;
