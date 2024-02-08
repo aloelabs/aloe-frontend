@@ -23,6 +23,7 @@ import SnxLogo from './snx.svg';
 import TribeLogo from './tribe.svg';
 import UniLogo from './uni.svg';
 import UnknownTokenLogo from './unknown_token.svg';
+import UsdbcLogo from './usdbc.svg';
 import UsdcLogo from './usdc.svg';
 import UsdtLogo from './usdt.svg';
 import VeloLogo from './velo.svg';
@@ -48,6 +49,7 @@ export {
   PerpLogo,
   PoolTogetherLogo,
   SnxLogo,
+  UsdbcLogo,
   UsdcLogo,
   WbtcLogo,
   WethLogo,
