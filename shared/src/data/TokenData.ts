@@ -25,6 +25,7 @@ import {
   RplLogo,
   SnxLogo,
   UniLogo,
+  UsdbcLogo,
   UsdcLogo,
   UsdtLogo,
   VeloLogo,
@@ -368,6 +369,15 @@ const WETH_BASE = new Token(
   WethLogo
 );
 
+const USDBC_BASE = new Token(
+  base.id,
+  '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca',
+  6,
+  'USDbC',
+  'USD Base Coin',
+  UsdbcLogo
+);
+
 const CBETH_BASE = new Token(
   base.id,
   '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
@@ -442,6 +452,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [CBETH_BASE.address]: CBETH_BASE,
     [BALD_BASE.address]: BALD_BASE,
     [BASED_BASE.address]: BASED_BASE,
+    [USDBC_BASE.address]: USDBC_BASE,
   },
 };
 
