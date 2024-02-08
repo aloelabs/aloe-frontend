@@ -99,7 +99,7 @@ export const ChainContext = React.createContext({
 function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
   const network = useNetwork();
-  const isAllowed = useGeoFencing(activeChain);
+  const { isAllowed } = useGeoFencing(activeChain);
   const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
