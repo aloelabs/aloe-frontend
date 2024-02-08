@@ -1,21 +1,17 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useProvider } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
-import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
@@ -148,7 +144,6 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
   const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
 
-  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
   // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
@@ -156,33 +151,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   // selection/hover state for Active Table
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
-
-  const { activeChain } = useContext(ChainContext);
-  const provider = useProvider();
-
-  // Fetch market infos for all borrowers
-  useEffect(() => {
-    (async () => {
-      const markets =
-        borrowers?.map((borrower) => {
-          return {
-            lender0: borrower.lender0,
-            lender1: borrower.lender1,
-            token0Decimals: borrower.token0.decimals,
-            token1Decimals: borrower.token1.decimals,
-          };
-        }) ?? [];
-      const uniqueMarkets = markets?.filter((market, index) => {
-        return markets.findIndex((m) => m.lender0 === market.lender0 && m.lender1 === market.lender1) === index;
-      });
-      const marketInfosData = await fetchMarketInfos(uniqueMarkets, activeChain.id, provider);
-      const marketInfosMapped = marketInfosData.reduce((acc, marketInfo) => {
-        acc.set(`${marketInfo.lender0.toLowerCase()}-${marketInfo.lender1.toLowerCase()}`, marketInfo);
-        return acc;
-      }, new Map<string, MarketInfo>());
-      setMarketInfos(marketInfosMapped);
-    })();
-  }, [borrowers, activeChain.id, provider, setMarketInfos]);
 
   const filteredCollateralEntries = useMemo(
     () => filterBySelection(lendingPairs, selectedBorrows),
@@ -288,11 +256,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           ? account.liabilities.amount0
                           : account.liabilities.amount1;
                         const liabilityColor = tokenColors.get(liability.address);
-                        const marketInfo = marketInfos.get(
-                          `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
-                        );
+                        const lendingPair = lendingPairs.find((pair) => pair.uniswapPool === account.uniswapPool);
                         const apr =
-                          ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
+                          (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
                         const roundedApr = Math.round(apr * 100) / 100;
                         return (
                           <AvailableContainer
@@ -487,9 +453,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateBorrowerModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
-          marketInfo={marketInfos.get(
-            `${selectedBorrower.borrower.lender0.toLowerCase()}-${selectedBorrower.borrower.lender1.toLowerCase()}`
-          )}
+          lendingPair={lendingPairs.find((pair) => pair.uniswapPool === selectedBorrower.borrower.uniswapPool)}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}
