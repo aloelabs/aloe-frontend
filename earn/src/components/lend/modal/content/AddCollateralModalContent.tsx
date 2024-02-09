@@ -130,18 +130,19 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
 
   const { address: userAddress } = useAccount();
 
-  const { data: balanceData } = useBalance({
-    address: userAddress,
-    token: borrower.token0.address,
-    enabled: userAddress !== undefined,
-    chainId: activeChain.id,
-  });
-
   // TODO this logic needs to change once we support more complex borrowing
   const isDepositingToken0 = borrower.assets.token0Raw > 0;
 
   // TODO: This logic needs to change once we support more complex borrowing
   const collateralToken = isDepositingToken0 ? borrower.token0 : borrower.token1;
+
+  const { data: balanceData } = useBalance({
+    address: userAddress,
+    token: collateralToken.address,
+    enabled: userAddress !== undefined,
+    chainId: activeChain.id,
+  });
+
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
   const numericCollateralAmount = isDepositingToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
