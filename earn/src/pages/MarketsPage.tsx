@@ -7,6 +7,7 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGreyButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -14,15 +15,15 @@ import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
+import InfoTab from '../components/info/InfoTab';
 import BorrowingWidget from '../components/lend/BorrowingWidget';
 import OperationsModal from '../components/lend/modal/OperationsModal';
 import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
-import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
-import { fetchBorrowerDatas } from '../data/MarginAccount';
+import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import MulticallOperation from '../data/operations/MulticallOperator';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
@@ -66,6 +67,7 @@ export type TokenBalance = {
 enum HeaderOptions {
   Supply,
   Borrow,
+  Monitor,
 }
 
 type TokenSymbol = string;
@@ -87,8 +89,25 @@ export default function MarketsPage() {
   const [isOperationsModalOpen, setIsOperationsModalOpen] = useState(false);
 
   // MARK: custom hooks
-  const availablePools = useAvailablePools();
   const { lendingPairs } = useLendingPairs();
+
+  // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
+  // This saves a lot of data.
+  const availablePools = useMemo(() => {
+    const poolInfoMap = new Map<string, UniswapPoolInfo>();
+    lendingPairs.forEach((pair) =>
+      poolInfoMap.set(pair.uniswapPool.toLowerCase(), {
+        token0: pair.token0,
+        token1: pair.token1,
+        fee: GetNumericFeeTier(pair.uniswapFeeTier),
+      })
+    );
+    return poolInfoMap;
+  }, [lendingPairs]);
+
+  const doesGuardianSenseManipulation = useMemo(() => {
+    return lendingPairs.some((pair) => pair.oracleData.manipulationMetric > pair.manipulationThreshold);
+  }, [lendingPairs]);
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
@@ -232,7 +251,7 @@ export default function MarketsPage() {
       rows.push({
         asset: pair.token0,
         kitty: pair.kitty0,
-        apy: pair.kitty0Info.lendAPY,
+        apy: pair.kitty0Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.inventory,
@@ -246,7 +265,7 @@ export default function MarketsPage() {
       rows.push({
         asset: pair.token1,
         kitty: pair.kitty1,
-        apy: pair.kitty1Info.lendAPY,
+        apy: pair.kitty1Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.inventory,
@@ -260,6 +279,41 @@ export default function MarketsPage() {
     });
     return rows;
   }, [balancesMap, lendingPairs, tokenQuotes]);
+
+  let tabContent: JSX.Element;
+
+  switch (selectedHeaderOption) {
+    default:
+    case HeaderOptions.Supply:
+      tabContent = <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />;
+      break;
+    case HeaderOptions.Borrow:
+      tabContent = (
+        <BorrowingWidget
+          borrowers={borrowers}
+          lendingPairs={lendingPairs}
+          uniqueTokens={uniqueTokens}
+          tokenBalances={balancesMap}
+          tokenQuotes={tokenQuotes}
+          tokenColors={tokenColors}
+          multicallOperator={multicallOperator}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
+    case HeaderOptions.Monitor:
+      tabContent = (
+        <InfoTab
+          chainId={activeChain.id}
+          provider={provider}
+          blockNumber={blockNumber}
+          lendingPairs={lendingPairs}
+          tokenColors={tokenColors}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
+  }
 
   return (
     <AppPage>
@@ -286,6 +340,14 @@ export default function MarketsPage() {
               >
                 Borrow
               </HeaderSegmentedControlOption>
+              <HeaderSegmentedControlOption
+                isActive={selectedHeaderOption === HeaderOptions.Monitor}
+                onClick={() => setSelectedHeaderOption(HeaderOptions.Monitor)}
+                role='tab'
+                aria-selected={selectedHeaderOption === HeaderOptions.Monitor}
+              >
+                Monitor {doesGuardianSenseManipulation ? '🚨' : ''}
+              </HeaderSegmentedControlOption>
             </div>
             <FilledGreyButtonWithIcon
               size='S'
@@ -300,22 +362,7 @@ export default function MarketsPage() {
           </div>
           <HeaderDividingLine />
         </div>
-        {selectedHeaderOption === HeaderOptions.Supply ? (
-          <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />
-        ) : (
-          <div className='flex flex-col gap-6'>
-            <BorrowingWidget
-              borrowers={borrowers}
-              lendingPairs={lendingPairs}
-              uniqueTokens={uniqueTokens}
-              tokenBalances={balancesMap}
-              tokenQuotes={tokenQuotes}
-              tokenColors={tokenColors}
-              multicallOperator={multicallOperator}
-              setPendingTxn={setPendingTxn}
-            />
-          </div>
-        )}
+        {tabContent}
       </div>
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}

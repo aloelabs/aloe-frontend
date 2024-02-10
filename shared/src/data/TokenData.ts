@@ -21,8 +21,11 @@ import {
   MimLogo,
   OpLogo,
   PerpLogo,
+  PoolTogetherLogo,
   RplLogo,
+  SnxLogo,
   UniLogo,
+  UsdbcLogo,
   UsdcLogo,
   UsdtLogo,
   VeloLogo,
@@ -256,6 +259,24 @@ const WSTETH_OPTIMISM = new Token(
   WstEthLogo
 );
 
+const POOLTOGETHER_OPTIMISM = new Token(
+  optimism.id,
+  '0x395ae52bb17aef68c2888d941736a71dc6d4e125',
+  18,
+  'POOL',
+  'PoolTogether',
+  PoolTogetherLogo
+);
+
+const SNX_OPTIMISM = new Token(
+  optimism.id,
+  '0x8700daec35af8ff88c16bdf0418774cb3d7599b4',
+  18,
+  'SNX',
+  'Synthetix Network Token',
+  SnxLogo
+);
+
 const DAI_ARBITRUM = new Token(
   arbitrum.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
@@ -348,6 +369,15 @@ const WETH_BASE = new Token(
   WethLogo
 );
 
+const USDBC_BASE = new Token(
+  base.id,
+  '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca',
+  6,
+  'USDbC',
+  'USD Base Coin',
+  UsdbcLogo
+);
+
 const CBETH_BASE = new Token(
   base.id,
   '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
@@ -395,6 +425,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [LYRA_OPTIMISM.address]: LYRA_OPTIMISM,
     [OP_OPTIMISM.address]: OP_OPTIMISM,
     [PERP_OPTIMISM.address]: PERP_OPTIMISM,
+    [POOLTOGETHER_OPTIMISM.address]: POOLTOGETHER_OPTIMISM,
+    [SNX_OPTIMISM.address]: SNX_OPTIMISM,
     [UNI_OPTIMISM.address]: UNI_OPTIMISM,
     [USDC_OPTIMISM.address]: USDC_OPTIMISM,
     [USDT_OPTIMISM.address]: USDT_OPTIMISM,
@@ -420,6 +452,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [CBETH_BASE.address]: CBETH_BASE,
     [BALD_BASE.address]: BALD_BASE,
     [BASED_BASE.address]: BASED_BASE,
+    [USDBC_BASE.address]: USDBC_BASE,
   },
 };
 
@@ -431,12 +464,8 @@ export function getToken(chainId: number, address: Address): Token | undefined {
   return TOKEN_DATA[chainId][getLowercaseAddress(address)];
 }
 
-export function getTokenBySymbol(chainId: number, symbol: string): Token {
-  const token = Object.values(TOKEN_DATA[chainId]).find((token) => token.symbol.toUpperCase() === symbol.toUpperCase());
-  if (!token) {
-    throw new Error(`Could not find token with symbol ${symbol}`);
-  }
-  return token;
+export function getTokenBySymbol(chainId: number, symbol: string): Token | undefined {
+  return Object.values(TOKEN_DATA[chainId]).find((token) => token.symbol.toUpperCase() === symbol.toUpperCase());
 }
 
 function getLowercaseAddress(address: Address): Address {

@@ -124,7 +124,7 @@ export default function LendPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(prResponse).map(([key, value]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, key),
+          token: getTokenBySymbol(activeChain.id, key)!,
           price: value.price,
         };
       });
@@ -202,7 +202,7 @@ export default function LendPage() {
           token: pair.kitty0,
           balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
-          apy: pair.kitty0Info.lendAPY,
+          apy: pair.kitty0Info.lendAPY * 100,
           isKitty: true,
           pairName,
         },
@@ -210,7 +210,7 @@ export default function LendPage() {
           token: pair.kitty1,
           balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
           balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
-          apy: pair.kitty1Info.lendAPY,
+          apy: pair.kitty1Info.lendAPY * 100,
           isKitty: true,
           pairName,
         },

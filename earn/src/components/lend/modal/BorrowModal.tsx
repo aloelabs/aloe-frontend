@@ -48,6 +48,7 @@ enum ConfirmButtonState {
   WAITING_FOR_USER,
   WAITING_FOR_TRANSACTION,
   INSUFFICIENT_ANTE,
+  CONNECT_WALLET,
   DISABLED,
 }
 
@@ -81,6 +82,8 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.INSUFFICIENT_ANTE:
       return { text: 'Insufficient Ante', enabled: false };
+    case ConfirmButtonState.CONNECT_WALLET:
+      return { text: 'Connect Wallet', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
       return { text: 'Add Action', enabled: false };
@@ -155,7 +158,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       return null;
     }
     const sqrtPriceX96 = GN.fromBigNumber(consultData?.[1] ?? BigNumber.from('0'), 96, 2);
-    const nSigma = selectedLendingPair?.nSigma ?? 0;
+    const nSigma = selectedLendingPair?.factoryData.nSigma ?? 0;
     const iv = consultData[2].div(1e6).toNumber() / 1e6;
     const ltv = computeLTV(iv, nSigma);
 
@@ -171,7 +174,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     consultData,
     selectedBorrow,
     selectedCollateral.address,
-    selectedLendingPair?.nSigma,
+    selectedLendingPair?.factoryData.nSigma,
     selectedLendingPair?.token0.address,
   ]);
 
@@ -191,7 +194,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
     const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
 
-    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization / 100 : kitty1Info.utilization / 100;
+    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;
     const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, selectedBorrow.decimals);
 
     const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
@@ -276,7 +279,9 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
 
   let confirmButtonState: ConfirmButtonState;
-  if (ante === undefined || maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) {
+  if (!userAddress) {
+    confirmButtonState = ConfirmButtonState.CONNECT_WALLET;
+  } else if (ante === undefined || maxBorrowSupplyConstraint == null || maxBorrowHealthConstraint == null) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (
     permit2State === Permit2State.ASKING_USER_TO_SIGN ||

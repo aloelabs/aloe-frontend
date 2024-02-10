@@ -20,8 +20,8 @@ import { useAccount, useBalance, useContractRead } from 'wagmi';
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { LendingPair } from '../../../../data/LendingPair';
 import { Liabilities } from '../../../../data/MarginAccount';
-import { MarketInfo } from '../../../../data/MarketInfo';
 import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../borrow/HealthBar';
@@ -143,14 +143,14 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
 export type BorrowModalContentProps = {
   borrower: BorrowerNftBorrower;
-  marketInfo?: MarketInfo;
   multicallOperator: MulticallOperator;
+  lendingPair?: LendingPair;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModalContent(props: BorrowModalContentProps) {
-  const { borrower, marketInfo, multicallOperator, setIsOpen, setPendingTxnResult } = props;
+  const { borrower, lendingPair, multicallOperator, setIsOpen, setPendingTxnResult } = props;
 
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
@@ -194,9 +194,15 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const requiredAnte =
     accountEtherBalance !== undefined && accountEtherBalance.lt(ante) ? ante.sub(accountEtherBalance) : GN.zero(18);
 
-  const maxBorrowsBasedOnMarket = isBorrowingToken0
-    ? marketInfo?.lender0AvailableAssets
-    : marketInfo?.lender1AvailableAssets;
+  const lenderInfo = lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'];
+  const inventoryTotal = lenderInfo?.inventory || 0;
+  const inventoryAvailable = inventoryTotal * (lenderInfo?.utilization || 0);
+
+  // Compute updated utilization and apr
+  const inventoryAvailableNew = inventoryAvailable - borrowAmount.toNumber();
+  let utilizationNew = inventoryTotal > 0 ? 1 - inventoryAvailableNew / inventoryTotal : 0;
+  if (inventoryAvailableNew < 0) utilizationNew = 1;
+  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilizationNew)) * 100;
 
   // TODO: use GN
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
@@ -211,7 +217,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   )[isBorrowingToken0 ? 0 : 1];
 
   // TODO: use GN
-  const max = Math.min(maxBorrowsBasedOnHealth, maxBorrowsBasedOnMarket?.toNumber() ?? 0);
+  const max = Math.min(maxBorrowsBasedOnHealth, inventoryAvailable);
 
   // Mitigate the case when the number is represented in scientific notation
   const eightyPercentMaxBorrowAmount = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
@@ -233,21 +239,10 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
     borrower.token1.decimals
   );
 
-  const availableAssets = isBorrowingToken0 ? marketInfo?.lender0AvailableAssets : marketInfo?.lender1AvailableAssets;
-  const remainingAvailableAssets = availableAssets?.sub(borrowAmount);
-
-  const lenderTotalAssets = isBorrowingToken0 ? marketInfo?.lender0TotalAssets : marketInfo?.lender1TotalAssets;
-  // TODO: use GN
-  const newUtilization =
-    lenderTotalAssets && remainingAvailableAssets && lenderTotalAssets.isGtZero()
-      ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
-      : 0;
-  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
-
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
-  const notEnoughSupply = maxBorrowsBasedOnMarket?.lt(borrowAmount) ?? false;
+  const notEnoughSupply = borrowAmount.toNumber() > inventoryAvailable;
 
   return (
     <>
@@ -313,7 +308,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
         <ConfirmButton
           borrowAmount={borrowAmount}
           borrower={borrower}
-          isLoading={marketInfo === undefined}
+          isLoading={lendingPair === undefined}
           isUnhealthy={isUnhealthy}
           notEnoughSupply={notEnoughSupply}
           requiredAnte={requiredAnte}

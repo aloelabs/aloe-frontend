@@ -1,22 +1,20 @@
 import React, { Suspense, useEffect } from 'react';
 
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
-import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
-import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
 import WagmiProvider from 'shared/lib/components/WagmiProvider';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { fetchGeoFencing, GeoFencingResponse } from 'shared/lib/data/GeoFencing';
+import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
-import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { useAccount, useNetwork, useProvider } from 'wagmi';
 import { Chain } from 'wagmi/chains';
@@ -30,7 +28,6 @@ import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
 import BorrowPage from './pages/BorrowPage';
 import ClaimPage from './pages/ClaimPage';
-import InfoPage from './pages/InfoPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import LendPage from './pages/LendPage';
 import MarketsPage from './pages/MarketsPage';
@@ -100,12 +97,9 @@ export const ChainContext = React.createContext({
 });
 
 function AppBodyWrapper() {
-  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = React.useState(false);
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
-  const account = useAccount();
   const network = useNetwork();
-  const navigate = useNavigate();
-  const isAllowed = useGeoFencing(activeChain);
+  const { isAllowed } = useGeoFencing(activeChain);
   const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
@@ -113,13 +107,6 @@ function AppBodyWrapper() {
       setActiveChain(network.chain);
     }
   }, [activeChain, network.chain, setActiveChain]);
-
-  useEffect(() => {
-    const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
-    if (!account?.isConnecting && !account?.isConnected && !hasSeenWelcomeModal) {
-      setIsWelcomeModalOpen(true);
-    }
-  }, [account?.isConnecting, account?.isConnected]);
 
   if (isAccountRiskLoading) {
     return null;
@@ -137,7 +124,6 @@ function AppBodyWrapper() {
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
           <Route path='/lend' element={<LendPage />} />
-          <Route path='/stats' element={<InfoPage />} />
           <Route path='/leaderboard' element={<LeaderboardPage />} />
           {isAllowed && (
             <>
@@ -148,20 +134,11 @@ function AppBodyWrapper() {
             </>
           )}
           <Route path='/claim' element={<ClaimPage />} />
-          <Route path='/' element={<Navigate replace to='/portfolio' />} />
+          <Route path='/' element={<Navigate replace to='/markets' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
       </main>
       <Footer />
-      <WelcomeModal
-        isOpen={isWelcomeModalOpen}
-        activeChain={activeChain}
-        checkboxes={CONNECT_WALLET_CHECKBOXES}
-        account={account}
-        setIsOpen={() => setIsWelcomeModalOpen(false)}
-        onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-        onSkip={() => navigate('/markets')}
-      />
       <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
     </AppBody>
   );
@@ -169,39 +146,26 @@ function AppBodyWrapper() {
 
 function App() {
   const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
-  const [blockNumber, setBlockNumber] = useSafeState<string | null>(null);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
-  const [geoFencingResponse, setGeoFencingResponse] = React.useState<GeoFencingResponse | null>(null);
+  const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
+    isAllowed: false,
+    isLoading: true,
+  });
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
 
   const { address: userAddress } = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
 
   const value = { activeChain, setActiveChain };
-  const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
-  const BLOCK_QUERY = gql`
-  {
-    blocks(first: 1, orderBy: timestamp, orderDirection: asc, where: {timestamp_gt: "${twentyFourHoursAgo.toFixed(
-      0
-    )}"}) {
-      id
-      number
-      timestamp
-    }
-  }
-  `;
 
   useEffectOnce(() => {
-    let mounted = true;
     (async () => {
       const result = await fetchGeoFencing();
-      if (mounted) {
-        setGeoFencingResponse(result);
-      }
+      setGeoFencingInfo({
+        isAllowed: result.isAllowed,
+        isLoading: false,
+      });
     })();
-    return () => {
-      mounted = false;
-    };
   });
 
   useEffect(() => {
@@ -215,16 +179,6 @@ function App() {
       setAccountRisk({ isBlocked: result.isBlocked, isLoading: false });
     })();
   }, [userAddress, setAccountRisk]);
-
-  useEffect(() => {
-    const queryBlocks = async () => {
-      const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
-      setBlockNumber(response.data.blocks[0].number);
-    };
-    if (blockNumber === null) {
-      queryBlocks();
-    }
-  });
 
   useEffect(() => {
     let mounted = true;
@@ -245,7 +199,7 @@ function App() {
       <Suspense fallback={null}>
         <WagmiProvider>
           <AccountRiskContext.Provider value={accountRisk}>
-            <GeoFencingContext.Provider value={geoFencingResponse}>
+            <GeoFencingContext.Provider value={geoFencingInfo}>
               <ChainContext.Provider value={value}>
                 <LendingPairsContext.Provider value={lendingPairs}>
                   <ScrollToTop />

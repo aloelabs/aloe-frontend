@@ -8,7 +8,7 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { MarketInfo } from '../../../data/MarketInfo';
+import { LendingPair } from '../../../data/LendingPair';
 import MulticallOperator from '../../../data/operations/MulticallOperator';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
@@ -51,14 +51,14 @@ const TabButton = styled.button`
 export type UpdateBorrowerModalProps = {
   isOpen: boolean;
   borrower: BorrowerNftBorrower;
-  marketInfo?: MarketInfo;
   multicallOperator: MulticallOperator;
+  lendingPair?: LendingPair;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
-  const { isOpen, borrower, marketInfo, multicallOperator, setIsOpen, setPendingTxn } = props;
+  const { isOpen, borrower, lendingPair, multicallOperator, setIsOpen, setPendingTxn } = props;
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.BORROW);
 
   return (
@@ -87,9 +87,9 @@ export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {
             <Tab.Panel className='w-full px-2'>
               <BorrowModalContent
                 borrower={borrower}
-                marketInfo={marketInfo}
                 multicallOperator={multicallOperator}
                 setIsOpen={setIsOpen}
+                lendingPair={lendingPair}
                 setPendingTxnResult={setPendingTxn}
               />
             </Tab.Panel>

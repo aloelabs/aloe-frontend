@@ -48,10 +48,10 @@ export default function Header(props: HeaderProps) {
   const isAllowed = useGeoFencing(activeChain);
   const navLinks: NavBarLink[] = [
     ...(isAllowed ? EXTENDED_NAV_LINKS : DEFAULT_NAV_LINKS),
-    {
-      label: 'Stats',
-      to: '/stats',
-    },
+    // {
+    //   label: 'Stats',
+    //   to: '/stats',
+    // },
   ];
 
   return (

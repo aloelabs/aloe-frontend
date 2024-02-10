@@ -1,20 +1,17 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useProvider } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
-import { fetchMarketInfos, MarketInfo } from '../../data/MarketInfo';
 import MulticallOperator from '../../data/operations/MulticallOperator';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
@@ -30,7 +27,6 @@ const CardWrapper = styled.div<{ $textAlignment: string }>`
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-  min-height: 200px;
   text-align: ${(props) => props.$textAlignment};
 `;
 
@@ -150,7 +146,6 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
   const { borrowers, lendingPairs, tokenBalances, tokenColors, multicallOperator, setPendingTxn } = props;
 
-  const [marketInfos, setMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
   // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
@@ -158,33 +153,6 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   // selection/hover state for Active Table
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
-
-  const { activeChain } = useContext(ChainContext);
-  const provider = useProvider();
-
-  // Fetch market infos for all borrowers
-  useEffect(() => {
-    (async () => {
-      const markets =
-        borrowers?.map((borrower) => {
-          return {
-            lender0: borrower.lender0,
-            lender1: borrower.lender1,
-            token0Decimals: borrower.token0.decimals,
-            token1Decimals: borrower.token1.decimals,
-          };
-        }) ?? [];
-      const uniqueMarkets = markets?.filter((market, index) => {
-        return markets.findIndex((m) => m.lender0 === market.lender0 && m.lender1 === market.lender1) === index;
-      });
-      const marketInfosData = await fetchMarketInfos(uniqueMarkets, activeChain.id, provider);
-      const marketInfosMapped = marketInfosData.reduce((acc, marketInfo) => {
-        acc.set(`${marketInfo.lender0.toLowerCase()}-${marketInfo.lender1.toLowerCase()}`, marketInfo);
-        return acc;
-      }, new Map<string, MarketInfo>());
-      setMarketInfos(marketInfosMapped);
-    })();
-  }, [borrowers, activeChain.id, provider, setMarketInfos]);
 
   const filteredCollateralEntries = useMemo(
     () => filterBySelection(lendingPairs, selectedBorrows),
@@ -198,62 +166,149 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   return (
     <>
+      {(borrowers?.length || 0) > 0 && (
+        <>
+          <Text size='L' weight='bold'>
+            Manage positions
+          </Text>
+          <div className='flex'>
+            <CardWrapper $textAlignment='start'>
+              <CardContainer>
+                <CardRow>
+                  <CardRowHeader>
+                    <Text size='M' weight='bold'>
+                      Collateral
+                    </Text>
+                  </CardRowHeader>
+                  <div className='flex flex-col'>
+                    {borrowers &&
+                      borrowers.map((account) => {
+                        const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                        if (hasNoCollateral) return null;
+                        const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
+                        const collateralAmount = collateral.equals(account.token0)
+                          ? account.assets.token0Raw
+                          : account.assets.token1Raw;
+                        const collateralColor = tokenColors.get(collateral.address);
+                        const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
+                        return (
+                          <AvailableContainer
+                            $gradDirection='45deg'
+                            $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
+                            $gradColorB={GREY_700}
+                            key={account.tokenId}
+                            onMouseEnter={() => {
+                              setHoveredBorrower(account);
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredBorrower(null);
+                            }}
+                            className={account === hoveredBorrower ? 'active' : ''}
+                            onClick={() => {
+                              setSelectedBorrower({
+                                borrower: account,
+                                type: 'supply',
+                              });
+                            }}
+                          >
+                            <div className='flex items-center gap-3'>
+                              <TokenIcon token={collateral} />
+                              <Display size='XS'>
+                                {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
+                              </Display>
+                            </div>
+                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}%&nbsp;&nbsp;LTV</Display>
+                          </AvailableContainer>
+                        );
+                      })}
+                  </div>
+                </CardRow>
+              </CardContainer>
+            </CardWrapper>
+            <div className='w-[52px] mt-[2px]'>
+              <div className='w-[52px] h-[42px]' />
+              {borrowers &&
+                borrowers.map((borrower) => {
+                  const hasNoCollateral = borrower.assets.token0Raw === 0 && borrower.assets.token1Raw === 0;
+                  if (hasNoCollateral) return null;
+                  return (
+                    <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
+                      <HealthGauge health={borrower.health} size={36} />
+                    </div>
+                  );
+                })}
+            </div>
+            <CardWrapper $textAlignment='end'>
+              <CardContainer>
+                <CardRow>
+                  <CardRowHeader>
+                    <Text size='M' weight='bold' className='ml-auto'>
+                      Borrows
+                    </Text>
+                  </CardRowHeader>
+                  <div className='flex flex-col'>
+                    {borrowers &&
+                      borrowers.map((account) => {
+                        const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                        if (hasNoCollateral) return null;
+                        const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
+                        const isBorrowingToken0 = !collateral.equals(account.token0);
+                        const liability = isBorrowingToken0 ? account.token0 : account.token1;
+                        const liabilityAmount = isBorrowingToken0
+                          ? account.liabilities.amount0
+                          : account.liabilities.amount1;
+                        const liabilityColor = tokenColors.get(liability.address);
+                        const lendingPair = lendingPairs.find((pair) => pair.uniswapPool === account.uniswapPool);
+                        const apr =
+                          (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
+                        const roundedApr = Math.round(apr * 100) / 100;
+                        return (
+                          <AvailableContainer
+                            $gradDirection='-45deg'
+                            $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
+                            $gradColorB={GREY_700}
+                            key={account.tokenId}
+                            onMouseEnter={() => {
+                              setHoveredBorrower(account);
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredBorrower(null);
+                            }}
+                            onClick={() => {
+                              setSelectedBorrower({
+                                borrower: account,
+                                type: 'borrow',
+                              });
+                            }}
+                            className={account === hoveredBorrower ? 'active' : ''}
+                          >
+                            <Display size='XXS'>{roundedApr}%&nbsp;&nbsp;APR</Display>
+                            <div className='flex items-center gap-3'>
+                              <Display size='XS'>
+                                {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
+                              </Display>
+                              <TokenIcon token={liability} />
+                            </div>
+                          </AvailableContainer>
+                        );
+                      })}
+                  </div>
+                </CardRow>
+              </CardContainer>
+            </CardWrapper>
+          </div>
+        </>
+      )}
+      <Text size='L' weight='bold'>
+        Open a new position
+      </Text>
       <div className='flex'>
         <CardWrapper $textAlignment='start'>
           <CardContainer>
             <CardRow>
               <CardRowHeader>
                 <Text size='M' weight='bold'>
-                  Active Collateral
-                </Text>
-              </CardRowHeader>
-              <div className='flex flex-col'>
-                {borrowers &&
-                  borrowers.map((account) => {
-                    const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
-                    if (hasNoCollateral) return null;
-                    const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
-                    const collateralAmount = collateral.equals(account.token0)
-                      ? account.assets.token0Raw
-                      : account.assets.token1Raw;
-                    const collateralColor = tokenColors.get(collateral.address);
-                    const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
-                    return (
-                      <AvailableContainer
-                        $gradDirection='45deg'
-                        $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
-                        $gradColorB={GREY_700}
-                        key={account.tokenId}
-                        onMouseEnter={() => {
-                          setHoveredBorrower(account);
-                        }}
-                        onMouseLeave={() => {
-                          setHoveredBorrower(null);
-                        }}
-                        className={account === hoveredBorrower ? 'active' : ''}
-                        onClick={() => {
-                          setSelectedBorrower({
-                            borrower: account,
-                            type: 'supply',
-                          });
-                        }}
-                      >
-                        <div className='flex items-center gap-3'>
-                          <TokenIcon token={collateral} />
-                          <Display size='XS'>
-                            {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
-                          </Display>
-                        </div>
-                        <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}%&nbsp;&nbsp;LTV</Display>
-                      </AvailableContainer>
-                    );
-                  })}
-              </div>
-            </CardRow>
-            <CardRow>
-              <CardRowHeader>
-                <Text size='M' weight='bold'>
-                  Available
+                  Collateral
                 </Text>
                 <ClearButton
                   disabled={selectedCollateral == null}
@@ -313,76 +368,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             </CardRow>
           </CardContainer>
         </CardWrapper>
-        <div className='w-[52px] mt-[2px]'>
-          <div className='w-[52px] h-[42px]' />
-          {borrowers &&
-            borrowers.map((borrower) => {
-              const hasNoCollateral = borrower.assets.token0Raw === 0 && borrower.assets.token1Raw === 0;
-              if (hasNoCollateral) return null;
-              return (
-                <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
-                  <HealthGauge health={borrower.health} size={36} />
-                </div>
-              );
-            })}
-        </div>
+        <div className='w-[52px] min-w-[52px]'></div>
         <CardWrapper $textAlignment='end'>
           <CardContainer>
-            <CardRow>
-              <CardRowHeader>
-                <Text size='M' weight='bold' className='ml-auto'>
-                  Active Borrows
-                </Text>
-              </CardRowHeader>
-              <div className='flex flex-col'>
-                {borrowers &&
-                  borrowers.map((account) => {
-                    const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
-                    if (hasNoCollateral) return null;
-                    const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
-                    const isBorrowingToken0 = !collateral.equals(account.token0);
-                    const liability = isBorrowingToken0 ? account.token0 : account.token1;
-                    const liabilityAmount = isBorrowingToken0
-                      ? account.liabilities.amount0
-                      : account.liabilities.amount1;
-                    const liabilityColor = tokenColors.get(liability.address);
-                    const marketInfo = marketInfos.get(
-                      `${account.lender0.toLowerCase()}-${account.lender1.toLowerCase()}`
-                    );
-                    const apr = ((isBorrowingToken0 ? marketInfo?.borrowerAPR0 : marketInfo?.borrowerAPR1) ?? 0) * 100;
-                    const roundedApr = Math.round(apr * 100) / 100;
-                    return (
-                      <AvailableContainer
-                        $gradDirection='-45deg'
-                        $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
-                        $gradColorB={GREY_700}
-                        key={account.tokenId}
-                        onMouseEnter={() => {
-                          setHoveredBorrower(account);
-                        }}
-                        onMouseLeave={() => {
-                          setHoveredBorrower(null);
-                        }}
-                        onClick={() => {
-                          setSelectedBorrower({
-                            borrower: account,
-                            type: 'borrow',
-                          });
-                        }}
-                        className={account === hoveredBorrower ? 'active' : ''}
-                      >
-                        <Display size='XXS'>{roundedApr}%&nbsp;&nbsp;APR</Display>
-                        <div className='flex items-center gap-3'>
-                          <Display size='XS'>
-                            {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
-                          </Display>
-                          <TokenIcon token={liability} />
-                        </div>
-                      </AvailableContainer>
-                    );
-                  })}
-              </div>
-            </CardRow>
             <CardRow>
               <CardRowHeader>
                 <ClearButton
@@ -394,7 +382,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   Clear
                 </ClearButton>
                 <Text size='M' weight='bold'>
-                  Available
+                  Borrows
                 </Text>
               </CardRowHeader>
               <div className='flex flex-col'>
@@ -404,14 +392,14 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   let aprText = '';
                   if (isSelected && hoveredPair !== null) {
                     const pair = hoveredPair;
-                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                    const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR * 100;
                     aprText = `${Math.round(apr * 100) / 100}%`;
                   } else {
                     let minApr = Infinity;
                     let maxApr = -Infinity;
 
                     entry.matchingPairs.forEach((pair) => {
-                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR;
+                      const apr = pair[entry.token.equals(pair.token0) ? 'kitty0Info' : 'kitty1Info'].borrowAPR * 100;
                       minApr = Math.min(minApr, apr);
                       maxApr = Math.max(maxApr, apr);
                     });
@@ -455,7 +443,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           }
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
-          userBalance={tokenBalances.get(selectedCollateral.address)!.gn}
+          userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
           multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrows(null);
@@ -468,9 +456,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateBorrowerModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
-          marketInfo={marketInfos.get(
-            `${selectedBorrower.borrower.lender0.toLowerCase()}-${selectedBorrower.borrower.lender1.toLowerCase()}`
-          )}
+          lendingPair={lendingPairs.find((pair) => pair.uniswapPool === selectedBorrower.borrower.uniswapPool)}
           multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrower(null);
