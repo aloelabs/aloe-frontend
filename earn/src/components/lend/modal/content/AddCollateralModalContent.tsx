@@ -3,10 +3,8 @@ import { useContext, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
-import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { permit2Abi } from 'shared/lib/abis/Permit2';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_PERMIT2_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
@@ -14,7 +12,7 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
@@ -23,7 +21,6 @@ import { Assets } from '../../../../data/MarginAccount';
 import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import HealthBar from '../../../borrow/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -50,10 +47,10 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.WAITING_FOR_USER:
       return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', enabled: true };
+      return { text: 'Add Action', enabled: true };
     case ConfirmButtonState.DISABLED:
     default:
-      return { text: 'Confirm', enabled: false };
+      return { text: 'Add Action', enabled: false };
   }
 }
 
@@ -69,20 +66,9 @@ type ConfirmButtonProps = {
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
-  const {
-    depositAmount,
-    maxDepositAmount,
-    borrower,
-    token,
-    isDepositingToken0,
-    multicallOperator,
-    setIsOpen,
-    setPendingTxn,
-  } = props;
+  const { depositAmount, maxDepositAmount, borrower, token, isDepositingToken0, multicallOperator, setIsOpen } = props;
   const { address: accountAddress } = useAccount();
   const { activeChain } = useContext(ChainContext);
-
-  const insufficientAssets = depositAmount.gt(maxDepositAmount);
 
   const {
     state: permit2State,
@@ -132,39 +118,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ]) as `0x${string}`;
   }, [isDepositingToken0, depositAmount, borrower.token0.decimals, borrower.token1.decimals, borrower.address]);
 
-  const { config: depositConfig, isLoading: isCheckingIfCanDeposit } = usePrepareContractWrite({
-    address: token.address,
-    abi: erc20Abi,
-    functionName: 'transfer',
-    args: [borrower.address, depositAmount.toBigNumber()],
-    enabled: Boolean(depositAmount) && !insufficientAssets,
-    chainId: activeChain.id,
-  });
-  const gasLimit = depositConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: deposit, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...depositConfig,
-    request: {
-      ...depositConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
-
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
-  if (isCheckingIfCanDeposit) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (depositAmount.isZero()) {
+  if (depositAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (depositAmount.gt(maxDepositAmount)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
-  } else if (isAskingUserToConfirm) {
-    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
-  } else if (!depositConfig.request) {
-    confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -190,15 +149,6 @@ function ConfirmButton(props: ConfirmButtonProps) {
           });
           setIsOpen(false);
         }}
-      >
-        Add Action
-      </FilledStylizedButton>
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        onClick={() => deposit?.()}
-        disabled={!confirmButton.enabled}
       >
         {confirmButton.text}
       </FilledStylizedButton>

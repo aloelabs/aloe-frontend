@@ -3,20 +3,14 @@ import { useContext, useMemo, useState } from 'react';
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
-import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
-import {
-  ALOE_II_BORROWER_NFT_ADDRESS,
-  ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS,
-  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
-} from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
@@ -25,7 +19,6 @@ import { Assets } from '../../../../data/MarginAccount';
 import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import HealthBar from '../../../borrow/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -49,10 +42,10 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.WAITING_FOR_USER:
       return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', enabled: true };
+      return { text: 'Add Action', enabled: true };
     case ConfirmButtonState.DISABLED:
     default:
-      return { text: 'Confirm', enabled: false };
+      return { text: 'Add Action', enabled: false };
   }
 }
 
@@ -80,7 +73,6 @@ function ConfirmButton(props: ConfirmButtonProps) {
     accountAddress,
     multicallOperator,
     setIsOpen,
-    setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
 
@@ -123,53 +115,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ) as `0x${string}`;
   }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
-  const { config: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = usePrepareContractWrite({
-    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
-    abi: borrowerNftAbi,
-    functionName: 'modify',
-    args: [
-      accountAddress ?? '0x',
-      [borrower.index],
-      [
-        shouldWithdrawAnte
-          ? ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS[activeChain.id]
-          : ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id],
-      ],
-      [(shouldWithdrawAnte ? combinedEncodingsForMultiManager : encodedWithdrawCall) ?? '0x'],
-      [0],
-    ],
-    chainId: activeChain.id,
-    enabled:
-      accountAddress &&
-      encodedWithdrawCall != null &&
-      !isRedeemingTooMuch &&
-      !(shouldWithdrawAnte && !encodedWithdrawAnteCall),
-  });
-  const gasLimit = withdrawConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: withdraw, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...withdrawConfig,
-    request: {
-      ...withdrawConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
-
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
-  if (isCheckingIfAbleToWithdraw) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (withdrawAmount.isZero()) {
+  if (withdrawAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (isRedeemingTooMuch) {
     confirmButtonState = ConfirmButtonState.REDEEM_TOO_MUCH;
-  } else if (isAskingUserToConfirm) {
-    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
-  } else if (!withdrawConfig.request) {
-    confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
@@ -191,15 +142,6 @@ function ConfirmButton(props: ConfirmButtonProps) {
           });
           setIsOpen(false);
         }}
-      >
-        Add Action
-      </FilledStylizedButton>
-      <FilledStylizedButton
-        size='M'
-        fillWidth={true}
-        color={MODAL_BLACK_TEXT_COLOR}
-        onClick={() => withdraw?.()}
-        disabled={!confirmButton.enabled}
       >
         {confirmButton.text}
       </FilledStylizedButton>
