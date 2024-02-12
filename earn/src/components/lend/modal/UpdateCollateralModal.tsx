@@ -8,6 +8,7 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import MulticallOperator from '../../../data/operations/MulticallOperator';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
 
@@ -49,12 +50,13 @@ const TabButton = styled.button`
 export type UpdateCollateralModalProps = {
   isOpen: boolean;
   borrower: BorrowerNftBorrower;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function UpdateCollateralModal(props: UpdateCollateralModalProps) {
-  const { isOpen, borrower, setIsOpen, setPendingTxn } = props;
+  const { isOpen, borrower, multicallOperator, setIsOpen, setPendingTxn } = props;
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
 
   return (
@@ -83,6 +85,7 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
             <Tab.Panel className='w-full px-2'>
               <AddCollateralModalContent
                 borrower={borrower}
+                multicallOperator={multicallOperator}
                 setIsOpen={setIsOpen}
                 setPendingTxnResult={setPendingTxn}
               />
@@ -90,6 +93,7 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
             <Tab.Panel className='w-full px-2'>
               <RemoveCollateralModalContent
                 borrower={borrower}
+                multicallOperator={multicallOperator}
                 setIsOpen={setIsOpen}
                 setPendingTxnResult={setPendingTxn}
               />

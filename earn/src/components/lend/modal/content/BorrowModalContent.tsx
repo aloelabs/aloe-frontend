@@ -3,14 +3,11 @@ import { ChangeEvent, useContext, useMemo, useState } from 'react';
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
-import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
-import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
-  ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
@@ -18,17 +15,17 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractRead } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { LendingPair } from '../../../../data/LendingPair';
 import { Liabilities } from '../../../../data/MarginAccount';
+import MulticallOperator from '../../../../data/operations/MulticallOperator';
 import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../borrow/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -47,7 +44,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
     case ConfirmButtonState.PENDING:
       return { text: 'Pending', enabled: false };
     case ConfirmButtonState.READY:
-      return { text: 'Confirm', enabled: true };
+      return { text: 'Add Action', enabled: true };
     case ConfirmButtonState.UNHEALTHY:
       return { text: 'Insufficient Collateral', enabled: false };
     case ConfirmButtonState.NOT_ENOUGH_SUPPLY:
@@ -58,7 +55,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Loading...', enabled: false };
     case ConfirmButtonState.DISABLED:
     default:
-      return { text: 'Confirm', enabled: false };
+      return { text: 'Add Action', enabled: false };
   }
 }
 
@@ -72,6 +69,7 @@ type ConfirmButtonProps = {
   token: Token;
   isBorrowingToken0: boolean;
   accountAddress?: Address;
+  multicallOperator: MulticallOperator;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
@@ -87,12 +85,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
     token,
     isBorrowingToken0,
     accountAddress,
+    multicallOperator,
     setIsOpen,
-    setPendingTxn,
   } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const encodedBorrowCall = useMemo(() => {
+  const encodedModify = useMemo(() => {
     if (!accountAddress) return null;
     const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
     const amount0 = isBorrowingToken0 ? borrowAmount : GN.zero(borrower.token0.decimals);
@@ -105,77 +103,54 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ]) as `0x${string}`;
   }, [borrowAmount, borrower.token0.decimals, borrower.token1.decimals, isBorrowingToken0, accountAddress]);
 
-  const { config: borrowConfig, isLoading: isCheckingIfAbleToBorrow } = usePrepareContractWrite({
-    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
-    abi: borrowerNftAbi,
-    functionName: 'modify',
-    args: [
-      accountAddress ?? '0x',
-      [borrower.index],
-      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedBorrowCall ?? '0x'],
-      [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
-    ],
-    overrides: { value: requiredAnte?.toBigNumber() },
-    chainId: activeChain.id,
-    enabled:
-      accountAddress && encodedBorrowCall != null && requiredAnte !== undefined && !isUnhealthy && !notEnoughSupply,
-  });
-  const gasLimit = borrowConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: borrow, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...borrowConfig,
-    request: {
-      ...borrowConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
-
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
   if (isLoading) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (isAskingUserToConfirm) {
-    confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
   } else if (borrowAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   } else if (isUnhealthy) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if (isCheckingIfAbleToBorrow && !borrowConfig.request) {
-    confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!borrowConfig.request) {
-    confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   return (
-    <FilledStylizedButton
-      size='M'
-      fillWidth={true}
-      color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => borrow?.()}
-      disabled={!confirmButton.enabled}
-    >
-      {confirmButton.text}
-    </FilledStylizedButton>
+    <div className='flex flex-col gap-4 w-full'>
+      <FilledStylizedButton
+        size='M'
+        fillWidth={true}
+        disabled={!confirmButton.enabled}
+        onClick={() => {
+          if (accountAddress === undefined || encodedModify == null || requiredAnte === undefined) return;
+          multicallOperator.addModifyOperation({
+            owner: accountAddress,
+            indices: [borrower.index],
+            managers: [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+            data: [encodedModify],
+            antes: [requiredAnte],
+          });
+          setIsOpen(false);
+        }}
+      >
+        {confirmButton.text}
+      </FilledStylizedButton>
+    </div>
   );
 }
 
 export type BorrowModalContentProps = {
   borrower: BorrowerNftBorrower;
+  multicallOperator: MulticallOperator;
   lendingPair?: LendingPair;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: SendTransactionResult | null) => void;
 };
 
 export default function BorrowModalContent(props: BorrowModalContentProps) {
-  const { borrower, lendingPair, setIsOpen, setPendingTxnResult } = props;
+  const { borrower, lendingPair, multicallOperator, setIsOpen, setPendingTxnResult } = props;
 
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
@@ -340,6 +315,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           token={borrowToken}
           isBorrowingToken0={isBorrowingToken0}
           accountAddress={accountAddress}
+          multicallOperator={multicallOperator}
           setIsOpen={setIsOpen}
           setPendingTxn={setPendingTxnResult}
         />

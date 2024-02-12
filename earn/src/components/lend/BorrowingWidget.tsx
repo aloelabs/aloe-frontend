@@ -12,6 +12,7 @@ import styled from 'styled-components';
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
+import MulticallOperator from '../../data/operations/MulticallOperator';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
@@ -120,6 +121,7 @@ export type BorrowingWidgetProps = {
   tokenBalances: LendingPairBalancesMap;
   tokenQuotes: Map<string, number>;
   tokenColors: Map<string, string>;
+  multicallOperator: MulticallOperator;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
@@ -142,7 +144,7 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
 }
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
+  const { borrowers, lendingPairs, tokenBalances, tokenColors, multicallOperator, setPendingTxn } = props;
 
   // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
@@ -442,6 +444,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrows(null);
             setSelectedCollateral(null);
@@ -454,6 +457,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
           lendingPair={lendingPairs.find((pair) => pair.uniswapPool === selectedBorrower.borrower.uniswapPool)}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}
@@ -464,6 +468,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateCollateralModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
+          multicallOperator={multicallOperator}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}
