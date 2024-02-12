@@ -1,6 +1,7 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
+import JSBI from 'jsbi';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
@@ -21,6 +22,7 @@ import { Address } from 'wagmi';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
+import { UniswapPosition } from './Uniswap';
 
 export type Assets = {
   token0Raw: number;
@@ -51,6 +53,7 @@ export type MarginAccount = {
   lender1: Address;
   iv: number;
   nSigma: number;
+  uniswapPositions?: UniswapPosition[];
 };
 
 /**
@@ -190,14 +193,14 @@ export async function fetchBorrowerDatas(
       contractAddress: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
       abi: borrowerLensAbi as any,
       calls: [
-        // {
-        //   reference: 'getLiabilities',
-        //   methodName: 'getLiabilities',
-        //   methodParameters: [accountAddress, true],
-        // },
         {
           reference: 'getHealth',
           methodName: 'getHealth',
+          methodParameters: [accountAddress],
+        },
+        {
+          reference: 'getUniswapPositions',
+          methodName: 'getUniswapPositions',
           methodParameters: [accountAddress],
         },
       ],
@@ -282,6 +285,20 @@ export async function fetchBorrowerDatas(
       amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
     };
 
+    const uniswapPositionData = lensReturnContexts[1].returnValues;
+    const uniswapPositionBounds = uniswapPositionData[0] as number[];
+    const uniswapPositionLiquidity = uniswapPositionData[1] as { hex: `0x${string}` }[];
+
+    const uniswapPositions: UniswapPosition[] = [];
+    uniswapPositionLiquidity.forEach((liquidity, i) => {
+      uniswapPositions.push({
+        lower: uniswapPositionBounds[i * 2],
+        upper: uniswapPositionBounds[i * 2 + 1],
+        liquidity: JSBI.BigInt(liquidity.hex),
+      });
+    });
+    // const uniswapPositionFees = uniswapPositionData[2];
+
     const lender0 = accountReturnContexts[0].returnValues[0];
     const lender1 = accountReturnContexts[1].returnValues[0];
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
@@ -299,6 +316,7 @@ export async function fetchBorrowerDatas(
       lender0,
       lender1,
       nSigma,
+      uniswapPositions,
     };
     marginAccounts.push(marginAccount);
   });

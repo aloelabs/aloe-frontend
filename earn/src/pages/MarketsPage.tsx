@@ -220,6 +220,8 @@ export default function MarketsPage() {
         } as BorrowerNftBorrower;
       });
 
+      console.log(fuse2BorrowerNfts);
+
       setBorrowers(borrowerDatas);
     })();
   }, [userAddress, availablePools, provider, blockNumber, setBorrowers]);
@@ -275,6 +277,9 @@ export default function MarketsPage() {
     case HeaderOptions.Borrow:
       tabContent = (
         <BorrowingWidget
+          chain={activeChain}
+          provider={provider}
+          userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
           uniqueTokens={uniqueTokens}

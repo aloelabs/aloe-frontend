@@ -203,9 +203,8 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
 
   const accountEtherBalance = accountEtherBalanceResult && GN.fromBigNumber(accountEtherBalanceResult.value, 18);
 
-  // TODO: This assumes that the borrowing token is always the opposite of the collateral token
-  // and that only one token is borrowed and one token is collateralized
-  const isBorrowingToken0 = borrower.assets.token1Raw > 0;
+  // TODO: This assumes that only one token is borrowed and one token is collateralized
+  const isBorrowingToken0 = borrower.liabilities.amount0 > 0;
 
   // TODO: This logic needs to change once we support more complex borrowing
   const borrowToken = isBorrowingToken0 ? borrower.token0 : borrower.token1;

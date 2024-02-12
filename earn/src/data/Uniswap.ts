@@ -490,7 +490,7 @@ function modQ24(value: number) {
   return value & 0b00000000111111111111111111111111;
 }
 
-export function zip(uniswapPositions: readonly UniswapPosition[]) {
+export function zip(uniswapPositions: readonly UniswapPosition[], tag?: `0x${string}`) {
   const positions: number[] = [];
   uniswapPositions.forEach((position) => {
     if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {
@@ -511,6 +511,11 @@ export function zip(uniswapPositions: readonly UniswapPosition[]) {
   const zipped = positions.reduce((prev, curr, i) => {
     return JSBI.add(prev, JSBI.leftShift(JSBI.BigInt(curr), JSBI.BigInt(24 * i)));
   }, JSBI.BigInt(0));
+
+  if (tag) {
+    const shiftedTag = JSBI.leftShift(JSBI.BigInt(tag), JSBI.BigInt(144));
+    return JSBI.add(shiftedTag, zipped).toString(10);
+  }
 
   return zipped.toString(10);
 }

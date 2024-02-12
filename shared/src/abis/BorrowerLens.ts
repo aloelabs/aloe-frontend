@@ -17,7 +17,7 @@ export const borrowerLensAbi = [
   },
   {
     type: 'function',
-    name: 'getUniswapFees',
+    name: 'getUniswapPositions',
     inputs: [
       {
         name: 'account',
@@ -26,7 +26,12 @@ export const borrowerLensAbi = [
       },
     ],
     outputs: [
-      { name: 'keys', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'positions', type: 'int24[]', internalType: 'int24[]' },
+      {
+        name: 'liquidity',
+        type: 'uint128[]',
+        internalType: 'uint128[]',
+      },
       { name: 'fees', type: 'uint256[]', internalType: 'uint256[]' },
     ],
     stateMutability: 'view',
