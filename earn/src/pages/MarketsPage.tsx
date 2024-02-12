@@ -220,6 +220,8 @@ export default function MarketsPage() {
         } as BorrowerNftBorrower;
       });
 
+      console.log(fuse2BorrowerNfts);
+
       setBorrowers(borrowerDatas);
     })();
   }, [userAddress, availablePools, provider, blockNumber, setBorrowers]);
