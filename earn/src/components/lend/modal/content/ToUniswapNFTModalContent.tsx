@@ -7,6 +7,7 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_WITHDRAW_MANAGER_ADDRESS,
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
@@ -87,10 +88,13 @@ function ConfirmButton(props: ConfirmButtonProps) {
     functionName: 'modify',
     args: [
       userAddress ?? '0x',
-      [borrower.index],
-      [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData],
-      [0],
+      [borrower.index, borrower.index],
+      [
+        ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
+        ALOE_II_BORROWER_NFT_WITHDRAW_MANAGER_ADDRESS[activeChain.id],
+      ],
+      [encodedData, '0x'],
+      [0, 0],
     ],
     enabled: Boolean(userAddress),
     chainId: activeChain.id,
