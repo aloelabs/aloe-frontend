@@ -35,7 +35,7 @@ export type HeaderProps = {
 export default function Header(props: HeaderProps) {
   const { checkboxes } = props;
   const { activeChain, setActiveChain } = useContext(ChainContext);
-  const isAllowedToInteract = useGeoFencing(activeChain);
+  const { isAllowed: isAllowedToInteract } = useGeoFencing(activeChain);
 
   return (
     <Nav>
@@ -44,7 +44,7 @@ export default function Header(props: HeaderProps) {
         activeChain={activeChain}
         checkboxes={checkboxes}
         setActiveChain={setActiveChain}
-        isAllowedToInteract={isAllowedToInteract.isAllowed}
+        isAllowedToInteract={isAllowedToInteract}
       />
     </Nav>
   );

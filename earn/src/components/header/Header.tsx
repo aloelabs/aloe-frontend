@@ -45,7 +45,7 @@ export type HeaderProps = {
 export default function Header(props: HeaderProps) {
   const { checkboxes } = props;
   const { activeChain, setActiveChain } = useContext(ChainContext);
-  const isAllowed = useGeoFencing(activeChain);
+  const { isAllowed } = useGeoFencing(activeChain);
   const navLinks: NavBarLink[] = [
     ...(isAllowed ? EXTENDED_NAV_LINKS : DEFAULT_NAV_LINKS),
     // {
