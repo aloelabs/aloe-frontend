@@ -227,8 +227,8 @@ export default function MarketsPage() {
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     lendingPairs.forEach((pair) => {
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0Price = tokenQuotes.get(pair.token0.symbol);
+      const token1Price = tokenQuotes.get(pair.token1.symbol);
       const token0Balance = balancesMap.get(pair.token0.address)?.value || 0;
       const token1Balance = balancesMap.get(pair.token1.address)?.value || 0;
       const kitty0Balance = balancesMap.get(pair.kitty0.address)?.value || 0;
@@ -240,11 +240,11 @@ export default function MarketsPage() {
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.inventory,
-        totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
+        totalSupplyUsd: token0Price ? pair.kitty0Info.inventory * token0Price : null,
         suppliedBalance: kitty0Balance,
-        suppliedBalanceUsd: kitty0Balance * token0Price,
+        suppliedBalanceUsd: token0Price ? kitty0Balance * token0Price : null,
         suppliableBalance: token0Balance,
-        suppliableBalanceUsd: token0Balance * token0Price,
+        suppliableBalanceUsd: token0Price ? token0Balance * token0Price : null,
         isOptimized: true,
       });
       rows.push({
@@ -254,11 +254,11 @@ export default function MarketsPage() {
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.inventory,
-        totalSupplyUsd: pair.kitty1Info.inventory * token1Price,
+        totalSupplyUsd: token1Price ? pair.kitty1Info.inventory * token1Price : null,
         suppliedBalance: kitty1Balance,
-        suppliedBalanceUsd: kitty1Balance * token1Price,
+        suppliedBalanceUsd: token1Price ? kitty1Balance * token1Price : null,
         suppliableBalance: token1Balance,
-        suppliableBalanceUsd: token1Balance * token1Price,
+        suppliableBalanceUsd: token1Price ? token1Balance * token1Price : null,
         isOptimized: true,
       });
     });
