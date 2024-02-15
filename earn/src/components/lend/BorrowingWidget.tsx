@@ -7,6 +7,7 @@ import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
@@ -207,7 +208,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       uniswapPositions.filter(
         (pos) =>
           JSBI.GT(pos.liquidity, '0') &&
-          lendingPairs.some((x) => x.token0.equals(pos.token0) && x.token1.equals(pos.token1)) &&
+          lendingPairs.some(
+            (x) =>
+              x.token0.equals(pos.token0) &&
+              x.token1.equals(pos.token1) &&
+              GetNumericFeeTier(x.uniswapFeeTier) === pos.fee
+          ) &&
           ((selectedBorrows?.equals(pos.token0) ?? true) || (selectedBorrows?.equals(pos.token1) ?? true))
       ),
     [uniswapPositions, lendingPairs, selectedBorrows]
