@@ -282,7 +282,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         const hasNoCollateral =
                           account.assets.token0Raw === 0 &&
                           account.assets.token1Raw === 0 &&
-                          (account.uniswapPositions?.length || 0) === 0;
+                          (account.uniswapPositions ?? []).every((pos) => JSBI.EQ(pos.liquidity, '0'));
                         if (hasNoCollateral) return null;
                         const uniswapPosition = account.uniswapPositions?.at(0);
                         const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;

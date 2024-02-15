@@ -232,7 +232,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     borrower.assets,
     borrower.liabilities,
-    [], // TODO: add uniswap positions
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -255,7 +255,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
-    [], // TODO: add uniswap positions
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
