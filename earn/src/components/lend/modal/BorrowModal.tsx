@@ -1,11 +1,10 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { factoryAbi } from 'shared/lib/abis/Factory';
 import { permit2Abi } from 'shared/lib/abis/Permit2';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
@@ -22,14 +21,16 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
+import { BorrowerNft, fetchListOfBorrowerNfts } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 
@@ -102,25 +103,42 @@ export type BorrowModalProps = {
 export default function BorrowModal(props: BorrowModalProps) {
   const { isOpen, selectedLendingPair, selectedCollateral, selectedBorrow, userBalance, setIsOpen, setPendingTxn } =
     props;
+
+  const provider = useProvider();
+  const { activeChain } = useContext(ChainContext);
+  const { address: userAddress } = useAccount();
+
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
-  const { activeChain } = useContext(ChainContext);
+  const [availableNft, setAvailableNft] = useChainDependentState<BorrowerNft | null | undefined>(
+    undefined,
+    activeChain.id
+  );
 
-  const { address: userAddress } = useAccount();
+  // The NFT indices we can use if the user has some unused BorrowerNFTs
+  useEffect(() => {
+    (async () => {
+      if (!userAddress) return;
+      const chainId = (await provider.getNetwork()).chainId;
+      const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
+        validUniswapPool: selectedLendingPair.uniswapPool,
+        onlyCheckMostRecentModify: true,
+        includeFreshBorrowers: true,
+      });
+
+      if (results.length > 0) {
+        setAvailableNft(results[0]);
+      } else {
+        setAvailableNft(null);
+      }
+    })();
+  }, [provider, userAddress, selectedLendingPair, setAvailableNft]);
 
   const { data: consultData } = useContractRead({
     abi: volatilityOracleAbi,
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     args: [selectedLendingPair?.uniswapPool || '0x', Q32],
     functionName: 'consult',
-    enabled: selectedLendingPair !== undefined,
-  });
-
-  const { data: parameterData } = useContractRead({
-    abi: factoryAbi,
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    args: [selectedLendingPair?.uniswapPool || '0x'],
-    functionName: 'getParameters',
     enabled: selectedLendingPair !== undefined,
   });
 
@@ -133,7 +151,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', selectedCollateral.decimals);
   const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', selectedBorrow.decimals);
-  const ante = parameterData !== undefined ? GN.fromBigNumber(parameterData.ante, 18) : undefined;
+  const ante = selectedLendingPair.factoryData.ante;
   const ethBalance = GN.fromDecimalString(ethBalanceData?.formatted ?? '0', 18);
 
   const isBorrowingToken0 = useMemo(
@@ -210,7 +228,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     functionName: 'balanceOf',
     args: [userAddress ?? '0x'],
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
+    enabled: Boolean(userAddress) && availableNft == null,
   });
 
   const {
@@ -242,7 +260,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   });
 
   const encodedPermit2 = useMemo(() => {
-    if (!userAddress || !predictedAddress || !permit2Result.signature) return null;
+    const borrowerAddress = availableNft?.borrowerAddress ?? predictedAddress;
+    if (!userAddress || !borrowerAddress || !permit2Result.signature) return null;
     const permit2 = new ethers.utils.Interface(permit2Abi);
     return permit2.encodeFunctionData(
       'permitTransferFrom(((address,uint256),uint256,uint256),(address,uint256),address,bytes)',
@@ -256,14 +275,14 @@ export default function BorrowModal(props: BorrowModalProps) {
           deadline: BigNumber.from(permit2Result.deadline),
         },
         {
-          to: predictedAddress,
+          to: borrowerAddress,
           requestedAmount: permit2Result.amount.toBigNumber(),
         },
         userAddress,
         permit2Result.signature,
       ]
     );
-  }, [permit2Result, predictedAddress, selectedCollateral.address, userAddress]);
+  }, [permit2Result, availableNft, predictedAddress, selectedCollateral.address, userAddress]);
 
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
@@ -288,15 +307,16 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
 
   const encodedModify = useMemo(() => {
-    if (!userAddress || nextNftPtrIdx === undefined || ante === undefined || !encodedPermit2 || !encodedBorrowCall)
-      return null;
+    const index = Boolean(availableNft) ? availableNft!.index : nextNftPtrIdx;
+    if (!userAddress || !index || ante === undefined || !encodedPermit2 || !encodedBorrowCall) return null;
+
     const owner = userAddress;
-    const indices = [nextNftPtrIdx];
+    const indices = [index];
     const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
     const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2))];
     const antes = [ante.toBigNumber().div(1e13)];
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
-  }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedPermit2, encodedBorrowCall, borrowerNft]);
+  }, [availableNft, nextNftPtrIdx, userAddress, ante, encodedPermit2, encodedBorrowCall, activeChain.id, borrowerNft]);
 
   const {
     config: configMulticallOps,
@@ -306,10 +326,10 @@ export default function BorrowModal(props: BorrowModalProps) {
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
-    args: [[encodedMint ?? '0x', encodedModify ?? '0x']],
+    args: [Boolean(availableNft) ? [encodedModify ?? '0x'] : [encodedMint ?? '0x', encodedModify ?? '0x']],
     overrides: { value: ante?.toBigNumber() },
     chainId: activeChain.id,
-    enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && parameterData !== undefined,
+    enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify),
   });
   const gasLimit = configMulticallOps.request?.gasLimit.mul(110).div(100);
   const { write: borrow, isLoading: isAskingUserToMulticallOps } = useContractWrite({
