@@ -275,6 +275,9 @@ export default function MarketsPage() {
     case HeaderOptions.Borrow:
       tabContent = (
         <BorrowingWidget
+          chain={activeChain}
+          provider={provider}
+          userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
           uniqueTokens={uniqueTokens}

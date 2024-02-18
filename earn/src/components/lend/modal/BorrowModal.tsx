@@ -352,7 +352,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   if (!selectedBorrow) return null;
 
   return (
-    <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Borrow'>
+    <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Open a new position'>
       <div className='w-full flex flex-col gap-4'>
         <div>
           <Text size='M' weight='bold'>
