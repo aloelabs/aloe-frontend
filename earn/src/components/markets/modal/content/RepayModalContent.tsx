@@ -17,7 +17,7 @@ import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
-import HealthBar from '../../../borrow/HealthBar';
+import HealthBar from '../../../common/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';

@@ -1,8 +1,8 @@
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { ReactComponent as Check } from '../../assets/svg/check_black.svg';
-import { ReactComponent as ChevronsUp } from '../../assets/svg/chevrons_up.svg';
+import { ReactComponent as Check } from '../../../assets/svg/check_black.svg';
+import { ReactComponent as ChevronsUp } from '../../../assets/svg/chevrons_up.svg';
 
 const StyledCheck = styled(Check)`
   path {

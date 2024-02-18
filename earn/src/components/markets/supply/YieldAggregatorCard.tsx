@@ -15,7 +15,7 @@ import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import LendTokenInfo from './LendTokenInfo';
+import LendTokenInfo from '../../lend/LendTokenInfo';
 import YieldTokenIcons from './YieldTokenIcons';
 
 const TOKEN_APY_BG_COLOR = 'rgb(29, 41, 53)';

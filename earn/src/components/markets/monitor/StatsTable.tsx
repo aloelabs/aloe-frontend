@@ -22,8 +22,8 @@ import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, useContractWrite } from 'wagmi';
 
-import { ChainContext } from '../../App';
-import { LendingPair } from '../../data/LendingPair';
+import { ChainContext } from '../../../App';
+import { LendingPair } from '../../../data/LendingPair';
 
 const PAGE_SIZE = 5;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';

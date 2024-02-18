@@ -4,8 +4,8 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { LendingPair } from '../../data/LendingPair';
-import LineGraph, { GraphChart } from '../graph/LineGraph';
+import { LendingPair } from '../../../data/LendingPair';
+import LineGraph, { GraphChart } from '../../graph/LineGraph';
 import InfoGraphTooltip from './InfoGraphTooltip';
 
 const FULL_HEIGHT = '342';
