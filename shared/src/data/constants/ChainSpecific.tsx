@@ -3,7 +3,6 @@ import { base } from '../BaseChain';
 import { Address } from 'wagmi';
 
 import { ArbitrumLogo, BaseLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
-import { GN } from '../GoodNumber';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
@@ -62,10 +61,10 @@ export const ALOE_II_FACTORY_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_BORROWER_LENS_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x46AeD741F9a329c0721519D6E66fA47Bb17B0986',
-  [optimism.id]: '0x46AeD741F9a329c0721519D6E66fA47Bb17B0986',
-  [arbitrum.id]: '0x46AeD741F9a329c0721519D6E66fA47Bb17B0986',
-  [base.id]: '0x46AeD741F9a329c0721519D6E66fA47Bb17B0986',
+  [mainnet.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [optimism.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [arbitrum.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [base.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
 };
 
 export const ALOE_II_LENDER_LENS_ADDRESS: { [chainId: number]: Address } = {
@@ -103,6 +102,13 @@ export const ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS: { [chainId: number]: A
   [base.id]: '0xA07FD687882FfE7380A044e7542bDAc6F8672Bf7',
 };
 
+export const ALOE_II_BORROWER_NFT_WITHDRAW_MANAGER_ADDRESS: { [chainId: number]: Address } = {
+  [mainnet.id]: '0xe1Bf15D99330E684020622856916F854c9322CB6',
+  [optimism.id]: '0xe1Bf15D99330E684020622856916F854c9322CB6',
+  [arbitrum.id]: '0xe1Bf15D99330E684020622856916F854c9322CB6',
+  [base.id]: '0xe1Bf15D99330E684020622856916F854c9322CB6',
+};
+
 export const ALOE_II_ORACLE_ADDRESS: { [chainId: number]: Address } = {
   [mainnet.id]: '0x0000000030d51e39a2dDDb5Db50F9d74a289DFc3',
   [optimism.id]: '0x0000000030d51e39a2dDDb5Db50F9d74a289DFc3',
@@ -111,10 +117,10 @@ export const ALOE_II_ORACLE_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
-  [optimism.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
-  [arbitrum.id]: '0x99E6e3C307FB8391E77215e47f3d8A3E38478CC3',
-  [base.id]: '0x03a3f925Ccb761e5fE1e684a20a553BFe3D9B6e5',
+  [mainnet.id]: '0x3EE236D69F6950525ff317D7a872439F09902C65',
+  [optimism.id]: '0x3EE236D69F6950525ff317D7a872439F09902C65',
+  [arbitrum.id]: '0x3EE236D69F6950525ff317D7a872439F09902C65',
+  [base.id]: '0x7357E37a60839DE89A52861Cf50851E317FFBE71',
 };
 
 export const ALOE_II_FRONTEND_MANAGER_ADDRESS: { [chainId: number]: Address } = {

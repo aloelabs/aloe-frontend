@@ -1,20 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { SendTransactionResult, Provider } from '@wagmi/core';
+import JSBI from 'jsbi';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
+import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Address, Chain } from 'wagmi';
 
 import { computeLTV } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
+import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../../data/Uniswap';
 import { rgba } from '../../util/Colors';
 import HealthGauge from '../common/HealthGauge';
 import BorrowModal from './modal/BorrowModal';
+import BorrowModalUniswap from './modal/BorrowModalUniswap';
 import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
 import UpdateCollateralModal from './modal/UpdateCollateralModal';
 
@@ -113,6 +121,10 @@ type SelectedBorrower = {
 };
 
 export type BorrowingWidgetProps = {
+  // Alternatively, could get these 3 from `ChainContext`, `useProvider`, and `useAccount`, respectively
+  chain: Chain;
+  provider: Provider;
+  userAddress?: Address;
   borrowers: BorrowerNftBorrower[] | null;
   lendingPairs: LendingPair[];
   uniqueTokens: Token[];
@@ -141,16 +153,42 @@ function filterBySelection(lendingPairs: LendingPair[], selection: Token | null)
   return Array.from(reverseTokenMap.entries()).map((entry) => ({ token: entry[0], matchingPairs: entry[1] }));
 }
 
+function borrowEntriesForUniswapCollateral(lendingPairs: LendingPair[], selection: UniswapNFTPosition) {
+  const pair = lendingPairs.find((x) => x.token0.equals(selection.token0) && x.token1.equals(selection.token1));
+
+  if (pair === undefined) return [];
+  return [
+    { token: pair.token0, matchingPairs: [pair] },
+    { token: pair.token1, matchingPairs: [pair] },
+  ];
+}
+
+type Collateral = Token | UniswapNFTPosition;
+
+function collateralIsUniswapPosition(collateral: Collateral | null): collateral is UniswapNFTPosition {
+  return collateral != null && Object.hasOwn(collateral, 'liquidity');
+}
+
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
+  const { chain, provider, userAddress, borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
 
   // selection/hover state for Available Table
-  const [selectedCollateral, setSelectedCollateral] = useState<Token | null>(null);
+  const [selectedCollateral, setSelectedCollateral] = useState<Collateral | null>(null);
   const [selectedBorrows, setSelectedBorrows] = useState<Token | null>(null);
   const [hoveredPair, setHoveredPair] = useState<LendingPair | null>(null);
   // selection/hover state for Active Table
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [hoveredBorrower, setHoveredBorrower] = useState<BorrowerNftBorrower | null>(null);
+  // uniswap positions
+  const [uniswapPositions, setUniswapPositions] = useChainDependentState<UniswapNFTPosition[]>([], chain.id);
+
+  useEffect(() => {
+    (async () => {
+      if (!userAddress) return;
+      const mapOfPositions = await fetchUniswapNFTPositions(userAddress, provider);
+      setUniswapPositions(Array.from(mapOfPositions.values()));
+    })();
+  }, [userAddress, provider, setUniswapPositions]);
 
   const filteredCollateralEntries = useMemo(
     () => filterBySelection(lendingPairs, selectedBorrows),
@@ -158,9 +196,69 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   );
 
   const filteredBorrowEntries = useMemo(
-    () => filterBySelection(lendingPairs, selectedCollateral),
+    () =>
+      collateralIsUniswapPosition(selectedCollateral)
+        ? borrowEntriesForUniswapCollateral(lendingPairs, selectedCollateral)
+        : filterBySelection(lendingPairs, selectedCollateral),
     [lendingPairs, selectedCollateral]
   );
+
+  const filteredUniswapPositions = useMemo(
+    () =>
+      uniswapPositions.filter(
+        (pos) =>
+          JSBI.GT(pos.liquidity, '0') &&
+          lendingPairs.some(
+            (x) =>
+              x.token0.equals(pos.token0) &&
+              x.token1.equals(pos.token1) &&
+              GetNumericFeeTier(x.uniswapFeeTier) === pos.fee
+          ) &&
+          ((selectedBorrows?.equals(pos.token0) ?? true) || (selectedBorrows?.equals(pos.token1) ?? true))
+      ),
+    [uniswapPositions, lendingPairs, selectedBorrows]
+  );
+
+  let borrowModal: JSX.Element | null = null;
+
+  if (selectedBorrows != null && selectedCollateral != null) {
+    if (collateralIsUniswapPosition(selectedCollateral)) {
+      borrowModal = (
+        <BorrowModalUniswap
+          isOpen={selectedBorrows != null && selectedCollateral != null}
+          selectedLendingPair={
+            // TODO: improve this
+            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
+          }
+          selectedCollateral={selectedCollateral}
+          selectedBorrow={selectedBorrows}
+          setIsOpen={() => {
+            setSelectedBorrows(null);
+            setSelectedCollateral(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+    } else {
+      borrowModal = (
+        <BorrowModal
+          isOpen={selectedBorrows != null && selectedCollateral != null}
+          selectedLendingPair={
+            // TODO: improve this
+            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
+          }
+          selectedCollateral={selectedCollateral}
+          selectedBorrow={selectedBorrows}
+          userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
+          setIsOpen={() => {
+            setSelectedBorrows(null);
+            setSelectedCollateral(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+    }
+  }
 
   return (
     <>
@@ -181,8 +279,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   <div className='flex flex-col'>
                     {borrowers &&
                       borrowers.map((account) => {
-                        const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                        const hasNoCollateral =
+                          account.assets.token0Raw === 0 &&
+                          account.assets.token1Raw === 0 &&
+                          (account.uniswapPositions ?? []).every((pos) => JSBI.EQ(pos.liquidity, '0'));
                         if (hasNoCollateral) return null;
+                        const uniswapPosition = account.uniswapPositions?.at(0);
                         const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
                         const collateralAmount = collateral.equals(account.token0)
                           ? account.assets.token0Raw
@@ -195,27 +297,33 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                             $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
                             $gradColorB={GREY_700}
                             key={account.tokenId}
-                            onMouseEnter={() => {
-                              setHoveredBorrower(account);
-                            }}
-                            onMouseLeave={() => {
-                              setHoveredBorrower(null);
-                            }}
+                            onMouseEnter={() => setHoveredBorrower(account)}
+                            onMouseLeave={() => setHoveredBorrower(null)}
                             className={account === hoveredBorrower ? 'active' : ''}
-                            onClick={() => {
+                            onClick={() =>
                               setSelectedBorrower({
                                 borrower: account,
                                 type: 'supply',
-                              });
-                            }}
+                              })
+                            }
                           >
-                            <div className='flex items-center gap-3'>
-                              <TokenIcon token={collateral} />
-                              <Display size='XS'>
-                                {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
-                              </Display>
-                            </div>
-                            <Display size='XXS'>{roundPercentage(ltvPercentage, 3)}%&nbsp;&nbsp;LTV</Display>
+                            {uniswapPosition !== undefined ? (
+                              <div className='flex items-center gap-3'>
+                                <TokenIcons tokens={[account.token0, account.token1]} />
+                                <Display size='XS'>Uniswap Position</Display>
+                                <Display size='XXS' color={SECONDARY_COLOR}>
+                                  {uniswapPosition.lower} ⇔ {uniswapPosition.upper}
+                                </Display>
+                              </div>
+                            ) : (
+                              <div className='flex items-center gap-3'>
+                                <TokenIcon token={collateral} />
+                                <Display size='XS'>
+                                  {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
+                                </Display>
+                              </div>
+                            )}
+                            <Display size='XXS'>{roundPercentage(ltvPercentage, 2)}%&nbsp;&nbsp;LLTV</Display>
                           </AvailableContainer>
                         );
                       })}
@@ -247,16 +355,21 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   <div className='flex flex-col'>
                     {borrowers &&
                       borrowers.map((account) => {
-                        const hasNoCollateral = account.assets.token0Raw === 0 && account.assets.token1Raw === 0;
+                        const hasNoCollateral =
+                          account.assets.token0Raw === 0 &&
+                          account.assets.token1Raw === 0 &&
+                          (account.uniswapPositions?.length || 0) === 0;
                         if (hasNoCollateral) return null;
-                        const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
-                        const isBorrowingToken0 = !collateral.equals(account.token0);
+
+                        const isBorrowingToken0 = account.liabilities.amount0 > 0;
                         const liability = isBorrowingToken0 ? account.token0 : account.token1;
                         const liabilityAmount = isBorrowingToken0
                           ? account.liabilities.amount0
                           : account.liabilities.amount1;
                         const liabilityColor = tokenColors.get(liability.address);
-                        const lendingPair = lendingPairs.find((pair) => pair.uniswapPool === account.uniswapPool);
+                        const lendingPair = lendingPairs.find(
+                          (pair) => pair.uniswapPool === account.uniswapPool.toLowerCase()
+                        );
                         const apr =
                           (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
                         const roundedApr = Math.round(apr * 100) / 100;
@@ -318,6 +431,36 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                 </ClearButton>
               </CardRowHeader>
               <div className='flex flex-col'>
+                {filteredUniswapPositions.map((uniswapPosition, idx) => {
+                  const lendingPair = lendingPairs.find(
+                    (pair) => pair.token0.equals(uniswapPosition.token0) && pair.token1.equals(uniswapPosition.token1)
+                  );
+                  const openSeaLink = `https://opensea.io/assets/${chain.network}/${
+                    UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id]
+                  }/${uniswapPosition.tokenId}`;
+                  return (
+                    <AvailableContainer
+                      key={idx}
+                      onClick={() => setSelectedCollateral(uniswapPosition)}
+                      onMouseEnter={() => {
+                        if (selectedBorrows !== null && lendingPair) setHoveredPair(lendingPair);
+                      }}
+                      onMouseLeave={() => setHoveredPair(null)}
+                      className={selectedCollateral === uniswapPosition ? 'selected' : ''}
+                    >
+                      <div className='flex items-center gap-3'>
+                        <TokenIcons
+                          tokens={[uniswapPosition.token0, uniswapPosition.token1]}
+                          links={[openSeaLink, openSeaLink]}
+                        />
+                        <Display size='XS'>Uniswap Position #{uniswapPosition.tokenId}</Display>
+                      </div>
+                      <Display size='XXS' color='rgba(130, 160, 182, 1)'>
+                        {((lendingPair?.ltv || 0) * 100).toFixed(0)}%&nbsp;&nbsp;LLTV
+                      </Display>
+                    </AvailableContainer>
+                  );
+                })}
                 {filteredCollateralEntries.map((entry, index) => {
                   const isSelected = selectedCollateral === entry.token;
 
@@ -357,7 +500,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                         </Display>
                       </div>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
-                        {ltvText}&nbsp;&nbsp;LTV
+                        {ltvText}&nbsp;&nbsp;LLTV
                       </Display>
                     </AvailableContainer>
                   );
@@ -432,28 +575,14 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           </CardContainer>
         </CardWrapper>
       </div>
-      {selectedBorrows != null && selectedCollateral != null && (
-        <BorrowModal
-          isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedLendingPair={
-            // TODO: improve this
-            filteredCollateralEntries.find((x) => x.token.equals(selectedCollateral))!.matchingPairs[0]
-          }
-          selectedCollateral={selectedCollateral}
-          selectedBorrow={selectedBorrows}
-          userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
-          setIsOpen={() => {
-            setSelectedBorrows(null);
-            setSelectedCollateral(null);
-          }}
-          setPendingTxn={setPendingTxn}
-        />
-      )}
+      {borrowModal}
       {selectedBorrower != null && selectedBorrower.type === 'borrow' && (
         <UpdateBorrowerModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
-          lendingPair={lendingPairs.find((pair) => pair.uniswapPool === selectedBorrower.borrower.uniswapPool)}
+          lendingPair={lendingPairs.find(
+            (pair) => pair.uniswapPool === selectedBorrower.borrower.uniswapPool.toLowerCase()
+          )}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}
@@ -464,6 +593,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <UpdateCollateralModal
           isOpen={selectedBorrower != null}
           borrower={selectedBorrower.borrower}
+          uniswapPositions={uniswapPositions}
           setIsOpen={() => {
             setSelectedBorrower(null);
           }}

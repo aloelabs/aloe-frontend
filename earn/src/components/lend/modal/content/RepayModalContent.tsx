@@ -202,9 +202,8 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   const { address: userAddress } = useAccount();
   const { activeChain } = useContext(ChainContext);
 
-  // TODO: This assumes that the borrowing token is always the opposite of the collateral token
-  // and that only one token is borrowed and one token is collateralized
-  const isRepayingToken0 = borrower.assets.token1Raw > 0;
+  // TODO: This assumes that only one token is borrowed and one token is collateralized
+  const isRepayingToken0 = borrower.liabilities.amount0 > 0;
 
   // TODO: This logic needs to change once we support more complex borrowing
   const repayToken = isRepayingToken0 ? borrower.token0 : borrower.token1;
@@ -239,7 +238,7 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
-    [], // TODO: add uniswap positions
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

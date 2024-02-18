@@ -8,7 +8,7 @@ import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
   ALOE_II_PERMIT2_MANAGER_ADDRESS,
-  ALOE_II_SIMPLE_MANAGER_ADDRESS,
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { filterNullishValues } from 'shared/lib/util/Arrays';
@@ -164,9 +164,9 @@ export async function fetchListOfFuse2BorrowNfts(
     includeFreshBorrowers: false, // TODO: change later
     onlyCheckMostRecentModify: true, // TODO: Hayden has concerns (as usual)
     validManagerSet: new Set([
-      ALOE_II_SIMPLE_MANAGER_ADDRESS[chainId],
       ALOE_II_PERMIT2_MANAGER_ADDRESS[chainId],
       ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[chainId],
+      ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[chainId],
     ]),
     validUniswapPool: uniswapPool,
   });

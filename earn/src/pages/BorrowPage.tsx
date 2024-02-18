@@ -345,9 +345,20 @@ export default function BorrowPage() {
         toBlock: 'latest',
       });
 
+      const blockI = updateLogs.at(0);
+      const blockF = updateLogs.at(-1);
+
+      if (blockI === undefined || blockF === undefined) return;
+
+      const [tI, tF] = await Promise.all(
+        [blockI, blockF].map(async (log) => {
+          return (await provider.getBlock(log.blockNumber)).timestamp;
+        })
+      );
+
       const results = await Promise.all(
-        updateLogs.map(async (result: any) => {
-          const timestamp = (await provider.getBlock(result.blockNumber)).timestamp;
+        updateLogs.map(async (result) => {
+          const approxTime = tI + ((tF - tI) / (blockF.blockNumber - blockI.blockNumber)) * result.blockNumber;
 
           const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], result.data);
           const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
@@ -356,7 +367,7 @@ export default function BorrowPage() {
           const resultData: BorrowGraphData = {
             IV: iv * Math.sqrt(365) * 100,
             LTV: ltv * 100,
-            x: new Date(timestamp * 1000),
+            x: new Date(approxTime * 1000),
           };
           return resultData;
         })

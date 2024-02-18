@@ -2,14 +2,17 @@ import { Fragment, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
 import { SendTransactionResult } from '@wagmi/core';
+import { BigNumber } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { UniswapNFTPosition } from '../../../data/Uniswap';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
+import ToUniswapNFTModalContent from './content/ToUniswapNFTModalContent';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',
@@ -49,13 +52,37 @@ const TabButton = styled.button`
 export type UpdateCollateralModalProps = {
   isOpen: boolean;
   borrower: BorrowerNftBorrower;
+  uniswapPositions: UniswapNFTPosition[];
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function UpdateCollateralModal(props: UpdateCollateralModalProps) {
-  const { isOpen, borrower, setIsOpen, setPendingTxn } = props;
+  const { isOpen, borrower, uniswapPositions, setIsOpen, setPendingTxn } = props;
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
+
+  if ((borrower.uniswapPositions?.length || 0) > 0) {
+    const positionToWithdraw = borrower.uniswapPositions![0];
+    const uniswapNftId = uniswapPositions.find(
+      (nft) => nft.lower === positionToWithdraw.lower && nft.upper === positionToWithdraw.upper
+    )?.tokenId;
+
+    if (uniswapNftId === undefined) return null;
+
+    return (
+      <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Withdraw Uniswap NFT'>
+        <div className='w-full flex flex-col gap-4'>
+          <ToUniswapNFTModalContent
+            borrower={borrower}
+            positionToWithdraw={positionToWithdraw}
+            uniswapNftId={BigNumber.from(uniswapNftId)}
+            setIsOpen={setIsOpen}
+            setPendingTxnResult={setPendingTxn}
+          />
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title={getConfirmationTypeValue(confirmationType)}>
