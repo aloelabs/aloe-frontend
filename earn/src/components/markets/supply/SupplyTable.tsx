@@ -15,10 +15,10 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
-import { ApyWithTooltip } from '../common/ApyWithTooltip';
-import { TokenIconsWithTooltip } from '../common/TokenIconsWithTooltip';
-import SupplyModal from './modal/SupplyModal';
-import WithdrawModal from './modal/WithdrawModal';
+import { ApyWithTooltip } from '../../common/ApyWithTooltip';
+import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
+import SupplyModal from '../modal/SupplyModal';
+import WithdrawModal from '../modal/WithdrawModal';
 // import OptimizeButton from './OptimizeButton';
 
 const PAGE_SIZE = 10;

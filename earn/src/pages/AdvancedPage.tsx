@@ -28,19 +28,19 @@ import { Address, useAccount, useContract, useProvider, useContractRead, useBala
 
 import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
-import BorrowGraph, { BorrowGraphData } from '../components/borrow/BorrowGraph';
-import { BorrowGraphPlaceholder } from '../components/borrow/BorrowGraphPlaceholder';
-import { BorrowMetrics } from '../components/borrow/BorrowMetrics';
-import GlobalStatsTable from '../components/borrow/GlobalStatsTable';
-import ManageAccountButtons from '../components/borrow/ManageAccountButtons';
-import AddCollateralModal from '../components/borrow/modal/AddCollateralModal';
-import BorrowModal from '../components/borrow/modal/BorrowModal';
-import NewSmartWalletModal from '../components/borrow/modal/NewSmartWalletModal';
-import RemoveCollateralModal from '../components/borrow/modal/RemoveCollateralModal';
-import RepayModal from '../components/borrow/modal/RepayModal';
-import WithdrawAnteModal from '../components/borrow/modal/WithdrawAnteModal';
-import SmartWalletButton, { NewSmartWalletButton } from '../components/borrow/SmartWalletButton';
-import { UniswapPositionList } from '../components/borrow/UniswapPositionList';
+import BorrowGraph, { BorrowGraphData } from '../components/advanced/BorrowGraph';
+import { BorrowGraphPlaceholder } from '../components/advanced/BorrowGraphPlaceholder';
+import { BorrowMetrics } from '../components/advanced/BorrowMetrics';
+import GlobalStatsTable from '../components/advanced/GlobalStatsTable';
+import ManageAccountButtons from '../components/advanced/ManageAccountButtons';
+import AddCollateralModal from '../components/advanced/modal/AddCollateralModal';
+import BorrowModal from '../components/advanced/modal/BorrowModal';
+import NewSmartWalletModal from '../components/advanced/modal/NewSmartWalletModal';
+import RemoveCollateralModal from '../components/advanced/modal/RemoveCollateralModal';
+import RepayModal from '../components/advanced/modal/RepayModal';
+import WithdrawAnteModal from '../components/advanced/modal/WithdrawAnteModal';
+import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/SmartWalletButton';
+import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { computeLTV } from '../data/BalanceSheet';
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
@@ -209,7 +209,7 @@ export type UniswapPoolInfo = {
   fee: number;
 };
 
-export default function BorrowPage() {
+export default function AdvancedPage() {
   const { activeChain } = useContext(ChainContext);
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress, isConnected } = useAccount();

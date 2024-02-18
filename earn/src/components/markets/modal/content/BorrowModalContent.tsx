@@ -26,7 +26,7 @@ import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { LendingPair } from '../../../../data/LendingPair';
 import { Liabilities } from '../../../../data/MarginAccount';
 import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
-import HealthBar from '../../../borrow/HealthBar';
+import HealthBar from '../../../common/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';

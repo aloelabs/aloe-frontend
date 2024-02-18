@@ -15,8 +15,8 @@ import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import { UniswapPosition } from '../../../../data/Uniswap';
+import HealthBar from '../../../common/HealthBar';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
-import HealthBar from '../../HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';

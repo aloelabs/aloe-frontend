@@ -25,8 +25,8 @@ import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { Assets } from '../../../data/MarginAccount';
 import { MarketInfo } from '../../../data/MarketInfo';
 import { UniswapPosition } from '../../../data/Uniswap';
+import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
-import HealthBar from '../HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';

@@ -23,11 +23,10 @@ import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import { LendingPairsContext } from './data/hooks/UseLendingPairs';
 import { getAvailableLendingPairs, LendingPair } from './data/LendingPair';
+import AdvancedPage from './pages/AdvancedPage';
 import ImportBoostPage from './pages/boost/ImportBoostPage';
 import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
-import BorrowPage from './pages/BorrowPage';
-import ClaimPage from './pages/ClaimPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import LendPage from './pages/LendPage';
 import MarketsPage from './pages/MarketsPage';
@@ -130,10 +129,9 @@ function AppBodyWrapper() {
               <Route path='/boost' element={<BoostPage />} />
               <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
               <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
-              <Route path='/borrow' element={<BorrowPage />} />
+              <Route path='/borrow' element={<AdvancedPage />} />
             </>
           )}
-          <Route path='/claim' element={<ClaimPage />} />
           <Route path='/' element={<Navigate replace to='/markets' />} />
           <Route path='*' element={<Navigate to='/' />} />
         </Routes>
