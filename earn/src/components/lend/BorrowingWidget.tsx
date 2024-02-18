@@ -256,7 +256,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                           ? account.liabilities.amount0
                           : account.liabilities.amount1;
                         const liabilityColor = tokenColors.get(liability.address);
-                        const lendingPair = lendingPairs.find((pair) => pair.uniswapPool === account.uniswapPool);
+                        const lendingPair = lendingPairs.find(
+                          (pair) => pair.uniswapPool.toLowerCase() === account.uniswapPool.toLowerCase()
+                        );
                         const apr =
                           (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
                         const roundedApr = Math.round(apr * 100) / 100;
