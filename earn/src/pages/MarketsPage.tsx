@@ -162,7 +162,12 @@ export default function MarketsPage() {
       if (
         uniqueSymbols.length === 0 ||
         uniqueSymbols.every((symbol) => {
-          return tokenQuotes.has(symbol) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
+          return (
+            Array.from(tokenQuotes.keys())
+              .map((key) => key.toLowerCase())
+              .includes(symbol.toLowerCase()) ||
+            (symbol === 'USDC.e' && tokenQuotes.has('USDC'))
+          );
         })
       ) {
         return;
