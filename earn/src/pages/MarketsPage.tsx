@@ -159,7 +159,12 @@ export default function MarketsPage() {
       const uniqueSymbols = Array.from(symbolSet.values());
 
       // Return early if there's nothing new to fetch
-      if (uniqueSymbols.length === 0 || uniqueSymbols.every((symbol) => tokenQuotes.has(symbol))) {
+      if (
+        uniqueSymbols.length === 0 ||
+        uniqueSymbols.every((symbol) => {
+          return tokenQuotes.has(symbol) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
+        })
+      ) {
         return;
       }
 
