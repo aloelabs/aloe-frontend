@@ -15,7 +15,7 @@ import { ChainContext } from '../../../App';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { useBalanceOfUnderlying } from '../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
-import { SupplyTableRow } from '../SupplyTable';
+import { SupplyTableRow } from '../supply/SupplyTable';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';

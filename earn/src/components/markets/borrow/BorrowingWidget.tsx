@@ -15,16 +15,16 @@ import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, Chain } from 'wagmi';
 
-import { computeLTV } from '../../data/BalanceSheet';
-import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import { LendingPair, LendingPairBalancesMap } from '../../data/LendingPair';
-import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../../data/Uniswap';
-import { rgba } from '../../util/Colors';
-import HealthGauge from '../common/HealthGauge';
-import BorrowModal from './modal/BorrowModal';
-import BorrowModalUniswap from './modal/BorrowModalUniswap';
-import UpdateBorrowerModal from './modal/UpdateBorrowerModal';
-import UpdateCollateralModal from './modal/UpdateCollateralModal';
+import { computeLTV } from '../../../data/BalanceSheet';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { LendingPair, LendingPairBalancesMap } from '../../../data/LendingPair';
+import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../../../data/Uniswap';
+import { rgba } from '../../../util/Colors';
+import HealthGauge from '../../common/HealthGauge';
+import BorrowModal from '../modal/BorrowModal';
+import BorrowModalUniswap from '../modal/BorrowModalUniswap';
+import UpdateBorrowerModal from '../modal/UpdateBorrowerModal';
+import UpdateCollateralModal from '../modal/UpdateCollateralModal';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SECONDARY_COLOR_LIGHT = 'rgba(130, 160, 182, 0.1)';

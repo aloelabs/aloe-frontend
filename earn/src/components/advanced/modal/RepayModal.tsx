@@ -19,8 +19,8 @@ import { ChainContext } from '../../../App';
 import { isHealthy } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
+import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
-import HealthBar from '../HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';

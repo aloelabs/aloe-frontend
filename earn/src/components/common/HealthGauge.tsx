@@ -4,7 +4,7 @@ import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { getHealthColor } from 'shared/lib/util/Health';
 import styled from 'styled-components';
 
-import HealthBar from '../borrow/HealthBar';
+import HealthBar from './HealthBar';
 
 const TooltipParent = styled.div`
   display: inline-block;

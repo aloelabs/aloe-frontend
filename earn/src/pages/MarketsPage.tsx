@@ -13,9 +13,9 @@ import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import InfoTab from '../components/info/InfoTab';
-import BorrowingWidget from '../components/lend/BorrowingWidget';
-import SupplyTable, { SupplyTableRow } from '../components/lend/SupplyTable';
+import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
+import InfoTab from '../components/markets/monitor/InfoTab';
+import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
@@ -159,7 +159,12 @@ export default function MarketsPage() {
       const uniqueSymbols = Array.from(symbolSet.values());
 
       // Return early if there's nothing new to fetch
-      if (uniqueSymbols.length === 0 || uniqueSymbols.every((symbol) => tokenQuotes.has(symbol))) {
+      if (
+        uniqueSymbols.length === 0 ||
+        uniqueSymbols.every((symbol) => {
+          return tokenQuotes.has(symbol) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
+        })
+      ) {
         return;
       }
 

@@ -9,8 +9,8 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Address } from 'wagmi';
 
-import { computeLTV } from '../../data/BalanceSheet';
-import { LendingPair } from '../../data/LendingPair';
+import { computeLTV } from '../../../data/BalanceSheet';
+import { LendingPair } from '../../../data/LendingPair';
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
 
