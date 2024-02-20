@@ -128,9 +128,11 @@ export default function SupplyTable(props: SupplyTableProps) {
     }
     return pages;
   }, [sortedRows]);
+
   if (pages.length === 0) {
     return null;
   }
+
   return (
     <>
       <TableContainer>
