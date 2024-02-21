@@ -8,13 +8,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
+import Banner from 'shared/lib/components/banner/Banner';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
+  ALOE_II_BORROWER_NFT_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
@@ -28,8 +28,6 @@ import { Address, useAccount, useContract, useProvider, useContractRead, useBala
 
 import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
-import BorrowGraph, { BorrowGraphData } from '../components/advanced/BorrowGraph';
-import { BorrowGraphPlaceholder } from '../components/advanced/BorrowGraphPlaceholder';
 import { BorrowMetrics } from '../components/advanced/BorrowMetrics';
 import GlobalStatsTable from '../components/advanced/GlobalStatsTable';
 import ManageAccountButtons from '../components/advanced/ManageAccountButtons';
@@ -42,10 +40,8 @@ import WithdrawAnteModal from '../components/advanced/modal/WithdrawAnteModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/SmartWalletButton';
 import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import { computeLTV } from '../data/BalanceSheet';
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { TOPIC0_UPDATE_ORACLE } from '../data/constants/Signatures';
+import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
@@ -58,83 +54,68 @@ import {
   UniswapPositionPrior,
 } from '../data/Uniswap';
 
-const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
-const TOPIC1_PREFIX = '0x000000000000000000000000';
 const FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS = 500;
 const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
 
-const ExplainerWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  position: relative;
-
-  padding: 16px;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-
-  background-color: rgba(10, 20, 27, 1);
-  border-radius: 8px;
-
-  &:before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: 8px;
-    /* 1.25px instead of 1px since it avoids the buggy appearance */
-    padding: 1.25px;
-    background: linear-gradient(90deg, #9baaf3 0%, #7bd8c0 100%);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-`;
-
 const Container = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 64px;
+  display: grid;
+  gap: 20px;
   max-width: 1280px;
   margin: 0 auto;
+  margin-top: 32px;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    gap: 32px;
-  }
+  grid-template-columns: 1fr 6fr;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    'title buttons'
+    'list data';
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
-    flex-direction: column;
-    gap: 0;
-    align-items: center;
-  }
-`;
-
-const PageGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  grid-template-rows: auto auto auto auto auto;
-  grid-template-areas:
-    'monitor graph'
-    'metrics metrics'
-    'uniswap uniswap'
-    'stats stats'
-    'link link';
-  flex-grow: 1;
-  margin-top: 26px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
-    width: 100%;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     grid-template-areas:
-      'monitor'
-      'graph'
-      'metrics'
-      'uniswap'
-      'stats'
-      'link';
+      'title'
+      'list'
+      'buttons'
+      'data';
   }
+`;
+
+const GridAreaForButtons = styled.div`
+  display: flex;
+  grid-area: buttons;
+
+  background: rgba(13, 23, 30, 1);
+
+  padding: 16px;
+  border-radius: 16px;
+`;
+
+const GridAreaForNFTList = styled.div`
+  display: flex;
+  flex-direction: column;
+  grid-area: list;
+
+  gap: 4px;
+
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: scroll;
+  }
+`;
+
+const GridAreaForData = styled.div`
+  display: flex;
+  flex-direction: column;
+  grid-area: data;
+
+  background: rgba(13, 23, 30, 1);
+
+  gap: 64px;
+  padding: 16px;
+  border-radius: 16px;
 `;
 
 const StyledExternalLink = styled.a`
@@ -150,53 +131,7 @@ const StyledExternalLink = styled.a`
   }
 `;
 
-const SmartWalletsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_SM}) {
-    width: 100%;
-  }
-`;
-
-const SmartWalletsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: max-content;
-  min-width: 280px;
-`;
-
-const MonitorContainer = styled.div`
-  grid-area: monitor;
-  margin-bottom: 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-`;
-
-const GraphContainer = styled.div`
-  grid-area: graph;
-  margin-bottom: 64px;
-`;
-
-const MetricsContainer = styled.div`
-  grid-area: metrics;
-  margin-bottom: 64px;
-`;
-
-const UniswapPositionsContainer = styled.div`
-  grid-area: uniswap;
-  margin-bottom: 64px;
-`;
-
-const StatsContainer = styled.div`
-  grid-area: stats;
-`;
-
 const LinkContainer = styled.div`
-  grid-area: link;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,8 +149,6 @@ export default function AdvancedPage() {
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress, isConnected } = useAccount();
 
-  const [cachedGraphDatas, setCachedGraphDatas] = useSafeState<Map<string, BorrowGraphData[]>>(new Map());
-  const [graphData, setGraphData] = useSafeState<BorrowGraphData[] | null>(null);
   const [borrowerNftBorrowers, setBorrowerNftBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(
     null,
     activeChain.id
@@ -326,58 +259,6 @@ export default function AdvancedPage() {
       setSelectedMarketInfo(result);
     })();
   }, [selectedMarginAccount, provider, cachedMarketInfos, activeChain.id, setSelectedMarketInfo, setCachedMarketInfos]);
-
-  // MARK: Fetch GraphData
-  useEffect(() => {
-    const cachedGraphData = cachedGraphDatas.get(selectedMarginAccount?.address ?? '');
-    if (cachedGraphData !== undefined) {
-      setGraphData(cachedGraphData);
-      return;
-    }
-    (async () => {
-      if (selectedMarginAccount == null) return;
-
-      const chainId = (await provider.getNetwork()).chainId;
-      const updateLogs = await provider.getLogs({
-        address: ALOE_II_ORACLE_ADDRESS[chainId],
-        topics: [TOPIC0_UPDATE_ORACLE, `${TOPIC1_PREFIX}${selectedMarginAccount?.uniswapPool.slice(2)}`],
-        fromBlock: 0,
-        toBlock: 'latest',
-      });
-
-      const blockI = updateLogs.at(0);
-      const blockF = updateLogs.at(-1);
-
-      if (blockI === undefined || blockF === undefined) return;
-
-      const [tI, tF] = await Promise.all(
-        [blockI, blockF].map(async (log) => {
-          return (await provider.getBlock(log.blockNumber)).timestamp;
-        })
-      );
-
-      const results = await Promise.all(
-        updateLogs.map(async (result) => {
-          const approxTime = tI + ((tF - tI) / (blockF.blockNumber - blockI.blockNumber)) * result.blockNumber;
-
-          const decoded = ethers.utils.defaultAbiCoder.decode(['uint160', 'uint256'], result.data);
-          const iv = ethers.BigNumber.from(decoded[1]).div(1e6).toNumber() / 1e6;
-          const ltv = computeLTV(iv, selectedMarginAccount.nSigma);
-
-          const resultData: BorrowGraphData = {
-            IV: iv * Math.sqrt(365) * 100,
-            LTV: ltv * 100,
-            x: new Date(approxTime * 1000),
-          };
-          return resultData;
-        })
-      );
-      setCachedGraphDatas((prev) => {
-        return new Map(prev).set(selectedMarginAccount.address, results);
-      });
-      setGraphData(results);
-    })();
-  }, [activeChain, cachedGraphDatas, provider, selectedMarginAccount, setCachedGraphDatas, setGraphData]);
 
   // MARK: Fetch Uniswap positions for this MarginAccount (debounced to avoid double-fetching)
   useDebouncedEffect(
@@ -510,6 +391,9 @@ export default function AdvancedPage() {
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
+  const selectedBorrowerOpenseaUrl = `https://opensea.io/assets/${activeChain.network}/${
+    ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id]
+  }/${selectedMarginAccount ? ethers.BigNumber.from(selectedMarginAccount!.tokenId).toString() : ''}`;
 
   const hasLiabilities = Object.values(selectedMarginAccount?.liabilities ?? {}).some((liability) => {
     return liability > 0;
@@ -522,47 +406,20 @@ export default function AdvancedPage() {
   const userHasNoMarginAccounts = borrowerNftBorrowers?.length === 0;
 
   return (
-    <AppPage>
-      <ExplainerWrapper>
-        <Text size='M' weight='regular' color={SECONDARY_COLOR}>
-          When you borrow on the Markets page or Boost page, Borrower NFTs are created behind the scenes. This page
-          gives you fine-grained control over those NFTs. However, once you make changes here, the NFTs won't show up
-          elsewhere.
-        </Text>
-      </ExplainerWrapper>
-      <Container>
-        <SmartWalletsContainer>
-          <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
-            Borrower NFTs
-          </Text>
-          <SmartWalletsList>
-            {borrowerNftBorrowers?.map((account) => (
-              <SmartWalletButton
-                token0={account.token0}
-                token1={account.token1}
-                tokenId={parseInt(account.tokenId.slice(-4), 16)}
-                isActive={selectedMarginAccount?.address === account.address}
-                onClick={() => {
-                  // When a new account is selected, we need to update the
-                  // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
-                  // setSelectedMarginAccount(account);
-                  setSearchParams({ [SELECTED_MARGIN_ACCOUNT_KEY]: account.address });
-                  setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
-                  setUniswapPositions(cachedUniswapPositionsMap.get(account.address) ?? []);
-                }}
-                key={account.address}
-              />
-            ))}
-            <NewSmartWalletButton
-              userHasNoMarginAccounts={userHasNoMarginAccounts}
-              onClick={() => {
-                setNewSmartWalletModalOpen(true);
-              }}
-            />
-          </SmartWalletsList>
-        </SmartWalletsContainer>
-        <PageGrid>
-          <MonitorContainer>
+    <>
+      <Banner
+        bannerName='Note'
+        bannerText='Due to UI limitations, once you transact with a Borrower NFT on this page, it may not load properly on the Markets page.'
+        bannerColor='#8884d8'
+      />
+      <AppPage>
+        <Container>
+          <div className='self-end'>
+            <Text size='M' weight='bold' color={BORROW_TITLE_TEXT_COLOR}>
+              Borrower NFTs
+            </Text>
+          </div>
+          <GridAreaForButtons>
             <ManageAccountButtons
               onAddCollateral={() => {
                 if (isConnected) setIsAddCollateralModalOpen(true);
@@ -588,25 +445,33 @@ export default function AdvancedPage() {
               isWithdrawAnteDisabled={isUnableToWithdrawAnte}
               isDisabled={!selectedMarginAccount}
             />
-          </MonitorContainer>
-          <GraphContainer>
-            <div>
-              {graphData && graphData.length > 0 ? (
-                <BorrowGraph graphData={graphData} />
-              ) : (
-                <BorrowGraphPlaceholder $animate={!userHasNoMarginAccounts} />
-              )}
-              <div className='text-center opacity-50 pl-8'>
-                <Text size='S' weight='regular' color={LABEL_TEXT_COLOR}>
-                  <em>
-                    IV comes from an on-chain oracle. It influences the current collateral factor, which impacts the
-                    health of your account.
-                  </em>
-                </Text>
-              </div>
-            </div>
-          </GraphContainer>
-          <MetricsContainer>
+          </GridAreaForButtons>
+          <GridAreaForNFTList>
+            {borrowerNftBorrowers?.map((account) => (
+              <SmartWalletButton
+                token0={account.token0}
+                token1={account.token1}
+                tokenId={parseInt(account.tokenId.slice(-4), 16)}
+                isActive={selectedMarginAccount?.address === account.address}
+                onClick={() => {
+                  // When a new account is selected, we need to update the
+                  // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
+                  // setSelectedMarginAccount(account);
+                  setSearchParams({ [SELECTED_MARGIN_ACCOUNT_KEY]: account.address });
+                  setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
+                  setUniswapPositions(cachedUniswapPositionsMap.get(account.address) ?? []);
+                }}
+                key={account.address}
+              />
+            ))}
+            <NewSmartWalletButton
+              userHasNoMarginAccounts={userHasNoMarginAccounts}
+              onClick={() => {
+                setNewSmartWalletModalOpen(true);
+              }}
+            />
+          </GridAreaForNFTList>
+          <GridAreaForData>
             <BorrowMetrics
               marginAccount={selectedMarginAccount}
               dailyInterest0={dailyInterest0}
@@ -614,101 +479,107 @@ export default function AdvancedPage() {
               uniswapPositions={uniswapPositions}
               userHasNoMarginAccounts={userHasNoMarginAccounts}
             />
-          </MetricsContainer>
-          <UniswapPositionsContainer>
             <UniswapPositionList
               borrower={selectedMarginAccount}
               uniswapPositions={uniswapPositions}
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
-          </UniswapPositionsContainer>
-          <StatsContainer>
             <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
-          </StatsContainer>
-          {selectedMarginAccount && (
-            <LinkContainer>
-              <InfoIcon width={16} height={16} />
-              <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
-                <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
-                  View this account on Etherscan
-                </StyledExternalLink>
-              </Text>
-            </LinkContainer>
-          )}
-        </PageGrid>
-      </Container>
-      {availablePools.size > 0 && (
-        <NewSmartWalletModal
-          availablePools={availablePools}
-          defaultPool={defaultPool}
-          isOpen={newSmartWalletModalOpen}
-          setIsOpen={setNewSmartWalletModalOpen}
-          setPendingTxn={setPendingTxn}
+            {selectedMarginAccount && (
+              <div className='flex flex-col gap-4 mb-8'>
+                <LinkContainer>
+                  <InfoIcon width={16} height={16} />
+                  <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+                    <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                      View on Etherscan
+                    </StyledExternalLink>
+                  </Text>
+                </LinkContainer>
+                <LinkContainer>
+                  <InfoIcon width={16} height={16} />
+                  <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
+                    <StyledExternalLink href={selectedBorrowerOpenseaUrl} target='_blank'>
+                      View on OpenSea
+                    </StyledExternalLink>
+                  </Text>
+                </LinkContainer>
+              </div>
+            )}
+          </GridAreaForData>
+        </Container>
+        {availablePools.size > 0 && (
+          <NewSmartWalletModal
+            availablePools={availablePools}
+            defaultPool={defaultPool}
+            isOpen={newSmartWalletModalOpen}
+            setIsOpen={setNewSmartWalletModalOpen}
+            setPendingTxn={setPendingTxn}
+          />
+        )}
+        {selectedMarginAccount && selectedMarketInfo && (
+          <>
+            <AddCollateralModal
+              borrower={selectedMarginAccount}
+              marketInfo={selectedMarketInfo}
+              isLoadingUniswapPositions={isLoadingUniswapPositions}
+              existingUniswapPositions={uniswapPositions}
+              uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
+              isOpen={isAddCollateralModalOpen}
+              setIsOpen={setIsAddCollateralModalOpen}
+              setPendingTxn={setPendingTxn}
+            />
+            <RemoveCollateralModal
+              borrower={selectedMarginAccount}
+              uniswapPositions={uniswapPositions}
+              marketInfo={selectedMarketInfo}
+              isOpen={isRemoveCollateralModalOpen}
+              setIsOpen={setIsRemoveCollateralModalOpen}
+              setPendingTxn={setPendingTxn}
+            />
+            <BorrowModal
+              borrower={selectedMarginAccount}
+              uniswapPositions={uniswapPositions}
+              marketInfo={selectedMarketInfo}
+              accountEtherBalance={accountEtherBalance}
+              isOpen={isBorrowModalOpen}
+              setIsOpen={setIsBorrowModalOpen}
+              setPendingTxn={setPendingTxn}
+            />
+            <RepayModal
+              marginAccount={selectedMarginAccount}
+              uniswapPositions={uniswapPositions}
+              isOpen={isRepayModalOpen}
+              setIsOpen={setIsRepayModalOpen}
+              setPendingTxn={setPendingTxn}
+            />
+            <WithdrawAnteModal
+              borrower={selectedMarginAccount}
+              accountEthBalance={accountEtherBalance}
+              isOpen={isWithdrawAnteModalOpen}
+              setIsOpen={setIsWithdrawAnteModalOpen}
+              setPendingTxn={setPendingTxn}
+            />
+          </>
+        )}
+        <PendingTxnModal
+          isOpen={isPendingTxnModalOpen}
+          setIsOpen={(isOpen: boolean) => {
+            setIsPendingTxnModalOpen(isOpen);
+            if (!isOpen) {
+              setPendingTxn(null);
+            }
+          }}
+          txnHash={pendingTxn?.hash}
+          onConfirm={() => {
+            setIsPendingTxnModalOpen(false);
+            setTimeout(() => {
+              navigate(0);
+            }, 100);
+          }}
+          status={pendingTxnModalStatus}
         />
-      )}
-      {selectedMarginAccount && selectedMarketInfo && (
-        <>
-          <AddCollateralModal
-            borrower={selectedMarginAccount}
-            marketInfo={selectedMarketInfo}
-            isLoadingUniswapPositions={isLoadingUniswapPositions}
-            existingUniswapPositions={uniswapPositions}
-            uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
-            isOpen={isAddCollateralModalOpen}
-            setIsOpen={setIsAddCollateralModalOpen}
-            setPendingTxn={setPendingTxn}
-          />
-          <RemoveCollateralModal
-            borrower={selectedMarginAccount}
-            uniswapPositions={uniswapPositions}
-            marketInfo={selectedMarketInfo}
-            isOpen={isRemoveCollateralModalOpen}
-            setIsOpen={setIsRemoveCollateralModalOpen}
-            setPendingTxn={setPendingTxn}
-          />
-          <BorrowModal
-            borrower={selectedMarginAccount}
-            uniswapPositions={uniswapPositions}
-            marketInfo={selectedMarketInfo}
-            accountEtherBalance={accountEtherBalance}
-            isOpen={isBorrowModalOpen}
-            setIsOpen={setIsBorrowModalOpen}
-            setPendingTxn={setPendingTxn}
-          />
-          <RepayModal
-            marginAccount={selectedMarginAccount}
-            uniswapPositions={uniswapPositions}
-            isOpen={isRepayModalOpen}
-            setIsOpen={setIsRepayModalOpen}
-            setPendingTxn={setPendingTxn}
-          />
-          <WithdrawAnteModal
-            borrower={selectedMarginAccount}
-            accountEthBalance={accountEtherBalance}
-            isOpen={isWithdrawAnteModalOpen}
-            setIsOpen={setIsWithdrawAnteModalOpen}
-            setPendingTxn={setPendingTxn}
-          />
-        </>
-      )}
-      <PendingTxnModal
-        isOpen={isPendingTxnModalOpen}
-        setIsOpen={(isOpen: boolean) => {
-          setIsPendingTxnModalOpen(isOpen);
-          if (!isOpen) {
-            setPendingTxn(null);
-          }
-        }}
-        txnHash={pendingTxn?.hash}
-        onConfirm={() => {
-          setIsPendingTxnModalOpen(false);
-          setTimeout(() => {
-            navigate(0);
-          }, 100);
-        }}
-        status={pendingTxnModalStatus}
-      />
-    </AppPage>
+      </AppPage>
+    </>
   );
 }

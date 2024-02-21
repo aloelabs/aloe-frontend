@@ -16,7 +16,6 @@ const Wrapper = styled.div`
   flex-direction: column;
   /* 16px due to the bottom padding already being 8px making the total space 24px */
   gap: 16px;
-  margin-bottom: 64px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     margin-bottom: 48px;

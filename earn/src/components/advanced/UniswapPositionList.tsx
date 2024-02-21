@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -59,7 +60,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
   if (!borrower || !uniswapPosition) {
     return (
-      <UniswapPositionCardWrapper>
+      <UniswapPositionCardWrapper $color={GREY_700}>
         <Text size='S' color={ACCENT_COLOR} className='text-center'>
           Empty
         </Text>
@@ -97,7 +98,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
   });
 
   return (
-    <UniswapPositionCardWrapper>
+    <UniswapPositionCardWrapper $color={GREY_700}>
       <div className='flex flex-col gap-4'>
         <div className='flex justify-center items-center'>
           <TokenPairIcons
@@ -186,7 +187,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 borrower={borrower}
-                uniswapPosition={uniswapPositions.length > index ? uniswapPositions[index] : undefined}
+                uniswapPosition={uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -22,7 +22,7 @@ const MetricCardContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  background-color: ${GREY_800};
+  background-color: ${GREY_700};
   border-radius: 8px;
   padding: 16px;
 `;
@@ -32,10 +32,10 @@ const MetricCardPlaceholder = styled.div.attrs((props: { height: number; $animat
   border-radius: 8px;
   padding: 16px;
   height: ${(props) => props.height}px;
-  background-color: #0d171e;
+  background-color: ${GREY_700};
   animation: ${(props) => (props.$animate ? 'metricCardShimmer 0.75s forwards linear infinite' : '')};
   background-image: ${(props) =>
-    props.$animate ? 'linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%)' : ''};
+    props.$animate ? `linear-gradient(to right, ${GREY_700} 0%, #131f28 20%, ${GREY_700} 40%, ${GREY_700} 100%)` : ''};
   background-repeat: no-repeat;
   background-size: 200% 100%;
   overflow: hidden;
@@ -57,7 +57,7 @@ const HorizontalMetricCardContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  background-color: ${GREY_800};
+  background-color: ${GREY_700};
   border-radius: 8px;
   padding: 16px;
 `;
