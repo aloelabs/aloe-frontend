@@ -162,12 +162,7 @@ export default function MarketsPage() {
       if (
         uniqueSymbols.length === 0 ||
         uniqueSymbols.every((symbol) => {
-          return (
-            Array.from(tokenQuotes.keys())
-              .map((key) => key.toLowerCase())
-              .includes(symbol.toLowerCase()) ||
-            (symbol === 'USDC.e' && tokenQuotes.has('USDC'))
-          );
+          return tokenQuotes.has(symbol.toLowerCase()) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
         })
       ) {
         return;
@@ -187,7 +182,10 @@ export default function MarketsPage() {
 
       // Convert response to the desired Map format
       const symbolToPriceMap = new Map<TokenSymbol, Quote>();
-      Object.entries(prResponse).forEach(([k, v]) => symbolToPriceMap.set(k, v.price));
+      Object.entries(prResponse).forEach(([k, v]) => {
+        symbolToPriceMap.set(k.toLowerCase(), v.price);
+        symbolToPriceMap.set(k, v.price);
+      });
 
       if (mounted) setTokenQuotes(symbolToPriceMap);
     })();
