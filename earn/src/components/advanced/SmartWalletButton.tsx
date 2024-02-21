@@ -1,5 +1,4 @@
-import React from 'react';
-
+import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
@@ -7,7 +6,6 @@ import styled from 'styled-components';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import useProminentColor from '../../data/hooks/UseProminentColor';
 import { rgba } from '../../util/Colors';
-import TokenPairIcons from '../common/TokenPairIcons';
 
 const Container = styled.button.attrs(
   (props: { backgroundGradient: string; active: boolean; $animate: boolean }) => props
@@ -87,14 +85,9 @@ export default function SmartWalletButton(props: SmartWalletButtonProps) {
 
   return (
     <Container backgroundGradient={buttonBackgroundGradient} active={isActive} onClick={onClick}>
-      <div className='flex items-center gap-4'>
-        <TokenPairIcons
-          token0IconPath={token0.logoURI}
-          token1IconPath={token1.logoURI}
-          token0AltText={`${token0.name}'s Icon`}
-          token1AltText={`${token1.name}'s Icon`}
-        />
-        <Display size='S' weight='semibold'>
+      <div className='flex items-center gap-4 min-w-max'>
+        <TokenIcons tokens={[token0, token1]} width={16} height={16} />
+        <Display size='XS'>
           {token0.symbol} / {token1.symbol}
           {tokenId === null ? '' : ` (#${tokenId})`}
         </Display>
@@ -112,13 +105,11 @@ export function NewSmartWalletButton(props: NewSmartWalletButtonProps) {
   const { userHasNoMarginAccounts, onClick } = props;
   return (
     <Container backgroundGradient={'transparent'} active={false} onClick={onClick} $animate={userHasNoMarginAccounts}>
-      <div className='flex items-center gap-4 m-auto'>
+      <div className='flex items-center gap-4 min-w-[220px]'>
         <PlusIconWrapper>
-          <PlusIcon />
+          <PlusIcon width='16px' height='16px' />
         </PlusIconWrapper>
-        <Display size='S' weight='semibold'>
-          Create
-        </Display>
+        <Display size='XS'>Create</Display>
       </div>
     </Container>
   );

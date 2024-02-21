@@ -15,11 +15,11 @@ export const UniswapPositionCardContainer = styled.div`
   gap: 8px;
 `;
 
-export const UniswapPositionCardWrapper = styled.div`
+export const UniswapPositionCardWrapper = styled.div<{ $color?: string }>`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: ${GREY_800};
+  background-color: ${(props) => props.$color ?? GREY_800};
   border-radius: 8px;
   padding: 16px;
   width: 100%;

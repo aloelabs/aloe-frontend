@@ -25,9 +25,9 @@ const TERTIARY_COLOR = '#4b6980';
 const SmartWalletOptionsPage = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   // The height of 5 buttons + gap between them
-  min-height: 304px;
+  min-height: 212px;
 `;
 
 type CreateSmartWalletButtonProps = {
@@ -177,7 +177,8 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
       <div className='w-full'>
         <div className='flex flex-col gap-4 mb-8'>
           <Text size='M' weight='medium'>
-            Select a pair to borrow from
+            On Aloe, all borrows are managed inside smart wallets, represented by NFTs. Select a pair and mint an NFT to
+            get started.
           </Text>
           <SquareInputWithIcon
             Icon={<SearchIcon />}

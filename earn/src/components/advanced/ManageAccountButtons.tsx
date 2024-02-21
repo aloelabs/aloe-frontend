@@ -21,7 +21,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
   const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, isWithdrawAnteDisabled, isDisabled } =
     props;
   return (
-    <div className='flex flex-col gap-3 w-max'>
+    <div className='flex flex-row flex-wrap justify-start gap-3 w-full'>
       <OutlinedWhiteButtonWithIcon
         Icon={<PlusIcon />}
         position='leading'
