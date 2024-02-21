@@ -105,13 +105,11 @@ export function NewSmartWalletButton(props: NewSmartWalletButtonProps) {
   const { userHasNoMarginAccounts, onClick } = props;
   return (
     <Container backgroundGradient={'transparent'} active={false} onClick={onClick} $animate={userHasNoMarginAccounts}>
-      <div className='flex items-center gap-4 m-auto'>
+      <div className='flex items-center gap-4 min-w-[220px]'>
         <PlusIconWrapper>
-          <PlusIcon />
+          <PlusIcon width='16px' height='16px' />
         </PlusIconWrapper>
-        <Display size='S' weight='semibold'>
-          Create
-        </Display>
+        <Display size='XS'>Create</Display>
       </div>
     </Container>
   );
