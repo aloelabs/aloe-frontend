@@ -63,7 +63,7 @@ const Container = styled.div`
   gap: 20px;
   max-width: 1280px;
   margin: 0 auto;
-  margin-top: 32px;
+  margin-top: 24px;
 
   grid-template-columns: 1fr 6fr;
   grid-template-rows: auto auto;
