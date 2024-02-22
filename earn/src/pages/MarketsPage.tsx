@@ -325,8 +325,8 @@ export default function MarketsPage() {
     return lendingPairs.reduce((acc, pair) => {
       const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
       const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
-      const token0BorrowedUsd = pair.kitty0Info.utilization * pair.kitty0Info.totalSupply * token0Price;
-      const token1BorrowedUsd = pair.kitty1Info.utilization * pair.kitty1Info.totalSupply * token1Price;
+      const token0BorrowedUsd = pair.kitty0Info.utilization * pair.kitty0Info.inventory * token0Price;
+      const token1BorrowedUsd = pair.kitty1Info.utilization * pair.kitty1Info.inventory * token1Price;
       return acc + token0BorrowedUsd + token1BorrowedUsd;
     }, 0);
   }, [lendingPairs, tokenQuotes]);
