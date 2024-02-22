@@ -9,7 +9,7 @@ import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
-import { formatUSD } from 'shared/lib/util/Numbers';
+import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
@@ -325,11 +325,9 @@ export default function MarketsPage() {
     return lendingPairs.reduce((acc, pair) => {
       const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
       const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
-      const token0BalanceUsd = pair.kitty0Info.totalSupply * token0Price;
-      const token1BalanceUsd = pair.kitty1Info.totalSupply * token1Price;
       const token0BorrowedUsd = pair.kitty0Info.utilization * pair.kitty0Info.totalSupply * token0Price;
       const token1BorrowedUsd = pair.kitty1Info.utilization * pair.kitty1Info.totalSupply * token1Price;
-      return acc + (token0BalanceUsd - token0BorrowedUsd) + (token1BalanceUsd - token1BorrowedUsd);
+      return acc + token0BorrowedUsd + token1BorrowedUsd;
     }, 0);
   }, [lendingPairs, tokenQuotes]);
 
@@ -353,7 +351,7 @@ export default function MarketsPage() {
                 Total Supplied
               </Text>
               <Display size='S' weight='semibold'>
-                {formatUSD(totalSupplied)}
+                {formatUSDAuto(totalSupplied)}
               </Display>
             </div>
             <div className='flex flex-col'>
@@ -361,7 +359,7 @@ export default function MarketsPage() {
                 Total Available
               </Text>
               <Display size='S' weight='semibold'>
-                {formatUSD(totalAvailable)}
+                {formatUSDAuto(totalAvailable)}
               </Display>
             </div>
             <div className='flex flex-col'>
@@ -369,7 +367,7 @@ export default function MarketsPage() {
                 Total Borrowed
               </Text>
               <Display size='S' weight='semibold'>
-                {formatUSD(totalBorrowed)}
+                {formatUSDAuto(totalBorrowed)}
               </Display>
             </div>
           </div>
