@@ -409,7 +409,8 @@ export default function AdvancedPage() {
     <>
       <Banner
         bannerName='Note'
-        bannerText='Due to UI limitations, once you transact with a Borrower NFT on this page, it may not load properly on the Markets page.'
+        bannerText={`Due to UI limitations, once you transact with a Borrower NFT on this page, 
+        it may not load properly on the Markets page.`}
         bannerColor='#8884d8'
       />
       <AppPage>
