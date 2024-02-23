@@ -32,7 +32,6 @@ import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowerNft, fetchListOfBorrowerNfts } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
-import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
 const SECONDARY_COLOR = '#CCDFED';
@@ -204,19 +203,8 @@ export default function BorrowModal(props: BorrowModalProps) {
   const estimatedApr = useMemo(() => {
     const { kitty0Info, kitty1Info } = selectedLendingPair;
 
-    const numericLenderTotalAssets = (isBorrowingToken0 ? kitty0Info.totalAssets : kitty1Info.totalAssets).toNumber();
-    const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
-
-    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;
-    const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, selectedBorrow.decimals);
-
-    const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
-    const newUtilization = lenderTotalAssets.isGtZero()
-      ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
-      : 0;
-
-    return yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
-  }, [selectedLendingPair, selectedBorrow, isBorrowingToken0, borrowAmount]);
+    return (isBorrowingToken0 ? kitty0Info : kitty1Info).hypotheticalBorrowAPR(borrowAmount) * 100;
+  }, [selectedLendingPair, isBorrowingToken0, borrowAmount]);
 
   // The NFT index we will use if minting
   const { data: nextNftPtrIdx } = useContractRead({
