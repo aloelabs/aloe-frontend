@@ -28,7 +28,7 @@ const BannerContainer = styled.div<{ bgColor: string }>`
   padding: 12px;
 `;
 
-const BetaBadge = styled.div<{ bgColor: string }>`
+const Badge = styled.div<{ bgColor: string }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -67,11 +67,11 @@ export default function Banner(props: BannerProps) {
     <BannerWrapper>
       <BannerContainer bgColor={bannerColor}>
         <div className='flex justify-center items-center'>
-          <BetaBadge bgColor='#ffffffcb' className='mix-blend-luminosity'>
+          <Badge bgColor='#ffffffcb' className='mix-blend-luminosity'>
             <Text size='S' weight='bold' color='#000000bc' className='mix-blend-darken'>
               {bannerName}
             </Text>
-          </BetaBadge>
+          </Badge>
           <Text size='S' weight='medium'>
             {bannerText}
           </Text>

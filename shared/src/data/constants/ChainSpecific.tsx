@@ -18,6 +18,23 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [base.id]: <BaseLogo width={16} height={16} />,
 };
 
+export function getChainLogo(chainId: number, size: number): JSX.Element {
+  switch (chainId) {
+    case mainnet.id:
+      return <EthereumLogo width={size} height={size} />;
+    case goerli.id:
+      return <EthereumLogo width={size} height={size} />;
+    case optimism.id:
+      return <OptimismLogo width={size} height={size} />;
+    case arbitrum.id:
+      return <ArbitrumLogo width={size} height={size} />;
+    case base.id:
+      return <BaseLogo width={size} height={size} />;
+    default:
+      return <EthereumLogo width={size} height={size} />;
+  }
+}
+
 export const APPROX_SECONDS_PER_BLOCK: { [chainId: number]: number } = {
   [mainnet.id]: 12.07,
   [optimism.id]: 2,
