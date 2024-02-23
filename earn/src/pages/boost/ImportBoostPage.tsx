@@ -192,7 +192,7 @@ export default function ImportBoostPage() {
         uniswapPool: cardInfo.uniswapPool,
         token0: cardInfo.token0,
         token1: cardInfo.token1,
-        assets: new Assets(GN.zero(cardInfo.token0.decimals), GN.zero(cardInfo.token1.decimals), [position]),
+        assets: new Assets(GN.zero(cardInfo.token0.decimals), GN.zero(cardInfo.token1.decimals), []),
         liabilities: {
           amount0: cardInfo.amount0() * (boostFactor - 1),
           amount1: cardInfo.amount1() * (boostFactor - 1),
