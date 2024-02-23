@@ -23,8 +23,6 @@ import { ChainContext } from '../../../App';
 import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { Assets } from '../../../data/MarginAccount';
-import { MarketInfo } from '../../../data/MarketInfo';
-import { UniswapPosition } from '../../../data/Uniswap';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -159,15 +157,13 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
 export type RemoveCollateralModalProps = {
   borrower: BorrowerNftBorrower;
-  uniswapPositions: readonly UniswapPosition[];
-  marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { borrower, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(borrower.token0);
@@ -197,7 +193,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const maxWithdrawBasedOnHealth = maxWithdraws(
     borrower.assets,
     borrower.liabilities,
-    uniswapPositions,
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -220,7 +216,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
-    uniswapPositions,
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

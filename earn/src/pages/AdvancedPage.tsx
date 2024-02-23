@@ -5,26 +5,19 @@ import { SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
-import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import Banner from 'shared/lib/components/banner/Banner';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import {
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_BORROWER_LENS_ADDRESS,
-  ALOE_II_BORROWER_NFT_ADDRESS,
-} from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useAccount, useContract, useProvider, useContractRead, useBalance } from 'wagmi';
+import { Address, useAccount, useContract, useProvider, useBalance } from 'wagmi';
 
 import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
@@ -44,18 +37,11 @@ import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNf
 import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
+import { useLendingPair } from '../data/hooks/UseLendingPairs';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
-import { fetchMarketInfoFor, MarketInfo } from '../data/MarketInfo';
-import {
-  fetchUniswapNFTPositions,
-  fetchUniswapPositions,
-  UniswapNFTPosition,
-  UniswapPosition,
-  UniswapPositionPrior,
-} from '../data/Uniswap';
+import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../data/Uniswap';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
-const FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS = 500;
 const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
 
 const Container = styled.div`
@@ -153,14 +139,7 @@ export default function AdvancedPage() {
     null,
     activeChain.id
   );
-  const [cachedUniswapPositionsMap, setCachedUniswapPositionsMap] = useSafeState<
-    Map<string, readonly UniswapPosition[]>
-  >(new Map());
-  const [isLoadingUniswapPositions, setIsLoadingUniswapPositions] = useSafeState(true);
-  const [uniswapPositions, setUniswapPositions] = useSafeState<readonly UniswapPosition[]>([]);
   const [uniswapNFTPositions, setUniswapNFTPositions] = useSafeState<Map<number, UniswapNFTPosition>>(new Map());
-  const [cachedMarketInfos, setCachedMarketInfos] = useSafeState<Map<string, MarketInfo>>(new Map());
-  const [selectedMarketInfo, setSelectedMarketInfo] = useSafeState<MarketInfo | undefined>(undefined);
   const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
   const [isAddCollateralModalOpen, setIsAddCollateralModalOpen] = useState(false);
   const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
@@ -183,17 +162,12 @@ export default function AdvancedPage() {
     );
   }, [borrowerNftBorrowers, searchParams]);
 
+  const market = useLendingPair(selectedMarginAccount?.token0.address, selectedMarginAccount?.token1.address);
+
   const borrowerLensContract = useContract({
     abi: borrowerLensAbi,
     address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     signerOrProvider: provider,
-  });
-  const { data: uniswapPositionTicks } = useContractRead({
-    address: selectedMarginAccount?.address ?? '0x',
-    abi: borrowerAbi,
-    functionName: 'getUniswapPositions',
-    chainId: activeChain.id,
-    enabled: Boolean(selectedMarginAccount),
   });
 
   const availablePools = useAvailablePools();
@@ -231,94 +205,6 @@ export default function AdvancedPage() {
       setSearchParams(searchParams);
     }
   }, [borrowerNftBorrowers?.length, searchParams, selectedMarginAccount, setSearchParams]);
-
-  // MARK: Fetch market info
-  useEffect(() => {
-    const cachedMarketInfo = cachedMarketInfos.get(selectedMarginAccount?.address ?? '');
-    if (cachedMarketInfo !== undefined) {
-      setSelectedMarketInfo(cachedMarketInfo);
-      return;
-    }
-    (async () => {
-      if (selectedMarginAccount == null) return;
-      const lenderLensContract = new ethers.Contract(
-        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
-        lenderLensAbi,
-        provider
-      );
-      const result = await fetchMarketInfoFor(
-        lenderLensContract,
-        selectedMarginAccount.lender0,
-        selectedMarginAccount.lender1,
-        selectedMarginAccount.token0.decimals,
-        selectedMarginAccount.token1.decimals
-      );
-      setCachedMarketInfos((prev) => {
-        return new Map(prev).set(selectedMarginAccount.address, result);
-      });
-      setSelectedMarketInfo(result);
-    })();
-  }, [selectedMarginAccount, provider, cachedMarketInfos, activeChain.id, setSelectedMarketInfo, setCachedMarketInfos]);
-
-  // MARK: Fetch Uniswap positions for this MarginAccount (debounced to avoid double-fetching)
-  useDebouncedEffect(
-    () => {
-      setIsLoadingUniswapPositions(true);
-      const cachedUniswapPositions = cachedUniswapPositionsMap.get(selectedMarginAccount?.address ?? '');
-      if (cachedUniswapPositions !== undefined) {
-        // If we have cached positions, set them and return (no need to fetch)
-        setUniswapPositions(cachedUniswapPositions);
-        setIsLoadingUniswapPositions(false);
-        return;
-      }
-      (async () => {
-        if (!Array.isArray(uniswapPositionTicks)) {
-          setCachedUniswapPositionsMap((prev) => {
-            return new Map(prev).set(selectedMarginAccount?.address ?? '', []);
-          });
-          setIsLoadingUniswapPositions(false);
-          return;
-        }
-
-        // Convert the ticks into UniswapPositionPriors
-        const uniswapPositionPriors: UniswapPositionPrior[] = [];
-        for (let i = 0; i < uniswapPositionTicks.length; i += 2) {
-          uniswapPositionPriors.push({
-            lower: uniswapPositionTicks[i] as number,
-            upper: uniswapPositionTicks[i + 1] as number,
-          });
-        }
-        if (uniswapPositionPriors.length === 0 || selectedMarginAccount === undefined) {
-          setCachedUniswapPositionsMap((prev) => {
-            return new Map(prev).set(selectedMarginAccount?.address ?? '', []);
-          });
-          setIsLoadingUniswapPositions(false);
-          return;
-        }
-
-        // Fetch the positions
-        const fetchedUniswapPositionsMap = await fetchUniswapPositions(
-          uniswapPositionPriors,
-          selectedMarginAccount.address,
-          selectedMarginAccount.uniswapPool,
-          provider,
-          activeChain
-        );
-        // We only want the values, not the keys
-        const fetchedUniswapPositions = Array.from(fetchedUniswapPositionsMap.values());
-
-        // Cache the positions
-        setCachedUniswapPositionsMap((prev) => {
-          return new Map(prev).set(selectedMarginAccount.address, fetchedUniswapPositions);
-        });
-        // Set the positions
-        setUniswapPositions(fetchedUniswapPositions);
-        setIsLoadingUniswapPositions(false);
-      })();
-    },
-    FETCH_UNISWAP_POSITIONS_DEBOUNCE_MS,
-    [uniswapPositionTicks]
-  );
 
   useEffect(() => {
     (async () => {
@@ -370,7 +256,7 @@ export default function AdvancedPage() {
   const withdrawableUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
-    uniswapPositions.forEach((uniswapPosition) => {
+    selectedMarginAccount.uniswapPositions?.forEach((uniswapPosition) => {
       const isNonZero = JSBI.greaterThan(uniswapPosition.liquidity, JSBI.BigInt('0'));
       const matchingNFTPosition = Array.from(uniswapNFTPositions.entries()).find(([, position]) => {
         return position.lower === uniswapPosition.lower && position.upper === uniswapPosition.upper;
@@ -380,14 +266,14 @@ export default function AdvancedPage() {
       }
     });
     return filteredPositions;
-  }, [selectedMarginAccount, uniswapPositions, uniswapNFTPositions]);
+  }, [selectedMarginAccount, uniswapNFTPositions]);
 
   const defaultPool = Array.from(availablePools.keys())[0];
 
   const dailyInterest0 =
-    ((selectedMarketInfo?.borrowerAPR0 || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
+    ((market?.kitty0Info.borrowAPR || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
   const dailyInterest1 =
-    ((selectedMarketInfo?.borrowerAPR1 || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
+    ((market?.kitty1Info.borrowAPR || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
@@ -458,8 +344,6 @@ export default function AdvancedPage() {
                   // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
                   // setSelectedMarginAccount(account);
                   setSearchParams({ [SELECTED_MARGIN_ACCOUNT_KEY]: account.address });
-                  setSelectedMarketInfo(cachedMarketInfos.get(account.address) ?? undefined);
-                  setUniswapPositions(cachedUniswapPositionsMap.get(account.address) ?? []);
                 }}
                 key={account.address}
               />
@@ -476,16 +360,14 @@ export default function AdvancedPage() {
               marginAccount={selectedMarginAccount}
               dailyInterest0={dailyInterest0}
               dailyInterest1={dailyInterest1}
-              uniswapPositions={uniswapPositions}
               userHasNoMarginAccounts={userHasNoMarginAccounts}
             />
             <UniswapPositionList
               borrower={selectedMarginAccount}
-              uniswapPositions={uniswapPositions}
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
-            <GlobalStatsTable marginAccount={selectedMarginAccount} marketInfo={selectedMarketInfo} />
+            <GlobalStatsTable market={market} />
             {selectedMarginAccount && (
               <div className='flex flex-col gap-4 mb-8'>
                 <LinkContainer>
@@ -517,13 +399,10 @@ export default function AdvancedPage() {
             setPendingTxn={setPendingTxn}
           />
         )}
-        {selectedMarginAccount && selectedMarketInfo && (
+        {selectedMarginAccount && market && (
           <>
             <AddCollateralModal
               borrower={selectedMarginAccount}
-              marketInfo={selectedMarketInfo}
-              isLoadingUniswapPositions={isLoadingUniswapPositions}
-              existingUniswapPositions={uniswapPositions}
               uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
               isOpen={isAddCollateralModalOpen}
               setIsOpen={setIsAddCollateralModalOpen}
@@ -531,16 +410,13 @@ export default function AdvancedPage() {
             />
             <RemoveCollateralModal
               borrower={selectedMarginAccount}
-              uniswapPositions={uniswapPositions}
-              marketInfo={selectedMarketInfo}
               isOpen={isRemoveCollateralModalOpen}
               setIsOpen={setIsRemoveCollateralModalOpen}
               setPendingTxn={setPendingTxn}
             />
             <BorrowModal
               borrower={selectedMarginAccount}
-              uniswapPositions={uniswapPositions}
-              marketInfo={selectedMarketInfo}
+              market={market}
               accountEtherBalance={accountEtherBalance}
               isOpen={isBorrowModalOpen}
               setIsOpen={setIsBorrowModalOpen}
@@ -548,7 +424,6 @@ export default function AdvancedPage() {
             />
             <RepayModal
               marginAccount={selectedMarginAccount}
-              uniswapPositions={uniswapPositions}
               isOpen={isRepayModalOpen}
               setIsOpen={setIsRepayModalOpen}
               setPendingTxn={setPendingTxn}

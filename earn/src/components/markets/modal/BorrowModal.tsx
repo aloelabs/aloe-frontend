@@ -163,10 +163,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     if (selectedBorrow === undefined) {
       return null;
     }
-    return GN.fromNumber(
-      selectedLendingPair[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].totalSupply,
-      selectedBorrow.decimals
-    );
+    return selectedLendingPair[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].availableAssets;
   }, [selectedBorrow, selectedLendingPair, isBorrowingToken0]);
 
   const maxBorrowHealthConstraint = useMemo(() => {
@@ -207,7 +204,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const estimatedApr = useMemo(() => {
     const { kitty0Info, kitty1Info } = selectedLendingPair;
 
-    const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
+    const numericLenderTotalAssets = (isBorrowingToken0 ? kitty0Info.totalAssets : kitty1Info.totalAssets).toNumber();
     const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
 
     const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;

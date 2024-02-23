@@ -18,7 +18,6 @@ import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Addr
 import { ChainContext } from '../../../App';
 import { isHealthy } from '../../../data/BalanceSheet';
 import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
-import { UniswapPosition } from '../../../data/Uniswap';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -195,14 +194,13 @@ function RepayButton(props: RepayButtonProps) {
 
 export type RepayModalProps = {
   marginAccount: MarginAccount;
-  uniswapPositions: readonly UniswapPosition[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function RepayModal(props: RepayModalProps) {
-  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
   const [repayAmountStr, setRepayAmountStr] = useState('');
@@ -251,7 +249,7 @@ export default function RepayModal(props: RepayModalProps) {
   const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
-    uniswapPositions,
+    marginAccount.uniswapPositions ?? [],
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
     marginAccount.nSigma,

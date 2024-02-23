@@ -23,10 +23,8 @@ import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { LendingPair } from '../../../data/LendingPair';
 import { Liabilities } from '../../../data/MarginAccount';
-import { MarketInfo } from '../../../data/MarketInfo';
-import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
-import { UniswapPosition } from '../../../data/Uniswap';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -179,8 +177,7 @@ function BorrowButton(props: BorrowButtonProps) {
 
 export type BorrowModalProps = {
   borrower: BorrowerNftBorrower;
-  uniswapPositions: readonly UniswapPosition[];
-  marketInfo: MarketInfo;
+  market: LendingPair;
   accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -188,7 +185,7 @@ export type BorrowModalProps = {
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { borrower, uniswapPositions, marketInfo, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, market, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
@@ -234,20 +231,22 @@ export default function BorrowModal(props: BorrowModalProps) {
     return null;
   }
 
-  const gnMaxBorrowsBasedOnMarket = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
   // TODO: use GN
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     borrower.assets,
     borrower.liabilities,
-    uniswapPositions,
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
     borrower.token0.decimals,
     borrower.token1.decimals
   )[isToken0 ? 0 : 1];
-  // TODO: use GN
-  const max = Math.min(maxBorrowsBasedOnHealth, gnMaxBorrowsBasedOnMarket.toNumber());
+
+  const max = Math.min(
+    maxBorrowsBasedOnHealth,
+    market[isToken0 ? 'kitty0Info' : 'kitty1Info'].availableAssets.toNumber()
+  );
   // Mitigate the case when the number is represented in scientific notation
   const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
   const maxString = gnEightyPercentMax.toString(GNFormat.DECIMAL);
@@ -261,7 +260,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
-    uniswapPositions,
+    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -269,20 +268,12 @@ export default function BorrowModal(props: BorrowModalProps) {
     borrower.token1.decimals
   );
 
-  const availableAssets = isToken0 ? marketInfo.lender0AvailableAssets : marketInfo.lender1AvailableAssets;
-  const remainingAvailableAssets = availableAssets.sub(borrowAmount);
-
-  const lenderTotalAssets = isToken0 ? marketInfo.lender0TotalAssets : marketInfo.lender1TotalAssets;
-  // TODO: use GN
-  const newUtilization = lenderTotalAssets.isGtZero()
-    ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
-    : 0;
-  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
+  const apr = market[isToken0 ? 'kitty0Info' : 'kitty1Info'].hypotheticalBorrowAPR(borrowAmount) * 100;
 
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
-  const notEnoughSupply = gnMaxBorrowsBasedOnMarket.lt(borrowAmount);
+  const notEnoughSupply = borrowAmount.gt(market[isToken0 ? 'kitty0Info' : 'kitty1Info'].availableAssets);
 
   return (
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>

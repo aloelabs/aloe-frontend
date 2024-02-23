@@ -25,7 +25,6 @@ import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { LendingPair } from '../../../../data/LendingPair';
 import { Liabilities } from '../../../../data/MarginAccount';
-import { RateModel, yieldPerSecondToAPR } from '../../../../data/RateModel';
 import HealthBar from '../../../common/HealthBar';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110;
@@ -219,14 +218,8 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
     accountEtherBalance !== undefined && accountEtherBalance.lt(ante) ? ante.sub(accountEtherBalance) : GN.zero(18);
 
   const lenderInfo = lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'];
-  const inventoryTotal = lenderInfo?.inventory || 0;
-  const inventoryAvailable = inventoryTotal * (lenderInfo?.utilization || 0);
 
-  // Compute updated utilization and apr
-  const inventoryAvailableNew = inventoryAvailable - borrowAmount.toNumber();
-  let utilizationNew = inventoryTotal > 0 ? 1 - inventoryAvailableNew / inventoryTotal : 0;
-  if (inventoryAvailableNew < 0) utilizationNew = 1;
-  const apr = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(utilizationNew)) * 100;
+  const apr = (lenderInfo?.hypotheticalBorrowAPR(borrowAmount) || 0) * 100;
 
   // TODO: use GN
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
@@ -241,7 +234,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   )[isBorrowingToken0 ? 0 : 1];
 
   // TODO: use GN
-  const max = Math.min(maxBorrowsBasedOnHealth, inventoryAvailable);
+  const max = Math.min(maxBorrowsBasedOnHealth, lenderInfo?.availableAssets.toNumber() || 0);
 
   // Mitigate the case when the number is represented in scientific notation
   const eightyPercentMaxBorrowAmount = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
@@ -266,7 +259,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   // A user is considered unhealthy if their health is 1 or less
   const isUnhealthy = newHealth <= 1;
   // A user cannot borrow more than the total supply of the market
-  const notEnoughSupply = borrowAmount.toNumber() > inventoryAvailable;
+  const notEnoughSupply = lenderInfo !== undefined && borrowAmount.gt(lenderInfo.availableAssets);
 
   return (
     <>

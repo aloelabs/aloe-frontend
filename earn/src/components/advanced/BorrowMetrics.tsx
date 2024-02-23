@@ -9,7 +9,6 @@ import styled from 'styled-components';
 import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice } from '../../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
-import { UniswapPosition } from '../../data/Uniswap';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;
@@ -161,12 +160,11 @@ export type BorrowMetricsProps = {
   marginAccount?: MarginAccount;
   dailyInterest0: number;
   dailyInterest1: number;
-  uniswapPositions: readonly UniswapPosition[];
   userHasNoMarginAccounts: boolean;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccount, dailyInterest0, dailyInterest1, uniswapPositions, userHasNoMarginAccounts } = props;
+  const { marginAccount, dailyInterest0, dailyInterest1, userHasNoMarginAccounts } = props;
 
   const maxSafeCollateralFall = useMemo(() => {
     if (!marginAccount) return null;
@@ -174,7 +172,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     const { lowerSqrtRatio, upperSqrtRatio, minSqrtRatio, maxSqrtRatio } = computeLiquidationThresholds(
       marginAccount.assets,
       marginAccount.liabilities,
-      uniswapPositions,
+      marginAccount.uniswapPositions ?? [],
       marginAccount.sqrtPriceX96,
       marginAccount.iv,
       marginAccount.nSigma,
@@ -191,7 +189,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     const assets = getAssets(
       marginAccount.assets.token0Raw,
       marginAccount.assets.token1Raw,
-      uniswapPositions,
+      marginAccount.uniswapPositions ?? [],
       lowerSqrtRatio,
       upperSqrtRatio,
       marginAccount.token0.decimals,
@@ -229,7 +227,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     // Since we don't know whether the user is thinking in terms of "X per Y" or "Y per X",
     // we return the minimum. Error on the side of being too conservative.
     return Math.min(percentChange0, percentChange1);
-  }, [marginAccount, uniswapPositions]);
+  }, [marginAccount]);
 
   if (!marginAccount)
     return (

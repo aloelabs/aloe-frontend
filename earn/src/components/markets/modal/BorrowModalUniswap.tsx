@@ -148,7 +148,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
       return null;
     }
     const lenderInfo = selectedLendingPair[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'];
-    return lenderInfo.inventory * (1 - lenderInfo.utilization);
+    return lenderInfo.availableAssets.toNumber();
   }, [selectedBorrow, selectedLendingPair, isBorrowingToken0]);
 
   const maxBorrowHealthConstraint = useMemo(() => {
@@ -186,7 +186,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   const estimatedApr = useMemo(() => {
     const { kitty0Info, kitty1Info } = selectedLendingPair;
 
-    const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
+    const numericLenderTotalAssets = (isBorrowingToken0 ? kitty0Info.totalAssets : kitty1Info.totalAssets).toNumber();
     const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
 
     const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;
