@@ -198,22 +198,20 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const { address: accountAddress } = useAccount();
 
   // TODO: This logic needs to change once we support more complex borrowing
-  const isWithdrawingToken0 = borrower.assets.token0Raw > 0;
+  const isWithdrawingToken0 = borrower.assets.amount0.isGtZero();
 
   // TODO: This logic needs to change once we support more complex borrowing
   const collateralToken = isWithdrawingToken0 ? borrower.token0 : borrower.token1;
 
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
-  const numericExistingCollateral = isWithdrawingToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
-  const existingCollateral = GN.fromNumber(numericExistingCollateral, collateralToken.decimals);
+  const existingCollateral = isWithdrawingToken0 ? borrower.assets.amount0 : borrower.assets.amount1;
   const withdrawAmount = GN.fromDecimalString(withdrawAmountStr || '0', collateralToken.decimals);
   const newCollateralAmount = existingCollateral.sub(withdrawAmount);
 
   const numericMaxWithdrawAmount = maxWithdraws(
     borrower.assets,
     borrower.liabilities,
-    [], // TODO: Add uniswap positions
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -226,18 +224,15 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
   const max = maxWithdrawAmount;
   const maxStr = max.toString(GNFormat.DECIMAL);
 
-  // TODO: use GN
-  const newAssets: Assets = {
-    token0Raw: isWithdrawingToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
-    token1Raw: isWithdrawingToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
-    uni0: 0, // TODO: add uniswap positions
-    uni1: 0, // TODO: add uniswap positions
-  };
+  const newAssets = new Assets(
+    isWithdrawingToken0 ? newCollateralAmount : borrower.assets.amount0,
+    isWithdrawingToken0 ? borrower.assets.amount1 : newCollateralAmount,
+    borrower.assets.uniswapPositions
+  );
 
   const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
-    [], // TODO: add uniswap positions
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -245,7 +240,7 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
     borrower.token1.decimals
   );
 
-  const shouldWithdrawAnte = newAssets.token0Raw < Number.EPSILON && newAssets.token1Raw < Number.EPSILON;
+  const shouldWithdrawAnte = newAssets.amount0.isZero() && newAssets.amount1.isZero();
 
   return (
     <>

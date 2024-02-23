@@ -1,4 +1,3 @@
-import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { ethers } from 'ethers';
@@ -19,9 +18,9 @@ import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { String1E } from 'shared/lib/util/Numbers';
 import { Address, erc20ABI } from 'wagmi';
 
+import { sqrtRatioToTick } from './BalanceSheet';
 import { fetchListOfBorrowerNfts } from './BorrowerNft';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import { getAmountsForLiquidity, getValueOfLiquidity, tickToPrice, UniswapPosition } from './Uniswap';
@@ -97,8 +96,9 @@ export class BoostCardInfo {
     const uniswapValue = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
 
     // Compute total debt
-    const debt0 = this.borrower.liabilities.amount0 - this.borrower.assets.token0Raw;
-    const debt1 = this.borrower.liabilities.amount1 - this.borrower.assets.token1Raw;
+    const [assets0, assets1] = this.borrower.assets.amountsAt(sqrtRatioToTick(this.borrower.sqrtPriceX96));
+    const debt0 = this.borrower.liabilities.amount0 - assets0;
+    const debt1 = this.borrower.liabilities.amount1 - assets1;
     const price = tickToPrice(this.currentTick, this.token0.decimals, this.token1.decimals, true);
     const debtValue = debt0 * price + debt1;
 
@@ -300,27 +300,14 @@ export async function fetchBoostBorrower(
     liquidity: JSBI.BigInt(liquidity.toString()),
   };
 
-  const token0Raw = new Big(
-    ethers.BigNumber.from(extraResults['token0.balanceOf'].callsReturnContext[0].returnValues[0].hex).toString()
+  const token0Raw = ethers.BigNumber.from(extraResults['token0.balanceOf'].callsReturnContext[0].returnValues[0].hex);
+  const token1Raw = ethers.BigNumber.from(extraResults['token1.balanceOf'].callsReturnContext[0].returnValues[0].hex);
+
+  const assets = new Assets(
+    GN.fromBigNumber(token0Raw, token0.decimals),
+    GN.fromBigNumber(token1Raw, token1.decimals),
+    [uniswapPosition]
   );
-  const token1Raw = new Big(
-    ethers.BigNumber.from(extraResults['token1.balanceOf'].callsReturnContext[0].returnValues[0].hex).toString()
-  );
-  let [uni0, uni1] = [0, 0];
-  if (hasPosition) {
-    [uni0, uni1] = getAmountsForLiquidity(
-      uniswapPosition,
-      TickMath.getTickAtSqrtRatio(sqrtPriceX96),
-      token0.decimals,
-      token1.decimals
-    );
-  }
-  const assets: Assets = {
-    token0Raw: token0Raw.div(String1E(token0.decimals)).toNumber(),
-    token1Raw: token1Raw.div(String1E(token1.decimals)).toNumber(),
-    uni0,
-    uni1,
-  };
 
   const borrower: MarginAccount = {
     address: borrowerAddress,

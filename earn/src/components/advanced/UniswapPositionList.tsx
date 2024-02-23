@@ -186,7 +186,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 borrower={borrower}
-                uniswapPosition={borrower?.uniswapPositions?.at(index)}
+                uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
@@ -200,7 +200,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           isOpen={selectedUniswapPosition !== null}
           borrower={borrower}
           uniswapPosition={selectedUniswapPosition.uniswapPosition}
-          existingUniswapPositions={borrower?.uniswapPositions ?? []}
+          existingUniswapPositions={borrower.assets.uniswapPositions}
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}
           setIsOpen={() => {
             setSelectedUniswapPosition(null);

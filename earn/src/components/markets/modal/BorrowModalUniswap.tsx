@@ -29,6 +29,7 @@ import { erc721ABI, useAccount, useBalance, useContractRead, useContractWrite, u
 import { ChainContext } from '../../../App';
 import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { LendingPair } from '../../../data/LendingPair';
+import { Assets } from '../../../data/MarginAccount';
 import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
 import { UniswapNFTPosition, zip } from '../../../data/Uniswap';
 
@@ -157,14 +158,10 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     }
 
     const [max0, max1] = maxBorrowAndWithdraw(
-      {
-        token0Raw: 0,
-        token1Raw: 0,
-        uni0: 0,
-        uni1: 0,
-      },
+      new Assets(GN.zero(selectedLendingPair.token0.decimals), GN.zero(selectedLendingPair.token1.decimals), [
+        uniswapPosition,
+      ]),
       { amount0: 0, amount1: 0 },
-      [uniswapPosition],
       new Big(consultData[1].toString()),
       selectedLendingPair.iv,
       selectedLendingPair.factoryData.nSigma,

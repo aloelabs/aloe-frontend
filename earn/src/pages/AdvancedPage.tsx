@@ -256,7 +256,7 @@ export default function AdvancedPage() {
   const withdrawableUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
     if (selectedMarginAccount == null) return filteredPositions;
-    selectedMarginAccount.uniswapPositions?.forEach((uniswapPosition) => {
+    selectedMarginAccount.assets.uniswapPositions.forEach((uniswapPosition) => {
       const isNonZero = JSBI.greaterThan(uniswapPosition.liquidity, JSBI.BigInt('0'));
       const matchingNFTPosition = Array.from(uniswapNFTPositions.entries()).find(([, position]) => {
         return position.lower === uniswapPosition.lower && position.upper === uniswapPosition.upper;

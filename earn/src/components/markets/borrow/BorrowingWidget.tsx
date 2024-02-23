@@ -8,7 +8,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
@@ -280,15 +280,15 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     {borrowers &&
                       borrowers.map((account) => {
                         const hasNoCollateral =
-                          account.assets.token0Raw === 0 &&
-                          account.assets.token1Raw === 0 &&
-                          (account.uniswapPositions ?? []).every((pos) => JSBI.EQ(pos.liquidity, '0'));
+                          account.assets.amount0.isZero() &&
+                          account.assets.amount1.isZero() &&
+                          account.assets.uniswapPositions.every((pos) => JSBI.EQ(pos.liquidity, '0'));
                         if (hasNoCollateral) return null;
-                        const uniswapPosition = account.uniswapPositions?.at(0);
-                        const collateral = account.assets.token0Raw > 0 ? account.token0 : account.token1;
+                        const uniswapPosition = account.assets.uniswapPositions.at(0);
+                        const collateral = account.assets.amount0.isGtZero() ? account.token0 : account.token1;
                         const collateralAmount = collateral.equals(account.token0)
-                          ? account.assets.token0Raw
-                          : account.assets.token1Raw;
+                          ? account.assets.amount0
+                          : account.assets.amount1;
                         const collateralColor = tokenColors.get(collateral.address);
                         const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
                         return (
@@ -319,7 +319,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                               <div className='flex items-center gap-3'>
                                 <TokenIcon token={collateral} />
                                 <Display size='XS'>
-                                  {formatTokenAmount(collateralAmount)}&nbsp;&nbsp;{collateral.symbol}
+                                  {collateralAmount.toString(GNFormat.LOSSY_HUMAN)}&nbsp;&nbsp;{collateral.symbol}
                                 </Display>
                               </div>
                             )}
@@ -335,7 +335,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
               <div className='w-[52px] h-[42px]' />
               {borrowers &&
                 borrowers.map((borrower) => {
-                  const hasNoCollateral = borrower.assets.token0Raw === 0 && borrower.assets.token1Raw === 0;
+                  const hasNoCollateral = borrower.assets.amount0.isZero() && borrower.assets.amount1.isZero();
                   if (hasNoCollateral) return null;
                   return (
                     <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
@@ -356,9 +356,9 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     {borrowers &&
                       borrowers.map((account) => {
                         const hasNoCollateral =
-                          account.assets.token0Raw === 0 &&
-                          account.assets.token1Raw === 0 &&
-                          (account.uniswapPositions?.length || 0) === 0;
+                          account.assets.amount0.isZero() &&
+                          account.assets.amount1.isZero() &&
+                          account.assets.uniswapPositions.length === 0;
                         if (hasNoCollateral) return null;
 
                         const isBorrowingToken0 = account.liabilities.amount0 > 0;

@@ -73,7 +73,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
         positionToWithdraw.upper,
         positionToWithdraw.liquidity.toString(10),
         zip(
-          borrower.uniswapPositions!.filter((position) => {
+          borrower.assets.uniswapPositions.filter((position) => {
             return position.lower !== positionToWithdraw.lower || position.upper !== positionToWithdraw.upper;
           }),
           '0x83ee755b'
@@ -144,7 +144,6 @@ export default function ToUniswapNFTModalContent(props: RemoveCollateralModalCon
   const { health: newHealth } = isHealthy(
     borrower.assets,
     borrower.liabilities,
-    [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

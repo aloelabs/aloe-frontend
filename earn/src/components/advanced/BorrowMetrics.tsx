@@ -6,7 +6,7 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
-import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice } from '../../data/BalanceSheet';
+import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 
@@ -166,13 +166,18 @@ export type BorrowMetricsProps = {
 export function BorrowMetrics(props: BorrowMetricsProps) {
   const { marginAccount, dailyInterest0, dailyInterest1, userHasNoMarginAccounts } = props;
 
+  const [token0Collateral, token1Collateral] = useMemo(
+    () => marginAccount?.assets.amountsAt(sqrtRatioToTick(marginAccount.sqrtPriceX96)) ?? [0, 0],
+    [marginAccount]
+  );
+
   const maxSafeCollateralFall = useMemo(() => {
     if (!marginAccount) return null;
 
     const { lowerSqrtRatio, upperSqrtRatio, minSqrtRatio, maxSqrtRatio } = computeLiquidationThresholds(
       marginAccount.assets,
       marginAccount.liabilities,
-      marginAccount.uniswapPositions ?? [],
+      marginAccount.assets.uniswapPositions,
       marginAccount.sqrtPriceX96,
       marginAccount.iv,
       marginAccount.nSigma,
@@ -186,22 +191,11 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
       sqrtRatioToPrice(sp, marginAccount.token0.decimals, marginAccount.token1.decimals)
     );
 
-    const assets = getAssets(
-      marginAccount.assets.token0Raw,
-      marginAccount.assets.token1Raw,
-      marginAccount.uniswapPositions ?? [],
-      lowerSqrtRatio,
-      upperSqrtRatio,
-      marginAccount.token0.decimals,
-      marginAccount.token1.decimals
-    );
+    const assets = getAssets(marginAccount.assets, lowerSqrtRatio, upperSqrtRatio);
 
     // Compute the value of all assets (collateral) at 3 different prices (current, lower, and upper)
     // Denominated in units of token1
-    let assetValueCurrent =
-      (marginAccount.assets.token0Raw + marginAccount.assets.uni0) * current +
-      marginAccount.assets.token1Raw +
-      marginAccount.assets.uni1;
+    let assetValueCurrent = token0Collateral * current + token1Collateral;
     let assetValueAtLower = assets.amount0AtA * lower + assets.amount1AtA;
     let assetValueAtUpper = assets.amount0AtB * upper + assets.amount1AtB;
 
@@ -227,7 +221,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     // Since we don't know whether the user is thinking in terms of "X per Y" or "Y per X",
     // we return the minimum. Error on the side of being too conservative.
     return Math.min(percentChange0, percentChange1);
-  }, [marginAccount]);
+  }, [marginAccount, token0Collateral, token1Collateral]);
 
   if (!marginAccount)
     return (
@@ -251,9 +245,6 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     if (maxSafeCollateralFall === Number.POSITIVE_INFINITY) liquidationDistanceText = '∞';
     else liquidationDistanceText = `${(maxSafeCollateralFall * 100).toPrecision(2)}% drop in collateral value`;
   }
-
-  const token0Collateral = marginAccount.assets.token0Raw + marginAccount.assets.uni0;
-  const token1Collateral = marginAccount.assets.token1Raw + marginAccount.assets.uni1;
 
   return (
     <MetricsGrid>

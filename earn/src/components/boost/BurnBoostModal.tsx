@@ -12,6 +12,7 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../App';
+import { sqrtRatioToTick } from '../../data/BalanceSheet';
 import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
 import MaxSlippageInput from '../common/MaxSlippageInput';
@@ -42,9 +43,10 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
 function calculateShortfall(borrower: MarginAccount): { shortfall0: GN; shortfall1: GN } {
   if (!borrower) return { shortfall0: GN.zero(0), shortfall1: GN.zero(0) };
   const { assets, liabilities } = borrower;
+  const [assets0, assets1] = assets.amountsAt(sqrtRatioToTick(borrower.sqrtPriceX96));
   return {
-    shortfall0: GN.fromNumber(liabilities.amount0 - (assets.token0Raw + assets.uni0), borrower.token0.decimals),
-    shortfall1: GN.fromNumber(liabilities.amount1 - (assets.token1Raw + assets.uni1), borrower.token1.decimals),
+    shortfall0: GN.fromNumber(liabilities.amount0 - assets0, borrower.token0.decimals),
+    shortfall1: GN.fromNumber(liabilities.amount1 - assets1, borrower.token1.decimals),
   };
 }
 

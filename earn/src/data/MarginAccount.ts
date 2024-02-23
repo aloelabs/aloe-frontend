@@ -15,6 +15,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
@@ -22,14 +23,33 @@ import { Address } from 'wagmi';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { UniswapPosition } from './Uniswap';
+import { getAmountsForLiquidity, UniswapPosition } from './Uniswap';
 
-export type Assets = {
-  token0Raw: number;
-  token1Raw: number;
-  uni0: number;
-  uni1: number;
-};
+export class Assets {
+  constructor(
+    public readonly amount0: GN,
+    public readonly amount1: GN,
+    public readonly uniswapPositions: UniswapPosition[]
+  ) {}
+
+  amountsAt(tick: number) {
+    let amount0 = this.amount0.toNumber();
+    let amount1 = this.amount1.toNumber();
+    for (const uniswapPosition of this.uniswapPositions) {
+      const [temp0, temp1] = getAmountsForLiquidity(
+        uniswapPosition,
+        tick,
+        this.amount0.resolution,
+        this.amount1.resolution
+      );
+
+      amount0 += temp0;
+      amount1 += temp1;
+    }
+
+    return [amount0, amount1];
+  }
+}
 
 export type Liabilities = {
   amount0: number;
@@ -53,7 +73,6 @@ export type MarginAccount = {
   lender1: Address;
   iv: number;
   nSigma: number;
-  uniswapPositions?: UniswapPosition[];
 };
 
 /**
@@ -271,15 +290,6 @@ export async function fetchBorrowerDatas(
     const nSigma = convertBigNumbersForReturnContexts(value.nSigma.callsReturnContext)[0].returnValues[1] / 10;
 
     const health = toImpreciseNumber(healthData[0].lt(healthData[1]) ? healthData[0] : healthData[1], 18);
-    const assets: Assets = {
-      token0Raw: toImpreciseNumber(token0Balance, token0.decimals),
-      token1Raw: toImpreciseNumber(token1Balance, token1.decimals),
-      uni0: 0,
-      uni1: 0,
-      // TODO: BEFORE LAUNCH, Get the uniswap balances data again
-      // uni0: toImpreciseNumber(assetsData[4], token0.decimals),
-      // uni1: toImpreciseNumber(assetsData[5], token1.decimals),
-    };
     const liabilities: Liabilities = {
       amount0: toImpreciseNumber(liabilitiesData[0], token0.decimals),
       amount1: toImpreciseNumber(liabilitiesData[1], token1.decimals),
@@ -299,6 +309,12 @@ export async function fetchBorrowerDatas(
     });
     // const uniswapPositionFees = uniswapPositionData[2];
 
+    const assets = new Assets(
+      GN.fromBigNumber(token0Balance, token0.decimals),
+      GN.fromBigNumber(token1Balance, token1.decimals),
+      uniswapPositions
+    );
+
     const lender0 = accountReturnContexts[0].returnValues[0];
     const lender1 = accountReturnContexts[1].returnValues[0];
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
@@ -316,7 +332,6 @@ export async function fetchBorrowerDatas(
       lender0,
       lender1,
       nSigma,
-      uniswapPositions,
     };
     marginAccounts.push(marginAccount);
   });

@@ -249,7 +249,6 @@ export default function RepayModal(props: RepayModalProps) {
   const { health: newHealth } = isHealthy(
     marginAccount.assets,
     newLiabilities,
-    marginAccount.uniswapPositions ?? [],
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
     marginAccount.nSigma,

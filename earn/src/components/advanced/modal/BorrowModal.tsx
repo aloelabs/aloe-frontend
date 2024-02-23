@@ -235,7 +235,6 @@ export default function BorrowModal(props: BorrowModalProps) {
   const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
     borrower.assets,
     borrower.liabilities,
-    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
@@ -260,7 +259,6 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
-    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
