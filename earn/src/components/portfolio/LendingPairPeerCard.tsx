@@ -127,9 +127,9 @@ function getActiveUtilizationAndTotalSupply(activeAsset: Token, selectedLendingP
   const token0Address = selectedLendingPair.token0.address;
   const token1Address = selectedLendingPair.token1.address;
   if (activeAssetAddress === token0Address) {
-    return [selectedLendingPair.kitty0Info.utilization, selectedLendingPair.kitty0Info.inventory];
+    return [selectedLendingPair.kitty0Info.utilization, selectedLendingPair.kitty0Info.totalAssets.toNumber()];
   } else if (activeAssetAddress === token1Address) {
-    return [selectedLendingPair.kitty1Info.utilization, selectedLendingPair.kitty1Info.inventory];
+    return [selectedLendingPair.kitty1Info.utilization, selectedLendingPair.kitty1Info.totalAssets.toNumber()];
   } else {
     return [0, 0];
   }

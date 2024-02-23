@@ -251,8 +251,8 @@ export default function MarketsPage() {
         apy: pair.kitty0Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
-        totalSupply: pair.kitty0Info.inventory,
-        totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
+        totalSupply: pair.kitty0Info.totalAssets.toNumber(),
+        totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
         suppliedBalance: kitty0Balance,
         suppliedBalanceUsd: kitty0Balance * token0Price,
         suppliableBalance: token0Balance,
@@ -265,8 +265,8 @@ export default function MarketsPage() {
         apy: pair.kitty1Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
-        totalSupply: pair.kitty1Info.inventory,
-        totalSupplyUsd: pair.kitty1Info.inventory * token1Price,
+        totalSupply: pair.kitty1Info.totalAssets.toNumber(),
+        totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
         suppliedBalance: kitty1Balance,
         suppliedBalanceUsd: kitty1Balance * token1Price,
         suppliableBalance: token1Balance,
@@ -323,8 +323,8 @@ export default function MarketsPage() {
     return lendingPairs.reduce((acc, pair) => {
       const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
       const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
-      const token0BorrowedUsd = pair.kitty0Info.utilization * pair.kitty0Info.inventory * token0Price;
-      const token1BorrowedUsd = pair.kitty1Info.utilization * pair.kitty1Info.inventory * token1Price;
+      const token0BorrowedUsd = pair.kitty0Info.totalBorrows.toNumber() * token0Price;
+      const token1BorrowedUsd = pair.kitty1Info.totalBorrows.toNumber() * token1Price;
       return acc + token0BorrowedUsd + token1BorrowedUsd;
     }, 0);
   }, [lendingPairs, tokenQuotes]);

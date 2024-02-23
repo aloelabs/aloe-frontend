@@ -27,33 +27,33 @@ import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } 
 import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
-import { borrowAPRToLendAPY } from './RateModel';
+import { asFactoryData, FactoryData } from './FactoryData';
+import { asOracleData, OracleData } from './OracleData';
+import { borrowAPRToLendAPY, RateModel, yieldPerSecondToAPR } from './RateModel';
 
 class KittyInfo {
+  public readonly availableAssets: GN;
+  public readonly utilization: number;
   public readonly lendAPY: number;
 
   constructor(
-    public readonly inventory: number,
-    public readonly totalSupply: number,
+    public readonly totalAssets: GN,
+    public readonly totalBorrows: GN,
+    public readonly totalSupply: GN,
     public readonly borrowAPR: number,
-    public readonly utilization: number,
     public readonly reserveFactor: number
   ) {
-    this.lendAPY = borrowAPRToLendAPY(borrowAPR, utilization, reserveFactor);
+    this.availableAssets = totalAssets.sub(totalBorrows);
+    this.utilization = totalBorrows.div(totalAssets).toNumber();
+    this.lendAPY = borrowAPRToLendAPY(borrowAPR, this.utilization, reserveFactor);
+  }
+
+  hypotheticalBorrowAPR(additionalBorrowAmount: GN) {
+    const hypotheticalUtilization = this.totalBorrows.add(additionalBorrowAmount).div(this.totalAssets);
+    // TODO: This only works for the current RateModel. If there are others, we'll need to update this.
+    return yieldPerSecondToAPR(RateModel.computeYieldPerSecond(hypotheticalUtilization.toNumber()));
   }
 }
-
-type FactoryData = {
-  ante: GN;
-  nSigma: number;
-  manipulationThresholdDivisor: number;
-  pausedUntilTime: number;
-};
-
-type OracleData = {
-  iv: GN;
-  manipulationMetric: number;
-};
 
 export class LendingPair {
   constructor(
@@ -85,6 +85,11 @@ export class LendingPair {
 
   get manipulationThreshold() {
     return -Math.log(this.ltv) / Math.log(1.0001) / this.factoryData.manipulationThresholdDivisor;
+  }
+
+  amountEthRequiredBeforeBorrowing(currentBorrowerBalance: BigNumber) {
+    const ante = this.factoryData.ante.toBigNumber();
+    return currentBorrowerBalance.gte(ante) ? BigNumber.from(0) : ante.sub(currentBorrowerBalance);
   }
 }
 
@@ -253,26 +258,14 @@ export async function getAvailableLendingPairs(
     const borrowAPR0 = toImpreciseNumber(basics0[1].mul(secondsInYear), 12);
     const borrowAPR1 = toImpreciseNumber(basics1[1].mul(secondsInYear), 12);
 
-    const utilization0 = toImpreciseNumber(basics0[2], 18);
-    const utilization1 = toImpreciseNumber(basics1[2], 18);
+    const totalAssets0 = GN.fromBigNumber(basics0[3], token0.decimals);
+    const totalAssets1 = GN.fromBigNumber(basics1[3], token1.decimals);
 
-    const inventory0 = toImpreciseNumber(basics0[3], token0.decimals);
-    const inventory1 = toImpreciseNumber(basics1[3], token1.decimals);
+    const totalBorrows0 = GN.fromBigNumber(basics0[4], token0.decimals);
+    const totalBorrows1 = GN.fromBigNumber(basics1[4], token1.decimals);
 
-    const totalSupply0 = toImpreciseNumber(basics0[5], kitty0.decimals);
-    const totalSupply1 = toImpreciseNumber(basics1[5], kitty1.decimals);
-
-    const oracleData = {
-      iv: GN.fromBigNumber(oracleResult[2], 12),
-      manipulationMetric: oracleResult[0].toNumber(),
-    };
-
-    const factoryData = {
-      ante: GN.fromBigNumber(factoryResult[0], 18),
-      nSigma: (factoryResult[1] as number) / 10,
-      manipulationThresholdDivisor: factoryResult[2],
-      pausedUntilTime: factoryResult[3],
-    };
+    const totalSupply0 = GN.fromBigNumber(basics0[5], kitty0.decimals);
+    const totalSupply1 = GN.fromBigNumber(basics1[5], kitty1.decimals);
 
     lendingPairs.push(
       new LendingPair(
@@ -280,14 +273,14 @@ export async function getAvailableLendingPairs(
         token1,
         kitty0,
         kitty1,
-        new KittyInfo(inventory0, totalSupply0, borrowAPR0, utilization0, basics0[6]),
-        new KittyInfo(inventory1, totalSupply1, borrowAPR1, utilization1, basics1[6]),
+        new KittyInfo(totalAssets0, totalBorrows0, totalSupply0, borrowAPR0, basics0[6]),
+        new KittyInfo(totalAssets1, totalBorrows1, totalSupply1, borrowAPR1, basics1[6]),
         uniswapPool as Address,
         NumericFeeTierToEnum(feeTier[0]),
         toImpreciseNumber(basics0[7], 18), // rewardsRate0
         toImpreciseNumber(basics1[7], 18), // rewardsRate1
-        factoryData,
-        oracleData
+        asFactoryData(factoryResult),
+        asOracleData(oracleResult)
       )
     );
   });

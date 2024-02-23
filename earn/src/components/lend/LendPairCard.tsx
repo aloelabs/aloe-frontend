@@ -138,7 +138,11 @@ export default function LendPairCard(props: LendPairCardProps) {
                 </Text>
               </TokenAPYWrapper>
             </div>
-            <LendTokenInfo token={token0} totalSupply={kitty0Info.inventory} utilization={kitty0Info.utilization} />
+            <LendTokenInfo
+              token={token0}
+              totalSupply={kitty0Info.totalAssets.toNumber()}
+              utilization={kitty0Info.utilization}
+            />
             {isCardHovered && (
               <EditPositionButton
                 Icon={hasDeposited0 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}
@@ -161,7 +165,11 @@ export default function LendPairCard(props: LendPairCardProps) {
                 </Text>
               </TokenAPYWrapper>
             </div>
-            <LendTokenInfo token={token1} totalSupply={kitty1Info.inventory} utilization={kitty1Info.utilization} />
+            <LendTokenInfo
+              token={token1}
+              totalSupply={kitty1Info.totalAssets.toNumber()}
+              utilization={kitty1Info.utilization}
+            />
             {isCardHovered && (
               <EditPositionButton
                 Icon={hasDeposited1 ? <EditIcon width={32} height={32} /> : <PlusIcon width={32} height={32} />}

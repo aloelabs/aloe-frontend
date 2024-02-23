@@ -29,7 +29,7 @@ import { erc721ABI, useAccount, useBalance, useContractRead, useContractWrite, u
 import { ChainContext } from '../../../App';
 import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { LendingPair } from '../../../data/LendingPair';
-import { RateModel, yieldPerSecondToAPR } from '../../../data/RateModel';
+import { Assets } from '../../../data/MarginAccount';
 import { UniswapNFTPosition, zip } from '../../../data/Uniswap';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -148,7 +148,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
       return null;
     }
     const lenderInfo = selectedLendingPair[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'];
-    return lenderInfo.inventory * (1 - lenderInfo.utilization);
+    return lenderInfo.availableAssets.toNumber();
   }, [selectedBorrow, selectedLendingPair, isBorrowingToken0]);
 
   const maxBorrowHealthConstraint = useMemo(() => {
@@ -157,14 +157,10 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     }
 
     const [max0, max1] = maxBorrowAndWithdraw(
-      {
-        token0Raw: 0,
-        token1Raw: 0,
-        uni0: 0,
-        uni1: 0,
-      },
+      new Assets(GN.zero(selectedLendingPair.token0.decimals), GN.zero(selectedLendingPair.token1.decimals), [
+        uniswapPosition,
+      ]),
       { amount0: 0, amount1: 0 },
-      [uniswapPosition],
       new Big(consultData[1].toString()),
       selectedLendingPair.iv,
       selectedLendingPair.factoryData.nSigma,
@@ -186,19 +182,8 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   const estimatedApr = useMemo(() => {
     const { kitty0Info, kitty1Info } = selectedLendingPair;
 
-    const numericLenderTotalAssets = isBorrowingToken0 ? kitty0Info.totalSupply : kitty1Info.totalSupply;
-    const lenderTotalAssets = GN.fromNumber(numericLenderTotalAssets, selectedBorrow.decimals);
-
-    const lenderUtilization = isBorrowingToken0 ? kitty0Info.utilization : kitty1Info.utilization;
-    const lenderUsedAssets = GN.fromNumber(numericLenderTotalAssets * lenderUtilization, selectedBorrow.decimals);
-
-    const remainingAvailableAssets = lenderTotalAssets.sub(lenderUsedAssets).sub(borrowAmount);
-    const newUtilization = lenderTotalAssets.isGtZero()
-      ? 1 - remainingAvailableAssets.div(lenderTotalAssets).toNumber()
-      : 0;
-
-    return yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization)) * 100;
-  }, [selectedLendingPair, selectedBorrow, isBorrowingToken0, borrowAmount]);
+    return (isBorrowingToken0 ? kitty0Info : kitty1Info).hypotheticalBorrowAPR(borrowAmount) * 100;
+  }, [selectedLendingPair, isBorrowingToken0, borrowAmount]);
 
   // The NFT index we will use if minting
   const { data: nextNftPtrIdx } = useContractRead({

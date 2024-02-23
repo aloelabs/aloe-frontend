@@ -131,7 +131,7 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const { address: userAddress } = useAccount();
 
   // TODO this logic needs to change once we support more complex borrowing
-  const isDepositingToken0 = borrower.assets.token0Raw > 0;
+  const isDepositingToken0 = borrower.assets.amount0.isGtZero();
 
   // TODO: This logic needs to change once we support more complex borrowing
   const collateralToken = isDepositingToken0 ? borrower.token0 : borrower.token1;
@@ -145,25 +145,21 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
 
   // TODO: This assumes that the borrowing token is always the opposite of the collateral token
   // and that only one token is borrowed and one token is collateralized
-  const numericCollateralAmount = isDepositingToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
-  const currentCollateralAmount = GN.fromNumber(numericCollateralAmount, collateralToken.decimals);
+  const currentCollateralAmount = isDepositingToken0 ? borrower.assets.amount0 : borrower.assets.amount1;
   const depositAmount = GN.fromDecimalString(depositAmountStr || '0', collateralToken.decimals);
   const newCollateralAmount = currentCollateralAmount.add(depositAmount);
   const maxDepositAmount = GN.fromDecimalString(balanceData?.formatted || '0', collateralToken.decimals);
   const maxDepositAmountStr = maxDepositAmount.toString(GNFormat.DECIMAL);
 
-  // TODO: use GN
-  const newAssets: Assets = {
-    token0Raw: isDepositingToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
-    token1Raw: isDepositingToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
-    uni0: 0, // TODO: add uniswap positions
-    uni1: 0, // TODO: add uniswap positions
-  };
+  const newAssets = new Assets(
+    isDepositingToken0 ? newCollateralAmount : borrower.assets.amount0,
+    isDepositingToken0 ? borrower.assets.amount1 : newCollateralAmount,
+    borrower.assets.uniswapPositions
+  );
 
   const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
-    [], // TODO: add uniswap positions
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

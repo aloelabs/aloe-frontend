@@ -23,8 +23,6 @@ import { ChainContext } from '../../../App';
 import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { Assets } from '../../../data/MarginAccount';
-import { MarketInfo } from '../../../data/MarketInfo';
-import { UniswapPosition } from '../../../data/Uniswap';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -159,15 +157,13 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
 
 export type RemoveCollateralModalProps = {
   borrower: BorrowerNftBorrower;
-  uniswapPositions: readonly UniswapPosition[];
-  marketInfo: MarketInfo;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {
-  const { borrower, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(borrower.token0);
@@ -183,9 +179,7 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const tokenOptions = [borrower.token0, borrower.token1];
   const isToken0 = collateralToken.address === borrower.token0.address;
 
-  const existingCollateralRaw = isToken0 ? borrower.assets.token0Raw : borrower.assets.token1Raw;
-
-  const existingCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals);
+  const existingCollateral = isToken0 ? borrower.assets.amount0 : borrower.assets.amount1;
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
 
   const newCollateralAmount = GN.max(existingCollateral.sub(collateralAmount), GN.zero(collateralToken.decimals));
@@ -197,30 +191,26 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   const maxWithdrawBasedOnHealth = maxWithdraws(
     borrower.assets,
     borrower.liabilities,
-    uniswapPositions,
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,
     borrower.token0.decimals,
     borrower.token1.decimals
   )[isToken0 ? 0 : 1];
-  const max = Math.min(existingCollateralRaw, maxWithdrawBasedOnHealth);
+  const max = Math.min(existingCollateral.toNumber(), maxWithdrawBasedOnHealth);
   // Mitigate the case when the number is represented in scientific notation
   const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
   const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
 
-  // TODO: Utilize GN for this
-  const newAssets: Assets = {
-    token0Raw: isToken0 ? newCollateralAmount.toNumber() : borrower.assets.token0Raw,
-    token1Raw: isToken0 ? borrower.assets.token1Raw : newCollateralAmount.toNumber(),
-    uni0: borrower.assets.uni0,
-    uni1: borrower.assets.uni1,
-  };
+  const newAssets = new Assets(
+    isToken0 ? newCollateralAmount : borrower.assets.amount0,
+    isToken0 ? borrower.assets.amount1 : newCollateralAmount,
+    borrower.assets.uniswapPositions
+  );
 
   const { health: newHealth } = isHealthy(
     newAssets,
     borrower.liabilities,
-    uniswapPositions,
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

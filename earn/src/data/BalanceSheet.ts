@@ -5,7 +5,7 @@ import { areWithinNSigDigs } from 'shared/lib/util/Numbers';
 
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, BIGQ96 } from './constants/Values';
 import { Assets, Liabilities } from './MarginAccount';
-import { getAmountsForLiquidity, UniswapPosition } from './Uniswap';
+import { UniswapPosition } from './Uniswap';
 
 const MIN_SQRT_RATIO = new Big('4295128740');
 const MAX_SQRT_RATIO = new Big('1461446703485210103287273052203988822378723970341');
@@ -61,32 +61,12 @@ function _solvency(
   };
 }
 
-export function getAssets(
-  token0Raw: number,
-  token1Raw: number,
-  uniswapPositions: readonly UniswapPosition[],
-  a: Big,
-  b: Big,
-  token0Decimals: number,
-  token1Decimals: number
-) {
+export function getAssets(assets: Assets, a: Big, b: Big) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
 
-  let amount0AtA = token0Raw;
-  let amount1AtA = token1Raw;
-  let amount0AtB = token0Raw;
-  let amount1AtB = token1Raw;
-
-  for (const position of uniswapPositions) {
-    let temp: [number, number];
-    temp = getAmountsForLiquidity(position, tickA, token0Decimals, token1Decimals);
-    amount0AtA += temp[0];
-    amount1AtA += temp[1];
-    temp = getAmountsForLiquidity(position, tickB, token0Decimals, token1Decimals);
-    amount0AtB += temp[0];
-    amount1AtB += temp[1];
-  }
+  const [amount0AtA, amount1AtA] = assets.amountsAt(tickA);
+  const [amount0AtB, amount1AtB] = assets.amountsAt(tickB);
 
   return {
     amount0AtA,
@@ -107,7 +87,6 @@ function _augmentLiabilities(liabilities0Or1: number, assets0Or1: number) {
 export function isHealthy(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   nSigma: number,
@@ -115,7 +94,7 @@ export function isHealthy(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets.token0Raw, assets.token1Raw, uniswapPositions, a, b, token0Decimals, token1Decimals);
+  const mem = getAssets(assets, a, b);
 
   const { amount0: liabilities0, amount1: liabilities1 } = liabilities;
 
@@ -219,7 +198,6 @@ function _minAssets0AllElseConstant(price: number, assets1: number, liabilities0
 export function maxWithdraws(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   nSigma: number,
@@ -227,7 +205,7 @@ export function maxWithdraws(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets.token0Raw, assets.token1Raw, uniswapPositions, a, b, token0Decimals, token1Decimals);
+  const mem = getAssets(assets, a, b);
 
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
@@ -239,13 +217,12 @@ export function maxWithdraws(
 
   const min0 = Math.max(min0A, min0B);
   const min1 = Math.max(min1A, min1B);
-  return [Math.max(0, assets.token0Raw - min0), Math.max(0, assets.token1Raw - min1)];
+  return [Math.max(0, assets.amount0.toNumber() - min0), Math.max(0, assets.amount1.toNumber() - min1)];
 }
 
 export function maxBorrowAndWithdraw(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   nSigma: number,
@@ -253,7 +230,7 @@ export function maxBorrowAndWithdraw(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets.token0Raw, assets.token1Raw, uniswapPositions, a, b, token0Decimals, token1Decimals);
+  const mem = getAssets(assets, a, b);
 
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
@@ -298,16 +275,7 @@ export function computeLiquidationThresholds(
   };
 
   // Find lower liquidation threshold
-  const isSolventAtMin = isHealthy(
-    assets,
-    liabilities,
-    uniswapPositions,
-    MINPRICE,
-    iv,
-    nSigma,
-    token0Decimals,
-    token1Decimals
-  );
+  const isSolventAtMin = isHealthy(assets, liabilities, MINPRICE, iv, nSigma, token0Decimals, token1Decimals);
   if (isSolventAtMin.atA && isSolventAtMin.atB) {
     // if solvent at beginning, short-circuit
     result.lowerSqrtRatio = MINPRICE;
@@ -326,7 +294,6 @@ export function computeLiquidationThresholds(
       const isSolventAtSearchPrice = isHealthy(
         assets,
         liabilities,
-        uniswapPositions,
         searchPrice,
         iv,
         nSigma,
@@ -346,16 +313,7 @@ export function computeLiquidationThresholds(
   }
 
   // Find upper liquidation threshold
-  const isSolventAtMax = isHealthy(
-    assets,
-    liabilities,
-    uniswapPositions,
-    MAXPRICE,
-    iv,
-    nSigma,
-    token0Decimals,
-    token1Decimals
-  );
+  const isSolventAtMax = isHealthy(assets, liabilities, MAXPRICE, iv, nSigma, token0Decimals, token1Decimals);
   if (isSolventAtMax.atA && isSolventAtMax.atB) {
     // if solvent at end, short-circuit
     result.upperSqrtRatio = MAXPRICE;
@@ -374,7 +332,6 @@ export function computeLiquidationThresholds(
       const isSolventAtSearchPrice = isHealthy(
         assets,
         liabilities,
-        uniswapPositions,
         searchPrice,
         iv,
         nSigma,
@@ -394,10 +351,6 @@ export function computeLiquidationThresholds(
   }
 
   return result;
-}
-
-export function sumAssetsPerToken(assets: Assets): [number, number] {
-  return [assets.token0Raw + assets.uni0, assets.token1Raw + assets.uni1];
 }
 
 export function computeLTV(iv: number, nSigma: number) {

@@ -8,15 +8,11 @@ import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { factoryAbi } from 'shared/lib/abis/Factory';
-import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BOOST_MANAGER_ADDRESS,
   ALOE_II_BORROWER_NFT_ADDRESS,
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
@@ -43,9 +39,8 @@ import {
 import { ChainContext } from '../../App';
 import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
-import { fetchMarketInfoFor, MarketInfo } from '../../data/MarketInfo';
+import { useLendingPair } from '../../data/hooks/UseLendingPairs';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
-import { RateModel, yieldPerSecondToAPR } from '../../data/RateModel';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
@@ -183,7 +178,6 @@ export type ImportBoostWidgetProps = {
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-  const [marketInfo, setMarketInfo] = useSafeState<MarketInfo | null>(null);
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useSafeState<TwentyFourHourPoolData | undefined>(
     undefined
   );
@@ -195,6 +189,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
+
+  const lendingPair = useLendingPair(cardInfo.token0.address, cardInfo.token1.address);
 
   // Generate labels for input range (slider)
   const labels: string[] = [];
@@ -230,63 +226,17 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     })();
   }, [activeChain.id, cardInfo.token0.symbol, cardInfo.token1.symbol, setTokenQuotes]);
 
-  useEffect(() => {
-    async function fetchMarketInfo() {
-      // Checking each of these individually since we don't want to fetch market info when the boost factor changes
-      if (!provider || !cardInfo.lender0 || !cardInfo.lender1 || !cardInfo.token0 || !cardInfo.token1) return;
-      const lenderLensContract = new ethers.Contract(
-        ALOE_II_LENDER_LENS_ADDRESS[activeChain.id],
-        lenderLensAbi,
-        provider
-      );
-      const marketInfo = await fetchMarketInfoFor(
-        lenderLensContract,
-        cardInfo.lender0,
-        cardInfo.lender1,
-        cardInfo.token0.decimals,
-        cardInfo.token1.decimals
-      );
-      setMarketInfo(marketInfo);
-    }
-    fetchMarketInfo();
-  }, [activeChain.id, cardInfo.lender0, cardInfo.lender1, cardInfo.token0, cardInfo.token1, provider, setMarketInfo]);
-
-  const { data: marketParameters } = useContractRead({
-    abi: factoryAbi,
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    functionName: 'getParameters',
-    args: [cardInfo.uniswapPool],
-    chainId: activeChain.id,
-  });
-
   const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
   const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
 
   const { apr0, apr1 } = useMemo(() => {
-    if (!marketInfo) {
-      return { apr0: null, apr1: null };
-    }
+    if (!lendingPair) return { apr0: null, apr1: null };
 
-    const availableAssets0 = marketInfo.lender0AvailableAssets;
-    const availableAssets1 = marketInfo.lender1AvailableAssets;
-    const remainingAvailableAssets0 = availableAssets0.sub(borrowAmount0);
-    const remainingAvailableAssets1 = availableAssets1.sub(borrowAmount1);
-
-    const lenderTotalAssets0 = marketInfo.lender0TotalAssets;
-    const lenderTotalAssets1 = marketInfo.lender1TotalAssets;
-
-    const newUtilization0 = lenderTotalAssets0.isGtZero()
-      ? 1 - remainingAvailableAssets0.div(lenderTotalAssets0).toNumber()
-      : 0;
-
-    const newUtilization1 = lenderTotalAssets1.isGtZero()
-      ? 1 - remainingAvailableAssets1.div(lenderTotalAssets1).toNumber()
-      : 0;
-
-    const apr0 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization0)) * 100;
-    const apr1 = yieldPerSecondToAPR(RateModel.computeYieldPerSecond(newUtilization1)) * 100;
-    return { apr0, apr1 };
-  }, [marketInfo, borrowAmount0, borrowAmount1]);
+    return {
+      apr0: lendingPair.kitty0Info.hypotheticalBorrowAPR(borrowAmount0) * 100,
+      apr1: lendingPair.kitty1Info.hypotheticalBorrowAPR(borrowAmount1) * 100,
+    };
+  }, [lendingPair, borrowAmount0, borrowAmount1]);
 
   useEffect(() => {
     (async () => {
@@ -435,15 +385,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
 
   const ethToSend = useMemo(() => {
-    if (!marketParameters) {
-      return ethers.BigNumber.from(0);
-    }
-    if (availableNft !== undefined && borrowerBalance !== undefined) {
-      if (borrowerBalance.value.lt(marketParameters.ante)) return marketParameters.ante.sub(borrowerBalance.value);
-      return ethers.BigNumber.from(0);
-    }
-    return marketParameters.ante;
-  }, [marketParameters, availableNft, borrowerBalance]);
+    if (!lendingPair || !borrowerBalance || !availableNft) return ethers.BigNumber.from(0);
+    return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance.value);
+  }, [lendingPair, borrowerBalance, availableNft]);
 
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);

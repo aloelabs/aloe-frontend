@@ -238,7 +238,6 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   const { health: newHealth } = isHealthy(
     borrower.assets,
     newLiabilities,
-    borrower.uniswapPositions ?? [],
     borrower.sqrtPriceX96,
     borrower.iv,
     borrower.nSigma,

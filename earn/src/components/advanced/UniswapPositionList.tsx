@@ -168,13 +168,12 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
 export type UniswapPositionListProps = {
   borrower?: BorrowerNftBorrower;
-  uniswapPositions: readonly UniswapPosition[];
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {
-  const { borrower, uniswapPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
+  const { borrower, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
 
   return (
@@ -187,7 +186,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 borrower={borrower}
-                uniswapPosition={uniswapPositions.at(index)}
+                uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
@@ -201,7 +200,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           isOpen={selectedUniswapPosition !== null}
           borrower={borrower}
           uniswapPosition={selectedUniswapPosition.uniswapPosition}
-          existingUniswapPositions={uniswapPositions}
+          existingUniswapPositions={borrower.assets.uniswapPositions}
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}
           setIsOpen={() => {
             setSelectedUniswapPosition(null);
