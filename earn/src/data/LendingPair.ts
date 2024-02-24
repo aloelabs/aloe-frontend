@@ -44,7 +44,7 @@ class KittyInfo {
     public readonly reserveFactor: number
   ) {
     this.availableAssets = totalAssets.sub(totalBorrows);
-    this.utilization = totalBorrows.div(totalAssets).toNumber();
+    this.utilization = totalAssets.isGtZero() ? totalBorrows.div(totalAssets).toNumber() : 0;
     this.lendAPY = borrowAPRToLendAPY(borrowAPR, this.utilization, reserveFactor);
   }
 
