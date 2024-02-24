@@ -116,7 +116,7 @@ function MetricContainer(props: MetricContainerProps) {
 export type MarginAccountCardProps = MarginAccountPreview;
 
 export function MarginAccountCard(props: MarginAccountCardProps) {
-  const { address, feeTier, liabilities, token0, token1, health } = props;
+  const { address, feeTier, token0, token1, health } = props;
   const [token0Color, setToken0Color] = useState<string>('');
   const [token1Color, setToken1Color] = useState<string>('');
   const link = `/borrow/account/${address}`;
