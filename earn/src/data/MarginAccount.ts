@@ -326,8 +326,6 @@ export async function fetchBorrowerDatas(
     const userDataHex = slot0.shr(144).mask(64).toHexString() as `0x${string}`;
     const warningTime = slot0.shr(208).mask(40).toNumber();
 
-    console.log(userDataHex, warningTime);
-
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,
