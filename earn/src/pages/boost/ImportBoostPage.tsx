@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
+import Big from 'big.js';
 import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
@@ -13,7 +14,7 @@ import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
@@ -192,13 +193,15 @@ export default function ImportBoostPage() {
         uniswapPool: cardInfo.uniswapPool,
         token0: cardInfo.token0,
         token1: cardInfo.token1,
-        assets: new Assets(GN.zero(cardInfo.token0.decimals), GN.zero(cardInfo.token1.decimals), []),
+        assets: new Assets(GN.zero(cardInfo.token0.decimals), GN.zero(cardInfo.token1.decimals), [
+          { ...position, liquidity: updatedLiquidity },
+        ]),
         liabilities: {
           amount0: cardInfo.amount0() * (boostFactor - 1),
           amount1: cardInfo.amount1() * (boostFactor - 1),
         },
         feeTier: FeeTier.INVALID,
-        sqrtPriceX96: sqrtPriceX96.toDecimalBig(),
+        sqrtPriceX96: new Big(sqrtPriceX96.toString(GNFormat.INT)),
         health: 0,
         lender0: '0x',
         lender1: '0x',
