@@ -124,6 +124,17 @@ const LinkContainer = styled.div`
   gap: 4px;
 `;
 
+enum OpenedModal {
+  NONE,
+  NEW_SMART_WALLET,
+  ADD_COLLATERAL,
+  REMOVE_COLLATERAL,
+  BORROW,
+  REPAY,
+  WITHDRAW_ANTE,
+  PENDING_TXN,
+}
+
 export type UniswapPoolInfo = {
   token0: Token;
   token1: Token;
@@ -140,13 +151,7 @@ export default function AdvancedPage() {
     activeChain.id
   );
   const [uniswapNFTPositions, setUniswapNFTPositions] = useSafeState<Map<number, UniswapNFTPosition>>(new Map());
-  const [newSmartWalletModalOpen, setNewSmartWalletModalOpen] = useState(false);
-  const [isAddCollateralModalOpen, setIsAddCollateralModalOpen] = useState(false);
-  const [isRemoveCollateralModalOpen, setIsRemoveCollateralModalOpen] = useState(false);
-  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
-  const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
-  const [isWithdrawAnteModalOpen, setIsWithdrawAnteModalOpen] = useState(false);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
+  const [openedModal, setOpenedModal] = useState(OpenedModal.NONE);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
 
@@ -218,7 +223,7 @@ export default function AdvancedPage() {
     (async () => {
       if (!pendingTxn) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
-      setIsPendingTxnModalOpen(true);
+      setOpenedModal(OpenedModal.PENDING_TXN);
       const receipt = await pendingTxn.wait();
       if (receipt.status === 1) {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
@@ -226,7 +231,7 @@ export default function AdvancedPage() {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [pendingTxn, setOpenedModal, setPendingTxnModalStatus]);
 
   const { data: accountEtherBalanceResult } = useBalance({
     address: selectedMarginAccount?.address as Address,
@@ -308,29 +313,19 @@ export default function AdvancedPage() {
           </div>
           <GridAreaForButtons>
             <ManageAccountButtons
-              onAddCollateral={() => {
-                if (isConnected) setIsAddCollateralModalOpen(true);
-              }}
-              onRemoveCollateral={() => {
-                if (isConnected) setIsRemoveCollateralModalOpen(true);
-              }}
-              onBorrow={() => {
-                if (isConnected) setIsBorrowModalOpen(true);
-              }}
-              onRepay={() => {
-                if (isConnected) setIsRepayModalOpen(true);
-              }}
+              onAddCollateral={() => setOpenedModal(OpenedModal.ADD_COLLATERAL)}
+              onRemoveCollateral={() => setOpenedModal(OpenedModal.REMOVE_COLLATERAL)}
+              onBorrow={() => setOpenedModal(OpenedModal.BORROW)}
+              onRepay={() => setOpenedModal(OpenedModal.REPAY)}
               onGetLeverage={() => {
                 if (selectedMarginAccount != null) {
                   const primeAccountUrl = `${primeUrl()}borrow/account/${selectedMarginAccount.address}`;
                   window.open(primeAccountUrl, '_blank');
                 }
               }}
-              onWithdrawAnte={() => {
-                if (isConnected) setIsWithdrawAnteModalOpen(true);
-              }}
+              onWithdrawAnte={() => setOpenedModal(OpenedModal.WITHDRAW_ANTE)}
               isWithdrawAnteDisabled={isUnableToWithdrawAnte}
-              isDisabled={!selectedMarginAccount}
+              isDisabled={!selectedMarginAccount || !isConnected}
             />
           </GridAreaForButtons>
           <GridAreaForNFTList>
@@ -351,9 +346,7 @@ export default function AdvancedPage() {
             ))}
             <NewSmartWalletButton
               userHasNoMarginAccounts={userHasNoMarginAccounts}
-              onClick={() => {
-                setNewSmartWalletModalOpen(true);
-              }}
+              onClick={() => setOpenedModal(OpenedModal.NEW_SMART_WALLET)}
             />
           </GridAreaForNFTList>
           <GridAreaForData>
@@ -395,8 +388,8 @@ export default function AdvancedPage() {
           <NewSmartWalletModal
             availablePools={availablePools}
             defaultPool={defaultPool}
-            isOpen={newSmartWalletModalOpen}
-            setIsOpen={setNewSmartWalletModalOpen}
+            isOpen={openedModal === OpenedModal.NEW_SMART_WALLET}
+            setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.NEW_SMART_WALLET : OpenedModal.NONE)}
             setPendingTxn={setPendingTxn}
           />
         )}
@@ -405,50 +398,50 @@ export default function AdvancedPage() {
             <AddCollateralModal
               borrower={selectedMarginAccount}
               uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
-              isOpen={isAddCollateralModalOpen}
-              setIsOpen={setIsAddCollateralModalOpen}
+              isOpen={openedModal === OpenedModal.ADD_COLLATERAL}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.ADD_COLLATERAL : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <RemoveCollateralModal
               borrower={selectedMarginAccount}
-              isOpen={isRemoveCollateralModalOpen}
-              setIsOpen={setIsRemoveCollateralModalOpen}
+              isOpen={openedModal === OpenedModal.REMOVE_COLLATERAL}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.REMOVE_COLLATERAL : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <BorrowModal
               borrower={selectedMarginAccount}
               market={market}
               accountEtherBalance={accountEtherBalance}
-              isOpen={isBorrowModalOpen}
-              setIsOpen={setIsBorrowModalOpen}
+              isOpen={openedModal === OpenedModal.BORROW}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.BORROW : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <RepayModal
               marginAccount={selectedMarginAccount}
-              isOpen={isRepayModalOpen}
-              setIsOpen={setIsRepayModalOpen}
+              isOpen={openedModal === OpenedModal.REPAY}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.REPAY : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <WithdrawAnteModal
               borrower={selectedMarginAccount}
               accountEthBalance={accountEtherBalance}
-              isOpen={isWithdrawAnteModalOpen}
-              setIsOpen={setIsWithdrawAnteModalOpen}
+              isOpen={openedModal === OpenedModal.WITHDRAW_ANTE}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.WITHDRAW_ANTE : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
           </>
         )}
         <PendingTxnModal
-          isOpen={isPendingTxnModalOpen}
+          isOpen={openedModal === OpenedModal.PENDING_TXN}
           setIsOpen={(isOpen: boolean) => {
-            setIsPendingTxnModalOpen(isOpen);
+            setOpenedModal(isOpen ? OpenedModal.PENDING_TXN : OpenedModal.NONE);
             if (!isOpen) {
               setPendingTxn(null);
             }
           }}
           txnHash={pendingTxn?.hash}
           onConfirm={() => {
-            setIsPendingTxnModalOpen(false);
+            setOpenedModal(OpenedModal.NONE);
             setTimeout(() => {
               navigate(0);
             }, 100);
