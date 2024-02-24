@@ -49,6 +49,8 @@ class KittyInfo {
   }
 
   hypotheticalBorrowAPR(additionalBorrowAmount: GN) {
+    // If there are no assets, the utilization will be 0, so the borrowAPR will be 0.
+    if (this.totalAssets.isZero()) return 0;
     const hypotheticalUtilization = this.totalBorrows.add(additionalBorrowAmount).div(this.totalAssets);
     // TODO: This only works for the current RateModel. If there are others, we'll need to update this.
     return yieldPerSecondToAPR(RateModel.computeYieldPerSecond(hypotheticalUtilization.toNumber()));
