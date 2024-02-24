@@ -177,7 +177,9 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   }, [isOpen, borrower.token0]);
 
   const tokenOptions = [borrower.token0, borrower.token1];
-  const isToken0 = collateralToken.address === borrower.token0.address;
+  if (!tokenOptions.some((token) => token.equals(collateralToken))) return null;
+
+  const isToken0 = collateralToken.equals(borrower.token0);
 
   const existingCollateral = isToken0 ? borrower.assets.amount0 : borrower.assets.amount1;
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);

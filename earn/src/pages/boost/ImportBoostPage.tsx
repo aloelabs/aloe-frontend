@@ -204,6 +204,8 @@ export default function ImportBoostPage() {
         lender1: '0x',
         iv,
         nSigma,
+        userDataHex: '0x',
+        warningTime: 0,
       },
       {
         ...position,
