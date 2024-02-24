@@ -106,7 +106,9 @@ export async function fetchListOfBorrowerNfts(
       tryAggregate: true,
       multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
     });
-    const lensResults = (await multicall.call(lensContext)).results['lens'].callsReturnContext;
+    const lensResults = (await multicall.call(lensContext))?.results['lens']?.callsReturnContext;
+    // Return early if there are no results
+    if (!lensResults.length) return [];
     if (lensResults.find((v) => !v.success || !v.decoded)) {
       throw new Error('Multicall error while checking whether Borrowers are in use');
     }
