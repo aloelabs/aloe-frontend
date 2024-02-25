@@ -260,9 +260,19 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
     }
   }
 
+  const filteredBorrowers = useMemo(() => {
+    return borrowers?.filter((account) => {
+      return !(
+        account.assets.amount0.isZero() &&
+        account.assets.amount1.isZero() &&
+        !account.assets.uniswapPositions.some((pos) => !JSBI.EQ(pos.liquidity, '0'))
+      );
+    });
+  }, [borrowers]);
+
   return (
     <>
-      {(borrowers?.length || 0) > 0 && (
+      {(filteredBorrowers?.length || 0) > 0 && (
         <>
           <Text size='L' weight='bold'>
             Manage positions
@@ -277,13 +287,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     </Text>
                   </CardRowHeader>
                   <div className='flex flex-col'>
-                    {borrowers &&
-                      borrowers.map((account) => {
-                        const hasNoCollateral =
-                          account.assets.amount0.isZero() &&
-                          account.assets.amount1.isZero() &&
-                          account.assets.uniswapPositions.every((pos) => JSBI.EQ(pos.liquidity, '0'));
-                        if (hasNoCollateral) return null;
+                    {filteredBorrowers &&
+                      filteredBorrowers.map((account) => {
                         const uniswapPosition = account.assets.uniswapPositions.at(0);
                         const collateral = account.assets.amount0.isGtZero() ? account.token0 : account.token1;
                         const collateralAmount = collateral.equals(account.token0)
@@ -333,10 +338,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
             </CardWrapper>
             <div className='w-[52px] mt-[2px]'>
               <div className='w-[52px] h-[42px]' />
-              {borrowers &&
-                borrowers.map((borrower) => {
-                  const hasNoCollateral = borrower.assets.amount0.isZero() && borrower.assets.amount1.isZero();
-                  if (hasNoCollateral) return null;
+              {filteredBorrowers &&
+                filteredBorrowers.map((borrower) => {
                   return (
                     <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
                       <HealthGauge health={borrower.health} size={36} />
@@ -353,14 +356,8 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     </Text>
                   </CardRowHeader>
                   <div className='flex flex-col'>
-                    {borrowers &&
-                      borrowers.map((account) => {
-                        const hasNoCollateral =
-                          account.assets.amount0.isZero() &&
-                          account.assets.amount1.isZero() &&
-                          account.assets.uniswapPositions.length === 0;
-                        if (hasNoCollateral) return null;
-
+                    {filteredBorrowers &&
+                      filteredBorrowers.map((account) => {
                         const isBorrowingToken0 = account.liabilities.amount0 > 0;
                         const liability = isBorrowingToken0 ? account.token0 : account.token1;
                         const liabilityAmount = isBorrowingToken0
