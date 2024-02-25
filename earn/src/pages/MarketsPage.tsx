@@ -337,37 +337,35 @@ export default function MarketsPage() {
 
   return (
     <AppPage>
-      <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
-        <div className='flex flex-col justify-between'>
-          <div className='flex flex-row items-center gap-4 mb-4'>
-            {activeChainLogo}
-            <Text size='XXL'>{activeChain.name} Markets</Text>
+      <div className='flex flex-col gap-2 max-w-screen-xl m-auto'>
+        <div className='flex flex-row items-center gap-4 mb-4'>
+          {activeChainLogo}
+          <Text size='XXL'>{activeChain.name} Markets</Text>
+        </div>
+        <div className='flex flex-row gap-8 ml-1 mb-2'>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Supplied
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalSupplied)}
+            </Display>
           </div>
-          <div className='flex flex-row gap-8'>
-            <div className='flex flex-col'>
-              <Text size='M' weight='bold' color={SECONDARY_COLOR}>
-                Total Supplied
-              </Text>
-              <Display size='S' weight='semibold'>
-                {formatUSDAuto(totalSupplied)}
-              </Display>
-            </div>
-            <div className='flex flex-col'>
-              <Text size='M' weight='bold' color={SECONDARY_COLOR}>
-                Total Available
-              </Text>
-              <Display size='S' weight='semibold'>
-                {formatUSDAuto(totalAvailable)}
-              </Display>
-            </div>
-            <div className='flex flex-col'>
-              <Text size='M' weight='bold' color={SECONDARY_COLOR}>
-                Total Borrowed
-              </Text>
-              <Display size='S' weight='semibold'>
-                {formatUSDAuto(totalBorrowed)}
-              </Display>
-            </div>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Available
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalAvailable)}
+            </Display>
+          </div>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Borrowed
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalBorrowed)}
+            </Display>
           </div>
         </div>
         <div>

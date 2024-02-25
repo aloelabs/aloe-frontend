@@ -146,7 +146,7 @@ export default function SupplyTable(props: SupplyTableProps) {
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <Text size='M' weight='bold'>
-                  Collateral Assets
+                  Collateral
                 </Text>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
