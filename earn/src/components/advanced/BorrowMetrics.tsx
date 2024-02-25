@@ -104,14 +104,16 @@ function getHealthColor(health: number) {
   }
 }
 
-function MetricCard(props: { label: string; value: string }) {
-  const { label, value } = props;
+function MetricCard(props: { label: string; value: string; valueClassName?: string }) {
+  const { label, value, valueClassName } = props;
   return (
     <MetricCardContainer>
       <Text size='M' color={BORROW_TITLE_TEXT_COLOR}>
         {label}
       </Text>
-      <Display size='L'>{value}</Display>
+      <Display size='L' className={valueClassName}>
+        {value}
+      </Display>
     </MetricCardContainer>
   );
 }
@@ -252,18 +254,22 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
         <MetricCard
           label={`${marginAccount.token0.symbol} Collateral`}
           value={formatTokenAmount(token0Collateral, 3)}
+          valueClassName='underline underline-offset-2 decoration-[#00C143f0]'
         />
         <MetricCard
           label={`${marginAccount.token1.symbol} Collateral`}
           value={formatTokenAmount(token1Collateral, 3)}
+          valueClassName='underline underline-offset-2 decoration-[#00C143f0]'
         />
         <MetricCard
           label={`${marginAccount.token0.symbol} Borrows`}
           value={formatTokenAmount(marginAccount.liabilities.amount0 || 0, 3)}
+          valueClassName='underline underline-offset-2 decoration-[#EC2D5Bf0]'
         />
         <MetricCard
           label={`${marginAccount.token1.symbol} Borrows`}
           value={formatTokenAmount(marginAccount.liabilities.amount1 || 0, 3)}
+          valueClassName='underline underline-offset-2 decoration-[#EC2D5Bf0]'
         />
       </MetricsGridUpper>
       <MetricsGridLower>
