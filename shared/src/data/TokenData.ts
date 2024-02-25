@@ -396,7 +396,7 @@ const BASED_BASE = new Token(
   BasedLogo
 );
 
-const BALD_BASE = new Token(optimism.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
+const BALD_BASE = new Token(base.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
   [mainnet.id]: {
