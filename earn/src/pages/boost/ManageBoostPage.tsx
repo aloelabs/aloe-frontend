@@ -171,8 +171,11 @@ export default function ManageBoostPage() {
       {!isLoading && (
         <Container>
           <BoostCard info={cardInfo} uniqueId={nftTokenId} isDisplayOnly={true} />
-          <div className='flex-grow'>
+          <div className='flex-grow flex-col'>
             <CollectFeesWidget cardInfo={cardInfo} tokenQuotes={tokenQuotes} setPendingTxn={setPendingTxn} />
+            <Text size='S' className='text-center underline mt-4 max-w-[500px]'>
+              <a href={`/borrow?account=${cardInfo.borrower?.address}`}>Advanced View</a>
+            </Text>
           </div>
         </Container>
       )}
