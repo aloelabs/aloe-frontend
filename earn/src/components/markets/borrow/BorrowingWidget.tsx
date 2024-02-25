@@ -272,7 +272,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   return (
     <>
-      {(filteredBorrowers?.length || 0) > 0 && (
+      {Boolean(filteredBorrowers?.length) && (
         <>
           <Text size='L' weight='bold'>
             Manage positions
@@ -287,65 +287,63 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     </Text>
                   </CardRowHeader>
                   <div className='flex flex-col'>
-                    {filteredBorrowers &&
-                      filteredBorrowers.map((account) => {
-                        const uniswapPosition = account.assets.uniswapPositions.at(0);
-                        const collateral = account.assets.amount0.isGtZero() ? account.token0 : account.token1;
-                        const collateralAmount = collateral.equals(account.token0)
-                          ? account.assets.amount0
-                          : account.assets.amount1;
-                        const collateralColor = tokenColors.get(collateral.address);
-                        const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
-                        return (
-                          <AvailableContainer
-                            $gradDirection='45deg'
-                            $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
-                            $gradColorB={GREY_700}
-                            key={account.tokenId}
-                            onMouseEnter={() => setHoveredBorrower(account)}
-                            onMouseLeave={() => setHoveredBorrower(null)}
-                            className={account === hoveredBorrower ? 'active' : ''}
-                            onClick={() =>
-                              setSelectedBorrower({
-                                borrower: account,
-                                type: 'supply',
-                              })
-                            }
-                          >
-                            {uniswapPosition !== undefined ? (
-                              <div className='flex items-center gap-3'>
-                                <TokenIcons tokens={[account.token0, account.token1]} />
-                                <Display size='XS'>Uniswap Position</Display>
-                                <Display size='XXS' color={SECONDARY_COLOR}>
-                                  {uniswapPosition.lower} ⇔ {uniswapPosition.upper}
-                                </Display>
-                              </div>
-                            ) : (
-                              <div className='flex items-center gap-3'>
-                                <TokenIcon token={collateral} />
-                                <Display size='XS'>
-                                  {collateralAmount.toString(GNFormat.LOSSY_HUMAN)}&nbsp;&nbsp;{collateral.symbol}
-                                </Display>
-                              </div>
-                            )}
-                            <Display size='XXS'>{roundPercentage(ltvPercentage, 2)}%&nbsp;&nbsp;LLTV</Display>
-                          </AvailableContainer>
-                        );
-                      })}
+                    {filteredBorrowers?.map((account) => {
+                      const uniswapPosition = account.assets.uniswapPositions.at(0);
+                      const collateral = account.assets.amount0.isGtZero() ? account.token0 : account.token1;
+                      const collateralAmount = collateral.equals(account.token0)
+                        ? account.assets.amount0
+                        : account.assets.amount1;
+                      const collateralColor = tokenColors.get(collateral.address);
+                      const ltvPercentage = computeLTV(account.iv, account.nSigma) * 100;
+                      return (
+                        <AvailableContainer
+                          $gradDirection='45deg'
+                          $gradColorA={collateralColor && rgba(collateralColor, 0.25)}
+                          $gradColorB={GREY_700}
+                          key={account.tokenId}
+                          onMouseEnter={() => setHoveredBorrower(account)}
+                          onMouseLeave={() => setHoveredBorrower(null)}
+                          className={account === hoveredBorrower ? 'active' : ''}
+                          onClick={() =>
+                            setSelectedBorrower({
+                              borrower: account,
+                              type: 'supply',
+                            })
+                          }
+                        >
+                          {uniswapPosition !== undefined ? (
+                            <div className='flex items-center gap-3'>
+                              <TokenIcons tokens={[account.token0, account.token1]} />
+                              <Display size='XS'>Uniswap Position</Display>
+                              <Display size='XXS' color={SECONDARY_COLOR}>
+                                {uniswapPosition.lower} ⇔ {uniswapPosition.upper}
+                              </Display>
+                            </div>
+                          ) : (
+                            <div className='flex items-center gap-3'>
+                              <TokenIcon token={collateral} />
+                              <Display size='XS'>
+                                {collateralAmount.toString(GNFormat.LOSSY_HUMAN)}&nbsp;&nbsp;{collateral.symbol}
+                              </Display>
+                            </div>
+                          )}
+                          <Display size='XXS'>{roundPercentage(ltvPercentage, 2)}%&nbsp;&nbsp;LLTV</Display>
+                        </AvailableContainer>
+                      );
+                    })}
                   </div>
                 </CardRow>
               </CardContainer>
             </CardWrapper>
             <div className='w-[52px] mt-[2px]'>
               <div className='w-[52px] h-[42px]' />
-              {filteredBorrowers &&
-                filteredBorrowers.map((borrower) => {
-                  return (
-                    <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
-                      <HealthGauge health={borrower.health} size={36} />
-                    </div>
-                  );
-                })}
+              {filteredBorrowers?.map((borrower) => {
+                return (
+                  <div className='flex justify-center items-center w-[52px] h-[52px]' key={borrower.tokenId}>
+                    <HealthGauge health={borrower.health} size={36} />
+                  </div>
+                );
+              })}
             </div>
             <CardWrapper $textAlignment='end'>
               <CardContainer>
@@ -356,50 +354,48 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                     </Text>
                   </CardRowHeader>
                   <div className='flex flex-col'>
-                    {filteredBorrowers &&
-                      filteredBorrowers.map((account) => {
-                        const isBorrowingToken0 = account.liabilities.amount0 > 0;
-                        const liability = isBorrowingToken0 ? account.token0 : account.token1;
-                        const liabilityAmount = isBorrowingToken0
-                          ? account.liabilities.amount0
-                          : account.liabilities.amount1;
-                        const liabilityColor = tokenColors.get(liability.address);
-                        const lendingPair = lendingPairs.find(
-                          (pair) => pair.uniswapPool === account.uniswapPool.toLowerCase()
-                        );
-                        const apr =
-                          (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
-                        const roundedApr = Math.round(apr * 100) / 100;
-                        return (
-                          <AvailableContainer
-                            $gradDirection='-45deg'
-                            $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
-                            $gradColorB={GREY_700}
-                            key={account.tokenId}
-                            onMouseEnter={() => {
-                              setHoveredBorrower(account);
-                            }}
-                            onMouseLeave={() => {
-                              setHoveredBorrower(null);
-                            }}
-                            onClick={() => {
-                              setSelectedBorrower({
-                                borrower: account,
-                                type: 'borrow',
-                              });
-                            }}
-                            className={account === hoveredBorrower ? 'active' : ''}
-                          >
-                            <Display size='XXS'>{roundedApr}%&nbsp;&nbsp;APR</Display>
-                            <div className='flex items-center gap-3'>
-                              <Display size='XS'>
-                                {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
-                              </Display>
-                              <TokenIcon token={liability} />
-                            </div>
-                          </AvailableContainer>
-                        );
-                      })}
+                    {filteredBorrowers?.map((account) => {
+                      const isBorrowingToken0 = account.liabilities.amount0 > 0;
+                      const liability = isBorrowingToken0 ? account.token0 : account.token1;
+                      const liabilityAmount = isBorrowingToken0
+                        ? account.liabilities.amount0
+                        : account.liabilities.amount1;
+                      const liabilityColor = tokenColors.get(liability.address);
+                      const lendingPair = lendingPairs.find(
+                        (pair) => pair.uniswapPool === account.uniswapPool.toLowerCase()
+                      );
+                      const apr = (lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'].borrowAPR || 0) * 100;
+                      const roundedApr = Math.round(apr * 100) / 100;
+                      return (
+                        <AvailableContainer
+                          $gradDirection='-45deg'
+                          $gradColorA={liabilityColor && rgba(liabilityColor, 0.25)}
+                          $gradColorB={GREY_700}
+                          key={account.tokenId}
+                          onMouseEnter={() => {
+                            setHoveredBorrower(account);
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredBorrower(null);
+                          }}
+                          onClick={() => {
+                            setSelectedBorrower({
+                              borrower: account,
+                              type: 'borrow',
+                            });
+                          }}
+                          className={account === hoveredBorrower ? 'active' : ''}
+                        >
+                          <Display size='XXS'>{roundedApr}%&nbsp;&nbsp;APR</Display>
+                          <div className='flex items-center gap-3'>
+                            <Display size='XS'>
+                              {formatTokenAmount(liabilityAmount)}&nbsp;&nbsp;{liability.symbol}
+                            </Display>
+                            <TokenIcon token={liability} />
+                          </div>
+                        </AvailableContainer>
+                      );
+                    })}
                   </div>
                 </CardRow>
               </CardContainer>
