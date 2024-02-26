@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
@@ -147,7 +147,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
         <div className='flex justify-between'>
           {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
           {withdrawableNFT && (
-            <FilledGreyButton
+            <FilledGradientButton
               size='S'
               disabled={!withdrawableNFT}
               onClick={() => {
@@ -158,7 +158,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               }}
             >
               Withdraw
-            </FilledGreyButton>
+            </FilledGradientButton>
           )}
         </div>
       </div>
