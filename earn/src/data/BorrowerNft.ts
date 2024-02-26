@@ -91,7 +91,10 @@ export async function fetchListOfBorrowerNfts(
   const borrowersInCorrectPool = new Set<Address>();
 
   // Fetch borrowers' in-use status and Uniswap pool, which we'll need for filtering
-  if (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) {
+  if (
+    (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) &&
+    borrowerManagerSets.size > 0
+  ) {
     const lensContext: ContractCallContext[] = [
       {
         reference: 'lens',

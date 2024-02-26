@@ -217,7 +217,9 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
 
   const etherscanUrl = getEtherscanUrlForChain(activeChain);
 
-  const mostRecentManager = marginAccount.mostRecentModify?.args!['manager'] as Address;
+  const mostRecentManager = marginAccount.mostRecentModify
+    ? (marginAccount.mostRecentModify.args!['manager'] as Address)
+    : '0x';
   const mostRecentManagerName = Object.hasOwn(MANAGER_NAME_MAP, mostRecentManager)
     ? MANAGER_NAME_MAP[mostRecentManager]
     : undefined;
