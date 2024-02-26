@@ -360,6 +360,24 @@ const ARB_ARBITRUM = new Token(
   ArbLogo
 );
 
+const UNI_ARBITRUM = new Token(
+  arbitrum.id,
+  '0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0',
+  18,
+  'UNI',
+  'Uniswap',
+  UniLogo
+);
+
+const WSTETH_ARBITRUM = new Token(
+  arbitrum.id,
+  '0x5979d7b546e38e414f7e9822514be443a4800529',
+  18,
+  'wstETH',
+  'Wrapped liquid staked Ether 2.0',
+  WstEthLogo
+);
+
 const WETH_BASE = new Token(
   base.id,
   '0x4200000000000000000000000000000000000006',
@@ -446,6 +464,8 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [USDT_ARBITRUM.address]: USDT_ARBITRUM,
     [WBTC_ARBITRUM.address]: WBTC_ARBITRUM,
     [WETH_ARBITRUM.address]: WETH_ARBITRUM,
+    [UNI_ARBITRUM.address]: UNI_ARBITRUM,
+    [WSTETH_ARBITRUM.address]: WSTETH_ARBITRUM,
   },
   [base.id]: {
     [WETH_BASE.address]: WETH_BASE,
