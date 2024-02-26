@@ -3,11 +3,13 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import AppPage from 'shared/lib/components/common/AppPage';
-import { Text } from 'shared/lib/components/common/Typography';
+import { Display, Text } from 'shared/lib/components/common/Typography';
+import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
+import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 
@@ -23,6 +25,8 @@ import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingP
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+
+const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
@@ -162,12 +166,7 @@ export default function MarketsPage() {
       if (
         uniqueSymbols.length === 0 ||
         uniqueSymbols.every((symbol) => {
-          return (
-            Array.from(tokenQuotes.keys())
-              .map((key) => key.toLowerCase())
-              .includes(symbol.toLowerCase()) ||
-            (symbol === 'USDC.e' && tokenQuotes.has('USDC'))
-          );
+          return tokenQuotes.has(symbol.toLowerCase()) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
         })
       ) {
         return;
@@ -187,7 +186,10 @@ export default function MarketsPage() {
 
       // Convert response to the desired Map format
       const symbolToPriceMap = new Map<TokenSymbol, Quote>();
-      Object.entries(prResponse).forEach(([k, v]) => symbolToPriceMap.set(k, v.price));
+      Object.entries(prResponse).forEach(([k, v]) => {
+        symbolToPriceMap.set(k.toLowerCase(), v.price);
+        symbolToPriceMap.set(k, v.price);
+      });
 
       if (mounted) setTokenQuotes(symbolToPriceMap);
     })();
@@ -249,8 +251,8 @@ export default function MarketsPage() {
         apy: pair.kitty0Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
-        totalSupply: pair.kitty0Info.inventory,
-        totalSupplyUsd: pair.kitty0Info.inventory * token0Price,
+        totalSupply: pair.kitty0Info.totalAssets.toNumber(),
+        totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
         suppliedBalance: kitty0Balance,
         suppliedBalanceUsd: kitty0Balance * token0Price,
         suppliableBalance: token0Balance,
@@ -263,8 +265,8 @@ export default function MarketsPage() {
         apy: pair.kitty1Info.lendAPY * 100,
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
-        totalSupply: pair.kitty1Info.inventory,
-        totalSupplyUsd: pair.kitty1Info.inventory * token1Price,
+        totalSupply: pair.kitty1Info.totalAssets.toNumber(),
+        totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
         suppliedBalance: kitty1Balance,
         suppliedBalanceUsd: kitty1Balance * token1Price,
         suppliableBalance: token1Balance,
@@ -312,12 +314,60 @@ export default function MarketsPage() {
       break;
   }
 
+  const totalSupplied = useMemo(() => {
+    const totalAssets = supplyRows.reduce((acc, row) => acc + row.totalSupplyUsd, 0);
+    return totalAssets;
+  }, [supplyRows]);
+
+  const totalBorrowed = useMemo(() => {
+    return lendingPairs.reduce((acc, pair) => {
+      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
+      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0BorrowedUsd = pair.kitty0Info.totalBorrows.toNumber() * token0Price;
+      const token1BorrowedUsd = pair.kitty1Info.totalBorrows.toNumber() * token1Price;
+      return acc + token0BorrowedUsd + token1BorrowedUsd;
+    }, 0);
+  }, [lendingPairs, tokenQuotes]);
+
+  const totalAvailable = useMemo(() => {
+    return totalSupplied - totalBorrowed;
+  }, [totalSupplied, totalBorrowed]);
+
+  const activeChainLogo = getChainLogo(activeChain.id, 32);
+
   return (
     <AppPage>
-      <div className='flex flex-col gap-4 max-w-screen-xl m-auto'>
-        <Text size='XXL' className='mb-4'>
-          {activeChain.name} Markets
-        </Text>
+      <div className='flex flex-col gap-2 max-w-screen-xl m-auto'>
+        <div className='flex flex-row items-center gap-4 mb-4'>
+          {activeChainLogo}
+          <Text size='XXL'>{activeChain.name} Markets</Text>
+        </div>
+        <div className='flex flex-row gap-8 ml-1 mb-2'>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Supplied
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalSupplied)}
+            </Display>
+          </div>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Available
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalAvailable)}
+            </Display>
+          </div>
+          <div className='flex flex-col'>
+            <Text size='M' weight='bold' color={SECONDARY_COLOR}>
+              Total Borrowed
+            </Text>
+            <Display size='S' weight='semibold'>
+              {formatUSDAuto(totalBorrowed)}
+            </Display>
+          </div>
+        </div>
         <div>
           <div className='flex flex-row' role='tablist'>
             <HeaderSegmentedControlOption

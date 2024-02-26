@@ -5,8 +5,7 @@ import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
-import { MarginAccount } from '../../data/MarginAccount';
-import { MarketInfo } from '../../data/MarketInfo';
+import { LendingPair } from '../../data/LendingPair';
 
 const STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const STAT_VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
@@ -16,7 +15,6 @@ const Wrapper = styled.div`
   flex-direction: column;
   /* 16px due to the bottom padding already being 8px making the total space 24px */
   gap: 16px;
-  margin-bottom: 64px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_XS}) {
     margin-bottom: 48px;
@@ -50,12 +48,11 @@ const StatContainer = styled.div`
 `;
 
 export type GlobalStatsTableProps = {
-  marginAccount?: MarginAccount;
-  marketInfo?: MarketInfo;
+  market?: LendingPair;
 };
 
 export default function GlobalStatsTable(props: GlobalStatsTableProps) {
-  const { marginAccount, marketInfo } = props;
+  const { market } = props;
 
   return (
     <Wrapper>
@@ -63,66 +60,66 @@ export default function GlobalStatsTable(props: GlobalStatsTableProps) {
       <StatsWidgetGrid>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token0.symbol} Total Supply
+            {market?.token0.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo?.lender0TotalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
+            {market?.kitty0Info.totalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token1.symbol} Total Supply
+            {market?.token1.symbol} Total Supply
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo?.lender1TotalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
+            {market?.kitty1Info.totalAssets.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token0.symbol} Borrows
+            {market?.token0.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo?.lender0TotalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
+            {market?.kitty0Info.totalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token1.symbol} Borrows
+            {market?.token1.symbol} Borrows
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo?.lender1TotalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
+            {market?.kitty1Info.totalBorrows.toString(GNFormat.LOSSY_HUMAN) ?? '-'}
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token0.symbol} Utilization
+            {market?.token0.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo ? roundPercentage(marketInfo.lender0Utilization * 100, 2) : '-'}%
+            {market ? roundPercentage(market.kitty0Info.utilization * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token1.symbol} Utilization
+            {market?.token1.symbol} Utilization
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo ? roundPercentage(marketInfo.lender1Utilization * 100, 2) : '-'}%
+            {market ? roundPercentage(market.kitty1Info.utilization * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token0.symbol} Borrow APR
+            {market?.token0.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo ? roundPercentage(marketInfo.borrowerAPR0 * 100, 2) : '-'}%
+            {market ? roundPercentage(market.kitty0Info.borrowAPR * 100, 2) : '-'}%
           </Display>
         </StatContainer>
         <StatContainer>
           <Text size='M' color={STAT_LABEL_TEXT_COLOR}>
-            {marginAccount?.token1.symbol} Borrow APR
+            {market?.token1.symbol} Borrow APR
           </Text>
           <Display size='S' color={STAT_VALUE_TEXT_COLOR}>
-            {marketInfo ? roundPercentage(marketInfo.borrowerAPR1 * 100, 2) : '-'}%
+            {market ? roundPercentage(market.kitty1Info.borrowAPR * 100, 2) : '-'}%
           </Display>
         </StatContainer>
       </StatsWidgetGrid>

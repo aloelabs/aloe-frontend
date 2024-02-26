@@ -61,8 +61,8 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
   const { isOpen, borrower, uniswapPositions, setIsOpen, setPendingTxn } = props;
   const [confirmationType, setConfirmationType] = useState<ConfirmationType>(ConfirmationType.DEPOSIT);
 
-  if ((borrower.uniswapPositions?.length || 0) > 0) {
-    const positionToWithdraw = borrower.uniswapPositions![0];
+  if (borrower.assets.uniswapPositions.length > 0) {
+    const positionToWithdraw = borrower.assets.uniswapPositions[0];
     const uniswapNftId = uniswapPositions.find(
       (nft) => nft.lower === positionToWithdraw.lower && nft.upper === positionToWithdraw.upper
     )?.tokenId;

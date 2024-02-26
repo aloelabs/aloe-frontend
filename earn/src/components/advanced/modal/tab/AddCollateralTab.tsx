@@ -14,7 +14,6 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
-import { UniswapPosition } from '../../../../data/Uniswap';
 import HealthBar from '../../../common/HealthBar';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 
@@ -126,14 +125,13 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
 
 export type AddCollateralTabProps = {
   marginAccount: MarginAccount;
-  uniswapPositions: readonly UniswapPosition[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function AddCollateralTab(props: AddCollateralTabProps) {
-  const { marginAccount, uniswapPositions, isOpen, setIsOpen, setPendingTxn } = props;
+  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
   const [collateralAmountStr, setCollateralAmountStr] = useState('');
@@ -166,34 +164,25 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
   }, [marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  if (!tokenOptions.some((token) => token.equals(collateralToken))) return null;
 
-  const existingCollateralRaw =
-    collateralToken.address === marginAccount.token0.address
-      ? marginAccount.assets.token0Raw
-      : marginAccount.assets.token1Raw;
+  const isToken0 = collateralToken.address === marginAccount.token0.address;
+
+  const existingCollateral = isToken0 ? marginAccount.assets.amount0 : marginAccount.assets.amount1;
 
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', collateralToken.decimals);
   const userBalance = GN.fromDecimalString(userBalanceResult?.formatted ?? '0', collateralToken.decimals);
-  const newCollateral = GN.fromNumber(existingCollateralRaw, collateralToken.decimals).add(collateralAmount);
+  const newCollateral = existingCollateral.add(collateralAmount);
 
-  // TODO: Utilize GN for this
-  const newAssets: Assets = {
-    token0Raw:
-      collateralToken.address === marginAccount.token0.address
-        ? existingCollateralRaw + collateralAmount.toNumber()
-        : marginAccount.assets.token0Raw,
-    token1Raw:
-      collateralToken.address === marginAccount.token1.address
-        ? existingCollateralRaw + collateralAmount.toNumber()
-        : marginAccount.assets.token1Raw,
-    uni0: marginAccount.assets.uni0,
-    uni1: marginAccount.assets.uni1,
-  };
+  const newAssets = new Assets(
+    isToken0 ? newCollateral : marginAccount.assets.amount0,
+    isToken0 ? marginAccount.assets.amount1 : newCollateral,
+    marginAccount.assets.uniswapPositions
+  );
 
   const { health: newHealth } = isHealthy(
     newAssets,
     marginAccount.liabilities,
-    uniswapPositions,
     marginAccount.sqrtPriceX96,
     marginAccount.iv,
     marginAccount.nSigma,

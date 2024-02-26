@@ -1,15 +1,20 @@
-import { useMemo } from 'react';
+import { ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
+import { formatDistanceToNowStrict } from 'date-fns';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Address } from 'wagmi';
 
-import { computeLiquidationThresholds, getAssets, sqrtRatioToPrice } from '../../data/BalanceSheet';
+import { ChainContext } from '../../App';
+import { auctionCurve, sqrtRatioToTick } from '../../data/BalanceSheet';
+import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
-import { MarginAccount } from '../../data/MarginAccount';
-import { UniswapPosition } from '../../data/Uniswap';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;
@@ -22,7 +27,7 @@ const MetricCardContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  background-color: ${GREY_800};
+  background-color: ${GREY_700};
   border-radius: 8px;
   padding: 16px;
 `;
@@ -32,10 +37,10 @@ const MetricCardPlaceholder = styled.div.attrs((props: { height: number; $animat
   border-radius: 8px;
   padding: 16px;
   height: ${(props) => props.height}px;
-  background-color: #0d171e;
+  background-color: ${GREY_700};
   animation: ${(props) => (props.$animate ? 'metricCardShimmer 0.75s forwards linear infinite' : '')};
   background-image: ${(props) =>
-    props.$animate ? 'linear-gradient(to right, #0d171e 0%, #131f28 20%, #0d171e 40%, #0d171e 100%)' : ''};
+    props.$animate ? `linear-gradient(to right, ${GREY_700} 0%, #131f28 20%, ${GREY_700} 40%, ${GREY_700} 100%)` : ''};
   background-repeat: no-repeat;
   background-size: 200% 100%;
   overflow: hidden;
@@ -57,7 +62,7 @@ const HorizontalMetricCardContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  background-color: ${GREY_800};
+  background-color: ${GREY_700};
   border-radius: 8px;
   padding: 16px;
 `;
@@ -117,14 +122,14 @@ function MetricCard(props: { label: string; value: string }) {
   );
 }
 
-function HorizontalMetricCard(props: { label: string; value: string }) {
-  const { label, value } = props;
+function HorizontalMetricCard(props: { label: string; value?: string; children?: ReactNode }) {
+  const { label, value, children } = props;
   return (
     <HorizontalMetricCardContainer>
       <Text size='M' color={BORROW_TITLE_TEXT_COLOR}>
         {label}
       </Text>
-      <Display size='S'>{value}</Display>
+      {children === undefined ? <Display size='S'>{value}</Display> : children}
     </HorizontalMetricCardContainer>
   );
 }
@@ -158,78 +163,39 @@ function HealthMetricCard(props: { health: number }) {
 }
 
 export type BorrowMetricsProps = {
-  marginAccount?: MarginAccount;
+  marginAccount?: BorrowerNftBorrower;
   dailyInterest0: number;
   dailyInterest1: number;
-  uniswapPositions: readonly UniswapPosition[];
   userHasNoMarginAccounts: boolean;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccount, dailyInterest0, dailyInterest1, uniswapPositions, userHasNoMarginAccounts } = props;
+  const { marginAccount, dailyInterest0, dailyInterest1, userHasNoMarginAccounts } = props;
 
-  const maxSafeCollateralFall = useMemo(() => {
-    if (!marginAccount) return null;
+  const { activeChain } = useContext(ChainContext);
 
-    const { lowerSqrtRatio, upperSqrtRatio, minSqrtRatio, maxSqrtRatio } = computeLiquidationThresholds(
-      marginAccount.assets,
-      marginAccount.liabilities,
-      uniswapPositions,
-      marginAccount.sqrtPriceX96,
-      marginAccount.iv,
-      marginAccount.nSigma,
-      marginAccount.token0.decimals,
-      marginAccount.token1.decimals
-    );
+  const [, setCurrentTime] = useState(Date.now());
+  const [mostRecentModifyTime, setMostRecentModifyTime] = useSafeState<Date | null>(null);
 
-    if (lowerSqrtRatio.eq(minSqrtRatio) && upperSqrtRatio.eq(maxSqrtRatio)) return Number.POSITIVE_INFINITY;
+  const [token0Collateral, token1Collateral] = useMemo(
+    () => marginAccount?.assets.amountsAt(sqrtRatioToTick(marginAccount.sqrtPriceX96)) ?? [0, 0],
+    [marginAccount]
+  );
 
-    const [current, lower, upper] = [marginAccount.sqrtPriceX96, lowerSqrtRatio, upperSqrtRatio].map((sp) =>
-      sqrtRatioToPrice(sp, marginAccount.token0.decimals, marginAccount.token1.decimals)
-    );
+  useEffect(() => {
+    (async () => {
+      setMostRecentModifyTime(null);
+      if (!marginAccount?.mostRecentModify) return;
+      const block = await marginAccount.mostRecentModify.getBlock();
+      setMostRecentModifyTime(new Date(block.timestamp * 1000));
+    })();
+  }, [marginAccount, setMostRecentModifyTime]);
 
-    const assets = getAssets(
-      marginAccount.assets.token0Raw,
-      marginAccount.assets.token1Raw,
-      uniswapPositions,
-      lowerSqrtRatio,
-      upperSqrtRatio,
-      marginAccount.token0.decimals,
-      marginAccount.token1.decimals
-    );
-
-    // Compute the value of all assets (collateral) at 3 different prices (current, lower, and upper)
-    // Denominated in units of token1
-    let assetValueCurrent =
-      (marginAccount.assets.token0Raw + marginAccount.assets.uni0) * current +
-      marginAccount.assets.token1Raw +
-      marginAccount.assets.uni1;
-    let assetValueAtLower = assets.amount0AtA * lower + assets.amount1AtA;
-    let assetValueAtUpper = assets.amount0AtB * upper + assets.amount1AtB;
-
-    // If there are no assets, further results would be spurious, so return null
-    if (assetValueCurrent < Number.EPSILON) return null;
-
-    // Compute how much the collateral can drop in value while remaining solvent
-    const percentChange1A = Math.abs(assetValueCurrent - assetValueAtLower) / assetValueCurrent;
-    const percentChange1B = Math.abs(assetValueCurrent - assetValueAtUpper) / assetValueCurrent;
-    const percentChange1 = Math.min(percentChange1A, percentChange1B);
-
-    // Now change to units of token0
-    assetValueCurrent /= current;
-    assetValueAtLower /= lower;
-    assetValueAtUpper /= upper;
-
-    // Again compute how much the collateral can drop in value while remaining solvent,
-    // but this time percentages are based on units of token0
-    const percentChange0A = Math.abs(assetValueCurrent - assetValueAtLower) / assetValueCurrent;
-    const percentChange0B = Math.abs(assetValueCurrent - assetValueAtUpper) / assetValueCurrent;
-    const percentChange0 = Math.min(percentChange0A, percentChange0B);
-
-    // Since we don't know whether the user is thinking in terms of "X per Y" or "Y per X",
-    // we return the minimum. Error on the side of being too conservative.
-    return Math.min(percentChange0, percentChange1);
-  }, [marginAccount, uniswapPositions]);
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 200);
+    if (!marginAccount?.warningTime) clearInterval(interval);
+    return () => clearInterval(interval);
+  }, [marginAccount?.warningTime]);
 
   if (!marginAccount)
     return (
@@ -244,18 +210,40 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
           <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
           <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
           <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
+          <MetricCardPlaceholder height={56} $animate={!userHasNoMarginAccounts} />
         </MetricsGridLower>
       </MetricsGrid>
     );
 
-  let liquidationDistanceText = '-';
-  if (maxSafeCollateralFall !== null) {
-    if (maxSafeCollateralFall === Number.POSITIVE_INFINITY) liquidationDistanceText = '∞';
-    else liquidationDistanceText = `${(maxSafeCollateralFall * 100).toPrecision(2)}% drop in collateral value`;
-  }
+  const etherscanUrl = getEtherscanUrlForChain(activeChain);
 
-  const token0Collateral = marginAccount.assets.token0Raw + marginAccount.assets.uni0;
-  const token1Collateral = marginAccount.assets.token1Raw + marginAccount.assets.uni1;
+  const mostRecentManager = marginAccount.mostRecentModify
+    ? (marginAccount.mostRecentModify.args!['manager'] as Address)
+    : '0x';
+  const mostRecentManagerName = Object.hasOwn(MANAGER_NAME_MAP, mostRecentManager)
+    ? MANAGER_NAME_MAP[mostRecentManager]
+    : undefined;
+  const mostRecentManagerUrl = `${etherscanUrl}/address/${mostRecentManager}`;
+
+  const mostRecentModifyHash = marginAccount.mostRecentModify?.transactionHash;
+  const mostRecentModifyUrl = `${etherscanUrl}/tx/${mostRecentModifyHash}`;
+  const mostRecentModifyTimeStr = mostRecentModifyTime
+    ? formatDistanceToNowStrict(mostRecentModifyTime, {
+        addSuffix: true,
+        roundingMethod: 'round',
+      })
+    : '';
+
+  let liquidationAuctionStr = 'Not started';
+  if (marginAccount.warningTime > 0) {
+    const auctionStartTime = marginAccount.warningTime + 5 * 60;
+    const currentTime = Date.now() / 1000;
+    if (currentTime < auctionStartTime) {
+      liquidationAuctionStr = `Begins in ${(auctionStartTime - currentTime).toFixed(1)} seconds`;
+    } else {
+      liquidationAuctionStr = `${(auctionCurve(currentTime - auctionStartTime) * 100 - 100).toFixed(2)}% incentive`;
+    }
+  }
 
   return (
     <MetricsGrid>
@@ -279,14 +267,34 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
       </MetricsGridUpper>
       <MetricsGridLower>
         <HealthMetricCard health={marginAccount.health || 0} />
-        <HorizontalMetricCard label='Liquidation Distance' value={liquidationDistanceText} />
         <HorizontalMetricCard
-          label='Daily Interest (-)'
-          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.symbol} + ${formatTokenAmount(
+          label='Daily Interest Owed'
+          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.symbol},  ${formatTokenAmount(
             dailyInterest1,
             2
           )} ${marginAccount.token1.symbol}`}
         />
+        {mostRecentModifyHash && (
+          <HorizontalMetricCard label='Last Modified'>
+            <Text size='M'>
+              <a className='underline text-purple' rel='noreferrer' target='_blank' href={mostRecentModifyUrl}>
+                {mostRecentModifyTimeStr}
+              </a>{' '}
+              using {mostRecentManagerName ? 'the ' : 'an '}
+              <a className='underline text-purple' rel='noreferrer' target='_blank' href={mostRecentManagerUrl}>
+                {mostRecentManagerName ?? 'unknown manager'}
+              </a>
+            </Text>
+          </HorizontalMetricCard>
+        )}
+        <HorizontalMetricCard label='Custom Tag'>
+          <Text size='M'>{marginAccount.userDataHex}</Text>
+        </HorizontalMetricCard>
+        {marginAccount.warningTime > 0 && (
+          <HorizontalMetricCard label='Liquidation Auction'>
+            <Text size='M'>{liquidationAuctionStr}</Text>
+          </HorizontalMetricCard>
+        )}
       </MetricsGridLower>
     </MetricsGrid>
   );

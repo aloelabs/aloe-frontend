@@ -20,11 +20,13 @@ export type BorrowerNft = {
   borrowerAddress: Address;
   tokenId: string;
   index: number;
+  mostRecentModify?: ethers.Event;
 };
 
 export type BorrowerNftBorrower = MarginAccount & {
   tokenId: string;
   index: number;
+  mostRecentModify?: ethers.Event;
 };
 
 type BorrowerNftFilterParams = {
@@ -66,6 +68,8 @@ export async function fetchListOfBorrowerNfts(
 
   // Create a mapping from (borrowerAddress => managerSet), which we'll need for filtering
   const borrowerManagerSets: Map<Address, Set<Address>> = new Map();
+  // Also store the most recent event (solely for displaying on the advanced paged)
+  const borrowerMostRecentManager: Map<Address, ethers.Event> = new Map();
   modifys.forEach((modify) => {
     const borrower = modify.args!['borrower'] as Address;
     const manager = modify.args!['manager'] as Address;
@@ -75,6 +79,7 @@ export async function fetchListOfBorrowerNfts(
     } else {
       // If there's no managerSet yet, create one
       borrowerManagerSets.set(borrower, new Set<Address>([manager]));
+      borrowerMostRecentManager.set(borrower, modify);
     }
   });
   orderedTokenIdStrs.forEach((orderedTokenIdStr) => {
@@ -86,7 +91,10 @@ export async function fetchListOfBorrowerNfts(
   const borrowersInCorrectPool = new Set<Address>();
 
   // Fetch borrowers' in-use status and Uniswap pool, which we'll need for filtering
-  if (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) {
+  if (
+    (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) &&
+    borrowerManagerSets.size > 0
+  ) {
     const lensContext: ContractCallContext[] = [
       {
         reference: 'lens',
@@ -149,6 +157,7 @@ export async function fetchListOfBorrowerNfts(
         borrowerAddress: borrower,
         tokenId,
         index,
+        mostRecentModify: borrowerMostRecentManager.get(borrower),
       };
     })
   );

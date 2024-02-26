@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
+import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -59,7 +60,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
   if (!borrower || !uniswapPosition) {
     return (
-      <UniswapPositionCardWrapper>
+      <UniswapPositionCardWrapper $color={GREY_700}>
         <Text size='S' color={ACCENT_COLOR} className='text-center'>
           Empty
         </Text>
@@ -97,7 +98,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
   });
 
   return (
-    <UniswapPositionCardWrapper>
+    <UniswapPositionCardWrapper $color={GREY_700}>
       <div className='flex flex-col gap-4'>
         <div className='flex justify-center items-center'>
           <TokenPairIcons
@@ -146,7 +147,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
         <div className='flex justify-between'>
           {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
           {withdrawableNFT && (
-            <FilledGreyButton
+            <FilledGradientButton
               size='S'
               disabled={!withdrawableNFT}
               onClick={() => {
@@ -157,7 +158,7 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               }}
             >
               Withdraw
-            </FilledGreyButton>
+            </FilledGradientButton>
           )}
         </div>
       </div>
@@ -167,13 +168,12 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
 export type UniswapPositionListProps = {
   borrower?: BorrowerNftBorrower;
-  uniswapPositions: readonly UniswapPosition[];
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {
-  const { borrower, uniswapPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
+  const { borrower, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
 
   return (
@@ -186,7 +186,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
               <Text size='S'>{slot}</Text>
               <UniswapPositionCard
                 borrower={borrower}
-                uniswapPosition={uniswapPositions.length > index ? uniswapPositions[index] : undefined}
+                uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
@@ -200,7 +200,7 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           isOpen={selectedUniswapPosition !== null}
           borrower={borrower}
           uniswapPosition={selectedUniswapPosition.uniswapPosition}
-          existingUniswapPositions={uniswapPositions}
+          existingUniswapPositions={borrower.assets.uniswapPositions}
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}
           setIsOpen={() => {
             setSelectedUniswapPosition(null);

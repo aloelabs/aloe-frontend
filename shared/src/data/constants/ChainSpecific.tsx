@@ -18,11 +18,41 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [base.id]: <BaseLogo width={16} height={16} />,
 };
 
+export function getChainLogo(chainId: number, size: number): JSX.Element {
+  switch (chainId) {
+    case mainnet.id:
+      return <EthereumLogo width={size} height={size} />;
+    case goerli.id:
+      return <EthereumLogo width={size} height={size} />;
+    case optimism.id:
+      return <OptimismLogo width={size} height={size} />;
+    case arbitrum.id:
+      return <ArbitrumLogo width={size} height={size} />;
+    case base.id:
+      return <BaseLogo width={size} height={size} />;
+    default:
+      return <EthereumLogo width={size} height={size} />;
+  }
+}
+
 export const APPROX_SECONDS_PER_BLOCK: { [chainId: number]: number } = {
   [mainnet.id]: 12.07,
   [optimism.id]: 2,
   [arbitrum.id]: 0.25,
   [base.id]: 2,
+};
+
+export const MANAGER_NAME_MAP: { [manager: Address]: string } = {
+  '0xBb5A35B80b15A8E5933fDC11646A20f6159Dd061': 'SimpleManager',
+  '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e': 'BorrowerNFTMultiManager',
+  '0xA07FD687882FfE7380A044e7542bDAc6F8672Bf7': 'BorrowerNFTSimpleManager',
+  '0xe1Bf15D99330E684020622856916F854c9322CB6': 'BorrowerNFTWithdrawManager',
+  '0x3EE236D69F6950525ff317D7a872439F09902C65': 'UniswapNFTManager',
+  '0x7357E37a60839DE89A52861Cf50851E317FFBE71': 'UniswapNFTManager',
+  '0x3Bb9F64b0e6b15dD5792A008c06E5c4Dc9d23D8f': 'FrontendManager',
+  '0xB6B7521cd3bd116432FeD94c2262Dd02BA616Db4': 'BoostManager',
+  '0x8E287b280671700EBE66A908A56C648f930b73b4': 'BoostManager',
+  '0x6BDa468b1d473028938585a04eC3c62dcFF5309B': 'Permit2Manager',
 };
 
 export const MULTICALL_ADDRESS: { [chainId: number]: Address } = {
