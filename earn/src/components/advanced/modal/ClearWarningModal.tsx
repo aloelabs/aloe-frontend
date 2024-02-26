@@ -112,7 +112,7 @@ export default function ClearWarningModal(props: ClearWarningModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
+    <Modal isOpen={isOpen} title='End Auction' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>

@@ -4,6 +4,7 @@ import { ReactComponent as FrownIcon } from '../../assets/svg/frown.svg';
 import { ReactComponent as MinusIcon } from '../../assets/svg/minus.svg';
 import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import { ReactComponent as StopIcon } from '../../assets/svg/stop_circle.svg';
 import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 
 export type ManageAccountButtonsProps = {
@@ -74,7 +75,7 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
       )}
       {onClearWarning && (
         <OutlinedWhiteButtonWithIcon
-          Icon={<FrownIcon />}
+          Icon={<StopIcon />}
           position='leading'
           onClick={onClearWarning}
           size='S'
