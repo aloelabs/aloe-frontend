@@ -67,7 +67,7 @@ const StyledMoreIcon = styled(MoreIcon)`
   transform: rotate(90deg);
 `;
 
-const MAX_NUM_CHUNKS = 10;
+const MAX_NUM_CHUNKS = 7;
 
 export type AssetChunkProps = {
   token: Token;
