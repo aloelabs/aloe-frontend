@@ -86,7 +86,10 @@ export async function fetchListOfBorrowerNfts(
   const borrowersInCorrectPool = new Set<Address>();
 
   // Fetch borrowers' in-use status and Uniswap pool, which we'll need for filtering
-  if (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) {
+  if (
+    (filterParams?.includeFreshBorrowers || Boolean(filterParams?.validUniswapPool)) &&
+    borrowerManagerSets.size > 0
+  ) {
     const lensContext: ContractCallContext[] = [
       {
         reference: 'lens',
@@ -106,9 +109,7 @@ export async function fetchListOfBorrowerNfts(
       tryAggregate: true,
       multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
     });
-    const lensResults = (await multicall.call(lensContext))?.results['lens']?.callsReturnContext;
-    // Return early if there are no results
-    if (!lensResults.length) return [];
+    const lensResults = (await multicall.call(lensContext)).results['lens'].callsReturnContext;
     if (lensResults.find((v) => !v.success || !v.decoded)) {
       throw new Error('Multicall error while checking whether Borrowers are in use');
     }
