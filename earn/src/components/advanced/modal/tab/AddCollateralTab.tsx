@@ -164,6 +164,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
   }, [marginAccount.token0]);
 
   const tokenOptions = [marginAccount.token0, marginAccount.token1];
+  if (!tokenOptions.some((token) => token.equals(collateralToken))) return null;
 
   const isToken0 = collateralToken.address === marginAccount.token0.address;
 

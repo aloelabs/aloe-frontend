@@ -195,6 +195,7 @@ export default function AdvancedPage() {
         ...borrower,
         tokenId: borrowerNfts[i].tokenId,
         index: borrowerNfts[i].index,
+        mostRecentModify: borrowerNfts[i].mostRecentModify,
       }));
       setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
     })();

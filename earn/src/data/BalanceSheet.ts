@@ -357,3 +357,14 @@ export function computeLTV(iv: number, nSigma: number) {
   const ltv = 1 / ((1 + 1 / ALOE_II_MAX_LEVERAGE + 1 / ALOE_II_LIQUIDATION_INCENTIVE) * Math.exp(iv * nSigma));
   return Math.max(0.1, Math.min(ltv, 0.9));
 }
+
+const Q = 22.8811827075;
+const R = 103567.889099532;
+const S = 0.95;
+const M = 20.405429;
+const N = 7 * 24 * 60 * 60 - 5 * 60;
+
+export function auctionCurve(auctionTimeSeconds: number) {
+  if (auctionTimeSeconds >= N) return Infinity;
+  return S + R / (N - auctionTimeSeconds) - Q / (M + auctionTimeSeconds);
+}

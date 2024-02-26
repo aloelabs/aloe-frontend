@@ -1,6 +1,6 @@
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
@@ -73,6 +73,8 @@ export type MarginAccount = {
   lender1: Address;
   iv: number;
   nSigma: number;
+  userDataHex: `0x${string}`;
+  warningTime: number;
 };
 
 /**
@@ -162,6 +164,11 @@ export async function fetchBorrowerDatas(
         {
           reference: 'lender1',
           methodName: 'LENDER1',
+          methodParameters: [],
+        },
+        {
+          reference: 'slot0',
+          methodName: 'slot0',
           methodParameters: [],
         },
         {
@@ -283,7 +290,7 @@ export async function fetchBorrowerDatas(
     const feeTier = NumericFeeTierToEnum(fee);
     const token0 = getToken(chainId, token0Address)!;
     const token1 = getToken(chainId, token1Address)!;
-    const liabilitiesData = accountReturnContexts[2].returnValues;
+    const liabilitiesData = accountReturnContexts[3].returnValues;
     const token0Balance = token0ReturnContexts[0].returnValues[0];
     const token1Balance = token1ReturnContexts[0].returnValues[0];
     const healthData = lensReturnContexts[0].returnValues;
@@ -315,8 +322,10 @@ export async function fetchBorrowerDatas(
       uniswapPositions
     );
 
-    const lender0 = accountReturnContexts[0].returnValues[0];
-    const lender1 = accountReturnContexts[1].returnValues[0];
+    const slot0 = accountReturnContexts[2].returnValues[0] as BigNumber;
+    const userDataHex = slot0.shr(144).mask(64).toHexString() as `0x${string}`;
+    const warningTime = slot0.shr(208).mask(40).toNumber();
+
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;
     const marginAccount: MarginAccount = {
       address: accountAddress,
@@ -329,9 +338,11 @@ export async function fetchBorrowerDatas(
       health,
       token0,
       token1,
-      lender0,
-      lender1,
+      lender0: accountReturnContexts[0].returnValues[0],
+      lender1: accountReturnContexts[1].returnValues[0],
       nSigma,
+      userDataHex,
+      warningTime,
     };
     marginAccounts.push(marginAccount);
   });

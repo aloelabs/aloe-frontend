@@ -328,6 +328,8 @@ export async function fetchBoostBorrower(
     lender1,
     iv,
     nSigma,
+    userDataHex: '0x',
+    warningTime: 0,
   };
 
   return {
