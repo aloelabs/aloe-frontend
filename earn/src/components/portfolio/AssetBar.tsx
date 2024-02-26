@@ -67,6 +67,8 @@ const StyledMoreIcon = styled(MoreIcon)`
   transform: rotate(90deg);
 `;
 
+const MAX_NUM_CHUNKS = 10;
+
 export type AssetChunkProps = {
   token: Token;
   percentage: number;
@@ -122,10 +124,10 @@ export function AssetBar(props: AssetBarProps) {
     const combinedBalances: Map<string, TokenBalance> = new Map();
     balances.forEach((balance) => {
       const tokenAddress = balance.token.underlying.address;
-      const existingBalance = combinedBalances.get(tokenAddress);
       if (combinedBalances.has(tokenAddress)) {
-        existingBalance!.balance += balance.balance;
-        existingBalance!.balanceUSD += balance.balanceUSD;
+        const existingBalance = combinedBalances.get(tokenAddress)!;
+        existingBalance.balance += balance.balance;
+        existingBalance.balanceUSD += balance.balanceUSD;
       } else {
         combinedBalances.set(tokenAddress, { ...balance });
       }
@@ -159,35 +161,42 @@ export function AssetBar(props: AssetBarProps) {
   });
 
   useEffect(() => {
-    const totalBalanceUSD = combinedTokenBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
-    // filter out tokens with a balance < 10% of total balance and a balance greater than 0
-    const filteredChunks = combinedTokenBalances.filter(
-      (balance) => balance.balance !== 0 && balance.balanceUSD >= totalBalanceUSD * 0.1
+    const filteredChunks = combinedTokenBalances.filter((balance) => balance.balance > 0);
+    filteredChunks.sort((a, b) => b.balanceUSD - a.balanceUSD);
+
+    const hasHiddenTokens = filteredChunks.length > MAX_NUM_CHUNKS;
+    const updatedTotalBalanceUSD = filteredChunks.reduce(
+      (acc, balance, i) => (i < MAX_NUM_CHUNKS ? acc + balance.balanceUSD : 0),
+      0
     );
 
-    const hasHiddenTokens = filteredChunks.length !== combinedTokenBalances.length;
-    const updatedTotalBalanceUSD = filteredChunks.reduce((acc, balance) => acc + balance.balanceUSD, 0);
+    const numChunks = Math.min(MAX_NUM_CHUNKS, filteredChunks.length);
+    const minSize = 1.0 / numChunks;
+    const maxSize = 3 * minSize;
 
-    const newChunks = filteredChunks.map((chunk, index) => {
+    const newChunks: AssetChunkProps[] = [];
+    for (let i = 0; i < numChunks; i += 1) {
+      const chunk = filteredChunks[i];
+
       const currentColor = tokenColors.get(chunk.token.address);
       let percentage: number = ignoreBalances
-        ? 1 / filteredChunks.length
+        ? ((maxSize - minSize) / numChunks) * (numChunks - i) + minSize
         : chunk.balanceUSD / updatedTotalBalanceUSD || 0;
       if (hasHiddenTokens) {
         percentage = percentage - 0.05 / filteredChunks.length;
       }
-      return {
+      newChunks.push({
         token: chunk.token,
         percentage: percentage,
-        active: index === activeIndex,
-        selected: index === defaultIndex,
+        active: i === activeIndex,
+        selected: i === defaultIndex,
         color: currentColor !== undefined ? rgb(currentColor) : 'transparent',
         onClick: () => {
-          setDefaultIndex(index);
+          setDefaultIndex(i);
         },
         onHover: () => {
           setIsHovering(true);
-          setActiveIndex(index);
+          setActiveIndex(i);
           setActiveAsset(chunk.token);
         },
         onLeave: () => {
@@ -195,8 +204,8 @@ export function AssetBar(props: AssetBarProps) {
           setActiveAsset(filteredChunks[defaultIndex].token);
           setIsHovering(false);
         },
-      };
-    });
+      });
+    }
     setChunks(newChunks);
   }, [combinedTokenBalances, tokenColors, activeIndex, defaultIndex, setActiveAsset, ignoreBalances]);
 
