@@ -11,15 +11,13 @@ export type ManageAccountButtonsProps = {
   onRemoveCollateral: () => void;
   onBorrow: () => void;
   onRepay: () => void;
-  onGetLeverage: () => void;
-  onWithdrawAnte: () => void;
-  isWithdrawAnteDisabled: boolean;
+  onWithdrawAnte?: () => void;
+  onClearWarning?: () => void;
   isDisabled: boolean;
 };
 
 export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
-  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, isWithdrawAnteDisabled, isDisabled } =
-    props;
+  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, onClearWarning, isDisabled } = props;
   return (
     <div className='flex flex-row flex-wrap justify-start gap-3 w-full'>
       <OutlinedWhiteButtonWithIcon
@@ -62,16 +60,30 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
       >
         Repay
       </OutlinedWhiteButtonWithIcon>
-      <OutlinedWhiteButtonWithIcon
-        Icon={<FrownIcon />}
-        position='leading'
-        onClick={onWithdrawAnte}
-        size='S'
-        svgColorType='stroke'
-        disabled={isWithdrawAnteDisabled || isDisabled}
-      >
-        Withdraw Ante
-      </OutlinedWhiteButtonWithIcon>
+      {onWithdrawAnte && (
+        <OutlinedWhiteButtonWithIcon
+          Icon={<FrownIcon />}
+          position='leading'
+          onClick={onWithdrawAnte}
+          size='S'
+          svgColorType='stroke'
+          disabled={isDisabled}
+        >
+          Withdraw Ante
+        </OutlinedWhiteButtonWithIcon>
+      )}
+      {onClearWarning && (
+        <OutlinedWhiteButtonWithIcon
+          Icon={<FrownIcon />}
+          position='leading'
+          onClick={onClearWarning}
+          size='S'
+          svgColorType='stroke'
+          disabled={isDisabled}
+        >
+          End Auction
+        </OutlinedWhiteButtonWithIcon>
+      )}
     </div>
   );
 }
