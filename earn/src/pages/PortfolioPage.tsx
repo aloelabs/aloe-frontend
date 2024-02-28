@@ -350,7 +350,7 @@ export default function PortfolioPage() {
                   <AssetBar
                     balances={combinedBalances}
                     tokenColors={tokenColors}
-                    ignoreBalances={errorLoadingPrices}
+                    ignoreBalances={true}
                     setActiveAsset={(updatedAsset: Token) => {
                       setActiveAsset(updatedAsset);
                     }}

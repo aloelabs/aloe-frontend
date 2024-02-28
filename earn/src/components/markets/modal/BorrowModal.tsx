@@ -293,7 +293,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const encodedModify = useMemo(() => {
     const index = Boolean(availableNft) ? availableNft!.index : nextNftPtrIdx;
-    if (!userAddress || !index || ante === undefined || !encodedPermit2 || !encodedBorrowCall) return null;
+    if (!userAddress || index === undefined || ante === undefined || !encodedPermit2 || !encodedBorrowCall) return null;
 
     const owner = userAddress;
     const indices = [index];
