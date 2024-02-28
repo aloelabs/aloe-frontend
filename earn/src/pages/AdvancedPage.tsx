@@ -26,6 +26,7 @@ import GlobalStatsTable from '../components/advanced/GlobalStatsTable';
 import ManageAccountButtons from '../components/advanced/ManageAccountButtons';
 import AddCollateralModal from '../components/advanced/modal/AddCollateralModal';
 import BorrowModal from '../components/advanced/modal/BorrowModal';
+import ClearWarningModal from '../components/advanced/modal/ClearWarningModal';
 import NewSmartWalletModal from '../components/advanced/modal/NewSmartWalletModal';
 import RemoveCollateralModal from '../components/advanced/modal/RemoveCollateralModal';
 import RepayModal from '../components/advanced/modal/RepayModal';
@@ -35,7 +36,6 @@ import { UniswapPositionList } from '../components/advanced/UniswapPositionList'
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { primeUrl } from '../data/constants/Values';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPair } from '../data/hooks/UseLendingPairs';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
@@ -133,6 +133,7 @@ enum OpenedModal {
   REPAY,
   WITHDRAW_ANTE,
   PENDING_TXN,
+  CLEAR_WARNING,
 }
 
 export type UniswapPoolInfo = {
@@ -293,9 +294,11 @@ export default function AdvancedPage() {
 
   const accountHasEther = accountEtherBalance?.isGtZero() ?? false;
 
-  const isUnableToWithdrawAnte = hasLiabilities || !accountHasEther;
-
   const userHasNoMarginAccounts = borrowerNftBorrowers?.length === 0;
+
+  const canWithdrawAnte = !hasLiabilities && accountHasEther;
+  const canClearWarning =
+    selectedMarginAccount && selectedMarginAccount.health >= 1 && selectedMarginAccount.warningTime > 0;
 
   return (
     <>
@@ -318,14 +321,8 @@ export default function AdvancedPage() {
               onRemoveCollateral={() => setOpenedModal(OpenedModal.REMOVE_COLLATERAL)}
               onBorrow={() => setOpenedModal(OpenedModal.BORROW)}
               onRepay={() => setOpenedModal(OpenedModal.REPAY)}
-              onGetLeverage={() => {
-                if (selectedMarginAccount != null) {
-                  const primeAccountUrl = `${primeUrl()}borrow/account/${selectedMarginAccount.address}`;
-                  window.open(primeAccountUrl, '_blank');
-                }
-              }}
-              onWithdrawAnte={() => setOpenedModal(OpenedModal.WITHDRAW_ANTE)}
-              isWithdrawAnteDisabled={isUnableToWithdrawAnte}
+              onWithdrawAnte={canWithdrawAnte ? () => setOpenedModal(OpenedModal.WITHDRAW_ANTE) : undefined}
+              onClearWarning={canClearWarning ? () => setOpenedModal(OpenedModal.CLEAR_WARNING) : undefined}
               isDisabled={!selectedMarginAccount || !isConnected}
             />
           </GridAreaForButtons>
@@ -428,6 +425,14 @@ export default function AdvancedPage() {
               accountEthBalance={accountEtherBalance}
               isOpen={openedModal === OpenedModal.WITHDRAW_ANTE}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.WITHDRAW_ANTE : OpenedModal.NONE)}
+              setPendingTxn={setPendingTxn}
+            />
+            <ClearWarningModal
+              borrower={selectedMarginAccount}
+              market={market}
+              accountEtherBalance={accountEtherBalance}
+              isOpen={openedModal === OpenedModal.CLEAR_WARNING}
+              setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.CLEAR_WARNING : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
           </>

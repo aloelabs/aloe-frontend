@@ -138,7 +138,7 @@ function HorizontalMetricCard(props: { label: string; value?: string; children?:
 
 function HealthMetricCard(props: { health: number }) {
   const { health } = props;
-  const healthLabel = health > MAX_HEALTH ? `${MAX_HEALTH}+` : health.toFixed(2);
+  const healthLabel = health > MAX_HEALTH ? `${MAX_HEALTH}+` : health.toFixed(4);
   const healthColor = getHealthColor(health);
   return (
     <HorizontalMetricCardContainer>
