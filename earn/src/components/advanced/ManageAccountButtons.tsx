@@ -4,6 +4,7 @@ import { ReactComponent as FrownIcon } from '../../assets/svg/frown.svg';
 import { ReactComponent as MinusIcon } from '../../assets/svg/minus.svg';
 import { ReactComponent as PercentIcon } from '../../assets/svg/percent.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
+import { ReactComponent as StopIcon } from '../../assets/svg/stop_circle.svg';
 import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 
 export type ManageAccountButtonsProps = {
@@ -11,15 +12,13 @@ export type ManageAccountButtonsProps = {
   onRemoveCollateral: () => void;
   onBorrow: () => void;
   onRepay: () => void;
-  onGetLeverage: () => void;
-  onWithdrawAnte: () => void;
-  isWithdrawAnteDisabled: boolean;
+  onWithdrawAnte?: () => void;
+  onClearWarning?: () => void;
   isDisabled: boolean;
 };
 
 export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
-  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, isWithdrawAnteDisabled, isDisabled } =
-    props;
+  const { onAddCollateral, onRemoveCollateral, onBorrow, onRepay, onWithdrawAnte, onClearWarning, isDisabled } = props;
   return (
     <div className='flex flex-row flex-wrap justify-start gap-3 w-full'>
       <OutlinedWhiteButtonWithIcon
@@ -62,16 +61,30 @@ export default function ManageAccountButtons(props: ManageAccountButtonsProps) {
       >
         Repay
       </OutlinedWhiteButtonWithIcon>
-      <OutlinedWhiteButtonWithIcon
-        Icon={<FrownIcon />}
-        position='leading'
-        onClick={onWithdrawAnte}
-        size='S'
-        svgColorType='stroke'
-        disabled={isWithdrawAnteDisabled || isDisabled}
-      >
-        Withdraw Ante
-      </OutlinedWhiteButtonWithIcon>
+      {onWithdrawAnte && (
+        <OutlinedWhiteButtonWithIcon
+          Icon={<FrownIcon />}
+          position='leading'
+          onClick={onWithdrawAnte}
+          size='S'
+          svgColorType='stroke'
+          disabled={isDisabled}
+        >
+          Withdraw Ante
+        </OutlinedWhiteButtonWithIcon>
+      )}
+      {onClearWarning && (
+        <OutlinedWhiteButtonWithIcon
+          Icon={<StopIcon />}
+          position='leading'
+          onClick={onClearWarning}
+          size='S'
+          svgColorType='stroke'
+          disabled={isDisabled}
+        >
+          End Auction
+        </OutlinedWhiteButtonWithIcon>
+      )}
     </div>
   );
 }

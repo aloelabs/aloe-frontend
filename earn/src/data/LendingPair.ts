@@ -269,6 +269,8 @@ export async function getAvailableLendingPairs(
     const totalSupply0 = GN.fromBigNumber(basics0[5], kitty0.decimals);
     const totalSupply1 = GN.fromBigNumber(basics1[5], kitty1.decimals);
 
+    if (oracleResult.length === 0) return;
+
     lendingPairs.push(
       new LendingPair(
         token0,
