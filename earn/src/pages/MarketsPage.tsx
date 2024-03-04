@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
+import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
@@ -27,6 +28,7 @@ import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
+const SELECTED_TAB_KEY = 'selectedTab';
 
 const HeaderDividingLine = styled.hr`
   color: ${GREY_600};
@@ -64,10 +66,10 @@ export type TokenBalance = {
   pairName: string;
 };
 
-enum HeaderOptions {
-  Supply,
-  Borrow,
-  Monitor,
+enum TabOption {
+  Supply = 'supply',
+  Borrow = 'borrow',
+  Monitor = 'monitor',
 }
 
 type TokenSymbol = string;
@@ -83,7 +85,19 @@ export default function MarketsPage() {
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
-  const [selectedHeaderOption, setSelectedHeaderOption] = useState<HeaderOptions>(HeaderOptions.Supply);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedTab = useMemo(() => {
+    const tabSearchParam = searchParams.get(SELECTED_TAB_KEY)?.toLowerCase();
+    if (tabSearchParam != null) {
+      // Check if the search param is a valid tab (case insensitive)
+      if (Object.values(TabOption).includes(tabSearchParam.toLowerCase() as TabOption)) {
+        return tabSearchParam as TabOption;
+      }
+    }
+    return TabOption.Supply;
+  }, [searchParams]);
 
   // MARK: custom hooks
   const { lendingPairs } = useLendingPairs();
@@ -279,12 +293,12 @@ export default function MarketsPage() {
 
   let tabContent: JSX.Element;
 
-  switch (selectedHeaderOption) {
+  switch (selectedTab) {
     default:
-    case HeaderOptions.Supply:
+    case TabOption.Supply:
       tabContent = <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />;
       break;
-    case HeaderOptions.Borrow:
+    case TabOption.Borrow:
       tabContent = (
         <BorrowingWidget
           chain={activeChain}
@@ -300,7 +314,7 @@ export default function MarketsPage() {
         />
       );
       break;
-    case HeaderOptions.Monitor:
+    case TabOption.Monitor:
       tabContent = (
         <InfoTab
           chainId={activeChain.id}
@@ -371,26 +385,26 @@ export default function MarketsPage() {
         <div>
           <div className='flex flex-row' role='tablist'>
             <HeaderSegmentedControlOption
-              isActive={selectedHeaderOption === HeaderOptions.Supply}
-              onClick={() => setSelectedHeaderOption(HeaderOptions.Supply)}
+              isActive={selectedTab === TabOption.Supply}
+              onClick={() => setSearchParams({ [SELECTED_TAB_KEY]: TabOption.Supply })}
               role='tab'
-              aria-selected={selectedHeaderOption === HeaderOptions.Supply}
+              aria-selected={selectedTab === TabOption.Supply}
             >
               Supply
             </HeaderSegmentedControlOption>
             <HeaderSegmentedControlOption
-              isActive={selectedHeaderOption === HeaderOptions.Borrow}
-              onClick={() => setSelectedHeaderOption(HeaderOptions.Borrow)}
+              isActive={selectedTab === TabOption.Borrow}
+              onClick={() => setSearchParams({ [SELECTED_TAB_KEY]: TabOption.Borrow })}
               role='tab'
-              aria-selected={selectedHeaderOption === HeaderOptions.Borrow}
+              aria-selected={selectedTab === TabOption.Borrow}
             >
               Borrow
             </HeaderSegmentedControlOption>
             <HeaderSegmentedControlOption
-              isActive={selectedHeaderOption === HeaderOptions.Monitor}
-              onClick={() => setSelectedHeaderOption(HeaderOptions.Monitor)}
+              isActive={selectedTab === TabOption.Monitor}
+              onClick={() => setSearchParams({ [SELECTED_TAB_KEY]: TabOption.Monitor })}
               role='tab'
-              aria-selected={selectedHeaderOption === HeaderOptions.Monitor}
+              aria-selected={selectedTab === TabOption.Monitor}
             >
               Monitor{doesGuardianSenseManipulation ? ' 🚨' : ''}
             </HeaderSegmentedControlOption>
