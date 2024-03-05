@@ -266,12 +266,16 @@ export default function MarketsPage() {
         rewardsRate: pair.rewardsRate0,
         collateralAssets: [pair.token1],
         totalSupply: pair.kitty0Info.totalAssets.toNumber(),
-        totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
         suppliedBalance: kitty0Balance,
-        suppliedBalanceUsd: kitty0Balance * token0Price,
         suppliableBalance: token0Balance,
-        suppliableBalanceUsd: token0Balance * token0Price,
         isOptimized: true,
+        ...(token0Price > 0
+          ? {
+              totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
+              suppliedBalanceUsd: kitty0Balance * token0Price,
+              suppliableBalanceUsd: token0Balance * token0Price,
+            }
+          : {}),
       });
       rows.push({
         asset: pair.token1,
@@ -280,12 +284,16 @@ export default function MarketsPage() {
         rewardsRate: pair.rewardsRate1,
         collateralAssets: [pair.token0],
         totalSupply: pair.kitty1Info.totalAssets.toNumber(),
-        totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
         suppliedBalance: kitty1Balance,
-        suppliedBalanceUsd: kitty1Balance * token1Price,
         suppliableBalance: token1Balance,
-        suppliableBalanceUsd: token1Balance * token1Price,
         isOptimized: true,
+        ...(token1Price > 0
+          ? {
+              totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
+              suppliedBalanceUsd: kitty1Balance * token1Price,
+              suppliableBalanceUsd: token1Balance * token1Price,
+            }
+          : {}),
       });
     });
     return rows;
@@ -329,7 +337,7 @@ export default function MarketsPage() {
   }
 
   const totalSupplied = useMemo(() => {
-    const totalAssets = supplyRows.reduce((acc, row) => acc + row.totalSupplyUsd, 0);
+    const totalAssets = supplyRows.reduce((acc, row) => acc + (row.totalSupplyUsd || 0), 0);
     return totalAssets;
   }, [supplyRows]);
 

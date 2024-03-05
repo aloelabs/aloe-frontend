@@ -33,7 +33,7 @@ export default function InfoGraphTooltip(data: any, active = false) {
           {item.name}
         </Text>
         <Text size='S' weight='medium' color={item.color}>
-          {item.value.toFixed(0)}%
+          {item.value.toFixed(2)}%
         </Text>
       </div>
     );
