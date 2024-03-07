@@ -95,11 +95,11 @@ export type SupplyTableRow = {
   apy: number;
   rewardsRate: number;
   totalSupply: number;
-  totalSupplyUsd: number;
+  totalSupplyUsd?: number;
   suppliedBalance: number;
-  suppliedBalanceUsd: number;
+  suppliedBalanceUsd?: number;
   suppliableBalance: number;
-  suppliableBalanceUsd: number;
+  suppliableBalanceUsd?: number;
   isOptimized: boolean;
 };
 
@@ -217,7 +217,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-start whitespace-nowrap'>
                   <ApyWithTooltip
                     apy={row.apy}
-                    addOn={row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
+                    addOn={row.totalSupplyUsd && row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
                   />
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
@@ -230,7 +230,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
                     <div className='text-end'>
-                      <Display size='XS'>${row.suppliableBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XS'>${row.suppliableBalanceUsd?.toFixed(2) ?? '－'}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                         {formatTokenAmount(row.suppliableBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
@@ -249,7 +249,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
                     <div className='text-end'>
-                      <Display size='XS'>${row.suppliedBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XS'>${row.suppliedBalanceUsd?.toFixed(2) ?? '－'}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                         {formatTokenAmount(row.suppliedBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>

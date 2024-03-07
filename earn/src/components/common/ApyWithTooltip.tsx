@@ -35,24 +35,26 @@ const PointsBadgeWrapper = styled.div`
   border-radius: 4px;
 `;
 
-export function ApyWithTooltip(props: { apy: number; addOn: number }) {
+export function ApyWithTooltip(props: { apy: number; addOn?: number }) {
   const [isHovering, setIsHovering] = useState(false);
 
   return (
     <div className='flex items-center gap-2'>
       <Display size='XS'>{props.apy.toFixed(2)}%</Display>
-      <PointsBadgeWrapper onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
-        <Display size='XXS' color='rgba(6,11,15,1)'>
-          +{props.addOn.toFixed(0)} pts
-        </Display>
-        {isHovering && (
-          <TooltipWrapper>
-            <Text size='S' weight='medium'>
-              loyalty points per $1000 per year
-            </Text>
-          </TooltipWrapper>
-        )}
-      </PointsBadgeWrapper>
+      {props.addOn !== undefined && (
+        <PointsBadgeWrapper onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+          <Display size='XXS' color='rgba(6,11,15,1)'>
+            +{props.addOn.toFixed(0)} pts
+          </Display>
+          {isHovering && (
+            <TooltipWrapper>
+              <Text size='S' weight='medium'>
+                loyalty points per $1000 per year
+              </Text>
+            </TooltipWrapper>
+          )}
+        </PointsBadgeWrapper>
+      )}
     </div>
   );
 }
