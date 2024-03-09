@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { TickMath } from '@uniswap/v3-sdk';
@@ -45,6 +45,7 @@ import { BoostCardInfo } from '../../data/Uniboost';
 import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
+import MaxSlippageInput from '../common/MaxSlippageInput';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -186,6 +187,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     undefined,
     activeChain.id
   );
+  const [maxSlippagePercentage, setSlippagePercentage] = useState('0.10');
 
   const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
@@ -275,6 +277,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
+    const maxSlippage = parseFloat(maxSlippagePercentage) / 100;
     const inner = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24', 'uint224'],
       [
@@ -283,12 +286,12 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         position.upper,
         position.liquidity.toString(10),
         (boostFactor * 10000).toFixed(0),
-        GN.Q(224).recklessSub(1).toBigNumber(), // TODO: Implement slippage protection here
+        GN.Q(224).recklessSub(maxSlippage).toBigNumber(),
       ]
     ) as `0x${string}`;
     const actionId = 0;
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
-  }, [cardInfo, boostFactor]);
+  }, [cardInfo, maxSlippagePercentage, boostFactor]);
   const enableHooks = cardInfo !== undefined;
 
   // Read who the manager is supposed to be
@@ -549,6 +552,12 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
           </div>
         </div>
       </div>
+      <div className='m-auto w-[300px]'>
+        <MaxSlippageInput
+          tooltipContent='The maximum slippage you are willing to accept when importing your position. If the slippage exceeds this value, the transaction will revert.'
+          updateMaxSlippage={setSlippagePercentage}
+        />
+      </div>
       <div className='mt-6 mx-6'>
         <div className='flex flex-col gap-1 w-full text-start mb-4'>
           <Text size='M' weight='bold'>
@@ -558,7 +567,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             You're moving liquidity from a Uniswap NFT to an Aloe NFT and applying a{' '}
             <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but also
             pay interest to Aloe lenders and risk liquidation. Liquidation thresholds are indicated with (!) in the
-            graph to the left.
+            graph to the left. You have selected a slippage tolerance of <strong>{maxSlippagePercentage}%</strong>.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
             You will need to provide an additional {GN.fromBigNumber(ethToSend, 18).toString(GNFormat.LOSSY_HUMAN)} ETH
