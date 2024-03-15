@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -15,6 +15,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import { ApyWithTooltip } from '../../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import SupplyModal from '../modal/SupplyModal';
@@ -95,11 +96,11 @@ export type SupplyTableRow = {
   apy: number;
   rewardsRate: number;
   totalSupply: number;
-  totalSupplyUsd: number;
+  totalSupplyUsd?: number;
   suppliedBalance: number;
-  suppliedBalanceUsd: number;
+  suppliedBalanceUsd?: number;
   suppliableBalance: number;
-  suppliableBalanceUsd: number;
+  suppliableBalanceUsd?: number;
   isOptimized: boolean;
 };
 
@@ -110,6 +111,7 @@ export type SupplyTableProps = {
 
 export default function SupplyTable(props: SupplyTableProps) {
   const { rows, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
   const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
@@ -121,6 +123,11 @@ export default function SupplyTable(props: SupplyTableProps) {
 
   const { address: userAddress } = useAccount();
 
+  // Reset current page when chain changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeChain]);
+
   const pages: SupplyTableRow[][] = useMemo(() => {
     const pages: SupplyTableRow[][] = [];
     for (let i = 0; i < sortedRows.length; i += PAGE_SIZE) {
@@ -129,7 +136,8 @@ export default function SupplyTable(props: SupplyTableProps) {
     return pages;
   }, [sortedRows]);
 
-  if (pages.length === 0) {
+  // If there are no pages or the current page is out of bounds, return null
+  if (pages.length === 0 || pages.length < currentPage) {
     return null;
   }
 
@@ -217,7 +225,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-start whitespace-nowrap'>
                   <ApyWithTooltip
                     apy={row.apy}
-                    addOn={row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
+                    addOn={row.totalSupplyUsd && row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
                   />
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
@@ -230,7 +238,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
                     <div className='text-end'>
-                      <Display size='XS'>${row.suppliableBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XS'>${row.suppliableBalanceUsd?.toFixed(2) ?? '－'}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                         {formatTokenAmount(row.suppliableBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
@@ -249,7 +257,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
                   <div className='flex justify-end gap-4'>
                     <div className='text-end'>
-                      <Display size='XS'>${row.suppliedBalanceUsd.toFixed(2)}</Display>
+                      <Display size='XS'>${row.suppliedBalanceUsd?.toFixed(2) ?? '－'}</Display>
                       <Display size='XXS' color='rgba(130, 160, 182, 1)'>
                         {formatTokenAmount(row.suppliedBalance)}&nbsp;&nbsp;{row.asset.symbol}
                       </Display>
