@@ -385,9 +385,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   });
 
   const ethToSend = useMemo(() => {
-    if (!lendingPair || !borrowerBalance || !availableNft) return ethers.BigNumber.from(0);
-    return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance.value);
-  }, [lendingPair, borrowerBalance, availableNft]);
+    if (!lendingPair) return ethers.BigNumber.from(0);
+    return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance?.value ?? ethers.BigNumber.from(0));
+  }, [lendingPair, borrowerBalance]);
 
   // Prepare for actual import/mint transaction
   const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
