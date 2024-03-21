@@ -2,6 +2,8 @@ import { Token } from './Token';
 import { Address } from 'wagmi';
 import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
+import BrettLogo from '../assets/png/brett.png';
+import ToshiLogo from '../assets/png/toshi.png';
 import {
   ApeLogo,
   ArbLogo,
@@ -11,6 +13,7 @@ import {
   CbEthLogo,
   ConvexLogo,
   DaiLogo,
+  DegenLogo,
   FraxLogo,
   GmxLogo,
   LidoLogo,
@@ -25,6 +28,7 @@ import {
   RplLogo,
   SnxLogo,
   UniLogo,
+  UnknownTokenLogo,
   UsdbcLogo,
   UsdcLogo,
   UsdtLogo,
@@ -414,6 +418,12 @@ const BASED_BASE = new Token(
   BasedLogo
 );
 
+const DEGEN_BASE = new Token(base.id, '0x4ed4e862860bed51a9570b96d89af5e1b0efefed', 18, 'DEGEN', 'Degen', DegenLogo);
+
+const TOSHI_BASE = new Token(base.id, '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4', 18, 'TOSHI', 'Toshi', ToshiLogo);
+
+const BRETT_BASE = new Token(base.id, '0x532f27101965dd16442e59d40670faf5ebb142e4', 18, 'BRETT', 'Brett', BrettLogo);
+
 const BALD_BASE = new Token(base.id, '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8', 18, 'BALD', 'Bald', BaldLogo);
 
 const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
@@ -473,6 +483,9 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [BALD_BASE.address]: BALD_BASE,
     [BASED_BASE.address]: BASED_BASE,
     [USDBC_BASE.address]: USDBC_BASE,
+    [DEGEN_BASE.address]: DEGEN_BASE,
+    [TOSHI_BASE.address]: TOSHI_BASE,
+    [BRETT_BASE.address]: BRETT_BASE,
   },
 };
 
