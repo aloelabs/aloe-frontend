@@ -228,8 +228,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     })();
   }, [activeChain.id, cardInfo.token0.symbol, cardInfo.token1.symbol, setTokenQuotes]);
 
-  const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
-  const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
+  const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * boostFactor, cardInfo.token0.decimals);
+  const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * boostFactor, cardInfo.token1.decimals);
 
   const { apr0, apr1 } = useMemo(() => {
     if (!lendingPair) return { apr0: null, apr1: null };
@@ -278,6 +278,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
     const maxSlippage = parseFloat(maxSlippagePercentage) / 100;
+    const maxBorrowAmount0 = borrowAmount0.recklessMul(1 + maxSlippage);
+    const maxBorrowAmount1 = borrowAmount1.recklessMul(1 + maxSlippage);
+    const combinedMaxBorrowAmount = maxBorrowAmount0.add(maxBorrowAmount1.mul(GN.Q(112)));
     const inner = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24', 'uint224'],
       [
@@ -286,12 +289,12 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         position.upper,
         position.liquidity.toString(10),
         (boostFactor * 10000).toFixed(0),
-        GN.Q(224).recklessSub(maxSlippage).toBigNumber(),
+        combinedMaxBorrowAmount.toBigNumber(),
       ]
     ) as `0x${string}`;
     const actionId = 0;
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
-  }, [cardInfo, maxSlippagePercentage, boostFactor]);
+  }, [cardInfo, maxSlippagePercentage, borrowAmount0, borrowAmount1, boostFactor]);
   const enableHooks = cardInfo !== undefined;
 
   // Read who the manager is supposed to be
@@ -554,7 +557,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       </div>
       <div className='m-auto w-[300px]'>
         <MaxSlippageInput
-          tooltipContent='The maximum slippage you are willing to accept when importing your position. If the slippage exceeds this value, the transaction will revert.'
+          tooltipContent={`The maximum slippage you are willing to accept when importing your position. 
+          If the slippage exceeds this value, the transaction will revert.`}
           updateMaxSlippage={setSlippagePercentage}
         />
       </div>
