@@ -5,6 +5,7 @@ import BaldLogo from './bald.svg';
 import BasedLogo from './based.svg';
 import ConvexLogo from './convex.svg';
 import DaiLogo from './dai.svg';
+import DegenLogo from './degen.svg';
 import FraxLogo from './frax.svg';
 import GmxLogo from './gmx.svg';
 import LidoLogo from './lido.svg';
@@ -40,6 +41,7 @@ export {
   BasedLogo,
   ConvexLogo,
   DaiLogo,
+  DegenLogo,
   FraxLogo,
   LidoLogo,
   LyraLogo,

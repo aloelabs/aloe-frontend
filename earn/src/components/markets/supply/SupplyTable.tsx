@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -15,6 +15,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import { ChainContext } from '../../../App';
 import { ApyWithTooltip } from '../../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import SupplyModal from '../modal/SupplyModal';
@@ -110,6 +111,7 @@ export type SupplyTableProps = {
 
 export default function SupplyTable(props: SupplyTableProps) {
   const { rows, setPendingTxn } = props;
+  const { activeChain } = useContext(ChainContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
   const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
@@ -121,6 +123,11 @@ export default function SupplyTable(props: SupplyTableProps) {
 
   const { address: userAddress } = useAccount();
 
+  // Reset current page when chain changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeChain]);
+
   const pages: SupplyTableRow[][] = useMemo(() => {
     const pages: SupplyTableRow[][] = [];
     for (let i = 0; i < sortedRows.length; i += PAGE_SIZE) {
@@ -129,7 +136,8 @@ export default function SupplyTable(props: SupplyTableProps) {
     return pages;
   }, [sortedRows]);
 
-  if (pages.length === 0) {
+  // If there are no pages or the current page is out of bounds, return null
+  if (pages.length === 0 || pages.length < currentPage) {
     return null;
   }
 
