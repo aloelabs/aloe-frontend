@@ -79,7 +79,7 @@ const CardHeader = styled.div`
 
 const CardBody = styled.div`
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 3fr) 1fr 1fr 1fr;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -184,11 +184,15 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
             <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
               Total Supply
             </Text>
-            <div>
-              <Display size='L' className='inline-block mr-0.5'>
+            <div className='w-full flex whitespace-nowrap overflow-hidden items-baseline justify-center'>
+              <Display
+                size='L'
+                className='overflow-hidden text-ellipsis whitespace-nowrap mr-0.5'
+                title={formatTokenAmount(activeTotalSupply)}
+              >
                 {formatTokenAmount(activeTotalSupply)}
               </Display>
-              <Display size='S' className='inline-block ml-0.5'>
+              <Display size='S' className='ml-0.5'>
                 {activeAsset.symbol}
               </Display>
             </div>
