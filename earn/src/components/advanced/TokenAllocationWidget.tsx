@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
@@ -40,19 +42,18 @@ export type TokenAllocationWidgetProps = {
 export function TokenAllocationWidget(props: TokenAllocationWidgetProps) {
   const { borrower, tokenColors } = props;
 
-  if (!borrower) {
-    return null;
-  }
-
-  const currentTick = sqrtRatioToTick(borrower.sqrtPriceX96);
-  const totalAmount = borrower.assets.amountsAt(currentTick).reduce((acc, amount) => {
-    return acc + amount;
-  }, 0);
+  const totalAmount = useMemo(() => {
+    if (borrower === undefined) return 0;
+    const currentTick = sqrtRatioToTick(borrower.sqrtPriceX96);
+    return borrower.assets.amountsAt(currentTick).reduce((acc, amount) => {
+      return acc + amount;
+    }, 0);
+  }, [borrower]);
 
   return (
     <Container>
       <Text size='M'>Token Allocation</Text>
-      {totalAmount === 0 ? (
+      {borrower === undefined || totalAmount === 0 ? (
         <EmptyStateContainer>
           <StyledPieChartIcon />
           <Text size='S' color={ACCENT_COLOR} className='text-center'>
