@@ -18,8 +18,6 @@ import { BoostCardInfo } from '../../data/Uniboost';
 import MaxSlippageInput from '../common/MaxSlippageInput';
 
 const SECONDARY_COLOR = '#CCDFED';
-const SLIPPAGE_TOOLTIP_TEXT = `Slippage tolerance is the maximum price difference you are willing to
- accept between the estimated price and the execution price.`;
 
 enum ConfirmButtonState {
   WAITING_FOR_USER,
@@ -136,9 +134,8 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Burn Boosted Position'>
       <div className='w-full flex flex-col items-center justify-center gap-4'>
-        <div className='w-full flex flex-col gap-1'>
+        <div className='w-full flex flex-col gap-1 mt-6'>
           <MaxSlippageInput
-            tooltipContent={SLIPPAGE_TOOLTIP_TEXT}
             updateMaxSlippage={(value: string) => {
               setSlippagePercentage(value);
             }}

@@ -45,7 +45,7 @@ import { BoostCardInfo } from '../../data/Uniboost';
 import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
-import MaxSlippageInput from '../common/MaxSlippageInput';
+import SlippageWidget from './SlippageWidget';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -228,8 +228,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     })();
   }, [activeChain.id, cardInfo.token0.symbol, cardInfo.token1.symbol, setTokenQuotes]);
 
-  const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * boostFactor, cardInfo.token0.decimals);
-  const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * boostFactor, cardInfo.token1.decimals);
+  const borrowAmount0 = GN.fromNumber(cardInfo.amount0() * (boostFactor - 1), cardInfo.token0.decimals);
+  const borrowAmount1 = GN.fromNumber(cardInfo.amount1() * (boostFactor - 1), cardInfo.token1.decimals);
 
   const { apr0, apr1 } = useMemo(() => {
     if (!lendingPair) return { apr0: null, apr1: null };
@@ -278,9 +278,15 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
     const maxSlippage = parseFloat(maxSlippagePercentage) / 100;
-    const maxBorrowAmount0 = borrowAmount0.recklessMul(1 + maxSlippage);
-    const maxBorrowAmount1 = borrowAmount1.recklessMul(1 + maxSlippage);
-    const combinedMaxBorrowAmount = maxBorrowAmount0.add(maxBorrowAmount1.mul(GN.Q(112)));
+    const maxBorrowAmount0 = borrowAmount0
+      .recklessMul(1 + maxSlippage)
+      .toBigNumber()
+      .add(2);
+    const maxBorrowAmount1 = borrowAmount1
+      .recklessMul(1 + maxSlippage)
+      .toBigNumber()
+      .add(2);
+    const combinedMaxBorrowAmount = maxBorrowAmount0.add(maxBorrowAmount1.mul(GN.Q(112).toBigNumber()));
     const inner = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24', 'uint224'],
       [
@@ -289,7 +295,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         position.upper,
         position.liquidity.toString(10),
         (boostFactor * 10000).toFixed(0),
-        combinedMaxBorrowAmount.toBigNumber(),
+        combinedMaxBorrowAmount,
       ]
     ) as `0x${string}`;
     const actionId = 0;
@@ -496,7 +502,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
 
   return (
     <Container>
-      <Text size='L'>Boost Factor</Text>
+      <div className='w-full grid grid-flow-col grid-cols-3'>
+        <div />
+        <Text size='L'>Boost Factor</Text>
+        <div className='ml-auto'>
+          <SlippageWidget updateSlippagePercentage={setSlippagePercentage} />
+        </div>
+      </div>
       <SliderContainer>
         <Display size='M'>{`${boostFactor}x`}</Display>
         <LeverageSlider
@@ -555,13 +567,6 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
           </div>
         </div>
       </div>
-      <div className='m-auto w-[300px]'>
-        <MaxSlippageInput
-          tooltipContent={`The maximum slippage you are willing to accept when importing your position. 
-          If the slippage exceeds this value, the transaction will revert.`}
-          updateMaxSlippage={setSlippagePercentage}
-        />
-      </div>
       <div className='mt-6 mx-6'>
         <div className='flex flex-col gap-1 w-full text-start mb-4'>
           <Text size='M' weight='bold'>
@@ -569,9 +574,10 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='w-full text-start overflow-hidden text-ellipsis'>
             You're moving liquidity from a Uniswap NFT to an Aloe NFT and applying a{' '}
-            <strong>{boostFactor}x boost</strong>. As a result, you will earn swap fees {boostFactor}x faster, but also
-            pay interest to Aloe lenders and risk liquidation. Liquidation thresholds are indicated with (!) in the
-            graph to the left. You have selected a slippage tolerance of <strong>{maxSlippagePercentage}%</strong>.
+            <strong>{boostFactor.toFixed(1)}x boost</strong>. As a result, you will earn swap fees{' '}
+            {boostFactor.toFixed(1)}x faster, but also pay interest to Aloe lenders and risk liquidation. Liquidation
+            thresholds are indicated with (!) in the graph to the left. You have selected a slippage tolerance of{' '}
+            <strong>{maxSlippagePercentage}%</strong>.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
             You will need to provide an additional {GN.fromBigNumber(ethToSend, 18).toString(GNFormat.LOSSY_HUMAN)} ETH

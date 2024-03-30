@@ -9,6 +9,9 @@ import styled from 'styled-components';
 
 import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
+const SLIPPAGE_TOOLTIP_TEXT = `Slippage tolerance is the maximum price difference you are willing to
+ accept between the estimated price and the execution price.`;
+
 const PREDEFINED_MAX_SLIPPAGE_OPTIONS = [
   { label: 'Low (0.1%)', value: '0.10' },
   { label: 'Mid (0.5%)', value: '0.50' },
@@ -122,12 +125,11 @@ const CustomSlippagePercent = styled.span`
 
 export type MaxSlippageInputProps = {
   updateMaxSlippage: (value: string) => void;
-  tooltipContent: string;
   disabled?: boolean;
 };
 
 export default function MaxSlippageInput(props: MaxSlippageInputProps) {
-  const { updateMaxSlippage, tooltipContent, disabled } = props;
+  const { updateMaxSlippage, disabled } = props;
   const [tempSlippagePercentage, setTempSlippage] = useState('0.10');
   const [slippagePercentage, setSlippage] = useState('0.10');
 
@@ -139,10 +141,10 @@ export default function MaxSlippageInput(props: MaxSlippageInputProps) {
   }, [slippagePercentage]);
 
   return (
-    <div className='w-full flex flex-col gap-y-2 mt-6'>
+    <div className='w-full flex flex-col gap-y-2'>
       <Text size='S' weight='medium' color='rgba(130, 160, 182, 1)' className='flex gap-x-2 mb-1'>
         <Tooltip
-          content={tooltipContent}
+          content={SLIPPAGE_TOOLTIP_TEXT}
           buttonText='Max Slippage'
           buttonSize='S'
           position='bottom-left'
