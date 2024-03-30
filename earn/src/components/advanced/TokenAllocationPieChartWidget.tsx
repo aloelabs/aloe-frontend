@@ -149,7 +149,7 @@ const AllocationSection = styled.div<{ color: string }>`
   :first-child:after {
     content: '';
     position: absolute;
-    top: 63%;
+    top: 64%;
     left: 3px;
     width: 2px;
     height: 37%;
