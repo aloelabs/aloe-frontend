@@ -19,7 +19,7 @@ if (process.env.REACT_APP_SENTRY_DSN) {
     sampleRate: 1.0,
     tracesSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0.2,
+    replaysSessionSampleRate: 0.05,
   });
 }
 
