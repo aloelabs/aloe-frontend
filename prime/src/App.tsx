@@ -1,6 +1,7 @@
 import React, { Suspense, useContext, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
+import * as Sentry from '@sentry/react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
@@ -95,6 +96,10 @@ function AppBodyWrapper() {
   const account = useAccount();
   const network = useNetwork();
   const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
+
+  useEffect(() => {
+    Sentry.setTag('chain_name', activeChain.name);
+  }, [activeChain]);
 
   useEffect(() => {
     const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');

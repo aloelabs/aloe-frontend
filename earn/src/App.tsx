@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
+import * as Sentry from '@sentry/react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
@@ -155,6 +156,10 @@ function App() {
   const provider = useProvider({ chainId: activeChain.id });
 
   const value = { activeChain, setActiveChain };
+
+  useEffect(() => {
+    Sentry.setTag('chain_name', activeChain.name);
+  }, [activeChain]);
 
   useEffectOnce(() => {
     (async () => {
