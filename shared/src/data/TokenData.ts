@@ -3,6 +3,7 @@ import { Address } from 'wagmi';
 import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 import BrettLogo from '../assets/png/brett.png';
+import EthenaLogo from '../assets/png/ethena.png';
 import ToshiLogo from '../assets/png/toshi.png';
 import {
   ApeLogo,
@@ -28,7 +29,6 @@ import {
   RplLogo,
   SnxLogo,
   UniLogo,
-  UnknownTokenLogo,
   UsdbcLogo,
   UsdcLogo,
   UsdtLogo,
@@ -152,6 +152,8 @@ const BADGER_MAINNET = new Token(
   'Badger',
   BadgerLogo
 );
+
+const ENA_MAINNET = new Token(mainnet.id, '0x57e114b691db790c35207b2e685d4a43181e6061', 18, 'ENA', 'ENA', EthenaLogo);
 
 const DAI_OPTIMISM = new Token(
   optimism.id,
@@ -440,6 +442,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [RPL_MAINNET.address]: RPL_MAINNET,
     [MATIC_MAINNET.address]: MATIC_MAINNET,
     [LDO_MAINNET.address]: LDO_MAINNET,
+    [ENA_MAINNET.address]: ENA_MAINNET,
   },
   [goerli.id]: {
     [USDC_GOERLI.address]: USDC_GOERLI,
