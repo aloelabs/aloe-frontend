@@ -70,7 +70,8 @@ export class LendingPair {
     public rewardsRate0: number,
     public rewardsRate1: number,
     public factoryData: FactoryData,
-    public oracleData: OracleData
+    public oracleData: OracleData,
+    public lastWrite: Date
   ) {}
 
   equals(other: LendingPair) {
@@ -187,6 +188,11 @@ export async function getAvailableLendingPairs(
           methodName: 'consult',
           methodParameters: [market.pool, Q32],
         },
+        {
+          reference: `${market.pool}-oracleLastWrite`,
+          methodName: 'lastWrites',
+          methodParameters: [market.pool],
+        },
       ],
     });
 
@@ -284,7 +290,8 @@ export async function getAvailableLendingPairs(
         toImpreciseNumber(basics0[7], 18), // rewardsRate0
         toImpreciseNumber(basics1[7], 18), // rewardsRate1
         asFactoryData(factoryResult),
-        asOracleData(oracleResult)
+        asOracleData(oracleResult),
+        new Date(oracleReturnContexts[1].returnValues[1] * 1000) // lastWrite.time
       )
     );
   });
