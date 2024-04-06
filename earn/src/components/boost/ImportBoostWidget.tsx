@@ -286,7 +286,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
       .recklessMul(1 + maxSlippage)
       .toBigNumber()
       .add(2);
-    const combinedMaxBorrowAmount = maxBorrowAmount0.add(maxBorrowAmount1.mul(GN.Q(112).toBigNumber()));
+    // 112 bits for maxBorrowAmount0, 112 bits for maxBorrowAmount1
+    const combinedMaxBorrowAmount = maxBorrowAmount0.add(maxBorrowAmount1.shl(112));
     const inner = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'int24', 'int24', 'uint128', 'uint24', 'uint224'],
       [
