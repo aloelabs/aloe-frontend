@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_MD } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
 import styled from 'styled-components';
@@ -8,7 +9,6 @@ import tw from 'twin.macro';
 
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import { RESPONSIVE_BREAKPOINT_LG } from '../../data/constants/Breakpoints';
 import { rgb, rgba } from '../../util/Colors';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
@@ -45,10 +45,10 @@ function getCoordinatesForPercent(percent: number) {
 }
 
 const TokenAllocationWrapper = styled.div`
-  ${tw`w-full h-full mt-4 pt-2 flex flex-nowrap`}
+  ${tw`w-full h-full pt-2 flex flex-nowrap`}
   flex-direction: row;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
     flex-direction: column;
   }
 `;
@@ -61,8 +61,8 @@ const ExpandingPath = styled.path`
 `;
 
 const PieChartLabel = styled.div`
-  --width: 145.28px;
-  --height: 145.28px;
+  --width: 115.2px;
+  --height: 115.2px;
 
   position: absolute;
   width: var(--width);
@@ -93,10 +93,11 @@ const PieChartLabel = styled.div`
 `;
 
 const TokenAllocationBreakdown = styled.div`
-  ${tw`flex flex-col justify-center gap-y-12`};
+  ${tw`flex flex-row gap-x-12`};
   margin-left: 45px;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_LG}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
+    ${tw`flex flex-col justify-center gap-y-6`};
     margin-left: 0;
     margin-top: 32px;
   }
@@ -110,9 +111,9 @@ const LabelWrapper = styled.div`
 `;
 
 const TokenLabel = styled.div`
-  width: 80px;
+  width: 90px;
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 30px;
   color: rgba(255, 255, 255, 1);
   transition: color 0.15s linear;
@@ -297,9 +298,9 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
   const secondHalfOfSlices = slices.slice(slices.length / 2);
 
   return (
-    <div className='w-full flex flex-col items-start justify-start mb-8'>
+    <div className='w-full flex flex-col items-start justify-start'>
       <TokenAllocationWrapper>
-        <div className='w-[227px] h-[227px] relative'>
+        <div className='w-[180px] h-[180px] relative'>
           <PieChartContainer>
             <svg viewBox='-1 -1 2 2' overflow='visible'>
               {paths.map((path, index) => {
@@ -328,7 +329,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
                   <AllocationSection color={slice.color} key={index}>
                     <LabelWrapper>
                       <Text
-                        size='L'
+                        size='M'
                         weight='medium'
                         color={
                           activeIndex !== -1 && activeIndex !== slice.index
@@ -362,7 +363,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
               })}
             </div>
           </div>
-          <div className='flex items-center gap-4'>
+          <div className='flex items-center gap-4 w-full'>
             <TokenLabel className={activeIndex !== -1 && activeIndex < firstHalfOfSlices.length ? 'inactive' : ''}>
               {token1.symbol}
             </TokenLabel>
@@ -372,7 +373,7 @@ export default function TokenAllocationPieChartWidget(props: TokenAllocationPieC
                   <AllocationSection color={slice.color} key={index}>
                     <LabelWrapper>
                       <Text
-                        size='L'
+                        size='M'
                         weight='medium'
                         color={
                           activeIndex !== -1 && activeIndex !== slice.index
