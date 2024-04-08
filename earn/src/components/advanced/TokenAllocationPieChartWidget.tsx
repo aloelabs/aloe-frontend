@@ -16,7 +16,7 @@ import { rgb, rgba } from '../../util/Colors';
 const PIE_CHART_HOVER_GROWTH = 1.05;
 
 const PieChartContainer = styled.div`
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
 `;
 
 // MARK: Pie chart setup -------------------------------------------------------------
@@ -93,7 +93,7 @@ const PieChartLabel = styled.div`
 `;
 
 const TokenAllocationBreakdown = styled.div`
-  ${tw`flex flex-row gap-x-12`};
+  ${tw`flex flex-col justify-center gap-y-6`};
   margin-left: 45px;
 
   @media (max-width: ${RESPONSIVE_BREAKPOINT_MD}) {
