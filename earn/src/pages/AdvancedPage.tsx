@@ -32,6 +32,7 @@ import RemoveCollateralModal from '../components/advanced/modal/RemoveCollateral
 import RepayModal from '../components/advanced/modal/RepayModal';
 import WithdrawAnteModal from '../components/advanced/modal/WithdrawAnteModal';
 import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/SmartWalletButton';
+import { TokenAllocationWidget } from '../components/advanced/TokenAllocationWidget';
 import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
@@ -40,6 +41,7 @@ import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { useLendingPair } from '../data/hooks/UseLendingPairs';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../data/Uniswap';
+import { getProminentColor } from '../util/Colors';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
@@ -155,6 +157,7 @@ export default function AdvancedPage() {
   const [openedModal, setOpenedModal] = useState(OpenedModal.NONE);
   const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -201,6 +204,29 @@ export default function AdvancedPage() {
       setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
     })();
   }, [userAddress, borrowerLensContract, provider, availablePools, setBorrowerNftBorrowers]);
+
+  const uniqueTokens = useMemo(() => {
+    const tokenSet = new Set<Token>();
+    borrowerNftBorrowers?.forEach((borrower) => {
+      tokenSet.add(borrower.token0);
+      tokenSet.add(borrower.token1);
+    });
+    return Array.from(tokenSet.values());
+  }, [borrowerNftBorrowers]);
+
+  // MARK: Computing token colors
+  useEffect(() => {
+    (async () => {
+      // Compute colors for each token logo (local, but still async)
+      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
+      const colors = await Promise.all(colorPromises);
+
+      // Convert response to the desired Map format
+      const addressToColorMap: Map<Address, string> = new Map();
+      uniqueTokens.forEach((token, index) => addressToColorMap.set(token.address, colors[index]));
+      setTokenColors(addressToColorMap);
+    })();
+  }, [uniqueTokens, setTokenColors]);
 
   // MARK: Reset search param if margin account doesn't exist
   useEffect(() => {
@@ -359,6 +385,7 @@ export default function AdvancedPage() {
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
+            <TokenAllocationWidget borrower={selectedMarginAccount} tokenColors={tokenColors} />
             <GlobalStatsTable market={market} />
             {selectedMarginAccount && (
               <div className='flex flex-col gap-4 mb-8'>
