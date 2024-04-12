@@ -252,11 +252,17 @@ export default function MarketsPage() {
 
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
+    const ethBalance = balancesMap.get('0x0000000000000000000000000000000000000000');
     lendingPairs.forEach((pair) => {
+      const isToken0Weth = pair.token0.name === 'Wrapped Ether';
+      const isToken1Weth = pair.token1.name === 'Wrapped Ether';
+
       const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
       const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
-      const token0Balance = balancesMap.get(pair.token0.address)?.value || 0;
-      const token1Balance = balancesMap.get(pair.token1.address)?.value || 0;
+      const token0Balance =
+        (balancesMap.get(pair.token0.address)?.value || 0) + ((isToken0Weth && ethBalance?.value) || 0);
+      const token1Balance =
+        (balancesMap.get(pair.token1.address)?.value || 0) + ((isToken1Weth && ethBalance?.value) || 0);
       const kitty0Balance = balancesMap.get(pair.kitty0.address)?.value || 0;
       const kitty1Balance = balancesMap.get(pair.kitty1.address)?.value || 0;
 

@@ -311,6 +311,8 @@ export async function getLendingPairBalances(
     tokenSet.add(pair.token1);
   });
 
+  const ethBalance = await provider.getBalance(userAddress);
+
   const multicall = new Multicall({
     ethersProvider: provider,
     multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
@@ -360,6 +362,12 @@ export async function getLendingPairBalances(
   const deprecatedLendingPairBalancesArray: LendingPairBalances[] = [];
   const balancesMap: LendingPairBalancesMap = new Map();
 
+  balancesMap.set('0x0000000000000000000000000000000000000000', {
+    value: GN.fromBigNumber(ethBalance, 18).toNumber(),
+    gn: GN.fromBigNumber(ethBalance, 18),
+    form: 'raw',
+  });
+
   lendingPairs.forEach((lendingPair) => {
     const hexes = [
       `${lendingPair.token0.address}.balanceOf`,
@@ -382,8 +390,14 @@ export async function getLendingPairBalances(
     balancesMap.set(lendingPair.kitty1.address, { value: gns[3].toNumber(), gn: gns[3], form: 'underlying' });
 
     deprecatedLendingPairBalancesArray.push({
-      token0Balance: toImpreciseNumber(BigNumber.from(hexes[0]), lendingPair.token0.decimals),
-      token1Balance: toImpreciseNumber(BigNumber.from(hexes[1]), lendingPair.token1.decimals),
+      token0Balance: toImpreciseNumber(
+        BigNumber.from(hexes[0]).add(lendingPair.token0.name === 'Wrapped Ether' ? ethBalance : 0),
+        lendingPair.token0.decimals
+      ),
+      token1Balance: toImpreciseNumber(
+        BigNumber.from(hexes[1]).add(lendingPair.token1.name === 'Wrapped Ether' ? ethBalance : 0),
+        lendingPair.token1.decimals
+      ),
       kitty0Balance: toImpreciseNumber(BigNumber.from(hexes[2]), lendingPair.token0.decimals),
       kitty1Balance: toImpreciseNumber(BigNumber.from(hexes[3]), lendingPair.token1.decimals),
     });

@@ -33,7 +33,7 @@ export const routerAbi = [
       { name: 'signature', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: 'shares', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -55,7 +55,7 @@ export const routerAbi = [
       { name: 's', type: 'bytes32', internalType: 'bytes32' },
     ],
     outputs: [{ name: 'shares', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
   },
   {
     type: 'function',

@@ -3,6 +3,7 @@ import { base } from '../BaseChain';
 import { Address } from 'wagmi';
 
 import { ArbitrumLogo, BaseLogo, EthereumLogo, OptimismLogo } from '../../assets/svg/chains';
+import { GN } from '../GoodNumber';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
@@ -40,6 +41,13 @@ export const APPROX_SECONDS_PER_BLOCK: { [chainId: number]: number } = {
   [optimism.id]: 2,
   [arbitrum.id]: 0.25,
   [base.id]: 2,
+};
+
+export const ETH_RESERVED_FOR_GAS: { [chainId: number]: GN } = {
+  [mainnet.id]: GN.fromDecimalString('0.1', 18),
+  [optimism.id]: GN.fromDecimalString('0.005', 18),
+  [arbitrum.id]: GN.fromDecimalString('0.005', 18),
+  [base.id]: GN.fromDecimalString('0.005', 18),
 };
 
 export const MANAGER_NAME_MAP: { [manager: Address]: string } = {
