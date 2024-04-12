@@ -23,6 +23,7 @@ import {
   UniswapPositionCardContainer,
   UniswapPositionCardWrapper,
 } from '../common/UniswapPositionCard';
+import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
 import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -51,12 +52,21 @@ type UniswapPositionCardProps = {
   borrower?: BorrowerNftBorrower;
   uniswapPosition?: UniswapPosition;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
+  hasImportableUniswapNFT: boolean;
+  setIsImportingUniswapNFT: (isImporting: boolean) => void;
   setSelectedUniswapPosition: (uniswapPosition: SelectedUniswapPosition | null) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function UniswapPositionCard(props: UniswapPositionCardProps) {
-  const { borrower, uniswapPosition, withdrawableUniswapNFTs, setSelectedUniswapPosition } = props;
+  const {
+    borrower,
+    uniswapPosition,
+    withdrawableUniswapNFTs,
+    hasImportableUniswapNFT,
+    setIsImportingUniswapNFT,
+    setSelectedUniswapPosition,
+  } = props;
 
   if (!borrower || !uniswapPosition) {
     return (
@@ -64,6 +74,16 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
         <Text size='S' color={ACCENT_COLOR} className='text-center'>
           Empty
         </Text>
+        <div className='flex justify-center items-center mt-4'>
+          <FilledGradientButton
+            size='S'
+            disabled={!hasImportableUniswapNFT}
+            onClick={() => setIsImportingUniswapNFT(true)}
+            fillWidth
+          >
+            Import
+          </FilledGradientButton>
+        </div>
       </UniswapPositionCardWrapper>
     );
   }
@@ -168,13 +188,18 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
 export type UniswapPositionListProps = {
   borrower?: BorrowerNftBorrower;
+  importableUniswapNFTPositions: Map<number, UniswapNFTPosition>;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {
-  const { borrower, withdrawableUniswapNFTs, setPendingTxn } = props;
+  const { borrower, importableUniswapNFTPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
+  const [isImportingUniswapNFT, setIsImportingUniswapNFT] = useState(false);
+
+  const defaultImportableNFTPosition =
+    importableUniswapNFTPositions.size > 0 ? Array.from(importableUniswapNFTPositions.entries())[0] : null;
 
   return (
     <>
@@ -188,6 +213,8 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
                 borrower={borrower}
                 uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
+                hasImportableUniswapNFT={importableUniswapNFTPositions.size > 0}
+                setIsImportingUniswapNFT={() => setIsImportingUniswapNFT(true)}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
               />
@@ -204,6 +231,19 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}
           setIsOpen={() => {
             setSelectedUniswapPosition(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {borrower && importableUniswapNFTPositions.size > 0 && defaultImportableNFTPosition && (
+        <ImportUniswapNFTModal
+          isOpen={isImportingUniswapNFT}
+          borrower={borrower}
+          uniswapNFTPositions={importableUniswapNFTPositions}
+          defaultUniswapNFTPosition={defaultImportableNFTPosition}
+          existingUniswapPositions={borrower.assets.uniswapPositions}
+          setIsOpen={() => {
+            setIsImportingUniswapNFT(false);
           }}
           setPendingTxn={setPendingTxn}
         />

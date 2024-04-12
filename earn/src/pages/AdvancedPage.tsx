@@ -356,6 +356,7 @@ export default function AdvancedPage() {
             />
             <UniswapPositionList
               borrower={selectedMarginAccount}
+              importableUniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
