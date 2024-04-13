@@ -25,7 +25,7 @@ import { Address } from 'wagmi';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
-import { UNISWAP_POOL_DENYLIST } from './constants/Addresses';
+import { UNISWAP_POOL_DENYLIST, ZERO_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
 import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
@@ -362,7 +362,7 @@ export async function getLendingPairBalances(
   const deprecatedLendingPairBalancesArray: LendingPairBalances[] = [];
   const balancesMap: LendingPairBalancesMap = new Map();
 
-  balancesMap.set('0x0000000000000000000000000000000000000000', {
+  balancesMap.set(ZERO_ADDRESS, {
     value: GN.fromBigNumber(ethBalance, 18).toNumber(),
     gn: GN.fromBigNumber(ethBalance, 18),
     form: 'raw',
