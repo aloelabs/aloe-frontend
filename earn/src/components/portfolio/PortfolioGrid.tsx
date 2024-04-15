@@ -155,9 +155,9 @@ export default function PortfolioGrid(props: PortfolioGridProps) {
   const { balances, activeAsset, tokenColors, tokenQuotes, tokenPriceData, errorLoadingPrices } = props;
   const activeAssetAddress = activeAsset != null ? activeAsset.address : null;
   const currentTokenQuote =
-    activeAssetAddress != null ? tokenQuotes.find((quote) => quote.token.address === activeAssetAddress) : undefined;
+    activeAssetAddress != null ? tokenQuotes.find((quote) => quote.token?.address === activeAssetAddress) : undefined;
   const currentTokenPriceData =
-    activeAsset != null ? tokenPriceData.find((data) => data.token.address === activeAsset.address) : undefined;
+    activeAsset != null ? tokenPriceData.find((data) => data.token?.address === activeAsset.address) : undefined;
   const activeColor = activeAsset ? tokenColors.get(activeAsset.address) : undefined;
   return (
     <Grid>
