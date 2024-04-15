@@ -17,18 +17,19 @@ const DEFAULT_NAV_LINKS: NavBarLink[] = [
     label: 'Markets',
     to: '/markets',
   },
-];
-
-const EXTENDED_NAV_LINKS: NavBarLink[] = [
-  ...DEFAULT_NAV_LINKS,
-  {
-    label: 'Boost',
-    to: '/boost',
-  },
   {
     label: 'Advanced',
     to: '/borrow',
   },
+];
+
+const EXTENDED_NAV_LINKS: NavBarLink[] = [
+  ...DEFAULT_NAV_LINKS.slice(0, 2),
+  {
+    label: 'Boost',
+    to: '/boost',
+  },
+  ...DEFAULT_NAV_LINKS.slice(2),
 ];
 
 const Nav = styled.nav`

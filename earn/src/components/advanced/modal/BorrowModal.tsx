@@ -232,15 +232,18 @@ export default function BorrowModal(props: BorrowModalProps) {
   }
 
   // TODO: use GN
-  const maxBorrowsBasedOnHealth = maxBorrowAndWithdraw(
-    borrower.assets,
-    borrower.liabilities,
-    borrower.sqrtPriceX96,
-    borrower.iv,
-    borrower.nSigma,
-    borrower.token0.decimals,
-    borrower.token1.decimals
-  )[isToken0 ? 0 : 1];
+  const maxBorrowsBasedOnHealth = Math.max(
+    0,
+    maxBorrowAndWithdraw(
+      borrower.assets,
+      borrower.liabilities,
+      borrower.sqrtPriceX96,
+      borrower.iv,
+      borrower.nSigma,
+      borrower.token0.decimals,
+      borrower.token1.decimals
+    )[isToken0 ? 0 : 1]
+  );
 
   const max = Math.min(
     maxBorrowsBasedOnHealth,
