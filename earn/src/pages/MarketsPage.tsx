@@ -20,13 +20,13 @@ import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
+import { ZERO_ADDRESS } from '../data/constants/Addresses';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
-import { ZERO_ADDRESS } from '../data/constants/Addresses';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';

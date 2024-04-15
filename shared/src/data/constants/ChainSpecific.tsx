@@ -50,16 +50,17 @@ export const ETH_RESERVED_FOR_GAS: { [chainId: number]: GN } = {
   [base.id]: GN.fromDecimalString('0.005', 18),
 };
 
+// TODO: better way of doing this so we don't forget to update it
 export const MANAGER_NAME_MAP: { [manager: Address]: string } = {
   '0xBb5A35B80b15A8E5933fDC11646A20f6159Dd061': 'SimpleManager',
   '0x2b7E3A41Eac757CC1e8e9E61a4Ad5C9D6421516e': 'BorrowerNFTMultiManager',
   '0xA07FD687882FfE7380A044e7542bDAc6F8672Bf7': 'BorrowerNFTSimpleManager',
   '0xe1Bf15D99330E684020622856916F854c9322CB6': 'BorrowerNFTWithdrawManager',
-  '0x3EE236D69F6950525ff317D7a872439F09902C65': 'UniswapNFTManager',
-  '0x7357E37a60839DE89A52861Cf50851E317FFBE71': 'UniswapNFTManager',
+  '0xeDE551885bC51C46Bb0da6AD0b6268396EB8aeBf': 'UniswapNFTManager',
+  '0xe56B8a872bf924Ed06929cEA57EFb1FeA58CbFB7': 'UniswapNFTManager',
   '0x3Bb9F64b0e6b15dD5792A008c06E5c4Dc9d23D8f': 'FrontendManager',
-  '0xB6B7521cd3bd116432FeD94c2262Dd02BA616Db4': 'BoostManager',
-  '0x8E287b280671700EBE66A908A56C648f930b73b4': 'BoostManager',
+  '0xB08f5f4b1B9eE99e82353c9B4B499f46d98db1B5': 'BoostManager',
+  '0xC3ac51872F017cf23a815F6A952e612cB69C5482': 'BoostManager',
   '0x6BDa468b1d473028938585a04eC3c62dcFF5309B': 'Permit2Manager',
 };
 
