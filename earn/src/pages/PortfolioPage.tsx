@@ -84,12 +84,12 @@ export type PriceEntry = {
 };
 
 export type TokenQuote = {
-  token: Token;
+  token?: Token;
   price: number;
 };
 
 export type TokenPriceData = {
-  token: Token;
+  token?: Token;
   priceEntries: PriceEntry[];
 };
 
@@ -175,13 +175,13 @@ export default function PortfolioPage() {
       }
       const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, symbol)!,
+          token: getTokenBySymbol(activeChain.id, symbol),
           price: data.price,
         };
       });
       const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
         return {
-          token: getTokenBySymbol(activeChain.id, symbol)!,
+          token: getTokenBySymbol(activeChain.id, symbol),
           priceEntries: data.prices,
         };
       });
@@ -240,8 +240,8 @@ export default function PortfolioPage() {
 
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
-      const token0Quote = tokenQuotes.find((quote) => quote.token.address === pair.token0.address);
-      const token1Quote = tokenQuotes.find((quote) => quote.token.address === pair.token1.address);
+      const token0Quote = tokenQuotes.find((quote) => quote.token?.address === pair.token0.address);
+      const token1Quote = tokenQuotes.find((quote) => quote.token?.address === pair.token1.address);
       const token0Price = token0Quote?.price || 0;
       const token1Price = token1Quote?.price || 0;
       const pairName: string = `${pair.token0.symbol}-${pair.token1.symbol}`;

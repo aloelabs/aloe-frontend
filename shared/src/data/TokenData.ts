@@ -1,6 +1,6 @@
 import { Token } from './Token';
 import { Address } from 'wagmi';
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet } from 'wagmi/chains';
 
 import BrettLogo from '../assets/png/brett.png';
 import EthenaLogo from '../assets/png/ethena.png';
@@ -38,33 +38,6 @@ import {
   WstEthLogo,
 } from '../assets/svg/tokens';
 import { base } from './BaseChain';
-
-const USDC_GOERLI = new Token(
-  goerli.id,
-  '0x3c80ca907ee39f6c3021b66b5a55ccc18e07141a',
-  6,
-  'USDC',
-  'Aloe Mock USDC',
-  UsdcLogo
-);
-
-const WBTC_GOERLI = new Token(
-  goerli.id,
-  '0x886055958cdf2635ff47a2071264a3413d26f959',
-  8,
-  'WBTC',
-  'Aloe Mock WBTC',
-  WbtcLogo
-);
-
-const WETH_GOERLI = new Token(
-  goerli.id,
-  '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6',
-  18,
-  'WETH',
-  'Aloe Mock WETH',
-  WethLogo
-);
 
 const USDC_MAINNET = new Token(
   mainnet.id,
@@ -443,11 +416,6 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [MATIC_MAINNET.address]: MATIC_MAINNET,
     [LDO_MAINNET.address]: LDO_MAINNET,
     [ENA_MAINNET.address]: ENA_MAINNET,
-  },
-  [goerli.id]: {
-    [USDC_GOERLI.address]: USDC_GOERLI,
-    [WBTC_GOERLI.address]: WBTC_GOERLI,
-    [WETH_GOERLI.address]: WETH_GOERLI,
   },
   [optimism.id]: {
     [BRIDGED_USDC_OPTIMISM.address]: BRIDGED_USDC_OPTIMISM,

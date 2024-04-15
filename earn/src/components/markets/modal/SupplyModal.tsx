@@ -8,7 +8,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
@@ -75,8 +75,9 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type DepositButtonProps = {
-  depositAmount: GN;
-  depositBalance: GN;
+  supplyAmount: GN;
+  userBalanceTotal: GN;
+  userBalanceToken: GN;
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
@@ -85,15 +86,19 @@ type DepositButtonProps = {
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
+  const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
+    props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
+
+  const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
+  const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
 
   const {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], supplyAmountToken);
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
@@ -107,6 +112,9 @@ function DepositButton(props: DepositButtonProps) {
       BigNumber.from(permit2Result.deadline),
       permit2Result.signature ?? '0x',
     ],
+    overrides: {
+      value: supplyAmountEth?.toBigNumber(),
+    },
     chainId: activeChain.id,
     enabled: permit2State === Permit2State.DONE,
   });
@@ -142,9 +150,9 @@ function DepositButton(props: DepositButtonProps) {
   let confirmButtonState: ConfirmButtonState;
   if (isPending) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
-  } else if (depositAmount.isZero()) {
+  } else if (supplyAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (depositAmount.gt(depositBalance)) {
+  } else if (supplyAmount.gt(userBalanceTotal)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -193,7 +201,7 @@ export default function SupplyModal(props: SupplyModalProps) {
   const { activeChain } = useContext(ChainContext);
   const { address: userAddress } = useAccount();
 
-  const { refetch: refetchBalance, data: userBalanceResult } = useBalance({
+  const { refetch: refetchBalanceToken, data: tokenBalanceResult } = useBalance({
     address: userAddress,
     token: selectedRow.asset.address,
     chainId: activeChain.id,
@@ -201,17 +209,33 @@ export default function SupplyModal(props: SupplyModalProps) {
     enabled: isOpen,
   });
 
+  const isWeth = selectedRow.asset.name === 'Wrapped Ether';
+  const { refetch: refetchBalanceEth, data: ethBalanceResult } = useBalance({
+    address: userAddress,
+    chainId: activeChain.id,
+    watch: false,
+    enabled: isOpen && isWeth,
+  });
+
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => refetchBalance(), 13_000);
+    interval = setInterval(() => {
+      refetchBalanceToken();
+      refetchBalanceEth();
+    }, 13_000);
     return () => {
       if (interval != null) {
         clearInterval(interval);
       }
     };
-  }, [refetchBalance]);
+  }, [refetchBalanceToken, refetchBalanceEth]);
 
-  const userBalance = GN.fromDecimalString(userBalanceResult?.formatted ?? '0', selectedRow.asset.decimals);
+  const tokenBalance = GN.fromBigNumber(tokenBalanceResult?.value ?? BigNumber.from(0), selectedRow.asset.decimals);
+  const ethBalance = GN.fromBigNumber(ethBalanceResult?.value ?? BigNumber.from(0), 18);
+  const userBalance = isWeth
+    ? tokenBalance.add(GN.max(ethBalance.sub(ETH_RESERVED_FOR_GAS[activeChain.id]), GN.zero(18)))
+    : tokenBalance;
+
   const supplyAmount = GN.fromDecimalString(amount || '0', selectedRow.asset.decimals);
   const apyPercentage = roundPercentage(selectedRow.apy, 2).toFixed(2);
 
@@ -273,8 +297,9 @@ export default function SupplyModal(props: SupplyModalProps) {
         </div>
         <DepositButton
           accountAddress={userAddress ?? '0x'}
-          depositAmount={supplyAmount}
-          depositBalance={userBalance}
+          supplyAmount={supplyAmount}
+          userBalanceTotal={userBalance}
+          userBalanceToken={tokenBalance}
           kitty={selectedRow.kitty}
           token={selectedRow.asset}
           setIsOpen={setIsOpen}

@@ -8,9 +8,9 @@ import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -76,8 +76,9 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type DepositButtonProps = {
-  depositAmount: GN;
-  depositBalance: GN;
+  supplyAmount: GN;
+  userBalanceTotal: GN;
+  userBalanceToken: GN;
   token: Token;
   kitty: Kitty;
   accountAddress: Address;
@@ -86,15 +87,19 @@ type DepositButtonProps = {
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { depositAmount, depositBalance, token, kitty, accountAddress, setIsOpen, setPendingTxn } = props;
+  const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
+    props;
   const { activeChain } = useContext(ChainContext);
   const [isPending, setIsPending] = useState(false);
+
+  const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
+  const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
 
   const {
     state: permit2State,
     action: permit2Action,
     result: permit2Result,
-  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], depositAmount);
+  } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], supplyAmountToken);
 
   const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
@@ -108,6 +113,9 @@ function DepositButton(props: DepositButtonProps) {
       BigNumber.from(permit2Result.deadline),
       permit2Result.signature ?? '0x',
     ],
+    overrides: {
+      value: supplyAmountEth?.toBigNumber(),
+    },
     chainId: activeChain.id,
     enabled: permit2State === Permit2State.DONE,
   });
@@ -143,9 +151,9 @@ function DepositButton(props: DepositButtonProps) {
   let confirmButtonState: ConfirmButtonState;
   if (isPending) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
-  } else if (depositAmount.isZero()) {
+  } else if (supplyAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (depositAmount.gt(depositBalance)) {
+  } else if (supplyAmount.gt(userBalanceTotal)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -215,18 +223,27 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
   }, [defaultOption]);
 
   // Get the user's balance of the selected token
-  const { refetch: refetchDepositBalance, data: depositBalance } = useBalance({
+  const { refetch: refetchBalanceToken, data: tokenBalanceResult } = useBalance({
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
     enabled: isOpen,
   });
 
+  const isWeth = selectedOption.name === 'Wrapped Ether';
+  const { refetch: refetchBalanceEth, data: ethBalanceResult } = useBalance({
+    address: account?.address ?? '0x',
+    chainId: activeChain.id,
+    watch: false,
+    enabled: isOpen && isWeth,
+  });
+
   useEffect(() => {
     let interval: NodeJS.Timer | null = null;
     if (isOpen) {
       interval = setInterval(() => {
-        refetchDepositBalance();
+        refetchBalanceToken();
+        refetchBalanceEth();
       }, 13_000);
     }
     if (!isOpen && interval != null) {
@@ -237,7 +254,7 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
         clearInterval(interval);
       }
     };
-  }, [refetchDepositBalance, isOpen]);
+  }, [refetchBalanceToken, refetchBalanceEth, isOpen]);
 
   // Get the active kitty that corresponds to the selected token and is in
   // the selected token / collateral token lending pair
@@ -261,8 +278,13 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
       ? selectedPairOption.token1
       : selectedPairOption.token0;
 
-  const gnDepositAmount = GN.fromDecimalString(inputValue || '0', selectedOption.decimals);
-  const gnDepositBalance = GN.fromDecimalString(depositBalance?.formatted ?? '0', selectedOption.decimals);
+  const tokenBalance = GN.fromBigNumber(tokenBalanceResult?.value ?? BigNumber.from(0), selectedOption.decimals);
+  const ethBalance = GN.fromBigNumber(ethBalanceResult?.value ?? BigNumber.from(0), 18);
+  const userBalance = isWeth
+    ? tokenBalance.add(GN.max(ethBalance.sub(ETH_RESERVED_FOR_GAS[activeChain.id]), GN.zero(18)))
+    : tokenBalance;
+
+  const supplyAmount = GN.fromDecimalString(inputValue || '0', selectedOption.decimals);
 
   return (
     <Modal
@@ -285,8 +307,8 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
             <BaseMaxButton
               size='L'
               onClick={() => {
-                if (depositBalance != null) {
-                  setInputValue(depositBalance?.formatted);
+                if (tokenBalanceResult != null) {
+                  setInputValue(userBalance.toString(GNFormat.DECIMAL));
                 }
               }}
             >
@@ -369,8 +391,9 @@ export default function EarnInterestModal(props: EarnInterestModalProps) {
         </div>
         <div className='w-full'>
           <DepositButton
-            depositAmount={gnDepositAmount}
-            depositBalance={gnDepositBalance}
+            supplyAmount={supplyAmount}
+            userBalanceTotal={userBalance}
+            userBalanceToken={tokenBalance}
             token={selectedOption}
             kitty={activeKitty}
             accountAddress={account.address ?? '0x'}
