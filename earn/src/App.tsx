@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
@@ -144,6 +144,8 @@ function AppBodyWrapper() {
 }
 
 function App() {
+  const mounted = useRef(false);
+
   const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
@@ -151,12 +153,18 @@ function App() {
     isLoading: true,
   });
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
-  const [shouldFetchLendingPairs, setShouldFetchLendingPairs] = useChainDependentState(true, activeChain.id);
 
   const { address: userAddress } = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
 
-  const value = { activeChain, setActiveChain };
+  const refetch = useCallback(async () => {
+    const chainId = (await provider.getNetwork()).chainId;
+    const res = await getAvailableLendingPairs(chainId, provider);
+    if (mounted.current) setLendingPairs(res);
+  }, [provider, setLendingPairs]);
+
+  const lendingPairsContextValue = useMemo(() => ({ lendingPairs, refetch }), [lendingPairs, refetch]);
+  const chainContextValue = { activeChain, setActiveChain };
 
   useEffect(() => {
     Sentry.setTag('chain_name', activeChain.name);
@@ -185,23 +193,12 @@ function App() {
   }, [userAddress, setAccountRisk]);
 
   useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      if (!shouldFetchLendingPairs) return;
-
-      const chainId = (await provider.getNetwork()).chainId;
-      const res = await getAvailableLendingPairs(chainId, provider);
-      if (mounted) {
-        setShouldFetchLendingPairs(false);
-        setLendingPairs(res);
-      }
-    })();
-
+    mounted.current = true;
+    refetch();
     return () => {
-      mounted = false;
+      mounted.current = false;
     };
-  }, [provider, setLendingPairs, shouldFetchLendingPairs, setShouldFetchLendingPairs]);
+  }, [refetch]);
 
   return (
     <>
@@ -209,8 +206,8 @@ function App() {
         <WagmiProvider>
           <AccountRiskContext.Provider value={accountRisk}>
             <GeoFencingContext.Provider value={geoFencingInfo}>
-              <ChainContext.Provider value={value}>
-                <LendingPairsContext.Provider value={{ lendingPairs, refetch: () => setShouldFetchLendingPairs(true) }}>
+              <ChainContext.Provider value={chainContextValue}>
+                <LendingPairsContext.Provider value={lendingPairsContextValue}>
                   <ScrollToTop />
                   <AppBodyWrapper />
                 </LendingPairsContext.Provider>
