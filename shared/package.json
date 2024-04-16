@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "main": "./lib/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "directories": {
     "lib": "lib"
   },
