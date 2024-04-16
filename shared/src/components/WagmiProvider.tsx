@@ -110,7 +110,7 @@ const { chains, provider, webSocketProvider } = configureChains(ALL_CHAINS, prov
 const connectors: Connector[] = [
   new InjectedConnector({
     chains,
-    options: { shimDisconnect: true },
+    options: { shimDisconnect: false },
   }),
   new CoinbaseWalletConnector({
     chains,
