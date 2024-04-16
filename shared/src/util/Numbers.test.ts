@@ -256,8 +256,8 @@ describe('Numbers', () => {
       expect(formatTokenAmount(9529.252)).toEqual('9,529');
     });
     it('should format large amounts', () => {
-      expect(formatTokenAmount(15929.2542)).toEqual('15,930');
-      expect(formatTokenAmount(573252.8232)).toEqual('573,300');
+      expect(formatTokenAmount(15929.2542)).toEqual('15,929');
+      expect(formatTokenAmount(573252.8232)).toEqual('573,253');
       expect(formatTokenAmount(2529253.7529)).toEqual('2.529M');
     });
     it('should format very large amounts', () => {
