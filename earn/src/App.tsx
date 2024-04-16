@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
@@ -144,13 +144,14 @@ function AppBodyWrapper() {
 }
 
 function App() {
-  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
+  const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
     isAllowed: false,
     isLoading: true,
   });
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
+  const [shouldFetchLendingPairs, setShouldFetchLendingPairs] = useChainDependentState(true, activeChain.id);
 
   const { address: userAddress } = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
@@ -187,15 +188,20 @@ function App() {
     let mounted = true;
 
     (async () => {
+      if (!shouldFetchLendingPairs) return;
+
       const chainId = (await provider.getNetwork()).chainId;
       const res = await getAvailableLendingPairs(chainId, provider);
-      if (mounted) setLendingPairs(res);
+      if (mounted) {
+        setShouldFetchLendingPairs(false);
+        setLendingPairs(res);
+      }
     })();
 
     return () => {
       mounted = false;
     };
-  }, [provider, setLendingPairs]);
+  }, [provider, setLendingPairs, shouldFetchLendingPairs, setShouldFetchLendingPairs]);
 
   return (
     <>
@@ -204,7 +210,7 @@ function App() {
           <AccountRiskContext.Provider value={accountRisk}>
             <GeoFencingContext.Provider value={geoFencingInfo}>
               <ChainContext.Provider value={value}>
-                <LendingPairsContext.Provider value={lendingPairs}>
+                <LendingPairsContext.Provider value={{ lendingPairs, refetch: () => setShouldFetchLendingPairs(true) }}>
                   <ScrollToTop />
                   <AppBodyWrapper />
                 </LendingPairsContext.Provider>

@@ -4,15 +4,18 @@ import { Address } from 'wagmi';
 
 import { LendingPair } from '../LendingPair';
 
-export const LendingPairsContext = createContext<LendingPair[] | null>(null);
+export const LendingPairsContext = createContext<{ lendingPairs: LendingPair[] | null; refetch?: () => void }>({
+  lendingPairs: null,
+});
 
 export function useLendingPairs() {
   const ctxt = useContext(LendingPairsContext);
 
   return useMemo(
     () => ({
-      isLoading: ctxt === null,
-      lendingPairs: ctxt ?? [],
+      isLoading: ctxt.lendingPairs === null,
+      lendingPairs: ctxt.lendingPairs ?? [],
+      refetch: ctxt.refetch,
     }),
     [ctxt]
   );
@@ -23,8 +26,8 @@ export function useLendingPair(token0?: Address, token1?: Address) {
 
   const { lendingPairs } = useMemo(
     () => ({
-      isLoading: ctxt === null,
-      lendingPairs: ctxt ?? [],
+      isLoading: ctxt.lendingPairs === null,
+      lendingPairs: ctxt.lendingPairs ?? [],
     }),
     [ctxt]
   );
