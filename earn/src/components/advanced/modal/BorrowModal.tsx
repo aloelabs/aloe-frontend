@@ -1,6 +1,5 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
-import { CheckIcon } from '@heroicons/react/solid';
 import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -9,7 +8,6 @@ import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
-import ToggleButton from 'shared/lib/components/common/ToggleButton';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
@@ -35,17 +33,11 @@ const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
-const CHECKBOX_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
-const CHECKBOX_BG_COLOR_ACTIVE = 'rgba(82, 182, 154, 1)';
-const CheckContainer = styled.div`
-  width: 16px;
-  height: 16px;
-  background-color: ${CHECKBOX_BG_COLOR};
+const StyledCheckInput = styled.input`
+  width: 14px;
+  height: 14px;
   border-radius: 4px;
-
-  &.active {
-    background-color: ${CHECKBOX_BG_COLOR_ACTIVE};
-  }
+  cursor: pointer;
 `;
 
 enum ConfirmButtonState {
@@ -310,16 +302,17 @@ export default function BorrowModal(props: BorrowModalProps) {
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between items-center mt-1 mb-1'>
-            <ToggleButton isActive={shouldWithdrawToWallet} setIsActive={setShouldWithdrawToWallet}>
-              <div className='flex flex-row gap-2 items-center'>
-                <CheckContainer className={shouldWithdrawToWallet ? 'active' : ''}>
-                  {shouldWithdrawToWallet && <CheckIcon color='black' className='w-4 h-4' width={16} height={16} />}
-                </CheckContainer>
-                <Text size='S' color={SECONDARY_COLOR}>
-                  Withdraw to wallet
-                </Text>
-              </div>
-            </ToggleButton>
+            <label className='flex gap-1 items-center'>
+              <StyledCheckInput
+                name='withdrawToWallet'
+                type='checkbox'
+                checked={shouldWithdrawToWallet}
+                onChange={() => setShouldWithdrawToWallet(!shouldWithdrawToWallet)}
+              />
+              <Text size='S' color={SECONDARY_COLOR} className='select-none'>
+                Withdraw to wallet
+              </Text>
+            </label>
             <CustomMaxButton
               onClick={() => {
                 setBorrowAmountStr(maxString);

@@ -1,6 +1,5 @@
 import { useContext, useState, useEffect } from 'react';
 
-import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import { SendTransactionResult } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -9,7 +8,6 @@ import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
-import ToggleButton from 'shared/lib/components/common/ToggleButton';
 import { Text } from 'shared/lib/components/common/Typography';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
@@ -35,17 +33,11 @@ const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
-const CHECKBOX_BG_COLOR = 'rgba(255, 255, 255, 0.1)';
-const CHECKBOX_BG_COLOR_ACTIVE = 'rgba(82, 182, 154, 1)';
-const CheckContainer = styled.div`
-  width: 16px;
-  height: 16px;
-  background-color: ${CHECKBOX_BG_COLOR};
+const StyledCheckInput = styled.input`
+  width: 14px;
+  height: 14px;
   border-radius: 4px;
-
-  &.active {
-    background-color: ${CHECKBOX_BG_COLOR_ACTIVE};
-  }
+  cursor: pointer;
 `;
 
 enum ConfirmButtonState {
@@ -416,16 +408,17 @@ export default function RepayModal(props: RepayModalProps) {
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
           <div className='flex flex-row justify-between mt-1 mb-1'>
-            <ToggleButton isActive={shouldRepayFromWallet} setIsActive={setShouldRepayFromWallet}>
-              <div className='flex flex-row gap-2 items-center'>
-                <CheckContainer className={shouldRepayFromWallet ? 'active' : ''}>
-                  {shouldRepayFromWallet && <CheckIcon color='black' className='w-4 h-4' width={16} height={16} />}
-                </CheckContainer>
-                <Text size='S' color={SECONDARY_COLOR}>
-                  Repay from wallet
-                </Text>
-              </div>
-            </ToggleButton>
+            <label className='flex gap-1 items-center'>
+              <StyledCheckInput
+                name='withdrawToWallet'
+                type='checkbox'
+                checked={shouldRepayFromWallet}
+                onChange={() => setShouldRepayFromWallet(!shouldRepayFromWallet)}
+              />
+              <Text size='S' color={SECONDARY_COLOR} className='select-none'>
+                Repay from wallet
+              </Text>
+            </label>
             <BaseMaxButton
               size='L'
               onClick={() => {
