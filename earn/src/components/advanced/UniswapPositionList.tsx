@@ -48,6 +48,45 @@ const PositionList = styled.div`
   justify-content: space-between;
 `;
 
+enum TextAlignment {
+  LEFT = 'text-left',
+  RIGHT = 'text-right',
+}
+
+function TokenInfo(props: { textAlignment: TextAlignment; amount?: string; percentage?: number; symbol: string }) {
+  const { textAlignment, amount, percentage, symbol } = props;
+  return (
+    <div className={`${textAlignment}`}>
+      <Display size='XS' color={ACCENT_COLOR}>
+        {percentage ?? '-'}%
+      </Display>
+      <Display size='S'>{amount ?? '-'}</Display>
+      <Text size='XS'>{symbol}</Text>
+    </div>
+  );
+}
+
+function PriceInfo(props: {
+  textAlignment: TextAlignment;
+  label: string;
+  amount?: string;
+  token0Symbol: string;
+  token1Symbol: string;
+}) {
+  const { textAlignment, label, amount, token0Symbol, token1Symbol } = props;
+  return (
+    <div className={`${textAlignment}`}>
+      <Text size='S' color={ACCENT_COLOR}>
+        {label}
+      </Text>
+      <Display size='S'>{amount ?? '-'}</Display>
+      <Text size='XS'>
+        {token1Symbol} per {token0Symbol}
+      </Text>
+    </div>
+  );
+}
+
 type UniswapPositionCardProps = {
   borrower?: BorrowerNftBorrower;
   uniswapPosition?: UniswapPosition;
@@ -68,21 +107,56 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
     setSelectedUniswapPosition,
   } = props;
 
-  if (!borrower || !uniswapPosition) {
+  if (!borrower) {
     return (
       <UniswapPositionCardWrapper $color={GREY_700}>
         <Text size='S' color={ACCENT_COLOR} className='text-center'>
           Empty
         </Text>
-        <div className='flex justify-center items-center mt-4'>
-          <FilledGradientButton
-            size='S'
-            disabled={!hasImportableUniswapNFT}
-            onClick={() => setIsImportingUniswapNFT(true)}
-            fillWidth
-          >
-            Import
-          </FilledGradientButton>
+      </UniswapPositionCardWrapper>
+    );
+  }
+
+  if (!uniswapPosition) {
+    return (
+      <UniswapPositionCardWrapper $color={GREY_700}>
+        <div className='flex flex-col gap-4'>
+          <div className='flex justify-center items-center'>
+            <TokenPairIcons
+              token0IconPath={borrower.token0.logoURI}
+              token1IconPath={borrower.token1.logoURI}
+              token0AltText={`${borrower.token0.symbol}'s icon`}
+              token1AltText={`${borrower.token1.symbol}'s icon`}
+            />
+          </div>
+          <div className='flex justify-between'>
+            <TokenInfo textAlignment={TextAlignment.LEFT} symbol={borrower.token0.symbol} />
+            <TokenInfo textAlignment={TextAlignment.RIGHT} symbol={borrower.token1.symbol} />
+          </div>
+          <div className='flex justify-between'>
+            <PriceInfo
+              textAlignment={TextAlignment.LEFT}
+              label='Min Price'
+              token0Symbol={borrower.token0.symbol}
+              token1Symbol={borrower.token1.symbol}
+            />
+            <PriceInfo
+              textAlignment={TextAlignment.RIGHT}
+              label='Max Price'
+              token0Symbol={borrower.token0.symbol}
+              token1Symbol={borrower.token1.symbol}
+            />
+          </div>
+          <div className='flex justify-center items-center'>
+            <FilledGradientButton
+              size='S'
+              disabled={!hasImportableUniswapNFT}
+              onClick={() => setIsImportingUniswapNFT(true)}
+              fillWidth
+            >
+              Import
+            </FilledGradientButton>
+          </div>
         </div>
       </UniswapPositionCardWrapper>
     );
@@ -129,40 +203,34 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
           />
         </div>
         <div className='flex justify-between'>
-          <div className='text-left'>
-            <Display size='XS' color={ACCENT_COLOR}>
-              {roundPercentage(amount0Percent, 1)}%
-            </Display>
-            <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
-            <Text size='XS'>{borrower.token0.symbol}</Text>
-          </div>
-          <div className='text-right'>
-            <Display size='XS' color={ACCENT_COLOR}>
-              {roundPercentage(amount1Percent, 1)}%
-            </Display>
-            <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
-            <Text size='XS'>{borrower.token1.symbol}</Text>
-          </div>
+          <TokenInfo
+            textAlignment={TextAlignment.LEFT}
+            amount={formatTokenAmount(amount0, 5)}
+            percentage={roundPercentage(amount0Percent, 1)}
+            symbol={borrower.token0.symbol}
+          />
+          <TokenInfo
+            textAlignment={TextAlignment.RIGHT}
+            amount={formatTokenAmount(amount1, 5)}
+            percentage={roundPercentage(amount1Percent, 1)}
+            symbol={borrower.token1.symbol}
+          />
         </div>
         <div className='flex justify-between'>
-          <div className='text-left'>
-            <Text size='S' color={ACCENT_COLOR}>
-              Min Price
-            </Text>
-            <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
-            <Text size='XS'>
-              {borrower.token1.symbol} per {borrower.token0.symbol}
-            </Text>
-          </div>
-          <div className='text-right'>
-            <Text size='S' color={ACCENT_COLOR}>
-              Max Price
-            </Text>
-            <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
-            <Text size='XS'>
-              {borrower.token1.symbol} per {borrower.token0.symbol}
-            </Text>
-          </div>
+          <PriceInfo
+            textAlignment={TextAlignment.LEFT}
+            label='Min Price'
+            amount={formatTokenAmount(minPrice, 5)}
+            token0Symbol={borrower.token0.symbol}
+            token1Symbol={borrower.token1.symbol}
+          />
+          <PriceInfo
+            textAlignment={TextAlignment.RIGHT}
+            label='Max Price'
+            amount={formatTokenAmount(maxPrice, 5)}
+            token0Symbol={borrower.token0.symbol}
+            token1Symbol={borrower.token1.symbol}
+          />
         </div>
         <div className='flex justify-between'>
           {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
