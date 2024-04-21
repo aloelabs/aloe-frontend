@@ -144,7 +144,7 @@ function AppBodyWrapper() {
 }
 
 function App() {
-  const mounted = useRef(false);
+  const mounted = useRef(true);
 
   const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
