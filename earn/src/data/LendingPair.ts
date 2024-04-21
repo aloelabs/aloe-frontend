@@ -30,6 +30,7 @@ import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
 import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
 import { borrowAPRToLendAPY, RateModel, yieldPerSecondToAPR } from './RateModel';
+import { asSlot0Data, Slot0Data } from './Slot0';
 
 class KittyInfo {
   public readonly availableAssets: GN;
@@ -71,6 +72,7 @@ export class LendingPair {
     public rewardsRate1: number,
     public factoryData: FactoryData,
     public oracleData: OracleData,
+    public slot0Data: Slot0Data,
     public lastWrite: Date
   ) {}
 
@@ -166,10 +168,15 @@ export async function getAvailableLendingPairs(
     });
 
     contractCallContexts.push({
-      reference: `${market.pool}-feeTier`,
+      reference: `${market.pool}-slot0AndFeeTier`,
       contractAddress: market.pool,
       abi: uniswapV3PoolAbi as any,
       calls: [
+        {
+          reference: `${market.pool}-slot0`,
+          methodName: 'slot0',
+          methodParameters: [],
+        },
         {
           reference: `${market.pool}-feeTier`,
           methodName: 'fee',
@@ -229,16 +236,21 @@ export async function getAvailableLendingPairs(
   const lendingPairs: LendingPair[] = [];
 
   Array.from(correspondingLendingPairResults.entries()).forEach(([uniswapPool, value]) => {
-    const { basics: basicsResults, feeTier: feeTierResults, oracle: oracleResults, factory: factoryResults } = value;
+    const {
+      basics: basicsResults,
+      slot0AndFeeTier: poolResults,
+      oracle: oracleResults,
+      factory: factoryResults,
+    } = value;
     const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
-    const feeTierReturnContexts = convertBigNumbersForReturnContexts(feeTierResults.callsReturnContext);
+    const poolReturnContexts = convertBigNumbersForReturnContexts(poolResults.callsReturnContext);
     const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
     const factoryReturnContexts = convertBigNumbersForReturnContexts(factoryResults.callsReturnContext);
     const { kitty0Address, kitty1Address } = basicsResults.originalContractCallContext.context;
 
     const basics0 = basicsReturnContexts[0].returnValues;
     const basics1 = basicsReturnContexts[1].returnValues;
-    const feeTier = feeTierReturnContexts[0].returnValues;
+    const feeTier = poolReturnContexts[1].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
     const factoryResult = factoryReturnContexts[0].returnValues;
     const token0 = getToken(chainId, basics0[0]);
@@ -291,6 +303,7 @@ export async function getAvailableLendingPairs(
         toImpreciseNumber(basics1[7], 18), // rewardsRate1
         asFactoryData(factoryResult),
         asOracleData(oracleResult),
+        asSlot0Data(poolReturnContexts[0].returnValues),
         new Date(oracleReturnContexts[1].returnValues[1] * 1000) // lastWrite.time
       )
     );
