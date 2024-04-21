@@ -442,7 +442,7 @@ export default function AdvancedPage() {
               setPendingTxn={setPendingTxn}
             />
             <RepayModal
-              marginAccount={selectedMarginAccount}
+              borrower={selectedMarginAccount}
               isOpen={openedModal === OpenedModal.REPAY}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.REPAY : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
