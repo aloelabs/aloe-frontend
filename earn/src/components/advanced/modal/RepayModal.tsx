@@ -262,7 +262,6 @@ function RepayButton(props: RepayButtonProps) {
     enabled: Boolean(userAddress) && repayAmount.isGtZero(),
     chainId: activeChain.id,
   });
-  // NOTE: Not using `useMemo` to update the request
   const gasLimit = repayConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
     write: repay,
