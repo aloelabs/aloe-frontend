@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
@@ -144,7 +144,9 @@ function AppBodyWrapper() {
 }
 
 function App() {
-  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
+  const mounted = useRef(true);
+
+  const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
     isAllowed: false,
@@ -155,7 +157,14 @@ function App() {
   const { address: userAddress } = useAccount();
   const provider = useProvider({ chainId: activeChain.id });
 
-  const value = { activeChain, setActiveChain };
+  const refetch = useCallback(async () => {
+    const chainId = (await provider.getNetwork()).chainId;
+    const res = await getAvailableLendingPairs(chainId, provider);
+    if (mounted.current) setLendingPairs(res);
+  }, [provider, setLendingPairs]);
+
+  const lendingPairsContextValue = useMemo(() => ({ lendingPairs, refetch }), [lendingPairs, refetch]);
+  const chainContextValue = { activeChain, setActiveChain };
 
   useEffect(() => {
     Sentry.setTag('chain_name', activeChain.name);
@@ -184,18 +193,12 @@ function App() {
   }, [userAddress, setAccountRisk]);
 
   useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const res = await getAvailableLendingPairs(chainId, provider);
-      if (mounted) setLendingPairs(res);
-    })();
-
+    mounted.current = true;
+    refetch();
     return () => {
-      mounted = false;
+      mounted.current = false;
     };
-  }, [provider, setLendingPairs]);
+  }, [refetch]);
 
   return (
     <>
@@ -203,8 +206,8 @@ function App() {
         <WagmiProvider>
           <AccountRiskContext.Provider value={accountRisk}>
             <GeoFencingContext.Provider value={geoFencingInfo}>
-              <ChainContext.Provider value={value}>
-                <LendingPairsContext.Provider value={lendingPairs}>
+              <ChainContext.Provider value={chainContextValue}>
+                <LendingPairsContext.Provider value={lendingPairsContextValue}>
                   <ScrollToTop />
                   <AppBodyWrapper />
                 </LendingPairsContext.Provider>
