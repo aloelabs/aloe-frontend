@@ -101,7 +101,7 @@ export default function MarketsPage() {
   }, [searchParams]);
 
   // MARK: custom hooks
-  const { lendingPairs } = useLendingPairs();
+  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs();
 
   // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
   // This saves a lot of data.
@@ -446,7 +446,10 @@ export default function MarketsPage() {
         }}
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
-          setTimeout(() => refetch(), 100);
+          setTimeout(() => {
+            refetchLendingPairs?.();
+            refetch();
+          }, 100);
         }}
         status={pendingTxnModalStatus}
       />

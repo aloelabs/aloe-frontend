@@ -134,6 +134,8 @@ export function roundUpToNearestN(value: number, n: number): number {
 }
 
 export function formatTokenAmount(amount: number, sigDigs = 4): string {
+  const lengthBeforeDecimal = Math.floor(amount).toString().length;
+  const adjustedSigDigs = Math.max(sigDigs, lengthBeforeDecimal);
   //TODO: if we want to support more than one locale, we would need to add more logic here
   if (amount > 1e13) {
     return amount.toExponential(sigDigs - 3);
@@ -142,20 +144,20 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
       style: 'decimal',
       notation: 'compact',
       compactDisplay: 'short',
-      maximumSignificantDigits: sigDigs,
+      maximumSignificantDigits: sigDigs, // With really large numbers, we don't want to show too many sigdigs
       minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else if (amount > 1e-5 || amount === 0) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
-      maximumSignificantDigits: sigDigs,
+      maximumSignificantDigits: adjustedSigDigs,
       minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else if (amount > 1e-10) {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'scientific',
-      maximumSignificantDigits: sigDigs,
+      maximumSignificantDigits: adjustedSigDigs - 1,
       minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else {

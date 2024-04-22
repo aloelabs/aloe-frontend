@@ -217,6 +217,9 @@ function StatsTableRow(props: StatsTableRowProps) {
         <Display size='XS'>{reserveFactorText}</Display>
       </td>
       <td className='px-4 py-2 text-start whitespace-nowrap'>
+        <Display size='XS'>{pair.slot0Data.observationCardinality}</Display>
+      </td>
+      <td className='px-4 py-2 text-start whitespace-nowrap'>
         <div className='flex gap-5 justify-between'>
           <div>
             <div className='flex'>
@@ -321,6 +324,11 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
                 </Text>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
+                <Text size='M' weight='bold'>
+                  Cardinality
+                </Text>
+              </th>
+              <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('sortA')}>
                   <Text size='M' weight='bold'>
                     Oracle Guardian
@@ -351,7 +359,7 @@ export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
           </tbody>
           <tfoot>
             <tr>
-              <td className='px-4 py-2' colSpan={7}>
+              <td className='px-4 py-2' colSpan={8}>
                 <Pagination
                   currentPage={currentPage}
                   itemsPerPage={PAGE_SIZE}

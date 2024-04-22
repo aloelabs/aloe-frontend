@@ -18,19 +18,27 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
 import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
-import { Liabilities } from '../../../data/MarginAccount';
+import { Assets, Liabilities } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
+
+const StyledCheckInput = styled.input`
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+`;
 
 enum ConfirmButtonState {
   PENDING,
@@ -65,6 +73,7 @@ type BorrowButtonProps = {
   userAddress: Address;
   borrowToken: Token;
   borrowAmount: GN;
+  shouldWithdrawToWallet: boolean;
   isUnhealthy: boolean;
   notEnoughSupply: boolean;
   setIsOpen: (open: boolean) => void;
@@ -78,6 +87,7 @@ function BorrowButton(props: BorrowButtonProps) {
     userAddress,
     borrowToken,
     borrowAmount,
+    shouldWithdrawToWallet,
     isUnhealthy,
     notEnoughSupply,
     setIsOpen,
@@ -96,7 +106,7 @@ function BorrowButton(props: BorrowButtonProps) {
   const encodedData = borrowerInterface.encodeFunctionData('borrow', [
     amount0Big.toBigNumber(),
     amount1Big.toBigNumber(),
-    userAddress,
+    shouldWithdrawToWallet ? userAddress : borrower.address,
   ]);
 
   const { config: borrowConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
@@ -190,6 +200,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
   const [borrowToken, setBorrowToken] = useState<Token>(borrower.token0);
+  const [shouldWithdrawToWallet, setShouldWithdrawToWallet] = useState(true);
 
   const { address: userAddress } = useAccount();
 
@@ -198,6 +209,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   useEffect(() => {
     setBorrowAmountStr('');
     setBorrowToken(borrower.token0);
+    setShouldWithdrawToWallet(true);
   }, [isOpen, borrower.token0]);
 
   const { data: anteData } = useContractRead({
@@ -214,7 +226,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [anteData]);
 
   const tokenOptions = [borrower.token0, borrower.token1];
-  const isToken0 = borrowToken.address === borrower.token0.address;
+  const isToken0 = borrowToken.equals(borrower.token0);
 
   const numericExistingLiability = isToken0 ? borrower.liabilities.amount0 : borrower.liabilities.amount1;
   const borrowAmount = GN.fromDecimalString(borrowAmountStr || '0', borrowToken.decimals);
@@ -232,6 +244,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   }
 
   // TODO: use GN
+  // TODO: if !shouldWithdrawToWallet, max borrows should just be from `maxBorrow`, not `maxBorrowAndWithdraw`
   const maxBorrowsBasedOnHealth = Math.max(
     0,
     maxBorrowAndWithdraw(
@@ -253,6 +266,14 @@ export default function BorrowModal(props: BorrowModalProps) {
   const gnEightyPercentMax = GN.fromNumber(max, borrowToken.decimals).recklessMul(80).recklessDiv(100);
   const maxString = gnEightyPercentMax.toString(GNFormat.DECIMAL);
 
+  let newAssets = borrower.assets;
+  if (!shouldWithdrawToWallet) {
+    newAssets = new Assets(
+      isToken0 ? borrower.assets.amount0.add(borrowAmount) : borrower.assets.amount0,
+      isToken0 ? borrower.assets.amount1 : borrower.assets.amount1.add(borrowAmount),
+      borrower.assets.uniswapPositions
+    );
+  }
   // TODO: use GN
   const newLiabilities: Liabilities = {
     amount0: isToken0 ? newLiability.toNumber() : borrower.liabilities.amount0,
@@ -260,7 +281,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   };
 
   const { health: newHealth } = isHealthy(
-    borrower.assets,
+    newAssets,
     newLiabilities,
     borrower.sqrtPriceX96,
     borrower.iv,
@@ -280,10 +301,18 @@ export default function BorrowModal(props: BorrowModalProps) {
     <Modal isOpen={isOpen} title='Borrow' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between items-center mb-1'>
-            <Text size='M' weight='bold'>
-              Borrow Amount
-            </Text>
+          <div className='flex flex-row justify-between items-center mt-1 mb-1'>
+            <label className='flex gap-1 items-center'>
+              <StyledCheckInput
+                name='withdrawToWallet'
+                type='checkbox'
+                checked={shouldWithdrawToWallet}
+                onChange={() => setShouldWithdrawToWallet(!shouldWithdrawToWallet)}
+              />
+              <Text size='S' color={SECONDARY_COLOR} className='select-none'>
+                Withdraw to wallet
+              </Text>
+            </label>
             <CustomMaxButton
               onClick={() => {
                 setBorrowAmountStr(maxString);
@@ -318,15 +347,13 @@ export default function BorrowModal(props: BorrowModalProps) {
             <strong>
               {borrowAmountStr || '0.00'} {borrowToken.symbol}
             </strong>{' '}
-            using this{' '}
+            from the{' '}
             <strong>
               {borrower.token0.symbol}/{borrower.token1.symbol}
             </strong>{' '}
-            smart wallet. Your total borrows for this token in this smart wallet will be{' '}
-            <strong>
-              {newLiability.toString(GNFormat.DECIMAL)} {borrowToken.symbol}
-            </strong>
-            .
+            market, bringing your total {borrowToken.symbol} borrows in this NFT to{' '}
+            <strong>{newLiability.toString(GNFormat.DECIMAL)}</strong>. The borrowed funds will be{' '}
+            {shouldWithdrawToWallet ? 'withdrawn to your wallet for immediate use.' : 'left in the NFT for future use.'}
           </Text>
           {etherToSend.isGtZero() && (
             <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
@@ -349,6 +376,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             userAddress={userAddress}
             borrowToken={borrowToken}
             borrowAmount={borrowAmount}
+            shouldWithdrawToWallet={shouldWithdrawToWallet}
             isUnhealthy={isUnhealthy}
             notEnoughSupply={notEnoughSupply}
             setIsOpen={setIsOpen}

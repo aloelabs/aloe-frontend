@@ -1,29 +1,44 @@
 import { useContext, useState, useEffect } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+import { borrowerAbi } from 'shared/lib/abis/Borrower';
+import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_ADDRESS,
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+  ALOE_II_ROUTER_ADDRESS,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
 import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy } from '../../../data/BalanceSheet';
-import { Liabilities, MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { Assets, Liabilities, MarginAccount } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
+
+const StyledCheckInput = styled.input`
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+`;
 
 enum ConfirmButtonState {
   INSUFFICIENT_FUNDS,
@@ -70,7 +85,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   }
 }
 
-type RepayButtonProps = {
+type RepayWithPermit2ButtonProps = {
   activeChain: Chain;
   marginAccount: MarginAccount;
   userAddress: Address;
@@ -83,7 +98,7 @@ type RepayButtonProps = {
   setPendingTxn: (result: SendTransactionResult | null) => void;
 };
 
-function RepayButton(props: RepayButtonProps) {
+function RepayWithPermit2Button(props: RepayWithPermit2ButtonProps) {
   const {
     activeChain,
     marginAccount,
@@ -192,19 +207,141 @@ function RepayButton(props: RepayButtonProps) {
   );
 }
 
+type RepayButtonProps = {
+  activeChain: Chain;
+  borrower: BorrowerNftBorrower;
+  userAddress: Address;
+  lender: Address;
+  shouldRepayMax: boolean;
+  repayAmount: GN;
+  repayToken: Token;
+  setIsOpen: (open: boolean) => void;
+  setPendingTxn: (result: SendTransactionResult | null) => void;
+};
+
+function RepayButton(props: RepayButtonProps) {
+  const {
+    activeChain,
+    borrower,
+    userAddress,
+    lender,
+    repayAmount: repayAmountSpecified,
+    repayToken,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
+  // TODO: Need new Manager contract in order to repay max this way
+  // const repayAmount = shouldRepayMax ? repayAmountSpecified.recklessMul(1.005) : repayAmountSpecified;
+  const repayAmount = repayAmountSpecified;
+
+  const [isPending, setIsPending] = useState(false);
+
+  const isToken0 = repayToken.equals(borrower.token0);
+  const amount0Big = isToken0 ? repayAmount : GN.zero(repayToken.decimals);
+  const amount1Big = isToken0 ? GN.zero(repayToken.decimals) : repayAmount;
+
+  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
+  const encodedData = borrowerInterface.encodeFunctionData('repay', [
+    amount0Big.toBigNumber(),
+    amount1Big.toBigNumber(),
+  ]);
+
+  const repayTokenBalance = borrower.assets[isToken0 ? 'amount0' : 'amount1'];
+
+  const { config: repayConfig, refetch: refetchRepay } = usePrepareContractWrite({
+    address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
+    abi: borrowerNftAbi,
+    functionName: 'modify',
+    args: [
+      userAddress,
+      [borrower.index],
+      [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
+      [encodedData as `0x${string}`],
+      [0],
+    ],
+    enabled: Boolean(userAddress) && repayAmount.isGtZero(),
+    chainId: activeChain.id,
+  });
+  const gasLimit = repayConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
+  const {
+    write: repay,
+    isSuccess: contractDidSucceed,
+    isLoading: contractIsLoading,
+    data: contractData,
+  } = useContractWrite({
+    ...repayConfig,
+    request: {
+      ...repayConfig.request,
+      gasLimit,
+    },
+  });
+
+  useEffect(() => {
+    if (contractDidSucceed && contractData) {
+      setPendingTxn(contractData);
+      setIsPending(false);
+      setIsOpen(false);
+    } else if (!contractIsLoading && !contractDidSucceed) {
+      setIsPending(false);
+    }
+  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+
+  // MARK: Preparing data that's necessary to figure out button state -------------------------------------------------
+  const existingLiability = borrower.liabilities[lender === borrower.lender0 ? 'amount0' : 'amount1'];
+  const existingLiabilityGN = GN.fromNumber(existingLiability, repayToken.decimals);
+
+  // MARK: Determining button state -----------------------------------------------------------------------------------
+  let confirmButtonState: ConfirmButtonState;
+  if (isPending) {
+    confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
+  } else if (repayAmount.isZero() || contractIsLoading) {
+    confirmButtonState = ConfirmButtonState.LOADING;
+  } else if (repayAmount.gt(repayTokenBalance)) {
+    confirmButtonState = ConfirmButtonState.INSUFFICIENT_FUNDS;
+  } else if (repayAmountSpecified.gt(existingLiabilityGN)) {
+    confirmButtonState = ConfirmButtonState.REPAYING_TOO_MUCH;
+  } else {
+    confirmButtonState = ConfirmButtonState.READY;
+  }
+
+  // MARK: Get the button itself --------------------------------------------------------------------------------------
+  // --> UI
+  const confirmButton = getConfirmButton(confirmButtonState, repayToken);
+  // --> action
+  const confirmButtonAction = () => {
+    if (confirmButtonState === ConfirmButtonState.READY) {
+      if (!repay) {
+        refetchRepay();
+        return;
+      }
+      setIsPending(true);
+      repay();
+    }
+  };
+
+  return (
+    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={confirmButtonAction}>
+      {confirmButton.text}
+    </FilledStylizedButton>
+  );
+}
+
 export type RepayModalProps = {
-  marginAccount: MarginAccount;
+  borrower: BorrowerNftBorrower;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export default function RepayModal(props: RepayModalProps) {
-  const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, isOpen, setIsOpen, setPendingTxn } = props;
 
   const { activeChain } = useContext(ChainContext);
   const [repayAmountStr, setRepayAmountStr] = useState('');
-  const [repayToken, setRepayToken] = useState<Token>(marginAccount.token0);
+  const [repayToken, setRepayToken] = useState<Token>(borrower.token0);
+  const [shouldRepayFromWallet, setShouldRepayFromWallet] = useState(true);
+
+  const isToken0 = repayToken.equals(borrower.token0);
 
   const { address: userAddress } = useAccount();
   const { data: tokenBalanceFetch } = useBalance({
@@ -214,18 +351,19 @@ export default function RepayModal(props: RepayModalProps) {
     watch: false,
     enabled: isOpen,
   });
-  const tokenBalance = GN.fromBigNumber(tokenBalanceFetch?.value ?? BigNumber.from('0'), repayToken.decimals);
+  const tokenBalance = shouldRepayFromWallet
+    ? GN.fromBigNumber(tokenBalanceFetch?.value ?? BigNumber.from('0'), repayToken.decimals)
+    : borrower.assets[isToken0 ? 'amount0' : 'amount1'];
 
   // Reset repay amount and token when modal is opened/closed or when the margin account token0 changes
   useEffect(() => {
     setRepayAmountStr('');
-    setRepayToken(marginAccount.token0);
-  }, [isOpen, marginAccount.token0]);
+    setRepayToken(borrower.token0);
+    setShouldRepayFromWallet(true);
+  }, [isOpen, borrower.token0]);
 
   const existingLiabilityNumber =
-    repayToken.address === marginAccount.token0.address
-      ? marginAccount.liabilities.amount0
-      : marginAccount.liabilities.amount1;
+    repayToken.address === borrower.token0.address ? borrower.liabilities.amount0 : borrower.liabilities.amount1;
   const existingLiability = GN.fromNumber(existingLiabilityNumber, repayToken.decimals);
   const repayAmount = GN.fromDecimalString(repayAmountStr || '0', repayToken.decimals);
   const remainingLiability = existingLiability.sub(repayAmount);
@@ -235,25 +373,29 @@ export default function RepayModal(props: RepayModalProps) {
   // if `tokenBalance` is the constraint.
   const shouldRepayMax = repayAmountStr === existingLiability.toString(GNFormat.DECIMAL);
 
+  let newAssets = borrower.assets;
+  if (!shouldRepayFromWallet) {
+    newAssets = new Assets(
+      isToken0 ? borrower.assets.amount0.sub(repayAmount) : borrower.assets.amount0,
+      isToken0 ? borrower.assets.amount1 : borrower.assets.amount1.sub(repayAmount),
+      borrower.assets.uniswapPositions
+    );
+  }
   const newLiabilities: Liabilities = {
-    amount0:
-      repayToken.address === marginAccount.token0.address
-        ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL))
-        : marginAccount.liabilities.amount0,
-    amount1:
-      repayToken.address === marginAccount.token1.address
-        ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL))
-        : marginAccount.liabilities.amount1,
+    amount0: isToken0 ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL)) : borrower.liabilities.amount0,
+    amount1: repayToken.equals(borrower.token1)
+      ? parseFloat(remainingLiability.toString(GNFormat.DECIMAL))
+      : borrower.liabilities.amount1,
   };
 
   const { health: newHealth } = isHealthy(
-    marginAccount.assets,
+    newAssets,
     newLiabilities,
-    marginAccount.sqrtPriceX96,
-    marginAccount.iv,
-    marginAccount.nSigma,
-    marginAccount.token0.decimals,
-    marginAccount.token1.decimals
+    borrower.sqrtPriceX96,
+    borrower.iv,
+    borrower.nSigma,
+    borrower.token0.decimals,
+    borrower.token1.decimals
   );
 
   if (!userAddress || !isOpen) {
@@ -264,10 +406,18 @@ export default function RepayModal(props: RepayModalProps) {
     <Modal isOpen={isOpen} title='Repay' setIsOpen={setIsOpen} maxHeight='650px'>
       <div className='flex flex-col items-center justify-center gap-8 w-full mt-2'>
         <div className='flex flex-col gap-1 w-full'>
-          <div className='flex flex-row justify-between mb-1'>
-            <Text size='M' weight='bold'>
-              Amount
-            </Text>
+          <div className='flex flex-row justify-between mt-1 mb-1'>
+            <label className='flex gap-1 items-center'>
+              <StyledCheckInput
+                name='withdrawToWallet'
+                type='checkbox'
+                checked={shouldRepayFromWallet}
+                onChange={() => setShouldRepayFromWallet(!shouldRepayFromWallet)}
+              />
+              <Text size='S' color={SECONDARY_COLOR} className='select-none'>
+                Repay from wallet
+              </Text>
+            </label>
             <BaseMaxButton
               size='L'
               onClick={() => {
@@ -290,7 +440,7 @@ export default function RepayModal(props: RepayModalProps) {
               setRepayAmountStr('');
               setRepayToken(option);
             }}
-            options={[marginAccount.token0, marginAccount.token1]}
+            options={[borrower.token0, borrower.token1]}
             selectedOption={repayToken}
           />
         </div>
@@ -301,31 +451,47 @@ export default function RepayModal(props: RepayModalProps) {
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             You're repaying{' '}
             <strong>
-              {repayAmountStr || '0'} {repayToken.symbol}
-            </strong>
-            . This will increase your smart wallet's health and bring remaining borrows down to{' '}
+              {repayAmountStr || '0.00'} {repayToken.symbol}
+            </strong>{' '}
+            to the{' '}
             <strong>
-              {remainingLiability.toString(GNFormat.DECIMAL)} {repayToken.symbol}
-            </strong>
-            .
+              {borrower.token0.symbol}/{borrower.token1.symbol}
+            </strong>{' '}
+            market, bringing your total {repayToken.symbol} borrows in this NFT down to{' '}
+            <strong>{remainingLiability.toString(GNFormat.DECIMAL)}</strong>. Funds will be sourced from{' '}
+            {shouldRepayFromWallet ? 'your wallet' : 'the NFT itself'}.
           </Text>
           <div className='mt-2'>
             <HealthBar health={newHealth} />
           </div>
         </div>
         <div className='w-full'>
-          <RepayButton
-            activeChain={activeChain}
-            marginAccount={marginAccount}
-            userAddress={userAddress}
-            lender={repayToken.address === marginAccount.token0.address ? marginAccount.lender0 : marginAccount.lender1}
-            shouldRepayMax={shouldRepayMax}
-            repayAmount={repayAmount}
-            repayToken={repayToken}
-            repayTokenBalance={tokenBalance}
-            setIsOpen={setIsOpen}
-            setPendingTxn={setPendingTxn}
-          />
+          {shouldRepayFromWallet ? (
+            <RepayWithPermit2Button
+              activeChain={activeChain}
+              marginAccount={borrower}
+              userAddress={userAddress}
+              lender={isToken0 ? borrower.lender0 : borrower.lender1}
+              shouldRepayMax={shouldRepayMax}
+              repayAmount={repayAmount}
+              repayToken={repayToken}
+              repayTokenBalance={tokenBalance}
+              setIsOpen={setIsOpen}
+              setPendingTxn={setPendingTxn}
+            />
+          ) : (
+            <RepayButton
+              activeChain={activeChain}
+              borrower={borrower}
+              userAddress={userAddress}
+              lender={isToken0 ? borrower.lender0 : borrower.lender1}
+              shouldRepayMax={shouldRepayMax}
+              repayAmount={repayAmount}
+              repayToken={repayToken}
+              setIsOpen={setIsOpen}
+              setPendingTxn={setPendingTxn}
+            />
+          )}
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
             By using our service, you agree to our{' '}
             <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
