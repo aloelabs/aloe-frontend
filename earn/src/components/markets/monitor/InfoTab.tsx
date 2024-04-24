@@ -181,6 +181,7 @@ export default function InfoTab(props: InfoTabProps) {
           setPendingTxn,
           onMouseEnter: setHoveredPair,
         }))}
+        chainId={chainId}
       />
       <InfoGraph graphData={graphData} graphColors={graphColors} hoveredPair={hoveredPair} />
     </div>
