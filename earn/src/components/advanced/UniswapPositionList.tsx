@@ -107,46 +107,10 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
     setSelectedUniswapPosition,
   } = props;
 
-  if (!borrower) {
+  if (!borrower || !uniswapPosition) {
     return (
       <UniswapPositionCardWrapper $color={GREY_700}>
-        <Text size='S' color={ACCENT_COLOR} className='text-center'>
-          Empty
-        </Text>
-      </UniswapPositionCardWrapper>
-    );
-  }
-
-  if (!uniswapPosition) {
-    return (
-      <UniswapPositionCardWrapper $color={GREY_700}>
-        <div className='flex flex-col gap-4'>
-          <div className='flex justify-center items-center'>
-            <TokenPairIcons
-              token0IconPath={borrower.token0.logoURI}
-              token1IconPath={borrower.token1.logoURI}
-              token0AltText={`${borrower.token0.symbol}'s icon`}
-              token1AltText={`${borrower.token1.symbol}'s icon`}
-            />
-          </div>
-          <div className='flex justify-between'>
-            <TokenInfo textAlignment={TextAlignment.LEFT} symbol={borrower.token0.symbol} />
-            <TokenInfo textAlignment={TextAlignment.RIGHT} symbol={borrower.token1.symbol} />
-          </div>
-          <div className='flex justify-between'>
-            <PriceInfo
-              textAlignment={TextAlignment.LEFT}
-              label='Min Price'
-              token0Symbol={borrower.token0.symbol}
-              token1Symbol={borrower.token1.symbol}
-            />
-            <PriceInfo
-              textAlignment={TextAlignment.RIGHT}
-              label='Max Price'
-              token0Symbol={borrower.token0.symbol}
-              token1Symbol={borrower.token1.symbol}
-            />
-          </div>
+        {hasImportableUniswapNFT ? (
           <div className='flex justify-center items-center'>
             <FilledGradientButton
               size='S'
@@ -157,7 +121,11 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
               Import
             </FilledGradientButton>
           </div>
-        </div>
+        ) : (
+          <Text size='S' color={ACCENT_COLOR} className='text-center'>
+            Empty
+          </Text>
+        )}
       </UniswapPositionCardWrapper>
     );
   }
@@ -281,7 +249,9 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
                 borrower={borrower}
                 uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
-                hasImportableUniswapNFT={importableUniswapNFTPositions.size > 0}
+                hasImportableUniswapNFT={
+                  importableUniswapNFTPositions.size > 0 && borrower?.assets.uniswapPositions.length === index
+                }
                 setIsImportingUniswapNFT={() => setIsImportingUniswapNFT(true)}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
