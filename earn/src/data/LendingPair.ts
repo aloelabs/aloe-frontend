@@ -253,6 +253,7 @@ export async function getAvailableLendingPairs(
     const feeTier = poolReturnContexts[1].returnValues;
     const oracleResult = oracleReturnContexts[0].returnValues;
     const factoryResult = factoryReturnContexts[0].returnValues;
+    console.log(basics0[0], basics1[0]);
     const token0 = getToken(chainId, basics0[0]);
     const token1 = getToken(chainId, basics1[0]);
     if (token0 == null || token1 == null) return;
