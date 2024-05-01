@@ -93,8 +93,9 @@ export default function ChainSelector(props: ChainSelectorProps) {
         size={'S'}
       >
         <div className='flex items-center gap-3'>
-          {selectedChainOption.icon && <div className='w-4 h-4 bg-white rounded-full'>{selectedChainOption.icon}</div>}
-          {/* <Text size='XS'>{selectedChainOption.label}</Text> */}
+          {selectedChainOption.icon && (
+            <div className='w-4 h-4 bg-transparent rounded-8'>{selectedChainOption.icon}</div>
+          )}
         </div>
         {isOpen ? (
           <DropdownArrowUp className='w-4 absolute right-3 pointer-events-none' />
@@ -128,7 +129,7 @@ export default function ChainSelector(props: ChainSelectorProps) {
                 }}
               >
                 <div className='flex items-center gap-3'>
-                  {option.icon && <div className='w-4 h-4 bg-white rounded-full'>{option.icon}</div>}
+                  {option.icon && <div className='w-4 h-4 bg-transparent rounded-8'>{option.icon}</div>}
                   <Text size='XS'>{option.label}</Text>
                   <div className='relative w-4 h-4 ml-auto'>
                     {option.value === pendingChainOption?.value && <AltSpinner size='XS' />}

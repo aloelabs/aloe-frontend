@@ -1,7 +1,7 @@
 import { arbitrum, mainnet, optimism, goerli } from '@wagmi/chains';
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
-import { base } from 'shared/lib/data/BaseChain';
+import { base } from 'shared/lib/data/chains/BaseChain';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 
 import {

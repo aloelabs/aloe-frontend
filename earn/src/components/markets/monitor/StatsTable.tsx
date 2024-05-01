@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { SendTransactionResult } from '@wagmi/core';
 import { format, formatDistanceToNowStrict } from 'date-fns';
@@ -16,6 +16,7 @@ import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { roundPercentage } from 'shared/lib/util/Numbers';
@@ -265,9 +266,9 @@ function StatsTableRow(props: StatsTableRowProps) {
   );
 }
 
-export default function StatsTable(props: { rows: StatsTableRowProps[] }) {
-  const { rows } = props;
-  const [currentPage, setCurrentPage] = useState(1);
+export default function StatsTable(props: { rows: StatsTableRowProps[]; chainId: number }) {
+  const { rows, chainId } = props;
+  const [currentPage, setCurrentPage] = useChainDependentState(1, chainId);
 
   // workaround to get sort data in the outermost scope
   const sortableRows = useMemo(() => {

@@ -23,6 +23,7 @@ import {
   UniswapPositionCardContainer,
   UniswapPositionCardWrapper,
 } from '../common/UniswapPositionCard';
+import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
 import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -47,23 +48,84 @@ const PositionList = styled.div`
   justify-content: space-between;
 `;
 
+enum TextAlignment {
+  LEFT = 'text-left',
+  RIGHT = 'text-right',
+}
+
+function TokenInfo(props: { textAlignment: TextAlignment; amount?: string; percentage?: number; symbol: string }) {
+  const { textAlignment, amount, percentage, symbol } = props;
+  return (
+    <div className={`${textAlignment}`}>
+      <Display size='XS' color={ACCENT_COLOR}>
+        {percentage ?? '-'}%
+      </Display>
+      <Display size='S'>{amount ?? '-'}</Display>
+      <Text size='XS'>{symbol}</Text>
+    </div>
+  );
+}
+
+function PriceInfo(props: {
+  textAlignment: TextAlignment;
+  label: string;
+  amount?: string;
+  token0Symbol: string;
+  token1Symbol: string;
+}) {
+  const { textAlignment, label, amount, token0Symbol, token1Symbol } = props;
+  return (
+    <div className={`${textAlignment}`}>
+      <Text size='S' color={ACCENT_COLOR}>
+        {label}
+      </Text>
+      <Display size='S'>{amount ?? '-'}</Display>
+      <Text size='XS'>
+        {token1Symbol} per {token0Symbol}
+      </Text>
+    </div>
+  );
+}
+
 type UniswapPositionCardProps = {
   borrower?: BorrowerNftBorrower;
   uniswapPosition?: UniswapPosition;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
+  hasImportableUniswapNFT: boolean;
+  setIsImportingUniswapNFT: (isImporting: boolean) => void;
   setSelectedUniswapPosition: (uniswapPosition: SelectedUniswapPosition | null) => void;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 function UniswapPositionCard(props: UniswapPositionCardProps) {
-  const { borrower, uniswapPosition, withdrawableUniswapNFTs, setSelectedUniswapPosition } = props;
+  const {
+    borrower,
+    uniswapPosition,
+    withdrawableUniswapNFTs,
+    hasImportableUniswapNFT,
+    setIsImportingUniswapNFT,
+    setSelectedUniswapPosition,
+  } = props;
 
   if (!borrower || !uniswapPosition) {
     return (
       <UniswapPositionCardWrapper $color={GREY_700}>
-        <Text size='S' color={ACCENT_COLOR} className='text-center'>
-          Empty
-        </Text>
+        {hasImportableUniswapNFT ? (
+          <div className='flex justify-center items-center'>
+            <FilledGradientButton
+              size='S'
+              disabled={!hasImportableUniswapNFT}
+              onClick={() => setIsImportingUniswapNFT(true)}
+              fillWidth
+            >
+              Import
+            </FilledGradientButton>
+          </div>
+        ) : (
+          <Text size='S' color={ACCENT_COLOR} className='text-center'>
+            Empty
+          </Text>
+        )}
       </UniswapPositionCardWrapper>
     );
   }
@@ -109,40 +171,34 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
           />
         </div>
         <div className='flex justify-between'>
-          <div className='text-left'>
-            <Display size='XS' color={ACCENT_COLOR}>
-              {roundPercentage(amount0Percent, 1)}%
-            </Display>
-            <Display size='S'>{formatTokenAmount(amount0, 5)}</Display>
-            <Text size='XS'>{borrower.token0.symbol}</Text>
-          </div>
-          <div className='text-right'>
-            <Display size='XS' color={ACCENT_COLOR}>
-              {roundPercentage(amount1Percent, 1)}%
-            </Display>
-            <Display size='S'>{formatTokenAmount(amount1, 5)}</Display>
-            <Text size='XS'>{borrower.token1.symbol}</Text>
-          </div>
+          <TokenInfo
+            textAlignment={TextAlignment.LEFT}
+            amount={formatTokenAmount(amount0, 5)}
+            percentage={roundPercentage(amount0Percent, 1)}
+            symbol={borrower.token0.symbol}
+          />
+          <TokenInfo
+            textAlignment={TextAlignment.RIGHT}
+            amount={formatTokenAmount(amount1, 5)}
+            percentage={roundPercentage(amount1Percent, 1)}
+            symbol={borrower.token1.symbol}
+          />
         </div>
         <div className='flex justify-between'>
-          <div className='text-left'>
-            <Text size='S' color={ACCENT_COLOR}>
-              Min Price
-            </Text>
-            <Display size='S'>{formatTokenAmount(minPrice, 5)}</Display>
-            <Text size='XS'>
-              {borrower.token1.symbol} per {borrower.token0.symbol}
-            </Text>
-          </div>
-          <div className='text-right'>
-            <Text size='S' color={ACCENT_COLOR}>
-              Max Price
-            </Text>
-            <Display size='S'>{formatTokenAmount(maxPrice, 5)}</Display>
-            <Text size='XS'>
-              {borrower.token1.symbol} per {borrower.token0.symbol}
-            </Text>
-          </div>
+          <PriceInfo
+            textAlignment={TextAlignment.LEFT}
+            label='Min Price'
+            amount={formatTokenAmount(minPrice, 5)}
+            token0Symbol={borrower.token0.symbol}
+            token1Symbol={borrower.token1.symbol}
+          />
+          <PriceInfo
+            textAlignment={TextAlignment.RIGHT}
+            label='Max Price'
+            amount={formatTokenAmount(maxPrice, 5)}
+            token0Symbol={borrower.token0.symbol}
+            token1Symbol={borrower.token1.symbol}
+          />
         </div>
         <div className='flex justify-between'>
           {isInRange ? <InRangeBadge /> : <OutOfRangeBadge />}
@@ -168,13 +224,18 @@ function UniswapPositionCard(props: UniswapPositionCardProps) {
 
 export type UniswapPositionListProps = {
   borrower?: BorrowerNftBorrower;
+  importableUniswapNFTPositions: Map<number, UniswapNFTPosition>;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
   setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {
-  const { borrower, withdrawableUniswapNFTs, setPendingTxn } = props;
+  const { borrower, importableUniswapNFTPositions, withdrawableUniswapNFTs, setPendingTxn } = props;
   const [selectedUniswapPosition, setSelectedUniswapPosition] = useState<SelectedUniswapPosition | null>(null);
+  const [isImportingUniswapNFT, setIsImportingUniswapNFT] = useState(false);
+
+  const defaultImportableNFTPosition =
+    importableUniswapNFTPositions.size > 0 ? Array.from(importableUniswapNFTPositions.entries())[0] : null;
 
   return (
     <>
@@ -188,6 +249,10 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
                 borrower={borrower}
                 uniswapPosition={borrower?.assets.uniswapPositions.at(index)}
                 withdrawableUniswapNFTs={withdrawableUniswapNFTs}
+                hasImportableUniswapNFT={
+                  importableUniswapNFTPositions.size > 0 && borrower?.assets.uniswapPositions.length === index
+                }
+                setIsImportingUniswapNFT={() => setIsImportingUniswapNFT(true)}
                 setSelectedUniswapPosition={setSelectedUniswapPosition}
                 setPendingTxn={props.setPendingTxn}
               />
@@ -204,6 +269,19 @@ export function UniswapPositionList(props: UniswapPositionListProps) {
           uniswapNFTPosition={selectedUniswapPosition.withdrawableNFT}
           setIsOpen={() => {
             setSelectedUniswapPosition(null);
+          }}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {borrower && importableUniswapNFTPositions.size > 0 && defaultImportableNFTPosition && (
+        <ImportUniswapNFTModal
+          isOpen={isImportingUniswapNFT}
+          borrower={borrower}
+          uniswapNFTPositions={importableUniswapNFTPositions}
+          defaultUniswapNFTPosition={defaultImportableNFTPosition}
+          existingUniswapPositions={borrower.assets.uniswapPositions}
+          setIsOpen={() => {
+            setIsImportingUniswapNFT(false);
           }}
           setPendingTxn={setPendingTxn}
         />

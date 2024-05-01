@@ -127,7 +127,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
           token0AltText={`${token0.name}'s Icon`}
           token1AltText={`${token1.name}'s Icon`}
         />
-        <Display size='S' weight='semibold'>
+        <Display size='S' weight='medium'>
           {token0.symbol} / {token1.symbol}
         </Display>
       </div>
@@ -135,7 +135,7 @@ function UniswapNFTPositionButton(props: UniswapNFTPositionButtonProps) {
         <Text size='M' weight='medium' color={SECONDARY_COLOR}>
           Total Liquidity:
         </Text>
-        <Display size='S' weight='semibold'>
+        <Display size='S' weight='medium'>
           {truncateDecimals(liquidityAmount.toString(), 6)} {token1.symbol}
         </Display>
       </div>
