@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { base } from 'shared/lib/data/BaseChain';
+import { base } from 'shared/lib/data/chains/BaseChain';
+import { linea } from 'shared/lib/data/chains/LineaChain';
+import { scroll } from 'shared/lib/data/chains/ScrollChain';
 import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
 const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
@@ -8,6 +10,8 @@ const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [optimism.id]: 'api-optimistic.etherscan.io',
   [arbitrum.id]: 'api.arbiscan.io',
   [base.id]: 'api.basescan.org',
+  [linea.id]: 'api.lineascan.build',
+  [scroll.id]: 'api.scrollscan.com',
 };
 
 const ETHERSCAN_API_KEYS: { [chainId: number]: string | undefined } = {
@@ -16,6 +20,8 @@ const ETHERSCAN_API_KEYS: { [chainId: number]: string | undefined } = {
   [optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
   [arbitrum.id]: process.env.REACT_APP_ARBISCAN_API_KEY,
   [base.id]: process.env.REACT_APP_BASESCAN_API_KEY,
+  [linea.id]: process.env.REACT_APP_LINEASCAN_API_KEY,
+  [scroll.id]: process.env.REACT_APP_SCROLLSCAN_API_KEY,
 };
 
 export function makeEtherscanRequest(

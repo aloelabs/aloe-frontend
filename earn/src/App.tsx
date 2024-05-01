@@ -91,6 +91,8 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+// TODO: Need TheGraph for Linea and Scroll
+
 export const ChainContext = React.createContext({
   activeChain: DEFAULT_CHAIN as Chain,
   setActiveChain: (chain: Chain) => {},

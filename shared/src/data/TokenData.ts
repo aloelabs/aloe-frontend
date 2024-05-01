@@ -37,7 +37,9 @@ import {
   WethLogo,
   WstEthLogo,
 } from '../assets/svg/tokens';
-import { base } from './BaseChain';
+import { base } from './chains/BaseChain';
+import { linea } from './chains/LineaChain';
+import { scroll } from './chains/ScrollChain';
 
 const USDC_MAINNET = new Token(
   mainnet.id,
@@ -393,6 +395,57 @@ const BASED_BASE = new Token(
   BasedLogo
 );
 
+const USDC_LINEA = new Token(linea.id, '0x176211869ca2b568f2a7d4ee941e073a821ee1ff', 6, 'USDC', 'USD Coin', UsdcLogo);
+
+const WETH_LINEA = new Token(
+  linea.id,
+  '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f',
+  18,
+  'WETH',
+  'Wrapped Ether',
+  WethLogo
+);
+
+const WBTC_LINEA = new Token(
+  linea.id,
+  '0x3aab2285ddcddad8edf438c1bab47e1a9d05a9b4',
+  8,
+  'WBTC',
+  'Wrapped Bitcoin',
+  WbtcLogo
+);
+
+const USDT_LINEA = new Token(linea.id, '0xa219439258ca9da29e9cc4ce5596924745e12b93', 6, 'USDT', 'Tether USD', UsdtLogo);
+
+const USDC_SCROLL = new Token(scroll.id, '0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4', 6, 'USDC', 'USD Coin', UsdcLogo);
+
+const WETH_SCROLL = new Token(
+  scroll.id,
+  '0x5300000000000000000000000000000000000004',
+  18,
+  'WETH',
+  'Wrapped Ether',
+  WethLogo
+);
+
+const USDT_SCROLL = new Token(
+  scroll.id,
+  '0xf55bec9cafdbe8730f096aa55dad6d22d44099df',
+  6,
+  'USDT',
+  'Tether USD',
+  UsdtLogo
+);
+
+const WBTC_SCROLL = new Token(
+  scroll.id,
+  '0x3c1bca5a656e69edcd0d4e36bebb3fcdaca60cf1',
+  8,
+  'WBTC',
+  'Wrapped Bitcoin',
+  WbtcLogo
+);
+
 const DEGEN_BASE = new Token(base.id, '0x4ed4e862860bed51a9570b96d89af5e1b0efefed', 18, 'DEGEN', 'Degen', DegenLogo);
 
 const TOSHI_BASE = new Token(base.id, '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4', 18, 'TOSHI', 'Toshi', ToshiLogo);
@@ -457,6 +510,18 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [DEGEN_BASE.address]: DEGEN_BASE,
     [TOSHI_BASE.address]: TOSHI_BASE,
     [BRETT_BASE.address]: BRETT_BASE,
+  },
+  [linea.id]: {
+    [USDC_LINEA.address]: USDC_LINEA,
+    [WETH_LINEA.address]: WETH_LINEA,
+    [WBTC_LINEA.address]: WBTC_LINEA,
+    [USDT_LINEA.address]: USDT_LINEA,
+  },
+  [scroll.id]: {
+    [USDC_SCROLL.address]: USDC_SCROLL,
+    [WETH_SCROLL.address]: WETH_SCROLL,
+    [USDT_SCROLL.address]: USDT_SCROLL,
+    [WBTC_SCROLL.address]: WBTC_SCROLL,
   },
 };
 
