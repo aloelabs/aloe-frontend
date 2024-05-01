@@ -9,7 +9,7 @@ import { scroll } from '../chains/ScrollChain';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
-export const SUPPORTED_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll];
+export const SUPPORTED_CHAINS = [mainnet, optimism, arbitrum, base, linea];
 
 export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll];
 
