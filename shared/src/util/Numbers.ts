@@ -157,7 +157,7 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
     return amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'scientific',
-      maximumSignificantDigits: adjustedSigDigs - 1,
+      maximumSignificantDigits: adjustedSigDigs,
       minimumSignificantDigits: Math.min(2, sigDigs),
     });
   } else {

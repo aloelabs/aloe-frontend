@@ -102,6 +102,20 @@ if (process.env.REACT_APP_ANKR_API_KEY) {
     })
   );
 }
+if (process.env.REACT_APP_INFURA_API_KEY) {
+  providers.push(
+    jsonRpcProvider({
+      rpc: (chain) => {
+        if (chain.id !== linea.id) return null;
+        return {
+          http: `https://linea-mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_API_KEY}`,
+          ws: `wss://linea-mainnet.infura.io/ws/v3/${process.env.REACT_APP_INFURA_API_KEY}`,
+        };
+      },
+      priority: 0,
+    })
+  );
+}
 const hasNonPublicRpc = providers.length > 1;
 providers.push(
   jsonRpcProvider({
@@ -110,7 +124,7 @@ providers.push(
       if (chain.id === scroll.id) return { http: 'https://scroll.drpc.org' };
       return null;
     },
-    priority: 0,
+    priority: 1,
   }),
   jsonRpcProvider({
     rpc: (chain) => {
@@ -118,7 +132,7 @@ providers.push(
       if (chain.id === scroll.id) return { http: 'https://rpc.scroll.io' };
       return null;
     },
-    priority: 1,
+    priority: 2,
   }),
   jsonRpcProvider({
     rpc: (chain) => {
@@ -126,7 +140,7 @@ providers.push(
       if (chain.id === scroll.id) return { http: 'https://1rpc.io/scroll' };
       return null;
     },
-    priority: 2,
+    priority: 3,
   })
 );
 
