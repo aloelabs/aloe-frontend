@@ -17,6 +17,7 @@ import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
+import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
@@ -71,6 +72,7 @@ enum TabOption {
   Supply = 'supply',
   Borrow = 'borrow',
   Monitor = 'monitor',
+  Liquidate = 'liquidate',
 }
 
 type TokenSymbol = string;
@@ -348,6 +350,17 @@ export default function MarketsPage() {
         />
       );
       break;
+    case TabOption.Liquidate:
+      tabContent = (
+        <LiquidateTab
+          chainId={activeChain.id}
+          provider={provider}
+          lendingPairs={lendingPairs}
+          tokenQuotes={tokenQuotes}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
   }
 
   const totalSupplied = useMemo(() => {
@@ -429,6 +442,14 @@ export default function MarketsPage() {
               aria-selected={selectedTab === TabOption.Monitor}
             >
               Monitor{doesGuardianSenseManipulation ? ' 🚨' : ''}
+            </HeaderSegmentedControlOption>
+            <HeaderSegmentedControlOption
+              isActive={selectedTab === TabOption.Liquidate}
+              onClick={() => setSearchParams({ [SELECTED_TAB_KEY]: TabOption.Liquidate })}
+              role='tab'
+              aria-selected={selectedTab === TabOption.Liquidate}
+            >
+              Liquidate
             </HeaderSegmentedControlOption>
           </div>
           <HeaderDividingLine />

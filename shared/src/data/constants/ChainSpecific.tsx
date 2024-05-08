@@ -122,7 +122,7 @@ export const ALOE_II_FACTORY_ADDRESS: { [chainId: number]: Address } = {
 
 export const ALOE_II_BORROWER_LENS_ADDRESS: { [chainId: number]: Address } = {
   [mainnet.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
-  [optimism.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [optimism.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
   [arbitrum.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
   [base.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
   [linea.id]: '0x809645F9F667586C49557eA2b68C2F8D64d706CA',
@@ -235,4 +235,12 @@ export const ALOE_II_PERMIT2_MANAGER_ADDRESS: { [chainId: number]: Address } = {
   [base.id]: '0x6BDa468b1d473028938585a04eC3c62dcFF5309B',
   [linea.id]: '0xDd890732Da2C677B987F949c4bBaD831D9B8f468',
   [scroll.id]: '0xDd890732Da2C677B987F949c4bBaD831D9B8f468',
+};
+
+export const ALOE_II_LIQUIDATOR_ADDRESS: { [chainId: number]: Address } = {
+  [mainnet.id]: '0xC8eD78424824Ff7eA3602733909eC57c7d7F7301',
+  [optimism.id]: '0xC8eD78424824Ff7eA3602733909eC57c7d7F7301',
+  [arbitrum.id]: '0xC8eD78424824Ff7eA3602733909eC57c7d7F7301',
+  [base.id]: '0xC8eD78424824Ff7eA3602733909eC57c7d7F7301',
+  [linea.id]: '0xC8eD78424824Ff7eA3602733909eC57c7d7F7301',
 };

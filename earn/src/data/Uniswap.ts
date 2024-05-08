@@ -108,6 +108,26 @@ function getAmount1ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquid
   return JSBI.divide(numerator, JSBI.BigInt(Q96.toString()));
 }
 
+export function getAmountsForLiquidityGN(position: UniswapPosition, sqrtRatioX96: JSBI) {
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(position.lower);
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(position.upper);
+  const liquidity = position.liquidity;
+
+  let amount0 = JSBI.BigInt(0);
+  let amount1 = JSBI.BigInt(0);
+
+  if (JSBI.LE(sqrtRatioX96, sqrtRatioAX96)) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  } else if (JSBI.LT(sqrtRatioX96, sqrtRatioBX96)) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioX96, sqrtRatioBX96, liquidity);
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioX96, liquidity);
+  } else {
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  }
+
+  return { amount0, amount1 };
+}
+
 export function getAmountsForLiquidity(
   position: UniswapPosition,
   currentTick: number,

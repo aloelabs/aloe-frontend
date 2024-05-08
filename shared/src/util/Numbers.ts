@@ -136,6 +136,7 @@ export function roundUpToNearestN(value: number, n: number): number {
 export function formatTokenAmount(amount: number, sigDigs = 4): string {
   const lengthBeforeDecimal = Math.floor(amount).toString().length;
   const adjustedSigDigs = Math.max(sigDigs, lengthBeforeDecimal);
+  // TODO: negative numbers are always expressed in scientific notation because of our conditionals here
   //TODO: if we want to support more than one locale, we would need to add more logic here
   if (amount > 1e13) {
     return amount.toExponential(sigDigs - 3);

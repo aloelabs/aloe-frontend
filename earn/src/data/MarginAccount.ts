@@ -23,7 +23,7 @@ import { Address } from 'wagmi';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { getAmountsForLiquidity, UniswapPosition } from './Uniswap';
+import { getAmountsForLiquidity, getAmountsForLiquidityGN, UniswapPosition } from './Uniswap';
 
 export class Assets {
   constructor(
@@ -48,6 +48,20 @@ export class Assets {
     }
 
     return [amount0, amount1];
+  }
+
+  amountsAtSqrtPrice(sqrtPriceX96: GN) {
+    let amount0 = this.amount0;
+    let amount1 = this.amount1;
+
+    for (const uniswapPosition of this.uniswapPositions) {
+      const temp = getAmountsForLiquidityGN(uniswapPosition, sqrtPriceX96.toJSBI());
+
+      amount0 = amount0.recklessAdd(temp.amount0.toString(10));
+      amount1 = amount1.recklessAdd(temp.amount1.toString(10));
+    }
+
+    return { amount0, amount1 };
   }
 }
 

@@ -17,6 +17,39 @@ export const borrowerLensAbi = [
   },
   {
     type: 'function',
+    name: 'getSummary',
+    inputs: [
+      {
+        name: 'account',
+        type: 'address',
+        internalType: 'contract Borrower',
+      },
+    ],
+    outputs: [
+      { name: 'balanceEth', type: 'uint256', internalType: 'uint256' },
+      { name: 'balance0', type: 'uint256', internalType: 'uint256' },
+      { name: 'balance1', type: 'uint256', internalType: 'uint256' },
+      {
+        name: 'liabilities0',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'liabilities1',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      { name: 'slot0', type: 'uint256', internalType: 'uint256' },
+      {
+        name: 'liquidity',
+        type: 'uint128[]',
+        internalType: 'uint128[]',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'getUniswapPositions',
     inputs: [
       {
