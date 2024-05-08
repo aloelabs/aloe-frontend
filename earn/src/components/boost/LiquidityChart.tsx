@@ -234,7 +234,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       const sqrtRatios = computeLiquidationThresholds(
         info.borrower.assets,
         info.borrower.liabilities,
-        [info.position],
         info.borrower.sqrtPriceX96,
         info.borrower.iv,
         info.borrower.nSigma,
