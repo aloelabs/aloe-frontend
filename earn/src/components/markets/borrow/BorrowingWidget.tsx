@@ -132,7 +132,7 @@ export type BorrowingWidgetProps = {
   tokenBalances: LendingPairBalancesMap;
   tokenQuotes: Map<string, number>;
   tokenColors: Map<string, string>;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function filterBySelection(lendingPairs: LendingPair[], selection: Token | null) {

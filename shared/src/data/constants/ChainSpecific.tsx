@@ -1,17 +1,14 @@
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
-import { base } from '../chains/BaseChain';
-import { Address } from 'wagmi';
+import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { ArbitrumLogo, BaseLogo, EthereumLogo, LineaLogo, OptimismLogo, ScrollLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
-import { linea } from '../chains/LineaChain';
-import { scroll } from '../chains/ScrollChain';
+import { Address, Chain } from 'viem';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
 export const SUPPORTED_CHAINS = [mainnet, optimism, arbitrum, base, linea];
 
-export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll];
+export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll] as const;
 
 export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [mainnet.id]: <EthereumLogo width={16} height={16} />,
@@ -25,8 +22,6 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
 export function getChainLogo(chainId: number, size: number): JSX.Element {
   switch (chainId) {
     case mainnet.id:
-      return <EthereumLogo width={size} height={size} />;
-    case goerli.id:
       return <EthereumLogo width={size} height={size} />;
     case optimism.id:
       return <OptimismLogo width={size} height={size} />;

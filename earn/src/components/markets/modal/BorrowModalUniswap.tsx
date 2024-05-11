@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -81,7 +81,7 @@ export type BorrowModalProps = {
   selectedCollateral: UniswapNFTPosition;
   selectedBorrow: Token;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function BorrowModalUniswap(props: BorrowModalProps) {

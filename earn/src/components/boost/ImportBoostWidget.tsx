@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { TickMath } from '@uniswap/v3-sdk';
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import Big from 'big.js';
 import { ethers } from 'ethers';

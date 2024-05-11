@@ -2,11 +2,12 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
-import WagmiProvider from 'shared/lib/components/WagmiProvider';
+import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
@@ -17,8 +18,8 @@ import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { useAccount, useNetwork, useProvider } from 'wagmi';
-import { Chain } from 'wagmi/chains';
+import { Chain } from 'viem';
+import { Config, useAccount, useClient, WagmiProvider } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -29,9 +30,9 @@ import ImportBoostPage from './pages/boost/ImportBoostPage';
 import ManageBoostPage from './pages/boost/ManageBoostPage';
 import BoostPage from './pages/BoostPage';
 import LeaderboardPage from './pages/LeaderboardPage';
-import LendPage from './pages/LendPage';
 import MarketsPage from './pages/MarketsPage';
 import PortfolioPage from './pages/PortfolioPage';
+import { useEthersProvider } from './util/Provider';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
@@ -100,15 +101,15 @@ export const ChainContext = React.createContext({
 
 function AppBodyWrapper() {
   const { activeChain, setActiveChain } = React.useContext(ChainContext);
-  const network = useNetwork();
+  const { chain: network } = useAccount();
   const { isAllowed } = useGeoFencing(activeChain);
   const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
 
   useEffect(() => {
-    if (network.chain !== undefined && network.chain !== activeChain) {
-      setActiveChain(network.chain);
+    if (network !== undefined && network.id !== activeChain.id) {
+      setActiveChain(network);
     }
-  }, [activeChain, network.chain, setActiveChain]);
+  }, [activeChain, network, setActiveChain]);
 
   if (isAccountRiskLoading) {
     return null;
@@ -125,7 +126,6 @@ function AppBodyWrapper() {
         <Routes>
           <Route path='/portfolio' element={<PortfolioPage />} />
           <Route path='/markets' element={<MarketsPage />} />
-          <Route path='/lend' element={<LendPage />} />
           <Route path='/leaderboard' element={<LeaderboardPage />} />
           {isAllowed && (
             <>
@@ -145,6 +145,8 @@ function AppBodyWrapper() {
   );
 }
 
+const queryClient = new QueryClient();
+
 function App() {
   const mounted = useRef(true);
 
@@ -157,9 +159,11 @@ function App() {
   const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
 
   const { address: userAddress } = useAccount();
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
 
   const refetch = useCallback(async () => {
+    if (!provider) return;
     const chainId = (await provider.getNetwork()).chainId;
     const res = await getAvailableLendingPairs(chainId, provider);
     if (mounted.current) setLendingPairs(res);
@@ -203,9 +207,9 @@ function App() {
   }, [refetch]);
 
   return (
-    <>
-      <Suspense fallback={null}>
-        <WagmiProvider>
+    <Suspense fallback={null}>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
           <AccountRiskContext.Provider value={accountRisk}>
             <GeoFencingContext.Provider value={geoFencingInfo}>
               <ChainContext.Provider value={chainContextValue}>
@@ -216,9 +220,9 @@ function App() {
               </ChainContext.Provider>
             </GeoFencingContext.Provider>
           </AccountRiskContext.Provider>
-        </WagmiProvider>
-      </Suspense>
-    </>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </Suspense>
   );
 }
 

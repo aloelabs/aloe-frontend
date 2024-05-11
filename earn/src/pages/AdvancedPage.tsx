@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useContext } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import Banner from 'shared/lib/components/banner/Banner';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
-import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
@@ -17,7 +16,8 @@ import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address, useAccount, useContract, useProvider, useBalance } from 'wagmi';
+import { Address } from 'viem';
+import { Config, useAccount, useBalance, useClient, usePublicClient } from 'wagmi';
 
 import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
@@ -42,6 +42,7 @@ import { useLendingPair } from '../data/hooks/UseLendingPairs';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
+import { useEthersProvider } from '../util/Provider';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
@@ -146,7 +147,8 @@ export type UniswapPoolInfo = {
 
 export default function AdvancedPage() {
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const { address: userAddress, isConnected } = useAccount();
 
   const [borrowerNftBorrowers, setBorrowerNftBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(
@@ -155,7 +157,7 @@ export default function AdvancedPage() {
   );
   const [uniswapNFTPositions, setUniswapNFTPositions] = useSafeState<Map<number, UniswapNFTPosition>>(new Map());
   const [openedModal, setOpenedModal] = useState(OpenedModal.NONE);
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
 
@@ -173,18 +175,12 @@ export default function AdvancedPage() {
 
   const market = useLendingPair(selectedMarginAccount?.token0.address, selectedMarginAccount?.token1.address);
 
-  const borrowerLensContract = useContract({
-    abi: borrowerLensAbi,
-    address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
-    signerOrProvider: provider,
-  });
-
   const availablePools = useAvailablePools();
 
   // MARK: Fetch margin accounts
   useEffect(() => {
     (async () => {
-      if (borrowerLensContract == null || userAddress === undefined || availablePools.size === 0) return;
+      if (!provider || userAddress === undefined || availablePools.size === 0) return;
       const chainId = (await provider.getNetwork()).chainId;
 
       const borrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress);
@@ -203,7 +199,7 @@ export default function AdvancedPage() {
       }));
       setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
     })();
-  }, [userAddress, borrowerLensContract, provider, availablePools, setBorrowerNftBorrowers]);
+  }, [userAddress, provider, availablePools, setBorrowerNftBorrowers]);
 
   const uniqueTokens = useMemo(() => {
     const tokenSet = new Set<Token>();
@@ -241,34 +237,36 @@ export default function AdvancedPage() {
 
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined) return;
+      if (userAddress === undefined || provider === undefined) return;
       const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider);
       setUniswapNFTPositions(fetchedUniswapNFTPositions);
     })();
   }, [provider, setUniswapNFTPositions, userAddress]);
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setOpenedModal(OpenedModal.PENDING_TXN);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setOpenedModal, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setOpenedModal, setPendingTxnModalStatus]);
 
   const { data: accountEtherBalanceResult } = useBalance({
     address: selectedMarginAccount?.address as Address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: selectedMarginAccount !== undefined,
+    query: { enabled: selectedMarginAccount !== undefined },
   });
 
-  const accountEtherBalance = accountEtherBalanceResult && GN.fromBigNumber(accountEtherBalanceResult.value, 18);
+  const accountEtherBalance = accountEtherBalanceResult && GN.fromBigInt(accountEtherBalanceResult.value, 18);
 
   const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
@@ -310,7 +308,7 @@ export default function AdvancedPage() {
 
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
-  const selectedBorrowerOpenseaUrl = `https://opensea.io/assets/${activeChain.network}/${
+  const selectedBorrowerOpenseaUrl = `https://opensea.io/assets/${activeChain.name}/${
     ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id]
   }/${selectedMarginAccount ? ethers.BigNumber.from(selectedMarginAccount!.tokenId).toString() : ''}`;
 
@@ -473,7 +471,7 @@ export default function AdvancedPage() {
               setPendingTxn(null);
             }
           }}
-          txnHash={pendingTxn?.hash}
+          txnHash={pendingTxn}
           onConfirm={() => {
             setOpenedModal(OpenedModal.NONE);
             setTimeout(() => {

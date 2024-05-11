@@ -14,6 +14,7 @@ export function getIconForWagmiConnectorNamed(name: string): JSX.Element {
     case 'Rabby':
       return <RabbyIcon width={40} height={40} />;
     default:
+      console.log(name);
       return <MetaMaskIcon width={40} height={40} />;
   }
 }

@@ -1,10 +1,10 @@
-import { Chain } from 'wagmi';
-import { GetAccountResult, Provider } from '@wagmi/core';
 import { FilledGreyButton } from './Buttons';
 import Modal from './Modal';
 import { Text } from './Typography';
 import ConnectWalletButton from '../navbar/ConnectWalletButton';
 import styled from 'styled-components';
+import { Chain } from 'viem';
+import { type UseAccountReturnType } from 'wagmi'
 
 const StyledLink = styled.a`
   text-decoration: underline;
@@ -14,7 +14,7 @@ export type WelcomeModalProps = {
   isOpen: boolean;
   activeChain: Chain;
   checkboxes: React.ReactNode[];
-  account?: GetAccountResult<Provider>;
+  account?: UseAccountReturnType;
   setIsOpen: (open: boolean) => void;
   onAcknowledged: () => void;
   onSkip?: () => void;

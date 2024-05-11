@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { Provider } from '@wagmi/core';
 import { ethers } from 'ethers';
 
 import { LendingPair } from '../LendingPair';
 
 export default function useNumberOfUsers(
-  provider: Provider,
+  provider: ethers.providers.JsonRpcProvider,
   selectedLendingPair: LendingPair,
   lendingPairLabel: string
 ) {

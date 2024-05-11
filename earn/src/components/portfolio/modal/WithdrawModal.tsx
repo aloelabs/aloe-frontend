@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -72,7 +72,7 @@ export type WithdrawModalProps = {
   lendingPairs: LendingPair[];
   tokenBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {

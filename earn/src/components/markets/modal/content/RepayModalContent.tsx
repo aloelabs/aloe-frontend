@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -80,7 +80,7 @@ type ConfirmButtonProps = {
   repayToken: Token;
   repayTokenBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {

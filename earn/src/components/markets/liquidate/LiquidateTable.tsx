@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { liquidatorAbi } from 'shared/lib/abis/Liquidator';

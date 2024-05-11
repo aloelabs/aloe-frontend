@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState, useMemo } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
@@ -127,7 +127,7 @@ export type AddCollateralTabProps = {
   marginAccount: MarginAccount;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export function AddCollateralTab(props: AddCollateralTabProps) {
@@ -143,8 +143,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
     address: userAddress,
     token: collateralToken.address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen,
+    query: { enabled: isOpen },
   });
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo } from 'react';
 
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { LendingPair } from '../LendingPair';
 

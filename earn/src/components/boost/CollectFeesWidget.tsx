@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';

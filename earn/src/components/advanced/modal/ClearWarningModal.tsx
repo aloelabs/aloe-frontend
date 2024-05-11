@@ -1,13 +1,13 @@
 import { useContext } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -41,7 +41,7 @@ type ClearWarningButtonProps = {
   borrower: BorrowerNftBorrower;
   etherToSend: GN;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function ClearWarningButton(props: ClearWarningButtonProps) {
@@ -49,19 +49,19 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
   const { activeChain } = useContext(ChainContext);
 
   const {
-    config: clearConfig,
+    data: clearConfig,
     isError: isUnableToClear,
     isLoading: isCheckingIfAbleToClear,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: borrower.address,
     abi: borrowerAbi,
     functionName: 'clear',
     args: [Q32],
-    overrides: { value: etherToSend.toBigNumber() },
+    value: etherToSend.toBigInt(),
     chainId: activeChain.id,
   });
   const gasLimit = clearConfig.request?.gasLimit.mul(110).div(100);
-  const { write: clearWarning, isLoading: isAskingUserToClearWarning } = useContractWrite({
+  const { write: clearWarning, isLoading: isAskingUserToClearWarning } = useWriteContract({
     ...clearConfig,
     request: {
       ...clearConfig.request,
@@ -97,7 +97,7 @@ export type ClearWarningModalProps = {
   accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function ClearWarningModal(props: ClearWarningModalProps) {

@@ -7,7 +7,7 @@ import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { computeLTV } from '../../../data/BalanceSheet';
 import { LendingPair } from '../../../data/LendingPair';
@@ -19,7 +19,7 @@ export type InfoTabProps = {
   chainId: number;
   provider: Provider;
   // Remaining 3 should be passed in for sure though
-  blockNumber: number | undefined;
+  blockNumber: bigint | undefined;
   lendingPairs: LendingPair[];
   tokenColors: Map<string, string>;
   setPendingTxn: (data: SendTransactionResult) => void;

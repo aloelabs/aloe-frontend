@@ -191,7 +191,7 @@ export type BorrowModalProps = {
   accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {

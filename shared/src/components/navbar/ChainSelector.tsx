@@ -9,13 +9,14 @@ import {
 } from '../common/Dropdown';
 import DropdownArrowDown from '../../assets/svg/DropdownArrowDown';
 import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
-import { Chain, useSwitchNetwork } from 'wagmi';
 import { CHAIN_LOGOS, SUPPORTED_CHAINS } from '../../data/constants/ChainSpecific';
 import styled from 'styled-components';
 import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
 import { AltSpinner } from '../common/Spinner';
 import useClickOutside from '../../data/hooks/UseClickOutside';
+import { useSwitchChain } from 'wagmi';
+import { Chain } from 'viem';
 
 const DROPDOWN_OPTIONS: DropdownOption<Chain>[] = SUPPORTED_CHAINS.map((chain) => ({
   label: chain.name,
@@ -48,37 +49,30 @@ export default function ChainSelector(props: ChainSelectorProps) {
   const [pendingChainOption, setPendingChainOption] = useState<DropdownOption<Chain> | undefined>(undefined);
   const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
 
-  const { isLoading, switchNetwork } = useSwitchNetwork({
-    chainId: selectedChainOption.value.id,
-    onError: () => {
-      setShouldAttemptToSwitchNetwork(false);
-      setIsOpen(false);
-      setPendingChainOption(undefined);
-    },
-    onMutate(args) {
-      console.debug('About to switch chains', args);
-    },
-    onSuccess: (chain) => {
-      setActiveChain(chain);
-      setShouldAttemptToSwitchNetwork(false);
-      setIsOpen(false);
-      setPendingChainOption(undefined);
-    },
-  });
+  const { isPending, switchChainAsync } = useSwitchChain();
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isPending) {
       setSelectedChainOption(
         DROPDOWN_OPTIONS.find((option) => option.value.id === activeChain.id) ?? DROPDOWN_OPTIONS[0]
       );
     }
-  }, [activeChain, isLoading]);
+  }, [activeChain, isPending]);
 
   useEffect(() => {
-    if (!isLoading && shouldAttemptToSwitchNetwork && pendingChainOption) {
-      switchNetwork?.(pendingChainOption.value.id);
+    if (!isPending && shouldAttemptToSwitchNetwork && pendingChainOption) {
+      const newChain = pendingChainOption.value;
+      switchChainAsync({ chainId: newChain.id })
+        .then(() => {
+          setActiveChain(newChain);
+        })
+        .finally(() => {
+          setShouldAttemptToSwitchNetwork(false);
+          setIsOpen(false);
+          setPendingChainOption(undefined);
+        });
     }
-  }, [shouldAttemptToSwitchNetwork, isLoading, switchNetwork, pendingChainOption]);
+  }, [shouldAttemptToSwitchNetwork, isPending, switchChainAsync, pendingChainOption, setActiveChain, setIsOpen]);
 
   const dropdownRef = useRef(null);
 

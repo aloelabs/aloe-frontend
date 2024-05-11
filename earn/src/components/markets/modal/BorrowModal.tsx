@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
@@ -96,7 +96,7 @@ export type BorrowModalProps = {
   selectedBorrow: Token;
   userBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {

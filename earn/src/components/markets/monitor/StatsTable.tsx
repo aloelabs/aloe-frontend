@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';

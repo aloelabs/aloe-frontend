@@ -10,7 +10,7 @@ import CloseModal from '../../assets/svg/CloseModal';
 import MenuIcon from '../../assets/svg/Menu';
 import { Text } from '../common/Typography';
 import styled from 'styled-components';
-import { Chain, useAccount, useNetwork, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -27,6 +27,7 @@ import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import useSafeState from '../../data/hooks/UseSafeState';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
+import { Chain } from 'viem';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -282,7 +283,7 @@ export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const network = useNetwork();
+  const { chain } = useAccount()
   const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
@@ -294,7 +295,7 @@ export function NavBar(props: NavBarProps) {
   useEffect(() => {
     // Close the chain selector dropdown when the chain changes
     setIsSelectChainDropdownOpen(false);
-  }, [network.chain]);
+  }, [chain]);
 
   useEffect(() => {
     (async () => {

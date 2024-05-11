@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -54,7 +54,7 @@ export type UpdateCollateralModalProps = {
   borrower: BorrowerNftBorrower;
   uniswapPositions: UniswapNFTPosition[];
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function UpdateCollateralModal(props: UpdateCollateralModalProps) {

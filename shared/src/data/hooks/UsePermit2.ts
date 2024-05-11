@@ -1,23 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { BigNumber, ethers } from 'ethers';
 import {
-  Address,
-  Chain,
-  erc20ABI,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
+  useReadContract,
   useSignTypedData,
-  useWaitForTransaction,
+  useSimulateContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
 } from 'wagmi';
 
 import { permit2Abi } from '../../abis/Permit2';
-import { bigNumberToBinary } from '../../util/Bitmap';
+import { bigIntToBinary } from '../../util/Bitmap';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import { computeDomainSeparator } from '../../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../constants/ChainSpecific';
 import { Token } from '../Token';
+import { Address, Chain, erc20Abi, maxUint256 } from 'viem';
 
 export enum Permit2State {
   FETCHING_DATA,
@@ -83,7 +80,7 @@ const SIGNATURE_SHELF_LIFE = 10 * 60; // seconds
 // Instead of a counter, a nonce is actually an entry in one of the user's 256-bit bitmaps. Each user has 2^248
 // unique bitmaps, and the `wordPos` indicates which one we're dealing with. `wordPos` should be in the range
 // [0, 2^248). When a nonce is used, it is flipped *on* in the bitmap.
-const DEFAULT_NONCE_WORD_POS = BigNumber.from('0xA10E');
+const DEFAULT_NONCE_WORD_POS = BigInt('0xA10E');
 
 function evmCurrentTimePlus(secondsFromNow: number) {
   return (Date.now() / 1000 + secondsFromNow).toFixed(0);
@@ -95,7 +92,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   //////////////////////////////////////////////////////////////*/
 
   const [deadline, setDeadline] = useState<uint256>(evmCurrentTimePlus(SIGNATURE_SHELF_LIFE));
-  const [nonceWordPos, setNonceWordPos] = useState<BigNumber>(DEFAULT_NONCE_WORD_POS);
+  const [nonceWordPos, setNonceWordPos] = useState<bigint>(DEFAULT_NONCE_WORD_POS);
   const [nonce, setNonce] = useState<uint256 | null>(null);
 
   /*//////////////////////////////////////////////////////////////
@@ -107,9 +104,9 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     data: allowance,
     refetch: refetchAllowance,
     isFetching: isFetchingAllowance,
-  } = useContractRead({
+  } = useReadContract({
     address: token.address,
-    abi: erc20ABI,
+    abi: erc20Abi,
     functionName: 'allowance',
     args: [owner, UNISWAP_PERMIT2_ADDRESS[chain.id]] as const,
     chainId: chain.id,
@@ -117,32 +114,34 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
 
   // Since Permit2 is going to be moving `amount` from the user into Aloe, `allowance` must be at least
   // as big as `amount`. If it's not, the user needs to `approve` more spending.
-  const shouldApprove = allowance !== undefined && allowance.lt(amount.toBigNumber());
+  const shouldApprove = allowance !== undefined && allowance < amount.toBigInt();
 
   // Set up the `approve` transaction (only enabled if `shouldApprove` is true)
-  const { config: configWriteAllowance } = usePrepareContractWrite({
+  const { data: configWriteAllowance } = useSimulateContract({
     address: token.address,
-    abi: erc20ABI,
+    abi: erc20Abi,
     functionName: 'approve',
-    args: [UNISWAP_PERMIT2_ADDRESS[chain.id], ethers.constants.MaxUint256],
+    args: [UNISWAP_PERMIT2_ADDRESS[chain.id], maxUint256],
     chainId: chain.id,
-    enabled: shouldApprove,
+    query: { enabled: shouldApprove },
   });
   const {
-    write: writeAllowance,
+    writeContract: writeAllowance,
     data: writeAllowanceTxn,
-    isLoading: isAskingUserToWriteAllowance,
-  } = useContractWrite(configWriteAllowance);
+    isPending: isAskingUserToWriteAllowance,
+  } = useWriteContract();
 
-  const { isLoading: isWritingAllowance } = useWaitForTransaction({
+  const { data: allowanceReceipt } = useWaitForTransactionReceipt({
     confirmations: 1,
-    hash: writeAllowanceTxn?.hash,
+    hash: writeAllowanceTxn,
     chainId: chain.id,
-    onSuccess(data) {
-      console.debug('writeAllowance transaction successful!', data);
-      refetchAllowance();
-    },
   });
+
+  useEffect(() => {
+    if (allowanceReceipt === undefined) return;
+    console.debug('writeAllowance transaction successful!', allowanceReceipt);
+    refetchAllowance();
+  }, [allowanceReceipt, refetchAllowance]);
 
   /*//////////////////////////////////////////////////////////////
                             PERMIT HOOKS
@@ -166,7 +165,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   // Verify that `domain` will produce the same domain separator that's stored in the contract.
   // This _should_ always be the case, but it's good to check our work.
   {
-    const { data: domainSeparator } = useContractRead({
+    const { data: domainSeparator } = useReadContract({
       address: UNISWAP_PERMIT2_ADDRESS[chain.id],
       abi: permit2Abi,
       functionName: 'DOMAIN_SEPARATOR',
@@ -184,11 +183,11 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     data: nonceBitmap,
     refetch: refetchNonceBitmap,
     isFetching: isFetchingNonceBitmap,
-  } = useContractRead({
+  } = useReadContract({
     address: UNISWAP_PERMIT2_ADDRESS[chain.id],
     abi: permit2Abi,
     functionName: 'nonceBitmap',
-    args: [owner, BigNumber.from(nonceWordPos)],
+    args: [owner, nonceWordPos],
     chainId: chain.id,
   });
 
@@ -197,19 +196,19 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   useEffect(() => {
     if (!nonceBitmap) return;
 
-    if (nonceBitmap.eq(ethers.constants.MaxUint256)) {
+    if (nonceBitmap === maxUint256) {
       // NOTE: Selecting `nonceWordPos` randomly may help us find a valid nonce more quickly. However,
       // it would also increase the likelihood of dirtying a completely-clean slot -- in other words,
       // taking it from zero --> non-zero. To save the user gas, we cycle through bitmaps in an orderly
       // fashion so that (in most cases) storage writes are non-zero --> non-zero.
-      setNonceWordPos((prev) => prev.add(1).mod(Q248));
+      setNonceWordPos((prev) => (prev + 1n) % BigInt(Q248));
       return;
     }
 
-    const nonceBitmapStr = bigNumberToBinary(nonceBitmap).padStart(256, '0');
+    const nonceBitmapStr = bigIntToBinary(nonceBitmap).padStart(256, '0');
     const nonceBitPos = 255 - nonceBitmapStr.lastIndexOf('0');
 
-    setNonce(nonceWordPos.shl(8).add(nonceBitPos).toString());
+    setNonce(((nonceWordPos << 8n) + BigInt(nonceBitPos)).toString(10));
   }, [nonceBitmap, nonceWordPos]);
 
   /*//////////////////////////////////////////////////////////////
@@ -256,16 +255,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     };
   }, [token.address, amountStr, spender, nonce, deadline]);
 
-  const {
-    signTypedData,
-    isLoading: isAskingUserToSign,
-    data: signature,
-    reset: resetSignature,
-  } = useSignTypedData({
-    domain,
-    types: PERMIT2_MESSAGE_TYPES,
-    value: permitTransferFrom,
-  });
+  const { signTypedData, isPending: isAskingUserToSign, data: signature, reset: resetSignature } = useSignTypedData();
 
   useEffect(() => {
     resetSignature();
@@ -274,10 +264,10 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   let state: Permit2State;
   let action: (() => void) | undefined;
 
-  if (isFetchingAllowance || isFetchingNonceBitmap) {
+  if (isFetchingAllowance || isFetchingNonceBitmap || permitTransferFrom === undefined) {
     state = Permit2State.FETCHING_DATA;
     action = undefined;
-  } else if (isWritingAllowance) {
+  } else if (writeAllowanceTxn && allowanceReceipt) {
     state = Permit2State.WAITING_FOR_TRANSACTION;
     action = undefined;
   } else if (isAskingUserToWriteAllowance) {
@@ -285,13 +275,19 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     action = undefined;
   } else if (shouldApprove) {
     state = Permit2State.READY_TO_APPROVE;
-    action = writeAllowance;
+    action = configWriteAllowance ? () => writeAllowance(configWriteAllowance.request) : undefined;
   } else if (isAskingUserToSign) {
     state = Permit2State.ASKING_USER_TO_SIGN;
     action = undefined;
   } else if (signature === undefined) {
     state = Permit2State.READY_TO_SIGN;
-    action = signTypedData;
+    action = () =>
+      signTypedData({
+        domain,
+        types: PERMIT2_MESSAGE_TYPES,
+        primaryType: 'PermitTransferFrom',
+        message: permitTransferFrom,
+      });
   } else {
     state = Permit2State.DONE;
     action = undefined;

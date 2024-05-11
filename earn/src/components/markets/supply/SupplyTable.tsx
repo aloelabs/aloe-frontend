@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
 import UpArrow from 'shared/lib/assets/svg/UpArrow';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
@@ -106,7 +106,7 @@ export type SupplyTableRow = {
 
 export type SupplyTableProps = {
   rows: SupplyTableRow[];
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyTable(props: SupplyTableProps) {

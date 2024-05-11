@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
@@ -94,7 +94,7 @@ type UniswapPositionCardProps = {
   hasImportableUniswapNFT: boolean;
   setIsImportingUniswapNFT: (isImporting: boolean) => void;
   setSelectedUniswapPosition: (uniswapPosition: SelectedUniswapPosition | null) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function UniswapPositionCard(props: UniswapPositionCardProps) {
@@ -226,7 +226,7 @@ export type UniswapPositionListProps = {
   borrower?: BorrowerNftBorrower;
   importableUniswapNFTPositions: Map<number, UniswapNFTPosition>;
   withdrawableUniswapNFTs: Map<number, UniswapNFTPosition>;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export function UniswapPositionList(props: UniswapPositionListProps) {

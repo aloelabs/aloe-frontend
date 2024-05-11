@@ -72,7 +72,7 @@ type ConfirmButtonProps = {
   isBorrowingToken0: boolean;
   accountAddress?: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {

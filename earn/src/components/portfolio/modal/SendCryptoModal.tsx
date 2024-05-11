@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -57,7 +57,7 @@ type SendCryptoConfirmButtonProps = {
   sendBalance: GN;
   token: Token;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
@@ -163,7 +163,7 @@ export type SendCryptoModalProps = {
   options: Token[];
   defaultOption: Token;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SendCryptoModal(props: SendCryptoModalProps) {

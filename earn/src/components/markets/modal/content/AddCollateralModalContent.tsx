@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
@@ -57,7 +57,7 @@ type ConfirmButtonProps = {
   borrower: BorrowerNftBorrower;
   token: Token;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {

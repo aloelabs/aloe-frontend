@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -12,7 +12,8 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
+import { Address } from 'viem';
+import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
 import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
@@ -28,6 +29,7 @@ import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingP
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';
@@ -85,7 +87,7 @@ export default function MarketsPage() {
   const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
@@ -125,7 +127,8 @@ export default function MarketsPage() {
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
   });
@@ -139,19 +142,22 @@ export default function MarketsPage() {
     return Array.from(tokenSet.values());
   }, [lendingPairs]);
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   // MARK: Computing token colors
   useEffect(() => {
@@ -219,7 +225,7 @@ export default function MarketsPage() {
   // MARK: Fetching token balances
   useEffect(() => {
     (async () => {
-      if (!userAddress) return;
+      if (!userAddress || !provider) return;
       // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
       // return value. Other usages should be updated similarly.
       const { balancesMap: result } = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
@@ -230,7 +236,7 @@ export default function MarketsPage() {
   // MARK: Fetch margin accounts
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined || availablePools.size === 0) return;
+      if (userAddress === undefined || availablePools.size === 0 || !provider) return;
 
       const chainId = (await provider.getNetwork()).chainId;
       const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(chainId, provider, userAddress);
@@ -458,7 +464,7 @@ export default function MarketsPage() {
       </div>
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
-        txnHash={pendingTxn?.hash}
+        txnHash={pendingTxn}
         setIsOpen={(isOpen: boolean) => {
           setIsPendingTxnModalOpen(isOpen);
           if (!isOpen) {

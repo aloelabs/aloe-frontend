@@ -19,7 +19,7 @@ import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address, erc20ABI } from 'wagmi';
+import { Address, erc20Abi } from 'viem';
 
 import { fetchListOfBorrowerNfts } from './BorrowerNft';
 import { Assets, Liabilities, MarginAccount } from './MarginAccount';
@@ -279,13 +279,13 @@ export async function fetchBoostBorrower(
     {
       reference: 'token0.balanceOf',
       contractAddress: token0Addr,
-      abi: erc20ABI as any,
+      abi: erc20Abi as any,
       calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],
     },
     {
       reference: 'token1.balanceOf',
       contractAddress: token1Addr,
-      abi: erc20ABI as any,
+      abi: erc20Abi as any,
       calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],
     },
   ];

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -82,7 +82,7 @@ type DepositButtonProps = {
   kitty: Kitty;
   accountAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
@@ -192,7 +192,7 @@ export type SupplyModalProps = {
   isOpen: boolean;
   selectedRow: SupplyTableRow;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyModal(props: SupplyModalProps) {

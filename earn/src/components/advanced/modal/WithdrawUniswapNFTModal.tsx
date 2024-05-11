@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -187,7 +187,7 @@ export type WithdrawUniswapNFTModalProps = {
   uniswapNFTPosition: UniswapNFTPositionEntry;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export function WithdrawUniswapNFTModal(props: WithdrawUniswapNFTModalProps) {

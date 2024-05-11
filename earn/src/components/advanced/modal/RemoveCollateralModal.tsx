@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -159,7 +159,7 @@ export type RemoveCollateralModalProps = {
   borrower: BorrowerNftBorrower;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function RemoveCollateralModal(props: RemoveCollateralModalProps) {

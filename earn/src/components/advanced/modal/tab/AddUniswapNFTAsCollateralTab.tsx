@@ -295,7 +295,7 @@ export type AddUniswapNFTAsCollateralTabProps = {
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   defaultUniswapNFTPosition: [number, UniswapNFTPosition];
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTabProps) {

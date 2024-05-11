@@ -3,7 +3,6 @@ import { defaultAbiCoder } from '@ethersproject/abi';
 import { getCreate2Address } from '@ethersproject/address';
 import { keccak256 } from '@ethersproject/solidity';
 import { TickMath } from '@uniswap/v3-sdk';
-import { Chain, Provider } from '@wagmi/core';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
@@ -19,7 +18,7 @@ import {
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address, Chain } from 'viem';
 
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
@@ -239,7 +238,7 @@ export async function fetchUniswapPositions(
   priors: UniswapPositionPrior[],
   marginAccountAddress: string,
   uniswapV3PoolAddress: string,
-  provider: Provider,
+  provider: ethers.providers.JsonRpcProvider,
   chain: Chain
 ) {
   const multicall = new Multicall({
@@ -325,7 +324,7 @@ export async function fetchUniswapPoolBasics(
 
 export async function fetchUniswapNFTPosition(
   tokenId: number,
-  provider: Provider
+  provider: ethers.providers.JsonRpcProvider
 ): Promise<UniswapNFTPosition | undefined> {
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(
@@ -354,7 +353,7 @@ export async function fetchUniswapNFTPosition(
 
 export async function fetchUniswapNFTPositions(
   userAddress: Address,
-  provider: Provider
+  provider: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider
 ): Promise<Map<number, UniswapNFTPosition>> {
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(

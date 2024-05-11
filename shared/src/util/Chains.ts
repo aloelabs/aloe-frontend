@@ -1,4 +1,4 @@
-import { Chain } from 'wagmi';
+import { Chain } from 'viem';
 import { DEFAULT_ETHERSCAN_URL } from '../data/constants/Values';
 
 /**

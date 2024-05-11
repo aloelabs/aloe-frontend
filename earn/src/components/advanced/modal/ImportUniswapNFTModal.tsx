@@ -1,4 +1,4 @@
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Modal from 'shared/lib/components/common/Modal';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -12,7 +12,7 @@ export type ImportUniswapNFTModalProps = {
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   defaultUniswapNFTPosition: [number, UniswapNFTPosition];
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function ImportUniswapNFTModal(props: ImportUniswapNFTModalProps) {

@@ -11,7 +11,8 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
-import { Address, useAccount, useContractReads, useProvider } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useProvider, useReadContracts } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
@@ -170,7 +171,7 @@ export default function BoostPage() {
       } as const;
     });
   }, [activeChain.id, uniswapNFTPositions]);
-  const { data: slot0Data } = useContractReads({
+  const { data: slot0Data } = useReadContracts({
     contracts: poolContracts,
     allowFailure: false,
   });
@@ -186,7 +187,7 @@ export default function BoostPage() {
       } as const;
     });
   }, [activeChain.id, uniswapNFTPositions]);
-  const { data: marketDatas } = useContractReads({
+  const { data: marketDatas } = useReadContracts({
     contracts: factoryContracts,
     allowFailure: false,
   });

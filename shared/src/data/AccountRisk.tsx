@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 import { API_SCREENING_URL } from './constants/Values';
 
 export type ScreeningResponse = {

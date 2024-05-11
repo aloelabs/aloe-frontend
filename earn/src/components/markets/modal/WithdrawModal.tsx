@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
@@ -63,7 +63,7 @@ export type WithdrawModalProps = {
   selectedRow: SupplyTableRow;
   userAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {

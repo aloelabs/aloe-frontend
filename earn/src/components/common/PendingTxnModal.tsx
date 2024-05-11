@@ -40,7 +40,7 @@ function EtherscanLink(props: { txnHash: string }) {
 export type PendingTxnModalProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  txnHash?: string;
+  txnHash: `0x${string}` | null;
   status: PendingTxnModalStatus | null;
   onConfirm: () => void;
 };

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
-import { GetAccountResult, Provider } from '@wagmi/core';
+import { type UseAccountReturnType } from 'wagmi';
 import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
 import { useConnect, useEnsName } from 'wagmi';
-import { Chain, mainnet } from 'wagmi/chains';
 
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
@@ -19,6 +18,8 @@ import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 import Bell from '../../assets/svg/Bell';
 import { QRCodeSVG } from 'qrcode.react';
 import { NOTIFICATION_BOT_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { Chain } from 'viem';
+import { mainnet } from 'viem/chains';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';
@@ -74,7 +75,7 @@ const QRCodeContainer = styled.div`
 `;
 
 export type AccountInfoProps = {
-  account: GetAccountResult<Provider>;
+  account: UseAccountReturnType;
   chain: Chain;
   buttonStyle?: 'secondary' | 'tertiary';
   closeChainSelector: () => void;
@@ -98,7 +99,7 @@ export default function AccountInfo(props: AccountInfoProps) {
   const [enableNotificationsModalOpen, setEnableNotificationsModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
-  const { connect, connectors, error } = useConnect({ chainId: chain.id });
+  const { connect, connectors, error } = useConnect();
 
   useEffect(() => {
     if (isConnected) {
@@ -220,7 +221,7 @@ export default function AccountInfo(props: AccountInfoProps) {
               .
             </Text>
             {connectors.map((connector) => (
-              <div key={connector.id} className='py-2 w-full flex flex-row items-center justify-between'>
+              <div key={connector.uid} className='py-2 w-full flex flex-row items-center justify-between'>
                 {getIconForWagmiConnectorNamed(connector.name)}
                 <FilledStylizedButton
                   name='Disconnect'
@@ -228,11 +229,9 @@ export default function AccountInfo(props: AccountInfoProps) {
                   backgroundColor={GREY_700}
                   color={'rgba(255, 255, 255, 1)'}
                   fillWidth={true}
-                  disabled={!connector.ready}
-                  onClick={() => connect({ connector })}
+                  onClick={() => connect({ connector, chainId: chain.id })}
                 >
                   {connector.name}
-                  {!connector.ready && ' (unsupported)'}
                 </FilledStylizedButton>
               </div>
             ))}

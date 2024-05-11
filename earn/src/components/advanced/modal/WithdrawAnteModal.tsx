@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -128,7 +128,7 @@ export type WithdrawAnteModalProps = {
   accountEthBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {

@@ -3,7 +3,8 @@ import { useContext, useEffect, useState } from 'react';
 import Big from 'big.js';
 import { lenderAbi } from 'shared/lib/abis/Lender';
 import { Token } from 'shared/lib/data/Token';
-import { Address, useContractRead } from 'wagmi';
+import { Address } from 'viem';
+import { useReadContract } from 'wagmi';
 
 import { ChainContext } from '../../App';
 
@@ -14,7 +15,7 @@ export function useBalanceOfUnderlying(
 ): { refetch: () => void; data: string | null } {
   const { activeChain } = useContext(ChainContext);
   const [state, setState] = useState<string | null>(null);
-  const { refetch, data: balanceOfUnderlying } = useContractRead({
+  const { refetch, data: balanceOfUnderlying } = useReadContract({
     address: lender,
     abi: lenderAbi,
     functionName: 'underlyingBalance',
