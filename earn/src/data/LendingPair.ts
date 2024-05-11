@@ -21,7 +21,7 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
@@ -92,9 +92,9 @@ export class LendingPair {
     return -Math.log(this.ltv) / Math.log(1.0001) / this.factoryData.manipulationThresholdDivisor;
   }
 
-  amountEthRequiredBeforeBorrowing(currentBorrowerBalance: BigNumber) {
-    const ante = this.factoryData.ante.toBigNumber();
-    return currentBorrowerBalance.gte(ante) ? BigNumber.from(0) : ante.sub(currentBorrowerBalance);
+  amountEthRequiredBeforeBorrowing(currentBorrowerBalance: bigint) {
+    const ante = this.factoryData.ante.toBigInt();
+    return currentBorrowerBalance >= ante ? 0n : ante - currentBorrowerBalance;
   }
 }
 

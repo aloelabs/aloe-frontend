@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, useMemo } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
@@ -9,7 +9,7 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
@@ -19,8 +19,6 @@ import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
-
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -50,51 +48,22 @@ type AddCollateralButtonProps = {
   collateralAmount: GN;
   userBalance: GN;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function AddCollateralButton(props: AddCollateralButtonProps) {
   const { marginAccount, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
 
-  const [isPending, setIsPending] = useState(false);
-
-  const { config: contractWriteConfig } = usePrepareContractWrite({
+  const { data: contractWriteConfig } = useSimulateContract({
     address: collateralToken.address,
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [marginAccount.address, collateralAmount.toBigNumber()],
-    enabled: Boolean(collateralAmount) && Boolean(userBalance) && collateralAmount.lte(userBalance),
+    args: [marginAccount.address, collateralAmount.toBigInt()],
+    query: { enabled: Boolean(collateralAmount) && Boolean(userBalance) && collateralAmount.lte(userBalance) },
     chainId: activeChain.id,
   });
-  const contractWriteConfigUpdatedRequest = useMemo(() => {
-    if (contractWriteConfig.request) {
-      return {
-        ...contractWriteConfig.request,
-        gasLimit: contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [contractWriteConfig.request]);
-  const {
-    write: contractWrite,
-    data: contractData,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-  } = useContractWrite({
-    ...contractWriteConfig,
-    request: contractWriteConfigUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+  const { writeContractAsync, isPending } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
 
@@ -112,9 +81,11 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
-          setIsPending(true);
-          contractWrite?.();
+        if (confirmButtonState === ConfirmButtonState.READY && contractWriteConfig !== undefined) {
+          writeContractAsync(contractWriteConfig.request).then((hash) => {
+            setPendingTxn(hash);
+            setIsOpen(false);
+          });
         }
       }}
     >

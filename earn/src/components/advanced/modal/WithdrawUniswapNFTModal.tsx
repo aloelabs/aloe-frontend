@@ -14,7 +14,8 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
@@ -31,8 +32,6 @@ import { InRangeBadge, OutOfRangeBadge } from '../../common/UniswapPositionCard'
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';
-
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   APPROVE_NFT_MANAGER,
@@ -85,7 +84,7 @@ type WithdrawUniswapNFTButtonProps = {
   uniswapNFTPosition: UniswapNFTPositionEntry;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
@@ -119,7 +118,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     ) as `0x${string}`;
   }, [uniswapNFTPosition, uniswapPosition, existingUniswapPositions]);
 
-  const { config: contractWriteConfig } = usePrepareContractWrite({
+  const { data: contractWriteConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -130,18 +129,14 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: true,
     chainId: activeChain.id,
   });
-  if (contractWriteConfig.request) {
-    contractWriteConfig.request.gasLimit = contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  }
   const {
-    write: contractWrite,
+    writeContract,
     data: contractData,
     isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-  } = useContractWrite(contractWriteConfig);
+    isPending: contractIsLoading,
+  } = useWriteContract();
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -169,9 +164,9 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
+        if (confirmButtonState === ConfirmButtonState.READY && contractWriteConfig) {
           setIsPending(true);
-          contractWrite?.();
+          writeContract(contractWriteConfig.request);
         }
       }}
     >

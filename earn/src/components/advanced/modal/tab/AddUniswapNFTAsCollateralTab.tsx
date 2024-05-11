@@ -1,7 +1,7 @@
-import { useContext, useEffect, useState, useMemo } from 'react';
+import { useContext, useState, useMemo } from 'react';
 
-import { erc721ABI, SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { type WriteContractReturnType } from '@wagmi/core';
+import { ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
@@ -15,7 +15,8 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, erc721Abi } from 'viem';
+import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
@@ -26,8 +27,6 @@ import TokenPairIcons from '../../../common/TokenPairIcons';
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 const ITEMS_PER_PAGE = 2;
-
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 const UniswapNFTPositionsPage = styled.div`
   display: flex;
@@ -155,7 +154,7 @@ type AddUniswapNFTAsCollateralButtonProps = {
   uniswapNFTPosition: UniswapNFTPositionEntry;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonProps) {
@@ -163,23 +162,19 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
   const { activeChain } = useContext(ChainContext);
 
   const [isPending, setIsPending] = useState(false);
-  const [approvingTxn, setApprovingTxn] = useState<SendTransactionResult | null>(null);
+  const [approvingTxn, setApprovingTxn] = useState<WriteContractReturnType | null>(null);
+
+  const publicClient = usePublicClient({ chainId: activeChain.id });
 
   // MARK: Read/write hooks for Router's allowance --------------------------------------------------------------------
-  const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
+  const { refetch: refetchGetApprovedData, data: getApprovedData } = useReadContract({
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
+    abi: erc721Abi,
     functionName: 'getApproved',
-    args: [BigNumber.from(uniswapNFTPosition[0].toFixed(0))] as const,
+    args: [BigInt(uniswapNFTPosition[0].toFixed(0))] as const,
     chainId: activeChain.id,
   });
-  const { writeAsync: writeApproveAsync } = useContractWrite({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
-    functionName: 'approve',
-    mode: 'recklesslyUnprepared',
-    chainId: activeChain.id,
-  });
+  const { writeContractAsync: writeApproveAsync } = useWriteContract();
 
   const encodedData = useMemo(() => {
     return ethers.utils.defaultAbiCoder.encode(
@@ -201,7 +196,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
     ) as `0x${string}`;
   }, [uniswapNFTPosition, existingUniswapPositions]);
 
-  const { config: contractWriteConfig } = usePrepareContractWrite({
+  const { data: contractWriteConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -212,28 +207,10 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
+    query: { enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] },
     chainId: activeChain.id,
   });
-  if (contractWriteConfig.request) {
-    contractWriteConfig.request.gasLimit = contractWriteConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  }
-  const {
-    write: contractWrite,
-    data: contractData,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-  } = useContractWrite(contractWriteConfig);
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+  const { writeContractAsync: contractWrite } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
 
@@ -257,30 +234,30 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       onClick={() => {
         if (confirmButtonState === ConfirmButtonState.APPROVE_NFT_MANAGER) {
           setIsPending(true);
-          writeApproveAsync?.({
-            recklesslySetUnpreparedArgs: [
-              ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
-              BigNumber.from(uniswapNFTPosition[0].toFixed(0)),
-            ],
-            recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from(100000) },
+          writeApproveAsync({
+            address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
+            abi: erc721Abi,
+            functionName: 'approve',
+            chainId: activeChain.id,
+            args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], BigInt(uniswapNFTPosition[0].toFixed(0))],
+            gas: 100000n,
           })
-            .then((txnResult) => {
+            .then(async (txnResult) => {
               setApprovingTxn(txnResult);
-              txnResult
-                .wait(1)
-                .then(() => refetchGetApprovedData())
-                .finally(() => {
-                  setApprovingTxn(null);
-                  setIsPending(false);
-                });
+              await publicClient?.waitForTransactionReceipt({ hash: txnResult, confirmations: 1 });
+              refetchGetApprovedData();
+              setApprovingTxn(null);
+              setIsPending(false);
             })
             .catch((_err) => {
               setApprovingTxn(null);
               setIsPending(false);
             });
-        } else if (confirmButtonState === ConfirmButtonState.READY) {
-          setIsPending(true);
-          contractWrite?.();
+        } else if (confirmButtonState === ConfirmButtonState.READY && contractWriteConfig) {
+          contractWrite(contractWriteConfig.request).then((hash) => {
+            setPendingTxn(hash);
+            setIsOpen(false);
+          });
         }
       }}
     >
