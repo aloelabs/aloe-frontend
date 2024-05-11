@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult, Provider } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { secondsInDay } from 'date-fns';
 import { ethers } from 'ethers';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
@@ -17,12 +17,12 @@ import StatsTable from './StatsTable';
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
   chainId: number;
-  provider: Provider;
+  provider: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider;
   // Remaining 3 should be passed in for sure though
   blockNumber: bigint | undefined;
   lendingPairs: LendingPair[];
   tokenColors: Map<string, string>;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
 };
 
 const MIN_NUM_DAYS_TO_FETCH = 30;

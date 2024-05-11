@@ -1,7 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton, SquareInput } from 'shared/lib/components/common/Input';
@@ -11,12 +10,14 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import { Address, getAddress, isAddress } from 'viem';
+import { mainnet } from 'viem/chains';
+import { normalize } from 'viem/ens';
+import { useAccount, useBalance, useEnsAddress, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -63,55 +64,32 @@ type SendCryptoConfirmButtonProps = {
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const { sendAddress, sendAmount, sendBalance, token, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const provider = useProvider({ chainId: activeChain.id });
 
-  useEffect(() => {
-    let mounted = true;
-    async function resolveEns() {
-      const resolved = await provider.resolveName(sendAddress);
-      if (mounted) {
-        setResolvedAddress(resolved);
-      }
-    }
-    // If the address could be valid, resolve it, otherwise set it to null
-    if (sendAddress.endsWith('.eth') || sendAddress.length === 42) {
-      resolveEns();
-    } else {
-      setResolvedAddress(null);
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [sendAddress, provider]);
+  const isEns = sendAddress.endsWith('.eth');
 
-  const { config: sendCryptoConfig } = usePrepareContractWrite({
+  const { data: resolvedAddress } = useEnsAddress({
+    name: normalize(sendAddress),
+    chainId: mainnet.id,
+    query: { enabled: isEns },
+  });
+
+  const finalAddress = isEns ? resolvedAddress : sendAddress;
+
+  const { data: sendCryptoConfig } = useSimulateContract({
     address: token.address,
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [resolvedAddress as Address, sendAmount.toBigNumber()],
+    args: [finalAddress as Address, sendAmount.toBigInt()],
     chainId: activeChain.id,
-    enabled: sendAmount.isGtZero() && !isPending && resolvedAddress != null,
+    query: { enabled: sendAmount.isGtZero() && !isPending && Boolean(finalAddress) },
   });
-  const sendCryptoUpdatedRequest = useMemo(() => {
-    if (sendCryptoConfig.request) {
-      return {
-        ...sendCryptoConfig.request,
-        gasLimit: sendCryptoConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [sendCryptoConfig.request]);
   const {
-    write: contractWrite,
+    writeContract: contractWrite,
     isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
+    isPending: contractIsLoading,
     data: contractData,
-  } = useContractWrite({
-    ...sendCryptoConfig,
-    request: sendCryptoUpdatedRequest,
-  });
+  } = useWriteContract();
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -137,9 +115,9 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
 
   function handleClickConfirm() {
     // TODO: Do not use setStates in async functions outside of useEffect
-    if (confirmButtonState === ConfirmButtonState.READY) {
+    if (confirmButtonState === ConfirmButtonState.READY && sendCryptoConfig !== undefined) {
       setIsPending(true);
-      contractWrite?.();
+      contractWrite(sendCryptoConfig.request);
     }
   }
 
@@ -174,6 +152,12 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   const [sendAmountInputValue, setSendAmountInputValue] = useState<string>('');
   const account = useAccount();
 
+  useEffect(() => {
+    if (!isAddress(addressInputValue)) return;
+    const checksummedAddress = getAddress(addressInputValue, activeChain.id);
+    if (checksummedAddress !== addressInputValue) setAddressInputValue(checksummedAddress);
+  }, [activeChain.id, addressInputValue]);
+
   function resetModal() {
     setSelectedOption(defaultOption);
     setAddressInputValue('');
@@ -184,7 +168,7 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
     address: account?.address ?? '0x',
     token: selectedOption.address,
     chainId: activeChain.id,
-    enabled: isOpen,
+    query: { enabled: isOpen },
   });
 
   useEffect(() => {
@@ -209,8 +193,8 @@ export default function SendCryptoModal(props: SendCryptoModalProps) {
   }, [defaultOption]);
 
   const gnSendAmount = GN.fromDecimalString(sendAmountInputValue || '0', selectedOption.decimals);
-  const gnSendBalance = GN.fromBigNumber(depositBalance?.value ?? BigNumber.from('0'), selectedOption.decimals);
-  const isValidAddress = ethers.utils.isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
+  const gnSendBalance = GN.fromBigInt(depositBalance?.value ?? 0n, selectedOption.decimals);
+  const isValidAddress = isAddress(addressInputValue) || addressInputValue.endsWith('.eth');
 
   const summaryText = isValidAddress
     ? `You're sending ${sendAmountInputValue || '0.00'} ${selectedOption.symbol} to ${addressInputValue || '...'}`

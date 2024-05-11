@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -12,7 +12,7 @@ import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { BoostCardInfo } from '../../data/Uniboost';
@@ -41,7 +41,7 @@ const FeeAmountsContainer = styled.div`
 export type CollectFeesWidgetProps = {
   cardInfo: BoostCardInfo;
   tokenQuotes?: TokenPairQuotes;
-  setPendingTxn: (txn: SendTransactionResult | null) => void;
+  setPendingTxn: (txn: WriteContractReturnType | null) => void;
 };
 
 export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
@@ -54,36 +54,20 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
   }, []);
 
-  const { config: configBurn } = usePrepareContractWrite({
+  const { data: configBurn } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
     args: [cardInfo.owner, [cardInfo.nftTokenPtr!], [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]], [modifyData], [0]],
     chainId: activeChain.id,
-    enabled:
-      cardInfo.nftTokenPtr != null &&
-      cardInfo.nftTokenPtr >= 0 &&
-      !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
-  });
-  let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
-  const {
-    write: claimFees,
-    data: claimFeesTxn,
-    isLoading: claimFeesIsLoading,
-    isSuccess: claimFeesDidSucceed,
-  } = useContractWrite({
-    ...configBurn,
-    request: {
-      ...configBurn.request,
-      gasLimit,
+    query: {
+      enabled:
+        cardInfo.nftTokenPtr != null &&
+        cardInfo.nftTokenPtr >= 0 &&
+        !JSBI.equal(cardInfo?.position.liquidity, JSBI.BigInt(0)),
     },
   });
-
-  useEffect(() => {
-    if (claimFeesDidSucceed && claimFeesTxn) {
-      setPendingTxn(claimFeesTxn);
-    }
-  }, [claimFeesDidSucceed, claimFeesTxn, claimFeesIsLoading, setPendingTxn]);
+  const { writeContractAsync: claimFees, isPending: claimFeesIsLoading } = useWriteContract();
 
   const token0FeesEarnedUSD = tokenQuotes ? cardInfo.feesEarned.amount0.toNumber() * tokenQuotes.token0Price : 0;
   const token1FeesEarnedUSD = tokenQuotes ? cardInfo.feesEarned.amount1.toNumber() * tokenQuotes.token1Price : 0;
@@ -97,9 +81,9 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
         <FilledGradientButton
           size='S'
           onClick={() => {
-            claimFees?.();
+            claimFees(configBurn!.request).then((hash) => setPendingTxn(hash));
           }}
-          disabled={claimFeesIsLoading}
+          disabled={claimFeesIsLoading || !configBurn}
         >
           Collect Fees
         </FilledGradientButton>

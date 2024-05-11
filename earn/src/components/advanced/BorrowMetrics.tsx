@@ -9,12 +9,12 @@ import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Address } from 'viem';
 
 import { ChainContext } from '../../App';
 import { auctionCurve, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
-import { Address } from 'viem';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;

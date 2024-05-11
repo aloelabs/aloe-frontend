@@ -9,7 +9,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { sqrtRatioToTick } from '../../data/BalanceSheet';
@@ -78,7 +78,7 @@ export type BurnBoostModalProps = {
   isOpen: boolean;
   cardInfo: BoostCardInfo;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: Dispatch<SendTransactionResult | null>;
+  setPendingTxn: Dispatch<WriteContractReturnType | null>;
 };
 
 export default function BurnBoostModal(props: BurnBoostModalProps) {
@@ -101,31 +101,20 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
     return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
   }, [cardInfo.borrower, slippagePercentage]);
 
-  const { config: configBurn, isLoading: isCheckingIfAbleToBurn } = usePrepareContractWrite({
+  const { data: configBurn, isLoading: isCheckingIfAbleToBurn } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
     args: [cardInfo.owner, [cardInfo.nftTokenPtr!], [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]], [modifyData], [0]],
     chainId: activeChain.id,
-    enabled: userAddress && !JSBI.equal(cardInfo.position.liquidity, JSBI.BigInt(0)),
+    query: { enabled: userAddress && !JSBI.equal(cardInfo.position.liquidity, JSBI.BigInt(0)) },
   });
-  let gasLimit = configBurn.request?.gasLimit.mul(110).div(100);
-  const { write: burn, isLoading: burnIsLoading } = useContractWrite({
-    ...configBurn,
-    request: {
-      ...configBurn.request,
-      gasLimit,
-    },
-    onSuccess: (data: SendTransactionResult) => {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: burn, isPending: burnIsLoading } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (burnIsLoading) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
-  } else if (isCheckingIfAbleToBurn) {
+  } else if (isCheckingIfAbleToBurn || !configBurn) {
     confirmButtonState = ConfirmButtonState.LOADING;
   }
 
@@ -158,7 +147,17 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
             in return. You have selected a slippage tolerance of <strong>{slippagePercentage}%</strong>.
           </Text>
         </div>
-        <FilledGradientButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={burn}>
+        <FilledGradientButton
+          size='M'
+          fillWidth={true}
+          disabled={!confirmButton.enabled}
+          onClick={() => {
+            burn(configBurn!.request).then((hash) => {
+              setIsOpen(false);
+              setPendingTxn(hash);
+            });
+          }}
+        >
           {confirmButton.text}
         </FilledGradientButton>
       </div>

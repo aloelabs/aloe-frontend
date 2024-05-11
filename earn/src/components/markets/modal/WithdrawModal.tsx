@@ -9,7 +9,7 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { ChainContext } from '../../../App';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
@@ -98,7 +98,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     maxAmount,
   } = useRedeem(activeChain.id, selectedRow.kitty.address, inputValue[1] ? GN.Q(112) : withdrawAmount, userAddress);
 
-  const maxAmountGN = GN.fromBigNumber(maxAmount, selectedRow.asset.decimals);
+  const maxAmountGN = GN.fromBigInt(maxAmount, selectedRow.asset.decimals);
   const isConstrainedByUtilization =
     inputValue[1] &&
     userBalance.isGtZero() &&

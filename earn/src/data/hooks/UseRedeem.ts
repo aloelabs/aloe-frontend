@@ -1,14 +1,12 @@
-import { BigNumber, ethers } from 'ethers';
 import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { Address, erc4626Abi, maxUint256 } from 'viem';
 import {
-  Address,
-  erc4626ABI,
-  useContractRead,
-  useContractReads,
-  useContractWrite,
-  usePrepareContractWrite,
+  useReadContract,
+  useReadContracts,
+  useSimulateContract,
+  useWriteContract,
 } from 'wagmi';
 
 import { ZERO_ADDRESS } from '../constants/Addresses';
@@ -22,9 +20,6 @@ export enum RedeemState {
   ASKING_USER_TO_REDEEM,
 }
 
-const BN0 = BigNumber.from('0');
-const GAS_LIMIT_CUSHION = 110;
-
 export function useRedeem(
   chainId: number,
   lender: Address | undefined,
@@ -36,7 +31,7 @@ export function useRedeem(
 
   const erc4626 = {
     address: lender,
-    abi: erc4626ABI,
+    abi: erc4626Abi,
     chainId,
   };
 
@@ -50,56 +45,48 @@ export function useRedeem(
                               FETCHING
   //////////////////////////////////////////////////////////////*/
 
-  const { data: maxData, isFetching: isFetchingMaxData } = useContractReads({
+  const { data: maxData, isFetching: isFetchingMaxData } = useReadContracts({
     contracts: [
       { ...erc4626, functionName: 'maxWithdraw', args: [owner] },
       { ...erc4626, functionName: 'maxRedeem', args: [owner] },
       { ...lenderLens, functionName: 'isMaxRedeemDynamic', args: [lender ?? ZERO_ADDRESS, owner] },
     ] as const,
     allowFailure: false,
-    enabled: lender !== undefined,
+    query: { enabled: lender !== undefined },
   });
-  const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [BN0, BN0, false];
+  const [maxAmount, maxShares, maxSharesIsChanging] = maxData ?? [0n, 0n, false];
 
   // If the user is trying to redeem more than they have, we'll just redeem the max.
   // This means we won't refetch multiple times if the user enters a number greater than the max.
   const amountToConvert = amount.toBigNumber().lte(maxAmount) ? amount : GN.Q(112);
-  const { data: sharesData, isFetching: isFetchingShares } = useContractRead({
+  const { data: sharesData, isFetching: isFetchingShares } = useReadContract({
     ...erc4626,
     functionName: 'convertToShares',
-    args: [amountToConvert.toBigNumber()],
-    enabled: lender !== undefined,
+    args: [amountToConvert.toBigInt()],
+    query: { enabled: lender !== undefined },
   });
-  const shares = sharesData ?? BN0;
+  const shares = sharesData ?? 0n;
 
-  const threshold = maxShares.mul(999).div(1000);
-  const shouldRedeemMax = shares.gte(threshold) && maxSharesIsChanging;
+  const threshold = maxShares * 999n / 1000n;
+  const shouldRedeemMax = shares >= threshold && maxSharesIsChanging;
 
   /*//////////////////////////////////////////////////////////////
                             ERC4626 REDEEM
   //////////////////////////////////////////////////////////////*/
 
-  const redeemableShares = shares.lt(maxShares) ? shares : maxShares;
-  const { config: configRedeem } = usePrepareContractWrite({
+  const redeemableShares = shares < maxShares ? shares : maxShares;
+  const { data: configRedeem } = useSimulateContract({
     ...erc4626,
     functionName: 'redeem',
-    args: [shouldRedeemMax ? ethers.constants.MaxUint256 : redeemableShares, owner, recipient],
-    enabled: redeemableShares.gt(0),
+    args: [shouldRedeemMax ? maxUint256 : redeemableShares, owner, recipient],
+    query: { enabled: redeemableShares > 0 },
   });
   const {
-    write: redeem,
+    writeContract: redeem,
     data: redeemTxn,
-    isLoading: isAskingUserToRedeem,
+    isPending: isAskingUserToRedeem,
     reset: resetRedeemTxn,
-  } = useContractWrite({
-    ...configRedeem,
-    request: configRedeem.request
-      ? {
-          ...configRedeem.request,
-          gasLimit: configRedeem.request?.gasLimit.mul(GAS_LIMIT_CUSHION).div(100),
-        }
-      : undefined,
-  });
+  } = useWriteContract();
 
   let state: RedeemState;
   let action: (() => void) | undefined;
@@ -115,7 +102,8 @@ export function useRedeem(
     action = undefined;
   } else {
     state = RedeemState.READY_TO_REDEEM;
-    action = redeem;
+    if (configRedeem) action = () => redeem(configRedeem.request);
+    else action = undefined;
   }
 
   return {

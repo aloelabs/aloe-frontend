@@ -1,6 +1,5 @@
 import { useContext, useState, useMemo, useEffect } from 'react';
 
-import { Address, SendTransactionResult } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -19,7 +18,8 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, WriteContractReturnType } from 'viem';
+import { useAccount, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
@@ -29,7 +29,6 @@ import { Assets, Liabilities } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -77,7 +76,7 @@ type BorrowButtonProps = {
   isUnhealthy: boolean;
   notEnoughSupply: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function BorrowButton(props: BorrowButtonProps) {
@@ -109,7 +108,7 @@ function BorrowButton(props: BorrowButtonProps) {
     shouldWithdrawToWallet ? userAddress : borrower.address,
   ]);
 
-  const { config: borrowConfig, isLoading: prepareContractIsLoading } = usePrepareContractWrite({
+  const { data: borrowConfig, isLoading: prepareContractIsLoading } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -120,28 +119,16 @@ function BorrowButton(props: BorrowButtonProps) {
       [encodedData as `0x${string}`],
       [etherToSend.toBigNumber().div(1e13).toNumber()],
     ],
-    overrides: { value: etherToSend.toBigNumber() },
-    enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply,
+    value: etherToSend.toBigInt(),
+    query: { enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply },
     chainId: activeChain.id,
   });
-  const borrowUpdatedRequest = useMemo(() => {
-    if (borrowConfig.request) {
-      return {
-        ...borrowConfig.request,
-        gasLimit: borrowConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [borrowConfig.request]);
   const {
-    write: contractWrite,
+    writeContract: contractWrite,
     isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
+    isPending: contractIsLoading,
     data: contractData,
-  } = useContractWrite({
-    ...borrowConfig,
-    request: borrowUpdatedRequest,
-  });
+  } = useWriteContract();
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -160,9 +147,9 @@ function BorrowButton(props: BorrowButtonProps) {
     confirmButtonState = ConfirmButtonState.UNHEALTHY;
   } else if (notEnoughSupply) {
     confirmButtonState = ConfirmButtonState.NOT_ENOUGH_SUPPLY;
-  } else if (prepareContractIsLoading && !borrowConfig.request) {
+  } else if (prepareContractIsLoading) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (!borrowConfig.request) {
+  } else if (!borrowConfig?.request) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
@@ -176,7 +163,7 @@ function BorrowButton(props: BorrowButtonProps) {
       onClick={() => {
         if (confirmButtonState === ConfirmButtonState.READY) {
           setIsPending(true);
-          contractWrite?.();
+          contractWrite(borrowConfig!.request);
         }
       }}
     >
@@ -212,7 +199,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     setShouldWithdrawToWallet(true);
   }, [isOpen, borrower.token0]);
 
-  const { data: anteData } = useContractRead({
+  const { data: anteData } = useReadContract({
     abi: factoryAbi,
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getParameters',
@@ -222,7 +209,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const ante = useMemo(() => {
     if (!anteData) return GN.zero(18);
-    return GN.fromBigNumber(anteData[0], 18);
+    return GN.fromBigInt(anteData[0], 18);
   }, [anteData]);
 
   const tokenOptions = [borrower.token0, borrower.token1];

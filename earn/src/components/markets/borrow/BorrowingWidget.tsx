@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult, Provider } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import JSBI from 'jsbi';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
@@ -13,13 +13,15 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, Chain } from 'wagmi';
+import { Address, Chain } from 'viem';
+import { Config, useClient } from 'wagmi';
 
 import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { LendingPair, LendingPairBalancesMap } from '../../../data/LendingPair';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../../../data/Uniswap';
 import { rgba } from '../../../util/Colors';
+import { useEthersProvider } from '../../../util/Provider';
 import HealthGauge from '../../common/HealthGauge';
 import BorrowModal from '../modal/BorrowModal';
 import BorrowModalUniswap from '../modal/BorrowModalUniswap';
@@ -123,7 +125,6 @@ type SelectedBorrower = {
 export type BorrowingWidgetProps = {
   // Alternatively, could get these 3 from `ChainContext`, `useProvider`, and `useAccount`, respectively
   chain: Chain;
-  provider: Provider;
   userAddress?: Address;
   borrowers: BorrowerNftBorrower[] | null;
   lendingPairs: LendingPair[];
@@ -170,7 +171,7 @@ function collateralIsUniswapPosition(collateral: Collateral | null): collateral 
 }
 
 export default function BorrowingWidget(props: BorrowingWidgetProps) {
-  const { chain, provider, userAddress, borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
+  const { chain, userAddress, borrowers, lendingPairs, tokenBalances, tokenColors, setPendingTxn } = props;
 
   // selection/hover state for Available Table
   const [selectedCollateral, setSelectedCollateral] = useState<Collateral | null>(null);
@@ -182,9 +183,12 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
   // uniswap positions
   const [uniswapPositions, setUniswapPositions] = useChainDependentState<UniswapNFTPosition[]>([], chain.id);
 
+  const client = useClient<Config>({ chainId: chain.id });
+  const provider = useEthersProvider(client);
+
   useEffect(() => {
     (async () => {
-      if (!userAddress) return;
+      if (!userAddress || !provider) return;
       const mapOfPositions = await fetchUniswapNFTPositions(userAddress, provider);
       setUniswapPositions(Array.from(mapOfPositions.values()));
     })();
@@ -428,7 +432,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
                   const lendingPair = lendingPairs.find(
                     (pair) => pair.token0.equals(uniswapPosition.token0) && pair.token1.equals(uniswapPosition.token1)
                   );
-                  const openSeaLink = `https://opensea.io/assets/${chain.network}/${
+                  const openSeaLink = `https://opensea.io/assets/${chain.name}/${
                     UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[chain.id]
                   }/${uniswapPosition.tokenId}`;
                   return (

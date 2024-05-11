@@ -1,15 +1,16 @@
 import { useEffect, useMemo } from 'react';
 
-import { SendTransactionResult, Provider } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useContractReads } from 'wagmi';
+import { getContract, GetContractEventsReturnType } from 'viem';
+import { usePublicClient, useReadContracts } from 'wagmi';
 
 import { DerivedBorrower } from '../../../data/Borrower';
 import { LendingPair } from '../../../data/LendingPair';
@@ -20,31 +21,42 @@ import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 export type LiquidateTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
   chainId: number;
-  provider: Provider;
   // Remaining 3 should be passed in for sure though
   lendingPairs: LendingPair[];
   tokenQuotes: Map<string, number>;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
 };
 
 export default function LiquidateTab(props: LiquidateTabProps) {
-  const { chainId, provider, lendingPairs, tokenQuotes, setPendingTxn } = props;
+  const { chainId, lendingPairs, tokenQuotes, setPendingTxn } = props;
 
-  const [createBorrowerEvents, setCreateBorrowerEvents] = useChainDependentState<ethers.Event[]>([], chainId);
+  const [createBorrowerEvents, setCreateBorrowerEvents] = useChainDependentState<
+    GetContractEventsReturnType<typeof factoryAbi, 'CreateBorrower'>
+  >([], chainId);
+
+  const publicClient = usePublicClient({ chainId });
 
   // Fetch `createBorrowerEvents`
   useEffect(() => {
     (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const factory = new ethers.Contract(ALOE_II_FACTORY_ADDRESS[chainId], factoryAbi, provider);
-      const logs = await factory.queryFilter(factory.filters.CreateBorrower(), 'earliest', 'latest');
+      if (!publicClient) return;
+      const factory = getContract({
+        address: ALOE_II_FACTORY_ADDRESS[chainId],
+        abi: factoryAbi,
+        client: publicClient,
+      });
+      const logs = await factory.getEvents.CreateBorrower(undefined, {
+        fromBlock: 'earliest',
+        toBlock: 'latest',
+        strict: true,
+      });
 
       setCreateBorrowerEvents(logs.filter((log) => !log.removed && log.args !== undefined));
     })();
-  }, [provider, lendingPairs, setCreateBorrowerEvents]);
+  }, [lendingPairs, setCreateBorrowerEvents, publicClient, chainId]);
 
   // Call `getSummary` on each borrower
-  const { data: summaryData } = useContractReads({
+  const { data: summaryData } = useReadContracts({
     contracts: createBorrowerEvents.map((ev) => ({
       chainId,
       address: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
@@ -53,13 +65,13 @@ export default function LiquidateTab(props: LiquidateTabProps) {
       args: [ev.args?.account],
     })),
     allowFailure: false,
-    enabled: createBorrowerEvents.length > 0,
+    query: { enabled: createBorrowerEvents.length > 0 },
   });
 
   const lendingPairsForEvents = useMemo(() => {
     let missing = false;
     const res = createBorrowerEvents.map((ev) => {
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args!.pool.toLowerCase());
+      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase());
       if (pair === undefined) missing = true;
       return pair;
     });
@@ -71,7 +83,7 @@ export default function LiquidateTab(props: LiquidateTabProps) {
   const borrowers = useMemo(() => {
     if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
     return createBorrowerEvents.map((ev, i) => {
-      const { pool: uniswapPool, owner, account: address } = ev.args!;
+      const { pool: uniswapPool, owner, account: address } = ev.args;
       const summary = summaryData[i] as {
         balanceEth: BigNumber;
         balance0: BigNumber;
