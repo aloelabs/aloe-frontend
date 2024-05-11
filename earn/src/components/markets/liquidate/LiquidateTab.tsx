@@ -122,9 +122,9 @@ export default function LiquidateTab(props: LiquidateTabProps) {
           amount1: liabilities1,
         },
         slot0,
-        address,
-        owner,
-        uniswapPool,
+        address: address!,
+        owner: owner!,
+        uniswapPool: uniswapPool!,
       });
     });
   }, [createBorrowerEvents, lendingPairsForEvents, summaryData]);

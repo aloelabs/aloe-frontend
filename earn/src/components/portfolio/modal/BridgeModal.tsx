@@ -20,6 +20,7 @@ export type BridgeModalProps = {
 export default function BridgeModal(props: BridgeModalProps) {
   const { isOpen, selectedAsset, setIsOpen } = props;
   const { activeChain } = useContext(ChainContext);
+  // @ts-ignore
   const provider = new ethers.providers.Web3Provider(window.ethereum as any);
 
   const supportedChainIds = BRIDGE_SUPPORTED_CHAINS.map((chain) => chain.id);

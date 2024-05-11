@@ -1,7 +1,7 @@
 import Big from 'big.js';
 import { BigNumber } from 'ethers';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { auctionCurve, computeAuctionAmounts, isHealthy } from './BalanceSheet';
 import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from './constants/Values';

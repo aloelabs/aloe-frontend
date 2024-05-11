@@ -1,7 +1,7 @@
 import { BigNumber, Contract, ContractReceipt, Signer } from 'ethers';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { Chain } from 'wagmi';
+import { Chain } from 'viem';
 
 import { BLOCKS_TO_WAIT, GAS_ESTIMATION_SCALING } from '../data/constants/Values';
 

@@ -17,7 +17,7 @@ import StatsTable from './StatsTable';
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
   chainId: number;
-  provider: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider;
+  provider?: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider;
   // Remaining 3 should be passed in for sure though
   blockNumber: bigint | undefined;
   lendingPairs: LendingPair[];
@@ -42,7 +42,7 @@ export default function InfoTab(props: InfoTabProps) {
   // Fetch `oracleLogs`
   useEffect(() => {
     (async () => {
-      if (lendingPairs.length === 0) return;
+      if (lendingPairs.length === 0 || !provider) return;
       const [chainId, currentBlockNumber] = await Promise.all([
         provider.getNetwork().then((resp) => resp.chainId),
         provider.getBlockNumber(),
@@ -87,6 +87,7 @@ export default function InfoTab(props: InfoTabProps) {
   // Fetch `blockNumbersToTimestamps`
   useEffect(() => {
     (async () => {
+      if (!provider) return;
       const blockNumbers = new Set<number>();
       let oldestBlockNumber = Infinity;
       // Include block numbers for each pool's latest `Update`, while also searching for oldest one

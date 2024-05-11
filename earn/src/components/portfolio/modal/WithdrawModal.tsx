@@ -111,7 +111,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     inputValue[1] ? GN.Q(112) : amount,
     isOpen && account.address ? account.address : ZERO_ADDRESS
   );
-  const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
+  const maxAmount = GN.fromBigInt(maxAmountBN, selectedToken.decimals);
 
   /*//////////////////////////////////////////////////////////////
                               LIFECYCLE

@@ -12,12 +12,12 @@ import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
-import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { GeoFencingContext, useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
+import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
+import { isDevelopment } from 'shared/lib/util/Utils';
 import { Chain } from 'viem';
 import { Config, useAccount, useClient, WagmiProvider } from 'wagmi';
 
@@ -100,63 +100,16 @@ export const ChainContext = React.createContext({
 });
 
 function AppBodyWrapper() {
-  const { activeChain, setActiveChain } = React.useContext(ChainContext);
-  const { chain: network } = useAccount();
-  const { isAllowed } = useGeoFencing(activeChain);
-  const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
+  const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
 
-  useEffect(() => {
-    if (network !== undefined && network.id !== activeChain.id) {
-      setActiveChain(network);
-    }
-  }, [activeChain, network, setActiveChain]);
-
-  if (isAccountRiskLoading) {
-    return null;
-  }
-
-  if (isAccountBlocked) {
-    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
-  }
-
-  return (
-    <AppBody>
-      <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-      <main className='flex-grow'>
-        <Routes>
-          <Route path='/portfolio' element={<PortfolioPage />} />
-          <Route path='/markets' element={<MarketsPage />} />
-          <Route path='/leaderboard' element={<LeaderboardPage />} />
-          {isAllowed && (
-            <>
-              <Route path='/boost' element={<BoostPage />} />
-              <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
-              <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
-            </>
-          )}
-          <Route path='/borrow' element={<AdvancedPage />} />
-          <Route path='/' element={<Navigate replace to='/markets' />} />
-          <Route path='*' element={<Navigate to='/' />} />
-        </Routes>
-      </main>
-      <Footer />
-      <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
-    </AppBody>
-  );
-}
-
-const queryClient = new QueryClient();
-
-function App() {
   const mounted = useRef(true);
 
-  const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
   const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
     isAllowed: false,
     isLoading: true,
   });
-  const [lendingPairs, setLendingPairs] = useChainDependentState<LendingPair[] | null>(null, activeChain.id);
+  const [lendingPairs, setLendingPairs] = useState<LendingPair[] | null>(null);
 
   const { address: userAddress } = useAccount();
   const client = useClient<Config>({ chainId: activeChain.id });
@@ -164,10 +117,9 @@ function App() {
 
   const refetch = useCallback(async () => {
     if (!provider) return;
-    const chainId = (await provider.getNetwork()).chainId;
-    const res = await getAvailableLendingPairs(chainId, provider);
+    const res = await getAvailableLendingPairs(activeChain.id, provider);
     if (mounted.current) setLendingPairs(res);
-  }, [provider, setLendingPairs]);
+  }, [activeChain.id, provider, setLendingPairs]);
 
   const lendingPairsContextValue = useMemo(() => ({ lendingPairs, refetch }), [lendingPairs, refetch]);
   const chainContextValue = { activeChain, setActiveChain };
@@ -206,20 +158,60 @@ function App() {
     };
   }, [refetch]);
 
+  const isAccountRiskLoading = accountRisk.isLoading;
+  const isAccountBlocked = accountRisk.isBlocked;
+  const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(activeChain.testnet);
+  if (isAccountRiskLoading) {
+    return null;
+  }
+
+  if (isAccountBlocked) {
+    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
+  }
+
+  return (
+    <AccountRiskContext.Provider value={accountRisk}>
+      <GeoFencingContext.Provider value={geoFencingInfo}>
+        <ChainContext.Provider value={chainContextValue}>
+          <LendingPairsContext.Provider value={lendingPairsContextValue}>
+            <ScrollToTop />
+            <AppBody>
+              <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+              <main className='flex-grow'>
+                <Routes>
+                  <Route path='/portfolio' element={<PortfolioPage />} />
+                  <Route path='/markets' element={<MarketsPage />} />
+                  <Route path='/leaderboard' element={<LeaderboardPage />} />
+                  {isAllowed && (
+                    <>
+                      <Route path='/boost' element={<BoostPage />} />
+                      <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
+                      <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
+                    </>
+                  )}
+                  <Route path='/borrow' element={<AdvancedPage />} />
+                  <Route path='/' element={<Navigate replace to='/markets' />} />
+                  <Route path='*' element={<Navigate to='/' />} />
+                </Routes>
+              </main>
+              <Footer />
+              <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+            </AppBody>
+          </LendingPairsContext.Provider>
+        </ChainContext.Provider>
+      </GeoFencingContext.Provider>
+    </AccountRiskContext.Provider>
+  );
+}
+
+const queryClient = new QueryClient();
+
+function App() {
   return (
     <Suspense fallback={null}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <AccountRiskContext.Provider value={accountRisk}>
-            <GeoFencingContext.Provider value={geoFencingInfo}>
-              <ChainContext.Provider value={chainContextValue}>
-                <LendingPairsContext.Provider value={lendingPairsContextValue}>
-                  <ScrollToTop />
-                  <AppBodyWrapper />
-                </LendingPairsContext.Provider>
-              </ChainContext.Provider>
-            </GeoFencingContext.Provider>
-          </AccountRiskContext.Provider>
+          <AppBodyWrapper />
         </QueryClientProvider>
       </WagmiProvider>
     </Suspense>

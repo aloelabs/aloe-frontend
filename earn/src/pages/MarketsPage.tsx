@@ -332,7 +332,6 @@ export default function MarketsPage() {
       tabContent = (
         <BorrowingWidget
           chain={activeChain}
-          provider={provider}
           userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
@@ -360,7 +359,6 @@ export default function MarketsPage() {
       tabContent = (
         <LiquidateTab
           chainId={activeChain.id}
-          provider={provider}
           lendingPairs={lendingPairs}
           tokenQuotes={tokenQuotes}
           setPendingTxn={setPendingTxn}

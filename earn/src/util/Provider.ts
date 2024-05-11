@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
-import { providers } from 'ethers';
+import { ethers, providers } from 'ethers';
 import type { Chain, Client, Transport } from 'viem';
 
 export function clientToProvider(client: Client<Transport, Chain>) {
@@ -20,5 +20,24 @@ export function clientToProvider(client: Client<Transport, Chain>) {
 }
 
 export function useEthersProvider(client?: Client<Transport, Chain>) {
-  return useMemo(() => client ? clientToProvider(client) : undefined, [client]);
+  const [provider, setProvider] = useState<
+    ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider | undefined
+  >(undefined);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      if (!client || provider !== undefined) return;
+      const newProvider = clientToProvider(client);
+      const readyNetwork = await newProvider.ready;
+      if (mounted && client?.chain.id === readyNetwork.chainId) setProvider(newProvider);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [client, provider]);
+
+  return provider;
 }
