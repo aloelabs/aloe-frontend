@@ -24,16 +24,16 @@ import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
+import { Address, erc721Abi } from 'viem';
 import {
-  Address,
-  erc721ABI,
+  Config,
   useAccount,
   useBalance,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
-  useProvider,
-  useWaitForTransaction,
+  useClient,
+  useReadContract,
+  useSimulateContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
 } from 'wagmi';
 
 import { ChainContext } from '../../App';
@@ -45,6 +45,7 @@ import { BoostCardInfo } from '../../data/Uniboost';
 import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
+import { useEthersProvider } from '../../util/Provider';
 import SlippageWidget from './SlippageWidget';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -173,7 +174,7 @@ export type ImportBoostWidgetProps = {
   boostFactor: number;
   iv: number;
   setBoostFactor: (boostFactor: number) => void;
-  setPendingTxn: (txn: SendTransactionResult | null) => void;
+  setPendingTxn: (txn: WriteContractReturnType | null) => void;
 };
 
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
@@ -189,8 +190,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   );
   const [maxSlippagePercentage, setSlippagePercentage] = useState('0.10');
 
-  const provider = useProvider({ chainId: activeChain.id });
   const { address: userAddress } = useAccount();
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
 
   const lendingPair = useLendingPair(cardInfo.token0.address, cardInfo.token1.address);
 
@@ -273,7 +275,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     return dailyInterestUSD0 + dailyInterestUSD1;
   }, [apr0, apr1, boostFactor, cardInfo, tokenQuotes]);
 
-  const nftTokenId = ethers.BigNumber.from(cardInfo.nftTokenId);
+  const nftTokenId = BigInt(cardInfo.nftTokenId);
   const modifyData = useMemo(() => {
     if (!cardInfo) return undefined;
     const { position } = cardInfo;
@@ -312,58 +314,52 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     data: manager,
     refetch: refetchManager,
     isFetching: isFetchingManager,
-  } = useContractRead({
+  } = useReadContract({
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
+    abi: erc721Abi,
     functionName: 'getApproved',
     args: [nftTokenId],
     chainId: activeChain.id,
-    enabled: enableHooks,
+    query: { enabled: enableHooks },
   });
   const managerIsCorrect = Boolean(manager) && manager === necessaryManager;
   const shouldWriteManager = !isFetchingManager && Boolean(manager) && !managerIsCorrect;
   const shouldMint = !isFetchingManager && Boolean(modifyData) && managerIsCorrect;
 
   // We need the Boost Manager to be approved, so if it's not, prepare to write
-  const { config: configWriteManager } = usePrepareContractWrite({
+  const { data: configWriteManager } = useSimulateContract({
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
+    abi: erc721Abi,
     functionName: 'approve',
     args: [necessaryManager ?? '0x', nftTokenId],
     chainId: activeChain.id,
-    enabled: enableHooks && shouldWriteManager,
+    query: { enabled: enableHooks && shouldWriteManager },
   });
-  let gasLimit = configWriteManager.request?.gasLimit.mul(110).div(100);
   const {
-    write: writeManager,
+    writeContract: writeManager,
     data: writeManagerTxn,
-    isLoading: isAskingUserToWriteManager,
-  } = useContractWrite({
-    ...configWriteManager,
-    request: {
-      ...configWriteManager.request,
-      gasLimit,
-    },
-  });
+    isPending: isAskingUserToWriteManager,
+  } = useWriteContract();
 
   // Wait for the approval transaction to go through, then refetch manager
-  const { isLoading: isWritingManager } = useWaitForTransaction({
+  const { data: managerReceipt, isLoading: isWritingManager } = useWaitForTransactionReceipt({
     confirmations: 1,
-    hash: writeManagerTxn?.hash,
+    hash: writeManagerTxn,
     chainId: activeChain.id,
-    onSuccess() {
-      refetchManager();
-    },
   });
 
+  useEffect(() => {
+    if (managerReceipt) refetchManager();
+  }, [managerReceipt, refetchManager]);
+
   // The NFT index we will use if minting
-  const { data: nextNftPtrIdx } = useContractRead({
+  const { data: nextNftPtrIdx } = useReadContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'balanceOf',
     args: [userAddress ?? '0x'],
     chainId: activeChain.id,
-    enabled: enableHooks && Boolean(userAddress),
+    query: { enabled: enableHooks && Boolean(userAddress) },
   });
 
   // The NFT indices we can use if the user has some unused BorrowerNFTs
@@ -371,7 +367,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     let mounted = true;
 
     (async () => {
-      if (!userAddress) return;
+      if (!userAddress || !provider) return;
       const chainId = (await provider.getNetwork()).chainId;
       const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
         validUniswapPool: cardInfo.uniswapPool,
@@ -393,13 +389,12 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { data: borrowerBalance } = useBalance({
     address: availableNft?.borrower ?? '0x',
     chainId: activeChain.id,
-    watch: false,
-    enabled: availableNft !== undefined,
+    query: { enabled: availableNft !== undefined },
   });
 
   const ethToSend = useMemo(() => {
-    if (!lendingPair) return ethers.BigNumber.from(0);
-    return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance?.value ?? ethers.BigNumber.from(0));
+    if (!lendingPair) return 0n;
+    return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance?.value ?? 0n);
   }, [lendingPair, borrowerBalance]);
 
   // Prepare for actual import/mint transaction
@@ -419,34 +414,24 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const indices = [availableNft !== undefined ? availableNft.ptrIdx : nextNftPtrIdx];
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
     const datas = [modifyData];
-    const antes = [ethToSend.div(1e13)];
+    const antes = [ethToSend / 10_000_000_000_000n];
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
   }, [borrowerNft, userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
 
   const {
-    config: configMint,
+    data: configMint,
     isError: isUnableToMint,
     isLoading: isCheckingIfAbleToMint,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
     args: [availableNft !== undefined ? [encodedModify] : [encodedMint, encodedModify]],
-    overrides: { value: ethToSend },
+    value: ethToSend,
     chainId: activeChain.id,
-    enabled: userAddress && enableHooks && shouldMint && Boolean(encodedMint) && Boolean(encodedModify),
+    query: { enabled: userAddress && enableHooks && shouldMint && Boolean(encodedMint) && Boolean(encodedModify) },
   });
-  gasLimit = configMint.request?.gasLimit.mul(110).div(100);
-  const { write: mint, isLoading: isAskingUserToMint } = useContractWrite({
-    ...configMint,
-    request: {
-      ...configMint.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: mint, isPending: isAskingUserToMint } = useWriteContract();
 
   const dailyFeesEarned = useMemo(() => {
     if (!twentyFourHourPoolData || !cardInfo) return null;
@@ -489,13 +474,13 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     state = ImportState.ASKING_USER_TO_APPROVE;
   } else if (isAskingUserToMint) {
     state = ImportState.ASKING_USER_TO_MINT;
-  } else if (shouldWriteManager && writeManager) {
+  } else if (shouldWriteManager && configWriteManager) {
     state = ImportState.READY_TO_APPROVE;
   } else if (isUnableToMint) {
     state = ImportState.UNABLE_TO_MINT;
   } else if (isCheckingIfAbleToMint) {
     state = ImportState.LOADING;
-  } else if (shouldMint && mint) {
+  } else if (shouldMint && configMint) {
     state = ImportState.READY_TO_MINT;
   }
 
@@ -581,18 +566,18 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             <strong>{maxSlippagePercentage}%</strong>.
           </Text>
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {GN.fromBigNumber(ethToSend, 18).toString(GNFormat.LOSSY_HUMAN)} ETH
-            to cover gas fees in the event that you get liquidated. If you don't get liquidated, the ETH will be
-            returned to you when you close the position.
+            You will need to provide an additional {GN.fromBigInt(ethToSend, 18).toString(GNFormat.LOSSY_HUMAN)} ETH to
+            cover gas fees in the event that you get liquidated. If you don't get liquidated, the ETH will be returned
+            to you when you close the position.
           </Text>
         </div>
         <FilledGradientButton
           size='M'
           onClick={() => {
             if (state === ImportState.READY_TO_APPROVE) {
-              writeManager?.();
+              writeManager(configWriteManager!.request);
             } else if (state === ImportState.READY_TO_MINT) {
-              mint?.();
+              mint(configMint!.request).then((hash) => setPendingTxn(hash));
             }
           }}
           disabled={buttonState.isDisabled}

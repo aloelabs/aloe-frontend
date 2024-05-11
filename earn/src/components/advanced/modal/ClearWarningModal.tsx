@@ -60,18 +60,7 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
     value: etherToSend.toBigInt(),
     chainId: activeChain.id,
   });
-  const gasLimit = clearConfig.request?.gasLimit.mul(110).div(100);
-  const { write: clearWarning, isLoading: isAskingUserToClearWarning } = useWriteContract({
-    ...clearConfig,
-    request: {
-      ...clearConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: clearWarning, isPending: isAskingUserToClearWarning } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (isCheckingIfAbleToClear) {
@@ -85,7 +74,17 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState);
 
   return (
-    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={(a) => clearWarning?.()}>
+    <FilledStylizedButton
+      size='M'
+      fillWidth={true}
+      disabled={!confirmButton.enabled || !clearConfig}
+      onClick={() =>
+        clearWarning(clearConfig!.request).then((hash) => {
+          setIsOpen(false);
+          setPendingTxn(hash);
+        })
+      }
+    >
       {confirmButton.text}
     </FilledStylizedButton>
   );

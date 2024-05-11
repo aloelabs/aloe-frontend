@@ -13,12 +13,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useBalance } from 'wagmi';
+import { Address, Chain } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -49,7 +49,7 @@ type WithdrawAnteButtonProps = {
   borrower: BorrowerNftBorrower;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
@@ -58,18 +58,16 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
   const { data: borrowerBalance } = useBalance({
     address: borrower.address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: true,
   });
 
   const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
   const encodedData = borrowerInterface.encodeFunctionData('transferEth', [borrowerBalance?.value ?? 0, userAddress]);
 
   const {
-    config: withdrawAnteConfig,
+    data: withdrawAnteConfig,
     isError: isUnableToWithdrawAnte,
     isLoading: isCheckingIfAbleToWithdrawAnte,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -80,21 +78,10 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
     chainId: activeChain.id,
   });
-  const gasLimit = withdrawAnteConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: withdrawAnte, isLoading: contractIsLoading } = useContractWrite({
-    ...withdrawAnteConfig,
-    request: {
-      ...withdrawAnteConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: withdrawAnte, isPending: contractIsLoading } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState;
   if (contractIsLoading) {
@@ -115,7 +102,11 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        withdrawAnte?.();
+        if (withdrawAnteConfig)
+          withdrawAnte(withdrawAnteConfig.request).then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          });
       }}
     >
       {confirmButton.text}

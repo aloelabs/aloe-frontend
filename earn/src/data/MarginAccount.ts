@@ -19,7 +19,7 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';

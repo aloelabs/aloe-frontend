@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from 'react';
 
-import { Address, SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -16,7 +16,8 @@ import {
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
@@ -24,7 +25,6 @@ import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -86,8 +86,6 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const { data: borrowerBalance } = useBalance({
     address: borrower.address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: true,
   });
 
   const encodedWithdrawCall = useMemo(() => {
@@ -120,7 +118,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ) as `0x${string}`;
   }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
-  const { config: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = usePrepareContractWrite({
+  const { data: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -136,24 +134,15 @@ function ConfirmButton(props: ConfirmButtonProps) {
       [0],
     ],
     chainId: activeChain.id,
-    enabled:
-      accountAddress &&
-      encodedWithdrawCall != null &&
-      !isRedeemingTooMuch &&
-      !(shouldWithdrawAnte && !encodedWithdrawAnteCall),
-  });
-  const gasLimit = withdrawConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: withdraw, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...withdrawConfig,
-    request: {
-      ...withdrawConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
+    query: {
+      enabled:
+        accountAddress &&
+        encodedWithdrawCall != null &&
+        !isRedeemingTooMuch &&
+        !(shouldWithdrawAnte && !encodedWithdrawAnteCall),
     },
   });
+  const { writeContractAsync: withdraw, isPending: isAskingUserToConfirm } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
@@ -165,7 +154,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.REDEEM_TOO_MUCH;
   } else if (isAskingUserToConfirm) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
-  } else if (!withdrawConfig.request) {
+  } else if (!withdrawConfig) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
@@ -176,7 +165,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => withdraw?.()}
+      onClick={() =>
+        withdraw(withdrawConfig!.request).then((hash) => {
+          setIsOpen(false);
+          setPendingTxn(hash);
+        })
+      }
       disabled={!confirmButton.enabled}
     >
       {confirmButton.text}
@@ -187,7 +181,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
 export type RemoveCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+  setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
 
 export default function RemoveCollateralModalContent(props: RemoveCollateralModalContentProps) {

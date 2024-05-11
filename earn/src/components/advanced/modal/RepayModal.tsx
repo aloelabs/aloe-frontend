@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { routerAbi } from 'shared/lib/abis/Router';
@@ -20,7 +20,8 @@ import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, usePrepareContractWrite, useContractWrite, useBalance, Address, Chain } from 'wagmi';
+import { Address, Chain } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy } from '../../../data/BalanceSheet';
@@ -29,7 +30,6 @@ import { Assets, Liabilities, MarginAccount } from '../../../data/MarginAccount'
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -95,7 +95,7 @@ type RepayWithPermit2ButtonProps = {
   repayToken: Token;
   repayTokenBalance: GN;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function RepayWithPermit2Button(props: RepayWithPermit2ButtonProps) {
@@ -121,36 +121,28 @@ function RepayWithPermit2Button(props: RepayWithPermit2ButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], repayAmount);
 
-  const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
+  const { data: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = useSimulateContract({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerAbi,
     functionName: 'repayWithPermit2',
     args: [
       lender,
       shouldRepayMax,
-      permit2Result.amount.toBigNumber(),
+      permit2Result.amount.toBigInt(),
       marginAccount.address,
-      BigNumber.from(permit2Result.nonce ?? '0'),
-      BigNumber.from(permit2Result.deadline),
+      BigInt(permit2Result.nonce ?? '0'),
+      BigInt(permit2Result.deadline),
       permit2Result.signature ?? '0x',
     ],
     chainId: activeChain.id,
-    enabled: permit2State === Permit2State.DONE,
+    query: { enabled: permit2State === Permit2State.DONE },
   });
-  // NOTE: Not using `useMemo` to update the request
-  const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
-    write: repayWithPermit2,
+    writeContract: repayWithPermit2,
     isError: contractDidError,
     isSuccess: contractDidSucceed,
     data: contractData,
-  } = useContractWrite({
-    ...repayWithPermit2Config,
-    request: {
-      ...repayWithPermit2Config.request,
-      gasLimit,
-    },
-  });
+  } = useWriteContract();
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -191,12 +183,12 @@ function RepayWithPermit2Button(props: RepayWithPermit2ButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!repayWithPermit2) {
+      if (!repayWithPermit2Config) {
         refetchRepayWithPermit2();
         return;
       }
       setIsPending(true);
-      repayWithPermit2();
+      repayWithPermit2(repayWithPermit2Config.request);
     }
   };
 
@@ -216,7 +208,7 @@ type RepayButtonProps = {
   repayAmount: GN;
   repayToken: Token;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function RepayButton(props: RepayButtonProps) {
@@ -248,7 +240,7 @@ function RepayButton(props: RepayButtonProps) {
 
   const repayTokenBalance = borrower.assets[isToken0 ? 'amount0' : 'amount1'];
 
-  const { config: repayConfig, refetch: refetchRepay } = usePrepareContractWrite({
+  const { data: repayConfig, refetch: refetchRepay } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -259,22 +251,15 @@ function RepayButton(props: RepayButtonProps) {
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: Boolean(userAddress) && repayAmount.isGtZero(),
+    query: { enabled: Boolean(userAddress) && repayAmount.isGtZero() },
     chainId: activeChain.id,
   });
-  const gasLimit = repayConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
   const {
-    write: repay,
+    writeContract: repay,
     isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
+    isPending: contractIsLoading,
     data: contractData,
-  } = useContractWrite({
-    ...repayConfig,
-    request: {
-      ...repayConfig.request,
-      gasLimit,
-    },
-  });
+  } = useWriteContract();
 
   useEffect(() => {
     if (contractDidSucceed && contractData) {
@@ -310,12 +295,12 @@ function RepayButton(props: RepayButtonProps) {
   // --> action
   const confirmButtonAction = () => {
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!repay) {
+      if (!repayConfig) {
         refetchRepay();
         return;
       }
       setIsPending(true);
-      repay();
+      repay(repayConfig!.request);
     }
   };
 
@@ -348,11 +333,10 @@ export default function RepayModal(props: RepayModalProps) {
     address: userAddress,
     chainId: activeChain.id,
     token: repayToken.address,
-    watch: false,
-    enabled: isOpen,
+    query: { enabled: isOpen },
   });
   const tokenBalance = shouldRepayFromWallet
-    ? GN.fromBigNumber(tokenBalanceFetch?.value ?? BigNumber.from('0'), repayToken.decimals)
+    ? GN.fromBigInt(tokenBalanceFetch?.value ?? 0n, repayToken.decimals)
     : borrower.assets[isToken0 ? 'amount0' : 'amount1'];
 
   // Reset repay amount and token when modal is opened/closed or when the margin account token0 changes

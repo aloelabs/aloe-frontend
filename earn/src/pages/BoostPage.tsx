@@ -12,7 +12,7 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { Address } from 'viem';
-import { useAccount, useProvider, useReadContracts } from 'wagmi';
+import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
 
 import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
@@ -22,6 +22,7 @@ import { sqrtRatioToTick } from '../data/BalanceSheet';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from '../data/Uniswap';
 import { getProminentColor, rgb } from '../util/Colors';
+import { useEthersProvider } from '../util/Provider';
 
 const DEFAULT_COLOR0 = 'white';
 const DEFAULT_COLOR1 = 'white';
@@ -82,8 +83,10 @@ export const BackButtonWrapper = styled.button`
 
 export default function BoostPage() {
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider({ chainId: activeChain.id });
+
   const { address: userAddress } = useAccount();
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
 
   const [isLoading, setIsLoading] = useSafeState<boolean>(true);
   const [isLoadingBoostedCardInfos, setIsLoadingBoostedCardInfos] = useSafeState<boolean>(true);
@@ -107,7 +110,7 @@ export default function BoostPage() {
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined) return;
+      if (userAddress === undefined || provider === undefined) return;
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;
@@ -148,7 +151,7 @@ export default function BoostPage() {
   //////////////////////////////////////////////////////////////*/
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined) return;
+      if (userAddress === undefined || provider === undefined) return;
       const fetchedPositionsMap = await fetchUniswapNFTPositions(userAddress, provider);
       const fetchedPositions = Array.from(fetchedPositionsMap.values());
       const nonZeroPositions = fetchedPositions.filter((v) => JSBI.greaterThan(v.liquidity, JSBI.BigInt(0)));
@@ -229,7 +232,7 @@ export default function BoostPage() {
     }
     return uniswapNFTPositions
       .map((position, index) => {
-        const currentTick = slot0Data[index]['tick'];
+        const currentTick = slot0Data[index][1];
         const marketData = marketDatas[index];
 
         return new BoostCardInfo(
@@ -241,8 +244,8 @@ export default function BoostPage() {
           currentTick,
           position.token0,
           position.token1,
-          marketData.lender0,
-          marketData.lender1,
+          marketData[0],
+          marketData[1],
           colors.get(position.token0.logoURI) ?? DEFAULT_COLOR0,
           colors.get(position.token1.logoURI) ?? DEFAULT_COLOR1,
           position,

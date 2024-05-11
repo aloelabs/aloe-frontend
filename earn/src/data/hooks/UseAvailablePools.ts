@@ -5,22 +5,27 @@ import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address, useProvider } from 'wagmi';
+import { Address } from 'viem';
+import { useClient, Config } from 'wagmi';
 
 import { ChainContext } from '../../App';
+import { useEthersProvider } from '../../util/Provider';
 import { UNISWAP_POOL_DENYLIST } from '../constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../constants/Signatures';
 import { UniswapPoolInfo } from '../MarginAccount';
 
+// TODO: Deprecate this, it sucks
 export default function useAvailablePools() {
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider();
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const [availablePools, setAvailablePools] = useChainDependentState(
     new Map<string, UniswapPoolInfo>(),
     activeChain.id
   );
   useEffect(() => {
     (async () => {
+      if (!provider) return;
       // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
       // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
       const chainId = (await provider.getNetwork()).chainId;

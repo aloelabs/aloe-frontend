@@ -17,7 +17,8 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
@@ -26,7 +27,6 @@ import { Assets } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -62,14 +62,12 @@ type RemoveCollateralButtonProps = {
   collateralAmount: GN;
   userBalance: GN;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   const { borrower, userAddress, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-
-  const [isPending, setIsPending] = useState(false);
 
   const isToken0Collateral = collateralToken.address === borrower.token0.address;
 
@@ -85,7 +83,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
     ]);
   }, [amount0, amount1, userAddress]);
 
-  const { config: removeCollateralConfig } = usePrepareContractWrite({
+  const { data: removeCollateralConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -96,37 +94,10 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance),
+    query: { enabled: Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) },
     chainId: activeChain.id,
   });
-  const removeCollateralUpdatedRequest = useMemo(() => {
-    if (removeCollateralConfig.request) {
-      return {
-        ...removeCollateralConfig.request,
-        gasLimit: removeCollateralConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [removeCollateralConfig.request]);
-  const {
-    write: contractWrite,
-    isSuccess: contractDidSucceed,
-    isLoading: contractIsLoading,
-    data: contractData,
-  } = useContractWrite({
-    ...removeCollateralConfig,
-    request: removeCollateralUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (!contractIsLoading && !contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractIsLoading, setPendingTxn, setIsOpen]);
+  const { writeContractAsync, isPending } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
 
@@ -144,9 +115,11 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        if (confirmButtonState === ConfirmButtonState.READY) {
-          setIsPending(true);
-          contractWrite?.();
+        if (confirmButtonState === ConfirmButtonState.READY && removeCollateralConfig) {
+          writeContractAsync(removeCollateralConfig.request).then((hash) => {
+            setPendingTxn(hash);
+            setIsOpen(false);
+          });
         }
       }}
     >

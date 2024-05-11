@@ -24,7 +24,8 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { erc721ABI, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { erc721Abi } from 'viem';
+import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../App';
 import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
@@ -98,36 +99,30 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   const { activeChain } = useContext(ChainContext);
 
   const { address: userAddress } = useAccount();
+  const publicClient = usePublicClient({ chainId: activeChain.id });
 
-  const { data: consultData } = useContractRead({
+  const { data: consultData } = useReadContract({
     abi: volatilityOracleAbi,
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     args: [selectedLendingPair?.uniswapPool || '0x', Q32],
     functionName: 'consult',
-    enabled: selectedLendingPair !== undefined,
+    query: { enabled: selectedLendingPair !== undefined },
   });
 
   const { data: ethBalanceData } = useBalance({
     address: userAddress,
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
-    watch: false,
+    query: { enabled: Boolean(userAddress) },
   });
 
-  const { refetch: refetchGetApprovedData, data: getApprovedData } = useContractRead({
+  const { refetch: refetchGetApprovedData, data: getApprovedData } = useReadContract({
     address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
+    abi: erc721Abi,
     functionName: 'getApproved',
-    args: [BigNumber.from(uniswapPosition.tokenId)] as const,
+    args: [BigInt(uniswapPosition.tokenId)] as const,
     chainId: activeChain.id,
   });
-  const { writeAsync: writeApproveAsync } = useContractWrite({
-    address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
-    abi: erc721ABI,
-    functionName: 'approve',
-    mode: 'recklesslyUnprepared',
-    chainId: activeChain.id,
-  });
+  const { writeContractAsync: writeApproveAsync } = useWriteContract();
   const isApproved = getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id];
 
   const selectedCollateral = uniswapPosition.token0.equals(selectedBorrow)
@@ -186,13 +181,13 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   }, [selectedLendingPair, isBorrowingToken0, borrowAmount]);
 
   // The NFT index we will use if minting
-  const { data: nextNftPtrIdx } = useContractRead({
+  const { data: nextNftPtrIdx } = useReadContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'balanceOf',
     args: [userAddress ?? '0x'],
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
   });
 
   const generatedSalt = useMemo(() => generateBytes12Salt(), []);
@@ -249,27 +244,16 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
   }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedImportCall, encodedBorrowCall, borrowerNft]);
 
-  const { config: multicallConfig } = usePrepareContractWrite({
+  const { data: multicallConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
     args: [[encodedMint ?? '0x', encodedModify ?? '0x']],
-    overrides: { value: ante.toBigNumber() },
+    value: ante.toBigInt(),
     chainId: activeChain.id,
-    enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && isApproved,
+    query: { enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) && isApproved },
   });
-  const gasLimit = multicallConfig.request?.gasLimit.mul(110).div(100);
-  const { write: multicallWrite, isLoading: isAskingUserToMulticall } = useContractWrite({
-    ...multicallConfig,
-    request: {
-      ...multicallConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: multicallWrite, isPending: isAskingUserToMulticall } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState;
 
@@ -371,27 +355,24 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
           disabled={!confirmButton.enabled}
           onClick={() => {
             if (!isApproved) {
-              writeApproveAsync?.({
-                recklesslySetUnpreparedArgs: [
-                  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
-                  BigNumber.from(uniswapPosition.tokenId),
-                ],
-                recklesslySetUnpreparedOverrides: { gasLimit: BigNumber.from(100000) },
-              })
-                .then((txnResult) => {
-                  setIsApproving(true);
-                  txnResult
-                    .wait(1)
-                    .then(() => refetchGetApprovedData())
-                    .finally(() => {
-                      setIsApproving(false);
-                    });
-                })
-                .catch((_err) => {
-                  setIsApproving(false);
-                });
+              writeApproveAsync({
+                address: UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS[activeChain.id],
+                abi: erc721Abi,
+                functionName: 'approve',
+                chainId: activeChain.id,
+                args: [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id], BigInt(uniswapPosition.tokenId)],
+                gas: 100000n,
+              }).then(async (hash) => {
+                setIsApproving(true);
+                await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
+                refetchGetApprovedData();
+                setIsApproving(false);
+              });
             } else {
-              multicallWrite?.();
+              multicallWrite(multicallConfig!.request).then((hash) => {
+                setIsOpen(false);
+                setPendingTxn(hash);
+              });
             }
           }}
         >

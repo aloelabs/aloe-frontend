@@ -11,7 +11,7 @@ import {
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
@@ -19,7 +19,6 @@ import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { UniswapPosition, zip } from '../../../../data/Uniswap';
 import HealthBar from '../../../common/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -55,7 +54,7 @@ type ConfirmButtonProps = {
   positionToWithdraw: UniswapPosition;
   uniswapNftId: BigNumber;
   setIsOpen: (open: boolean) => void;
-  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+  setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
@@ -82,7 +81,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     ) as `0x${string}`;
   }, [borrower, positionToWithdraw, uniswapNftId]);
 
-  const { config: withdrawConfig, error: withdrawError } = usePrepareContractWrite({
+  const { data: withdrawConfig, error: withdrawError } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -96,26 +95,15 @@ function ConfirmButton(props: ConfirmButtonProps) {
       [encodedData, '0x'],
       [0, 0],
     ],
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
     chainId: activeChain.id,
   });
-  const gasLimit = withdrawConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: contractWrite, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...withdrawConfig,
-    request: {
-      ...withdrawConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxnResult(data);
-    },
-  });
+  const { writeContractAsync, isPending: isAskingUserToConfirm } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (withdrawError !== null) {
     confirmButtonState = ConfirmButtonState.CONTRACT_ERROR;
-  } else if (contractWrite === undefined || !withdrawConfig.request) {
+  } else if (!withdrawConfig) {
     confirmButtonState = ConfirmButtonState.LOADING;
   } else if (isAskingUserToConfirm) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
@@ -124,7 +112,17 @@ function ConfirmButton(props: ConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState);
 
   return (
-    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={contractWrite}>
+    <FilledStylizedButton
+      size='M'
+      fillWidth={true}
+      disabled={!confirmButton.enabled}
+      onClick={() =>
+        writeContractAsync(withdrawConfig!.request).then((hash) => {
+          setIsOpen(false);
+          setPendingTxnResult(hash);
+        })
+      }
+    >
       {confirmButton.text}
     </FilledStylizedButton>
   );
@@ -135,7 +133,7 @@ export type RemoveCollateralModalContentProps = {
   positionToWithdraw: UniswapPosition;
   uniswapNftId: BigNumber;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+  setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
 
 export default function ToUniswapNFTModalContent(props: RemoveCollateralModalContentProps) {

@@ -9,7 +9,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
@@ -17,7 +17,6 @@ import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -66,26 +65,15 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
   const insufficientAssets = depositAmount.gt(maxDepositAmount);
 
-  const { config: depositConfig, isLoading: isCheckingIfCanDeposit } = usePrepareContractWrite({
+  const { data: depositConfig, isLoading: isCheckingIfCanDeposit } = useSimulateContract({
     address: token.address,
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [borrower.address, depositAmount.toBigNumber()],
-    enabled: Boolean(depositAmount) && !insufficientAssets,
+    args: [borrower.address, depositAmount.toBigInt()],
+    query: { enabled: Boolean(depositAmount) && !insufficientAssets },
     chainId: activeChain.id,
   });
-  const gasLimit = depositConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: deposit, isLoading: isAskingUserToConfirm } = useContractWrite({
-    ...depositConfig,
-    request: {
-      ...depositConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: deposit, isPending: isAskingUserToConfirm } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState = ConfirmButtonState.READY;
 
@@ -97,7 +85,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else if (isAskingUserToConfirm) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_USER;
-  } else if (!depositConfig.request) {
+  } else if (!depositConfig) {
     confirmButtonState = ConfirmButtonState.DISABLED;
   }
 
@@ -108,7 +96,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => deposit?.()}
+      onClick={() =>
+        deposit(depositConfig!.request).then((hash) => {
+          setIsOpen(false);
+          setPendingTxn(hash);
+        })
+      }
       disabled={!confirmButton.enabled}
     >
       {confirmButton.text}
@@ -119,7 +112,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
 export type AddCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+  setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
 
 export default function AddCollateralModalContent(props: AddCollateralModalContentProps) {
@@ -139,7 +132,7 @@ export default function AddCollateralModalContent(props: AddCollateralModalConte
   const { data: balanceData } = useBalance({
     address: userAddress,
     token: collateralToken.address,
-    enabled: userAddress !== undefined,
+    query: { enabled: userAddress !== undefined },
     chainId: activeChain.id,
   });
 

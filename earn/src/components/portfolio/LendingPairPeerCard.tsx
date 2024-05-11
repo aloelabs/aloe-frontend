@@ -7,12 +7,13 @@ import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useProvider } from 'wagmi';
+import { Config, useClient } from 'wagmi';
 
 import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import useNumberOfUsers from '../../data/hooks/UseNumberOfUsers';
 import { LendingPair } from '../../data/LendingPair';
+import { useEthersProvider } from '../../util/Provider';
 
 const Container = styled.div`
   width: 100%;
@@ -143,7 +144,9 @@ export type LendingPairPeerCardProps = {
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeAsset, lendingPairs } = props;
   const { activeChain } = useContext(ChainContext);
-  const provider = useProvider({ chainId: activeChain.id });
+  
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
 
   const options: DropdownOption<LendingPair>[] = useMemo(() => {
     return lendingPairs.map((lendingPair) => {
