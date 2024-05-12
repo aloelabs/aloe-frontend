@@ -10,7 +10,6 @@ import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { DEAD_ADDRESS } from 'shared/lib/data/constants/Values';
 import { API_LEADERBOARD_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
@@ -71,7 +70,7 @@ const UserLabel = styled(Text)`
 
 export default function LeaderboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [leaderboardEntries, setLeaderboardEntries] = useSafeState<Array<LeaderboardEntry> | null>(null);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<Array<LeaderboardEntry> | null>(null);
 
   const { address } = useAccount();
 

@@ -17,7 +17,6 @@ import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { Config, useClient, usePublicClient, useReadContract } from 'wagmi';
 
@@ -72,10 +71,10 @@ export default function ImportBoostPage() {
     undefined,
     activeChain.id
   );
-  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
+  const [colors, setColors] = useState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [boostFactor, setBoostFactor] = useState<number>(BOOST_DEFAULT);
 
   const navigate = useNavigate();

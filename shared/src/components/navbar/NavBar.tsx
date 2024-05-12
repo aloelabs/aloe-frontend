@@ -24,7 +24,6 @@ import useLockScroll from '../../data/hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
-import useSafeState from '../../data/hooks/UseSafeState';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
 import { Chain } from 'viem';
@@ -283,14 +282,14 @@ export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const { chain } = useAccount()
+  const { chain } = useAccount();
   const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
   // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
-  const [leaderboardEntries, setLeaderboardEntries] = useSafeState<{ address: string; score: string }[]>([]);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<{ address: string; score: string }[]>([]);
 
   useEffect(() => {
     // Close the chain selector dropdown when the chain changes

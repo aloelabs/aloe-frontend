@@ -11,7 +11,6 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, usePublicClient, useReadContract } from 'wagmi';
@@ -49,11 +48,11 @@ export default function ManageBoostPage() {
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const [cardInfo, setCardInfo] = useChainDependentState<BoostCardInfo | null>(null, activeChain.id);
-  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenPairQuotes | undefined>(undefined);
-  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
+  const [tokenQuotes, setTokenQuotes] = useState<TokenPairQuotes | undefined>(undefined);
+  const [colors, setColors] = useState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [isBurnModalOpen, setIsBurnModalOpen] = useState(false);
   const { address: userAddress } = useAccount();
 

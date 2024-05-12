@@ -7,7 +7,6 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -107,22 +106,22 @@ export default function PortfolioPage() {
   const { activeChain } = useContext(ChainContext);
 
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
-  const [tokenColors, setTokenColors] = useSafeState<Map<string, string>>(new Map());
+  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
   );
-  const [tokenPriceData, setTokenPriceData] = useSafeState<TokenPriceData[]>([]);
-  const [isLoadingPrices, setIsLoadingPrices] = useSafeState(true);
-  const [errorLoadingPrices, setErrorLoadingPrices] = useSafeState(false);
+  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
   const { isLoading, lendingPairs } = useLendingPairs();
   const client = useClient<Config>({ chainId: activeChain.id });

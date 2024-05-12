@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
@@ -9,7 +9,6 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
@@ -88,8 +87,8 @@ export default function BoostPage() {
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
 
-  const [isLoading, setIsLoading] = useSafeState<boolean>(true);
-  const [isLoadingBoostedCardInfos, setIsLoadingBoostedCardInfos] = useSafeState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingBoostedCardInfos, setIsLoadingBoostedCardInfos] = useState<boolean>(true);
   const [initialBoostedCardInfos, setInitialBoostedCardInfos] = useChainDependentState<BoostCardInfo[]>(
     [],
     activeChain.id
@@ -98,7 +97,7 @@ export default function BoostPage() {
     [],
     activeChain.id
   );
-  const [colors, setColors] = useSafeState<Map<string, string>>(new Map());
+  const [colors, setColors] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     setIsLoading(true);

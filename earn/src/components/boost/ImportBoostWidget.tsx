@@ -18,7 +18,6 @@ import {
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import { formatUSD } from 'shared/lib/util/Numbers';
@@ -180,10 +179,8 @@ export type ImportBoostWidgetProps = {
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
   const { activeChain } = useContext(ChainContext);
-  const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useSafeState<TwentyFourHourPoolData | undefined>(
-    undefined
-  );
-  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenQuote[] | undefined>(undefined);
+  const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useState<TwentyFourHourPoolData | undefined>(undefined);
+  const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[] | undefined>(undefined);
   const [availableNft, setAvailableNft] = useChainDependentState<{ borrower: Address; ptrIdx: number } | undefined>(
     undefined,
     activeChain.id

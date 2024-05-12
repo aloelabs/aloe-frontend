@@ -5,7 +5,6 @@ import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -177,7 +176,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
   const { activeChain } = useContext(ChainContext);
 
   const [, setCurrentTime] = useState(Date.now());
-  const [mostRecentModifyTime, setMostRecentModifyTime] = useSafeState<Date | null>(null);
+  const [mostRecentModifyTime, setMostRecentModifyTime] = useState<Date | null>(null);
 
   const [token0Collateral, token1Collateral] = useMemo(
     () => marginAccount?.assets.amountsAt(sqrtRatioToTick(marginAccount.sqrtPriceX96)) ?? [0, 0],
