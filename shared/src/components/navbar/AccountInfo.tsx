@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { type UseAccountReturnType } from 'wagmi';
@@ -100,6 +100,47 @@ export default function AccountInfo(props: AccountInfoProps) {
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect();
+
+  const orderedFilteredConnectors = useMemo(() => {
+    let hasNamedInjectedConnector = false;
+    let idxPlainInjectedConnector = -1;
+
+    for (let i = 0; i < connectors.length; i += 1) {
+      const connector = connectors[i];
+      if (connector.type !== 'injected') continue;
+
+      if (connector.name === 'Injected') {
+        idxPlainInjectedConnector = i;
+      } else {
+        hasNamedInjectedConnector = true;
+      }
+    }
+
+    const temp = connectors.concat();
+    if (hasNamedInjectedConnector && idxPlainInjectedConnector !== -1) temp.splice(idxPlainInjectedConnector, 1);
+
+    temp.sort((a, b) => {
+      const rank = (id: string) => {
+        switch (id) {
+          case 'io.rabby':
+            return 0;
+          case 'io.metamask':
+            return 1;
+          case 'coinbaseWalletSDK':
+            return 2;
+          case 'walletConnect':
+            return 3;
+          case 'safe':
+            return 4;
+          default:
+            return 5;
+        }
+      };
+      return rank(a.id) - rank(b.id);
+    });
+
+    return temp as typeof connectors;
+  }, [connectors]);
 
   useEffect(() => {
     if (isConnected) {
@@ -220,9 +261,13 @@ export default function AccountInfo(props: AccountInfoProps) {
               </a>
               .
             </Text>
-            {connectors.map((connector) => (
+            {orderedFilteredConnectors.map((connector) => (
               <div key={connector.uid} className='py-2 w-full flex flex-row items-center justify-between'>
-                {getIconForWagmiConnectorNamed(connector.name)}
+                {connector.icon !== undefined ? (
+                  <img width={40} height={40} src={connector.icon} alt={`${connector.icon} icon`} />
+                ) : (
+                  getIconForWagmiConnectorNamed(connector.name)
+                )}
                 <FilledStylizedButton
                   name='Disconnect'
                   size='M'

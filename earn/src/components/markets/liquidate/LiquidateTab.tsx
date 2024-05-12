@@ -11,11 +11,11 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { getContract, GetContractEventsReturnType } from 'viem';
 import { usePublicClient, useReadContracts } from 'wagmi';
 
+import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 import { DerivedBorrower } from '../../../data/Borrower';
 import { LendingPair } from '../../../data/LendingPair';
 import { Assets } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
-import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 
 export type LiquidateTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
