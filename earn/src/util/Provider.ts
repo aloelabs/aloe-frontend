@@ -25,18 +25,19 @@ export function useEthersProvider(client?: Client<Transport, Chain>) {
   >(undefined);
 
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
-      if (!client || provider !== undefined) return;
+      if (!client || client.chain.id === provider?.network.chainId) return;
       const newProvider = clientToProvider(client);
-      const readyNetwork = await newProvider.ready;
-      if (mounted && client?.chain.id === readyNetwork.chainId) setProvider(newProvider);
+      try {
+        const isReady = await newProvider.ready;
+        if (isReady) {
+          console.log('Setting provider', newProvider);
+          setProvider(newProvider);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     })();
-
-    return () => {
-      mounted = false;
-    };
   }, [client, provider]);
 
   return provider;

@@ -15,7 +15,6 @@ import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDevelopment } from 'shared/lib/util/Utils';
 import { Chain } from 'viem';
@@ -102,10 +101,8 @@ export const ChainContext = React.createContext({
 function AppBodyWrapper() {
   const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
 
-  const mounted = useRef(true);
-
-  const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
-  const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
+  const [accountRisk, setAccountRisk] = useState<AccountRiskResult>({ isBlocked: false, isLoading: true });
+  const [geoFencingInfo, setGeoFencingInfo] = useState<GeoFencingInfo>({
     isAllowed: false,
     isLoading: true,
   });
@@ -116,9 +113,10 @@ function AppBodyWrapper() {
   const provider = useEthersProvider(client);
 
   const refetch = useCallback(async () => {
-    if (!provider) return;
+    if (provider === undefined) return;
     const res = await getAvailableLendingPairs(activeChain.id, provider);
-    if (mounted.current) setLendingPairs(res);
+    console.log(res);
+    setLendingPairs(res);
   }, [activeChain.id, provider, setLendingPairs]);
 
   const lendingPairsContextValue = useMemo(() => ({ lendingPairs, refetch }), [lendingPairs, refetch]);
@@ -127,6 +125,10 @@ function AppBodyWrapper() {
   useEffect(() => {
     Sentry.setTag('chain_name', activeChain.name);
   }, [activeChain]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   useEffectOnce(() => {
     (async () => {
@@ -150,17 +152,10 @@ function AppBodyWrapper() {
     })();
   }, [userAddress, setAccountRisk]);
 
-  useEffect(() => {
-    mounted.current = true;
-    refetch();
-    return () => {
-      mounted.current = false;
-    };
-  }, [refetch]);
-
   const isAccountRiskLoading = accountRisk.isLoading;
   const isAccountBlocked = accountRisk.isBlocked;
   const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(activeChain.testnet);
+
   if (isAccountRiskLoading) {
     return null;
   }

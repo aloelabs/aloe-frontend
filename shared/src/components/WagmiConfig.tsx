@@ -1,4 +1,4 @@
-import { createConfig, fallback, http, unstable_connector } from 'wagmi';
+import { createConfig, fallback, http } from 'wagmi';
 import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors';
@@ -19,16 +19,12 @@ if (process.env.REACT_APP_ALCHEMY_API_KEY) {
 if (process.env.REACT_APP_INFURA_API_KEY) {
   transports[linea.id].push(http(`https://linea-mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_API_KEY}`));
 }
-// Wallet-provided endpoints
-ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
+// TODO: Wallet-provided endpoints
+// ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
 // Public endpoints
-transports[mainnet.id].push(http('https://rpc.ankr.com/eth'), http('https://eth-mainnet.public.blastapi.io'));
-transports[optimism.id].push(
-  http('https://rpc.ankr.com/optimism'),
-  http('https://optimism-mainnet.public.blastapi.io')
-);
-transports[arbitrum.id].push(http('https://rpc.ankr.com/arbitrum'), http('https://arbitrum-one.public.blastapi.io'));
-transports[base.id].push(http('https://rpc.ankr.com/base'));
+transports[mainnet.id].push(http('https://eth-mainnet.public.blastapi.io'));
+transports[optimism.id].push(http('https://optimism-mainnet.public.blastapi.io'));
+transports[arbitrum.id].push(http('https://arbitrum-one.public.blastapi.io'));
 transports[linea.id].push(
   http('https://rpc.linea.build'),
   http('https://linea.decubate.com'),
@@ -61,16 +57,17 @@ export const wagmiConfig = createConfig({
   ],
   batch: {
     multicall: {},
+    // TODO: many more options available here
   },
   cacheTime: 4000,
   pollingInterval: 4000,
   transports: {
-    [mainnet.id]: fallback(transports[mainnet.id]),
-    [optimism.id]: fallback(transports[optimism.id]),
-    [arbitrum.id]: fallback(transports[arbitrum.id]),
-    [base.id]: fallback(transports[base.id]),
-    [linea.id]: fallback(transports[linea.id]),
-    [scroll.id]: fallback(transports[scroll.id]),
+    [mainnet.id]: fallback(transports[mainnet.id], { rank: false }),
+    [optimism.id]: fallback(transports[optimism.id], { rank: false }),
+    [arbitrum.id]: fallback(transports[arbitrum.id], { rank: false }),
+    [base.id]: fallback(transports[base.id], { rank: false }),
+    [linea.id]: fallback(transports[linea.id], { rank: false }),
+    [scroll.id]: fallback(transports[scroll.id], { rank: false }),
   },
 });
 
