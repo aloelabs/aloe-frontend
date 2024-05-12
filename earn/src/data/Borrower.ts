@@ -1,5 +1,4 @@
 import Big from 'big.js';
-import { BigNumber } from 'ethers';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'viem';
 
@@ -15,7 +14,7 @@ type Data = {
   /** The borrower's current liabilities */
   readonly liabilities: { amount0: GN; amount1: GN };
   /** The current value of `borrower.slot0()` (onchain) */
-  readonly slot0: BigNumber;
+  readonly slot0: bigint;
   /** The borrower's address */
   readonly address: Address;
   /** The owner of the borrower */
@@ -53,11 +52,11 @@ export class DerivedBorrower {
   }
 
   public get userData() {
-    return this.data.slot0.shr(144).mask(64).toHexString() as `0x${string}`;
+    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as `0x${string}`;
   }
 
   public get warnTime() {
-    return this.data.slot0.shr(208).mask(40).toNumber();
+    return Number((this.data.slot0 << 208n) & BigInt(`0xffffffffff`));
   }
 
   public get auctionTime() {

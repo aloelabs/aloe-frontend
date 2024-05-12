@@ -2,7 +2,6 @@ import { useEffect, useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
@@ -57,13 +56,16 @@ export default function LiquidateTab(props: LiquidateTabProps) {
 
   // Call `getSummary` on each borrower
   const { data: summaryData } = useReadContracts({
-    contracts: createBorrowerEvents.map((ev) => ({
-      chainId,
-      address: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
-      abi: borrowerLensAbi,
-      functionName: 'getSummary',
-      args: [ev.args?.account],
-    })),
+    contracts: createBorrowerEvents.map(
+      (ev) =>
+        ({
+          chainId,
+          address: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
+          abi: borrowerLensAbi,
+          functionName: 'getSummary',
+          args: [ev.args?.account],
+        } as const)
+    ),
     allowFailure: false,
     query: { enabled: createBorrowerEvents.length > 0 },
   });
@@ -84,42 +86,29 @@ export default function LiquidateTab(props: LiquidateTabProps) {
     if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
     return createBorrowerEvents.map((ev, i) => {
       const { pool: uniswapPool, owner, account: address } = ev.args;
-      const summary = summaryData[i] as {
-        balanceEth: BigNumber;
-        balance0: BigNumber;
-        balance1: BigNumber;
-        liabilities0: BigNumber;
-        liabilities1: BigNumber;
-        slot0: BigNumber;
-        liquidity: readonly BigNumber[];
-      };
+      const [balanceEth, balance0, balance1, liabilities0, liabilities1, slot0, liquidity] = summaryData[i];
 
       const pair = lendingPairsForEvents[i];
-      const liabilities0 = GN.fromBigNumber(summary.liabilities0, pair.token0.decimals);
-      const liabilities1 = GN.fromBigNumber(summary.liabilities1, pair.token1.decimals);
 
-      const slot0 = summary.slot0;
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
-        const lower = slot0.shr(24 * i * 2).mask(24);
-        const upper = slot0.shr(24 * i * 2 + 24).mask(24);
-        if (lower.eq(upper)) continue;
+        const lower = (slot0 >> BigInt(24 * i * 2)) & BigInt('0xffffff');
+        const upper = (slot0 >> BigInt(24 * i * 2 + 24)) & BigInt('0xffffff');
+        if (lower === upper) continue;
 
-        positionTicks.push({ lower: lower.toNumber(), upper: upper.toNumber() });
+        positionTicks.push({ lower: Number(lower), upper: Number(upper) });
       }
 
       return DerivedBorrower.from({
-        ethBalance: GN.fromBigNumber(summary.balanceEth, 18),
+        ethBalance: GN.fromBigInt(balanceEth, 18),
         assets: new Assets(
-          GN.fromBigNumber(summary.balance0, pair.token0.decimals),
-          GN.fromBigNumber(summary.balance1, pair.token1.decimals),
-          positionTicks.map(
-            (v, i) => ({ ...v, liquidity: JSBI.BigInt(summary.liquidity[i].toString()) } as UniswapPosition)
-          )
+          GN.fromBigInt(balance0, pair.token0.decimals),
+          GN.fromBigInt(balance1, pair.token1.decimals),
+          positionTicks.map((v, i) => ({ ...v, liquidity: JSBI.BigInt(liquidity[i].toString()) } as UniswapPosition))
         ),
         liabilities: {
-          amount0: liabilities0,
-          amount1: liabilities1,
+          amount0: GN.fromBigInt(liabilities0, pair.token0.decimals),
+          amount1: GN.fromBigInt(liabilities1, pair.token1.decimals),
         },
         slot0,
         address: address!,
