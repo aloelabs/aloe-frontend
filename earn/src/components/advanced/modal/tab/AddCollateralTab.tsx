@@ -7,11 +7,11 @@ import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { Assets, MarginAccount } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
@@ -53,7 +53,7 @@ type AddCollateralButtonProps = {
 
 function AddCollateralButton(props: AddCollateralButtonProps) {
   const { marginAccount, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { data: contractWriteConfig } = useSimulateContract({
     address: collateralToken.address,
@@ -103,7 +103,7 @@ export type AddCollateralTabProps = {
 
 export function AddCollateralTab(props: AddCollateralTabProps) {
   const { marginAccount, isOpen, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [collateralAmountStr, setCollateralAmountStr] = useState('');
   const [collateralToken, setCollateralToken] = useState(marginAccount.token0);

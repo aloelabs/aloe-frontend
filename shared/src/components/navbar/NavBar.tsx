@@ -26,7 +26,6 @@ import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
-import { Chain } from 'viem';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -273,13 +272,11 @@ export type NavBarLink = {
 export type NavBarProps = {
   links: NavBarLink[];
   isAllowedToInteract: boolean;
-  activeChain: Chain;
   checkboxes: React.ReactNode[];
-  setActiveChain(c: Chain): void;
 };
 
 export function NavBar(props: NavBarProps) {
-  const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
+  const { links, isAllowedToInteract, checkboxes } = props;
   const navigate = useNavigate();
   const account = useAccount();
   const { chain } = useAccount();
@@ -314,8 +311,6 @@ export function NavBar(props: NavBarProps) {
     return entry === undefined ? GN.zero(18) : new GN(entry.score, 18, 10);
   }, [account.address, leaderboardEntries]);
 
-  const isOffline = !account.isConnected && !account.isConnecting;
-
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS.XS);
 
   useEffect(() => {
@@ -348,29 +343,17 @@ export function NavBar(props: NavBarProps) {
           ))}
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
-          <ChainSelector
-            activeChain={activeChain}
-            isOffline={isOffline}
-            isOpen={isSelectChainDropdownOpen}
-            setIsOpen={setIsSelectChainDropdownOpen}
-            setActiveChain={setActiveChain}
-          />
+          <ChainSelector isOpen={isSelectChainDropdownOpen} setIsOpen={setIsSelectChainDropdownOpen} />
           {account.address !== undefined && (
             <OutlinedGradientRoundedButton size='S' onClick={() => navigate('/leaderboard')}>
               {accountPoints.toString(GNFormat.LOSSY_HUMAN)} points
             </OutlinedGradientRoundedButton>
           )}
-          {!activeChain || !account.address ? (
-            <ConnectWalletButton
-              account={account}
-              checkboxes={checkboxes}
-              activeChain={activeChain}
-              disabled={!isAllowedToInteract}
-            />
+          {!account.isConnected ? (
+            <ConnectWalletButton account={account} checkboxes={checkboxes} disabled={!isAllowedToInteract} />
           ) : (
             <AccountInfo
               account={account}
-              chain={activeChain}
               closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
               disconnect={disconnect}
             />

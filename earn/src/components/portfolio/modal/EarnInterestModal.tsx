@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
@@ -10,6 +10,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -17,7 +18,6 @@ import { formatNumberInput, roundPercentage, truncateDecimals } from 'shared/lib
 import { Address } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
@@ -88,7 +88,7 @@ type DepositButtonProps = {
 function DepositButton(props: DepositButtonProps) {
   const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
     props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [isPending, setIsPending] = useState(false);
 
   const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
@@ -185,7 +185,7 @@ export type EarnInterestModalProps = {
 
 export default function EarnInterestModal(props: EarnInterestModalProps) {
   const { isOpen, options, defaultOption, lendingPairs, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [activePairOptions, setActivePairOptions] = useState<LendingPair[]>([]);
   const [selectedPairOption, setSelectedPairOption] = useState<LendingPair | null>(null);

@@ -12,12 +12,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import {
@@ -97,7 +97,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
     setIsOpen,
     setPendingTxn,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [isPending, setIsPending] = useState(false);
 

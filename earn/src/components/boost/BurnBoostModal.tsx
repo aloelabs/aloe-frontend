@@ -9,9 +9,9 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { sqrtRatioToTick } from '../../data/BalanceSheet';
 import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
@@ -83,7 +83,7 @@ export type BurnBoostModalProps = {
 
 export default function BurnBoostModal(props: BurnBoostModalProps) {
   const { isOpen, cardInfo, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [slippagePercentage, setSlippagePercentage] = useState('0.10');
   const { address: userAddress } = useAccount();
 

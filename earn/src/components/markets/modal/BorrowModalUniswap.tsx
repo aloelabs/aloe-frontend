@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
@@ -21,13 +21,13 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import { erc721Abi } from 'viem';
 import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { LendingPair } from '../../../data/LendingPair';
 import { Assets } from '../../../data/MarginAccount';
@@ -96,7 +96,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   } = props;
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
   const [isApproving, setIsApproving] = useState(false);
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { address: userAddress } = useAccount();
   const publicClient = usePublicClient({ chainId: activeChain.id });

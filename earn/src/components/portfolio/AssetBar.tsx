@@ -5,10 +5,10 @@ import useHover from 'shared/lib/data/hooks/UseHover';
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
+import { SearchBar } from './SearchBar';
 import { ReactComponent as MoreIcon } from '../../assets/svg/more_ellipsis.svg';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
-import { SearchBar } from './SearchBar';
 
 export type AssetBarItem = {
   token: Token;

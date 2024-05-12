@@ -15,7 +15,7 @@ import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
 import { AltSpinner } from '../common/Spinner';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { useSwitchChain } from 'wagmi';
+import { useChainId, useSwitchChain } from 'wagmi';
 import { Chain } from 'viem';
 
 const DROPDOWN_OPTIONS: DropdownOption<Chain>[] = SUPPORTED_CHAINS.map((chain) => ({
@@ -36,43 +36,37 @@ const StyledDropdownOptionContainer = styled(DropdownOptionContainer)`
 `;
 
 export type ChainSelectorProps = {
-  activeChain: Chain;
   isOpen: boolean;
-  isOffline: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  setActiveChain: (chain: Chain) => void;
 };
 
 export default function ChainSelector(props: ChainSelectorProps) {
-  const { activeChain, isOpen, isOffline, setIsOpen, setActiveChain } = props;
+  const { isOpen, setIsOpen } = props;
   const [selectedChainOption, setSelectedChainOption] = useState<DropdownOption<Chain>>(DROPDOWN_OPTIONS[0]);
   const [pendingChainOption, setPendingChainOption] = useState<DropdownOption<Chain> | undefined>(undefined);
-  const [shouldAttemptToSwitchNetwork, setShouldAttemptToSwitchNetwork] = useState<boolean>(true);
 
+  const chainId = useChainId();
   const { isPending, switchChainAsync } = useSwitchChain();
 
   useEffect(() => {
-    if (!isPending) {
-      setSelectedChainOption(
-        DROPDOWN_OPTIONS.find((option) => option.value.id === activeChain.id) ?? DROPDOWN_OPTIONS[0]
-      );
-    }
-  }, [activeChain, isPending]);
+    if (isPending) return;
+    setSelectedChainOption(DROPDOWN_OPTIONS.find((option) => option.value.id === chainId) ?? DROPDOWN_OPTIONS[0]);
+  }, [chainId, isPending]);
 
-  useEffect(() => {
-    if (!isPending && shouldAttemptToSwitchNetwork && pendingChainOption) {
-      const newChain = pendingChainOption.value;
-      switchChainAsync({ chainId: newChain.id })
-        .then(() => {
-          setActiveChain(newChain);
-        })
-        .finally(() => {
-          setShouldAttemptToSwitchNetwork(false);
-          setIsOpen(false);
-          setPendingChainOption(undefined);
-        });
-    }
-  }, [shouldAttemptToSwitchNetwork, isPending, switchChainAsync, pendingChainOption, setActiveChain, setIsOpen]);
+  // useEffect(() => {
+  //   if (!isPending && shouldAttemptToSwitchNetwork && pendingChainOption) {
+  //     const newChain = pendingChainOption.value;
+  //     switchChainAsync({ chainId: newChain.id })
+  //       .then(() => {
+  //         setActiveChain(newChain);
+  //       })
+  //       .finally(() => {
+  //         setShouldAttemptToSwitchNetwork(false);
+  //         setIsOpen(false);
+  //         setPendingChainOption(undefined);
+  //       });
+  //   }
+  // }, [shouldAttemptToSwitchNetwork, isPending, switchChainAsync, pendingChainOption, setActiveChain, setIsOpen]);
 
   const dropdownRef = useRef(null);
 
@@ -112,14 +106,12 @@ export default function ChainSelector(props: ChainSelectorProps) {
                   if (option.value === selectedChainOption.value) return;
                   if (pendingChainOption?.value !== undefined) return;
                   // If the user is offline, set the chain
-                  if (isOffline) {
-                    setActiveChain(option.value);
-                    setIsOpen(false);
-                    return;
-                  }
-                  // Otherwise, set the pending chain option and attempt to switch networks
-                  setPendingChainOption(option);
-                  setShouldAttemptToSwitchNetwork(true);
+                  switchChainAsync({ chainId: option.value.id })
+                    .then(() => {
+                      setSelectedChainOption(option);
+                      setIsOpen(false);
+                    })
+                    .finally(() => setPendingChainOption(undefined));
                 }}
               >
                 <div className='flex items-center gap-3'>

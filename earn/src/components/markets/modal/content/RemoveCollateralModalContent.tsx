@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -15,11 +15,11 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { Address } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Assets } from '../../../../data/MarginAccount';
@@ -79,7 +79,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     setIsOpen,
     setPendingTxn,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const isRedeemingTooMuch = withdrawAmount.gt(maxWithdrawAmount);
 

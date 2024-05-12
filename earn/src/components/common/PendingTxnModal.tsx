@@ -3,9 +3,9 @@ import React, { useContext } from 'react';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
-import { ChainContext } from '../../App';
 import { ReactComponent as ErrorIcon } from '../../assets/svg/error.svg';
 import { ReactComponent as SuccessIcon } from '../../assets/svg/success.svg';
 
@@ -22,7 +22,7 @@ const STATUS_TITLES = {
 };
 
 function EtherscanLink(props: { txnHash: string }) {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   return (
     <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR} className='mr-auto'>
       <a

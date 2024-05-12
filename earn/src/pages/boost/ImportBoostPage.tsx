@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { type WriteContractReturnType } from '@wagmi/core';
@@ -16,11 +16,11 @@ import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import styled from 'styled-components';
 import { Config, useClient, usePublicClient, useReadContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
 import ImportBoostWidget from '../../components/boost/ImportBoostWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
@@ -63,7 +63,7 @@ const BoostCardWrapper = styled.div`
 `;
 
 export default function ImportBoostPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { tokenId } = useParams();
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -8,6 +8,7 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -15,7 +16,6 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { ApyWithTooltip } from '../../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import SupplyModal from '../modal/SupplyModal';
@@ -111,7 +111,7 @@ export type SupplyTableProps = {
 
 export default function SupplyTable(props: SupplyTableProps) {
   const { rows, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
   const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);

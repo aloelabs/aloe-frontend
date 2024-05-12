@@ -9,10 +9,10 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Address } from 'viem';
 
-import { computeLTV } from '../../../data/BalanceSheet';
-import { LendingPair } from '../../../data/LendingPair';
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
+import { computeLTV } from '../../../data/BalanceSheet';
+import { LendingPair } from '../../../data/LendingPair';
 
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively

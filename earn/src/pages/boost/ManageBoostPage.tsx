@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
@@ -10,12 +10,12 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, usePublicClient, useReadContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
 import BurnBoostModal from '../../components/boost/BurnBoostModal';
 import CollectFeesWidget from '../../components/boost/CollectFeesWidget';
@@ -43,7 +43,7 @@ const Container = styled.div`
 `;
 
 export default function ManageBoostPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { nftTokenId } = useParams();
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);

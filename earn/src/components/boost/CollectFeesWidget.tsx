@@ -10,11 +10,11 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { TokenPairQuotes } from '../../pages/boost/ManageBoostPage';
 
@@ -46,7 +46,7 @@ export type CollectFeesWidgetProps = {
 
 export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
   const { cardInfo, tokenQuotes, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const modifyData = useMemo(() => {
     const inner = '0x';

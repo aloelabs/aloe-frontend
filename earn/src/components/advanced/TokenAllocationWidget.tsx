@@ -4,10 +4,10 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
+import TokenAllocationPieChartWidget from './TokenAllocationPieChartWidget';
 import { ReactComponent as PieChartIcon } from '../../assets/svg/pie_chart.svg';
 import { sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import TokenAllocationPieChartWidget from './TokenAllocationPieChartWidget';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 

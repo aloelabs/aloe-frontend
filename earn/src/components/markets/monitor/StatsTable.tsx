@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { format, formatDistanceToNowStrict } from 'date-fns';
@@ -16,6 +16,7 @@ import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -24,7 +25,6 @@ import styled from 'styled-components';
 import { Address } from 'viem';
 import { useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { LendingPair } from '../../../data/LendingPair';
 
 const PAGE_SIZE = 5;
@@ -119,7 +119,7 @@ export type StatsTableRowProps = {
 
 function StatsTableRow(props: StatsTableRowProps) {
   const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn, onMouseEnter } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { writeContractAsync } = useWriteContract();
 

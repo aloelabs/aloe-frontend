@@ -7,6 +7,8 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
+import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
+import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import {
@@ -23,8 +25,6 @@ import {
   UniswapPositionCardContainer,
   UniswapPositionCardWrapper,
 } from '../common/UniswapPositionCard';
-import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
-import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 

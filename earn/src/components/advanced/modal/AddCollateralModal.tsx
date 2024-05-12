@@ -5,11 +5,11 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 
+import { AddCollateralTab } from './tab/AddCollateralTab';
+import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { MAX_UNISWAP_POSITIONS } from '../../../data/constants/Values';
 import { UniswapNFTPosition } from '../../../data/Uniswap';
-import { AddCollateralTab } from './tab/AddCollateralTab';
-import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
 const SECONDARY_COLOR = '#CCDFED';
 

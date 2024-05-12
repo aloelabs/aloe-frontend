@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -9,12 +9,12 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
@@ -40,7 +40,7 @@ type CreateSmartWalletButtonProps = {
 
 function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
   const { poolAddress, uniswapPoolInfo, userAddress, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const salt = useMemo(() => generateBytes12Salt(), []);
   const { data: createBorrowerConfig } = useSimulateContract({

@@ -4,11 +4,10 @@ import { FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import styled from 'styled-components';
-import { useConnect } from 'wagmi';
+import { useChainId, useConnect } from 'wagmi';
 
 import Modal, { MODAL_BLACK_TEXT_COLOR } from '../common/Modal';
 import { GREY_700 } from '../../data/constants/Colors';
-import { Chain } from 'viem';
 import { type UseAccountReturnType } from 'wagmi';
 
 const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
@@ -17,7 +16,6 @@ const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
 
 export type ConnectWalletButtonProps = {
   account?: UseAccountReturnType;
-  activeChain: Chain;
   checkboxes: React.ReactNode[];
   disabled?: boolean;
   fillWidth?: boolean;
@@ -26,7 +24,7 @@ export type ConnectWalletButtonProps = {
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account, activeChain, checkboxes, disabled, fillWidth, onConnected } = props;
+  const { account, checkboxes, disabled, fillWidth, onConnected } = props;
   const [acknowledgedCheckboxes, setAcknowledgedCheckboxes] = useState<boolean[]>(() => {
     return checkboxes?.map(() => false) ?? [];
   });
@@ -38,6 +36,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect();
+  const targetChainId = useChainId();
 
   const orderedFilteredConnectors = useMemo(() => {
     let hasNamedInjectedConnector = false;
@@ -122,7 +121,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
                       // Manually close the modal when the connector is connecting
                       // This indicates the connector's modal/popup is or will soon be open
                       connector.emitter.once('connect', () => setWalletModalOpen(false));
-                      connect({ connector, chainId: activeChain.id });
+                      connect({ connector, chainId: targetChainId });
 
                       if (connector.id === 'walletConnect') setWalletModalOpen(false);
                     }}

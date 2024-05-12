@@ -1,9 +1,9 @@
 import { type WriteContractReturnType } from '@wagmi/core';
 import Modal from 'shared/lib/components/common/Modal';
 
+import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { UniswapNFTPosition, UniswapPosition } from '../../../data/Uniswap';
-import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
 export type ImportUniswapNFTModalProps = {
   isOpen: boolean;

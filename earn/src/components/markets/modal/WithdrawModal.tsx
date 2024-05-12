@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -7,11 +7,11 @@ import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 
-import { ChainContext } from '../../../App';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { useBalanceOfUnderlying } from '../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
@@ -69,7 +69,7 @@ export type WithdrawModalProps = {
 export default function WithdrawModal(props: WithdrawModalProps) {
   const { isOpen, selectedRow, userAddress, setIsOpen, setPendingTxn } = props;
   const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]); // [amountStr, isMaxed]
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { data: balanceResult, refetch: refetchBalance } = useBalanceOfUnderlying(
     selectedRow.asset,

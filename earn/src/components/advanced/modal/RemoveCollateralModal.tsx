@@ -15,12 +15,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { isHealthy, maxWithdraws } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { Assets } from '../../../data/MarginAccount';
@@ -67,7 +67,7 @@ type RemoveCollateralButtonProps = {
 
 function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   const { borrower, userAddress, collateralToken, collateralAmount, userBalance, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const isToken0Collateral = collateralToken.address === borrower.token0.address;
 

@@ -20,9 +20,9 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
 import { Address, Chain } from 'viem';
 
+import { BIGQ96, Q96 } from './constants/Values';
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { BIGQ96, Q96 } from './constants/Values';
 
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 const MAX_TICKS_PER_QUERY = 1000;

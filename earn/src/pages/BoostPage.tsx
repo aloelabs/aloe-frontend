@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
@@ -8,12 +8,12 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
 
-import { ChainContext } from '../App';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import NoPositions from '../components/boost/NoPositions';
@@ -81,7 +81,7 @@ export const BackButtonWrapper = styled.button`
 `;
 
 export default function BoostPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { address: userAddress } = useAccount();
   const client = useClient<Config>({ chainId: activeChain.id });

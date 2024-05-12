@@ -4,10 +4,10 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 
-import { TokenBalance } from '../../pages/PortfolioPage';
-import { rgba } from '../../util/Colors';
 import { APYContainer, BalanceContainer, PieChartContainer } from './PortfolioGrid';
 import PortfolioPieChartWidget, { PortfolioPieChartSlice } from './PortfolioPieChartWidget';
+import { TokenBalance } from '../../pages/PortfolioPage';
+import { rgba } from '../../util/Colors';
 
 export type PortfolioMetricsProps = {
   balances: TokenBalance[];

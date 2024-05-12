@@ -3,8 +3,7 @@ import Modal from './Modal';
 import { Text } from './Typography';
 import ConnectWalletButton from '../navbar/ConnectWalletButton';
 import styled from 'styled-components';
-import { Chain } from 'viem';
-import { type UseAccountReturnType } from 'wagmi'
+import { type UseAccountReturnType } from 'wagmi';
 
 const StyledLink = styled.a`
   text-decoration: underline;
@@ -12,7 +11,6 @@ const StyledLink = styled.a`
 
 export type WelcomeModalProps = {
   isOpen: boolean;
-  activeChain: Chain;
   checkboxes: React.ReactNode[];
   account?: UseAccountReturnType;
   setIsOpen: (open: boolean) => void;
@@ -21,7 +19,7 @@ export type WelcomeModalProps = {
 };
 
 export default function WelcomeModal(props: WelcomeModalProps) {
-  const { isOpen, activeChain, checkboxes, account, setIsOpen, onAcknowledged, onSkip } = props;
+  const { isOpen, checkboxes, account, setIsOpen, onAcknowledged, onSkip } = props;
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Welcome!'>
@@ -47,7 +45,6 @@ export default function WelcomeModal(props: WelcomeModalProps) {
           </FilledGreyButton>
           <ConnectWalletButton
             account={account}
-            activeChain={activeChain}
             checkboxes={checkboxes}
             onConnected={() => {
               onAcknowledged();

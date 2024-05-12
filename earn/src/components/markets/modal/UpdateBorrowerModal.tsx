@@ -7,10 +7,10 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { LendingPair } from '../../../data/LendingPair';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { LendingPair } from '../../../data/LendingPair';
 
 export enum ConfirmationType {
   BORROW = 'BORROW',

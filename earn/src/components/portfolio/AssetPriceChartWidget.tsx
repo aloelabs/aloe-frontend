@@ -5,11 +5,11 @@ import { Token } from 'shared/lib/data/Token';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
+import AssetPriceChartTooltip from './AssetPriceChartTooltip';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { PriceEntry } from '../../pages/PortfolioPage';
 import { fixTimestamp } from '../../util/Dates';
 import Graph from '../graph/Graph';
-import AssetPriceChartTooltip from './AssetPriceChartTooltip';
 
 const GRAY_STROKE_COLOR = '#C2D1DD';
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';

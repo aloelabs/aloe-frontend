@@ -23,7 +23,6 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 
-import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST, ZERO_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
@@ -31,6 +30,7 @@ import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
 import { borrowAPRToLendAPY, RateModel, yieldPerSecondToAPR } from './RateModel';
 import { asSlot0Data, Slot0Data } from './Slot0';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
 class KittyInfo {
   public readonly availableAssets: GN;

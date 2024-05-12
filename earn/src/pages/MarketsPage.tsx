@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
@@ -8,6 +8,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
@@ -15,7 +16,6 @@ import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
-import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
@@ -81,7 +81,7 @@ type TokenSymbol = string;
 type Quote = number;
 
 export default function MarketsPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
   const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
@@ -105,7 +105,7 @@ export default function MarketsPage() {
   }, [searchParams]);
 
   // MARK: custom hooks
-  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs();
+  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs(activeChain.id);
 
   // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
   // This saves a lot of data.
@@ -228,10 +228,15 @@ export default function MarketsPage() {
       if (!userAddress || !provider) return;
       // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
       // return value. Other usages should be updated similarly.
-      const { balancesMap: result } = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
+      const { balancesMap: result } = await getLendingPairBalances(
+        lendingPairs,
+        userAddress,
+        provider,
+        provider.network.chainId
+      );
       setBalancesMap(result);
     })();
-  }, [activeChain.id, lendingPairs, provider, setBalancesMap, userAddress]);
+  }, [lendingPairs, provider, setBalancesMap, userAddress]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {

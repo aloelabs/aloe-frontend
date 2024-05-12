@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
@@ -8,17 +8,12 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { Address, Chain } from 'viem';
-import {
-  useAccount,
-  useBalance,
-  useSimulateContract,
-  useWriteContract,
-} from 'wagmi';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
@@ -189,7 +184,7 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   const [repayAmountStr, setRepayAmountStr] = useState('');
 
   const { address: userAddress } = useAccount();
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   // TODO: This assumes that only one token is borrowed and one token is collateralized
   const isRepayingToken0 = borrower.liabilities.amount0 > 0;

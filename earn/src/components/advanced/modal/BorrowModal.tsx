@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -15,13 +15,13 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, WriteContractReturnType } from 'viem';
 import { useAccount, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
@@ -92,7 +92,7 @@ function BorrowButton(props: BorrowButtonProps) {
     setIsOpen,
     setPendingTxn,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [isPending, setIsPending] = useState(false);
 
@@ -183,7 +183,7 @@ export type BorrowModalProps = {
 
 export default function BorrowModal(props: BorrowModalProps) {
   const { borrower, market, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
   const [borrowToken, setBorrowToken] = useState<Token>(borrower.token0);

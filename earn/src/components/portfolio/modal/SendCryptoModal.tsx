@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
@@ -8,6 +8,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address, getAddress, isAddress } from 'viem';
@@ -15,7 +16,6 @@ import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { useAccount, useBalance, useEnsAddress, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -63,7 +63,7 @@ type SendCryptoConfirmButtonProps = {
 
 function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const { sendAddress, sendAmount, sendBalance, token, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [isPending, setIsPending] = useState(false);
 
   const isEns = sendAddress.endsWith('.eth');
@@ -146,7 +146,7 @@ export type SendCryptoModalProps = {
 
 export default function SendCryptoModal(props: SendCryptoModalProps) {
   const { isOpen, options, defaultOption, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [selectedOption, setSelectedOption] = useState<Token>(defaultOption);
   const [addressInputValue, setAddressInputValue] = useState<string>('');
   const [sendAmountInputValue, setSendAmountInputValue] = useState<string>('');

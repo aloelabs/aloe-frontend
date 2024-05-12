@@ -21,6 +21,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
@@ -36,7 +37,6 @@ import {
   useWriteContract,
 } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowerNft, fetchListOfBorrowerNfts } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
@@ -112,7 +112,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   const { isOpen, selectedLendingPair, selectedCollateral, selectedBorrow, userBalance, setIsOpen, setPendingTxn } =
     props;
 
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   const client = useClient<Config>({ chainId: activeChain.id });

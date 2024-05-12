@@ -13,12 +13,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, erc721Abi } from 'viem';
 import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
@@ -159,7 +159,7 @@ type AddUniswapNFTAsCollateralButtonProps = {
 
 function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonProps) {
   const { borrower, existingUniswapPositions, uniswapNFTPosition, userAddress, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [isPending, setIsPending] = useState(false);
   const [approvingTxn, setApprovingTxn] = useState<WriteContractReturnType | null>(null);

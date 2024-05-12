@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
@@ -10,14 +10,13 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
-import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDevelopment } from 'shared/lib/util/Utils';
-import { Chain } from 'viem';
 import { Config, useAccount, useClient, WagmiProvider } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
@@ -93,38 +92,34 @@ export const theGraphEthereumBlocksClient = new ApolloClient({
 
 // TODO: Need TheGraph for Linea and Scroll
 
-export const ChainContext = React.createContext({
-  activeChain: DEFAULT_CHAIN as Chain,
-  setActiveChain: (chain: Chain) => {},
-});
-
 function AppBodyWrapper() {
-  const [activeChain, setActiveChain] = useState<Chain>(DEFAULT_CHAIN);
-
   const [accountRisk, setAccountRisk] = useState<AccountRiskResult>({ isBlocked: false, isLoading: true });
   const [geoFencingInfo, setGeoFencingInfo] = useState<GeoFencingInfo>({
     isAllowed: false,
     isLoading: true,
   });
-  const [lendingPairs, setLendingPairs] = useState<LendingPair[] | null>(null);
+  const [lendingPairs, setLendingPairs] = useState<{ lendingPairs: LendingPair[] | null; chainId: number }>({
+    lendingPairs: null,
+    chainId: -1,
+  });
 
   const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
+  const client = useClient<Config>();
   const provider = useEthersProvider(client);
 
   const refetch = useCallback(async () => {
     if (provider === undefined) return;
-    const res = await getAvailableLendingPairs(activeChain.id, provider);
-    console.log(res);
-    setLendingPairs(res);
-  }, [activeChain.id, provider, setLendingPairs]);
+    const chainId = provider.network.chainId;
+    const res = await getAvailableLendingPairs(chainId, provider);
+    setLendingPairs({ lendingPairs: res, chainId });
+  }, [provider, setLendingPairs]);
 
-  const lendingPairsContextValue = useMemo(() => ({ lendingPairs, refetch }), [lendingPairs, refetch]);
-  const chainContextValue = { activeChain, setActiveChain };
+  const lendingPairsContextValue = useMemo(() => ({ ...lendingPairs, refetch }), [lendingPairs, refetch]);
 
   useEffect(() => {
-    Sentry.setTag('chain_name', activeChain.name);
-  }, [activeChain]);
+    if (!client) return;
+    Sentry.setTag('chain_name', client.chain.name);
+  }, [client]);
 
   useEffect(() => {
     refetch();
@@ -154,7 +149,7 @@ function AppBodyWrapper() {
 
   const isAccountRiskLoading = accountRisk.isLoading;
   const isAccountBlocked = accountRisk.isBlocked;
-  const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(activeChain.testnet);
+  const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(client?.chain.testnet);
 
   if (isAccountRiskLoading) {
     return null;
@@ -167,33 +162,31 @@ function AppBodyWrapper() {
   return (
     <AccountRiskContext.Provider value={accountRisk}>
       <GeoFencingContext.Provider value={geoFencingInfo}>
-        <ChainContext.Provider value={chainContextValue}>
-          <LendingPairsContext.Provider value={lendingPairsContextValue}>
-            <ScrollToTop />
-            <AppBody>
-              <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-              <main className='flex-grow'>
-                <Routes>
-                  <Route path='/portfolio' element={<PortfolioPage />} />
-                  <Route path='/markets' element={<MarketsPage />} />
-                  <Route path='/leaderboard' element={<LeaderboardPage />} />
-                  {isAllowed && (
-                    <>
-                      <Route path='/boost' element={<BoostPage />} />
-                      <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
-                      <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
-                    </>
-                  )}
-                  <Route path='/borrow' element={<AdvancedPage />} />
-                  <Route path='/' element={<Navigate replace to='/markets' />} />
-                  <Route path='*' element={<Navigate to='/' />} />
-                </Routes>
-              </main>
-              <Footer />
-              <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
-            </AppBody>
-          </LendingPairsContext.Provider>
-        </ChainContext.Provider>
+        <LendingPairsContext.Provider value={lendingPairsContextValue}>
+          <ScrollToTop />
+          <AppBody>
+            <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+            <main className='flex-grow'>
+              <Routes>
+                <Route path='/portfolio' element={<PortfolioPage />} />
+                <Route path='/markets' element={<MarketsPage />} />
+                <Route path='/leaderboard' element={<LeaderboardPage />} />
+                {isAllowed && (
+                  <>
+                    <Route path='/boost' element={<BoostPage />} />
+                    <Route path='/boost/import/:tokenId' element={<ImportBoostPage />} />
+                    <Route path='/boost/manage/:nftTokenId' element={<ManageBoostPage />} />
+                  </>
+                )}
+                <Route path='/borrow' element={<AdvancedPage />} />
+                <Route path='/' element={<Navigate replace to='/markets' />} />
+                <Route path='*' element={<Navigate to='/' />} />
+              </Routes>
+            </main>
+            <Footer />
+            <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+          </AppBody>
+        </LendingPairsContext.Provider>
       </GeoFencingContext.Provider>
     </AccountRiskContext.Provider>
   );

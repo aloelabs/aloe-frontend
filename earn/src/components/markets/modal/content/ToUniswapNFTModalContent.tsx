@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
@@ -11,9 +11,9 @@ import {
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { UniswapPosition, zip } from '../../../../data/Uniswap';
@@ -59,7 +59,7 @@ type ConfirmButtonProps = {
 
 function ConfirmButton(props: ConfirmButtonProps) {
   const { borrower, positionToWithdraw, uniswapNftId, setIsOpen, setPendingTxnResult } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { address: userAddress } = useAccount();
 

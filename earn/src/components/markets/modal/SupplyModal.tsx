@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
@@ -10,6 +10,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
@@ -17,7 +18,6 @@ import { formatNumberInput, roundPercentage } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import { SupplyTableRow } from '../supply/SupplyTable';
 
@@ -87,7 +87,7 @@ type DepositButtonProps = {
 function DepositButton(props: DepositButtonProps) {
   const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
     props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
   const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
@@ -169,7 +169,7 @@ export type SupplyModalProps = {
 export default function SupplyModal(props: SupplyModalProps) {
   const { isOpen, selectedRow, setIsOpen, setPendingTxn } = props;
   const [amount, setAmount] = useState<string>('');
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   const { refetch: refetchBalanceToken, data: tokenBalanceResult } = useBalance({

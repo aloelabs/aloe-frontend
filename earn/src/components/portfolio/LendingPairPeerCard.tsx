@@ -1,15 +1,15 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Config, useClient } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import useNumberOfUsers from '../../data/hooks/UseNumberOfUsers';
 import { LendingPair } from '../../data/LendingPair';
@@ -143,8 +143,8 @@ export type LendingPairPeerCardProps = {
 
 export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
   const { activeAsset, lendingPairs } = props;
-  const { activeChain } = useContext(ChainContext);
-  
+  const activeChain = useChain();
+
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
 

@@ -16,6 +16,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
@@ -23,7 +24,6 @@ import styled from 'styled-components';
 import { Address, Chain } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { isHealthy } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { Assets, Liabilities, MarginAccount } from '../../../data/MarginAccount';
@@ -321,7 +321,7 @@ export type RepayModalProps = {
 export default function RepayModal(props: RepayModalProps) {
   const { borrower, isOpen, setIsOpen, setPendingTxn } = props;
 
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [repayAmountStr, setRepayAmountStr] = useState('');
   const [repayToken, setRepayToken] = useState<Token>(borrower.token0);
   const [shouldRepayFromWallet, setShouldRepayFromWallet] = useState(true);

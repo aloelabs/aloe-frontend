@@ -5,11 +5,11 @@ import { RESPONSIVE_BREAKPOINT_TABLET } from 'shared/lib/data/constants/Breakpoi
 import { Token } from 'shared/lib/data/Token';
 import styled from 'styled-components';
 
+import { AssetBarItem, AssetChunk } from './AssetBar';
+import SearchInput from './TokenSearchInput';
 import { ReactComponent as BackArrowIcon } from '../../assets/svg/back_arrow.svg';
 import { TokenBalance } from '../../pages/PortfolioPage';
 import { rgb } from '../../util/Colors';
-import { AssetBarItem, AssetChunk } from './AssetBar';
-import SearchInput from './TokenSearchInput';
 
 const Container = styled.div`
   position: relative;

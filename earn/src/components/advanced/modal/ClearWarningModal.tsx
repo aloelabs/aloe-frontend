@@ -1,5 +1,3 @@
-import { useContext } from 'react';
-
 import { type WriteContractReturnType } from '@wagmi/core';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -7,9 +5,9 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
 
@@ -46,7 +44,7 @@ type ClearWarningButtonProps = {
 
 function ClearWarningButton(props: ClearWarningButtonProps) {
   const { borrower, etherToSend, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const {
     data: clearConfig,

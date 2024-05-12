@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useContext } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -11,6 +10,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -18,7 +18,6 @@ import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useBalance, useClient, usePublicClient } from 'wagmi';
 
-import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { BorrowMetrics } from '../components/advanced/BorrowMetrics';
 import GlobalStatsTable from '../components/advanced/GlobalStatsTable';
@@ -145,7 +144,7 @@ export type UniswapPoolInfo = {
 };
 
 export default function AdvancedPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const { address: userAddress, isConnected } = useAccount();

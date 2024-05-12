@@ -14,22 +14,26 @@ if (process.env.REACT_APP_ALCHEMY_API_KEY) {
   transports[optimism.id].push(http(`https://opt-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
   transports[arbitrum.id].push(http(`https://arb-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
   transports[base.id].push(http(`https://base-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
+} else {
+  // TODO: Wallet-provided endpoints
+  // ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
+  // Public endpoint alternatives
+  transports[mainnet.id].push(http('https://eth-mainnet.public.blastapi.io'));
+  transports[optimism.id].push(http('https://optimism-mainnet.public.blastapi.io'));
+  transports[arbitrum.id].push(http('https://arbitrum-one.public.blastapi.io'));
 }
 // Infura endpoints
 if (process.env.REACT_APP_INFURA_API_KEY) {
   transports[linea.id].push(http(`https://linea-mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_API_KEY}`));
+} else {
+  // Public endpoint alternatives
+  transports[linea.id].push(
+    http('https://rpc.linea.build'),
+    http('https://linea.decubate.com'),
+    http('https://linea.blockpi.network/v1/rpc/public')
+  );
 }
-// TODO: Wallet-provided endpoints
-// ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
-// Public endpoints
-transports[mainnet.id].push(http('https://eth-mainnet.public.blastapi.io'));
-transports[optimism.id].push(http('https://optimism-mainnet.public.blastapi.io'));
-transports[arbitrum.id].push(http('https://arbitrum-one.public.blastapi.io'));
-transports[linea.id].push(
-  http('https://rpc.linea.build'),
-  http('https://linea.decubate.com'),
-  http('https://linea.blockpi.network/v1/rpc/public')
-);
+
 transports[scroll.id].push(
   http('https://scroll.drpc.org'),
   http('https://rpc.scroll.io'),
@@ -45,19 +49,27 @@ export const wagmiConfig = createConfig({
       qrModalOptions: {
         themeMode: 'dark',
         termsOfServiceUrl: 'https://aloe.capital/legal/terms-of-service',
-        // TODO: many more options available here
       },
       showQrModal: true,
+      metadata: {
+        name: 'Aloe',
+        description: 'Permissionless lending built on Uniswap',
+        url: 'https://app.aloe.capital',
+        icons: [],
+      },
     }),
     coinbaseWallet({
       appName: 'Aloe',
-      // TODO: many more options available here
+      // appLogoUrl: // TODO: do better than favicon
+      darkMode: true,
     }),
     safe(),
   ],
   batch: {
-    multicall: {},
-    // TODO: many more options available here
+    multicall: {
+      batchSize: 2048,
+      wait: 100,
+    },
   },
   cacheTime: 4000,
   pollingInterval: 4000,

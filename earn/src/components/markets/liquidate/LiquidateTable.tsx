@@ -15,6 +15,7 @@ import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
@@ -22,7 +23,6 @@ import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
@@ -116,7 +116,7 @@ export type LiquidateTableRowProps = {
 
 function LiquidateTableRow(props: LiquidateTableRowProps) {
   const { lendingPair: pair, positionValue, health, borrower, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   const [, setCurrentTime] = useState(Date.now());

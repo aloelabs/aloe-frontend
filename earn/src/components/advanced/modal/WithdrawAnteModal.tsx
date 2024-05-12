@@ -13,10 +13,10 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Address, Chain } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -124,7 +124,7 @@ export type WithdrawAnteModalProps = {
 
 export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
   const { borrower, accountEthBalance, isOpen, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   if (!userAddress || !accountEthBalance) {

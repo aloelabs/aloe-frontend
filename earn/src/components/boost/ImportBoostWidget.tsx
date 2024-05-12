@@ -17,6 +17,7 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -35,7 +36,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 
-import { ChainContext } from '../../App';
+import SlippageWidget from './SlippageWidget';
 import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { useLendingPair } from '../../data/hooks/UseLendingPairs';
@@ -45,7 +46,6 @@ import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQue
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
 import { useEthersProvider } from '../../util/Provider';
-import SlippageWidget from './SlippageWidget';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -178,7 +178,7 @@ export type ImportBoostWidgetProps = {
 
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useState<TwentyFourHourPoolData | undefined>(undefined);
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[] | undefined>(undefined);
   const [availableNft, setAvailableNft] = useChainDependentState<{ borrower: Address; ptrIdx: number } | undefined>(

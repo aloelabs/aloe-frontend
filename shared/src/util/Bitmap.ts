@@ -18,9 +18,9 @@ export function bigNumberToBinary(n: BigNumber) {
 }
 
 export function bigIntToBinary(n: bigint) {
-  console.log(n.toString(2));
-  console.log(hexToBinary(n.toString(16)));
-  return hexToBinary(n.toString(16));
+  let bstr = n.toString(2);
+  if (bstr.length % 2 === 1) bstr = `0${bstr}`;
+  return bstr;
 }
 
 export function randomHexValue(bits: number) {

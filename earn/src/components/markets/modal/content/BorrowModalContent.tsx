@@ -1,4 +1,4 @@
-import { ChangeEvent, useContext, useMemo, useState } from 'react';
+import { ChangeEvent, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -16,12 +16,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { LendingPair } from '../../../../data/LendingPair';
@@ -89,7 +89,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     setIsOpen,
     setPendingTxn,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const encodedBorrowCall = useMemo(() => {
     if (!accountAddress) return null;
@@ -149,10 +149,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       size='M'
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
-      onClick={() => borrow(borrowConfig!.request).then((hash) => {
-        setIsOpen(false);
-        setPendingTxn(hash);
-      })}
+      onClick={() =>
+        borrow(borrowConfig!.request).then((hash) => {
+          setIsOpen(false);
+          setPendingTxn(hash);
+        })
+      }
       disabled={!confirmButton.enabled}
     >
       {confirmButton.text}
@@ -173,7 +175,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
   const { address: accountAddress } = useAccount();
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { data: anteData } = useReadContract({
     abi: factoryAbi,

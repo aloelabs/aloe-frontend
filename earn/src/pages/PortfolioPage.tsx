@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
@@ -6,13 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
 import { Config, useAccount, useClient, usePublicClient } from 'wagmi';
 
-import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
@@ -103,7 +103,7 @@ export type TokenBalance = {
 };
 
 export default function PortfolioPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
@@ -123,7 +123,7 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const { isLoading, lendingPairs } = useLendingPairs();
+  const { isLoading, lendingPairs } = useLendingPairs(activeChain.id);
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const { address, isConnecting, isConnected } = useAccount();

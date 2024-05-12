@@ -8,11 +8,11 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { UniswapNFTPosition } from '../../../data/Uniswap';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
 import ToUniswapNFTModalContent from './content/ToUniswapNFTModalContent';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { UniswapNFTPosition } from '../../../data/Uniswap';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',

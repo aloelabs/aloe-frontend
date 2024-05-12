@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
-import { type UseAccountReturnType } from 'wagmi';
+import { useChainId, type UseAccountReturnType } from 'wagmi';
 import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
@@ -18,7 +18,6 @@ import { GREY_700, GREY_800 } from '../../data/constants/Colors';
 import Bell from '../../assets/svg/Bell';
 import { QRCodeSVG } from 'qrcode.react';
 import { NOTIFICATION_BOT_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
-import { Chain } from 'viem';
 import { mainnet } from 'viem/chains';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -76,7 +75,6 @@ const QRCodeContainer = styled.div`
 
 export type AccountInfoProps = {
   account: UseAccountReturnType;
-  chain: Chain;
   buttonStyle?: 'secondary' | 'tertiary';
   closeChainSelector: () => void;
   disconnect: () => void;
@@ -84,7 +82,7 @@ export type AccountInfoProps = {
 
 export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component props
-  const { account, chain, closeChainSelector, disconnect } = props;
+  const { account, closeChainSelector, disconnect } = props;
   const isConnected = account?.isConnected ?? false;
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
@@ -100,6 +98,7 @@ export default function AccountInfo(props: AccountInfoProps) {
 
   // MARK: wagmi hooks
   const { connect, connectors, error } = useConnect();
+  const targetChainId = useChainId();
 
   const orderedFilteredConnectors = useMemo(() => {
     let hasNamedInjectedConnector = false;
@@ -274,7 +273,7 @@ export default function AccountInfo(props: AccountInfoProps) {
                   backgroundColor={GREY_700}
                   color={'rgba(255, 255, 255, 1)'}
                   fillWidth={true}
-                  onClick={() => connect({ connector, chainId: chain.id })}
+                  onClick={() => connect({ connector, chainId: targetChainId })}
                 >
                   {connector.name}
                 </FilledStylizedButton>

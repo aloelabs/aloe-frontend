@@ -1,14 +1,14 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { ethers } from 'ethers';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { getToken } from 'shared/lib/data/TokenData';
 import { Address } from 'viem';
 import { useClient, Config } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import { useEthersProvider } from '../../util/Provider';
 import { UNISWAP_POOL_DENYLIST } from '../constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../constants/Signatures';
@@ -16,7 +16,7 @@ import { UniswapPoolInfo } from '../MarginAccount';
 
 // TODO: Deprecate this, it sucks
 export default function useAvailablePools() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const [availablePools, setAvailablePools] = useChainDependentState(

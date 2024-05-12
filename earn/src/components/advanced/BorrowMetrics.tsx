@@ -1,16 +1,16 @@
-import { ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { formatDistanceToNowStrict } from 'date-fns';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
 
-import { ChainContext } from '../../App';
 import { auctionCurve, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
@@ -173,7 +173,7 @@ export type BorrowMetricsProps = {
 export function BorrowMetrics(props: BorrowMetricsProps) {
   const { marginAccount, dailyInterest0, dailyInterest1, userHasNoMarginAccounts } = props;
 
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [, setCurrentTime] = useState(Date.now());
   const [mostRecentModifyTime, setMostRecentModifyTime] = useState<Date | null>(null);
