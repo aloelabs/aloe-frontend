@@ -11,33 +11,25 @@ export function clientToProvider(client: Client<Transport, Chain>) {
     ensAddress: chain.contracts?.ensRegistry?.address,
   };
   if (transport.type === 'fallback')
-    return new providers.FallbackProvider(
-      (transport.transports as ReturnType<Transport>[]).map(
-        ({ value }) => new providers.JsonRpcProvider(value?.url, network)
-      )
-    );
+    return new providers.JsonRpcProvider((transport.transports as ReturnType<Transport>[])[0].value?.url, network);
   return new providers.JsonRpcProvider(transport.url, network);
 }
 
 export function useEthersProvider(client?: Client<Transport, Chain>) {
-  const [provider, setProvider] = useState<
-    ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider | undefined
-  >(undefined);
+  const [provider, setProvider] = useState<ethers.providers.JsonRpcProvider | undefined>(undefined);
 
   useEffect(() => {
-    (async () => {
-      if (!client || client.chain.id === provider?.network.chainId) return;
-      const newProvider = clientToProvider(client);
-      try {
-        const isReady = await newProvider.ready;
-        if (isReady) {
-          console.log('Setting provider', newProvider);
-          setProvider(newProvider);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    })();
+    if (!client || client.chain.id === provider?.network.chainId) return;
+
+    const newProvider = clientToProvider(client);
+    // No reason to set state and re-render everything if chainId still doesn't match
+    if (newProvider.network.chainId !== client.chain.id) return;
+
+    try {
+      setProvider(newProvider);
+    } catch (e) {
+      console.error(e);
+    }
   }, [client, provider]);
 
   return provider;

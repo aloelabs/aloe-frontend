@@ -14,26 +14,22 @@ if (process.env.REACT_APP_ALCHEMY_API_KEY) {
   transports[optimism.id].push(http(`https://opt-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
   transports[arbitrum.id].push(http(`https://arb-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
   transports[base.id].push(http(`https://base-mainnet.g.alchemy.com/v2/${process.env.REACT_APP_ALCHEMY_API_KEY}`));
-} else {
-  // TODO: Wallet-provided endpoints
-  // ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
-  // Public endpoint alternatives
-  transports[mainnet.id].push(http('https://eth-mainnet.public.blastapi.io'));
-  transports[optimism.id].push(http('https://optimism-mainnet.public.blastapi.io'));
-  transports[arbitrum.id].push(http('https://arbitrum-one.public.blastapi.io'));
 }
 // Infura endpoints
 if (process.env.REACT_APP_INFURA_API_KEY) {
   transports[linea.id].push(http(`https://linea-mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_API_KEY}`));
-} else {
-  // Public endpoint alternatives
-  transports[linea.id].push(
-    http('https://rpc.linea.build'),
-    http('https://linea.decubate.com'),
-    http('https://linea.blockpi.network/v1/rpc/public')
-  );
 }
-
+// TODO: Wallet-provided endpoints
+// ALL_CHAINS.forEach((c) => transports[c.id].push(unstable_connector(injected, { retryCount: 1 })));
+// Public endpoint alternatives
+transports[mainnet.id].push(http('https://eth-mainnet.public.blastapi.io'));
+transports[optimism.id].push(http('https://optimism-mainnet.public.blastapi.io'));
+transports[arbitrum.id].push(http('https://arbitrum-one.public.blastapi.io'));
+transports[linea.id].push(
+  http('https://rpc.linea.build'),
+  http('https://linea.decubate.com'),
+  http('https://linea.blockpi.network/v1/rpc/public')
+);
 transports[scroll.id].push(
   http('https://scroll.drpc.org'),
   http('https://rpc.scroll.io'),

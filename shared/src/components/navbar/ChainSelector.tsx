@@ -106,6 +106,7 @@ export default function ChainSelector(props: ChainSelectorProps) {
                   if (option.value === selectedChainOption.value) return;
                   if (pendingChainOption?.value !== undefined) return;
                   // If the user is offline, set the chain
+                  setPendingChainOption(option);
                   switchChainAsync({ chainId: option.value.id })
                     .then(() => {
                       setSelectedChainOption(option);

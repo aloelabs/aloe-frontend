@@ -26,6 +26,7 @@ import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
+import useEffectOnce from '../../data/hooks/UseEffectOnce';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -279,7 +280,6 @@ export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, checkboxes } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const { chain } = useAccount();
   const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
@@ -288,12 +288,7 @@ export function NavBar(props: NavBarProps) {
   // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
   const [leaderboardEntries, setLeaderboardEntries] = useState<{ address: string; score: string }[]>([]);
 
-  useEffect(() => {
-    // Close the chain selector dropdown when the chain changes
-    setIsSelectChainDropdownOpen(false);
-  }, [chain]);
-
-  useEffect(() => {
+  useEffectOnce(() => {
     (async () => {
       let response: AxiosResponse<{ address: string; score: string }[]>;
       try {
@@ -303,7 +298,7 @@ export function NavBar(props: NavBarProps) {
       }
       if (response.data) setLeaderboardEntries(response.data);
     })();
-  }, [setLeaderboardEntries]);
+  });
 
   const accountPoints = useMemo(() => {
     if (account.address === undefined) return GN.zero(18);
