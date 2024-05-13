@@ -159,6 +159,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
           setPendingTxn(hash);
           setIsOpen(false);
         })
+        .catch((e) => console.error(e))
         .finally(() => {
           setIsPending(false);
         });

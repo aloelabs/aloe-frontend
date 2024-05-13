@@ -150,10 +150,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
       onClick={() =>
-        borrow(borrowConfig!.request).then((hash) => {
-          setIsOpen(false);
-          setPendingTxn(hash);
-        })
+        borrow(borrowConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          })
+          .catch((e) => console.error(e))
       }
       disabled={!confirmButton.enabled}
     >

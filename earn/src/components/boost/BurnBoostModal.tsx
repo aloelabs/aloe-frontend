@@ -1,4 +1,4 @@
-import { Dispatch, useContext, useMemo, useState } from 'react';
+import { Dispatch, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -152,10 +152,12 @@ export default function BurnBoostModal(props: BurnBoostModalProps) {
           fillWidth={true}
           disabled={!confirmButton.enabled}
           onClick={() => {
-            burn(configBurn!.request).then((hash) => {
-              setIsOpen(false);
-              setPendingTxn(hash);
-            });
+            burn(configBurn!.request)
+              .then((hash) => {
+                setIsOpen(false);
+                setPendingTxn(hash);
+              })
+              .catch((e) => console.error(e));
           }}
         >
           {confirmButton.text}

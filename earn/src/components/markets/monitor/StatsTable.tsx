@@ -228,7 +228,9 @@ function StatsTableRow(props: StatsTableRowProps) {
                   functionName: 'pause',
                   args: [pair.uniswapPool as Address, Q32],
                   chainId: activeChain.id,
-                }).then((hash) => setPendingTxn(hash))
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
               }
               disabled={!canBorrowingBeDisabled}
               backgroundColor={canBorrowingBeDisabled ? RED_COLOR : SECONDARY_COLOR}
@@ -256,7 +258,9 @@ function StatsTableRow(props: StatsTableRowProps) {
                   functionName: 'update',
                   args: [pair.uniswapPool as Address, Q32],
                   chainId: activeChain.id,
-                }).then((hash) => setPendingTxn(hash))
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
               }
               disabled={!canUpdateLTV}
             >

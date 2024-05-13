@@ -1,5 +1,3 @@
-import { useContext } from 'react';
-
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -103,10 +101,12 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       disabled={!confirmButton.enabled}
       onClick={() => {
         if (withdrawAnteConfig)
-          withdrawAnte(withdrawAnteConfig.request).then((hash) => {
-            setIsOpen(false);
-            setPendingTxn(hash);
-          });
+          withdrawAnte(withdrawAnteConfig.request)
+            .then((hash) => {
+              setIsOpen(false);
+              setPendingTxn(hash);
+            })
+            .catch((e) => console.error(e));
       }}
     >
       {confirmButton.text}

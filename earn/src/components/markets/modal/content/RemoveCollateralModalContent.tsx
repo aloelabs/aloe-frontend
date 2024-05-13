@@ -166,10 +166,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
       onClick={() =>
-        withdraw(withdrawConfig!.request).then((hash) => {
-          setIsOpen(false);
-          setPendingTxn(hash);
-        })
+        withdraw(withdrawConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          })
+          .catch((e) => console.error(e))
       }
       disabled={!confirmButton.enabled}
     >
@@ -213,7 +215,10 @@ export default function RemoveCollateralModalContent(props: RemoveCollateralModa
     borrower.token1.decimals
   )[isWithdrawingToken0 ? 0 : 1];
 
-  const maxWithdrawAmount = GN.fromNumber(numericMaxWithdrawAmount, collateralToken.decimals);
+  const maxWithdrawAmount = GN.min(
+    existingCollateral,
+    GN.fromNumber(numericMaxWithdrawAmount, collateralToken.decimals)
+  );
 
   const max = maxWithdrawAmount;
   const maxStr = max.toString(GNFormat.DECIMAL);

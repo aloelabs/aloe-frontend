@@ -60,10 +60,12 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
       size='M'
       fillWidth={true}
       onClick={() => {
-        createBorrower(createBorrowerConfig!.request).then((hash) => {
-          setPendingTxn(hash);
-          setIsOpen(false);
-        });
+        createBorrower(createBorrowerConfig!.request)
+          .then((hash) => {
+            setPendingTxn(hash);
+            setIsOpen(false);
+          })
+          .catch((e) => console.error(e));
       }}
       disabled={isPending || !createBorrowerConfig || poolAddress === ''}
     >

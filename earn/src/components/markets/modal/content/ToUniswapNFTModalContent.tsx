@@ -117,10 +117,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() =>
-        writeContractAsync(withdrawConfig!.request).then((hash) => {
-          setIsOpen(false);
-          setPendingTxnResult(hash);
-        })
+        writeContractAsync(withdrawConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxnResult(hash);
+          })
+          .catch((e) => console.error(e))
       }
     >
       {confirmButton.text}

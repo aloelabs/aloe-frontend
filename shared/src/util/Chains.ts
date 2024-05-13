@@ -7,5 +7,5 @@ import { DEFAULT_ETHERSCAN_URL } from '../data/constants/Values';
  * @returns the Etherscan url for the given chain
  */
 export function getEtherscanUrlForChain(chain: Chain): string {
-  return chain.blockExplorers?.etherscan?.url ?? DEFAULT_ETHERSCAN_URL;
+  return chain.blockExplorers?.default.url ?? DEFAULT_ETHERSCAN_URL;
 }

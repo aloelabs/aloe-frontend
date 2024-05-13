@@ -77,10 +77,12 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled || !clearConfig}
       onClick={() =>
-        clearWarning(clearConfig!.request).then((hash) => {
-          setIsOpen(false);
-          setPendingTxn(hash);
-        })
+        clearWarning(clearConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          })
+          .catch((e) => console.error(e))
       }
     >
       {confirmButton.text}

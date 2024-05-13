@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -254,10 +254,12 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
               setIsPending(false);
             });
         } else if (confirmButtonState === ConfirmButtonState.READY && contractWriteConfig) {
-          contractWrite(contractWriteConfig.request).then((hash) => {
-            setPendingTxn(hash);
-            setIsOpen(false);
-          });
+          contractWrite(contractWriteConfig.request)
+            .then((hash) => {
+              setPendingTxn(hash);
+              setIsOpen(false);
+            })
+            .catch((e) => console.error(e));
         }
       }}
     >

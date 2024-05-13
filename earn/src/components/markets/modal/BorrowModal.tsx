@@ -445,10 +445,12 @@ export default function BorrowModal(props: BorrowModalProps) {
               !isCheckingIfAbleToMulticallOps &&
               configMulticallOps
             ) {
-              borrow(configMulticallOps.request).then((hash) => {
-                setIsOpen(false);
-                setPendingTxn(hash);
-              });
+              borrow(configMulticallOps.request)
+                .then((hash) => {
+                  setIsOpen(false);
+                  setPendingTxn(hash);
+                })
+                .catch((e) => console.error(e));
             }
           }}
         >

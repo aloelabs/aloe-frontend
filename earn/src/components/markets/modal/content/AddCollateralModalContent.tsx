@@ -97,10 +97,12 @@ function ConfirmButton(props: ConfirmButtonProps) {
       fillWidth={true}
       color={MODAL_BLACK_TEXT_COLOR}
       onClick={() =>
-        deposit(depositConfig!.request).then((hash) => {
-          setIsOpen(false);
-          setPendingTxn(hash);
-        })
+        deposit(depositConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          })
+          .catch((e) => console.error(e))
       }
       disabled={!confirmButton.enabled}
     >

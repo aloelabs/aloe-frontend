@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
@@ -116,10 +116,12 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
       disabled={!confirmButton.enabled}
       onClick={() => {
         if (confirmButtonState === ConfirmButtonState.READY && removeCollateralConfig) {
-          writeContractAsync(removeCollateralConfig.request).then((hash) => {
-            setPendingTxn(hash);
-            setIsOpen(false);
-          });
+          writeContractAsync(removeCollateralConfig.request)
+            .then((hash) => {
+              setPendingTxn(hash);
+              setIsOpen(false);
+            })
+            .catch((e) => console.error(e));
         }
       }}
     >

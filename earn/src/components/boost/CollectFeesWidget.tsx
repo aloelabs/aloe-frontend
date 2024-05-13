@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -81,7 +81,9 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
         <FilledGradientButton
           size='S'
           onClick={() => {
-            claimFees(configBurn!.request).then((hash) => setPendingTxn(hash));
+            claimFees(configBurn!.request)
+              .then((hash) => setPendingTxn(hash))
+              .catch((e) => console.error(e));
           }}
           disabled={claimFeesIsLoading || !configBurn}
         >

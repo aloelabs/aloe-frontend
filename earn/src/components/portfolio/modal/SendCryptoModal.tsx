@@ -69,7 +69,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const isEns = sendAddress.endsWith('.eth');
 
   const { data: resolvedAddress } = useEnsAddress({
-    name: normalize(sendAddress),
+    name: isEns ? normalize(sendAddress) : '',
     chainId: mainnet.id,
     query: { enabled: isEns },
   });
@@ -103,7 +103,7 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
 
   let confirmButtonState = ConfirmButtonState.READY;
 
-  if (resolvedAddress == null) {
+  if ((isEns && !resolvedAddress) || (!isEns && !isAddress(sendAddress.toLowerCase()))) {
     confirmButtonState = ConfirmButtonState.INVALID_ADDRESS;
   } else if (sendAmount.gt(sendBalance)) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;

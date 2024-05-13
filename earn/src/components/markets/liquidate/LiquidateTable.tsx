@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
@@ -231,7 +231,9 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
                   functionName: 'warn',
                   args: [Q32],
                   chainId: activeChain.id,
-                }).then((hash) => setPendingTxn(hash))
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
               }
               disabled={!canBeWarned || userAddress === undefined}
               backgroundColor={canBeWarned ? RED_COLOR : SECONDARY_COLOR}
@@ -261,7 +263,9 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
                   functionName: 'liquidate',
                   args: [borrower.address, encodedLiquidateData, 10000n, Q32],
                   chainId: activeChain.id,
-                }).then((hash) => setPendingTxn(hash))
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
               }
               disabled={!canBeLiquidated || userAddress === undefined}
             >

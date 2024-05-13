@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
@@ -82,10 +82,12 @@ function AddCollateralButton(props: AddCollateralButtonProps) {
       disabled={!confirmButton.enabled}
       onClick={() => {
         if (confirmButtonState === ConfirmButtonState.READY && contractWriteConfig !== undefined) {
-          writeContractAsync(contractWriteConfig.request).then((hash) => {
-            setPendingTxn(hash);
-            setIsOpen(false);
-          });
+          writeContractAsync(contractWriteConfig.request)
+            .then((hash) => {
+              setPendingTxn(hash);
+              setIsOpen(false);
+            })
+            .catch((e) => console.error(e));
         }
       }}
     >

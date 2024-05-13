@@ -574,7 +574,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
             if (state === ImportState.READY_TO_APPROVE) {
               writeManager(configWriteManager!.request);
             } else if (state === ImportState.READY_TO_MINT) {
-              mint(configMint!.request).then((hash) => setPendingTxn(hash));
+              mint(configMint!.request)
+                .then((hash) => setPendingTxn(hash))
+                .catch((e) => console.error(e));
             }
           }}
           disabled={buttonState.isDisabled}

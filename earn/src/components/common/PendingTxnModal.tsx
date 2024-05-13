@@ -1,5 +1,3 @@
-import React, { useContext } from 'react';
-
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';

@@ -369,10 +369,12 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
                 setIsApproving(false);
               });
             } else {
-              multicallWrite(multicallConfig!.request).then((hash) => {
-                setIsOpen(false);
-                setPendingTxn(hash);
-              });
+              multicallWrite(multicallConfig!.request)
+                .then((hash) => {
+                  setIsOpen(false);
+                  setPendingTxn(hash);
+                })
+                .catch((e) => console.error(e));
             }
           }}
         >

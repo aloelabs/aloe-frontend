@@ -140,10 +140,12 @@ function DepositButton(props: DepositButtonProps) {
         refetchDepositWithPermit2();
         return;
       }
-      depositWithPermit2(depsitWithPermit2Config.request).then((hash) => {
-        setPendingTxn(hash);
-        setIsOpen(false);
-      });
+      depositWithPermit2(depsitWithPermit2Config.request)
+        .then((hash) => {
+          setPendingTxn(hash);
+          setIsOpen(false);
+        })
+        .catch((e) => console.error(e));
     }
   }
 

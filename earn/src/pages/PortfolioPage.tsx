@@ -395,6 +395,7 @@ export default function PortfolioPage() {
           />
           <PortfolioActionButton
             label={'Bridge'}
+            disabled={true}
             Icon={<TruckIcon />}
             onClick={() => {
               if (isConnected) setIsBridgeModalOpen(true);
