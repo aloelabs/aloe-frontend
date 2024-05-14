@@ -2,7 +2,7 @@ import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { ArbitrumLogo, BaseLogo, EthereumLogo, LineaLogo, OptimismLogo, ScrollLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
-import { Address, Chain } from 'viem';
+import { Address } from 'viem';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 

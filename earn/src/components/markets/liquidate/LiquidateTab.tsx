@@ -92,8 +92,8 @@ export default function LiquidateTab(props: LiquidateTabProps) {
 
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
-        const lower = (slot0 >> BigInt(24 * i * 2)) & BigInt('0xffffff');
-        const upper = (slot0 >> BigInt(24 * i * 2 + 24)) & BigInt('0xffffff');
+        const lower = BigInt.asIntN(24, (slot0 >> BigInt(24 * i * 2)) & BigInt('0xffffff'));
+        const upper = BigInt.asIntN(24, (slot0 >> BigInt(24 * i * 2 + 24)) & BigInt('0xffffff'));
         if (lower === upper) continue;
 
         positionTicks.push({ lower: Number(lower), upper: Number(upper) });

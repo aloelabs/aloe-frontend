@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ApolloQueryResult } from '@apollo/react-hooks';
 import { TickMath } from '@uniswap/v3-sdk';
