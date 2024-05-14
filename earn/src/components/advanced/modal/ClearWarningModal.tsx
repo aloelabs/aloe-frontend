@@ -1,15 +1,13 @@
-import { useContext } from 'react';
-
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import useChain from 'shared/lib/data/hooks/UseChain';
+import { useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
 
@@ -41,37 +39,26 @@ type ClearWarningButtonProps = {
   borrower: BorrowerNftBorrower;
   etherToSend: GN;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function ClearWarningButton(props: ClearWarningButtonProps) {
   const { borrower, etherToSend, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const {
-    config: clearConfig,
+    data: clearConfig,
     isError: isUnableToClear,
     isLoading: isCheckingIfAbleToClear,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: borrower.address,
     abi: borrowerAbi,
     functionName: 'clear',
     args: [Q32],
-    overrides: { value: etherToSend.toBigNumber() },
+    value: etherToSend.toBigInt(),
     chainId: activeChain.id,
   });
-  const gasLimit = clearConfig.request?.gasLimit.mul(110).div(100);
-  const { write: clearWarning, isLoading: isAskingUserToClearWarning } = useContractWrite({
-    ...clearConfig,
-    request: {
-      ...clearConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: clearWarning, isPending: isAskingUserToClearWarning } = useWriteContract();
 
   let confirmButtonState = ConfirmButtonState.READY;
   if (isCheckingIfAbleToClear) {
@@ -85,7 +72,19 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState);
 
   return (
-    <FilledStylizedButton size='M' fillWidth={true} disabled={!confirmButton.enabled} onClick={(a) => clearWarning?.()}>
+    <FilledStylizedButton
+      size='M'
+      fillWidth={true}
+      disabled={!confirmButton.enabled || !clearConfig}
+      onClick={() =>
+        clearWarning(clearConfig!.request)
+          .then((hash) => {
+            setIsOpen(false);
+            setPendingTxn(hash);
+          })
+          .catch((e) => console.error(e))
+      }
+    >
       {confirmButton.text}
     </FilledStylizedButton>
   );
@@ -97,7 +96,7 @@ export type ClearWarningModalProps = {
   accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function ClearWarningModal(props: ClearWarningModalProps) {

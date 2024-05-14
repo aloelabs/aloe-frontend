@@ -301,6 +301,10 @@ export class GN {
     return JSBI.BigInt(this.toString(GNFormat.INT));
   }
 
+  toBigInt(): bigint {
+    return BigInt(this.toString(GNFormat.INT));
+  }
+
   /**
    * Converts to `Number` with a potential loss of precision.
    * @returns Equivalent `Number`
@@ -342,6 +346,10 @@ export class GN {
    */
   static fromBigNumber(int: BigNumber, resolution: number, base: 2 | 10 = 10) {
     return new GN(int.toString(), resolution, base);
+  }
+
+  static fromBigInt(int: bigint, resolution: number, base: 2 | 10 = 10) {
+    return new GN(int.toString(10), resolution, base);
   }
 
   /**

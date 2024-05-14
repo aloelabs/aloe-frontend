@@ -4,10 +4,10 @@ import { Dialog, Transition } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import { Display } from './Typography';
 import CloseIcon from '../../assets/svg/close_modal.svg';
 import LoadingIcon from '../../assets/svg/loading.svg';
 import { classNames } from '../../util/ClassNames';
-import { Display } from './Typography';
 
 const DEFAULT_BORDER_GRADIENT = 'linear-gradient(90deg, #9BAAF3 0%, #7BD8C0 100%)';
 const LOADING_BORDER_GRADIENT = 'rgba(43, 64, 80, 1)';

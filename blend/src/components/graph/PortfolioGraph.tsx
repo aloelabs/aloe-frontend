@@ -14,13 +14,13 @@ import {
 } from 'date-fns/esm';
 import styled from 'styled-components';
 
-import { API_URL } from '../../data/constants/Values';
-import { CombinedPercentChange } from '../common/PercentChange';
-import { Display, Text } from '../common/Typography';
 import Graph from './Graph';
 import GraphButtons, { buttonIdxToText } from './GraphButtons';
 import { PortfolioGraphPlaceholder } from './PortfolioGraphPlaceholder';
 import PortfolioGraphTooltip, { PORTFOLIO_TOOLTIP_WIDTH } from './tooltips/PortfolioGraphTooltip';
+import { API_URL } from '../../data/constants/Values';
+import { CombinedPercentChange } from '../common/PercentChange';
+import { Display, Text } from '../common/Typography';
 
 const GRAPH_HEIGHT = 222.5;
 

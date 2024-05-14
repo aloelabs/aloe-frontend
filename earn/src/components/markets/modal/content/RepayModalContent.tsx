@@ -1,7 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
@@ -9,17 +8,17 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
-import { Address, Chain, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address, Chain } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../../App';
 import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
 import { Liabilities } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110;
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -80,7 +79,7 @@ type ConfirmButtonProps = {
   repayToken: Token;
   repayTokenBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function ConfirmButton(props: ConfirmButtonProps) {
@@ -107,45 +106,23 @@ function ConfirmButton(props: ConfirmButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, repayToken, userAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], repayAmount);
 
-  const { config: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = usePrepareContractWrite({
+  const { data: repayWithPermit2Config, refetch: refetchRepayWithPermit2 } = useSimulateContract({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerAbi,
     functionName: 'repayWithPermit2',
     args: [
       isRepayingToken0 ? borrower.lender0 : borrower.lender1,
       shouldRepayMax,
-      permit2Result.amount.toBigNumber(),
+      permit2Result.amount.toBigInt(),
       borrower.address,
-      BigNumber.from(permit2Result.nonce ?? '0'),
-      BigNumber.from(permit2Result.deadline),
+      BigInt(permit2Result.nonce ?? 0n),
+      BigInt(permit2Result.deadline),
       permit2Result.signature ?? '0x',
     ],
     chainId: activeChain.id,
-    enabled: permit2State === Permit2State.DONE,
+    query: { enabled: permit2State === Permit2State.DONE },
   });
-  const gasLimit = repayWithPermit2Config.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const {
-    write: repayWithPermit2,
-    isError: contractDidError,
-    isSuccess: contractDidSucceed,
-    data: contractData,
-  } = useContractWrite({
-    ...repayWithPermit2Config,
-    request: {
-      ...repayWithPermit2Config.request,
-      gasLimit,
-    },
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (contractDidSucceed) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
+  const { writeContractAsync: repayWithPermit2 } = useWriteContract();
 
   // MARK: Determining button state -----------------------------------------------------------------------------------
   let confirmButtonState: ConfirmButtonState;
@@ -172,12 +149,20 @@ function ConfirmButton(props: ConfirmButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!repayWithPermit2) {
+      if (!repayWithPermit2Config) {
         refetchRepayWithPermit2();
         return;
       }
       setIsPending(true);
-      repayWithPermit2();
+      repayWithPermit2(repayWithPermit2Config.request)
+        .then((hash) => {
+          setPendingTxn(hash);
+          setIsOpen(false);
+        })
+        .catch((e) => console.error(e))
+        .finally(() => {
+          setIsPending(false);
+        });
     }
   };
 
@@ -191,7 +176,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
 export type RepayModalContentProps = {
   borrower: BorrowerNftBorrower;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxnResult: (result: SendTransactionResult | null) => void;
+  setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
 
 export default function RepayModalContent(props: RepayModalContentProps) {
@@ -200,7 +185,7 @@ export default function RepayModalContent(props: RepayModalContentProps) {
   const [repayAmountStr, setRepayAmountStr] = useState('');
 
   const { address: userAddress } = useAccount();
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   // TODO: This assumes that only one token is borrowed and one token is collateralized
   const isRepayingToken0 = borrower.liabilities.amount0 > 0;
@@ -212,8 +197,7 @@ export default function RepayModalContent(props: RepayModalContentProps) {
     address: userAddress,
     chainId: activeChain.id,
     token: repayToken.address,
-    watch: false,
-    enabled: userAddress !== undefined,
+    query: { enabled: userAddress !== undefined },
   });
   const tokenBalance = GN.fromDecimalString(tokenBalanceData?.formatted ?? '0', repayToken.decimals);
 

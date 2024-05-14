@@ -1,16 +1,16 @@
 import { Fragment, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { LendingPair } from '../../../data/LendingPair';
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { LendingPair } from '../../../data/LendingPair';
 
 export enum ConfirmationType {
   BORROW = 'BORROW',
@@ -52,7 +52,7 @@ export type UpdateBorrowerModalProps = {
   borrower: BorrowerNftBorrower;
   lendingPair?: LendingPair;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function UpdateBorrowerModal(props: UpdateBorrowerModalProps) {

@@ -1,19 +1,18 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
-import { useAccount, useProvider } from 'wagmi';
+import { Config, useAccount, useClient, usePublicClient } from 'wagmi';
 
-import { ChainContext } from '../App';
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
 import { ReactComponent as ShareIcon } from '../assets/svg/share.svg';
@@ -37,6 +36,7 @@ import { useLendingPairs } from '../data/hooks/UseLendingPairs';
 import { getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
 import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+import { useEthersProvider } from '../util/Provider';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -103,28 +103,29 @@ export type TokenBalance = {
 };
 
 export default function PortfolioPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [tokenColors, setTokenColors] = useSafeState<Map<string, string>>(new Map());
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
+  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
   );
-  const [tokenPriceData, setTokenPriceData] = useSafeState<TokenPriceData[]>([]);
-  const [isLoadingPrices, setIsLoadingPrices] = useSafeState(true);
-  const [errorLoadingPrices, setErrorLoadingPrices] = useSafeState(false);
+  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const { isLoading, lendingPairs } = useLendingPairs();
-  const provider = useProvider({ chainId: activeChain.id });
+  const { isLoading, lendingPairs } = useLendingPairs(activeChain.id);
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
 
@@ -206,7 +207,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
-      if (!address || isLoading) return;
+      if (!address || !provider || isLoading) return;
       const { lendingPairBalances: results } = await getLendingPairBalances(
         lendingPairs,
         address,
@@ -217,19 +218,22 @@ export default function PortfolioPage() {
     })();
   }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
     if (!isConnected && !isConnecting && lendingPairBalances.length > 0) {
@@ -391,6 +395,7 @@ export default function PortfolioPage() {
           />
           <PortfolioActionButton
             label={'Bridge'}
+            disabled={true}
             Icon={<TruckIcon />}
             onClick={() => {
               if (isConnected) setIsBridgeModalOpen(true);
@@ -454,7 +459,7 @@ export default function PortfolioPage() {
       )}
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
-        txnHash={pendingTxn?.hash}
+        txnHash={pendingTxn}
         setIsOpen={(isOpen: boolean) => {
           setIsPendingTxnModalOpen(isOpen);
           if (!isOpen) {

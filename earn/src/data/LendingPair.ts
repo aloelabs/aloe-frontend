@@ -21,9 +21,8 @@ import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
-import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 import { computeLTV } from './BalanceSheet';
 import { UNISWAP_POOL_DENYLIST, ZERO_ADDRESS } from './constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
@@ -31,6 +30,7 @@ import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
 import { borrowAPRToLendAPY, RateModel, yieldPerSecondToAPR } from './RateModel';
 import { asSlot0Data, Slot0Data } from './Slot0';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
 class KittyInfo {
   public readonly availableAssets: GN;
@@ -92,9 +92,9 @@ export class LendingPair {
     return -Math.log(this.ltv) / Math.log(1.0001) / this.factoryData.manipulationThresholdDivisor;
   }
 
-  amountEthRequiredBeforeBorrowing(currentBorrowerBalance: BigNumber) {
-    const ante = this.factoryData.ante.toBigNumber();
-    return currentBorrowerBalance.gte(ante) ? BigNumber.from(0) : ante.sub(currentBorrowerBalance);
+  amountEthRequiredBeforeBorrowing(currentBorrowerBalance: bigint) {
+    const ante = this.factoryData.ante.toBigInt();
+    return currentBorrowerBalance >= ante ? 0n : ante - currentBorrowerBalance;
   }
 }
 

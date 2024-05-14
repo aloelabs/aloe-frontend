@@ -1,65 +1,79 @@
 import { useEffect, useMemo } from 'react';
 
-import { SendTransactionResult, Provider } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useContractReads } from 'wagmi';
+import { getContract, GetContractEventsReturnType } from 'viem';
+import { usePublicClient, useReadContracts } from 'wagmi';
 
+import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 import { DerivedBorrower } from '../../../data/Borrower';
 import { LendingPair } from '../../../data/LendingPair';
 import { Assets } from '../../../data/MarginAccount';
 import { UniswapPosition } from '../../../data/Uniswap';
-import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 
 export type LiquidateTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
   chainId: number;
-  provider: Provider;
   // Remaining 3 should be passed in for sure though
   lendingPairs: LendingPair[];
   tokenQuotes: Map<string, number>;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
 };
 
 export default function LiquidateTab(props: LiquidateTabProps) {
-  const { chainId, provider, lendingPairs, tokenQuotes, setPendingTxn } = props;
+  const { chainId, lendingPairs, tokenQuotes, setPendingTxn } = props;
 
-  const [createBorrowerEvents, setCreateBorrowerEvents] = useChainDependentState<ethers.Event[]>([], chainId);
+  const [createBorrowerEvents, setCreateBorrowerEvents] = useChainDependentState<
+    GetContractEventsReturnType<typeof factoryAbi, 'CreateBorrower'>
+  >([], chainId);
+
+  const publicClient = usePublicClient({ chainId });
 
   // Fetch `createBorrowerEvents`
   useEffect(() => {
     (async () => {
-      const chainId = (await provider.getNetwork()).chainId;
-      const factory = new ethers.Contract(ALOE_II_FACTORY_ADDRESS[chainId], factoryAbi, provider);
-      const logs = await factory.queryFilter(factory.filters.CreateBorrower(), 'earliest', 'latest');
+      if (!publicClient) return;
+      const factory = getContract({
+        address: ALOE_II_FACTORY_ADDRESS[chainId],
+        abi: factoryAbi,
+        client: publicClient,
+      });
+      const logs = await factory.getEvents.CreateBorrower(undefined, {
+        fromBlock: 'earliest',
+        toBlock: 'latest',
+        strict: true,
+      });
 
       setCreateBorrowerEvents(logs.filter((log) => !log.removed && log.args !== undefined));
     })();
-  }, [provider, lendingPairs, setCreateBorrowerEvents]);
+  }, [lendingPairs, setCreateBorrowerEvents, publicClient, chainId]);
 
   // Call `getSummary` on each borrower
-  const { data: summaryData } = useContractReads({
-    contracts: createBorrowerEvents.map((ev) => ({
-      chainId,
-      address: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
-      abi: borrowerLensAbi,
-      functionName: 'getSummary',
-      args: [ev.args?.account],
-    })),
+  const { data: summaryData } = useReadContracts({
+    contracts: createBorrowerEvents.map(
+      (ev) =>
+        ({
+          chainId,
+          address: ALOE_II_BORROWER_LENS_ADDRESS[chainId],
+          abi: borrowerLensAbi,
+          functionName: 'getSummary',
+          args: [ev.args?.account],
+        } as const)
+    ),
     allowFailure: false,
-    enabled: createBorrowerEvents.length > 0,
+    query: { enabled: createBorrowerEvents.length > 0 },
   });
 
   const lendingPairsForEvents = useMemo(() => {
     let missing = false;
     const res = createBorrowerEvents.map((ev) => {
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args!.pool.toLowerCase());
+      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase());
       if (pair === undefined) missing = true;
       return pair;
     });
@@ -71,48 +85,35 @@ export default function LiquidateTab(props: LiquidateTabProps) {
   const borrowers = useMemo(() => {
     if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
     return createBorrowerEvents.map((ev, i) => {
-      const { pool: uniswapPool, owner, account: address } = ev.args!;
-      const summary = summaryData[i] as {
-        balanceEth: BigNumber;
-        balance0: BigNumber;
-        balance1: BigNumber;
-        liabilities0: BigNumber;
-        liabilities1: BigNumber;
-        slot0: BigNumber;
-        liquidity: readonly BigNumber[];
-      };
+      const { pool: uniswapPool, owner, account: address } = ev.args;
+      const [balanceEth, balance0, balance1, liabilities0, liabilities1, slot0, liquidity] = summaryData[i];
 
       const pair = lendingPairsForEvents[i];
-      const liabilities0 = GN.fromBigNumber(summary.liabilities0, pair.token0.decimals);
-      const liabilities1 = GN.fromBigNumber(summary.liabilities1, pair.token1.decimals);
 
-      const slot0 = summary.slot0;
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
-        const lower = slot0.shr(24 * i * 2).mask(24);
-        const upper = slot0.shr(24 * i * 2 + 24).mask(24);
-        if (lower.eq(upper)) continue;
+        const lower = BigInt.asIntN(24, (slot0 >> BigInt(24 * i * 2)) & BigInt('0xffffff'));
+        const upper = BigInt.asIntN(24, (slot0 >> BigInt(24 * i * 2 + 24)) & BigInt('0xffffff'));
+        if (lower === upper) continue;
 
-        positionTicks.push({ lower: lower.toNumber(), upper: upper.toNumber() });
+        positionTicks.push({ lower: Number(lower), upper: Number(upper) });
       }
 
       return DerivedBorrower.from({
-        ethBalance: GN.fromBigNumber(summary.balanceEth, 18),
+        ethBalance: GN.fromBigInt(balanceEth, 18),
         assets: new Assets(
-          GN.fromBigNumber(summary.balance0, pair.token0.decimals),
-          GN.fromBigNumber(summary.balance1, pair.token1.decimals),
-          positionTicks.map(
-            (v, i) => ({ ...v, liquidity: JSBI.BigInt(summary.liquidity[i].toString()) } as UniswapPosition)
-          )
+          GN.fromBigInt(balance0, pair.token0.decimals),
+          GN.fromBigInt(balance1, pair.token1.decimals),
+          positionTicks.map((v, i) => ({ ...v, liquidity: JSBI.BigInt(liquidity[i].toString()) } as UniswapPosition))
         ),
         liabilities: {
-          amount0: liabilities0,
-          amount1: liabilities1,
+          amount0: GN.fromBigInt(liabilities0, pair.token0.decimals),
+          amount1: GN.fromBigInt(liabilities1, pair.token1.decimals),
         },
         slot0,
-        address,
-        owner,
-        uniswapPool,
+        address: address!,
+        owner: owner!,
+        uniswapPool: uniswapPool!,
       });
     });
   }, [createBorrowerEvents, lendingPairsForEvents, summaryData]);

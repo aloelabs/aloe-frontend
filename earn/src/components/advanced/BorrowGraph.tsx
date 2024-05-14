@@ -3,13 +3,13 @@ import { Text } from 'shared/lib/components/common/Typography';
 import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
 import styled from 'styled-components';
 
+import BorrowGraphTooltip from './BorrowGraphTooltip';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINTS,
 } from '../../data/constants/Breakpoints';
 import Graph from '../graph/Graph';
-import BorrowGraphTooltip from './BorrowGraphTooltip';
 
 const TEXT_COLOR = '#82a0b6';
 const GREEN_COLOR = '#82ca9d';

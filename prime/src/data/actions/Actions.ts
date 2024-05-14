@@ -1,6 +1,8 @@
 import JSBI from 'jsbi';
 import { DropdownOption } from 'shared/lib/components/common/Dropdown';
 
+import { ActionID } from './ActionID';
+import { runWithChecks } from './Utils';
 import { ReactComponent as AloeLogo } from '../../assets/svg/aloe_capital_logo.svg';
 import { ReactComponent as UniswapLogo } from '../../assets/svg/uniswap_logo.svg';
 import { AloeAddMarginActionCard } from '../../components/borrow/actions/AloeAddMarginActionCard';
@@ -14,8 +16,6 @@ import UniswapSwapActionCard from '../../components/borrow/actions/UniswapSwapAc
 import { Balances } from '../Balances';
 import { Assets, Liabilities, MarginAccount } from '../MarginAccount';
 import { MarketInfo } from '../MarketInfo';
-import { ActionID } from './ActionID';
-import { runWithChecks } from './Utils';
 
 export type UniswapPosition = {
   lower: number;

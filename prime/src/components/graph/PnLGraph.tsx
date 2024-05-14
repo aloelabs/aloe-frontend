@@ -24,6 +24,8 @@ import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
+import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
@@ -33,8 +35,6 @@ import { LiquidationThresholds, MarginAccount } from '../../data/MarginAccount';
 import { GENERAL_DEBOUNCE_DELAY_MS } from '../../pages/BorrowActionsPage';
 import { makeEtherscanRequest } from '../../util/Etherscan';
 import { tickToPrice } from '../../util/Uniswap';
-import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
-import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const INPUT_DEBOUNCE_DELAY_MS = 25;

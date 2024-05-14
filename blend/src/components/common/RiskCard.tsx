@@ -3,6 +3,7 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import { Text } from './Typography';
 import BaseProtocolRiskIcon from '../../assets/svg/base_protocol_risk.svg';
 import ExecutionRiskIcon from '../../assets/svg/execution_risk.svg';
 import ImpermanentLossIcon from '../../assets/svg/impermanent_loss.svg';
@@ -12,7 +13,6 @@ import PreviousChevronActive from '../../assets/svg/previous_chevron_active.svg'
 import PreviousChevronInactive from '../../assets/svg/previous_chevron_inactive.svg';
 import TokenAndBaseLayerRiskIcon from '../../assets/svg/token_and_base_layer_risk.svg';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
-import { Text } from './Typography';
 
 const DESCRIPTION_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 

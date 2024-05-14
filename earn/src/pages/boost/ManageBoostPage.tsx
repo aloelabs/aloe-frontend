@@ -1,6 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import JSBI from 'jsbi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -10,12 +10,12 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
-import { Address, useAccount, useContractRead, useProvider } from 'wagmi';
+import { Address } from 'viem';
+import { Config, useAccount, useClient, usePublicClient, useReadContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
 import BurnBoostModal from '../../components/boost/BurnBoostModal';
 import CollectFeesWidget from '../../components/boost/CollectFeesWidget';
@@ -25,6 +25,7 @@ import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../../data/Uniboost';
 import { getProminentColor, rgb } from '../../util/Colors';
+import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
 const DEFAULT_COLOR0 = 'white';
@@ -42,30 +43,31 @@ const Container = styled.div`
 `;
 
 export default function ManageBoostPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { nftTokenId } = useParams();
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const [cardInfo, setCardInfo] = useChainDependentState<BoostCardInfo | null>(null, activeChain.id);
-  const [tokenQuotes, setTokenQuotes] = useSafeState<TokenPairQuotes | undefined>(undefined);
-  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [tokenQuotes, setTokenQuotes] = useState<TokenPairQuotes | undefined>(undefined);
+  const [colors, setColors] = useState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [isBurnModalOpen, setIsBurnModalOpen] = useState(false);
   const { address: userAddress } = useAccount();
 
   const navigate = useNavigate();
 
-  const { data: tokenIds } = useContractRead({
+  const { data: tokenIds } = useReadContract({
     abi: borrowerNftAbi,
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     functionName: 'tokensOf',
     args: userAddress ? [userAddress] : undefined,
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
   });
   const tokenPtr = useMemo(
-    () => tokenIds?.findIndex((id) => id.toHexString() === nftTokenId) ?? null,
+    () => tokenIds?.findIndex((id) => `0x${id.toString(16)}` === nftTokenId) ?? null,
     [tokenIds, nftTokenId]
   );
 
@@ -75,19 +77,22 @@ export default function ManageBoostPage() {
     }
   }, [cardInfo, navigate]);
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
     (async () => {
@@ -122,7 +127,7 @@ export default function ManageBoostPage() {
 
   useEffect(() => {
     // Using tokenPtr == null rather than !tokenPtr because tokenPtr can be 0
-    if (!borrowerAddress || !nftTokenId || !userAddress || tokenPtr == null) return;
+    if (!borrowerAddress || !nftTokenId || !userAddress || tokenPtr == null || !provider) return;
     (async () => {
       const res = await fetchBoostBorrower(activeChain.id, provider, borrowerAddress as Address);
       const boostCardInfo = new BoostCardInfo(
@@ -197,7 +202,7 @@ export default function ManageBoostPage() {
             setPendingTxn(null);
           }
         }}
-        txnHash={pendingTxn?.hash}
+        txnHash={pendingTxn}
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {

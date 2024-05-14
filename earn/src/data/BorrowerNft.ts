@@ -11,7 +11,7 @@ import {
   MULTICALL_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { filterNullishValues } from 'shared/lib/util/Arrays';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { MarginAccount } from './MarginAccount';
 
@@ -180,36 +180,4 @@ export async function fetchListOfFuse2BorrowNfts(
   });
 
   return originalBorrowerNfts;
-
-  // const slot0Contexts: ContractCallContext[] = originalBorrowerNfts.map((borrowerNft) => {
-  //   return {
-  //     abi: borrowerAbi as any,
-  //     calls: [
-  //       {
-  //         methodName: 'slot0',
-  //         methodParameters: [],
-  //         reference: 'slot0',
-  //       },
-  //     ],
-  //     contractAddress: borrowerNft.borrowerAddress,
-  //     reference: borrowerNft.borrowerAddress,
-  //   };
-  // });
-
-  // // Execute multicall fetch
-  // const multicall = new Multicall({
-  //   ethersProvider: provider,
-  //   tryAggregate: true,
-  //   multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
-  // });
-
-  // const slot0Results = await multicall.call(slot0Contexts);
-
-  // // TODO: setup contracts to always append this. right now only the Permit2Manager does.
-  // return originalBorrowerNfts.filter((borrowerNft) => {
-  //   const result = slot0Results.results[borrowerNft.borrowerAddress];
-  //   const slot0Hex = result.callsReturnContext[0].returnValues[0].hex;
-  //   const extraDataHex: string = slot0Hex.slice(14, 30);
-  //   return extraDataHex.endsWith('83ee755b');
-  // });
 }

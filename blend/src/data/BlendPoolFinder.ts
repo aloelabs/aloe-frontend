@@ -2,10 +2,10 @@ import axios from 'axios';
 import { ethers } from 'ethers';
 import { Address } from 'wagmi';
 
-import AloeBlendABI from '../assets/abis/AloeBlend.json';
-import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 import { BlendPoolMarkers, FeeTier } from './BlendPoolMarkers';
 import { API_URL } from './constants/Values';
+import AloeBlendABI from '../assets/abis/AloeBlend.json';
+import UniswapV3PoolABI from '../assets/abis/UniswapV3Pool.json';
 
 export async function fetchBlendPoolData(
   address: Address,

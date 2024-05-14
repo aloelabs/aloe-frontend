@@ -4,6 +4,12 @@ import Big from 'big.js';
 import styled from 'styled-components';
 import { useAccount, useBalance, useSigner } from 'wagmi';
 
+import { TabWrapper } from './DepositTab';
+import MaxSlippageInput from './MaxSlippageInput';
+import ConfirmWithdrawalModal from './modal/ConfirmWithdrawalModal';
+import SharesWithdrawnModal from './modal/SharesWithdrawnModal';
+import SubmittingOrderModal from './modal/SubmittingOrderModal';
+import TransactionFailedModal from './modal/TransactionFailedModal';
 import { withdraw } from '../../connector/BlendWithdrawActions';
 import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
@@ -16,12 +22,6 @@ import Pending from '../common/Pending';
 import TokenAmountInput from '../common/TokenAmountInput';
 import TokenBreakdown from '../common/TokenBreakdown';
 import { Display, Text } from '../common/Typography';
-import { TabWrapper } from './DepositTab';
-import MaxSlippageInput from './MaxSlippageInput';
-import ConfirmWithdrawalModal from './modal/ConfirmWithdrawalModal';
-import SharesWithdrawnModal from './modal/SharesWithdrawnModal';
-import SubmittingOrderModal from './modal/SubmittingOrderModal';
-import TransactionFailedModal from './modal/TransactionFailedModal';
 
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 

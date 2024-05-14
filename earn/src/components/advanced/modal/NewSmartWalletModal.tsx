@@ -1,6 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithIcon } from 'shared/lib/components/common/Input';
@@ -9,16 +9,16 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { Address, useAccount, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
 import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const ITEMS_PER_PAGE = 5;
 const TERTIARY_COLOR = '#4b6980';
 
@@ -35,51 +35,23 @@ type CreateSmartWalletButtonProps = {
   uniswapPoolInfo: UniswapPoolInfo;
   userAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
   const { poolAddress, uniswapPoolInfo, userAddress, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
-
-  const [isPending, setIsPending] = useState(false);
+  const activeChain = useChain();
 
   const salt = useMemo(() => generateBytes12Salt(), []);
-  const { config: createBorrowerConfig } = usePrepareContractWrite({
+  const { data: createBorrowerConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'mint',
     args: [userAddress, [poolAddress as Address], [salt]],
-    enabled: Boolean(poolAddress) && Boolean(userAddress),
+    query: { enabled: Boolean(poolAddress) && Boolean(userAddress) },
     chainId: activeChain.id,
   });
-  const createBorrowerUpdatedRequest = useMemo(() => {
-    if (createBorrowerConfig.request) {
-      return {
-        ...createBorrowerConfig.request,
-        gasLimit: createBorrowerConfig.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [createBorrowerConfig.request]);
-  const {
-    write: createBorrower,
-    isSuccess: successfullyCreatedBorrower,
-    isLoading: isLoadingCreateBorrower,
-    data: createBorrowerData,
-  } = useContractWrite({
-    ...createBorrowerConfig,
-    request: createBorrowerUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (successfullyCreatedBorrower && createBorrowerData) {
-      setPendingTxn(createBorrowerData);
-      setIsOpen(false);
-    } else if (!isLoadingCreateBorrower && !successfullyCreatedBorrower) {
-      setIsPending(false);
-    }
-  }, [createBorrowerData, isLoadingCreateBorrower, setIsOpen, setPendingTxn, successfullyCreatedBorrower]);
+  const { writeContractAsync: createBorrower, isPending } = useWriteContract();
 
   const pairLabel = `${uniswapPoolInfo.token0.symbol}/${uniswapPoolInfo.token1.symbol}`;
 
@@ -88,10 +60,14 @@ function CreateSmartWalletButton(props: CreateSmartWalletButtonProps) {
       size='M'
       fillWidth={true}
       onClick={() => {
-        setIsPending(true);
-        createBorrower?.();
+        createBorrower(createBorrowerConfig!.request)
+          .then((hash) => {
+            setPendingTxn(hash);
+            setIsOpen(false);
+          })
+          .catch((e) => console.error(e));
       }}
-      disabled={isPending || poolAddress === ''}
+      disabled={isPending || !createBorrowerConfig || poolAddress === ''}
     >
       Create {pairLabel} Smart Wallet
     </FilledStylizedButton>
@@ -103,7 +79,7 @@ export type NewSmartWalletModalProps = {
   defaultPool: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {

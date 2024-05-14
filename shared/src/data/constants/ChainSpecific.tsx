@@ -1,17 +1,14 @@
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
-import { base } from '../chains/BaseChain';
-import { Address } from 'wagmi';
+import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { ArbitrumLogo, BaseLogo, EthereumLogo, LineaLogo, OptimismLogo, ScrollLogo } from '../../assets/svg/chains';
 import { GN } from '../GoodNumber';
-import { linea } from '../chains/LineaChain';
-import { scroll } from '../chains/ScrollChain';
+import { Address } from 'viem';
 
 export const BRIDGE_SUPPORTED_CHAINS = [mainnet, optimism, arbitrum];
 
 export const SUPPORTED_CHAINS = [mainnet, optimism, arbitrum, base, linea];
 
-export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll];
+export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll] as const;
 
 export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [mainnet.id]: <EthereumLogo width={16} height={16} />,
@@ -25,8 +22,6 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
 export function getChainLogo(chainId: number, size: number): JSX.Element {
   switch (chainId) {
     case mainnet.id:
-      return <EthereumLogo width={size} height={size} />;
-    case goerli.id:
       return <EthereumLogo width={size} height={size} />;
     case optimism.id:
       return <OptimismLogo width={size} height={size} />;
@@ -121,12 +116,12 @@ export const ALOE_II_FACTORY_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_BORROWER_LENS_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [mainnet.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
   [optimism.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
-  [arbitrum.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
-  [base.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
-  [linea.id]: '0x809645F9F667586C49557eA2b68C2F8D64d706CA',
-  [scroll.id]: '0x809645F9F667586C49557eA2b68C2F8D64d706CA',
+  [arbitrum.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [base.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [linea.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [scroll.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
 };
 
 export const ALOE_II_LENDER_LENS_ADDRESS: { [chainId: number]: Address } = {

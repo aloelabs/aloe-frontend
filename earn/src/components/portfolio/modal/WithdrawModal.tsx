@@ -1,6 +1,6 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -8,11 +8,11 @@ import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { LendingPair } from '../../../data/LendingPair';
@@ -72,13 +72,13 @@ export type WithdrawModalProps = {
   lendingPairs: LendingPair[];
   tokenBalances: TokenBalance[];
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
   const { isOpen, tokens, defaultToken, lendingPairs, tokenBalances, setIsOpen, setPendingTxn } = props;
 
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const [selectedToken, setSelectedToken] = useState(defaultToken);
   const [selectedPairIdx, setSelectedPairIdx] = useState(0);
@@ -111,7 +111,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     inputValue[1] ? GN.Q(112) : amount,
     isOpen && account.address ? account.address : ZERO_ADDRESS
   );
-  const maxAmount = GN.fromBigNumber(maxAmountBN, selectedToken.decimals);
+  const maxAmount = GN.fromBigInt(maxAmountBN, selectedToken.decimals);
 
   /*//////////////////////////////////////////////////////////////
                               LIFECYCLE

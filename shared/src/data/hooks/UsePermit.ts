@@ -1,8 +1,9 @@
-import { Address, useContractReads, useSignTypedData } from 'wagmi';
+import { useReadContracts, useSignTypedData } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from '../../abis/ERC20';
 import { computeDomainSeparator } from '../../util/Permit';
 import { splitSignature } from 'ethers/lib/utils.js';
+import { Address } from 'viem';
 
 export enum PermitState {
   FETCHING_DATA,
@@ -85,14 +86,14 @@ export function usePermit(
     chainId: chainId,
   };
 
-  const { data, isFetching, isError } = useContractReads({
+  const { data, isFetching, isError } = useReadContracts({
     contracts: [
       { ...erc20, functionName: 'DOMAIN_SEPARATOR' },
       { ...erc20, functionName: 'name' },
       { ...erc20, functionName: 'nonces', args: [owner] },
     ] as const,
     allowFailure: false,
-    enabled: enabled,
+    query: { enabled: enabled },
   });
 
   /*//////////////////////////////////////////////////////////////
@@ -130,14 +131,10 @@ export function usePermit(
 
   const {
     signTypedData,
-    isLoading: isAskingUserToSign,
+    isPending: isAskingUserToSign,
     data: signature,
     reset: resetSignature,
-  } = useSignTypedData({
-    domain,
-    types: PERMIT_MESSAGE_TYPES,
-    value: permit,
-  });
+  } = useSignTypedData();
 
   useEffect(() => {
     resetSignature();
@@ -149,7 +146,7 @@ export function usePermit(
   if (!enabled) {
     state = PermitState.DISABLED;
     action = undefined;
-  } else if (isFetching) {
+  } else if (isFetching || permit === undefined) {
     state = PermitState.FETCHING_DATA;
     action = undefined;
   } else if (isAskingUserToSign) {
@@ -160,7 +157,7 @@ export function usePermit(
     action = undefined;
   } else if (signature === undefined) {
     state = PermitState.READY_TO_SIGN;
-    action = signTypedData;
+    action = () => signTypedData({ domain, types: PERMIT_MESSAGE_TYPES, primaryType: 'Permit', message: permit });
   } else {
     state = PermitState.DONE;
     action = undefined;

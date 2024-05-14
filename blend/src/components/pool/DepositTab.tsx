@@ -5,6 +5,11 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useSigner } from 'wagmi';
 
+import MaxSlippageInput from './MaxSlippageInput';
+import ConfirmDepositModal from './modal/ConfirmDepositModal';
+import SubmittingOrderModal from './modal/SubmittingOrderModal';
+import TokensDepositedModal from './modal/TokensDepositedModal';
+import TransactionFailedModal from './modal/TransactionFailedModal';
 import { approve, deposit, mintWeth } from '../../connector/BlendDepositActions';
 import { BlendPoolDrawData, ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
@@ -17,11 +22,6 @@ import { formatUSDCompact, String1E } from '../../util/Numbers';
 import { FilledStylizedButton } from '../common/Buttons';
 import Pending from '../common/Pending';
 import TokenAmountInput from '../common/TokenAmountInput';
-import MaxSlippageInput from './MaxSlippageInput';
-import ConfirmDepositModal from './modal/ConfirmDepositModal';
-import SubmittingOrderModal from './modal/SubmittingOrderModal';
-import TokensDepositedModal from './modal/TokensDepositedModal';
-import TransactionFailedModal from './modal/TransactionFailedModal';
 
 enum ButtonState {
   DEPRECATED,

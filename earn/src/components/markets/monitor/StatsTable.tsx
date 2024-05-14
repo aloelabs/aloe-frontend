@@ -1,6 +1,6 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
@@ -16,14 +16,15 @@ import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, useContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { LendingPair } from '../../../data/LendingPair';
 
 const PAGE_SIZE = 5;
@@ -112,33 +113,15 @@ function getManipulationColor(manipulationMetric: number, manipulationThreshold:
 export type StatsTableRowProps = {
   lendingPair: LendingPair;
   lastUpdatedTimestamp?: number;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
   onMouseEnter: (pair: LendingPair | undefined) => void;
 };
 
 function StatsTableRow(props: StatsTableRowProps) {
   const { lendingPair: pair, lastUpdatedTimestamp, setPendingTxn, onMouseEnter } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
-  const { writeAsync: pause } = useContractWrite({
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    abi: factoryAbi,
-    functionName: 'pause',
-    mode: 'recklesslyUnprepared',
-    args: [pair.uniswapPool as Address, Q32],
-    chainId: activeChain.id,
-    onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
-  });
-
-  const { writeAsync: updateLTV } = useContractWrite({
-    address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
-    abi: volatilityOracleAbi,
-    functionName: 'update',
-    mode: 'recklesslyUnprepared',
-    args: [pair.uniswapPool as Address, Q32],
-    chainId: activeChain.id,
-    onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
-  });
+  const { writeContractAsync } = useWriteContract();
 
   const uniswapLink = `${getEtherscanUrlForChain(activeChain)}/address/${pair.uniswapPool}`;
 
@@ -238,7 +221,17 @@ function StatsTableRow(props: StatsTableRowProps) {
           {true && (
             <FilledGreyButton
               size='S'
-              onClick={() => pause()}
+              onClick={() =>
+                writeContractAsync({
+                  address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+                  abi: factoryAbi,
+                  functionName: 'pause',
+                  args: [pair.uniswapPool as Address, Q32],
+                  chainId: activeChain.id,
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
+              }
               disabled={!canBorrowingBeDisabled}
               backgroundColor={canBorrowingBeDisabled ? RED_COLOR : SECONDARY_COLOR}
             >
@@ -256,7 +249,21 @@ function StatsTableRow(props: StatsTableRowProps) {
             </Display>
           </div>
           {true && (
-            <FilledGreyButton size='S' onClick={() => updateLTV()} disabled={!canUpdateLTV}>
+            <FilledGreyButton
+              size='S'
+              onClick={() =>
+                writeContractAsync({
+                  address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
+                  abi: volatilityOracleAbi,
+                  functionName: 'update',
+                  args: [pair.uniswapPool as Address, Q32],
+                  chainId: activeChain.id,
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
+              }
+              disabled={!canUpdateLTV}
+            >
               Update
             </FilledGreyButton>
           )}

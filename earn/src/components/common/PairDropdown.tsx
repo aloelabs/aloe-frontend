@@ -6,8 +6,8 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { LendingPair } from '../../data/LendingPair';
 import TokenPairIcons from './TokenPairIcons';
+import { LendingPair } from '../../data/LendingPair';
 
 const DEFAULT_BACKGROUND_COLOR = GREY_800;
 const DEFAULT_BACKGROUND_COLOR_HOVER = 'rgb(18, 32, 41)';

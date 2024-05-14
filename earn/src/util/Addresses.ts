@@ -1,4 +1,4 @@
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 export function truncateAddress(address: Address, totalLength = 10): string {
   const prefixLength = Math.floor(totalLength / 2);

@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { type WriteContractReturnType } from '@wagmi/core';
+import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { liquidatorAbi } from 'shared/lib/abis/Liquidator';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -15,14 +15,14 @@ import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared
 import { GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { useAccount, useContractWrite } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
@@ -111,12 +111,12 @@ export type LiquidateTableRowProps = {
   positionValue: number;
   health: number;
   borrower: Borrower;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
 };
 
 function LiquidateTableRow(props: LiquidateTableRowProps) {
   const { lendingPair: pair, positionValue, health, borrower, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   const [, setCurrentTime] = useState(Date.now());
@@ -126,15 +126,7 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
     return () => clearInterval(interval);
   }, [borrower.warnTime]);
 
-  const { writeAsync: warn } = useContractWrite({
-    address: borrower.address,
-    abi: borrowerAbi,
-    functionName: 'warn',
-    mode: 'recklesslyUnprepared',
-    args: [Q32],
-    chainId: activeChain.id,
-    onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
-  });
+  const { writeContractAsync } = useWriteContract();
 
   const encodedLiquidateData = useMemo(() => {
     return ethers.utils.defaultAbiCoder.encode(
@@ -149,16 +141,6 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
       ]
     ) as `0x${string}`;
   }, [pair, userAddress]);
-
-  const { writeAsync: liquidate } = useContractWrite({
-    address: ALOE_II_LIQUIDATOR_ADDRESS[activeChain.id],
-    abi: liquidatorAbi,
-    functionName: 'liquidate',
-    mode: 'recklesslyUnprepared',
-    args: [borrower.address, encodedLiquidateData, BigNumber.from('10000'), Q32],
-    chainId: activeChain.id,
-    onSuccess: (data: SendTransactionResult) => setPendingTxn(data),
-  });
 
   const etherscanUrl = getEtherscanUrlForChain(activeChain);
   const borrowerLink = `${etherscanUrl}/address/${borrower.address}`;
@@ -242,7 +224,17 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
           {true && (
             <FilledGreyButton
               size='S'
-              onClick={() => warn()}
+              onClick={() =>
+                writeContractAsync({
+                  address: borrower.address,
+                  abi: borrowerAbi,
+                  functionName: 'warn',
+                  args: [Q32],
+                  chainId: activeChain.id,
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
+              }
               disabled={!canBeWarned || userAddress === undefined}
               backgroundColor={canBeWarned ? RED_COLOR : SECONDARY_COLOR}
             >
@@ -264,7 +256,17 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
           {true && (
             <FilledGreyButton
               size='S'
-              onClick={() => liquidate()}
+              onClick={() =>
+                writeContractAsync({
+                  address: ALOE_II_LIQUIDATOR_ADDRESS[activeChain.id],
+                  abi: liquidatorAbi,
+                  functionName: 'liquidate',
+                  args: [borrower.address, encodedLiquidateData, 10000n, Q32],
+                  chainId: activeChain.id,
+                })
+                  .then((hash) => setPendingTxn(hash))
+                  .catch((e) => console.error(e))
+              }
               disabled={!canBeLiquidated || userAddress === undefined}
             >
               {userAddress === undefined ? 'Connect Wallet' : 'Liquidate'}

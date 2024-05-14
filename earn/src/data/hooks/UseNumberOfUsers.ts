@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
-import { Provider } from '@wagmi/core';
 import { ethers } from 'ethers';
 
 import { LendingPair } from '../LendingPair';
 
+// TODO: Deprecate this, it sucks
 export default function useNumberOfUsers(
-  provider: Provider,
+  provider: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider | undefined,
   selectedLendingPair: LendingPair,
   lendingPairLabel: string
 ) {
@@ -23,6 +23,7 @@ export default function useNumberOfUsers(
     // Temporarily set the number of users to 0 while we fetch the number of users
     setNumberOfUsers(0);
     async function fetchNumberOfUsers() {
+      if (!provider) return;
       let lender0Logs: ethers.providers.Log[] = [];
       let lender1Logs: ethers.providers.Log[] = [];
       try {

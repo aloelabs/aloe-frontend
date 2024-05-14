@@ -1,17 +1,17 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
-import { ChainContext } from '../../../App';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { useBalanceOfUnderlying } from '../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
@@ -63,13 +63,13 @@ export type WithdrawModalProps = {
   selectedRow: SupplyTableRow;
   userAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawModal(props: WithdrawModalProps) {
   const { isOpen, selectedRow, userAddress, setIsOpen, setPendingTxn } = props;
   const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]); // [amountStr, isMaxed]
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   const { data: balanceResult, refetch: refetchBalance } = useBalanceOfUnderlying(
     selectedRow.asset,
@@ -98,7 +98,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     maxAmount,
   } = useRedeem(activeChain.id, selectedRow.kitty.address, inputValue[1] ? GN.Q(112) : withdrawAmount, userAddress);
 
-  const maxAmountGN = GN.fromBigNumber(maxAmount, selectedRow.asset.decimals);
+  const maxAmountGN = GN.fromBigInt(maxAmount, selectedRow.asset.decimals);
   const isConstrainedByUtilization =
     inputValue[1] &&
     userBalance.isGtZero() &&

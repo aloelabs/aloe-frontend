@@ -1,10 +1,10 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import { GN } from 'shared/lib/data/GoodNumber';
 
-import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 import { UniswapPosition } from './actions/Actions';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE } from './constants/Values';
 import { Assets, Liabilities, LiquidationThresholds } from './MarginAccount';
+import { getAmountsForLiquidity, getValueOfLiquidity } from '../util/Uniswap';
 
 const MIN_SQRT_RATIO = GN.fromJSBI(TickMath.MIN_SQRT_RATIO, 96, 2);
 const MAX_SQRT_RATIO = GN.fromJSBI(TickMath.MAX_SQRT_RATIO, 96, 2);

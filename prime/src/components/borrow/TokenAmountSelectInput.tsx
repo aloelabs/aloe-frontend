@@ -5,8 +5,8 @@ import { BaseMaxButton, InputBase } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
 
-import { TokenType } from '../../data/actions/Actions';
 import TokenDropdown from './TokenDropdown';
+import { TokenType } from '../../data/actions/Actions';
 
 const SquareInputWrapper = styled.div`
   display: flex;
