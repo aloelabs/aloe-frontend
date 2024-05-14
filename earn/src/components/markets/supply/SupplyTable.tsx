@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
+import { Tooltip } from 'react-tooltip';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
 import UpArrow from 'shared/lib/assets/svg/UpArrow';
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
-import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { Kitty } from 'shared/lib/data/Kitty';
@@ -16,6 +17,7 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
+import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
 import { ApyWithTooltip } from '../../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import SupplyModal from '../modal/SupplyModal';
@@ -70,6 +72,13 @@ const StyledUpArrow = styled(UpArrow)`
     stroke: rgba(130, 160, 182, 1);
     stroke-width: 3px;
   }
+`;
+
+const StyledTooltip = styled(Tooltip)`
+  background-color: ${GREY_700};
+  max-width: 200px;
+  z-index: 10000;
+  padding: 8px 12px;
 `;
 
 type SortArrowProps = {
@@ -143,6 +152,28 @@ export default function SupplyTable(props: SupplyTableProps) {
 
   return (
     <>
+      <StyledTooltip
+        anchorSelect='.collateral-tooltip-anchor'
+        place='right'
+        opacity={1.0}
+        border={'1px solid #CCDFED'}
+        disableStyleInjection={true}
+      >
+        <Text size='S' weight='regular' color='#CCDFED'>
+          The supplied asset can be borrowed by posting any of these assets as collateral.
+        </Text>
+      </StyledTooltip>
+      <StyledTooltip
+        anchorSelect='.apy-tooltip-anchor'
+        place='right'
+        opacity={1.0}
+        border={'1px solid #CCDFED'}
+        disableStyleInjection={true}
+      >
+        <Text size='S' weight='regular' color='#CCDFED'>
+          Yield is variable based on utilization. Points have no monetary value.
+        </Text>
+      </StyledTooltip>
       <TableContainer>
         <Table>
           <TableHeader>
@@ -152,19 +183,21 @@ export default function SupplyTable(props: SupplyTableProps) {
                   Asset
                 </Text>
               </th>
-              <th className='px-4 py-2 text-start whitespace-nowrap'>
+              <th className='px-4 py-2 text-start whitespace-nowrap flex items-center gap-1'>
                 <Text size='M' weight='bold'>
                   Collateral
                 </Text>
+                <InfoIcon width={14} height={14} className='collateral-tooltip-anchor' />
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('apy', sortConfig?.primaryKey)}>
                   <Text size='M' weight='bold'>
                     APY
                   </Text>
+                  <InfoIcon width={14} height={14} className='apy-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'apy' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'apy'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
@@ -174,16 +207,16 @@ export default function SupplyTable(props: SupplyTableProps) {
                     Total Supply
                   </Text>
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'totalSupplyUsd' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'totalSupplyUsd'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-end whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('suppliableBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'suppliableBalanceUsd' || false}
-                    isSortedDesc={sortConfig?.direction === 'descending' || false}
+                    isSorted={sortConfig?.primaryKey === 'suppliableBalanceUsd'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                   <Text size='M' weight='bold'>
                     Wallet Balance
@@ -193,8 +226,8 @@ export default function SupplyTable(props: SupplyTableProps) {
               <th className='px-4 py-2 text-end whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('suppliedBalanceUsd', sortConfig?.primaryKey)}>
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'suppliedBalanceUsd' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'suppliedBalanceUsd'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                   <Text size='M' weight='bold'>
                     Aloe Balance

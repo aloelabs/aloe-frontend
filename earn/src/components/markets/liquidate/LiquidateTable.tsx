@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
+import { Tooltip } from 'react-tooltip';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { liquidatorAbi } from 'shared/lib/abis/Liquidator';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -12,7 +13,7 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
@@ -23,6 +24,7 @@ import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount, useWriteContract } from 'wagmi';
 
+import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
 import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { LendingPair } from '../../../data/LendingPair';
@@ -31,6 +33,23 @@ import { truncateAddress } from '../../../util/Addresses';
 const PAGE_SIZE = 10;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
+
+const EXPLANATORY_TOOLTIPS = {
+  ps: {
+    text: "The account's total borrows. The auction incentive will be expressed as a percentage of this value.",
+  },
+  incentive: {
+    // eslint-disable-next-line max-len
+    text: 'A small amount of ETH for Warn (for gas costs); a variable amount tokens for Liquidate (for gas and swap costs)',
+  },
+  health: {
+    text: 'Accounts with health less than 1 can be warned and liquidated.',
+  },
+  auction: {
+    // eslint-disable-next-line max-len
+    text: 'Auctions begin 5 minutes after warning. The incentive, based on the TWAP, starts at 0%－meaning the liquidator is donating to the protocol. After 5 more minutes, the incentive rises to 100%－meaning the liquidator breaks-even. Further growth implies a reward.',
+  },
+};
 
 function formatAuctionTime(seconds: number) {
   const hours = Math.floor(seconds / 3600);
@@ -79,6 +98,13 @@ const StyledUpArrow = styled(UpArrow)`
     stroke: rgba(130, 160, 182, 1);
     stroke-width: 3px;
   }
+`;
+
+const StyledTooltip = styled(Tooltip)`
+  background-color: ${GREY_700};
+  max-width: 200px;
+  z-index: 10000;
+  padding: 8px 12px;
 `;
 
 const OpenIconLink = styled.a`
@@ -309,6 +335,20 @@ export default function LiquidateTable(props: { rows: LiquidateTableRowProps[] }
   }
   return (
     <>
+      {Object.entries(EXPLANATORY_TOOLTIPS).map(([k, v]) => (
+        <StyledTooltip
+          key={k}
+          anchorSelect={`.${k}-tooltip-anchor`}
+          place='right'
+          opacity={1.0}
+          border={'1px solid #CCDFED'}
+          disableStyleInjection={true}
+        >
+          <Text size='S' weight='regular' color='#CCDFED'>
+            {v.text}
+          </Text>
+        </StyledTooltip>
+      ))}
       <TableContainer>
         <table className='w-full'>
           <TableHeader>
@@ -328,25 +368,30 @@ export default function LiquidateTable(props: { rows: LiquidateTableRowProps[] }
                   <Text size='M' weight='bold'>
                     Position Size
                   </Text>
+                  <InfoIcon width={14} height={14} className='ps-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'positionValue' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'positionValue'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <Text size='M' weight='bold'>
-                  Incentive
-                </Text>
+                <div className='flex items-center gap-1'>
+                  <Text size='M' weight='bold'>
+                    Incentive
+                  </Text>
+                  <InfoIcon width={14} height={14} className='incentive-tooltip-anchor' />
+                </div>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('health')}>
                   <Text size='M' weight='bold'>
                     Health
                   </Text>
+                  <InfoIcon width={14} height={14} className='health-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'health' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'health'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
@@ -355,9 +400,10 @@ export default function LiquidateTable(props: { rows: LiquidateTableRowProps[] }
                   <Text size='M' weight='bold'>
                     Auction
                   </Text>
+                  <InfoIcon width={14} height={14} className='auction-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'sortA' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'sortA'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>

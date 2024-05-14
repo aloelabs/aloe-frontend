@@ -7,6 +7,8 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { DEVELOPMENT, PRODUCTION } from 'shared/lib/data/constants/SentryEnvironments';
 import { isProduction } from 'shared/lib/util/Utils';
 
+import 'react-tooltip/dist/react-tooltip.css';
+
 import App from './App';
 import generatedGitInfo from './gitInfo.json';
 
