@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { format, formatDistanceToNowStrict } from 'date-fns';
+import { Tooltip } from 'react-tooltip';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import DownArrow from 'shared/lib/assets/svg/DownArrow';
@@ -12,7 +13,7 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import { GREY_600 } from 'shared/lib/data/constants/Colors';
+import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
@@ -25,6 +26,7 @@ import styled from 'styled-components';
 import { Address } from 'viem';
 import { useWriteContract } from 'wagmi';
 
+import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
 import { LendingPair } from '../../../data/LendingPair';
 
 const PAGE_SIZE = 5;
@@ -32,6 +34,34 @@ const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const GREEN_COLOR = 'rgba(0, 189, 63, 1)';
 const YELLOW_COLOR = 'rgba(242, 201, 76, 1)';
 const RED_COLOR = 'rgba(234, 87, 87, 0.75)';
+
+const EXPLANATORY_TOOLTIPS = {
+  ante: {
+    tag: 'GOVERNABLE',
+    text: 'The amount of ETH each borrower must deposit before borrowing. Intended to cover liquidation gas costs.',
+  },
+  sigma: {
+    tag: 'GOVERNABLE',
+    // eslint-disable-next-line max-len
+    text: 'A scaling factor to apply when mapping IV to LTV. Ex: If this is 5, the market will try to adjust itself to sustain a 5σ event',
+  },
+  rf: {
+    tag: 'GOVERNABLE',
+    text: "The portion of interest that's redirected to the treasury to help cover bad debt.",
+  },
+  cardinality: {
+    tag: 'PERMISSIONLESS INCREASE',
+    text: 'The number of initialized slots in the Uniswap TWAP Oracle. Higher is better.',
+  },
+  guardian: {
+    tag: 'PERMISSIONLESS REPORT',
+    text: 'Helps monitor oracle manipulation. If threshold is exceeded, anyone can report it and pause borrows.',
+  },
+  ltv: {
+    tag: 'PERMISSIONLESS UPDATE',
+    text: 'Moves up and down based on market volatility. Updates can be triggered by anyone every 4 hours.',
+  },
+};
 
 const TableContainer = styled.div`
   width: 100%;
@@ -69,6 +99,13 @@ const StyledUpArrow = styled(UpArrow)`
     stroke: rgba(130, 160, 182, 1);
     stroke-width: 3px;
   }
+`;
+
+const StyledTooltip = styled(Tooltip)`
+  background-color: ${GREY_700};
+  max-width: 200px;
+  z-index: 10000;
+  padding: 8px 12px;
 `;
 
 const OpenIconLink = styled.a`
@@ -304,6 +341,23 @@ export default function StatsTable(props: { rows: StatsTableRowProps[]; chainId:
   }
   return (
     <>
+      {Object.entries(EXPLANATORY_TOOLTIPS).map(([k, v]) => (
+        <StyledTooltip
+          key={k}
+          anchorSelect={`.${k}-tooltip-anchor`}
+          place='right'
+          opacity={1.0}
+          border={'1px solid #CCDFED'}
+          disableStyleInjection={true}
+        >
+          <Text size='XS' weight='medium' color='white'>
+            {v.tag}
+          </Text>
+          <Text size='S' weight='regular' color='#CCDFED'>
+            {v.text}
+          </Text>
+        </StyledTooltip>
+      ))}
       <TableContainer>
         <table className='w-full'>
           <TableHeader>
@@ -319,31 +373,44 @@ export default function StatsTable(props: { rows: StatsTableRowProps[]; chainId:
                 </Text>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <Text size='M' weight='bold'>
-                  Ante
-                </Text>
+                <div className='flex items-center gap-1'>
+                  <Text size='M' weight='bold'>
+                    Ante
+                  </Text>
+                  <InfoIcon width={14} height={14} className='ante-tooltip-anchor' />
+                </div>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <Display size='S'>σ</Display>
+                <div className='flex items-center gap-1'>
+                  <Display size='S'>σ</Display>
+                  <InfoIcon width={14} height={14} className='sigma-tooltip-anchor' />
+                </div>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <Text size='M' weight='bold'>
-                  Reserve Factor
-                </Text>
+                <div className='flex items-center gap-1'>
+                  <Text size='M' weight='bold'>
+                    Reserve Factor
+                  </Text>
+                  <InfoIcon width={14} height={14} className='rf-tooltip-anchor' />
+                </div>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
-                <Text size='M' weight='bold'>
-                  Cardinality
-                </Text>
+                <div className='flex items-center gap-1'>
+                  <Text size='M' weight='bold'>
+                    Cardinality
+                  </Text>
+                  <InfoIcon width={14} height={14} className='cardinality-tooltip-anchor' />
+                </div>
               </th>
               <th className='px-4 py-2 text-start whitespace-nowrap'>
                 <SortButton onClick={() => requestSort('sortA')}>
                   <Text size='M' weight='bold'>
                     Oracle Guardian
                   </Text>
+                  <InfoIcon width={14} height={14} className='guardian-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'sortA' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'sortA'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
@@ -352,9 +419,10 @@ export default function StatsTable(props: { rows: StatsTableRowProps[]; chainId:
                   <Text size='M' weight='bold'>
                     LTV
                   </Text>
+                  <InfoIcon width={14} height={14} className='ltv-tooltip-anchor' />
                   <SortArrow
-                    isSorted={sortConfig?.primaryKey === 'sortB' ?? false}
-                    isSortedDesc={sortConfig?.direction === 'descending' ?? false}
+                    isSorted={sortConfig?.primaryKey === 'sortB'}
+                    isSortedDesc={sortConfig?.direction === 'descending'}
                   />
                 </SortButton>
               </th>
