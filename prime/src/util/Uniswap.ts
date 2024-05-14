@@ -12,6 +12,7 @@ import { Token } from 'shared/lib/data/Token';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
 import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
 
+import { UniswapTicksQuery } from './GraphQL';
 import {
   theGraphUniswapV3ArbitrumClient,
   theGraphUniswapV3Client,
@@ -19,7 +20,6 @@ import {
   theGraphUniswapV3OptimismClient,
 } from '../App';
 import { BIGQ96, Q96 } from '../data/constants/Values';
-import { UniswapTicksQuery } from './GraphQL';
 
 const BINS_TO_FETCH = 500;
 const ONE = new Big('1.0');

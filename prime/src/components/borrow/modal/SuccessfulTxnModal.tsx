@@ -1,8 +1,8 @@
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CloseableModal, HorizontalDivider, MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 
-import SuccessIcon from '../../../assets/svg/success.svg';
 import FeedbackBlock from './common/FeedbackBlock';
+import SuccessIcon from '../../../assets/svg/success.svg';
 
 export type SuccessfulTxnModalProps = {
   open: boolean;

@@ -22,6 +22,9 @@ import {
   useProvider,
 } from 'wagmi';
 
+import FailedTxnModal from './modal/FailedTxnModal';
+import PendingTxnModal from './modal/PendingTxnModal';
+import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 import { ChainContext } from '../../App';
 import { ReactComponent as AlertTriangleIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as CheckIcon } from '../../assets/svg/check_black.svg';
@@ -30,9 +33,6 @@ import { zip } from '../../data/actions/ActionArgs';
 import { getFrontendManagerCodeFor } from '../../data/actions/ActionID';
 import { AccountState, ActionCardOutput } from '../../data/actions/Actions';
 import { Balances } from '../../data/Balances';
-import FailedTxnModal from './modal/FailedTxnModal';
-import PendingTxnModal from './modal/PendingTxnModal';
-import SuccessfulTxnModal from './modal/SuccessfulTxnModal';
 
 const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 

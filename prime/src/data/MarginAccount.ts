@@ -21,10 +21,10 @@ import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
 import { Address, Chain, erc20ABI } from 'wagmi';
 
-import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 import { UniswapPosition, UniswapPositionPrior } from './actions/Actions';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
+import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { getAmountsForLiquidity, uniswapPositionKey } from '../util/Uniswap';
 
 export type Assets = {
   token0Raw: GN;
