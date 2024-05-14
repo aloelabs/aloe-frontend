@@ -116,12 +116,12 @@ export const ALOE_II_FACTORY_ADDRESS: { [chainId: number]: Address } = {
 };
 
 export const ALOE_II_BORROWER_LENS_ADDRESS: { [chainId: number]: Address } = {
-  [mainnet.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
+  [mainnet.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
   [optimism.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
-  [arbitrum.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
-  [base.id]: '0x267Fa142FA270F39738443b914FB7d3F95462451',
-  [linea.id]: '0x809645F9F667586C49557eA2b68C2F8D64d706CA',
-  [scroll.id]: '0x809645F9F667586C49557eA2b68C2F8D64d706CA',
+  [arbitrum.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [base.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [linea.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
+  [scroll.id]: '0xf8686eaff7106fa6b6337b4fb767557e73299aa0',
 };
 
 export const ALOE_II_LENDER_LENS_ADDRESS: { [chainId: number]: Address } = {
