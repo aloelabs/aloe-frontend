@@ -6,7 +6,6 @@ import tw from 'twin.macro';
 
 import ConnectWallet from './ConnectWallet';
 import DepositTab from './DepositTab';
-import SwapTab from './SwapTab';
 import WithdrawTab from './WithdrawTab';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { OffChainPoolStats } from '../../data/PoolStats';
@@ -125,9 +124,6 @@ export default function PoolInteractionTabs(props: PoolInteractionTabsProps) {
               </Tab.Panel>
               <Tab.Panel>
                 <WithdrawTab poolData={props.poolData} offChainPoolStats={offChainPoolStats} />
-              </Tab.Panel>
-              <Tab.Panel>
-                <SwapTab poolData={props.poolData} />
               </Tab.Panel>
             </PanelsWrapper>
           </Tab.Panels>
