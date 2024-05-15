@@ -279,9 +279,10 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <FilledGreyButton
                       size='S'
                       onClick={() => {
-                        setSelectedSupply(row);
+                        if (userAddress) setSelectedSupply(row);
                       }}
-                      disabled={row.suppliableBalance === 0}
+                      disabled={userAddress && row.suppliableBalance === 0}
+                      className='connect-wallet-button-trigger'
                     >
                       Supply
                     </FilledGreyButton>
