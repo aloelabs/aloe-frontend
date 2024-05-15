@@ -10,7 +10,7 @@ import CloseModal from '../../assets/svg/CloseModal';
 import MenuIcon from '../../assets/svg/Menu';
 import { Text } from '../common/Typography';
 import styled from 'styled-components';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -280,7 +280,6 @@ export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, checkboxes } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
@@ -345,13 +344,9 @@ export function NavBar(props: NavBarProps) {
             </OutlinedGradientRoundedButton>
           )}
           {!account.isConnected ? (
-            <ConnectWalletButton account={account} checkboxes={checkboxes} disabled={!isAllowedToInteract} />
+            <ConnectWalletButton checkboxes={checkboxes} disabled={!isAllowedToInteract} />
           ) : (
-            <AccountInfo
-              account={account}
-              closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
-              disconnect={disconnect}
-            />
+            <AccountInfo account={account} closeChainSelector={() => setIsSelectChainDropdownOpen(false)} />
           )}
         </div>
       </DesktopTopNav>

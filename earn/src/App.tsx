@@ -2,12 +2,11 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
-import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
+import { Web3Provider } from 'shared/lib/components/WagmiConfig';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
@@ -17,7 +16,7 @@ import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDevelopment } from 'shared/lib/util/Utils';
-import { Config, useAccount, useClient, WagmiProvider } from 'wagmi';
+import { Config, useAccount, useClient } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -192,16 +191,12 @@ function AppBodyWrapper() {
   );
 }
 
-const queryClient = new QueryClient();
-
 function App() {
   return (
     <Suspense fallback={null}>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <AppBodyWrapper />
-        </QueryClientProvider>
-      </WagmiProvider>
+      <Web3Provider>
+        <AppBodyWrapper />
+      </Web3Provider>
     </Suspense>
   );
 }

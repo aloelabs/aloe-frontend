@@ -1,23 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Popover } from '@headlessui/react';
-import { useChainId, type UseAccountReturnType } from 'wagmi';
-import { FilledGreyButton, FilledGreyButtonWithIcon, FilledStylizedButton } from '../common/Buttons';
+import { useDisconnect, type UseAccountReturnType } from 'wagmi';
+import { FilledGreyButtonWithIcon, FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import styled from 'styled-components';
-import { useConnect, useEnsName } from 'wagmi';
+import { useEnsName } from 'wagmi';
 
 import CopyIcon from '../../assets/svg/Copy';
 import PowerIcon from '../../assets/svg/Power';
 import { formatAddress } from '../../util/FormatAddress';
 import Modal, { CloseableModal } from '../common/Modal';
-import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import Identicon from './Identicon';
-import { GREY_700, GREY_800 } from '../../data/constants/Colors';
+import { GREY_800 } from '../../data/constants/Colors';
 import Bell from '../../assets/svg/Bell';
 import { QRCodeSVG } from 'qrcode.react';
-import { NOTIFICATION_BOT_URL, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { NOTIFICATION_BOT_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { mainnet } from 'viem/chains';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -77,215 +76,106 @@ export type AccountInfoProps = {
   account: UseAccountReturnType;
   buttonStyle?: 'secondary' | 'tertiary';
   closeChainSelector: () => void;
-  disconnect: () => void;
 };
 
 export default function AccountInfo(props: AccountInfoProps) {
   // MARK: component props
-  const { account, closeChainSelector, disconnect } = props;
-  const isConnected = account?.isConnected ?? false;
+  const { account, closeChainSelector } = props;
   const formattedAddr = account?.address ? formatAddress(account.address) : '';
   const { data: ensName } = useEnsName({
     address: account.address,
     chainId: mainnet.id,
   });
-  const buttonText = isConnected ? (ensName ? ensName : formattedAddr) : 'Connect Wallet';
+  const buttonText = ensName ? ensName : formattedAddr;
 
   // MARK: component state
   const [switchChainPromptModalOpen, setSwitchChainPromptModalOpen] = useState<boolean>(false);
-  const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
   const [enableNotificationsModalOpen, setEnableNotificationsModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
-  const { connect, connectors, error } = useConnect();
-  const targetChainId = useChainId();
-
-  const orderedFilteredConnectors = useMemo(() => {
-    let hasNamedInjectedConnector = false;
-    let idxPlainInjectedConnector = -1;
-
-    for (let i = 0; i < connectors.length; i += 1) {
-      const connector = connectors[i];
-      if (connector.type !== 'injected') continue;
-
-      if (connector.name === 'Injected') {
-        idxPlainInjectedConnector = i;
-      } else {
-        hasNamedInjectedConnector = true;
-      }
-    }
-
-    const temp = connectors.concat();
-    if (hasNamedInjectedConnector && idxPlainInjectedConnector !== -1) temp.splice(idxPlainInjectedConnector, 1);
-
-    temp.sort((a, b) => {
-      const rank = (id: string) => {
-        switch (id) {
-          case 'io.rabby':
-            return 0;
-          case 'io.metamask':
-            return 1;
-          case 'coinbaseWalletSDK':
-            return 2;
-          case 'walletConnect':
-            return 3;
-          case 'safe':
-            return 4;
-          default:
-            return 5;
-        }
-      };
-      return rank(a.id) - rank(b.id);
-    });
-
-    return temp as typeof connectors;
-  }, [connectors]);
-
-  useEffect(() => {
-    if (isConnected) {
-      setWalletModalOpen(false);
-    }
-  }, [isConnected]);
+  const { disconnect } = useDisconnect();
 
   return (
     <div>
-      {!isConnected && (
-        <FilledGreyButton onClick={() => setWalletModalOpen(true)} size='M'>
-          Connect Wallet
-        </FilledGreyButton>
-      )}
-      {isConnected && (
-        <Popover>
-          {({ open }) => (
-            <>
-              <Popover.Button
-                className='outline-none flex justify-center items-center gap-2'
-                onClick={() => {
-                  // A hack to close the chain selector when the user clicks on the account info button
-                  closeChainSelector();
-                }}
-              >
-                <Identicon />
-                <ButtonTextContainer>{buttonText}</ButtonTextContainer>
-              </Popover.Button>
-              {open && (
-                <StyledPopoverPanel>
-                  {account?.address !== undefined && (
-                    <div className='flex flex-col gap-2 w-full'>
-                      <div className='flex items-center justify-between'>
-                        <div className='flex gap-2 items-center'>
-                          <Identicon />
-                          <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
-                            {buttonText}
-                          </Text>
-                        </div>
-                        <div className='flex gap-2 items-center'>
-                          <FilledGreyButtonWithIcon
-                            Icon={<CopyIcon />}
-                            size='S'
-                            svgColorType='stroke'
-                            position='center'
-                            onClick={() => {
-                              if (account.address) {
-                                navigator.clipboard.writeText(account.address);
-                              }
-                            }}
-                          />
-                          <FilledGreyButtonWithIcon
-                            Icon={<PowerIcon />}
-                            size='S'
-                            svgColorType='stroke'
-                            position='center'
-                            onClick={() => {
-                              disconnect();
-                            }}
-                          />
-                        </div>
+      <Popover>
+        {({ open }) => (
+          <>
+            <Popover.Button
+              className='outline-none flex justify-center items-center gap-2'
+              onClick={() => {
+                // A hack to close the chain selector when the user clicks on the account info button
+                closeChainSelector();
+              }}
+            >
+              <Identicon />
+              <ButtonTextContainer>{buttonText}</ButtonTextContainer>
+            </Popover.Button>
+            {open && (
+              <StyledPopoverPanel>
+                {account?.address !== undefined && (
+                  <div className='flex flex-col gap-2 w-full'>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex gap-2 items-center'>
+                        <Identicon />
+                        <Text size='M' className='overflow-hidden text-ellipsis' title={account.address}>
+                          {buttonText}
+                        </Text>
                       </div>
-                      <div className='flex flex-col gap-2'>
-                        <div>
-                          <Text size='S'>Notifications</Text>
-                          <Text size='XS' color={SECONDARY_COLOR}>
-                            Receive Telegram messages when your positions are at risk of liquidation.
-                          </Text>
-                        </div>
+                      <div className='flex gap-2 items-center'>
                         <FilledGreyButtonWithIcon
+                          Icon={<CopyIcon />}
                           size='S'
-                          Icon={<Bell />}
                           svgColorType='stroke'
-                          position='leading'
+                          position='center'
                           onClick={() => {
-                            setEnableNotificationsModalOpen(true);
+                            if (account.address) {
+                              navigator.clipboard.writeText(account.address);
+                            }
                           }}
-                        >
-                          Enable Notifications
-                        </FilledGreyButtonWithIcon>
+                        />
+                        <FilledGreyButtonWithIcon
+                          Icon={<PowerIcon />}
+                          size='S'
+                          svgColorType='stroke'
+                          position='center'
+                          onClick={() => {
+                            disconnect();
+                          }}
+                        />
                       </div>
                     </div>
-                  )}
-                </StyledPopoverPanel>
-              )}
-            </>
-          )}
-        </Popover>
-      )}
+                    <div className='flex flex-col gap-2'>
+                      <div>
+                        <Text size='S'>Notifications</Text>
+                        <Text size='XS' color={SECONDARY_COLOR}>
+                          Receive Telegram messages when your positions are at risk of liquidation.
+                        </Text>
+                      </div>
+                      <FilledGreyButtonWithIcon
+                        size='S'
+                        Icon={<Bell />}
+                        svgColorType='stroke'
+                        position='leading'
+                        onClick={() => {
+                          setEnableNotificationsModalOpen(true);
+                        }}
+                      >
+                        Enable Notifications
+                      </FilledGreyButtonWithIcon>
+                    </div>
+                  </div>
+                )}
+              </StyledPopoverPanel>
+            )}
+          </>
+        )}
+      </Popover>
       <CloseableModal
         isOpen={switchChainPromptModalOpen}
         setIsOpen={setSwitchChainPromptModalOpen}
         title={'Switch Chain'}
       >
         <div className='w-full'></div>
-      </CloseableModal>
-      <CloseableModal isOpen={walletModalOpen} setIsOpen={setWalletModalOpen} title={'Connect Wallet'}>
-        <div className='w-full'>
-          <div className='py-2'>
-            <Text size='M' weight='medium'>
-              By connecting a wallet, I agree to Aloe Labs, Inc's{' '}
-              <a
-                href={TERMS_OF_SERVICE_URL}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='underline text-green-600 hover:text-green-700'
-              >
-                Terms of Use
-              </a>{' '}
-              and{' '}
-              <a
-                href={PRIVACY_POLICY_URL}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='underline text-green-600 hover:text-green-700'
-              >
-                Privacy Policy
-              </a>
-              .
-            </Text>
-            {orderedFilteredConnectors.map((connector) => (
-              <div key={connector.uid} className='py-2 w-full flex flex-row items-center justify-between'>
-                {connector.icon !== undefined ? (
-                  <img width={40} height={40} src={connector.icon} alt={`${connector.icon} icon`} />
-                ) : (
-                  getIconForWagmiConnectorNamed(connector.name)
-                )}
-                <FilledStylizedButton
-                  name='Disconnect'
-                  size='M'
-                  backgroundColor={GREY_700}
-                  color={'rgba(255, 255, 255, 1)'}
-                  fillWidth={true}
-                  onClick={() => connect({ connector, chainId: targetChainId })}
-                >
-                  {connector.name}
-                </FilledStylizedButton>
-              </div>
-            ))}
-          </div>
-          {error && (
-            <Text size='S' color='rgb(236, 45, 91)'>
-              {error?.message ?? 'Failed to connect'}
-            </Text>
-          )}
-        </div>
       </CloseableModal>
       <Modal
         isOpen={enableNotificationsModalOpen}

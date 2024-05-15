@@ -1,10 +1,12 @@
-import { createConfig, fallback, http } from 'wagmi';
+import { ReactNode } from 'react';
+import { WagmiProvider, createConfig, fallback, http } from 'wagmi';
 import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors';
 
 import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 import { Transport } from 'viem';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const transports: { [chainId: number]: Transport[] } = Object.fromEntries(ALL_CHAINS.map((c) => [c.id, []]));
 
@@ -36,27 +38,23 @@ transports[scroll.id].push(
   http('https://1rpc.io/scroll')
 );
 
-export const wagmiConfig = createConfig({
+const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!;
+const metadata = {
+  name: 'Aloe',
+  description: 'Permissionless lending built on Uniswap',
+  url: 'https://aloe.capital',
+  icons: ['https://avatars.githubusercontent.com/u/82793388'],
+};
+
+const config = createConfig({
   chains: ALL_CHAINS,
   connectors: [
     injected({ shimDisconnect: true }),
-    walletConnect({
-      projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!,
-      qrModalOptions: {
-        themeMode: 'dark',
-        termsOfServiceUrl: 'https://aloe.capital/legal/terms-of-service',
-      },
-      showQrModal: true,
-      metadata: {
-        name: 'Aloe',
-        description: 'Permissionless lending built on Uniswap',
-        url: 'https://app.aloe.capital',
-        icons: [],
-      },
-    }),
+    walletConnect({ projectId, metadata, showQrModal: false }),
     coinbaseWallet({
-      appName: 'Aloe',
+      appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
+      // appChainIds: [mainnet.id, optimism.id, arbitrum.id, base.id],
       darkMode: true,
     }),
     safe(),
@@ -78,6 +76,16 @@ export const wagmiConfig = createConfig({
     [scroll.id]: fallback(transports[scroll.id], { rank: false }),
   },
 });
+
+const queryClient = new QueryClient();
+
+export const Web3Provider = ({ children }: { children: ReactNode }) => {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </WagmiProvider>
+  );
+};
 
 // TODO: seems like it could be useful, but breaks things rn
 // declare module 'wagmi' {
