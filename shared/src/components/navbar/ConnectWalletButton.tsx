@@ -97,6 +97,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         size='M'
         fillWidth={fillWidth}
         disabled={disabled}
+        className='connect-wallet-button'
       >
         Connect Wallet
       </FilledStylizedButton>
