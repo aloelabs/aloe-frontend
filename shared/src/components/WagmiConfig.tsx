@@ -50,7 +50,15 @@ const config = createConfig({
   chains: ALL_CHAINS,
   connectors: [
     injected({ shimDisconnect: true }),
-    walletConnect({ projectId, metadata, showQrModal: false }),
+    walletConnect({
+      projectId,
+      metadata,
+      showQrModal: true,
+      qrModalOptions: {
+        themeMode: 'dark',
+        termsOfServiceUrl: 'https://aloe.capital/legal/terms-of-service',
+      },
+    }),
     coinbaseWallet({
       appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
