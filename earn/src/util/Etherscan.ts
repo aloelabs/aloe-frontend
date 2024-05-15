@@ -1,8 +1,5 @@
 import axios from 'axios';
-import { base } from 'shared/lib/data/chains/BaseChain';
-import { linea } from 'shared/lib/data/chains/LineaChain';
-import { scroll } from 'shared/lib/data/chains/ScrollChain';
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet, goerli, base, linea, scroll } from 'viem/chains';
 
 const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [mainnet.id]: 'api.etherscan.io',

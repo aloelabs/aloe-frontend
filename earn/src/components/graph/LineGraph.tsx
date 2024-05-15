@@ -45,7 +45,9 @@ export default function LineGraph(props: GraphProps) {
       >
         <defs>
           {linearGradients &&
-            linearGradients.map((gradient, index) => <React.Fragment key={index}>{gradient}</React.Fragment>)}
+            linearGradients.map((gradient, index) => (
+              <React.Fragment key={index}>{React.isValidElement(gradient) ? gradient : null}</React.Fragment>
+            ))}
         </defs>
         <XAxis
           hide={true}

@@ -1,4 +1,4 @@
-import { optimism } from 'wagmi/chains';
+import { optimism } from 'viem/chains';
 
 export const DEFAULT_CHAIN = optimism;
 export const DEFAULT_ETHERSCAN_URL = 'https://etherscan.io';

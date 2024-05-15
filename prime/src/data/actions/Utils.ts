@@ -1,7 +1,7 @@
+import { AccountState } from './Actions';
 import { isSolvent } from '../BalanceSheet';
 import { MAX_UNISWAP_POSITIONS } from '../constants/Values';
 import { MarginAccount } from '../MarginAccount';
-import { AccountState } from './Actions';
 
 export function runWithChecks(
   operator: (operand: AccountState) => AccountState,

@@ -1,28 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult, Provider } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { secondsInDay } from 'date-fns';
 import { ethers } from 'ethers';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
-import { computeLTV } from '../../../data/BalanceSheet';
-import { LendingPair } from '../../../data/LendingPair';
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
+import { computeLTV } from '../../../data/BalanceSheet';
+import { LendingPair } from '../../../data/LendingPair';
 
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
   chainId: number;
-  provider: Provider;
+  provider?: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider;
   // Remaining 3 should be passed in for sure though
-  blockNumber: number | undefined;
+  blockNumber: bigint | undefined;
   lendingPairs: LendingPair[];
   tokenColors: Map<string, string>;
-  setPendingTxn: (data: SendTransactionResult) => void;
+  setPendingTxn: (data: WriteContractReturnType) => void;
 };
 
 const MIN_NUM_DAYS_TO_FETCH = 30;
@@ -42,7 +42,7 @@ export default function InfoTab(props: InfoTabProps) {
   // Fetch `oracleLogs`
   useEffect(() => {
     (async () => {
-      if (lendingPairs.length === 0) return;
+      if (lendingPairs.length === 0 || !provider) return;
       const [chainId, currentBlockNumber] = await Promise.all([
         provider.getNetwork().then((resp) => resp.chainId),
         provider.getBlockNumber(),
@@ -87,6 +87,7 @@ export default function InfoTab(props: InfoTabProps) {
   // Fetch `blockNumbersToTimestamps`
   useEffect(() => {
     (async () => {
+      if (!provider) return;
       const blockNumbers = new Set<number>();
       let oldestBlockNumber = Infinity;
       // Include block numbers for each pool's latest `Update`, while also searching for oldest one

@@ -1,6 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
 import { useNavigate, useParams } from 'react-router-dom';
 import { factoryAbi } from 'shared/lib/abis/Factory';
@@ -15,12 +16,11 @@ import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
 import styled from 'styled-components';
-import { useContractRead, useProvider } from 'wagmi';
+import { Config, useClient, usePublicClient, useReadContract } from 'wagmi';
 
-import { ChainContext } from '../../App';
 import BoostCard from '../../components/boost/BoostCard';
 import ImportBoostWidget from '../../components/boost/ImportBoostWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
@@ -28,6 +28,7 @@ import { Assets } from '../../data/MarginAccount';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from '../../data/Uniswap';
 import { getProminentColor, rgb } from '../../util/Colors';
+import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
 export const BOOST_MIN = 1;
@@ -62,34 +63,38 @@ const BoostCardWrapper = styled.div`
 `;
 
 export default function ImportBoostPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { tokenId } = useParams();
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const [uniswapNftPosition, setUniswapNftPosition] = useChainDependentState<UniswapNFTPosition | undefined>(
     undefined,
     activeChain.id
   );
-  const [colors, setColors] = useSafeState<{ token0: string; token1: string } | undefined>(undefined);
-  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useSafeState(false);
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
-  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useSafeState<PendingTxnModalStatus | null>(null);
+  const [colors, setColors] = useState<{ token0: string; token1: string } | undefined>(undefined);
+  const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
+  const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
   const [boostFactor, setBoostFactor] = useState<number>(BOOST_DEFAULT);
 
   const navigate = useNavigate();
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   useEffect(() => {
     (async () => {
@@ -105,7 +110,8 @@ export default function ImportBoostPage() {
 
   useEffect(() => {
     (async () => {
-      const fetchedUniswapNFTPosition = await fetchUniswapNFTPosition(Number(tokenId), provider);
+      if (provider === undefined) return;
+      const fetchedUniswapNFTPosition = await fetchUniswapNFTPosition(Number(tokenId), provider as JsonRpcProvider);
       setUniswapNftPosition(fetchedUniswapNFTPosition);
     })();
   }, [tokenId, provider, setUniswapNftPosition]);
@@ -120,25 +126,25 @@ export default function ImportBoostPage() {
     });
   }, [uniswapNftPosition, activeChain.id]);
 
-  const { data: slot0 } = useContractRead({
+  const { data: slot0 } = useReadContract({
     abi: uniswapV3PoolAbi,
     address: poolAddress,
     functionName: 'slot0',
     chainId: activeChain.id,
-    enabled: Boolean(poolAddress),
+    query: { enabled: Boolean(poolAddress) },
   });
 
-  const { data: marketData } = useContractRead({
+  const { data: marketData } = useReadContract({
     abi: factoryAbi,
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getMarket',
     args: [poolAddress || '0x'],
-    enabled: Boolean(poolAddress),
+    query: { enabled: Boolean(poolAddress) },
   });
 
   const cardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!uniswapNftPosition || !poolAddress || !slot0 || !marketData) return undefined;
-    const currentTick = slot0.tick;
+    const currentTick = slot0[1];
     return new BoostCardInfo(
       BoostCardType.UNISWAP_NFT,
       uniswapNftPosition.owner,
@@ -148,8 +154,8 @@ export default function ImportBoostPage() {
       currentTick,
       uniswapNftPosition.token0,
       uniswapNftPosition.token1,
-      marketData.lender0,
-      marketData.lender1,
+      marketData[0],
+      marketData[1],
       colors?.token0 || DEFAULT_COLOR0,
       colors?.token1 || DEFAULT_COLOR1,
       uniswapNftPosition,
@@ -161,25 +167,25 @@ export default function ImportBoostPage() {
     );
   }, [uniswapNftPosition, poolAddress, slot0, marketData, colors]);
 
-  const { data: consultData } = useContractRead({
+  const { data: consultData } = useReadContract({
     abi: volatilityOracleAbi,
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     functionName: 'consult',
     args: [cardInfo?.uniswapPool ?? '0x', Q32],
-    enabled: Boolean(cardInfo),
+    query: { enabled: Boolean(cardInfo) },
   });
 
-  const { data: parametersData } = useContractRead({
+  const { data: parametersData } = useReadContract({
     abi: factoryAbi,
     address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
     functionName: 'getParameters',
     args: [cardInfo?.uniswapPool ?? '0x'],
-    enabled: Boolean(cardInfo),
+    query: { enabled: Boolean(cardInfo) },
   });
 
-  let sqrtPriceX96 = consultData ? GN.fromBigNumber(consultData[1], 96, 2) : undefined;
-  let iv = GN.hexToGn(consultData?.[2].toHexString() ?? '0x0', 12).toNumber();
-  const nSigma = (parametersData?.['nSigma'] ?? 0) / 10;
+  let sqrtPriceX96 = consultData ? GN.fromBigInt(consultData[1], 96, 2) : undefined;
+  let iv = GN.fromBigInt(consultData?.[2] ?? 0n, 12).toNumber();
+  const nSigma = (parametersData?.[1] ?? 0) / 10;
 
   const updatedCardInfo: BoostCardInfo | undefined = useMemo(() => {
     if (!cardInfo || !sqrtPriceX96) return undefined;
@@ -250,7 +256,7 @@ export default function ImportBoostPage() {
             setPendingTxn(null);
           }
         }}
-        txnHash={pendingTxn?.hash}
+        txnHash={pendingTxn}
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {

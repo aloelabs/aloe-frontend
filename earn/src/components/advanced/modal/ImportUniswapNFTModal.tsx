@@ -1,9 +1,9 @@
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import Modal from 'shared/lib/components/common/Modal';
 
+import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { UniswapNFTPosition, UniswapPosition } from '../../../data/Uniswap';
-import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 
 export type ImportUniswapNFTModalProps = {
   isOpen: boolean;
@@ -12,7 +12,7 @@ export type ImportUniswapNFTModalProps = {
   uniswapNFTPositions: Map<number, UniswapNFTPosition>;
   defaultUniswapNFTPosition: [number, UniswapNFTPosition];
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function ImportUniswapNFTModal(props: ImportUniswapNFTModalProps) {

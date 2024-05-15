@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 
 import { Connector, useConnect, useDisconnect } from 'wagmi';
 
+import { mapConnectorNameToIcon } from './ConnectorIconMap';
 import { FormatAddress } from '../../util/FormatAddress';
 import { FilledStylizedButton, OutlinedGradientRoundedButton } from '../common/Buttons';
 import { CloseableModal } from '../common/Modal';
 import { Text } from '../common/Typography';
-import { mapConnectorNameToIcon } from './ConnectorIconMap';
 
 export type ConnectWalletButtonProps = {
   address: string | undefined;

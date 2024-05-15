@@ -3,8 +3,8 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { FeeTier, PrintFeeTier } from '../../data/BlendPoolMarkers';
 import { Text } from './Typography';
+import { FeeTier, PrintFeeTier } from '../../data/BlendPoolMarkers';
 
 const FEE_TIER_TEXT_COLOR = 'rgba(204, 223, 237, 1)';
 

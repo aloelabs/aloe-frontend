@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
-import WarningIcon from '../../assets/svg/warning.svg';
 import { WarningButtonWithIcon } from './Buttons';
 import { CloseableModal } from './Modal';
 import WidgetHeading from './WidgetHeading';
+import WarningIcon from '../../assets/svg/warning.svg';
 
 export default function RiskNotices() {
   const [open, setOpen] = useState(false);

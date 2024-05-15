@@ -8,6 +8,10 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address, useAccount, useBalance } from 'wagmi';
 
+import BorrowSelectActionModal from './BorrowSelectActionModal';
+import HealthBar from './HealthBar';
+import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
+import SaveTemplateButton from './SaveTemplateButton';
 import { ChainContext } from '../../App';
 import { ReactComponent as AlertIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
@@ -27,10 +31,6 @@ import {
 } from '../../data/constants/Breakpoints';
 import { MarginAccount } from '../../data/MarginAccount';
 import { MarketInfo } from '../../data/MarketInfo';
-import BorrowSelectActionModal from './BorrowSelectActionModal';
-import HealthBar from './HealthBar';
-import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
-import SaveTemplateButton from './SaveTemplateButton';
 
 const Wrapper = styled.div`
   ${tw`flex flex-col items-center justify-start`}

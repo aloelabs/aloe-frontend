@@ -1,6 +1,5 @@
 import { Token } from './Token';
-import { Address } from 'wagmi';
-import { arbitrum, optimism, mainnet } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import BrettLogo from '../assets/png/brett.png';
 import EthenaLogo from '../assets/png/ethena.png';
@@ -37,9 +36,7 @@ import {
   WethLogo,
   WstEthLogo,
 } from '../assets/svg/tokens';
-import { base } from './chains/BaseChain';
-import { linea } from './chains/LineaChain';
-import { scroll } from './chains/ScrollChain';
+import { Address } from 'viem';
 
 const USDC_MAINNET = new Token(
   mainnet.id,

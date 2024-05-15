@@ -6,12 +6,12 @@ import styled from 'styled-components';
 import tw from 'twin.macro';
 import { useAccount, useEnsName } from 'wagmi';
 
+import ConnectWalletButton from './ConnectWalletButton';
 import AloeLogo from '../../assets/svg/aloe_capital_nav_logo.svg';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../data/hooks/UseMediaQuery';
 import { IS_DEV } from '../../util/Env';
 import { Text } from '../common/Typography';
-import ConnectWalletButton from './ConnectWalletButton';
 
 type MenuItem = {
   title: string;

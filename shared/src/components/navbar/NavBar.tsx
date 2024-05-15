@@ -10,7 +10,7 @@ import CloseModal from '../../assets/svg/CloseModal';
 import MenuIcon from '../../assets/svg/Menu';
 import { Text } from '../common/Typography';
 import styled from 'styled-components';
-import { Chain, useAccount, useNetwork, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -24,9 +24,9 @@ import useLockScroll from '../../data/hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
-import useSafeState from '../../data/hooks/UseSafeState';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
+import useEffectOnce from '../../data/hooks/UseEffectOnce';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -273,30 +273,22 @@ export type NavBarLink = {
 export type NavBarProps = {
   links: NavBarLink[];
   isAllowedToInteract: boolean;
-  activeChain: Chain;
   checkboxes: React.ReactNode[];
-  setActiveChain(c: Chain): void;
 };
 
 export function NavBar(props: NavBarProps) {
-  const { links, isAllowedToInteract, activeChain, checkboxes, setActiveChain } = props;
+  const { links, isAllowedToInteract, checkboxes } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const network = useNetwork();
   const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
   // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
-  const [leaderboardEntries, setLeaderboardEntries] = useSafeState<{ address: string; score: string }[]>([]);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<{ address: string; score: string }[]>([]);
 
-  useEffect(() => {
-    // Close the chain selector dropdown when the chain changes
-    setIsSelectChainDropdownOpen(false);
-  }, [network.chain]);
-
-  useEffect(() => {
+  useEffectOnce(() => {
     (async () => {
       let response: AxiosResponse<{ address: string; score: string }[]>;
       try {
@@ -306,15 +298,13 @@ export function NavBar(props: NavBarProps) {
       }
       if (response.data) setLeaderboardEntries(response.data);
     })();
-  }, [setLeaderboardEntries]);
+  });
 
   const accountPoints = useMemo(() => {
     if (account.address === undefined) return GN.zero(18);
     const entry = leaderboardEntries.find((x) => x.address.toLowerCase() === account.address!.toLowerCase());
     return entry === undefined ? GN.zero(18) : new GN(entry.score, 18, 10);
   }, [account.address, leaderboardEntries]);
-
-  const isOffline = !account.isConnected && !account.isConnecting;
 
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS.XS);
 
@@ -348,29 +338,17 @@ export function NavBar(props: NavBarProps) {
           ))}
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
-          <ChainSelector
-            activeChain={activeChain}
-            isOffline={isOffline}
-            isOpen={isSelectChainDropdownOpen}
-            setIsOpen={setIsSelectChainDropdownOpen}
-            setActiveChain={setActiveChain}
-          />
+          <ChainSelector isOpen={isSelectChainDropdownOpen} setIsOpen={setIsSelectChainDropdownOpen} />
           {account.address !== undefined && (
             <OutlinedGradientRoundedButton size='S' onClick={() => navigate('/leaderboard')}>
               {accountPoints.toString(GNFormat.LOSSY_HUMAN)} points
             </OutlinedGradientRoundedButton>
           )}
-          {!activeChain || !account.address ? (
-            <ConnectWalletButton
-              account={account}
-              checkboxes={checkboxes}
-              activeChain={activeChain}
-              disabled={!isAllowedToInteract}
-            />
+          {!account.isConnected ? (
+            <ConnectWalletButton account={account} checkboxes={checkboxes} disabled={!isAllowedToInteract} />
           ) : (
             <AccountInfo
               account={account}
-              chain={activeChain}
               closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
               disconnect={disconnect}
             />

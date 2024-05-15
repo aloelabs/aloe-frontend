@@ -3,7 +3,6 @@ import { defaultAbiCoder } from '@ethersproject/abi';
 import { getCreate2Address } from '@ethersproject/address';
 import { keccak256 } from '@ethersproject/solidity';
 import { TickMath } from '@uniswap/v3-sdk';
-import { Chain, Provider } from '@wagmi/core';
 import Big from 'big.js';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
@@ -19,11 +18,11 @@ import {
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toBig } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address, Chain } from 'viem';
 
+import { BIGQ96, Q96 } from './constants/Values';
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { convertBigNumbersForReturnContexts } from '../util/Multicall';
-import { BIGQ96, Q96 } from './constants/Values';
 
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 const MAX_TICKS_PER_QUERY = 1000;
@@ -106,6 +105,26 @@ function getAmount0ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquid
 function getAmount1ForLiquidity(sqrtRatioAX96: JSBI, sqrtRatioBX96: JSBI, liquidity: JSBI): JSBI {
   const numerator = JSBI.multiply(liquidity, JSBI.subtract(sqrtRatioBX96, sqrtRatioAX96));
   return JSBI.divide(numerator, JSBI.BigInt(Q96.toString()));
+}
+
+export function getAmountsForLiquidityGN(position: UniswapPosition, sqrtRatioX96: JSBI) {
+  const sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(position.lower);
+  const sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(position.upper);
+  const liquidity = position.liquidity;
+
+  let amount0 = JSBI.BigInt(0);
+  let amount1 = JSBI.BigInt(0);
+
+  if (JSBI.LE(sqrtRatioX96, sqrtRatioAX96)) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  } else if (JSBI.LT(sqrtRatioX96, sqrtRatioBX96)) {
+    amount0 = getAmount0ForLiquidity(sqrtRatioX96, sqrtRatioBX96, liquidity);
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioX96, liquidity);
+  } else {
+    amount1 = getAmount1ForLiquidity(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+  }
+
+  return { amount0, amount1 };
 }
 
 export function getAmountsForLiquidity(
@@ -219,7 +238,7 @@ export async function fetchUniswapPositions(
   priors: UniswapPositionPrior[],
   marginAccountAddress: string,
   uniswapV3PoolAddress: string,
-  provider: Provider,
+  provider: ethers.providers.JsonRpcProvider,
   chain: Chain
 ) {
   const multicall = new Multicall({
@@ -305,7 +324,7 @@ export async function fetchUniswapPoolBasics(
 
 export async function fetchUniswapNFTPosition(
   tokenId: number,
-  provider: Provider
+  provider: ethers.providers.JsonRpcProvider
 ): Promise<UniswapNFTPosition | undefined> {
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(
@@ -334,7 +353,7 @@ export async function fetchUniswapNFTPosition(
 
 export async function fetchUniswapNFTPositions(
   userAddress: Address,
-  provider: Provider
+  provider: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider
 ): Promise<Map<number, UniswapNFTPosition>> {
   const chainId = (await provider.getNetwork()).chainId;
   const nftManager = new ethers.Contract(

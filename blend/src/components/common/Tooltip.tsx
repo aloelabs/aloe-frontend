@@ -3,9 +3,9 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import { Text } from './Typography';
 import InfoIcon from '../../assets/svg/info.svg';
 import useClickOutside from '../../data/hooks/UseClickOutside';
-import { Text } from './Typography';
 
 const ICON_SIZES = {
   S: 16,

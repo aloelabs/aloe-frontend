@@ -1,15 +1,14 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { Bridge } from '@socket.tech/plugin';
 import { ethers } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800, GREY_900 } from 'shared/lib/data/constants/Colors';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { getTokens } from 'shared/lib/data/TokenData';
 import { mainnet } from 'wagmi/chains';
-
-import { ChainContext } from '../../../App';
 
 export type BridgeModalProps = {
   isOpen: boolean;
@@ -19,7 +18,8 @@ export type BridgeModalProps = {
 
 export default function BridgeModal(props: BridgeModalProps) {
   const { isOpen, selectedAsset, setIsOpen } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
+  // @ts-ignore
   const provider = new ethers.providers.Web3Provider(window.ethereum as any);
 
   const supportedChainIds = BRIDGE_SUPPORTED_CHAINS.map((chain) => chain.id);

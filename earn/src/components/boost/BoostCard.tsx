@@ -3,6 +3,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
+import LiquidityChart from './LiquidityChart';
 import { ReactComponent as WrenchIcon } from '../../assets/svg/wrench.svg';
 import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
@@ -14,7 +15,6 @@ import {
   UniswapPositionCardContainer,
   UniswapPositionCardWrapper,
 } from '../common/UniswapPositionCard';
-import LiquidityChart from './LiquidityChart';
 
 export const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 const BOOSTED_BACKGROUND_COLOR = 'rgb(255,217,102,0.1)';

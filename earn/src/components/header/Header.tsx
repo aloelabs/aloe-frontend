@@ -1,12 +1,8 @@
-import { useContext } from 'react';
-
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-
-import { ChainContext } from '../../App';
 
 const DEFAULT_NAV_LINKS: NavBarLink[] = [
   {
@@ -45,8 +41,8 @@ export type HeaderProps = {
 
 export default function Header(props: HeaderProps) {
   const { checkboxes } = props;
-  const { activeChain, setActiveChain } = useContext(ChainContext);
-  const { isAllowed } = useGeoFencing(activeChain);
+
+  const { isAllowed } = useGeoFencing();
   const navLinks: NavBarLink[] = [
     ...(isAllowed ? EXTENDED_NAV_LINKS : DEFAULT_NAV_LINKS),
     // {
@@ -57,13 +53,7 @@ export default function Header(props: HeaderProps) {
 
   return (
     <Nav>
-      <NavBar
-        links={navLinks}
-        activeChain={activeChain}
-        checkboxes={checkboxes}
-        setActiveChain={setActiveChain}
-        isAllowedToInteract={true}
-      />
+      <NavBar links={navLinks} checkboxes={checkboxes} isAllowedToInteract={true} />
     </Nav>
   );
 }

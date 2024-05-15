@@ -1,18 +1,18 @@
 import { Fragment, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { UniswapNFTPosition } from '../../../data/Uniswap';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
 import ToUniswapNFTModalContent from './content/ToUniswapNFTModalContent';
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { UniswapNFTPosition } from '../../../data/Uniswap';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',
@@ -54,7 +54,7 @@ export type UpdateCollateralModalProps = {
   borrower: BorrowerNftBorrower;
   uniswapPositions: UniswapNFTPosition[];
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function UpdateCollateralModal(props: UpdateCollateralModalProps) {

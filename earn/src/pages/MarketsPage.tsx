@@ -1,6 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
@@ -8,15 +8,17 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, useAccount, useBlockNumber, useProvider } from 'wagmi';
+import { Address } from 'viem';
+import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
-import { ChainContext } from '../App';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
+import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
@@ -27,6 +29,7 @@ import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingP
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
+import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';
@@ -71,19 +74,20 @@ enum TabOption {
   Supply = 'supply',
   Borrow = 'borrow',
   Monitor = 'monitor',
+  Liquidate = 'liquidate',
 }
 
 type TokenSymbol = string;
 type Quote = number;
 
 export default function MarketsPage() {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   // MARK: component state
   const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
   const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
-  const [pendingTxn, setPendingTxn] = useState<SendTransactionResult | null>(null);
+  const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
@@ -101,7 +105,7 @@ export default function MarketsPage() {
   }, [searchParams]);
 
   // MARK: custom hooks
-  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs();
+  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs(activeChain.id);
 
   // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
   // This saves a lot of data.
@@ -123,7 +127,8 @@ export default function MarketsPage() {
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
-  const provider = useProvider({ chainId: activeChain.id });
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
   });
@@ -137,19 +142,22 @@ export default function MarketsPage() {
     return Array.from(tokenSet.values());
   }, [lendingPairs]);
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
-      if (!pendingTxn) return;
+      if (!pendingTxn || !publicClient) return;
       setPendingTxnModalStatus(PendingTxnModalStatus.PENDING);
       setIsPendingTxnModalOpen(true);
-      const receipt = await pendingTxn.wait();
-      if (receipt.status === 1) {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: pendingTxn,
+      });
+      if (receipt.status === 'success') {
         setPendingTxnModalStatus(PendingTxnModalStatus.SUCCESS);
       } else {
         setPendingTxnModalStatus(PendingTxnModalStatus.FAILURE);
       }
     })();
-  }, [pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
+  }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
   // MARK: Computing token colors
   useEffect(() => {
@@ -217,18 +225,23 @@ export default function MarketsPage() {
   // MARK: Fetching token balances
   useEffect(() => {
     (async () => {
-      if (!userAddress) return;
+      if (!userAddress || !provider) return;
       // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
       // return value. Other usages should be updated similarly.
-      const { balancesMap: result } = await getLendingPairBalances(lendingPairs, userAddress, provider, activeChain.id);
+      const { balancesMap: result } = await getLendingPairBalances(
+        lendingPairs,
+        userAddress,
+        provider,
+        provider.network.chainId
+      );
       setBalancesMap(result);
     })();
-  }, [activeChain.id, lendingPairs, provider, setBalancesMap, userAddress]);
+  }, [lendingPairs, provider, setBalancesMap, userAddress]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined || availablePools.size === 0) return;
+      if (userAddress === undefined || availablePools.size === 0 || !provider) return;
 
       const chainId = (await provider.getNetwork()).chainId;
       const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(chainId, provider, userAddress);
@@ -275,7 +288,7 @@ export default function MarketsPage() {
           kitty: pair.kitty0,
           apy: pair.kitty0Info.lendAPY * 100,
           rewardsRate: pair.rewardsRate0,
-          collateralAssets: [pair.token1],
+          collateralAssets: [pair.token0, pair.token1],
           totalSupply: pair.kitty0Info.totalAssets.toNumber(),
           suppliedBalance: kitty0Balance,
           suppliableBalance: token0Balance,
@@ -295,7 +308,7 @@ export default function MarketsPage() {
           kitty: pair.kitty1,
           apy: pair.kitty1Info.lendAPY * 100,
           rewardsRate: pair.rewardsRate1,
-          collateralAssets: [pair.token0],
+          collateralAssets: [pair.token1, pair.token0],
           totalSupply: pair.kitty1Info.totalAssets.toNumber(),
           suppliedBalance: kitty1Balance,
           suppliableBalance: token1Balance,
@@ -324,7 +337,6 @@ export default function MarketsPage() {
       tabContent = (
         <BorrowingWidget
           chain={activeChain}
-          provider={provider}
           userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
@@ -344,6 +356,16 @@ export default function MarketsPage() {
           blockNumber={blockNumber}
           lendingPairs={lendingPairs}
           tokenColors={tokenColors}
+          setPendingTxn={setPendingTxn}
+        />
+      );
+      break;
+    case TabOption.Liquidate:
+      tabContent = (
+        <LiquidateTab
+          chainId={activeChain.id}
+          lendingPairs={lendingPairs}
+          tokenQuotes={tokenQuotes}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -430,6 +452,14 @@ export default function MarketsPage() {
             >
               Monitor{doesGuardianSenseManipulation ? ' 🚨' : ''}
             </HeaderSegmentedControlOption>
+            <HeaderSegmentedControlOption
+              isActive={selectedTab === TabOption.Liquidate}
+              onClick={() => setSearchParams({ [SELECTED_TAB_KEY]: TabOption.Liquidate })}
+              role='tab'
+              aria-selected={selectedTab === TabOption.Liquidate}
+            >
+              Liquidate
+            </HeaderSegmentedControlOption>
           </div>
           <HeaderDividingLine />
         </div>
@@ -437,7 +467,7 @@ export default function MarketsPage() {
       </div>
       <PendingTxnModal
         isOpen={isPendingTxnModalOpen}
-        txnHash={pendingTxn?.hash}
+        txnHash={pendingTxn}
         setIsOpen={(isOpen: boolean) => {
           setIsPendingTxnModalOpen(isOpen);
           if (!isOpen) {

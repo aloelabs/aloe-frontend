@@ -1,22 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { GetAccountResult, Provider } from '@wagmi/core';
 import { FilledStylizedButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import styled from 'styled-components';
-import { Chain, useConnect } from 'wagmi';
+import { useChainId, useConnect } from 'wagmi';
 
 import Modal, { MODAL_BLACK_TEXT_COLOR } from '../common/Modal';
 import { GREY_700 } from '../../data/constants/Colors';
+import { type UseAccountReturnType } from 'wagmi';
 
 const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
   width: ${(props) => (props.fillWidth ? '100%' : 'max-content')};
 `;
 
 export type ConnectWalletButtonProps = {
-  account?: GetAccountResult<Provider>;
-  activeChain: Chain;
+  account?: UseAccountReturnType;
   checkboxes: React.ReactNode[];
   disabled?: boolean;
   fillWidth?: boolean;
@@ -25,7 +24,7 @@ export type ConnectWalletButtonProps = {
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account, activeChain, checkboxes, disabled, fillWidth, onConnected } = props;
+  const { account, checkboxes, disabled, fillWidth, onConnected } = props;
   const [acknowledgedCheckboxes, setAcknowledgedCheckboxes] = useState<boolean[]>(() => {
     return checkboxes?.map(() => false) ?? [];
   });
@@ -36,7 +35,49 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
 
   // MARK: wagmi hooks
-  const { connect, connectors, error } = useConnect({ chainId: activeChain.id });
+  const { connect, connectors, error } = useConnect();
+  const targetChainId = useChainId();
+
+  const orderedFilteredConnectors = useMemo(() => {
+    let hasNamedInjectedConnector = false;
+    let idxPlainInjectedConnector = -1;
+
+    for (let i = 0; i < connectors.length; i += 1) {
+      const connector = connectors[i];
+      if (connector.type !== 'injected') continue;
+
+      if (connector.name === 'Injected') {
+        idxPlainInjectedConnector = i;
+      } else {
+        hasNamedInjectedConnector = true;
+      }
+    }
+
+    const temp = connectors.concat();
+    if (hasNamedInjectedConnector && idxPlainInjectedConnector !== -1) temp.splice(idxPlainInjectedConnector, 1);
+
+    temp.sort((a, b) => {
+      const rank = (id: string) => {
+        switch (id) {
+          case 'io.rabby':
+            return 0;
+          case 'io.metamask':
+            return 1;
+          case 'coinbaseWalletSDK':
+            return 2;
+          case 'walletConnect':
+            return 3;
+          case 'safe':
+            return 4;
+          default:
+            return 5;
+        }
+      };
+      return rank(a.id) - rank(b.id);
+    });
+
+    return temp as typeof connectors;
+  }, [connectors]);
 
   useEffect(() => {
     if (isConnected) {
@@ -56,6 +97,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         size='M'
         fillWidth={fillWidth}
         disabled={disabled}
+        className='connect-wallet-button'
       >
         Connect Wallet
       </FilledStylizedButton>
@@ -63,30 +105,29 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         {acceptedTerms ? (
           <div className='w-full'>
             <div>
-              {connectors.map((connector) => (
-                <div key={connector.id} className='py-2 w-full flex flex-row gap-4 items-center justify-between'>
-                  {getIconForWagmiConnectorNamed(connector.name)}
+              {orderedFilteredConnectors.map((connector) => (
+                <div key={connector.uid} className='py-2 w-full flex flex-row gap-4 items-center justify-between'>
+                  {connector.icon !== undefined ? (
+                    <img width={40} height={40} src={connector.icon} alt={`${connector.icon} icon`} />
+                  ) : (
+                    getIconForWagmiConnectorNamed(connector.name)
+                  )}
                   <FilledStylizedButton
                     name='Connect'
                     size='M'
                     backgroundColor={GREY_700}
                     color={'rgba(255, 255, 255, 1)'}
                     fillWidth={true}
-                    disabled={!connector.ready}
                     onClick={() => {
                       // Manually close the modal when the connector is connecting
                       // This indicates the connector's modal/popup is or will soon be open
-                      connector.addListener('message', (m) => {
-                        if (m.type === 'connecting') {
-                          setWalletModalOpen(false);
-                          connector.removeListener('message');
-                        }
-                      });
-                      connect({ connector });
+                      connector.emitter.once('connect', () => setWalletModalOpen(false));
+                      connect({ connector, chainId: targetChainId });
+
+                      if (connector.id === 'walletConnect') setWalletModalOpen(false);
                     }}
                   >
                     {connector.name}
-                    {!connector.ready && ' (unsupported)'}
                   </FilledStylizedButton>
                 </div>
               ))}

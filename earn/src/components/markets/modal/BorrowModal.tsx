@@ -1,6 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
@@ -21,17 +21,26 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite, useProvider } from 'wagmi';
+import {
+  Config,
+  useAccount,
+  useBalance,
+  useClient,
+  useReadContract,
+  useSimulateContract,
+  useWriteContract,
+} from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowerNft, fetchListOfBorrowerNfts } from '../../../data/BorrowerNft';
 import { LendingPair } from '../../../data/LendingPair';
+import { useEthersProvider } from '../../../util/Provider';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
 const SECONDARY_COLOR = '#CCDFED';
@@ -96,16 +105,18 @@ export type BorrowModalProps = {
   selectedBorrow: Token;
   userBalance: GN;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
   const { isOpen, selectedLendingPair, selectedCollateral, selectedBorrow, userBalance, setIsOpen, setPendingTxn } =
     props;
 
-  const provider = useProvider();
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
+
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
 
   const [collateralAmountStr, setCollateralAmountStr] = useState<string>('');
   const [borrowAmountStr, setBorrowAmountStr] = useState<string>('');
@@ -117,7 +128,7 @@ export default function BorrowModal(props: BorrowModalProps) {
   // The NFT indices we can use if the user has some unused BorrowerNFTs
   useEffect(() => {
     (async () => {
-      if (!userAddress) return;
+      if (!userAddress || !provider) return;
       const chainId = (await provider.getNetwork()).chainId;
       const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
         validUniswapPool: selectedLendingPair.uniswapPool,
@@ -133,19 +144,18 @@ export default function BorrowModal(props: BorrowModalProps) {
     })();
   }, [provider, userAddress, selectedLendingPair, setAvailableNft]);
 
-  const { data: consultData } = useContractRead({
+  const { data: consultData } = useReadContract({
     abi: volatilityOracleAbi,
     address: ALOE_II_ORACLE_ADDRESS[activeChain.id],
     args: [selectedLendingPair?.uniswapPool || '0x', Q32],
     functionName: 'consult',
-    enabled: selectedLendingPair !== undefined,
+    query: { enabled: selectedLendingPair !== undefined },
   });
 
   const { data: ethBalanceData } = useBalance({
     address: userAddress,
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
-    watch: false,
+    query: { enabled: Boolean(userAddress) },
   });
 
   const collateralAmount = GN.fromDecimalString(collateralAmountStr || '0', selectedCollateral.decimals);
@@ -169,9 +179,9 @@ export default function BorrowModal(props: BorrowModalProps) {
     if (consultData === undefined || selectedBorrow === undefined) {
       return null;
     }
-    const sqrtPriceX96 = GN.fromBigNumber(consultData?.[1] ?? BigNumber.from('0'), 96, 2);
+    const sqrtPriceX96 = GN.fromBigInt(consultData[1] ?? 0n, 96, 2);
     const nSigma = selectedLendingPair?.factoryData.nSigma ?? 0;
-    const iv = consultData[2].div(1e6).toNumber() / 1e6;
+    const iv = Number(consultData[2] / 1_000_000n) / 1e6;
     const ltv = computeLTV(iv, nSigma);
 
     let inTermsOfBorrow = collateralAmount;
@@ -207,13 +217,13 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [selectedLendingPair, isBorrowingToken0, borrowAmount]);
 
   // The NFT index we will use if minting
-  const { data: nextNftPtrIdx } = useContractRead({
+  const { data: nextNftPtrIdx } = useReadContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'balanceOf',
     args: [userAddress ?? '0x'],
     chainId: activeChain.id,
-    enabled: Boolean(userAddress) && availableNft == null,
+    query: { enabled: Boolean(userAddress) && availableNft == null },
   });
 
   const {
@@ -230,7 +240,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const generatedSalt = useMemo(() => generateBytes12Salt(), []);
 
-  const { data: predictedAddress } = useContractRead({
+  const { data: predictedAddress } = useReadContract({
     abi: borrowerLensAbi,
     address: ALOE_II_BORROWER_LENS_ADDRESS[activeChain.id],
     functionName: 'predictBorrowerAddress',
@@ -241,7 +251,7 @@ export default function BorrowModal(props: BorrowModalProps) {
       ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
       ALOE_II_FACTORY_ADDRESS[activeChain.id],
     ],
-    enabled: selectedLendingPair !== undefined,
+    query: { enabled: selectedLendingPair !== undefined },
   });
 
   const encodedPermit2 = useMemo(() => {
@@ -304,30 +314,19 @@ export default function BorrowModal(props: BorrowModalProps) {
   }, [availableNft, nextNftPtrIdx, userAddress, ante, encodedPermit2, encodedBorrowCall, activeChain.id, borrowerNft]);
 
   const {
-    config: configMulticallOps,
+    data: configMulticallOps,
     isError: isUnableToMulticallOps,
     isLoading: isCheckingIfAbleToMulticallOps,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'multicall',
     args: [Boolean(availableNft) ? [encodedModify ?? '0x'] : [encodedMint ?? '0x', encodedModify ?? '0x']],
-    overrides: { value: ante?.toBigNumber() },
+    value: ante?.toBigInt(),
     chainId: activeChain.id,
-    enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify),
+    query: { enabled: userAddress && Boolean(encodedMint) && Boolean(encodedModify) },
   });
-  const gasLimit = configMulticallOps.request?.gasLimit.mul(110).div(100);
-  const { write: borrow, isLoading: isAskingUserToMulticallOps } = useContractWrite({
-    ...configMulticallOps,
-    request: {
-      ...configMulticallOps.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: borrow, isPending: isAskingUserToMulticallOps } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState;
   if (!userAddress) {
@@ -446,7 +445,12 @@ export default function BorrowModal(props: BorrowModalProps) {
               !isCheckingIfAbleToMulticallOps &&
               configMulticallOps
             ) {
-              borrow?.();
+              borrow(configMulticallOps.request)
+                .then((hash) => {
+                  setIsOpen(false);
+                  setPendingTxn(hash);
+                })
+                .catch((e) => console.error(e));
             }
           }}
         >

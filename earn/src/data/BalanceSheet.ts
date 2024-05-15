@@ -1,11 +1,11 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
+import { GN } from 'shared/lib/data/GoodNumber';
 import { areWithinNSigDigs } from 'shared/lib/util/Numbers';
 
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, BIGQ96 } from './constants/Values';
 import { Assets, Liabilities } from './MarginAccount';
-import { UniswapPosition } from './Uniswap';
 
 const MIN_SQRT_RATIO = new Big('4295128740');
 const MAX_SQRT_RATIO = new Big('1461446703485210103287273052203988822378723970341');
@@ -61,7 +61,7 @@ function _solvency(
   };
 }
 
-export function getAssets(assets: Assets, a: Big, b: Big) {
+export function _getAssets(assets: Assets, a: Big, b: Big) {
   const tickA = TickMath.getTickAtSqrtRatio(JSBI.BigInt(a.toFixed(0)));
   const tickB = TickMath.getTickAtSqrtRatio(JSBI.BigInt(b.toFixed(0)));
 
@@ -94,7 +94,7 @@ export function isHealthy(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets, a, b);
+  const mem = _getAssets(assets, a, b);
 
   const { amount0: liabilities0, amount1: liabilities1 } = liabilities;
 
@@ -121,12 +121,6 @@ export function isHealthy(
   const healthB = liabilitiesB > 0 ? assetsB / liabilitiesB : 1000;
 
   return {
-    priceA: sqrtRatioToPrice(a, token0Decimals, token1Decimals),
-    priceB: sqrtRatioToPrice(b, token0Decimals, token1Decimals),
-    assetsA,
-    assetsB,
-    liabilitiesA,
-    liabilitiesB,
     atA,
     atB,
     health: Math.min(healthA, healthB),
@@ -205,7 +199,7 @@ export function maxWithdraws(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets, a, b);
+  const mem = _getAssets(assets, a, b);
 
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
@@ -230,7 +224,7 @@ export function maxBorrowAndWithdraw(
   token1Decimals: number
 ) {
   const [a, b] = _computeProbePrices(sqrtPriceX96, iv, nSigma);
-  const mem = getAssets(assets, a, b);
+  const mem = _getAssets(assets, a, b);
 
   const priceA = sqrtRatioToPrice(a, token0Decimals, token1Decimals);
   const priceB = sqrtRatioToPrice(b, token0Decimals, token1Decimals);
@@ -255,7 +249,6 @@ export type LiquidationThresholds = {
 export function computeLiquidationThresholds(
   assets: Assets,
   liabilities: Liabilities,
-  uniswapPositions: readonly UniswapPosition[],
   sqrtPriceX96: Big,
   iv: number,
   nSigma: number,
@@ -367,4 +360,43 @@ const N = 7 * 24 * 60 * 60 - 5 * 60;
 export function auctionCurve(auctionTimeSeconds: number) {
   if (auctionTimeSeconds >= N) return Infinity;
   return S + R / (N - auctionTimeSeconds) - Q / (M + auctionTimeSeconds);
+}
+
+// TODO: This can be cleaned up a lot once we have native BigInts
+export function computeAuctionAmounts(
+  sqrtPriceX96: GN,
+  assets0: GN,
+  assets1: GN,
+  liabilities0: GN,
+  liabilities1: GN,
+  auctionTimeSeconds: number,
+  closeFactor: number
+) {
+  let priceX128 = sqrtPriceX96.toJSBI();
+  priceX128 = JSBI.divide(JSBI.multiply(priceX128, priceX128), GN.Q(64).toJSBI());
+
+  let liabilities = JSBI.add(
+    liabilities1.toJSBI(),
+    JSBI.divide(JSBI.multiply(liabilities0.toJSBI(), priceX128), GN.Q(128).toJSBI())
+  );
+  let assets = JSBI.add(assets1.toJSBI(), JSBI.divide(JSBI.multiply(assets0.toJSBI(), priceX128), GN.Q(128).toJSBI()));
+
+  if (auctionTimeSeconds < N) {
+    liabilities = JSBI.divide(
+      JSBI.multiply(liabilities, JSBI.BigInt((auctionCurve(auctionTimeSeconds) * 10_000).toFixed(0))),
+      JSBI.BigInt(10_000)
+    );
+
+    if (JSBI.lessThan(liabilities, assets)) {
+      assets0 = assets0.mul(GN.fromJSBI(liabilities, 0)).div(GN.fromJSBI(assets, 0));
+      assets1 = assets1.mul(GN.fromJSBI(liabilities, 0)).div(GN.fromJSBI(assets, 0));
+    }
+  }
+
+  return {
+    out0: assets0.recklessMul(closeFactor),
+    out1: assets1.recklessMul(closeFactor),
+    repay0: liabilities0.recklessMul(closeFactor),
+    repay1: liabilities1.recklessMul(closeFactor),
+  };
 }

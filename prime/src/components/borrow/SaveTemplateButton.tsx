@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 
+import SaveTemplateModal from './modal/SaveTemplateModal';
 import { Action } from '../../data/actions/Actions';
 import { StoredActionTemplate, storeTemplate } from '../../data/actions/StoredActionTemplate';
-import SaveTemplateModal from './modal/SaveTemplateModal';
 
 export type SaveTemplateButtonProps = {
   activeActions: Action[];

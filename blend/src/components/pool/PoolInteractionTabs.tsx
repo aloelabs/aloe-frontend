@@ -4,13 +4,12 @@ import { Tab } from '@headlessui/react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
+import ConnectWallet from './ConnectWallet';
+import DepositTab from './DepositTab';
+import WithdrawTab from './WithdrawTab';
 import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import { OffChainPoolStats } from '../../data/PoolStats';
 import { isPoolDeprecated } from '../../util/Pool';
-import ConnectWallet from './ConnectWallet';
-import DepositTab from './DepositTab';
-import SwapTab from './SwapTab';
-import WithdrawTab from './WithdrawTab';
 
 export const MODAL_BLACK_TEXT_COLOR = 'rgba(7, 14, 18, 1)';
 
@@ -125,9 +124,6 @@ export default function PoolInteractionTabs(props: PoolInteractionTabsProps) {
               </Tab.Panel>
               <Tab.Panel>
                 <WithdrawTab poolData={props.poolData} offChainPoolStats={offChainPoolStats} />
-              </Tab.Panel>
-              <Tab.Panel>
-                <SwapTab poolData={props.poolData} />
               </Tab.Panel>
             </PanelsWrapper>
           </Tab.Panels>

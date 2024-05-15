@@ -1,6 +1,4 @@
-import { useContext } from 'react';
-
-import { SendTransactionResult } from '@wagmi/core';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -13,12 +11,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { usePrepareContractWrite, useContractWrite, Address, Chain, useAccount, useBalance } from 'wagmi';
+import useChain from 'shared/lib/data/hooks/UseChain';
+import { Address, Chain } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
 
@@ -49,7 +47,7 @@ type WithdrawAnteButtonProps = {
   borrower: BorrowerNftBorrower;
   userAddress: Address;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (result: SendTransactionResult | null) => void;
+  setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
 
 function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
@@ -58,18 +56,16 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
   const { data: borrowerBalance } = useBalance({
     address: borrower.address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: true,
   });
 
   const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
   const encodedData = borrowerInterface.encodeFunctionData('transferEth', [borrowerBalance?.value ?? 0, userAddress]);
 
   const {
-    config: withdrawAnteConfig,
+    data: withdrawAnteConfig,
     isError: isUnableToWithdrawAnte,
     isLoading: isCheckingIfAbleToWithdrawAnte,
-  } = usePrepareContractWrite({
+  } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
     abi: borrowerNftAbi,
     functionName: 'modify',
@@ -80,21 +76,10 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       [encodedData as `0x${string}`],
       [0],
     ],
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
     chainId: activeChain.id,
   });
-  const gasLimit = withdrawAnteConfig.request?.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100);
-  const { write: withdrawAnte, isLoading: contractIsLoading } = useContractWrite({
-    ...withdrawAnteConfig,
-    request: {
-      ...withdrawAnteConfig.request,
-      gasLimit,
-    },
-    onSuccess(data) {
-      setIsOpen(false);
-      setPendingTxn(data);
-    },
-  });
+  const { writeContractAsync: withdrawAnte, isPending: contractIsLoading } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState;
   if (contractIsLoading) {
@@ -115,7 +100,13 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       fillWidth={true}
       disabled={!confirmButton.enabled}
       onClick={() => {
-        withdrawAnte?.();
+        if (withdrawAnteConfig)
+          withdrawAnte(withdrawAnteConfig.request)
+            .then((hash) => {
+              setIsOpen(false);
+              setPendingTxn(hash);
+            })
+            .catch((e) => console.error(e));
       }}
     >
       {confirmButton.text}
@@ -128,12 +119,12 @@ export type WithdrawAnteModalProps = {
   accountEthBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
   const { borrower, accountEthBalance, isOpen, setIsOpen, setPendingTxn } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   if (!userAddress || !accountEthBalance) {

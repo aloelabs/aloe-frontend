@@ -4,8 +4,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 import { Dropdown } from './Dropdown';
+import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
 
 const MAX_DISPLAYED_COUNT = 6;
 

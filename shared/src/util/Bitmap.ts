@@ -17,6 +17,12 @@ export function bigNumberToBinary(n: BigNumber) {
   return hexToBinary(n.toHexString());
 }
 
+export function bigIntToBinary(n: bigint) {
+  let bstr = n.toString(2);
+  if (bstr.length % 2 === 1) bstr = `0${bstr}`;
+  return bstr;
+}
+
 export function randomHexValue(bits: number) {
   const alphabet = '0123456789abcdef';
   let hexString = '';

@@ -2,8 +2,8 @@ import JSBI from 'jsbi';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'wagmi';
 
-import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
 import { AccountState, TokenType } from './Actions';
+import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';
 
 export function transferInOperator(operand: AccountState, token: TokenType, amount: GN): AccountState {
   const assets = { ...operand.assets };

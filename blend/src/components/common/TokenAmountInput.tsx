@@ -3,9 +3,9 @@ import React from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import ErrorIcon from '../../assets/svg/interaction_error.svg';
 import { SquareInputWithMax } from './Input';
 import { Text } from './Typography';
+import ErrorIcon from '../../assets/svg/interaction_error.svg';
 
 const INPUT_LABEL_TEXT_COLOR = 'rgba(255, 255, 255, 1)';
 const BALANCE_VALUE_TEXT_COLOR = 'rgba(75, 105, 128, 1)';

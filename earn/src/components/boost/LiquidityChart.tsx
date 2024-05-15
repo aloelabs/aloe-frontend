@@ -1,20 +1,20 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import * as Sentry from '@sentry/react';
 import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import styled from 'styled-components';
 
-import { ChainContext } from '../../App';
+import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
+import LiquidityChartTooltip from './LiquidityChartTooltip';
 import { ReactComponent as WarningIcon } from '../../assets/svg/warning.svg';
 import { computeLiquidationThresholds, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { TickData, calculateTickData } from '../../data/Uniswap';
-import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
-import LiquidityChartTooltip from './LiquidityChartTooltip';
 
 const LIQUIDATION_THRESHOLDS_DEBOUNCE_MS = 250;
 const CHART_WIDTH = 300;
@@ -159,7 +159,7 @@ export type LiquidityChartProps = {
 export default function LiquidityChart(props: LiquidityChartProps) {
   const { info, uniqueId, showPOI } = props;
   const { uniswapPool: poolAddress, currentTick, position, color0, color1 } = info;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
   const [chartError, setChartError] = useState<boolean>(false);
@@ -234,7 +234,6 @@ export default function LiquidityChart(props: LiquidityChartProps) {
       const sqrtRatios = computeLiquidationThresholds(
         info.borrower.assets,
         info.borrower.liabilities,
-        [info.position],
         info.borrower.sqrtPriceX96,
         info.borrower.iv,
         info.borrower.nSigma,

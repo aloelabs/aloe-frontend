@@ -23,8 +23,7 @@
 
 @font-face {
   font-family: 'Satoshi-VariableItalic';
-  src: url('./assets/fonts/Satoshi/Satoshi-VariableItalic.woff2')
-      format('woff2'),
+  src: url('./assets/fonts/Satoshi/Satoshi-VariableItalic.woff2') format('woff2'),
     url('./assets/fonts/Satoshi/Satoshi-VariableItalic.woff') format('woff'),
     url('./assets/fonts/Satoshi/Satoshi-VariableItalic.ttf') format('truetype');
   font-weight: 300 900;
@@ -60,4 +59,13 @@
 
 html {
   background-color: rgba(7, 14, 18, 1);
+}
+
+
+.connect-wallet-button {
+  animation: none;
+}
+
+body:has(.connect-wallet-button-trigger:hover) .connect-wallet-button {
+  animation: pulse-shadow 1s infinite;
 }

@@ -3,10 +3,10 @@ import React, { MouseEventHandler, useState } from 'react';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
-import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 import SiloBlob from './SiloBlob';
 import TokenPairLogos from './TokenPairLogos';
+import { ResolveBlendPoolDrawData } from '../../data/BlendPoolDataResolver';
+import { BlendPoolMarkers } from '../../data/BlendPoolMarkers';
 
 export type BlendStampProps = {
   poolData: BlendPoolMarkers;

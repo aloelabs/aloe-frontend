@@ -1,7 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { SendTransactionResult } from '@wagmi/core';
-import { BigNumber } from 'ethers';
+import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
@@ -11,19 +10,19 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, roundPercentage } from 'shared/lib/util/Numbers';
-import { Address, useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../../../App';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import { SupplyTableRow } from '../supply/SupplyTable';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const TERTIARY_COLOR = '#4b6980';
-const GAS_ESTIMATE_WIGGLE_ROOM = 110; // 10% wiggle room
 
 enum ConfirmButtonState {
   INSUFFICIENT_ASSET,
@@ -82,14 +81,13 @@ type DepositButtonProps = {
   kitty: Kitty;
   accountAddress: Address;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 function DepositButton(props: DepositButtonProps) {
   const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
     props;
-  const { activeChain } = useContext(ChainContext);
-  const [isPending, setIsPending] = useState(false);
+  const activeChain = useChain();
 
   const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
   const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
@@ -100,52 +98,23 @@ function DepositButton(props: DepositButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], supplyAmountToken);
 
-  const { config: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = usePrepareContractWrite({
+  const { data: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = useSimulateContract({
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerAbi,
     functionName: 'depositWithPermit2',
     args: [
       kitty.address,
-      permit2Result.amount.toBigNumber(),
+      permit2Result.amount.toBigInt(),
       ROUTER_TRANSMITTANCE,
-      BigNumber.from(permit2Result.nonce ?? '0'),
-      BigNumber.from(permit2Result.deadline),
+      BigInt(permit2Result.nonce ?? '0'),
+      BigInt(permit2Result.deadline),
       permit2Result.signature ?? '0x',
     ],
-    overrides: {
-      value: supplyAmountEth?.toBigNumber(),
-    },
+    value: supplyAmountEth?.toBigInt(),
     chainId: activeChain.id,
-    enabled: permit2State === Permit2State.DONE,
+    query: { enabled: permit2State === Permit2State.DONE },
   });
-  const depositWithPermit2ConfigUpdatedRequest = useMemo(() => {
-    if (depsitWithPermit2Config.request) {
-      return {
-        ...depsitWithPermit2Config.request,
-        gasLimit: depsitWithPermit2Config.request.gasLimit.mul(GAS_ESTIMATE_WIGGLE_ROOM).div(100),
-      };
-    }
-    return undefined;
-  }, [depsitWithPermit2Config.request]);
-  const {
-    write: depositWithPermit2,
-    isError: contractDidError,
-    isSuccess: contractDidSucceed,
-    data: contractData,
-  } = useContractWrite({
-    ...depsitWithPermit2Config,
-    request: depositWithPermit2ConfigUpdatedRequest,
-  });
-
-  useEffect(() => {
-    if (contractDidSucceed && contractData) {
-      setPendingTxn(contractData);
-      setIsPending(false);
-      setIsOpen(false);
-    } else if (contractDidError) {
-      setIsPending(false);
-    }
-  }, [contractDidSucceed, contractData, contractDidError, setPendingTxn, setIsOpen]);
+  const { writeContractAsync: depositWithPermit2, isPending } = useWriteContract();
 
   let confirmButtonState: ConfirmButtonState;
   if (isPending) {
@@ -167,12 +136,16 @@ function DepositButton(props: DepositButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!depsitWithPermit2Config.request) {
+      if (!depsitWithPermit2Config) {
         refetchDepositWithPermit2();
         return;
       }
-      setIsPending(true);
-      depositWithPermit2?.();
+      depositWithPermit2(depsitWithPermit2Config.request)
+        .then((hash) => {
+          setPendingTxn(hash);
+          setIsOpen(false);
+        })
+        .catch((e) => console.error(e));
     }
   }
 
@@ -192,29 +165,27 @@ export type SupplyModalProps = {
   isOpen: boolean;
   selectedRow: SupplyTableRow;
   setIsOpen: (isOpen: boolean) => void;
-  setPendingTxn: (pendingTxn: SendTransactionResult | null) => void;
+  setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyModal(props: SupplyModalProps) {
   const { isOpen, selectedRow, setIsOpen, setPendingTxn } = props;
   const [amount, setAmount] = useState<string>('');
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
   const { refetch: refetchBalanceToken, data: tokenBalanceResult } = useBalance({
     address: userAddress,
     token: selectedRow.asset.address,
     chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen,
+    query: { enabled: isOpen },
   });
 
   const isWeth = selectedRow.asset.name === 'Wrapped Ether';
   const { refetch: refetchBalanceEth, data: ethBalanceResult } = useBalance({
     address: userAddress,
     chainId: activeChain.id,
-    watch: false,
-    enabled: isOpen && isWeth,
+    query: { enabled: isOpen && isWeth },
   });
 
   useEffect(() => {
@@ -230,8 +201,8 @@ export default function SupplyModal(props: SupplyModalProps) {
     };
   }, [refetchBalanceToken, refetchBalanceEth]);
 
-  const tokenBalance = GN.fromBigNumber(tokenBalanceResult?.value ?? BigNumber.from(0), selectedRow.asset.decimals);
-  const ethBalance = GN.fromBigNumber(ethBalanceResult?.value ?? BigNumber.from(0), 18);
+  const tokenBalance = GN.fromBigInt(tokenBalanceResult?.value ?? 0n, selectedRow.asset.decimals);
+  const ethBalance = GN.fromBigInt(ethBalanceResult?.value ?? 0n, 18);
   const userBalance = isWeth
     ? tokenBalance.add(GN.max(ethBalance.sub(ETH_RESERVED_FOR_GAS[activeChain.id]), GN.zero(18)))
     : tokenBalance;
