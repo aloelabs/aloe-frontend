@@ -1,15 +1,38 @@
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
-import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
+import { FeeTier, GetNumericFeeTier } from '../data/FeeTier';
 import { arbitrum, base, goerli, mainnet, optimism } from 'viem/chains';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 
-import {
-  theGraphUniswapV3ArbitrumClient,
-  theGraphUniswapV3BaseClient,
-  theGraphUniswapV3Client,
-  theGraphUniswapV3GoerliClient,
-  theGraphUniswapV3OptimismClient,
-} from '../App';
+export const theGraphUniswapV3Client = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-arbitrum-one' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3OptimismClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3BaseClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.studio.thegraph.com/query/48211/uniswap-v3-base/version/latest' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphUniswapV3GoerliClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/0xfind/uniswap-v3-goerli-2' }),
+  cache: new InMemoryCache(),
+});
+
+export const theGraphEthereumBlocksClient = new ApolloClient({
+  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
+  cache: new InMemoryCache(),
+});
 
 export function getTheGraphClient(chainId: number) {
   switch (chainId) {

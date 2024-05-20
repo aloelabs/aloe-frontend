@@ -4,17 +4,17 @@ import * as Sentry from '@sentry/react';
 import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
+import { computeLiquidationThresholds, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { TickData, calculateTickData } from 'shared/lib/data/Uniswap';
 import styled from 'styled-components';
 
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
 import LiquidityChartTooltip from './LiquidityChartTooltip';
 import { ReactComponent as WarningIcon } from '../../assets/svg/warning.svg';
-import { computeLiquidationThresholds, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BoostCardInfo } from '../../data/Uniboost';
-import { TickData, calculateTickData } from '../../data/Uniswap';
 
 const LIQUIDATION_THRESHOLDS_DEBOUNCE_MS = 250;
 const CHART_WIDTH = 300;

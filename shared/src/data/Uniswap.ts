@@ -4,25 +4,37 @@ import { getCreate2Address } from '@ethersproject/address';
 import { keccak256 } from '@ethersproject/solidity';
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
-import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { CallContext, CallReturnContext } from 'ethereum-multicall/dist/esm/models';
+import { ContractCallContext, Multicall, CallReturnContext } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { uniswapNonFungiblePositionsAbi } from 'shared/lib/abis/UniswapNonFungiblePositions';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
+import { uniswapNonFungiblePositionsAbi } from '../abis/UniswapNonFungiblePositions';
+import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
 import {
   MULTICALL_ADDRESS,
   UNISWAP_FACTORY_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
-} from 'shared/lib/data/constants/ChainSpecific';
-import { Token } from 'shared/lib/data/Token';
-import { getToken } from 'shared/lib/data/TokenData';
-import { toBig } from 'shared/lib/util/Numbers';
+} from './constants/ChainSpecific';
+import { Token } from './Token';
+import { getToken } from './TokenData';
+import { toBig } from '../util/Numbers';
 import { Address, Chain } from 'viem';
 
-import { BIGQ96, Q96 } from './constants/Values';
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
-import { convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { BIGQ96, Q96 } from './constants/Values';
+import { CallContext } from 'ethereum-multicall/dist/esm/models';
+
+function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
+  return callReturnContexts.map((callReturnContext) => {
+    callReturnContext.returnValues = callReturnContext.returnValues.map((returnValue) => {
+      // If the return value is a BigNumber, convert it to an ethers BigNumber
+      if (returnValue?.type === 'BigNumber' && returnValue?.hex) {
+        returnValue = BigNumber.from(returnValue.hex);
+      }
+      return returnValue;
+    });
+    return callReturnContext;
+  });
+}
 
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 const MAX_TICKS_PER_QUERY = 1000;

@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { BarChart, Bar, XAxis, ResponsiveContainer, ReferenceLine, ReferenceArea, BarProps } from 'recharts';
 import styled from 'styled-components';
 
 export type ChartEntry = {
@@ -70,7 +70,8 @@ export default function LiquidityChart(props: LiquidityChartProps) {
             dataKey='liquidityDensity'
             fill='rgb(38, 176, 130)'
             isAnimationActive={false}
-            shape={(props) => {
+            shape={(props: BarProps) => {
+              // @ts-ignore
               return <StyledBar x={props.x} y={props.y} width={props.width} height={props.height} fill={props.fill} />;
             }}
           />

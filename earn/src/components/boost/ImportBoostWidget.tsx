@@ -19,8 +19,15 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useLendingPair } from 'shared/lib/data/hooks/UseLendingPairs';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import {
+  getValueOfLiquidity,
+  UniswapPosition,
+  UniswapV3GraphQL24HourPoolDataQueryResponse,
+} from 'shared/lib/data/Uniswap';
+import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
@@ -39,12 +46,9 @@ import {
 import SlippageWidget from './SlippageWidget';
 import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
-import { useLendingPair } from '../../data/hooks/UseLendingPairs';
 import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo } from '../../data/Uniboost';
-import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
-import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
 import { useEthersProvider } from '../../util/Provider';
 
 const SECONDARY_COLOR = '#CCDFED';

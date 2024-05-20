@@ -1,6 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Routes, Navigate } from 'react-router-dom';
@@ -8,21 +7,20 @@ import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModa
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
-import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
-import { screenAddress } from 'shared/lib/data/AccountRisk';
+import { AccountRiskResult, screenAddress } from 'shared/lib/data/AccountRisk';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
+import { LendingPairsContext } from 'shared/lib/data/hooks/UseLendingPairs';
+import { getAvailableLendingPairs, LendingPair } from 'shared/lib/data/LendingPair';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDevelopment } from 'shared/lib/util/Utils';
-import { Config, useAccount, useClient, WagmiProvider } from 'wagmi';
+import { useAccount, usePublicClient, WagmiProvider } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
-import { LendingPairsContext } from './data/hooks/UseLendingPairs';
-import { getAvailableLendingPairs, LendingPair } from './data/LendingPair';
 import AdvancedPage from './pages/AdvancedPage';
 import ImportBoostPage from './pages/boost/ImportBoostPage';
 import ManageBoostPage from './pages/boost/ManageBoostPage';
@@ -30,7 +28,6 @@ import BoostPage from './pages/BoostPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import MarketsPage from './pages/MarketsPage';
 import PortfolioPage from './pages/PortfolioPage';
-import { useEthersProvider } from './util/Provider';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
@@ -60,36 +57,6 @@ const CONNECT_WALLET_CHECKBOXES = [
   <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
-export const theGraphUniswapV3Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-arbitrum-one' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3OptimismClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3BaseClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.studio.thegraph.com/query/48211/uniswap-v3-base/version/latest' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3GoerliClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/0xfind/uniswap-v3-goerli-2' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphEthereumBlocksClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
-  cache: new InMemoryCache(),
-});
-
 // TODO: Need TheGraph for Linea and Scroll
 
 function AppBodyWrapper() {
@@ -104,22 +71,21 @@ function AppBodyWrapper() {
   });
 
   const { address: userAddress } = useAccount();
-  const client = useClient<Config>();
-  const provider = useEthersProvider(client);
+  const publicClient = usePublicClient();
 
   const refetch = useCallback(async () => {
-    if (provider === undefined) return;
-    const chainId = provider.network.chainId;
-    const res = await getAvailableLendingPairs(chainId, provider);
+    if (publicClient === undefined) return;
+    const chainId = publicClient.chain.id;
+    const res = await getAvailableLendingPairs(chainId, publicClient);
     setLendingPairs({ lendingPairs: res, chainId });
-  }, [provider, setLendingPairs]);
+  }, [publicClient]);
 
   const lendingPairsContextValue = useMemo(() => ({ ...lendingPairs, refetch }), [lendingPairs, refetch]);
 
   useEffect(() => {
-    if (!client) return;
-    Sentry.setTag('chain_name', client.chain.name);
-  }, [client]);
+    if (!publicClient) return;
+    Sentry.setTag('chain_name', publicClient.chain.name);
+  }, [publicClient]);
 
   useEffect(() => {
     refetch();
@@ -149,7 +115,7 @@ function AppBodyWrapper() {
 
   const isAccountRiskLoading = accountRisk.isLoading;
   const isAccountBlocked = accountRisk.isBlocked;
-  const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(client?.chain.testnet);
+  const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(publicClient?.chain.testnet);
 
   if (isAccountRiskLoading) {
     return null;

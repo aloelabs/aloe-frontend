@@ -1,10 +1,9 @@
 import Big from 'big.js';
+import { auctionCurve, computeAuctionAmounts, isHealthy } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
+import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Address } from 'viem';
-
-import { auctionCurve, computeAuctionAmounts, isHealthy } from './BalanceSheet';
-import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from './constants/Values';
-import { Assets } from './MarginAccount';
 
 type Data = {
   /** The borrower's current Ether balance */

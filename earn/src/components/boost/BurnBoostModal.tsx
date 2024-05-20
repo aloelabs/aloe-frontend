@@ -7,12 +7,12 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { sqrtRatioToTick } from '../../data/BalanceSheet';
 import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
 import MaxSlippageInput from '../common/MaxSlippageInput';

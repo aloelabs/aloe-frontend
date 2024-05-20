@@ -13,12 +13,12 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, roundPercentage, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { LendingPair } from '../../../data/LendingPair';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';
 

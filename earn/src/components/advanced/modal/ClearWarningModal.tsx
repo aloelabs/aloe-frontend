@@ -6,10 +6,10 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { LendingPair } from '../../../data/LendingPair';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';

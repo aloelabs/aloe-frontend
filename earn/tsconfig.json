@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["src"],
+  "include": ["src", "../shared/src/data/LendingPair.ts", "../shared/src/data/OracleData.ts", "../shared/src/data/FactoryData.ts", "../shared/src/data/Slot0.ts", "../shared/src/data/BalanceSheet.ts", "../shared/src/data/RateModel.ts", "../shared/src/data/Uniswap.ts", "../shared/src/util/GraphQL.ts"],
   "exclude": ["src/scripts"],
   "compilerOptions": {
     "sourceMap": true,

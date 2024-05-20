@@ -4,15 +4,15 @@ import { type WriteContractReturnType } from '@wagmi/core';
 import { secondsInDay } from 'date-fns';
 import { ethers } from 'ethers';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import { computeLTV } from 'shared/lib/data/BalanceSheet';
 import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Address } from 'viem';
 
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
-import { computeLTV } from '../../../data/BalanceSheet';
-import { LendingPair } from '../../../data/LendingPair';
 
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively

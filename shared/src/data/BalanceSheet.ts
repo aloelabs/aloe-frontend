@@ -1,11 +1,11 @@
 import { TickMath } from '@uniswap/v3-sdk';
 import Big from 'big.js';
 import JSBI from 'jsbi';
-import { GN } from 'shared/lib/data/GoodNumber';
-import { areWithinNSigDigs } from 'shared/lib/util/Numbers';
+import { GN } from './GoodNumber';
+import { areWithinNSigDigs } from '../util/Numbers';
 
+import { Assets, Liabilities } from './Borrower';
 import { ALOE_II_LIQUIDATION_INCENTIVE, ALOE_II_MAX_LEVERAGE, BIGQ96 } from './constants/Values';
-import { Assets, Liabilities } from './MarginAccount';
 
 const MIN_SQRT_RATIO = new Big('4295128740');
 const MAX_SQRT_RATIO = new Big('1461446703485210103287273052203988822378723970341');
