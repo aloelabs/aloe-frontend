@@ -1,12 +1,10 @@
-import { ReactNode } from 'react';
-import { WagmiProvider, createConfig, fallback, http } from 'wagmi';
+import { createConfig, fallback, http } from 'wagmi';
 import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors';
 
 import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 import { Transport } from 'viem';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const transports: { [chainId: number]: Transport[] } = Object.fromEntries(ALL_CHAINS.map((c) => [c.id, []]));
 
@@ -46,7 +44,7 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/82793388'],
 };
 
-const config = createConfig({
+export const wagmiConfig = createConfig({
   chains: ALL_CHAINS,
   connectors: [
     injected({ shimDisconnect: true }),
@@ -84,16 +82,6 @@ const config = createConfig({
     [scroll.id]: fallback(transports[scroll.id], { rank: false }),
   },
 });
-
-const queryClient = new QueryClient();
-
-export const Web3Provider = ({ children }: { children: ReactNode }) => {
-  return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </WagmiProvider>
-  );
-};
 
 // TODO: seems like it could be useful, but breaks things rn
 // declare module 'wagmi' {

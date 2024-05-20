@@ -1,11 +1,12 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import * as Sentry from '@sentry/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
-import { Web3Provider } from 'shared/lib/components/WagmiConfig';
+import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
@@ -17,7 +18,7 @@ import { LendingPairsContext } from 'shared/lib/data/hooks/UseLendingPairs';
 import { getAvailableLendingPairs, LendingPair } from 'shared/lib/data/LendingPair';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
 import { isDevelopment } from 'shared/lib/util/Utils';
-import { useAccount, usePublicClient } from 'wagmi';
+import { useAccount, usePublicClient, WagmiProvider } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -158,12 +159,16 @@ function AppBodyWrapper() {
   );
 }
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
     <Suspense fallback={null}>
-      <Web3Provider>
-        <AppBodyWrapper />
-      </Web3Provider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <AppBodyWrapper />
+        </QueryClientProvider>
+      </WagmiProvider>
     </Suspense>
   );
 }
