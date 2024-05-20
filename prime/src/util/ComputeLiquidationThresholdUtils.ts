@@ -2,7 +2,7 @@ import JSBI from 'jsbi';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { UniswapPosition } from '../data/actions/Actions';
 import { MarginAccount } from '../data/MarginAccount';

@@ -5,6 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy } from 'shared/lib/data/BalanceSheet';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_WITHDRAW_MANAGER_ADDRESS,
@@ -12,11 +13,10 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import useChain from 'shared/lib/data/hooks/UseChain';
+import { UniswapPosition, zip } from 'shared/lib/data/Uniswap';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { UniswapPosition, zip } from '../../../../data/Uniswap';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';

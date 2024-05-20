@@ -6,6 +6,7 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { sqrtRatioToPrice, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
@@ -13,20 +14,19 @@ import {
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import useChain from 'shared/lib/data/hooks/UseChain';
-import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
-import styled from 'styled-components';
-import { Address } from 'viem';
-import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
-
-import { sqrtRatioToPrice, sqrtRatioToTick } from '../../../data/BalanceSheet';
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import {
   getAmountsForLiquidity,
   tickToPrice,
   UniswapNFTPositionEntry,
   UniswapPosition,
   zip,
-} from '../../../data/Uniswap';
+} from 'shared/lib/data/Uniswap';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
+import { Address } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
+
+import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import TokenPairIcons from '../../common/TokenPairIcons';
 import { InRangeBadge, OutOfRangeBadge } from '../../common/UniswapPositionCard';
 

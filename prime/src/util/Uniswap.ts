@@ -5,39 +5,24 @@ import { TickMath, maxLiquidityForAmounts, SqrtPriceMath, nearestUsableTick, Fee
 import Big from 'big.js';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { FeeTier, GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
+import { UniswapV3GraphQLTicksQueryResponse, UniswapV3PoolBasics } from 'shared/lib/data/Uniswap';
+import {
+  theGraphUniswapV3Client,
+  theGraphUniswapV3OptimismClient,
+  theGraphUniswapV3ArbitrumClient,
+  theGraphUniswapV3BaseClient,
+} from 'shared/lib/util/GraphQL';
 import { roundDownToNearestN, roundUpToNearestN, toBig } from 'shared/lib/util/Numbers';
-import { arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { arbitrum, optimism, mainnet, base } from 'wagmi/chains';
 
 import { UniswapTicksQuery } from './GraphQL';
-import {
-  theGraphUniswapV3ArbitrumClient,
-  theGraphUniswapV3Client,
-  theGraphUniswapV3GoerliClient,
-  theGraphUniswapV3OptimismClient,
-} from '../App';
 import { BIGQ96, Q96 } from '../data/constants/Values';
 
 const BINS_TO_FETCH = 500;
 const ONE = new Big('1.0');
-
-export interface UniswapV3PoolSlot0 {
-  sqrtPriceX96: GN;
-  tick: number;
-  observationIndex: number;
-  observationCardinality: number;
-  observationCardinalityNext: number;
-  feeProtocol: number;
-}
-
-export interface UniswapV3PoolBasics {
-  slot0: UniswapV3PoolSlot0;
-  tickSpacing: number;
-  token1OverToken0: Big;
-}
 
 export type TickInfo = {
   tickSpacing: number;
@@ -56,25 +41,6 @@ export type TickData = {
   price1In0: number;
   price0In1: number;
   totalValueIn0: number;
-};
-
-export type UniswapV3GraphQLTick = {
-  tickIdx: string;
-  liquidityNet: string;
-  price0: string;
-  price1: string;
-  __typename: string;
-};
-
-export type UniswapV3GraphQLTicksQueryResponse = {
-  pools: {
-    token0: { decimals: string };
-    token1: { decimals: string };
-    liquidity: string;
-    tick: string;
-    ticks: UniswapV3GraphQLTick[];
-    __typename: string;
-  }[];
 };
 
 export function convertSqrtPriceX96(sqrtPriceX96: ethers.BigNumber): Big {
@@ -122,8 +88,8 @@ export async function calculateTickData(
     case optimism.id:
       theGraphClient = theGraphUniswapV3OptimismClient;
       break;
-    case goerli.id:
-      theGraphClient = theGraphUniswapV3GoerliClient;
+    case base.id:
+      theGraphClient = theGraphUniswapV3BaseClient;
       break;
     case mainnet.id:
     default:
@@ -219,32 +185,6 @@ export async function calculateTickData(
   const tickData = tickDataLeft.reverse().concat(...tickDataRight);
 
   return tickData;
-}
-
-/**
- *
- * @returns the current tick for a given Uniswap pool
- */
-export async function getUniswapPoolBasics(
-  uniswapPoolAddress: string,
-  provider: ethers.providers.BaseProvider
-): Promise<UniswapV3PoolBasics> {
-  const pool = new ethers.Contract(uniswapPoolAddress, uniswapV3PoolAbi, provider);
-
-  const [slot0, tickSpacing] = await Promise.all([pool.slot0(), pool.tickSpacing()]);
-
-  return {
-    slot0: {
-      sqrtPriceX96: slot0.sqrtPriceX96,
-      tick: slot0.tick,
-      observationIndex: slot0.observationIndex,
-      observationCardinality: slot0.observationCardinality,
-      observationCardinalityNext: slot0.observationCardinalityNext,
-      feeProtocol: slot0.feeProtocol,
-    },
-    tickSpacing: tickSpacing,
-    token1OverToken0: convertSqrtPriceX96(slot0.sqrtPriceX96),
-  };
 }
 
 export function tickToPrice(tick: number): GN {

@@ -12,6 +12,7 @@ import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { computeLTV } from 'shared/lib/data/BalanceSheet';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_BORROWER_NFT_ADDRESS,
@@ -24,6 +25,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
@@ -37,9 +39,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 
-import { computeLTV } from '../../../data/BalanceSheet';
 import { BorrowerNft, fetchListOfBorrowerNfts } from '../../../data/BorrowerNft';
-import { LendingPair } from '../../../data/LendingPair';
 import { useEthersProvider } from '../../../util/Provider';
 
 const MAX_BORROW_PERCENTAGE = 0.8;

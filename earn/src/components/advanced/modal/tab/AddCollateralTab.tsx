@@ -5,6 +5,8 @@ import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
@@ -12,8 +14,7 @@ import { Token } from 'shared/lib/data/Token';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy } from '../../../../data/BalanceSheet';
-import { Assets, MarginAccount } from '../../../../data/MarginAccount';
+import { MarginAccount } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 

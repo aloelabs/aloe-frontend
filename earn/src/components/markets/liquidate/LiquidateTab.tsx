@@ -5,17 +5,17 @@ import Big from 'big.js';
 import JSBI from 'jsbi';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
+import { Assets } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { LendingPair } from 'shared/lib/data/LendingPair';
+import { UniswapPosition } from 'shared/lib/data/Uniswap';
 import { getContract, GetContractEventsReturnType } from 'viem';
 import { usePublicClient, useReadContracts } from 'wagmi';
 
 import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
 import { DerivedBorrower } from '../../../data/Borrower';
-import { LendingPair } from '../../../data/LendingPair';
-import { Assets } from '../../../data/MarginAccount';
-import { UniswapPosition } from '../../../data/Uniswap';
 
 export type LiquidateTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively

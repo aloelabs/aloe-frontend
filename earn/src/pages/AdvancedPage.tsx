@@ -12,7 +12,9 @@ import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useLendingPair } from 'shared/lib/data/hooks/UseLendingPairs';
 import { Token } from 'shared/lib/data/Token';
+import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address } from 'viem';
@@ -36,9 +38,7 @@ import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/Pen
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
 import useAvailablePools from '../data/hooks/UseAvailablePools';
-import { useLendingPair } from '../data/hooks/UseLendingPairs';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
-import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../data/Uniswap';
 import { getProminentColor } from '../util/Colors';
 import { useEthersProvider } from '../util/Provider';
 

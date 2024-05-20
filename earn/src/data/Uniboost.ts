@@ -7,6 +7,7 @@ import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
@@ -19,17 +20,17 @@ import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address, erc20Abi } from 'viem';
-
-import { fetchListOfBorrowerNfts } from './BorrowerNft';
-import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import {
   getAmountsForLiquidity,
   getValueOfLiquidity,
   tickToPrice,
   UniswapPosition,
   uniswapPositionKey,
-} from './Uniswap';
+} from 'shared/lib/data/Uniswap';
+import { Address, erc20Abi } from 'viem';
+
+import { fetchListOfBorrowerNfts } from './BorrowerNft';
+import { MarginAccount } from './MarginAccount';
 
 export enum BoostCardType {
   UNISWAP_NFT,
