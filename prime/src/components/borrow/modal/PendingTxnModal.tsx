@@ -1,10 +1,7 @@
-import React, { useContext } from 'react';
-
 import { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import useChain from 'shared/lib/data/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
-
-import { ChainContext } from '../../../App';
 
 export type PendingTxnModalProps = {
   open: boolean;
@@ -13,7 +10,7 @@ export type PendingTxnModalProps = {
 };
 
 export default function PendingTxnModal(props: PendingTxnModalProps) {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   return (
     <LoadingModal isOpen={props.open} setIsOpen={props.setOpen} title='Submitting Order'>
       <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>

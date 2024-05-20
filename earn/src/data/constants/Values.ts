@@ -13,10 +13,6 @@ export const Q96 = BigNumber.from('0x1000000000000000000000000');
 export const BIGQ96 = toBig(Q96);
 export const MAX_UNISWAP_POSITIONS = 3;
 
-export const ALOE_II_LIQUIDATION_INCENTIVE = 20;
-export const ALOE_II_MAX_LEVERAGE = 200;
-export const ALOE_II_LIQUIDATION_GRACE_PERIOD = 5 * 60;
-
 export const API_PRICE_RELAY_LATEST_URL = 'https://api-price.aloe.capital/price-relay/v1/latest';
 export const API_PRICE_RELAY_HISTORICAL_URL = 'https://api-price.aloe.capital/price-relay/v1/historical';
 export const API_PRICE_RELAY_CONSOLIDATED_URL = 'https://api-price.aloe.capital/price-relay/v1/consolidated';

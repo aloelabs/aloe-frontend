@@ -8,6 +8,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy, maxWithdraws } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS,
@@ -20,9 +22,7 @@ import { Token } from 'shared/lib/data/Token';
 import { Address } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';

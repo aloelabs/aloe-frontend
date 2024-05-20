@@ -5,6 +5,8 @@ import { routerAbi } from 'shared/lib/abis/Router';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy } from 'shared/lib/data/BalanceSheet';
+import { Liabilities } from 'shared/lib/data/Borrower';
 import { ALOE_II_ROUTER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -14,9 +16,7 @@ import { Token } from 'shared/lib/data/Token';
 import { Address, Chain } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { Liabilities } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';

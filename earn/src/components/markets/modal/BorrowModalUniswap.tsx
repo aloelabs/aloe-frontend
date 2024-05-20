@@ -12,6 +12,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { maxBorrowAndWithdraw } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -22,16 +24,13 @@ import {
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import { UniswapNFTPosition, zip } from 'shared/lib/data/Uniswap';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import { erc721Abi } from 'viem';
 import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
-
-import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { LendingPair } from '../../../data/LendingPair';
-import { Assets } from '../../../data/MarginAccount';
-import { UniswapNFTPosition, zip } from '../../../data/Uniswap';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
 const SECONDARY_COLOR = '#CCDFED';

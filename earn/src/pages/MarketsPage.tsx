@@ -10,6 +10,8 @@ import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
+import { getLendingPairBalances, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -24,8 +26,6 @@ import SupplyTable, { SupplyTableRow } from '../components/markets/supply/Supply
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
 import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
-import { useLendingPairs } from '../data/hooks/UseLendingPairs';
-import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
 import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';

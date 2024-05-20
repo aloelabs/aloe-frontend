@@ -1,4 +1,6 @@
+import { BigNumber } from 'ethers';
 import { optimism } from 'viem/chains';
+import { toBig } from '../../util/Numbers';
 
 export const DEFAULT_CHAIN = optimism;
 export const DEFAULT_ETHERSCAN_URL = 'https://etherscan.io';
@@ -12,3 +14,8 @@ export const API_LEADERBOARD_URL = 'https://leaderboard.aloe.capital/v1/leaderbo
 export const LAUNCH_DATE = new Date('2024-01-02T06:00:00.000Z'); // 12 AM CST on Jan 2, 2024
 export const DEAD_ADDRESS = '0xdead00000000000000000000000000000000dead';
 export const ROUTER_TRANSMITTANCE = 9999;
+export const ALOE_II_LIQUIDATION_INCENTIVE = 20;
+export const ALOE_II_MAX_LEVERAGE = 200;
+export const ALOE_II_LIQUIDATION_GRACE_PERIOD = 5 * 60;
+export const Q96 = BigNumber.from('0x1000000000000000000000000');
+export const BIGQ96 = toBig(Q96);

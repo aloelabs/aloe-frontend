@@ -6,6 +6,7 @@ import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import {
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
@@ -14,14 +15,13 @@ import {
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import useChain from 'shared/lib/data/hooks/UseChain';
+import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from 'shared/lib/data/Uniswap';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, erc721Abi } from 'viem';
 import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { sqrtRatioToTick } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from '../../../../data/Uniswap';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
 const SECONDARY_COLOR = '#CCDFED';

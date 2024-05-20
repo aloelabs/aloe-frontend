@@ -70,7 +70,7 @@ const config = createConfig({
   batch: {
     multicall: {
       batchSize: 2048,
-      wait: 100,
+      wait: 500,
     },
   },
   cacheTime: 4000,

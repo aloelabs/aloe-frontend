@@ -9,6 +9,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { BaseMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy } from 'shared/lib/data/BalanceSheet';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -24,9 +26,8 @@ import styled from 'styled-components';
 import { Address, Chain } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { Assets, Liabilities, MarginAccount } from '../../../data/MarginAccount';
+import { MarginAccount } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 

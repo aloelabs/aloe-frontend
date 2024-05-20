@@ -19,7 +19,7 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address, Chain, erc20ABI } from 'wagmi';
+import { Address, Chain, erc20Abi } from 'viem';
 
 import { UniswapPosition, UniswapPositionPrior } from './actions/Actions';
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
@@ -302,13 +302,13 @@ export async function fetchMarginAccount(
     ),
   });
   secondaryCallContext.push({
-    abi: erc20ABI as any,
+    abi: erc20Abi as any,
     contractAddress: token0.address,
     reference: 'token0ReturnContext',
     calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],
   });
   secondaryCallContext.push({
-    abi: erc20ABI as any,
+    abi: erc20Abi as any,
     contractAddress: token1.address,
     reference: 'token1ReturnContext',
     calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [borrowerAddress] }],

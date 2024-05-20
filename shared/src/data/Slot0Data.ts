@@ -1,4 +1,4 @@
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN } from './GoodNumber';
 
 export type Slot0Data = {
   sqrtPriceX96: GN;
@@ -9,9 +9,11 @@ export type Slot0Data = {
   feeProtocol: number;
 };
 
-export function asSlot0Data(multicallResult: any[]): Slot0Data {
+export function asSlot0Data(
+  multicallResult: readonly [bigint, number, number, number, number, number, boolean]
+): Slot0Data {
   return {
-    sqrtPriceX96: GN.fromBigNumber(multicallResult[0], 96, 2),
+    sqrtPriceX96: GN.fromBigInt(multicallResult[0], 96, 2),
     tick: multicallResult[1],
     observationIndex: multicallResult[2],
     observationCardinality: multicallResult[3],

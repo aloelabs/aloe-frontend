@@ -1,36 +1,34 @@
-import { secondsInYear } from 'date-fns';
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { erc20Abi } from 'shared/lib/abis/ERC20';
-import { factoryAbi } from 'shared/lib/abis/Factory';
-import { lenderAbi } from 'shared/lib/abis/Lender';
-import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
-import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
-import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import { erc20Abi } from '../abis/ERC20';
+import { factoryAbi } from '../abis/Factory';
+import { lenderAbi } from '../abis/Lender';
+import { lenderLensAbi } from '../abis/LenderLens';
+import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
+import { volatilityOracleAbi } from '../abis/VolatilityOracle';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   MULTICALL_ADDRESS,
-} from 'shared/lib/data/constants/ChainSpecific';
-import { Q32 } from 'shared/lib/data/constants/Values';
-import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
-import { Kitty } from 'shared/lib/data/Kitty';
-import { Token } from 'shared/lib/data/Token';
-import { getToken } from 'shared/lib/data/TokenData';
-import { toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+} from './constants/ChainSpecific';
+import { Q32 } from './constants/Values';
+import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
+import { GN } from './GoodNumber';
+import { Kitty } from './Kitty';
+import { Token } from './Token';
+import { getToken } from './TokenData';
+import { toImpreciseNumber } from '../util/Numbers';
+import { Address, getContract, PublicClient, zeroAddress } from 'viem';
 
-import { computeLTV } from './BalanceSheet';
-import { UNISWAP_POOL_DENYLIST, ZERO_ADDRESS } from './constants/Addresses';
-import { TOPIC0_CREATE_MARKET_EVENT } from './constants/Signatures';
 import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
 import { borrowAPRToLendAPY, RateModel, yieldPerSecondToAPR } from './RateModel';
-import { asSlot0Data, Slot0Data } from './Slot0';
-import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
+import { asSlot0Data, Slot0Data } from './Slot0Data';
+import { computeLTV } from './BalanceSheet';
+
+const SECONDS_IN_YEAR = 365n * 24n * 60n * 60n;
 
 class KittyInfo {
   public readonly availableAssets: GN;
@@ -107,158 +105,62 @@ export type LendingPairBalances = {
 
 export type LendingPairBalancesMap = Map<Address, { value: number; gn: GN; form: 'raw' | 'underlying' }>;
 
-export async function getAvailableLendingPairs(
-  chainId: number,
-  provider: ethers.providers.BaseProvider
-): Promise<LendingPair[]> {
-  const multicall = new Multicall({
-    ethersProvider: provider,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
-    tryAggregate: true,
+export async function getAvailableLendingPairs(chainId: number, publicClient: PublicClient): Promise<LendingPair[]> {
+  const factory = getContract({
+    abi: factoryAbi,
+    address: ALOE_II_FACTORY_ADDRESS[chainId],
+    client: publicClient,
   });
 
-  // Fetch all the Aloe II markets
-  let logs: ethers.providers.Log[] = [];
-  try {
-    logs = await provider.getLogs({
-      fromBlock: 0,
-      toBlock: 'latest',
-      address: ALOE_II_FACTORY_ADDRESS[chainId],
-      topics: [TOPIC0_CREATE_MARKET_EVENT],
-    });
-  } catch (e) {
-    console.error(e);
-  }
+  const logs = await factory.getEvents.CreateMarket({}, { strict: true, fromBlock: 'earliest', toBlock: 'latest' });
   if (logs.length === 0) return [];
 
-  // Get all of the lender and pool addresses from the logs
-  const addresses: { pool: string; kitty0: string; kitty1: string }[] = logs.map((item: any) => {
-    const lenderAddresses = ethers.utils.defaultAbiCoder.decode(['address', 'address'], item.data);
-    return {
-      pool: `0x${item.topics[1].slice(-40)}` as Address,
-      kitty0: lenderAddresses[0],
-      kitty1: lenderAddresses[1],
-    };
+  const lenderLens = getContract({
+    abi: lenderLensAbi,
+    address: ALOE_II_LENDER_LENS_ADDRESS[chainId],
+    client: publicClient,
   });
 
-  const contractCallContexts: ContractCallContext[] = [];
-
-  addresses.forEach((market) => {
-    if (UNISWAP_POOL_DENYLIST.includes(market.pool.toLowerCase())) {
-      return;
-    }
-
-    contractCallContexts.push({
-      reference: `${market.pool}-basics`,
-      contractAddress: ALOE_II_LENDER_LENS_ADDRESS[chainId],
-      abi: lenderLensAbi as any,
-      calls: [
-        {
-          reference: `${market.pool}-basics0`,
-          methodName: 'readBasics',
-          methodParameters: [market.kitty0],
-        },
-        {
-          reference: `${market.pool}-basics1`,
-          methodName: 'readBasics',
-          methodParameters: [market.kitty1],
-        },
-      ],
-      context: { kitty0Address: market.kitty0, kitty1Address: market.kitty1 },
-    });
-
-    contractCallContexts.push({
-      reference: `${market.pool}-slot0AndFeeTier`,
-      contractAddress: market.pool,
-      abi: uniswapV3PoolAbi as any,
-      calls: [
-        {
-          reference: `${market.pool}-slot0`,
-          methodName: 'slot0',
-          methodParameters: [],
-        },
-        {
-          reference: `${market.pool}-feeTier`,
-          methodName: 'fee',
-          methodParameters: [],
-        },
-      ],
-    });
-
-    contractCallContexts.push({
-      reference: `${market.pool}-oracle`,
-      contractAddress: ALOE_II_ORACLE_ADDRESS[chainId],
-      abi: volatilityOracleAbi as any,
-      calls: [
-        {
-          reference: `${market.pool}-oracle`,
-          methodName: 'consult',
-          methodParameters: [market.pool, Q32],
-        },
-        {
-          reference: `${market.pool}-oracleLastWrite`,
-          methodName: 'lastWrites',
-          methodParameters: [market.pool],
-        },
-      ],
-    });
-
-    contractCallContexts.push({
-      reference: `${market.pool}-factory`,
-      contractAddress: ALOE_II_FACTORY_ADDRESS[chainId],
-      abi: factoryAbi as any,
-      calls: [
-        {
-          reference: `${market.pool}-factory`,
-          methodName: 'getParameters',
-          methodParameters: [market.pool],
-        },
-      ],
-    });
+  const oracle = getContract({
+    abi: volatilityOracleAbi,
+    address: ALOE_II_ORACLE_ADDRESS[chainId],
+    client: publicClient,
   });
 
-  const lendingPairResults = (await multicall.call(contractCallContexts)).results;
-
-  const correspondingLendingPairResults: Map<string, ContractCallReturnContextEntries> = new Map();
-  // Convert the results into a map of account address to the results
-  Object.entries(lendingPairResults).forEach(([key, value]) => {
-    const entryAccountAddress = key.split('-')[0];
-    const entryType = key.split('-')[1];
-    const existingValue = correspondingLendingPairResults.get(entryAccountAddress);
-    if (existingValue) {
-      existingValue[entryType] = value;
-      correspondingLendingPairResults.set(entryAccountAddress, existingValue);
-    } else {
-      correspondingLendingPairResults.set(entryAccountAddress, { [entryType]: value });
-    }
-  });
+  const reads = await Promise.all(
+    logs.map((log) =>
+      Promise.all([
+        factory.read.getParameters([log.args.pool!]),
+        oracle.read.consult([log.args.pool!, Q32]),
+        oracle.read.lastWrites([log.args.pool!]),
+        lenderLens.read.readBasics([log.args.lender0!]),
+        lenderLens.read.readBasics([log.args.lender1!]),
+        publicClient.readContract({
+          abi: uniswapV3PoolAbi,
+          address: log.args.pool!,
+          functionName: 'slot0',
+        }),
+        publicClient.readContract({
+          abi: uniswapV3PoolAbi,
+          address: log.args.pool!,
+          functionName: 'fee',
+        }),
+      ])
+    )
+  );
 
   const lendingPairs: LendingPair[] = [];
 
-  Array.from(correspondingLendingPairResults.entries()).forEach(([uniswapPool, value]) => {
-    const {
-      basics: basicsResults,
-      slot0AndFeeTier: poolResults,
-      oracle: oracleResults,
-      factory: factoryResults,
-    } = value;
-    const basicsReturnContexts = convertBigNumbersForReturnContexts(basicsResults.callsReturnContext);
-    const poolReturnContexts = convertBigNumbersForReturnContexts(poolResults.callsReturnContext);
-    const oracleReturnContexts = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext);
-    const factoryReturnContexts = convertBigNumbersForReturnContexts(factoryResults.callsReturnContext);
-    const { kitty0Address, kitty1Address } = basicsResults.originalContractCallContext.context;
+  logs.forEach((log, i) => {
+    const [getParameters, consult, lastWrites, readBasics0, readBasics1, slot0, fee] = reads[i];
 
-    const basics0 = basicsReturnContexts[0].returnValues;
-    const basics1 = basicsReturnContexts[1].returnValues;
-    const feeTier = poolReturnContexts[1].returnValues;
-    const oracleResult = oracleReturnContexts[0].returnValues;
-    const factoryResult = factoryReturnContexts[0].returnValues;
-    const token0 = getToken(chainId, basics0[0]);
-    const token1 = getToken(chainId, basics1[0]);
+    const token0 = getToken(chainId, readBasics0[0]);
+    const token1 = getToken(chainId, readBasics1[0]);
     if (token0 == null || token1 == null) return;
+
     const kitty0 = new Kitty(
       chainId,
-      kitty0Address as Address,
+      log.args.lender0!,
       token0.decimals,
       `${token0.symbol}+`,
       `Aloe II ${token0.name}`,
@@ -267,7 +169,7 @@ export async function getAvailableLendingPairs(
     );
     const kitty1 = new Kitty(
       chainId,
-      kitty1Address as Address,
+      log.args.lender1!,
       token1.decimals,
       `${token1.symbol}+`,
       `Aloe II ${token1.name}`,
@@ -275,19 +177,17 @@ export async function getAvailableLendingPairs(
       token1
     );
 
-    const borrowAPR0 = toImpreciseNumber(basics0[1].mul(secondsInYear), 12);
-    const borrowAPR1 = toImpreciseNumber(basics1[1].mul(secondsInYear), 12);
+    const borrowAPR0 = Number((readBasics0[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
+    const borrowAPR1 = Number((readBasics1[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
 
-    const totalAssets0 = GN.fromBigNumber(basics0[3], token0.decimals);
-    const totalAssets1 = GN.fromBigNumber(basics1[3], token1.decimals);
+    const totalAssets0 = GN.fromBigInt(readBasics0[3], token0.decimals);
+    const totalAssets1 = GN.fromBigInt(readBasics1[3], token1.decimals);
 
-    const totalBorrows0 = GN.fromBigNumber(basics0[4], token0.decimals);
-    const totalBorrows1 = GN.fromBigNumber(basics1[4], token1.decimals);
+    const totalBorrows0 = GN.fromBigInt(readBasics0[4], token0.decimals);
+    const totalBorrows1 = GN.fromBigInt(readBasics1[4], token1.decimals);
 
-    const totalSupply0 = GN.fromBigNumber(basics0[5], kitty0.decimals);
-    const totalSupply1 = GN.fromBigNumber(basics1[5], kitty1.decimals);
-
-    if (oracleResult.length === 0) return;
+    const totalSupply0 = GN.fromBigInt(readBasics0[5], kitty0.decimals);
+    const totalSupply1 = GN.fromBigInt(readBasics1[5], kitty1.decimals);
 
     lendingPairs.push(
       new LendingPair(
@@ -295,16 +195,16 @@ export async function getAvailableLendingPairs(
         token1,
         kitty0,
         kitty1,
-        new KittyInfo(totalAssets0, totalBorrows0, totalSupply0, borrowAPR0, basics0[6]),
-        new KittyInfo(totalAssets1, totalBorrows1, totalSupply1, borrowAPR1, basics1[6]),
-        uniswapPool as Address,
-        NumericFeeTierToEnum(feeTier[0]),
-        toImpreciseNumber(basics0[7], 18), // rewardsRate0
-        toImpreciseNumber(basics1[7], 18), // rewardsRate1
-        asFactoryData(factoryResult),
-        asOracleData(oracleResult),
-        asSlot0Data(poolReturnContexts[0].returnValues),
-        new Date(oracleReturnContexts[1].returnValues[1] * 1000) // lastWrite.time
+        new KittyInfo(totalAssets0, totalBorrows0, totalSupply0, borrowAPR0, readBasics0[6]),
+        new KittyInfo(totalAssets1, totalBorrows1, totalSupply1, borrowAPR1, readBasics0[6]),
+        log.args.pool!,
+        NumericFeeTierToEnum(fee),
+        Number(readBasics0[7] / 1_000_000_000_000n) / 1e6, // rewardsRate0
+        Number(readBasics1[7] / 1_000_000_000_000n) / 1e6, // rewardsRate1
+        asFactoryData(getParameters),
+        asOracleData(consult),
+        asSlot0Data(slot0),
+        new Date(lastWrites[1] * 1000) // lastWrite.time
       )
     );
   });
@@ -375,7 +275,7 @@ export async function getLendingPairBalances(
   const deprecatedLendingPairBalancesArray: LendingPairBalances[] = [];
   const balancesMap: LendingPairBalancesMap = new Map();
 
-  balancesMap.set(ZERO_ADDRESS, {
+  balancesMap.set(zeroAddress, {
     value: GN.fromBigNumber(ethBalance, 18).toNumber(),
     gn: GN.fromBigNumber(ethBalance, 18),
     form: 'raw',

@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { auctionCurve, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import useChain from 'shared/lib/data/hooks/UseChain';
@@ -11,7 +12,6 @@ import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
 
-import { auctionCurve, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 

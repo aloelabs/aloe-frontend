@@ -19,6 +19,8 @@
     ]
   },
   "dependencies": {
+    "@apollo/client": "^3.10.3",
+    "@apollo/react-hooks": "^4.0.0",
     "@heroicons/react": "^1.0.5",
     "@metamask/jazzicon": "^2.0.0",
     "@tanstack/react-query": "^5.35.1",
@@ -32,6 +34,8 @@
     "ethereum-multicall": "^2.15.0",
     "ethers": "5.7.1",
     "jsbi": "^3.1.4",
+    "graphql": "^16.5.0",
+    "graphql-tag": "^2.12.6",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "postcss-nested": "^5.0.6",
     "prettier": "^2.8.8",
@@ -40,7 +44,7 @@
     "styled-components": "^5.3.3",
     "typescript": "5.0.4",
     "viem": "2.x",
-    "wagmi": "^2.8.3"
+    "wagmi": "^2.9.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

@@ -18,6 +18,7 @@ import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import useSortableData from 'shared/lib/data/hooks/UseSortableData';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
@@ -27,7 +28,6 @@ import { useAccount, useWriteContract } from 'wagmi';
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
 import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
-import { LendingPair } from '../../../data/LendingPair';
 import { truncateAddress } from '../../../util/Addresses';
 
 const PAGE_SIZE = 10;

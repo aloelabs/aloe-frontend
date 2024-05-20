@@ -7,7 +7,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { ReactComponent as RightArrowIcon } from '../../../assets/svg/small_right_arrow.svg';

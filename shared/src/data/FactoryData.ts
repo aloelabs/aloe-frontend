@@ -1,4 +1,4 @@
-import { GN } from 'shared/lib/data/GoodNumber';
+import { GN } from './GoodNumber';
 
 export type FactoryData = {
   ante: GN;
@@ -7,9 +7,9 @@ export type FactoryData = {
   pausedUntilTime: number;
 };
 
-export function asFactoryData(multicallResult: any[]): FactoryData {
+export function asFactoryData(multicallResult: readonly [bigint, number, number, number]): FactoryData {
   return {
-    ante: GN.fromBigNumber(multicallResult[0], 18),
+    ante: GN.fromBigInt(multicallResult[0], 18),
     nSigma: (multicallResult[1] as number) / 10,
     manipulationThresholdDivisor: multicallResult[2],
     pausedUntilTime: multicallResult[3],
