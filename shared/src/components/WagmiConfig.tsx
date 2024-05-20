@@ -36,27 +36,31 @@ transports[scroll.id].push(
   http('https://1rpc.io/scroll')
 );
 
+const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!;
+const metadata = {
+  name: 'Aloe',
+  description: 'Permissionless lending built on Uniswap',
+  url: 'https://aloe.capital',
+  icons: ['https://avatars.githubusercontent.com/u/82793388'],
+};
+
 export const wagmiConfig = createConfig({
   chains: ALL_CHAINS,
   connectors: [
     injected({ shimDisconnect: true }),
     walletConnect({
-      projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!,
+      projectId,
+      metadata,
+      showQrModal: true,
       qrModalOptions: {
         themeMode: 'dark',
         termsOfServiceUrl: 'https://aloe.capital/legal/terms-of-service',
       },
-      showQrModal: true,
-      metadata: {
-        name: 'Aloe',
-        description: 'Permissionless lending built on Uniswap',
-        url: 'https://app.aloe.capital',
-        icons: [],
-      },
     }),
     coinbaseWallet({
-      appName: 'Aloe',
+      appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
+      // appChainIds: [mainnet.id, optimism.id, arbitrum.id, base.id],
       darkMode: true,
     }),
     safe(),

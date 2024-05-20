@@ -7,7 +7,8 @@ import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModa
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
-import { AccountRiskResult, screenAddress } from 'shared/lib/data/AccountRisk';
+import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
+import { screenAddress } from 'shared/lib/data/AccountRisk';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
