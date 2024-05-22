@@ -1,11 +1,11 @@
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
+import { rgba } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import useProminentColor from '../../data/hooks/UseProminentColor';
-import { rgba } from '../../util/Colors';
 
 const Container = styled.button.attrs(
   (props: { backgroundGradient: string; active: boolean; $animate: boolean }) => props

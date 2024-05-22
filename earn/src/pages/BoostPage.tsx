@@ -12,6 +12,7 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from 'shared/lib/data/Uniswap';
+import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
@@ -20,7 +21,6 @@ import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import NoPositions from '../components/boost/NoPositions';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
-import { getProminentColor, rgb } from '../util/Colors';
 import { useEthersProvider } from '../util/Provider';
 
 const DEFAULT_COLOR0 = 'white';
@@ -197,6 +197,7 @@ export default function BoostPage() {
   /*//////////////////////////////////////////////////////////////
                            COMPUTE COLORS
   //////////////////////////////////////////////////////////////*/
+  // TODO: useTokenColors
   useEffect(() => {
     (async () => {
       const tokenLogos = new Set<string>();

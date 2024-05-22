@@ -9,6 +9,7 @@ import useChain from 'shared/lib/data/hooks/UseChain';
 import { useLendingPairsBalances } from 'shared/lib/data/hooks/UseLendingPairBalances';
 import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { useConsolidatedPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
+import { useTokenColors } from 'shared/lib/data/hooks/UseTokenColors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import styled from 'styled-components';
@@ -32,7 +33,6 @@ import PortfolioBalance from '../components/portfolio/PortfolioBalance';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { getProminentColor } from '../util/Colors';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -102,7 +102,6 @@ export default function PortfolioPage() {
   const activeChain = useChain();
 
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
-  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
@@ -113,6 +112,7 @@ export default function PortfolioPage() {
 
   const { lendingPairs } = useLendingPairs(activeChain.id);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
   const {
     data: consolidatedPriceData,
     isPending: isPendingPrices,
@@ -151,18 +151,6 @@ export default function PortfolioPage() {
       })),
     };
   }, [activeChain.id, consolidatedPriceData]);
-
-  useEffect(() => {
-    (async () => {
-      const tokenColorMap: Map<string, string> = new Map();
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
-      const colors = await Promise.all(colorPromises);
-      uniqueTokens.forEach((token: Token, index: number) => {
-        tokenColorMap.set(token.address, colors[index]);
-      });
-      setTokenColors(tokenColorMap);
-    })();
-  }, [lendingPairs, setTokenColors, uniqueTokens]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -292,7 +280,7 @@ export default function PortfolioPage() {
                 return (
                   <AssetBar
                     balances={combinedBalances}
-                    tokenColors={tokenColors}
+                    tokenColors={tokenColors!}
                     ignoreBalances={true}
                     setActiveAsset={(updatedAsset: Token) => {
                       setActiveAsset(updatedAsset);
@@ -346,7 +334,7 @@ export default function PortfolioPage() {
             <PortfolioGrid
               activeAsset={activeAsset}
               balances={combinedBalances}
-              tokenColors={tokenColors}
+              tokenColors={tokenColors!}
               tokenPriceData={tokenPriceData}
               tokenQuotes={tokenQuotes}
               errorLoadingPrices={errorLoadingPrices}

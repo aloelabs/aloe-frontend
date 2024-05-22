@@ -14,6 +14,7 @@ import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpe
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { PriceRelayLatestResponse } from 'shared/lib/data/hooks/UsePriceRelay';
+import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, usePublicClient, useReadContract } from 'wagmi';
@@ -24,7 +25,6 @@ import CollectFeesWidget from '../../components/boost/CollectFeesWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../../data/Uniboost';
-import { getProminentColor, rgb } from '../../util/Colors';
 import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
@@ -94,6 +94,7 @@ export default function ManageBoostPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  // TODO: useTokenColors
   useEffect(() => {
     (async () => {
       if (!cardInfo) return;

@@ -1,13 +1,13 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
+import { rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 
 import AssetPriceChartWidget from './AssetPriceChartWidget';
 import PortfolioMetrics from './PortfolioMetrics';
 import { RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 import { TokenBalance, TokenPriceData, TokenQuote } from '../../pages/PortfolioPage';
-import { rgb } from '../../util/Colors';
 
 const STATUS_GREEN = 'rgba(0, 196, 140, 1)';
 const STATUS_GREEN_LIGHT = 'rgba(0, 196, 140, 0.75)';

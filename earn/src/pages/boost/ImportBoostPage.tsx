@@ -20,6 +20,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import { Config, useClient, usePublicClient, useReadContract } from 'wagmi';
 
@@ -27,7 +28,6 @@ import BoostCard from '../../components/boost/BoostCard';
 import ImportBoostWidget from '../../components/boost/ImportBoostWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
-import { getProminentColor, rgb } from '../../util/Colors';
 import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
@@ -96,6 +96,7 @@ export default function ImportBoostPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  // TODO: useTokenColors
   useEffect(() => {
     (async () => {
       if (!uniswapNftPosition) return;

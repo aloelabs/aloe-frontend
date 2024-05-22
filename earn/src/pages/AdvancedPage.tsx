@@ -13,6 +13,8 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useTokenColors } from 'shared/lib/data/hooks/UseTokenColors';
+import { useUniswapPools } from 'shared/lib/data/hooks/UseUniswapPools';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -37,9 +39,7 @@ import { UniswapPositionList } from '../components/advanced/UniswapPositionList'
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import useAvailablePools from '../data/hooks/UseAvailablePools';
 import { fetchBorrowerDatas } from '../data/MarginAccount';
-import { getProminentColor } from '../util/Colors';
 import { useEthersProvider } from '../util/Provider';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -157,7 +157,6 @@ export default function AdvancedPage() {
   const [openedModal, setOpenedModal] = useState(OpenedModal.NONE);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
-  const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -172,13 +171,14 @@ export default function AdvancedPage() {
   }, [borrowerNftBorrowers, searchParams]);
 
   const { lendingPairs } = useLendingPairs(activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
   const market = useLendingPair(
     lendingPairs,
     selectedMarginAccount?.token0.address,
     selectedMarginAccount?.token1.address
   );
 
-  const availablePools = useAvailablePools();
+  const availablePools = useUniswapPools(lendingPairs);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
@@ -203,29 +203,6 @@ export default function AdvancedPage() {
       setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
     })();
   }, [userAddress, provider, availablePools, setBorrowerNftBorrowers]);
-
-  const uniqueTokens = useMemo(() => {
-    const tokenSet = new Set<Token>();
-    borrowerNftBorrowers?.forEach((borrower) => {
-      tokenSet.add(borrower.token0);
-      tokenSet.add(borrower.token1);
-    });
-    return Array.from(tokenSet.values());
-  }, [borrowerNftBorrowers]);
-
-  // MARK: Computing token colors
-  useEffect(() => {
-    (async () => {
-      // Compute colors for each token logo (local, but still async)
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
-      const colors = await Promise.all(colorPromises);
-
-      // Convert response to the desired Map format
-      const addressToColorMap: Map<Address, string> = new Map();
-      uniqueTokens.forEach((token, index) => addressToColorMap.set(token.address, colors[index]));
-      setTokenColors(addressToColorMap);
-    })();
-  }, [uniqueTokens, setTokenColors]);
 
   // MARK: Reset search param if margin account doesn't exist
   useEffect(() => {
@@ -387,7 +364,7 @@ export default function AdvancedPage() {
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
-            <TokenAllocationWidget borrower={selectedMarginAccount} tokenColors={tokenColors} />
+            <TokenAllocationWidget borrower={selectedMarginAccount} tokenColors={tokenColors!} />
             <GlobalStatsTable market={market} />
             {selectedMarginAccount && (
               <div className='flex flex-col gap-4 mb-8'>

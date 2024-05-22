@@ -5,11 +5,11 @@ import { sqrtRatioToPrice, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet'
 import { RESPONSIVE_BREAKPOINT_MD } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
+import { rgb, rgba } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import { rgb, rgba } from '../../util/Colors';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 
