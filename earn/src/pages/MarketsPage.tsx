@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import axios, { AxiosResponse } from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
@@ -11,6 +10,7 @@ import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useLatestPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
 import { getLendingPairBalances, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
@@ -26,9 +26,7 @@ import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
-import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
 import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
-import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 import { useEthersProvider } from '../util/Provider';
 
@@ -78,13 +76,10 @@ enum TabOption {
   Liquidate = 'liquidate',
 }
 
-type TokenSymbol = string;
-type Quote = number;
-
 export default function MarketsPage() {
   const activeChain = useChain();
   // MARK: component state
-  const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
+  // const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
   const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
@@ -107,6 +102,7 @@ export default function MarketsPage() {
 
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
+  const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
 
   useWatchBlockNumber({
     onBlockNumber(/* blockNumber */) {
@@ -182,55 +178,6 @@ export default function MarketsPage() {
     })();
   }, [uniqueTokens, setTokenColors]);
 
-  // MARK: Fetching token prices
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      // Determine set of unique token symbols (tickers)
-      const symbolSet = new Set<string>();
-      lendingPairs.forEach((pair) => {
-        symbolSet.add(pair.token0.symbol);
-        symbolSet.add(pair.token1.symbol);
-      });
-      const uniqueSymbols = Array.from(symbolSet.values());
-
-      // Return early if there's nothing new to fetch
-      if (
-        uniqueSymbols.length === 0 ||
-        uniqueSymbols.every((symbol) => {
-          return tokenQuotes.has(symbol.toLowerCase()) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
-        })
-      ) {
-        return;
-      }
-
-      // Query API for price data, returning early if request fails
-      let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
-      try {
-        quoteDataResponse = await axios.get(
-          `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols.join(',').toUpperCase()}`
-        );
-      } catch {
-        return;
-      }
-      const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
-      if (!prResponse) return;
-
-      // Convert response to the desired Map format
-      const symbolToPriceMap = new Map<TokenSymbol, Quote>();
-      Object.entries(prResponse).forEach(([k, v]) => {
-        symbolToPriceMap.set(k.toLowerCase(), v.price);
-        symbolToPriceMap.set(k, v.price);
-      });
-
-      if (mounted) setTokenQuotes(symbolToPriceMap);
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [lendingPairs, tokenQuotes, setTokenQuotes]);
-
   // MARK: Fetching token balances
   useEffect(() => {
     (async () => {
@@ -280,8 +227,8 @@ export default function MarketsPage() {
       const isToken0Weth = pair.token0.name === 'Wrapped Ether';
       const isToken1Weth = pair.token1.name === 'Wrapped Ether';
 
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0Price = tokenQuotes?.get(pair.token0.symbol) || 0;
+      const token1Price = tokenQuotes?.get(pair.token1.symbol) || 0;
       const token0Balance =
         (balancesMap.get(pair.token0.address)?.value || 0) + ((isToken0Weth && ethBalance?.value) || 0);
       const token1Balance =
@@ -351,7 +298,7 @@ export default function MarketsPage() {
           lendingPairs={lendingPairs}
           uniqueTokens={uniqueTokens}
           tokenBalances={balancesMap}
-          tokenQuotes={tokenQuotes}
+          tokenQuotes={tokenQuotes!}
           tokenColors={tokenColors}
           setPendingTxn={setPendingTxn}
         />
@@ -374,7 +321,7 @@ export default function MarketsPage() {
         <LiquidateTab
           chainId={activeChain.id}
           lendingPairs={lendingPairs}
-          tokenQuotes={tokenQuotes}
+          tokenQuotes={tokenQuotes!}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -388,8 +335,8 @@ export default function MarketsPage() {
 
   const totalBorrowed = useMemo(() => {
     return lendingPairs.reduce((acc, pair) => {
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0Price = tokenQuotes?.get(pair.token0.symbol) || 0;
+      const token1Price = tokenQuotes?.get(pair.token1.symbol) || 0;
       const token0BorrowedUsd = pair.kitty0Info.totalBorrows.toNumber() * token0Price;
       const token1BorrowedUsd = pair.kitty1Info.totalBorrows.toNumber() * token1Price;
       return acc + token0BorrowedUsd + token1BorrowedUsd;

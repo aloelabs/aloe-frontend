@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import axios, { AxiosResponse } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -9,6 +8,7 @@ import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useConsolidatedPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
 import { getLendingPairBalances, LendingPairBalances } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -33,8 +33,6 @@ import PortfolioBalance from '../components/portfolio/PortfolioBalance';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
-import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
 import { getProminentColor } from '../util/Colors';
 import { useEthersProvider } from '../util/Provider';
 
@@ -107,14 +105,10 @@ export default function PortfolioPage() {
 
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
-  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
   const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
     [],
     activeChain.id
   );
-  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
@@ -124,14 +118,18 @@ export default function PortfolioPage() {
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
   const { lendingPairs } = useLendingPairs(activeChain.id);
+  const {
+    data: consolidatedPriceData,
+    isPending: isPendingPrices,
+    isFetching: isFetchingPrices,
+    isError: errorLoadingPrices,
+  } = useConsolidatedPriceRelay(lendingPairs, 2 * 60 * 1_000);
+  const isLoadingPrices = isPendingPrices || isFetchingPrices || consolidatedPriceData?.latestPrices.size === 0;
+
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const { address, isConnecting, isConnected } = useAccount();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setIsLoadingPrices(true);
-  }, [activeChain.id, setIsLoadingPrices]);
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -142,55 +140,24 @@ export default function PortfolioPage() {
     return Array.from(tokens);
   }, [lendingPairs]);
 
-  /**
-   * Get the latest and historical prices for all tokens
-   */
-  useEffect(() => {
-    (async () => {
-      // Only fetch prices for tokens if they are all on the same (active) chain
-      if (uniqueTokens.length > 0 && uniqueTokens.some((token) => token.chainId !== activeChain.id)) {
-        return;
-      }
-      const symbols = uniqueTokens
-        .map((token) => token?.symbol)
-        .filter((symbol) => symbol !== undefined)
-        .join(',');
-      if (symbols.length === 0) {
-        return;
-      }
-      let priceRelayResponses: AxiosResponse<PriceRelayConsolidatedResponse> | null = null;
-      try {
-        priceRelayResponses = await axios.get(`${API_PRICE_RELAY_CONSOLIDATED_URL}?symbols=${symbols}`);
-      } catch (error) {
-        setErrorLoadingPrices(true);
-        setIsLoadingPrices(false);
-        return;
-      }
-      if (priceRelayResponses == null) {
-        return;
-      }
-      const latestPriceResponse = priceRelayResponses.data.latest;
-      const historicalPriceResponse = priceRelayResponses.data.historical;
-      if (!latestPriceResponse || !historicalPriceResponse) {
-        return;
-      }
-      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
-        return {
-          token: getTokenBySymbol(activeChain.id, symbol),
-          price: data.price,
-        };
-      });
-      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
-        return {
-          token: getTokenBySymbol(activeChain.id, symbol),
-          priceEntries: data.prices,
-        };
-      });
-      setTokenQuotes(tokenQuoteData);
-      setTokenPriceData(tokenPriceData);
-      setIsLoadingPrices(false);
-    })();
-  }, [activeChain, uniqueTokens, setTokenQuotes, setTokenPriceData, setIsLoadingPrices, setErrorLoadingPrices]);
+  const { tokenQuotes, tokenPriceData } = useMemo(() => {
+    if (!consolidatedPriceData)
+      return {
+        tokenQuotes: [],
+        tokenPriceData: [],
+      };
+
+    return {
+      tokenQuotes: Array.from(consolidatedPriceData.latestPrices.entries()).map(([k, v]) => ({
+        token: getTokenBySymbol(activeChain.id, k),
+        price: v,
+      })),
+      tokenPriceData: Array.from(consolidatedPriceData.historicalPrices.entries()).map(([k, v]) => ({
+        token: getTokenBySymbol(activeChain.id, k),
+        priceEntries: v,
+      })),
+    };
+  }, [activeChain.id, consolidatedPriceData]);
 
   useEffect(() => {
     (async () => {
