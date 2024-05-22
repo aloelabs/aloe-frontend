@@ -2,25 +2,15 @@ import { ContractCallContext, Multicall } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { erc20Abi } from '../abis/ERC20';
-import { factoryAbi } from '../abis/Factory';
 import { lenderAbi } from '../abis/Lender';
-import { lenderLensAbi } from '../abis/LenderLens';
-import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
-import { volatilityOracleAbi } from '../abis/VolatilityOracle';
-import {
-  ALOE_II_FACTORY_ADDRESS,
-  ALOE_II_LENDER_LENS_ADDRESS,
-  ALOE_II_ORACLE_ADDRESS,
-  MULTICALL_ADDRESS,
-} from './constants/ChainSpecific';
-import { Q32 } from './constants/Values';
+import { MULTICALL_ADDRESS } from './constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GN } from './GoodNumber';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
 import { toImpreciseNumber } from '../util/Numbers';
-import { Address, getContract, PublicClient, zeroAddress } from 'viem';
+import { Address, zeroAddress } from 'viem';
 
 import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
@@ -169,73 +159,6 @@ export function asLendingPair(
     asSlot0Data(slot0),
     new Date(lastWrites[1] * 1000) // lastWrite.time
   );
-}
-
-export async function getAvailableLendingPairs(chainId: number, publicClient: PublicClient): Promise<LendingPair[]> {
-  const factory = getContract({
-    abi: factoryAbi,
-    address: ALOE_II_FACTORY_ADDRESS[chainId],
-    client: publicClient,
-  });
-
-  const logs = await factory.getEvents.CreateMarket({}, { strict: true, fromBlock: 'earliest', toBlock: 'latest' });
-  if (logs.length === 0) return [];
-
-  const lenderLens = getContract({
-    abi: lenderLensAbi,
-    address: ALOE_II_LENDER_LENS_ADDRESS[chainId],
-    client: publicClient,
-  });
-
-  const oracle = getContract({
-    abi: volatilityOracleAbi,
-    address: ALOE_II_ORACLE_ADDRESS[chainId],
-    client: publicClient,
-  });
-
-  const reads = await Promise.all(
-    logs.map((log) =>
-      Promise.all([
-        factory.read.getParameters([log.args.pool!]),
-        oracle.read.consult([log.args.pool!, Q32]),
-        oracle.read.lastWrites([log.args.pool!]),
-        lenderLens.read.readBasics([log.args.lender0!]),
-        lenderLens.read.readBasics([log.args.lender1!]),
-        publicClient.readContract({
-          abi: uniswapV3PoolAbi,
-          address: log.args.pool!,
-          functionName: 'slot0',
-        }),
-        publicClient.readContract({
-          abi: uniswapV3PoolAbi,
-          address: log.args.pool!,
-          functionName: 'fee',
-        }),
-      ])
-    )
-  );
-
-  const lendingPairs: LendingPair[] = [];
-
-  logs.forEach((log, i) => {
-    const [getParameters, consult, lastWrites, readBasics0, readBasics1, slot0, fee] = reads[i];
-    const lendingPair = asLendingPair(
-      chainId,
-      log.args.pool!,
-      log.args.lender0!,
-      log.args.lender1!,
-      fee,
-      getParameters,
-      slot0,
-      consult,
-      lastWrites,
-      readBasics0,
-      readBasics1
-    );
-    if (lendingPair !== undefined) lendingPairs.push(lendingPair);
-  });
-
-  return lendingPairs;
 }
 
 export async function getLendingPairBalances(
