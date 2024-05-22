@@ -64,7 +64,7 @@ export function useLendingPairsBalances(lendingPairs: LendingPair[], chainId: nu
     allowFailure: false,
     query: {
       enabled: address !== undefined,
-      staleTime: Infinity,
+      staleTime,
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
