@@ -19,7 +19,7 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useLendingPair } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import {
@@ -195,7 +195,8 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
 
-  const lendingPair = useLendingPair(cardInfo.token0.address, cardInfo.token1.address);
+  const { lendingPairs } = useLendingPairs(activeChain.id);
+  const lendingPair = useLendingPair(lendingPairs, cardInfo.token0.address, cardInfo.token1.address);
 
   // Generate labels for input range (slider)
   const labels: string[] = [];

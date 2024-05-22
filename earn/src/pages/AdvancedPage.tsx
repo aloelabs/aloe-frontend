@@ -12,7 +12,7 @@ import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useLendingPair } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
@@ -171,7 +171,12 @@ export default function AdvancedPage() {
     );
   }, [borrowerNftBorrowers, searchParams]);
 
-  const market = useLendingPair(selectedMarginAccount?.token0.address, selectedMarginAccount?.token1.address);
+  const { lendingPairs } = useLendingPairs(activeChain.id);
+  const market = useLendingPair(
+    lendingPairs,
+    selectedMarginAccount?.token0.address,
+    selectedMarginAccount?.token1.address
+  );
 
   const availablePools = useAvailablePools();
 

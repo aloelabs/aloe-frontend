@@ -16,7 +16,8 @@ import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
-import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
+import { linea } from 'viem/chains';
+import { Config, useAccount, useBlockNumber, useClient, usePublicClient, useWatchBlockNumber } from 'wagmi';
 
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
@@ -105,7 +106,15 @@ export default function MarketsPage() {
   }, [searchParams]);
 
   // MARK: custom hooks
-  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs(activeChain.id);
+  const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
+
+  useWatchBlockNumber({
+    onBlockNumber(/* blockNumber */) {
+      // TODO: Won't need to return once Alchemy supports Linea (this is a rate limiting thing)
+      if (activeChain.id === linea.id) return;
+      refetchOracleData();
+    },
+  });
 
   // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
   // This saves a lot of data.
@@ -225,7 +234,7 @@ export default function MarketsPage() {
   // MARK: Fetching token balances
   useEffect(() => {
     (async () => {
-      if (!userAddress || !provider) return;
+      if (!userAddress || !provider || lendingPairs.length === 0) return;
       // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
       // return value. Other usages should be updated similarly.
       const { balancesMap: result } = await getLendingPairBalances(
@@ -477,7 +486,7 @@ export default function MarketsPage() {
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {
-            refetchLendingPairs?.();
+            refetchLenderData();
             refetch();
           }, 100);
         }}

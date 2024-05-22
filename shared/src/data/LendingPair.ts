@@ -30,7 +30,7 @@ import { computeLTV } from './BalanceSheet';
 
 const SECONDS_IN_YEAR = 365n * 24n * 60n * 60n;
 
-class KittyInfo {
+export class KittyInfo {
   public readonly availableAssets: GN;
   public readonly utilization: number;
   public readonly lendAPY: number;

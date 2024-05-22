@@ -1,7 +1,9 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import * as Sentry from '@sentry/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
@@ -15,11 +17,9 @@ import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
 import { AccountRiskContext } from 'shared/lib/data/hooks/UseAccountRisk';
 import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
-import { LendingPairsContext } from 'shared/lib/data/hooks/UseLendingPairs';
-import { getAvailableLendingPairs, LendingPair } from 'shared/lib/data/LendingPair';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { useAccount, usePublicClient, WagmiProvider } from 'wagmi';
+import { useAccount, usePublicClient, WagmiProvider, serialize, deserialize } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
@@ -59,31 +59,14 @@ function AppBodyWrapper() {
     isAllowed: false,
     isLoading: true,
   });
-  const [lendingPairs, setLendingPairs] = useState<{ lendingPairs: LendingPair[] | null; chainId: number }>({
-    lendingPairs: null,
-    chainId: -1,
-  });
 
   const account = useAccount();
   const publicClient = usePublicClient();
-
-  const refetch = useCallback(async () => {
-    if (publicClient === undefined) return;
-    const chainId = publicClient.chain.id;
-    const res = await getAvailableLendingPairs(chainId, publicClient);
-    setLendingPairs({ lendingPairs: res, chainId });
-  }, [publicClient]);
-
-  const lendingPairsContextValue = useMemo(() => ({ ...lendingPairs, refetch }), [lendingPairs, refetch]);
 
   useEffect(() => {
     if (!publicClient) return;
     Sentry.setTag('chain_name', publicClient.chain.name);
   }, [publicClient]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   useEffect(() => {
     const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
@@ -129,43 +112,46 @@ function AppBodyWrapper() {
   return (
     <AccountRiskContext.Provider value={accountRisk}>
       <GeoFencingContext.Provider value={geoFencingInfo}>
-        <LendingPairsContext.Provider value={lendingPairsContextValue}>
-          <ScrollToTop />
-          <AppBody>
-            <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-            <main className='flex-grow'>
-              <Routes>
-                <Route path='/borrow' element={<BorrowAccountsPage />} />
-                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                <Route path='/' element={<Navigate replace to='/borrow' />} />
-                <Route path='*' element={<Navigate to='/' />} />
-              </Routes>
-            </main>
-            <Footer />
-            <WelcomeModal
-              isOpen={isWelcomeModalOpen}
-              checkboxes={CONNECT_WALLET_CHECKBOXES}
-              account={account}
-              setIsOpen={() => setIsWelcomeModalOpen(false)}
-              onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-            />
-            <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
-          </AppBody>
-        </LendingPairsContext.Provider>
+        <ScrollToTop />
+        <AppBody>
+          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+          <main className='flex-grow'>
+            <Routes>
+              <Route path='/borrow' element={<BorrowAccountsPage />} />
+              <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+              <Route path='/' element={<Navigate replace to='/borrow' />} />
+              <Route path='*' element={<Navigate to='/' />} />
+            </Routes>
+          </main>
+          <Footer />
+          <WelcomeModal
+            isOpen={isWelcomeModalOpen}
+            checkboxes={CONNECT_WALLET_CHECKBOXES}
+            setIsOpen={() => setIsWelcomeModalOpen(false)}
+            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+          />
+          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+        </AppBody>
       </GeoFencingContext.Provider>
     </AccountRiskContext.Provider>
   );
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: 365 * 24 * 60 * 60 * 1_000 } } });
+
+const persister = createSyncStoragePersister({
+  serialize,
+  storage: window.localStorage,
+  deserialize,
+});
 
 function App() {
   return (
     <Suspense fallback={null}>
       <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
           <AppBodyWrapper />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </WagmiProvider>
     </Suspense>
   );
