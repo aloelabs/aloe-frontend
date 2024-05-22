@@ -1,16 +1,9 @@
-import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { BigNumber, ethers } from 'ethers';
-import JSBI from 'jsbi';
-import { erc20Abi } from '../abis/ERC20';
-import { lenderAbi } from '../abis/Lender';
-import { MULTICALL_ADDRESS } from './constants/ChainSpecific';
 import { FeeTier, NumericFeeTierToEnum } from './FeeTier';
 import { GN } from './GoodNumber';
 import { Kitty } from './Kitty';
 import { Token } from './Token';
 import { getToken } from './TokenData';
-import { toImpreciseNumber } from '../util/Numbers';
-import { Address, zeroAddress } from 'viem';
+import { Address } from 'viem';
 
 import { asFactoryData, FactoryData } from './FactoryData';
 import { asOracleData, OracleData } from './OracleData';
@@ -159,116 +152,6 @@ export function asLendingPair(
     asSlot0Data(slot0),
     new Date(lastWrites[1] * 1000) // lastWrite.time
   );
-}
-
-export async function getLendingPairBalances(
-  lendingPairs: LendingPair[],
-  userAddress: string,
-  provider: ethers.providers.Provider,
-  chainId: number
-) {
-  const tokenSet = new Set<Token>();
-  lendingPairs.forEach((pair) => {
-    tokenSet.add(pair.token0);
-    tokenSet.add(pair.token1);
-  });
-
-  const ethBalance = await provider.getBalance(userAddress);
-
-  const multicall = new Multicall({
-    ethersProvider: provider,
-    multicallCustomContractAddress: MULTICALL_ADDRESS[chainId],
-  });
-  const contractCallContexts: ContractCallContext[] = [];
-
-  tokenSet.forEach((token) =>
-    contractCallContexts.push({
-      reference: `${token.address}.balanceOf`,
-      contractAddress: token.address,
-      abi: erc20Abi as any,
-      calls: [{ reference: 'balanceOf', methodName: 'balanceOf', methodParameters: [userAddress] }],
-    })
-  );
-
-  lendingPairs.forEach((lendingPair) =>
-    contractCallContexts.push(
-      {
-        reference: `${lendingPair.kitty0.address}.underlyingBalance`,
-        contractAddress: lendingPair.kitty0.address,
-        abi: lenderAbi as any,
-        calls: [
-          {
-            reference: 'underlyingBalance',
-            methodName: 'underlyingBalance',
-            methodParameters: [userAddress],
-          },
-        ],
-      },
-      {
-        reference: `${lendingPair.kitty1.address}.underlyingBalance`,
-        contractAddress: lendingPair.kitty1.address,
-        abi: lenderAbi as any,
-        calls: [
-          {
-            reference: 'underlyingBalance',
-            methodName: 'underlyingBalance',
-            methodParameters: [userAddress],
-          },
-        ],
-      }
-    )
-  );
-
-  const results = (await multicall.call(contractCallContexts)).results;
-
-  const deprecatedLendingPairBalancesArray: LendingPairBalances[] = [];
-  const balancesMap: LendingPairBalancesMap = new Map();
-
-  balancesMap.set(zeroAddress, {
-    value: GN.fromBigNumber(ethBalance, 18).toNumber(),
-    gn: GN.fromBigNumber(ethBalance, 18),
-    form: 'raw',
-  });
-
-  lendingPairs.forEach((lendingPair) => {
-    const hexes = [
-      `${lendingPair.token0.address}.balanceOf`,
-      `${lendingPair.token1.address}.balanceOf`,
-      `${lendingPair.kitty0.address}.underlyingBalance`,
-      `${lendingPair.kitty1.address}.underlyingBalance`,
-    ].map((key) => results[key].callsReturnContext[0].returnValues[0].hex);
-
-    const gns = hexes.map((hex, i) =>
-      GN.fromJSBI(JSBI.BigInt(hex), lendingPair[i % 2 ? 'token1' : 'token0'].decimals, 10)
-    );
-
-    // NOTE: If `token0` or `token1` exists in multiple lending pairs, we'll be setting the same value
-    // in the map over and over. This doesn't hurt anything, and as long as we need to generate the old
-    // array-style return value, doing it here is simpler than iterating over the `tokenSet` so as to
-    // set the values only once.
-    balancesMap.set(lendingPair.token0.address, { value: gns[0].toNumber(), gn: gns[0], form: 'raw' });
-    balancesMap.set(lendingPair.token1.address, { value: gns[1].toNumber(), gn: gns[1], form: 'raw' });
-    balancesMap.set(lendingPair.kitty0.address, { value: gns[2].toNumber(), gn: gns[2], form: 'underlying' });
-    balancesMap.set(lendingPair.kitty1.address, { value: gns[3].toNumber(), gn: gns[3], form: 'underlying' });
-
-    deprecatedLendingPairBalancesArray.push({
-      token0Balance: toImpreciseNumber(
-        BigNumber.from(hexes[0]).add(lendingPair.token0.name === 'Wrapped Ether' ? ethBalance : 0),
-        lendingPair.token0.decimals
-      ),
-      token1Balance: toImpreciseNumber(
-        BigNumber.from(hexes[1]).add(lendingPair.token1.name === 'Wrapped Ether' ? ethBalance : 0),
-        lendingPair.token1.decimals
-      ),
-      kitty0Balance: toImpreciseNumber(BigNumber.from(hexes[2]), lendingPair.token0.decimals),
-      kitty1Balance: toImpreciseNumber(BigNumber.from(hexes[3]), lendingPair.token1.decimals),
-    });
-  });
-
-  return {
-    lendingPairBalances: deprecatedLendingPairBalancesArray,
-    balancesMap,
-  };
 }
 
 /**

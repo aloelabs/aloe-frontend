@@ -9,9 +9,9 @@ import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { useLendingPairsBalances } from 'shared/lib/data/hooks/UseLendingPairBalances';
 import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { useLatestPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
-import { getLendingPairBalances, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -79,8 +79,6 @@ enum TabOption {
 export default function MarketsPage() {
   const activeChain = useChain();
   // MARK: component state
-  // const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
-  const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
@@ -103,6 +101,7 @@ export default function MarketsPage() {
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
   const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
+  const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
 
   useWatchBlockNumber({
     onBlockNumber(/* blockNumber */) {
@@ -177,22 +176,6 @@ export default function MarketsPage() {
       setTokenColors(addressToColorMap);
     })();
   }, [uniqueTokens, setTokenColors]);
-
-  // MARK: Fetching token balances
-  useEffect(() => {
-    (async () => {
-      if (!userAddress || !provider || lendingPairs.length === 0) return;
-      // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
-      // return value. Other usages should be updated similarly.
-      const { balancesMap: result } = await getLendingPairBalances(
-        lendingPairs,
-        userAddress,
-        provider,
-        provider.network.chainId
-      );
-      setBalancesMap(result);
-    })();
-  }, [lendingPairs, provider, setBalancesMap, userAddress]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
@@ -434,6 +417,7 @@ export default function MarketsPage() {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {
             refetchLenderData();
+            refetchBalances();
             refetch();
           }, 100);
         }}
