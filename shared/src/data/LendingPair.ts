@@ -105,6 +105,72 @@ export type LendingPairBalances = {
 
 export type LendingPairBalancesMap = Map<Address, { value: number; gn: GN; form: 'raw' | 'underlying' }>;
 
+export function asLendingPair(
+  chainId: number,
+  pool: Address,
+  lender0: Address,
+  lender1: Address,
+  fee: number,
+  getParameters: readonly [bigint, number, number, number],
+  slot0: readonly [bigint, number, number, number, number, number, boolean],
+  consult: readonly [bigint, bigint, bigint],
+  lastWrites: readonly [number, number, bigint, bigint],
+  readBasics0: readonly [`0x${string}`, bigint, bigint, bigint, bigint, bigint, number, bigint],
+  readBasics1: readonly [`0x${string}`, bigint, bigint, bigint, bigint, bigint, number, bigint]
+) {
+  const token0 = getToken(chainId, readBasics0[0]);
+  const token1 = getToken(chainId, readBasics1[0]);
+  if (token0 == null || token1 == null) return undefined;
+
+  const kitty0 = new Kitty(
+    chainId,
+    lender0,
+    token0.decimals,
+    `${token0.symbol}+`,
+    `Aloe II ${token0.name}`,
+    token0.logoURI,
+    token0
+  );
+  const kitty1 = new Kitty(
+    chainId,
+    lender1,
+    token1.decimals,
+    `${token1.symbol}+`,
+    `Aloe II ${token1.name}`,
+    token1.logoURI,
+    token1
+  );
+
+  const borrowAPR0 = Number((readBasics0[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
+  const borrowAPR1 = Number((readBasics1[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
+
+  const totalAssets0 = GN.fromBigInt(readBasics0[3], token0.decimals);
+  const totalAssets1 = GN.fromBigInt(readBasics1[3], token1.decimals);
+
+  const totalBorrows0 = GN.fromBigInt(readBasics0[4], token0.decimals);
+  const totalBorrows1 = GN.fromBigInt(readBasics1[4], token1.decimals);
+
+  const totalSupply0 = GN.fromBigInt(readBasics0[5], kitty0.decimals);
+  const totalSupply1 = GN.fromBigInt(readBasics1[5], kitty1.decimals);
+
+  return new LendingPair(
+    token0,
+    token1,
+    kitty0,
+    kitty1,
+    new KittyInfo(totalAssets0, totalBorrows0, totalSupply0, borrowAPR0, readBasics0[6]),
+    new KittyInfo(totalAssets1, totalBorrows1, totalSupply1, borrowAPR1, readBasics0[6]),
+    pool,
+    NumericFeeTierToEnum(fee),
+    Number(readBasics0[7] / 1_000_000_000_000n) / 1e6, // rewardsRate0
+    Number(readBasics1[7] / 1_000_000_000_000n) / 1e6, // rewardsRate1
+    asFactoryData(getParameters),
+    asOracleData(consult),
+    asSlot0Data(slot0),
+    new Date(lastWrites[1] * 1000) // lastWrite.time
+  );
+}
+
 export async function getAvailableLendingPairs(chainId: number, publicClient: PublicClient): Promise<LendingPair[]> {
   const factory = getContract({
     abi: factoryAbi,
@@ -153,60 +219,20 @@ export async function getAvailableLendingPairs(chainId: number, publicClient: Pu
 
   logs.forEach((log, i) => {
     const [getParameters, consult, lastWrites, readBasics0, readBasics1, slot0, fee] = reads[i];
-
-    const token0 = getToken(chainId, readBasics0[0]);
-    const token1 = getToken(chainId, readBasics1[0]);
-    if (token0 == null || token1 == null) return;
-
-    const kitty0 = new Kitty(
+    const lendingPair = asLendingPair(
       chainId,
+      log.args.pool!,
       log.args.lender0!,
-      token0.decimals,
-      `${token0.symbol}+`,
-      `Aloe II ${token0.name}`,
-      token0.logoURI,
-      token0
-    );
-    const kitty1 = new Kitty(
-      chainId,
       log.args.lender1!,
-      token1.decimals,
-      `${token1.symbol}+`,
-      `Aloe II ${token1.name}`,
-      token1.logoURI,
-      token1
+      fee,
+      getParameters,
+      slot0,
+      consult,
+      lastWrites,
+      readBasics0,
+      readBasics1
     );
-
-    const borrowAPR0 = Number((readBasics0[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
-    const borrowAPR1 = Number((readBasics1[1] * SECONDS_IN_YEAR) / 1_000_000n) / 1e6;
-
-    const totalAssets0 = GN.fromBigInt(readBasics0[3], token0.decimals);
-    const totalAssets1 = GN.fromBigInt(readBasics1[3], token1.decimals);
-
-    const totalBorrows0 = GN.fromBigInt(readBasics0[4], token0.decimals);
-    const totalBorrows1 = GN.fromBigInt(readBasics1[4], token1.decimals);
-
-    const totalSupply0 = GN.fromBigInt(readBasics0[5], kitty0.decimals);
-    const totalSupply1 = GN.fromBigInt(readBasics1[5], kitty1.decimals);
-
-    lendingPairs.push(
-      new LendingPair(
-        token0,
-        token1,
-        kitty0,
-        kitty1,
-        new KittyInfo(totalAssets0, totalBorrows0, totalSupply0, borrowAPR0, readBasics0[6]),
-        new KittyInfo(totalAssets1, totalBorrows1, totalSupply1, borrowAPR1, readBasics0[6]),
-        log.args.pool!,
-        NumericFeeTierToEnum(fee),
-        Number(readBasics0[7] / 1_000_000_000_000n) / 1e6, // rewardsRate0
-        Number(readBasics1[7] / 1_000_000_000_000n) / 1e6, // rewardsRate1
-        asFactoryData(getParameters),
-        asOracleData(consult),
-        asSlot0Data(slot0),
-        new Date(lastWrites[1] * 1000) // lastWrite.time
-      )
-    );
+    if (lendingPair !== undefined) lendingPairs.push(lendingPair);
   });
 
   return lendingPairs;
