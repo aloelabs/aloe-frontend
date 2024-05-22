@@ -194,7 +194,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   // Search through `nonceBitmap` for valid nonces. If there aren't any, jump forward to the
   // next bitmap by incrementing `nonceWordPos`
   useEffect(() => {
-    if (!nonceBitmap) return;
+    if (nonceBitmap === undefined) return;
 
     if (nonceBitmap === maxUint256) {
       // NOTE: Selecting `nonceWordPos` randomly may help us find a valid nonce more quickly. However,
@@ -243,7 +243,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
 
   const amountStr = useMemo(() => amount.toString(GNFormat.INT), [amount]);
   const permitTransferFrom: PermitTransferFrom | undefined = useMemo(() => {
-    if (!nonce) return undefined;
+    if (nonce == null) return undefined;
     return {
       permitted: {
         token: token.address,
