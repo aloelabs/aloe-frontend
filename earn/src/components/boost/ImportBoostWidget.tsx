@@ -20,6 +20,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
+import { PriceRelayLatestResponse } from 'shared/lib/data/hooks/UsePriceRelay';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import {
@@ -46,7 +47,6 @@ import {
 import SlippageWidget from './SlippageWidget';
 import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
-import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 import { useEthersProvider } from '../../util/Provider';
