@@ -10,7 +10,7 @@ import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
 import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
-import { useLendingPair } from 'shared/lib/data/hooks/UseLendingPairs';
+import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { formatPriceRatio } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
@@ -195,7 +195,8 @@ export default function BorrowActionsPage() {
   const [swapFeesInputValue, setSwapFeesInputValue] = useState<string>('');
   const [isInvalidAddress, setIsInvalidAddress] = useState<boolean>(false);
 
-  const lendingPair = useLendingPair(marginAccount?.token0.address, marginAccount?.token1.address);
+  const { lendingPairs } = useLendingPairs(activeChain.id);
+  const lendingPair = useLendingPair(lendingPairs, marginAccount?.token0.address, marginAccount?.token1.address);
 
   // MARK: worker message handling (for liquidation threshold calcs)
   useEffect(() => {

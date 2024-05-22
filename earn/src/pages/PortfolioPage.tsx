@@ -123,7 +123,7 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const { isLoading, lendingPairs } = useLendingPairs(activeChain.id);
+  const { lendingPairs } = useLendingPairs(activeChain.id);
   const client = useClient<Config>({ chainId: activeChain.id });
   const provider = useEthersProvider(client);
   const { address, isConnecting, isConnected } = useAccount();
@@ -207,7 +207,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     (async () => {
       // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
-      if (!address || !provider || isLoading) return;
+      if (!address || !provider || lendingPairs.length === 0) return;
       const { lendingPairBalances: results } = await getLendingPairBalances(
         lendingPairs,
         address,
@@ -216,7 +216,7 @@ export default function PortfolioPage() {
       );
       setLendingPairBalances(results);
     })();
-  }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
+  }, [activeChain.id, address, lendingPairs, provider, setLendingPairBalances]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -321,7 +321,7 @@ export default function PortfolioPage() {
   }, [lendingPairs, activeAsset]);
 
   const noWallet = !isConnecting && !isConnected;
-  const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
+  const isDoneLoading = !isLoadingPrices && (lendingPairs.length > 0 || !noWallet);
 
   return (
     <AppPage>
