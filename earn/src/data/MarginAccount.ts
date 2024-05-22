@@ -127,7 +127,7 @@ export async function fetchBorrowerDatas(
   // Fetch all the data for the margin accounts
   addresses.forEach((accountAddress) => {
     const uniswapPool = borrowerUniswapPools[accountAddress].callsReturnContext[0].returnValues[0];
-    const uniswapPoolInfo = uniswapPoolDataMap.get(uniswapPool.toLowerCase()) ?? null;
+    const uniswapPoolInfo = uniswapPoolDataMap.get(uniswapPool) ?? null;
 
     if (uniswapPoolInfo === null) return;
 

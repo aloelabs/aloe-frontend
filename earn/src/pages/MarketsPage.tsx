@@ -6,16 +6,16 @@ import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
-import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import useChain from 'shared/lib/data/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { useLendingPairsBalances } from 'shared/lib/data/hooks/UseLendingPairBalances';
 import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
 import { useLatestPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
+import { useTokenColors } from 'shared/lib/data/hooks/UseTokenColors';
+import { useUniswapPools } from 'shared/lib/data/hooks/UseUniswapPools';
 import { Token } from 'shared/lib/data/Token';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address } from 'viem';
 import { linea } from 'viem/chains';
 import { Config, useAccount, useBlockNumber, useClient, usePublicClient, useWatchBlockNumber } from 'wagmi';
 
@@ -26,8 +26,7 @@ import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
-import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
-import { getProminentColor } from '../util/Colors';
+import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -80,7 +79,6 @@ export default function MarketsPage() {
   const activeChain = useChain();
   // MARK: component state
   const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
-  const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -100,6 +98,7 @@ export default function MarketsPage() {
 
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
   const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
 
@@ -111,19 +110,7 @@ export default function MarketsPage() {
     },
   });
 
-  // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
-  // This saves a lot of data.
-  const availablePools = useMemo(() => {
-    const poolInfoMap = new Map<string, UniswapPoolInfo>();
-    lendingPairs.forEach((pair) =>
-      poolInfoMap.set(pair.uniswapPool.toLowerCase(), {
-        token0: pair.token0,
-        token1: pair.token1,
-        fee: GetNumericFeeTier(pair.uniswapFeeTier),
-      })
-    );
-    return poolInfoMap;
-  }, [lendingPairs]);
+  const availablePools = useUniswapPools(lendingPairs);
 
   const doesGuardianSenseManipulation = useMemo(() => {
     return lendingPairs.some((pair) => pair.oracleData.manipulationMetric > pair.manipulationThreshold);
@@ -162,20 +149,6 @@ export default function MarketsPage() {
       }
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
-
-  // MARK: Computing token colors
-  useEffect(() => {
-    (async () => {
-      // Compute colors for each token logo (local, but still async)
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
-      const colors = await Promise.all(colorPromises);
-
-      // Convert response to the desired Map format
-      const addressToColorMap: Map<Address, string> = new Map();
-      uniqueTokens.forEach((token, index) => addressToColorMap.set(token.address, colors[index]));
-      setTokenColors(addressToColorMap);
-    })();
-  }, [uniqueTokens, setTokenColors]);
 
   // MARK: Fetch margin accounts
   useEffect(() => {
@@ -282,7 +255,7 @@ export default function MarketsPage() {
           uniqueTokens={uniqueTokens}
           tokenBalances={balancesMap}
           tokenQuotes={tokenQuotes!}
-          tokenColors={tokenColors}
+          tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -294,7 +267,7 @@ export default function MarketsPage() {
           provider={provider}
           blockNumber={blockNumber}
           lendingPairs={lendingPairs}
-          tokenColors={tokenColors}
+          tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
         />
       );

@@ -14,13 +14,13 @@ import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentS
 import { LendingPair, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import { rgba } from 'shared/lib/util/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, Chain } from 'viem';
 import { Config, useClient } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { rgba } from '../../../util/Colors';
 import { useEthersProvider } from '../../../util/Provider';
 import HealthGauge from '../../common/HealthGauge';
 import BorrowModal from '../modal/BorrowModal';
