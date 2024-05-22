@@ -102,6 +102,7 @@ export default function MarketsPage() {
   const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
 
+  // TODO: don't run when in background
   useWatchBlockNumber({
     onBlockNumber(/* blockNumber */) {
       // TODO: Won't need to return once Alchemy supports Linea (this is a rate limiting thing)
@@ -123,15 +124,6 @@ export default function MarketsPage() {
   const { data: blockNumber, refetch } = useBlockNumber({
     chainId: activeChain.id,
   });
-
-  const uniqueTokens = useMemo(() => {
-    const tokenSet = new Set<Token>();
-    lendingPairs.forEach((pair) => {
-      tokenSet.add(pair.token0);
-      tokenSet.add(pair.token1);
-    });
-    return Array.from(tokenSet.values());
-  }, [lendingPairs]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -252,7 +244,6 @@ export default function MarketsPage() {
           userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
-          uniqueTokens={uniqueTokens}
           tokenBalances={balancesMap}
           tokenQuotes={tokenQuotes!}
           tokenColors={tokenColors!}

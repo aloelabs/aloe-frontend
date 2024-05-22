@@ -128,7 +128,6 @@ export type BorrowingWidgetProps = {
   userAddress?: Address;
   borrowers: BorrowerNftBorrower[] | null;
   lendingPairs: LendingPair[];
-  uniqueTokens: Token[];
   // TODO: may be better to have the key be a full Token instead of just the address due to multichain issues
   tokenBalances: LendingPairBalancesMap;
   tokenQuotes: Map<string, number>;

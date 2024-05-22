@@ -42,11 +42,9 @@ export default function InfoTab(props: InfoTabProps) {
   // Fetch `oracleLogs`
   useEffect(() => {
     (async () => {
-      if (lendingPairs.length === 0 || !provider) return;
-      const [chainId, currentBlockNumber] = await Promise.all([
-        provider.getNetwork().then((resp) => resp.chainId),
-        provider.getBlockNumber(),
-      ]);
+      if (lendingPairs.length === 0 || !provider || provider.network.chainId !== chainId) return;
+
+      const currentBlockNumber = await provider.getBlockNumber();
       // Calculate how many requests are necessary to fetch the desired number of days, given
       // Alchemy's `eth_getLogs` constraints.
       const worstCaseNumUpdateLogsPerDay = MAX_NUM_UPDATE_LOGS_PER_POOL_PER_DAY * lendingPairs.length;
@@ -73,7 +71,7 @@ export default function InfoTab(props: InfoTabProps) {
       for (const log of logs) {
         if (log.removed || log.args === undefined) continue;
 
-        const pool = log.args['pool'].toLowerCase();
+        const pool = log.args['pool'];
         if (map.has(pool)) {
           map.get(pool)!.push(log);
         } else {
@@ -82,12 +80,12 @@ export default function InfoTab(props: InfoTabProps) {
       }
       setOracleLogs(map);
     })();
-  }, [provider, lendingPairs, setOracleLogs, blockNumber /* just here to trigger refetch */]);
+  }, [chainId, provider, lendingPairs.length, setOracleLogs, blockNumber /* just here to trigger refetch */]);
 
   // Fetch `blockNumbersToTimestamps`
   useEffect(() => {
     (async () => {
-      if (!provider) return;
+      if (!provider || provider.network.chainId !== chainId) return;
       const blockNumbers = new Set<number>();
       let oldestBlockNumber = Infinity;
       // Include block numbers for each pool's latest `Update`, while also searching for oldest one
@@ -107,7 +105,7 @@ export default function InfoTab(props: InfoTabProps) {
       );
       setBlockNumbersToTimestamps(map);
     })();
-  }, [provider, oracleLogs, setBlockNumbersToTimestamps]);
+  }, [chainId, provider, oracleLogs, setBlockNumbersToTimestamps]);
 
   // Compute `latestTimestamps` for table
   const latestTimestamps = useMemo(() => {

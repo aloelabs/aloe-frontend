@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
@@ -110,7 +109,7 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const { lendingPairs } = useLendingPairs(activeChain.id);
+  const { lendingPairs, refetchLenderData } = useLendingPairs(activeChain.id);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
   const { data: tokenColors } = useTokenColors(lendingPairs);
   const {
@@ -122,7 +121,6 @@ export default function PortfolioPage() {
   const isLoadingPrices = isPendingPrices || isFetchingPrices || consolidatedPriceData?.latestPrices.size === 0;
 
   const { isConnecting, isConnected } = useAccount();
-  const navigate = useNavigate();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -396,7 +394,8 @@ export default function PortfolioPage() {
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {
-            navigate(0);
+            refetchLenderData();
+            refetchBalances();
           }, 100);
         }}
         status={pendingTxnModalStatus}

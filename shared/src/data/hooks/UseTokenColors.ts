@@ -34,7 +34,7 @@ export function useTokenColors(lendingPairs: LendingPair[]) {
     return addressToColorMap;
   };
 
-  const queryKey = ['useTokenColors', tokens];
+  const queryKey = ['useTokenColors', Object.fromEntries(tokens.entries())];
 
   return useQuery({
     queryKey,
