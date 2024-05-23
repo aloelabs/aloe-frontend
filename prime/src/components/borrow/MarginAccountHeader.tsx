@@ -1,8 +1,8 @@
 import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import RoundedBadge, { BADGE_TEXT_COLOR } from 'shared/lib/components/common/RoundedBadge';
 import { Display } from 'shared/lib/components/common/Typography';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import tw from 'twin.macro';

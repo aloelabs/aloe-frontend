@@ -1,6 +1,6 @@
 import { NavBar, NavBarLink } from 'shared/lib/components/navbar/NavBar';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
+import { useGeoFencing } from 'shared/lib/hooks/UseGeoFencing';
 import { isDappnet } from 'shared/lib/util/Utils';
 import styled from 'styled-components';
 import tw from 'twin.macro';

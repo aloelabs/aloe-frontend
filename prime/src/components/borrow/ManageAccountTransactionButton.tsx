@@ -10,10 +10,10 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { computeOracleSeed } from 'shared/lib/data/OracleSeed';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
 import { Address, erc20Abi, maxUint256 } from 'viem';
 import {
   Config,

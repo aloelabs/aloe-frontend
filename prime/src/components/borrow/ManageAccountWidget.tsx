@@ -4,7 +4,7 @@ import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Butto
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 import { Address } from 'viem';

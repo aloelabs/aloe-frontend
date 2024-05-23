@@ -4,8 +4,8 @@ import { ethers } from 'ethers';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { fetchUniswapPoolBasics, UniswapV3PoolBasics } from 'shared/lib/data/Uniswap';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
 import { formatPriceRatioGN } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
