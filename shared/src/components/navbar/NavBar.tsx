@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { NavLink } from 'react-router-dom';
@@ -22,11 +22,10 @@ import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import useMediaQuery from '../../hooks/UseMediaQuery';
 import useLockScroll from '../../hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
-import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
-import { GN, GNFormat } from '../../data/GoodNumber';
-import axios, { AxiosResponse } from 'axios';
-import useEffectOnce from '../../hooks/UseEffectOnce';
+import { GNFormat } from '../../data/GoodNumber';
+import { useLeaderboardValue } from '../../hooks/UseLeaderboard';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -284,27 +283,8 @@ export function NavBar(props: NavBarProps) {
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
-  // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
-  const [leaderboardEntries, setLeaderboardEntries] = useState<{ address: string; score: string }[]>([]);
 
-  useEffectOnce(() => {
-    (async () => {
-      let response: AxiosResponse<{ address: string; score: string }[]>;
-      try {
-        response = await axios.get(API_LEADERBOARD_URL);
-      } catch (e) {
-        return;
-      }
-      if (response.data) setLeaderboardEntries(response.data);
-    })();
-  });
-
-  const accountPoints = useMemo(() => {
-    if (account.address === undefined) return GN.zero(18);
-    const entry = leaderboardEntries.find((x) => x.address.toLowerCase() === account.address!.toLowerCase());
-    return entry === undefined ? GN.zero(18) : new GN(entry.score, 18, 10);
-  }, [account.address, leaderboardEntries]);
-
+  const accountPoints = useLeaderboardValue(account.address);
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS.XS);
 
   useEffect(() => {

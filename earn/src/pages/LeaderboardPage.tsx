@@ -1,28 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import axios, { AxiosResponse } from 'axios';
-import { BigNumber } from 'ethers';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import Pagination from 'shared/lib/components/common/Pagination';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
-import { DEAD_ADDRESS } from 'shared/lib/data/constants/Values';
-import { API_LEADERBOARD_URL } from 'shared/lib/data/constants/Values';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { useLeaderboard } from 'shared/lib/hooks/UseLeaderboard';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
 
-import { LeaderboardEnsEntry, LeaderboardResponseEntry } from '../data/LeaderboardResponse';
-
 const PAGE_SIZE = 10;
 const GREEN_ACCENT = 'rgba(82, 182, 154, 1)';
-
-type LeaderboardEntry = {
-  address: string;
-  score: GN;
-  ens?: LeaderboardEnsEntry;
-};
 
 const TableContainer = styled.div`
   width: 100%;
@@ -70,35 +59,15 @@ const UserLabel = styled(Text)`
 
 export default function LeaderboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [leaderboardEntries, setLeaderboardEntries] = useState<Array<LeaderboardEntry> | null>(null);
-
   const { address } = useAccount();
 
-  useEffect(() => {
-    (async () => {
-      let leaderboardResponse: AxiosResponse<Array<LeaderboardResponseEntry>>;
-      try {
-        leaderboardResponse = await axios.get(API_LEADERBOARD_URL);
-      } catch (e) {
-        return;
-      }
-      if (!leaderboardResponse.data) return;
-      const updatedLeaderboardEntries = leaderboardResponse.data
-        .map((entry) => ({
-          address: entry.address,
-          score: GN.fromBigNumber(BigNumber.from(entry.score), 18),
-          ens: entry.ens,
-        }))
-        .filter((entry) => entry.address.toLowerCase() !== DEAD_ADDRESS);
-      setLeaderboardEntries(updatedLeaderboardEntries);
-    })();
-  }, [setLeaderboardEntries]);
+  const { data: leaderboardEntries } = useLeaderboard();
 
-  const pages: LeaderboardEntry[][] = useMemo(() => {
+  const pages = useMemo(() => {
     if (leaderboardEntries == null) {
       return [];
     }
-    const pages: LeaderboardEntry[][] = [];
+    const pages = [];
     for (let i = 0; i < leaderboardEntries.length; i += PAGE_SIZE) {
       pages.push(leaderboardEntries.slice(i, i + PAGE_SIZE));
     }
