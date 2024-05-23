@@ -2,19 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Address } from 'viem';
 
-import { LendingPair, asLendingPair } from '../LendingPair';
+import { LendingPair, asLendingPair } from '../data/LendingPair';
 import useContractEvents from './UseContractEvents';
-import { factoryAbi } from '../../abis/Factory';
+import { factoryAbi } from '../abis/Factory';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_LENDER_LENS_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
-} from '../constants/ChainSpecific';
+} from '../data/constants/ChainSpecific';
 import { useReadContracts } from 'wagmi';
-import { volatilityOracleAbi } from '../../abis/VolatilityOracle';
-import { Q32 } from '../constants/Values';
-import { uniswapV3PoolAbi } from '../../abis/UniswapV3Pool';
-import { lenderLensAbi } from '../../abis/LenderLens';
+import { volatilityOracleAbi } from '../abis/VolatilityOracle';
+import { Q32 } from '../data/constants/Values';
+import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
+import { lenderLensAbi } from '../abis/LenderLens';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useLendingPairs(chainId: number) {

@@ -8,9 +8,9 @@ import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount } from 'wagmi';
 

@@ -10,7 +10,7 @@ import { Text, Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useSimulateContract, useWriteContract } from 'wagmi';

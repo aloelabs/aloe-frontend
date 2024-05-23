@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import { LendingPair } from '../LendingPair';
+import { LendingPair } from '../data/LendingPair';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import {
   API_PRICE_RELAY_LATEST_URL,
   API_PRICE_RELAY_HISTORICAL_URL,
   API_PRICE_RELAY_CONSOLIDATED_URL,
-} from '../constants/Values';
+} from '../data/constants/Values';
 
 type TokenSymbol = string;
 type Quote = number;

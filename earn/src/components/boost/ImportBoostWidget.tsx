@@ -17,10 +17,6 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import { useLendingPair, useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
-import { PriceRelayLatestResponse } from 'shared/lib/data/hooks/UsePriceRelay';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import {
@@ -28,6 +24,10 @@ import {
   UniswapPosition,
   UniswapV3GraphQL24HourPoolDataQueryResponse,
 } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
+import { PriceRelayLatestResponse } from 'shared/lib/hooks/UsePriceRelay';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';

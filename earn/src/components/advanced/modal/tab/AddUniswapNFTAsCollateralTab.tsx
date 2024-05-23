@@ -14,8 +14,8 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, zip } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, erc721Abi } from 'viem';

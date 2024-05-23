@@ -19,14 +19,14 @@ import AccountInfo from './AccountInfo';
 import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
-import useMediaQuery from '../../data/hooks/UseMediaQuery';
-import useLockScroll from '../../data/hooks/UseLockScroll';
+import useMediaQuery from '../../hooks/UseMediaQuery';
+import useLockScroll from '../../hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import { GN, GNFormat } from '../../data/GoodNumber';
 import axios, { AxiosResponse } from 'axios';
-import useEffectOnce from '../../data/hooks/UseEffectOnce';
+import useEffectOnce from '../../hooks/UseEffectOnce';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;

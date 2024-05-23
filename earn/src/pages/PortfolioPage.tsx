@@ -4,13 +4,13 @@ import { type WriteContractReturnType } from '@wagmi/core';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useLendingPairsBalances } from 'shared/lib/data/hooks/UseLendingPairBalances';
-import { useLendingPairs } from 'shared/lib/data/hooks/UseLendingPairs';
-import { useConsolidatedPriceRelay } from 'shared/lib/data/hooks/UsePriceRelay';
-import { useTokenColors } from 'shared/lib/data/hooks/UseTokenColors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useLendingPairsBalances } from 'shared/lib/hooks/UseLendingPairBalances';
+import { useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
+import { useConsolidatedPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
+import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import styled from 'styled-components';
 import { useAccount, usePublicClient } from 'wagmi';
 

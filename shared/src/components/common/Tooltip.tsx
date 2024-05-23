@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import { Text } from './Typography';
 import { GREY_700, GREY_900 } from '../../data/constants/Colors';
-import useClickOutside from '../../data/hooks/UseClickOutside';
+import useClickOutside from '../../hooks/UseClickOutside';
 import styled from 'styled-components';
 
 import InfoIcon from '../../assets/svg/Info';

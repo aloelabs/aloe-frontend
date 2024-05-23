@@ -16,9 +16,9 @@ import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { LendingPair } from 'shared/lib/data/LendingPair';
+import useChain from 'shared/lib/hooks/UseChain';
+import useSortableData from 'shared/lib/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';

@@ -1,9 +1,9 @@
 import { Address, zeroAddress } from 'viem';
-import { LendingPair, LendingPairBalancesMap } from '../LendingPair';
-import { lenderAbi } from '../../abis/Lender';
+import { LendingPair, LendingPairBalancesMap } from '../data/LendingPair';
+import { lenderAbi } from '../abis/Lender';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { GN } from '../GoodNumber';
+import { GN } from '../data/GoodNumber';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useLendingPairsBalances(lendingPairs: LendingPair[], chainId: number, staleTime = 60 * 1_000) {

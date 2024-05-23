@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useConfig } from 'wagmi';
-import { DEFAULT_CHAIN } from '../constants/Values';
+import { DEFAULT_CHAIN } from '../data/constants/Values';
 
 export default function useChain() {
   const config = useConfig();

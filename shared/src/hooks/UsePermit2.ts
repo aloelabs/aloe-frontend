@@ -8,12 +8,12 @@ import {
   useWriteContract,
 } from 'wagmi';
 
-import { permit2Abi } from '../../abis/Permit2';
-import { bigIntToBinary } from '../../util/Bitmap';
-import { GN, GNFormat } from '../../data/GoodNumber';
-import { computeDomainSeparator } from '../../util/Permit';
-import { UNISWAP_PERMIT2_ADDRESS } from '../constants/ChainSpecific';
-import { Token } from '../Token';
+import { permit2Abi } from '../abis/Permit2';
+import { bigIntToBinary } from '../util/Bitmap';
+import { GN, GNFormat } from '../data/GoodNumber';
+import { computeDomainSeparator } from '../util/Permit';
+import { UNISWAP_PERMIT2_ADDRESS } from '../data/constants/ChainSpecific';
+import { Token } from '../data/Token';
 import { Address, Chain, erc20Abi, maxUint256 } from 'viem';
 
 export enum Permit2State {

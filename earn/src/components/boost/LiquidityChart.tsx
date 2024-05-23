@@ -5,10 +5,10 @@ import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
 import { computeLiquidationThresholds, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useDebouncedMemo } from 'shared/lib/data/hooks/UseDebouncedMemo';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
 import { TickData, calculateTickData } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useDebouncedMemo } from 'shared/lib/hooks/UseDebouncedMemo';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
 import styled from 'styled-components';
 
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';

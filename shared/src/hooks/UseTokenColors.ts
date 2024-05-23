@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { LendingPair } from '../LendingPair';
+import { LendingPair } from '../data/LendingPair';
 import { Address } from 'viem';
-import { getProminentColor } from '../../util/Colors';
+import { getProminentColor } from '../util/Colors';
 import { useQuery } from '@tanstack/react-query';
 
+/**
+ * Fetches all pertinent token colors for the lending pairs. Token colors are persisted in cache for efficiency.
+ * @param lendingPairs Unordered list of lending pairs expected to change frequently due to oracle & balance data.
+ * @returns Map from token address to colors of the form `${r}, ${g}, ${b}`
+ */
 export function useTokenColors(lendingPairs: LendingPair[]) {
   const [tokens, setTokens] = useState(new Map<Address, string>());
 
+  // Isolate token changes from other `lendingPairs` changes to prevent unnecessary renders/fetches.
+  // We can't rely on Tanstack to do this for us, since the `tokens` are part of the `queryKey`,
+  // not just part of the query.
   useEffect(() => {
     const newTokens = new Map<Address, string>();
     let shouldUpdate = false;
@@ -34,6 +42,7 @@ export function useTokenColors(lendingPairs: LendingPair[]) {
     return addressToColorMap;
   };
 
+  // NOTE: Important for `queryKey` to consist of arrays/objects, NOT a `Map` (hence the conversion)
   const queryKey = ['useTokenColors', Object.fromEntries(tokens.entries())];
 
   return useQuery({

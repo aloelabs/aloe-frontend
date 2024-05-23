@@ -8,9 +8,9 @@ import { factoryAbi } from 'shared/lib/abis/Factory';
 import { Assets } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { UniswapPosition } from 'shared/lib/data/Uniswap';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { getContract, GetContractEventsReturnType } from 'viem';
 import { usePublicClient, useReadContracts } from 'wagmi';
 

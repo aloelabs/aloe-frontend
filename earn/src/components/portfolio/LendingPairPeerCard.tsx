@@ -4,9 +4,9 @@ import { Dropdown, DropdownOption } from 'shared/lib/components/common/Dropdown'
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Config, useClient } from 'wagmi';

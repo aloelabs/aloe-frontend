@@ -7,8 +7,8 @@ import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import { computeLTV } from 'shared/lib/data/BalanceSheet';
 import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { LendingPair } from 'shared/lib/data/LendingPair';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { Address } from 'viem';
 
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';

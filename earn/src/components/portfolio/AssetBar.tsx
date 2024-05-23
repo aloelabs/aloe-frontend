@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { RESPONSIVE_BREAKPOINT_SM } from 'shared/lib/data/constants/Breakpoints';
-import useHover from 'shared/lib/data/hooks/UseHover';
 import { Token } from 'shared/lib/data/Token';
+import useHover from 'shared/lib/hooks/UseHover';
 import { rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 

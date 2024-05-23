@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
-import { ELLIPSIS, usePagination } from '../../data/hooks/UsePagination';
+import { ELLIPSIS, usePagination } from '../../hooks/UsePagination';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid';
 import { Dropdown } from './Dropdown';
 import { GREY_400, GREY_800 } from '../../data/constants/Colors';

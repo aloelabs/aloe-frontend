@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import DropdownArrowDown from '../../assets/svg/DropdownArrowDown';
 import DropdownArrowUp from '../../assets/svg/DropdownArrowUp';
 import { CheckIcon } from '@heroicons/react/solid';
-import useClickOutside from '../../data/hooks/UseClickOutside';
+import useClickOutside from '../../hooks/UseClickOutside';
 import { Text } from './Typography';
 import { GREY_900 } from '../../data/constants/Colors';
 

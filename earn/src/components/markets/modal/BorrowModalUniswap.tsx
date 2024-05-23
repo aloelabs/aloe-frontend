@@ -23,10 +23,10 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { UniswapNFTPosition, zip } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import { erc721Abi } from 'viem';

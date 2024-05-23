@@ -10,7 +10,7 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { MarginAccount } from '../../data/MarginAccount';

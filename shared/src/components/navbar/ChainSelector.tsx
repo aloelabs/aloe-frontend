@@ -14,7 +14,7 @@ import styled from 'styled-components';
 import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
 import { AltSpinner } from '../common/Spinner';
-import useClickOutside from '../../data/hooks/UseClickOutside';
+import useClickOutside from '../../hooks/UseClickOutside';
 import { useChainId, useSwitchChain } from 'wagmi';
 import { Chain } from 'viem';
 

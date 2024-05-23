@@ -1,7 +1,7 @@
 import { useReadContracts, useSignTypedData } from 'wagmi';
 import { useEffect, useMemo, useState } from 'react';
-import { erc20Abi } from '../../abis/ERC20';
-import { computeDomainSeparator } from '../../util/Permit';
+import { erc20Abi } from '../abis/ERC20';
+import { computeDomainSeparator } from '../util/Permit';
 import { splitSignature } from 'ethers/lib/utils.js';
 import { Address } from 'viem';
 
@@ -129,12 +129,7 @@ export function usePermit(
     };
   }, [owner, spender, amount, nonce, deadline]);
 
-  const {
-    signTypedData,
-    isPending: isAskingUserToSign,
-    data: signature,
-    reset: resetSignature,
-  } = useSignTypedData();
+  const { signTypedData, isPending: isAskingUserToSign, data: signature, reset: resetSignature } = useSignTypedData();
 
   useEffect(() => {
     resetSignature();

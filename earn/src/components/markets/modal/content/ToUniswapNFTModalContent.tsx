@@ -12,8 +12,8 @@ import {
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { UniswapPosition, zip } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';

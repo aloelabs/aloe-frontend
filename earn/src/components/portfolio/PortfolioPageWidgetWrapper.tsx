@@ -1,4 +1,4 @@
-import useLocalStorage from 'shared/lib/data/hooks/UseLocalStorage';
+import useLocalStorage from 'shared/lib/hooks/UseLocalStorage';
 
 import PortfolioTooltip from './PortfolioTooltip';
 

@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { LendingPair } from '../LendingPair';
-import { Token } from '../Token';
-import { GetNumericFeeTier } from '../FeeTier';
+import { LendingPair } from '../data/LendingPair';
+import { Token } from '../data/Token';
+import { GetNumericFeeTier } from '../data/FeeTier';
 import { Address } from 'viem';
 
 type UniswapPoolsMap = Map<Address, { token0: Token; token1: Token; fee: number }>;
 
+/**
+ * Isolates Uniswap pool changes from other `lendingPairs` changes to prevent unnecessary renders/fetches.
+ * @param lendingPairs Unordered list of lending pairs expected to change frequently due to oracle & balance data.
+ * @returns Map of Uniswap pool data that only changes when switching chains or deploying new markets.
+ */
 export function useUniswapPools(lendingPairs: LendingPair[]) {
   const [uniswapPools, setUniswapPools] = useState<UniswapPoolsMap>(new Map());
 

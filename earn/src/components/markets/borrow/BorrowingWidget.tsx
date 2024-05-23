@@ -10,10 +10,10 @@ import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/co
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { LendingPair, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { rgba } from 'shared/lib/util/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';

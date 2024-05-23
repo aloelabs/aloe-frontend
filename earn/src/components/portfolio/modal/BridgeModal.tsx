@@ -5,9 +5,9 @@ import { ethers } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { BRIDGE_SUPPORTED_CHAINS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800, GREY_900 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
 import { getTokens } from 'shared/lib/data/TokenData';
+import useChain from 'shared/lib/hooks/UseChain';
 import { mainnet } from 'wagmi/chains';
 
 export type BridgeModalProps = {

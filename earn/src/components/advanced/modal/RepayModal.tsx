@@ -18,9 +18,9 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { usePermit2, Permit2State } from 'shared/lib/data/hooks/UsePermit2';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
+import { usePermit2, Permit2State } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, Chain } from 'viem';

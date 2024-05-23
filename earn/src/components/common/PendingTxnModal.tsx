@@ -1,7 +1,7 @@
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 
 import { ReactComponent as ErrorIcon } from '../../assets/svg/error.svg';

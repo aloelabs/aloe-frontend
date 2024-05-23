@@ -9,7 +9,7 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
 import { Address } from 'viem';

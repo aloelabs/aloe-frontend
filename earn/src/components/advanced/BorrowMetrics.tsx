@@ -6,7 +6,7 @@ import { Display, Text } from 'shared/lib/components/common/Typography';
 import { auctionCurve, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';

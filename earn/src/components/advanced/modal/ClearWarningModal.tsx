@@ -5,8 +5,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { LendingPair } from 'shared/lib/data/LendingPair';
+import useChain from 'shared/lib/hooks/UseChain';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
