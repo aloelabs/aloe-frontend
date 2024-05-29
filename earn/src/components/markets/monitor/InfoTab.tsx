@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { secondsInDay } from 'date-fns';
@@ -38,48 +38,58 @@ export default function InfoTab(props: InfoTabProps) {
   );
   const [hoveredPair, setHoveredPair] = useState<LendingPair | undefined>(undefined);
 
+  const fetchOracleLogs = useCallback(async () => {
+    if (lendingPairs.length === 0 || !provider || provider.network.chainId !== chainId) return;
+
+    const currentBlockNumber = await provider.getBlockNumber();
+    // Calculate how many requests are necessary to fetch the desired number of days, given
+    // Alchemy's `eth_getLogs` constraints.
+    const worstCaseNumUpdateLogsPerDay = MAX_NUM_UPDATE_LOGS_PER_POOL_PER_DAY * lendingPairs.length;
+    const worstCaseNumDays = MAX_NUM_LOGS_PER_ALCHEMY_REQUEST / worstCaseNumUpdateLogsPerDay;
+    const safeNumBlocks = Math.round((worstCaseNumDays * secondsInDay) / APPROX_SECONDS_PER_BLOCK[chainId]);
+    const numRequests = Math.ceil(MIN_NUM_DAYS_TO_FETCH / worstCaseNumDays);
+
+    const volatilityOracle = new ethers.Contract(ALOE_II_ORACLE_ADDRESS[chainId], volatilityOracleAbi, provider);
+    // Make requests
+    const requests: Promise<ethers.Event[]>[] = [];
+    for (let i = numRequests; i > 0; i -= 1) {
+      requests.push(
+        volatilityOracle.queryFilter(
+          volatilityOracle.filters.Update(),
+          currentBlockNumber - safeNumBlocks * i,
+          currentBlockNumber - safeNumBlocks * (i - 1)
+        )
+      );
+    }
+
+    // Flatten into one big `logs` array and parse out into a pool-specific `map`
+    const logs = (await Promise.all(requests)).flat();
+    const map = new Map<Address, ethers.Event[]>();
+    for (const log of logs) {
+      if (log.removed || log.args === undefined) continue;
+
+      const pool = log.args['pool'];
+      if (map.has(pool)) {
+        map.get(pool)!.push(log);
+      } else {
+        map.set(pool, [log]);
+      }
+    }
+    setOracleLogs(map);
+  }, [chainId, provider, lendingPairs.length, setOracleLogs]);
+
+  const setPendingTxnAndRefresh = useCallback(
+    (data: `0x${string}`) => {
+      setPendingTxn(data);
+      fetchOracleLogs();
+    },
+    [setPendingTxn, fetchOracleLogs]
+  );
+
   // Fetch `oracleLogs`
   useEffect(() => {
-    (async () => {
-      if (lendingPairs.length === 0 || !provider || provider.network.chainId !== chainId) return;
-
-      const currentBlockNumber = await provider.getBlockNumber();
-      // Calculate how many requests are necessary to fetch the desired number of days, given
-      // Alchemy's `eth_getLogs` constraints.
-      const worstCaseNumUpdateLogsPerDay = MAX_NUM_UPDATE_LOGS_PER_POOL_PER_DAY * lendingPairs.length;
-      const worstCaseNumDays = MAX_NUM_LOGS_PER_ALCHEMY_REQUEST / worstCaseNumUpdateLogsPerDay;
-      const safeNumBlocks = Math.round((worstCaseNumDays * secondsInDay) / APPROX_SECONDS_PER_BLOCK[chainId]);
-      const numRequests = Math.ceil(MIN_NUM_DAYS_TO_FETCH / worstCaseNumDays);
-
-      const volatilityOracle = new ethers.Contract(ALOE_II_ORACLE_ADDRESS[chainId], volatilityOracleAbi, provider);
-      // Make requests
-      const requests: Promise<ethers.Event[]>[] = [];
-      for (let i = numRequests; i > 0; i -= 1) {
-        requests.push(
-          volatilityOracle.queryFilter(
-            volatilityOracle.filters.Update(),
-            currentBlockNumber - safeNumBlocks * i,
-            currentBlockNumber - safeNumBlocks * (i - 1)
-          )
-        );
-      }
-
-      // Flatten into one big `logs` array and parse out into a pool-specific `map`
-      const logs = (await Promise.all(requests)).flat();
-      const map = new Map<Address, ethers.Event[]>();
-      for (const log of logs) {
-        if (log.removed || log.args === undefined) continue;
-
-        const pool = log.args['pool'];
-        if (map.has(pool)) {
-          map.get(pool)!.push(log);
-        } else {
-          map.set(pool, [log]);
-        }
-      }
-      setOracleLogs(map);
-    })();
-  }, [chainId, provider, lendingPairs.length, setOracleLogs]);
+    fetchOracleLogs();
+  }, [fetchOracleLogs]);
 
   // Fetch `blockNumbersToTimestamps`
   useEffect(() => {
@@ -176,7 +186,7 @@ export default function InfoTab(props: InfoTabProps) {
         rows={lendingPairs.map((lendingPair, i) => ({
           lendingPair,
           lastUpdatedTimestamp: latestTimestamps.at(i),
-          setPendingTxn,
+          setPendingTxn: setPendingTxnAndRefresh,
           onMouseEnter: setHoveredPair,
         }))}
         chainId={chainId}
