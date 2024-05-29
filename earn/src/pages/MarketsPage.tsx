@@ -98,8 +98,6 @@ export default function MarketsPage() {
     return TabOption.Supply;
   }, [searchParams]);
 
-  console.log(pendingTxn);
-
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
   const client = useClient<Config>({ chainId: activeChain.id });
@@ -151,7 +149,7 @@ export default function MarketsPage() {
     // NOTE: Due to polling, we don't receive every block, so this bisection isn't perfect. Close enough though.
     if (blockNumber % 2n) {
       refetchOracleData();
-    } else {
+    } else if (selectedTab === TabOption.Borrow) {
       refetchBorrowers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

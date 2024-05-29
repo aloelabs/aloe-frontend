@@ -81,8 +81,6 @@ export const BackButtonWrapper = styled.button`
   }
 `;
 
-const VALID_MANAGER_SET = new Set<Address>(Object.values(ALOE_II_BOOST_MANAGER_ADDRESS));
-
 export default function BoostPage() {
   const activeChain = useChain();
 
@@ -112,11 +110,11 @@ export default function BoostPage() {
   //////////////////////////////////////////////////////////////*/
   const borrowerNftFilterParams = useMemo(
     () => ({
-      validManagerSet: VALID_MANAGER_SET,
+      validManagerSet: new Set<Address>([ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]]),
       onlyCheckMostRecentModify: true,
       includeUnusedBorrowers: false,
     }),
-    []
+    [activeChain.id]
   );
   const { borrowerNftRefs } = useBorrowerNftRefs(userAddress, activeChain.id, borrowerNftFilterParams);
 
