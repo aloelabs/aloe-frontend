@@ -12,6 +12,7 @@ import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { Borrower } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
@@ -26,7 +27,6 @@ import styled from 'styled-components';
 import { useAccount, useWriteContract } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
-import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { truncateAddress } from '../../../util/Addresses';
 

@@ -19,7 +19,6 @@ export type InfoTabProps = {
   chainId: number;
   provider?: ethers.providers.JsonRpcProvider | ethers.providers.FallbackProvider;
   // Remaining 3 should be passed in for sure though
-  blockNumber: bigint | undefined;
   lendingPairs: LendingPair[];
   tokenColors: Map<string, string>;
   setPendingTxn: (data: WriteContractReturnType) => void;
@@ -30,7 +29,7 @@ const MAX_NUM_UPDATE_LOGS_PER_POOL_PER_DAY = 6;
 const MAX_NUM_LOGS_PER_ALCHEMY_REQUEST = 2000;
 
 export default function InfoTab(props: InfoTabProps) {
-  const { chainId, provider, blockNumber, lendingPairs, tokenColors, setPendingTxn } = props;
+  const { chainId, provider, lendingPairs, tokenColors, setPendingTxn } = props;
 
   const [oracleLogs, setOracleLogs] = useChainDependentState(new Map<Address, ethers.Event[]>(), chainId);
   const [blockNumbersToTimestamps, setBlockNumbersToTimestamps] = useChainDependentState(
@@ -80,7 +79,7 @@ export default function InfoTab(props: InfoTabProps) {
       }
       setOracleLogs(map);
     })();
-  }, [chainId, provider, lendingPairs.length, setOracleLogs, blockNumber /* just here to trigger refetch */]);
+  }, [chainId, provider, lendingPairs.length, setOracleLogs]);
 
   // Fetch `blockNumbersToTimestamps`
   useEffect(() => {

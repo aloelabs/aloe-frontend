@@ -16,7 +16,7 @@ export type LeaderboardResponseEntry = {
   ens?: LeaderboardEnsEntry;
 };
 
-export function useLeaderboard(staleTime = 10 * 60 * 1_000) {
+export function useLeaderboard(refetchInterval = 10 * 60 * 1_000) {
   const queryFn = async () => {
     const response: AxiosResponse<LeaderboardResponseEntry[]> = await axios.get(`${API_LEADERBOARD_URL}`);
     if (!response || !response.data) {
@@ -30,11 +30,11 @@ export function useLeaderboard(staleTime = 10 * 60 * 1_000) {
   return useQuery({
     queryKey,
     queryFn,
-    staleTime,
+    staleTime: refetchInterval,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: staleTime,
+    refetchInterval,
     refetchIntervalInBackground: false,
     placeholderData: [],
     select(data) {

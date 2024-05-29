@@ -24,20 +24,18 @@ import {
   UniswapPosition,
   UniswapV3GraphQL24HourPoolDataQueryResponse,
 } from 'shared/lib/data/Uniswap';
+import { useBorrowerNftRefs } from 'shared/lib/hooks/UseBorrowerNft';
 import useChain from 'shared/lib/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { PriceRelayLatestResponse } from 'shared/lib/hooks/UsePriceRelay';
 import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { Address, erc721Abi } from 'viem';
+import { erc721Abi } from 'viem';
 import {
-  Config,
   useAccount,
   useBalance,
-  useClient,
   useReadContract,
   useSimulateContract,
   useWaitForTransactionReceipt,
@@ -45,11 +43,9 @@ import {
 } from 'wagmi';
 
 import SlippageWidget from './SlippageWidget';
-import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
-import { useEthersProvider } from '../../util/Provider';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -185,15 +181,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const activeChain = useChain();
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useState<TwentyFourHourPoolData | undefined>(undefined);
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[] | undefined>(undefined);
-  const [availableNft, setAvailableNft] = useChainDependentState<{ borrower: Address; ptrIdx: number } | undefined>(
-    undefined,
-    activeChain.id
-  );
   const [maxSlippagePercentage, setSlippagePercentage] = useState('0.10');
 
   const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
 
   const { lendingPairs } = useLendingPairs(activeChain.id);
   const lendingPair = useLendingPair(lendingPairs, cardInfo.token0.address, cardInfo.token1.address);
@@ -364,28 +354,23 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     query: { enabled: enableHooks && Boolean(userAddress) },
   });
 
-  // The NFT indices we can use if the user has some unused BorrowerNFTs
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      if (!userAddress || !provider) return;
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
-        validUniswapPool: cardInfo.uniswapPool,
-        onlyCheckMostRecentModify: true,
-        includeFreshBorrowers: true,
-      });
-
-      if (mounted && results.length > 0) {
-        setAvailableNft({ borrower: results[0].borrowerAddress, ptrIdx: results[0].index });
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [provider, userAddress, cardInfo, setAvailableNft]);
+  const borrowerNftFilterParams = useMemo(
+    () => ({
+      validUniswapPool: cardInfo.uniswapPool,
+      onlyCheckMostRecentModify: true,
+      includeUnusedBorrowers: true,
+    }),
+    [cardInfo.uniswapPool]
+  );
+  const { borrowerNftRefs } = useBorrowerNftRefs(userAddress, activeChain.id, borrowerNftFilterParams);
+  const availableNft = useMemo(() => {
+    return borrowerNftRefs.length > 0
+      ? {
+          borrower: borrowerNftRefs[0].address,
+          ptrIdx: borrowerNftRefs[0].index,
+        }
+      : undefined;
+  }, [borrowerNftRefs]);
 
   // If we're reusing an old NFT, check whether it has ANTE
   const { data: borrowerBalance } = useBalance({

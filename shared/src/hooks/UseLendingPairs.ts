@@ -136,10 +136,10 @@ export function useLendingPairs(chainId: number) {
 
   const queryClient = useQueryClient();
   const refetchOracleData = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: oracleKey });
+    return queryClient.invalidateQueries({ queryKey: oracleKey });
   }, [queryClient, oracleKey]);
   const refetchLenderData = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: readBasicsKey });
+    return queryClient.invalidateQueries({ queryKey: readBasicsKey });
   }, [queryClient, readBasicsKey]);
 
   const [data, setData] = useState<{ lendingPairs: LendingPair[]; chainId: number }>({

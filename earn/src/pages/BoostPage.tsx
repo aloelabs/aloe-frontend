@@ -7,9 +7,10 @@ import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
-import { ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { ALOE_II_BOOST_MANAGER_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPositions } from 'shared/lib/data/Uniswap';
+import { useBorrowerNftRefs } from 'shared/lib/hooks/UseBorrowerNft';
 import useChain from 'shared/lib/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { getProminentColor, rgb } from 'shared/lib/util/Colors';
@@ -20,7 +21,7 @@ import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
 import BoostCard from '../components/boost/BoostCard';
 import { BoostCardPlaceholder } from '../components/boost/BoostCardPlaceholder';
 import NoPositions from '../components/boost/NoPositions';
-import { BoostCardInfo, BoostCardType, fetchBoostBorrower, fetchBoostBorrowersList } from '../data/Uniboost';
+import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../data/Uniboost';
 import { useEthersProvider } from '../util/Provider';
 
 const DEFAULT_COLOR0 = 'white';
@@ -80,6 +81,8 @@ export const BackButtonWrapper = styled.button`
   }
 `;
 
+const VALID_MANAGER_SET = new Set<Address>(Object.values(ALOE_II_BOOST_MANAGER_ADDRESS));
+
 export default function BoostPage() {
   const activeChain = useChain();
 
@@ -107,17 +110,23 @@ export default function BoostPage() {
   /*//////////////////////////////////////////////////////////////
                       FETCH BOOSTED CARD INFOS
   //////////////////////////////////////////////////////////////*/
+  const borrowerNftFilterParams = useMemo(
+    () => ({
+      validManagerSet: VALID_MANAGER_SET,
+      onlyCheckMostRecentModify: true,
+      includeUnusedBorrowers: false,
+    }),
+    []
+  );
+  const { borrowerNftRefs } = useBorrowerNftRefs(userAddress, activeChain.id, borrowerNftFilterParams);
+
   useEffect(() => {
     (async () => {
       if (userAddress === undefined || provider === undefined) return;
-      // NOTE: Use chainId from provider instead of `activeChain.id` since one may update before the other
-      // when rendering. We want to stay consistent to avoid fetching things from the wrong address.
-      const chainId = (await provider.getNetwork()).chainId;
-      const borrowerNfts = await fetchBoostBorrowersList(chainId, provider, userAddress);
 
       const fetchedInfos = await Promise.all(
-        borrowerNfts.map(async (borrowerNft) => {
-          const res = await fetchBoostBorrower(chainId, provider, borrowerNft.borrowerAddress);
+        borrowerNftRefs.map(async (borrowerNft) => {
+          const res = await fetchBoostBorrower(provider.network.chainId, provider, borrowerNft.address);
           return new BoostCardInfo(
             BoostCardType.BOOST_NFT,
             userAddress,
@@ -143,7 +152,7 @@ export default function BoostPage() {
       setInitialBoostedCardInfos(filteredInfos);
       setIsLoadingBoostedCardInfos(false);
     })();
-  }, [provider, userAddress, setInitialBoostedCardInfos, setIsLoadingBoostedCardInfos]);
+  }, [provider, borrowerNftRefs, userAddress, setInitialBoostedCardInfos, setIsLoadingBoostedCardInfos]);
 
   /*//////////////////////////////////////////////////////////////
                     FETCH UNISWAP NFT POSITIONS

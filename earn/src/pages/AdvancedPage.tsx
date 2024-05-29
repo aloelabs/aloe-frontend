@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import JSBI from 'jsbi';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Banner from 'shared/lib/components/banner/Banner';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -12,15 +12,16 @@ import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import { useBorrowerNfts } from 'shared/lib/hooks/UseBorrowerNft';
 import useChain from 'shared/lib/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import { useUniswapPools } from 'shared/lib/hooks/UseUniswapPools';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import { Address } from 'viem';
-import { Config, useAccount, useBalance, useClient, usePublicClient } from 'wagmi';
+import { linea } from 'viem/chains';
+import { Config, useAccount, useBalance, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { BorrowMetrics } from '../components/advanced/BorrowMetrics';
@@ -37,9 +38,8 @@ import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/
 import { TokenAllocationWidget } from '../components/advanced/TokenAllocationWidget';
 import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import { BorrowerNftBorrower, fetchListOfBorrowerNfts } from '../data/BorrowerNft';
+import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
-import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { useEthersProvider } from '../util/Provider';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
@@ -149,10 +149,6 @@ export default function AdvancedPage() {
   const provider = useEthersProvider(client);
   const { address: userAddress, isConnected } = useAccount();
 
-  const [borrowerNftBorrowers, setBorrowerNftBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(
-    null,
-    activeChain.id
-  );
   const [uniswapNFTPositions, setUniswapNFTPositions] = useState<Map<number, UniswapNFTPosition>>(new Map());
   const [openedModal, setOpenedModal] = useState(OpenedModal.NONE);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
@@ -160,7 +156,40 @@ export default function AdvancedPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const navigate = useNavigate();
+  const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
+  const { borrowerNftRefs, borrowers, refetchBorrowerNftRefs, refetchBorrowers } = useBorrowerNfts(
+    lendingPairs,
+    userAddress,
+    activeChain.id
+  );
+  const borrowerNftBorrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNftRefs, borrowers);
+
+  // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
+  // when in the background
+  const { data: blockNumber } = useBlockNumber({
+    chainId: activeChain.id,
+    cacheTime: 5_000,
+    watch: false,
+    query: {
+      refetchOnMount: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 5_000,
+      refetchIntervalInBackground: false,
+    },
+  });
+  // Use the `blockNumber` to trigger refresh of certain data
+  useEffect(() => {
+    if (activeChain.id === linea.id || !blockNumber) return;
+    // NOTE: Due to polling, we don't receive every block, so this bisection isn't perfect. Close enough though.
+    if (blockNumber % 2n) {
+      refetchOracleData();
+    } else {
+      refetchBorrowers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockNumber]);
 
   const selectedMarginAccount = useMemo(() => {
     const marginAccountSearchParam = searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY);
@@ -170,8 +199,6 @@ export default function AdvancedPage() {
     );
   }, [borrowerNftBorrowers, searchParams]);
 
-  const { lendingPairs } = useLendingPairs(activeChain.id);
-  const { data: tokenColors } = useTokenColors(lendingPairs);
   const market = useLendingPair(
     lendingPairs,
     selectedMarginAccount?.token0.address,
@@ -179,30 +206,6 @@ export default function AdvancedPage() {
   );
 
   const availablePools = useUniswapPools(lendingPairs);
-
-  // MARK: Fetch margin accounts
-  useEffect(() => {
-    (async () => {
-      if (!provider || userAddress === undefined || availablePools.size === 0) return;
-      const chainId = (await provider.getNetwork()).chainId;
-
-      const borrowerNfts = await fetchListOfBorrowerNfts(chainId, provider, userAddress);
-      const borrowers = await fetchBorrowerDatas(
-        chainId,
-        provider,
-        borrowerNfts.map((x) => x.borrowerAddress),
-        availablePools
-      );
-
-      const fetchedBorrowerNftBorrowers: BorrowerNftBorrower[] = borrowers.map((borrower, i) => ({
-        ...borrower,
-        tokenId: borrowerNfts[i].tokenId,
-        index: borrowerNfts[i].index,
-        mostRecentModify: borrowerNfts[i].mostRecentModify,
-      }));
-      setBorrowerNftBorrowers(fetchedBorrowerNftBorrowers);
-    })();
-  }, [userAddress, provider, availablePools, setBorrowerNftBorrowers]);
 
   // MARK: Reset search param if margin account doesn't exist
   useEffect(() => {
@@ -454,9 +457,8 @@ export default function AdvancedPage() {
           txnHash={pendingTxn}
           onConfirm={() => {
             setOpenedModal(OpenedModal.NONE);
-            setTimeout(() => {
-              navigate(0);
-            }, 100);
+            refetchLenderData();
+            refetchBorrowerNftRefs().then(() => refetchBorrowers());
           }}
           status={pendingTxnModalStatus}
         />
