@@ -74,7 +74,7 @@ function toHistoricalPrices(response: PriceRelayHistoricalResponse) {
   return historicalPrices;
 }
 
-export function useLatestPriceRelay(lendingPairs: LendingPair[], staleTime = 60 * 1_000) {
+export function useLatestPriceRelay(lendingPairs: LendingPair[], refetchInterval = 60 * 1_000) {
   const commaSeparatedSymbols = useMemo(() => commaSeparatedSymbolsFor(lendingPairs), [lendingPairs]);
 
   const queryFn = async () => {
@@ -90,18 +90,18 @@ export function useLatestPriceRelay(lendingPairs: LendingPair[], staleTime = 60 
   return useQuery({
     queryKey,
     queryFn,
-    staleTime,
+    staleTime: refetchInterval,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: staleTime,
+    refetchInterval,
     refetchIntervalInBackground: false,
     placeholderData: new Map<TokenSymbol, Quote>(),
     enabled: lendingPairs.length > 0,
   });
 }
 
-export function useHistoricalPriceRelay(lendingPairs: LendingPair[], staleTime = 20 * 60 * 1_000) {
+export function useHistoricalPriceRelay(lendingPairs: LendingPair[], refetchInterval = 20 * 60 * 1_000) {
   const commaSeparatedSymbols = useMemo(() => commaSeparatedSymbolsFor(lendingPairs), [lendingPairs]);
 
   const queryFn = async () => {
@@ -117,18 +117,18 @@ export function useHistoricalPriceRelay(lendingPairs: LendingPair[], staleTime =
   return useQuery({
     queryKey,
     queryFn,
-    staleTime,
+    staleTime: refetchInterval,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: staleTime,
+    refetchInterval,
     refetchIntervalInBackground: false,
     placeholderData: new Map<TokenSymbol, { price: Quote; timestamp: number }[]>(),
     enabled: lendingPairs.length > 0,
   });
 }
 
-export function useConsolidatedPriceRelay(lendingPairs: LendingPair[], staleTime = 60 * 1_000) {
+export function useConsolidatedPriceRelay(lendingPairs: LendingPair[], refetchInterval = 60 * 1_000) {
   const commaSeparatedSymbols = useMemo(() => commaSeparatedSymbolsFor(lendingPairs), [lendingPairs]);
 
   const queryFn = async () => {
@@ -147,11 +147,11 @@ export function useConsolidatedPriceRelay(lendingPairs: LendingPair[], staleTime
   return useQuery({
     queryKey,
     queryFn,
-    staleTime,
+    staleTime: refetchInterval,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: staleTime,
+    refetchInterval,
     refetchIntervalInBackground: false,
     placeholderData: {
       latestPrices: new Map<TokenSymbol, Quote>(),

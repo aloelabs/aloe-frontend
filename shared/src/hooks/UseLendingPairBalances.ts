@@ -98,7 +98,7 @@ export function useLendingPairsBalances(lendingPairs: LendingPair[], chainId: nu
   const queryClient = useQueryClient();
 
   const refetch = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey });
+    return queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
 
   return {

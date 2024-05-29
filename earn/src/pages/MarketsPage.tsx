@@ -4,29 +4,32 @@ import { type WriteContractReturnType } from '@wagmi/core';
 import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+  ALOE_II_PERMIT2_MANAGER_ADDRESS,
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+  getChainLogo,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
+import { useBorrowerNfts } from 'shared/lib/hooks/UseBorrowerNft';
 import useChain from 'shared/lib/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { useLendingPairsBalances } from 'shared/lib/hooks/UseLendingPairBalances';
 import { useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { useLatestPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
 import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
-import { useUniswapPools } from 'shared/lib/hooks/UseUniswapPools';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { linea } from 'viem/chains';
-import { Config, useAccount, useBlockNumber, useClient, usePublicClient, useWatchBlockNumber } from 'wagmi';
+import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
-import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
+import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
-import { fetchBorrowerDatas } from '../data/MarginAccount';
 import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -78,7 +81,6 @@ enum TabOption {
 export default function MarketsPage() {
   const activeChain = useChain();
   // MARK: component state
-  const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -96,34 +98,66 @@ export default function MarketsPage() {
     return TabOption.Supply;
   }, [searchParams]);
 
+  // MARK: wagmi hooks
+  const { address: userAddress } = useAccount();
+  const client = useClient<Config>({ chainId: activeChain.id });
+  const provider = useEthersProvider(client);
+
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
   const { data: tokenColors } = useTokenColors(lendingPairs);
   const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
 
-  // TODO: don't run when in background
-  useWatchBlockNumber({
-    onBlockNumber(/* blockNumber */) {
-      // TODO: Won't need to return once Alchemy supports Linea (this is a rate limiting thing)
-      if (activeChain.id === linea.id) return;
-      refetchOracleData();
+  const borrowerNftFilterParams = useMemo(
+    () => ({
+      includeUnusedBorrowers: false,
+      onlyCheckMostRecentModify: true,
+      validManagerSet: new Set([
+        ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id],
+        ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id],
+        ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
+      ]),
+    }),
+    [activeChain.id]
+  );
+  const {
+    borrowerNftRefs,
+    borrowers: rawBorrowers,
+    refetchBorrowerNftRefs,
+    refetchBorrowers,
+  } = useBorrowerNfts(lendingPairs, userAddress, activeChain.id, borrowerNftFilterParams);
+  const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNftRefs, rawBorrowers);
+
+  // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
+  // when in the background
+  const { data: blockNumber } = useBlockNumber({
+    chainId: activeChain.id,
+    cacheTime: 5_000,
+    watch: false,
+    query: {
+      refetchOnMount: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 5_000,
+      refetchIntervalInBackground: false,
     },
   });
-
-  const availablePools = useUniswapPools(lendingPairs);
+  // Use the `blockNumber` to trigger refresh of certain data
+  useEffect(() => {
+    if (activeChain.id === linea.id || !blockNumber) return;
+    // NOTE: Due to polling, we don't receive every block, so this bisection isn't perfect. Close enough though.
+    if (blockNumber % 2n) {
+      refetchOracleData();
+    } else if (selectedTab === TabOption.Borrow) {
+      refetchBorrowers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockNumber]);
 
   const doesGuardianSenseManipulation = useMemo(() => {
     return lendingPairs.some((pair) => pair.oracleData.manipulationMetric > pair.manipulationThreshold);
   }, [lendingPairs]);
-
-  // MARK: wagmi hooks
-  const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
-  const { data: blockNumber, refetch } = useBlockNumber({
-    chainId: activeChain.id,
-  });
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -141,32 +175,6 @@ export default function MarketsPage() {
       }
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
-
-  // MARK: Fetch margin accounts
-  useEffect(() => {
-    (async () => {
-      if (userAddress === undefined || availablePools.size === 0 || !provider) return;
-
-      const chainId = (await provider.getNetwork()).chainId;
-      const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(chainId, provider, userAddress);
-      const borrowerDatas = (
-        await fetchBorrowerDatas(
-          chainId,
-          provider,
-          fuse2BorrowerNfts.map((b) => b.borrowerAddress),
-          availablePools
-        )
-      ).map((borrowerData) => {
-        return {
-          ...borrowerData,
-          index: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.index || 0,
-          tokenId: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.tokenId || 0,
-        } as BorrowerNftBorrower;
-      });
-
-      setBorrowers(borrowerDatas);
-    })();
-  }, [userAddress, availablePools, provider, blockNumber, setBorrowers]);
 
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
@@ -256,7 +264,6 @@ export default function MarketsPage() {
         <InfoTab
           chainId={activeChain.id}
           provider={provider}
-          blockNumber={blockNumber}
           lendingPairs={lendingPairs}
           tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
@@ -378,12 +385,11 @@ export default function MarketsPage() {
           }
         }}
         onConfirm={() => {
+          setPendingTxn(null);
           setIsPendingTxnModalOpen(false);
-          setTimeout(() => {
-            refetchLenderData();
-            refetchBalances();
-            refetch();
-          }, 100);
+          refetchLenderData();
+          refetchBalances();
+          refetchBorrowerNftRefs().then(() => refetchBorrowers());
         }}
         status={pendingTxnModalStatus}
       />
