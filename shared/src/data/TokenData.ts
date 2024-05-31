@@ -3,6 +3,7 @@ import { arbitrum, optimism, mainnet, base, linea, scroll } from 'viem/chains';
 
 import BrettLogo from '../assets/png/brett.png';
 import EthenaLogo from '../assets/png/ethena.png';
+import MooBifiLogo from '../assets/png/mooBifi.png';
 import ToshiLogo from '../assets/png/toshi.png';
 import {
   ApeLogo,
@@ -255,6 +256,15 @@ const SNX_OPTIMISM = new Token(
   SnxLogo
 );
 
+const MOOBIFI_OPTIMISM = new Token(
+  optimism.id,
+  '0xc55e93c62874d8100dbd2dfe307edc1036ad5434',
+  18,
+  'mooBIFI',
+  'Moo BIFI',
+  MooBifiLogo
+);
+
 const DAI_ARBITRUM = new Token(
   arbitrum.id,
   '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
@@ -483,6 +493,7 @@ const TOKEN_DATA: { [chainId: number]: { [address: Address]: Token } } = {
     [WBTC_OPTIMISM.address]: WBTC_OPTIMISM,
     [WETH_OPTIMISM.address]: WETH_OPTIMISM,
     [WSTETH_OPTIMISM.address]: WSTETH_OPTIMISM,
+    [MOOBIFI_OPTIMISM.address]: MOOBIFI_OPTIMISM,
   },
   [arbitrum.id]: {
     [ARB_ARBITRUM.address]: ARB_ARBITRUM,
