@@ -41,7 +41,7 @@ export default function WelcomeModal(props: WelcomeModalProps) {
           >
             Skip for now
           </FilledGreyButton>
-          <ConnectWalletButton checkboxes={checkboxes} />
+          <ConnectWalletButton shouldShortenText={false} checkboxes={checkboxes} />
         </div>
       </div>
     </Modal>

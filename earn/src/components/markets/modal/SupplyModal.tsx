@@ -15,7 +15,7 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, roundPercentage } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hash } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
@@ -99,8 +99,17 @@ function DepositButton(props: DepositButtonProps) {
   } = props;
   const activeChain = useChain();
 
-  const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
-  const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
+  // Normally, we use as much of the token as possible, and fill in the remainder with ETH
+  // if (a) the token is WETH and (b) there's ETH available
+  let supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
+  let supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
+  // However, if there are auxiliary funds and the entered amount is greater than the user's balance,
+  // we switch *entirely* to *just* use auxiliary funds. Currently only works with ETH on Base.
+  const isUsingAuxiliaryFunds = hasAuxiliaryFunds && token.symbol === 'WETH' && supplyAmount.gt(userBalanceToken);
+  if (isUsingAuxiliaryFunds) {
+    supplyAmountToken = GN.zero(token.decimals);
+    supplyAmountEth = supplyAmount;
+  }
 
   const {
     state: permit2State,
@@ -108,7 +117,7 @@ function DepositButton(props: DepositButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], supplyAmountToken);
 
-  const { data: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = useSimulateContract({
+  const depositWithPermit2Args = {
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerAbi,
     functionName: 'depositWithPermit2',
@@ -122,7 +131,10 @@ function DepositButton(props: DepositButtonProps) {
     ],
     value: supplyAmountEth?.toBigInt(),
     chainId: activeChain.id,
-    query: { enabled: permit2State === Permit2State.DONE },
+  } as const;
+  const { data: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = useSimulateContract({
+    ...depositWithPermit2Args,
+    query: { enabled: permit2State === Permit2State.DONE && !isUsingAuxiliaryFunds },
   });
   const { writeContractAsync: depositWithPermit2, isPending } = useWriteContract();
 
@@ -131,7 +143,7 @@ function DepositButton(props: DepositButtonProps) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (supplyAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (supplyAmount.gt(userBalanceTotal) && !hasAuxiliaryFunds) {
+  } else if (supplyAmount.gt(userBalanceTotal) && !isUsingAuxiliaryFunds) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -146,11 +158,17 @@ function DepositButton(props: DepositButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!depsitWithPermit2Config) {
+      let method: Promise<Hash>;
+      if (isUsingAuxiliaryFunds) {
+        method = depositWithPermit2(depositWithPermit2Args);
+      } else if (!depsitWithPermit2Config) {
         refetchDepositWithPermit2();
         return;
+      } else {
+        method = depositWithPermit2(depsitWithPermit2Config.request);
       }
-      depositWithPermit2(depsitWithPermit2Config.request)
+
+      method
         .then((hash) => {
           setPendingTxn(hash);
           setIsOpen(false);
