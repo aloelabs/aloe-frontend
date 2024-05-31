@@ -10,9 +10,11 @@ import { GN } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { Address } from 'viem';
+import { Config, useClient } from 'wagmi';
 
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
+import { useEthersProvider } from '../../../util/Provider';
 
 export type InfoTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
@@ -29,7 +31,7 @@ const MAX_NUM_UPDATE_LOGS_PER_POOL_PER_DAY = 6;
 const MAX_NUM_LOGS_PER_ALCHEMY_REQUEST = 2000;
 
 export default function InfoTab(props: InfoTabProps) {
-  const { chainId, provider, lendingPairs, tokenColors, setPendingTxn } = props;
+  const { chainId, lendingPairs, tokenColors, setPendingTxn } = props;
 
   const [oracleLogs, setOracleLogs] = useChainDependentState(new Map<Address, ethers.Event[]>(), chainId);
   const [blockNumbersToTimestamps, setBlockNumbersToTimestamps] = useChainDependentState(
@@ -38,6 +40,8 @@ export default function InfoTab(props: InfoTabProps) {
   );
   const [hoveredPair, setHoveredPair] = useState<LendingPair | undefined>(undefined);
 
+  const client = useClient<Config>({ chainId });
+  const provider = useEthersProvider(client);
   const fetchOracleLogs = useCallback(async () => {
     if (lendingPairs.length === 0 || !provider || provider.network.chainId !== chainId) return;
 
