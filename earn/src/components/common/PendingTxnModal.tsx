@@ -3,6 +3,7 @@ import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/c
 import { Text } from 'shared/lib/components/common/Typography';
 import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { Hash } from 'viem';
 
 import { ReactComponent as ErrorIcon } from '../../assets/svg/error.svg';
 import { ReactComponent as SuccessIcon } from '../../assets/svg/success.svg';
@@ -38,7 +39,7 @@ function EtherscanLink(props: { txnHash: string }) {
 export type PendingTxnModalProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  txnHash: `0x${string}` | null;
+  txnHash: Hash | null;
   status: PendingTxnModalStatus | null;
   onConfirm: () => void;
 };

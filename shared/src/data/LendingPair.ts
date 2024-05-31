@@ -98,8 +98,8 @@ export function asLendingPair(
   slot0: readonly [bigint, number, number, number, number, number, boolean],
   consult: readonly [bigint, bigint, bigint],
   lastWrites: readonly [number, number, bigint, bigint],
-  readBasics0: readonly [`0x${string}`, bigint, bigint, bigint, bigint, bigint, number, bigint],
-  readBasics1: readonly [`0x${string}`, bigint, bigint, bigint, bigint, bigint, number, bigint]
+  readBasics0: readonly [Address, bigint, bigint, bigint, bigint, bigint, number, bigint],
+  readBasics1: readonly [Address, bigint, bigint, bigint, bigint, bigint, number, bigint]
 ) {
   const token0 = getToken(chainId, readBasics0[0]);
   const token1 = getToken(chainId, readBasics1[0]);

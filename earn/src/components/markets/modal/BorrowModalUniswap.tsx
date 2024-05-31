@@ -29,7 +29,7 @@ import { UniswapNFTPosition, zip } from 'shared/lib/data/Uniswap';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { erc721Abi } from 'viem';
+import { erc721Abi, Hex } from 'viem';
 import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -199,7 +199,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     const to = userAddress;
     const pools = [selectedLendingPair.uniswapPool];
     const salts = [generatedSalt];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
   }, [userAddress, selectedLendingPair, generatedSalt, borrowerNft]);
 
   // Then we use the UniswapNFTManager to import the Uniswap NFT as collateral
@@ -213,7 +213,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
         `-${uniswapPosition.liquidity.toString(10)}`,
         zip([uniswapPosition], '0x83ee755b'),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [uniswapPosition]);
 
   // Finally, we borrow the requested tokens
@@ -240,7 +240,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     ];
     const datas = [encodedImportCall, encodedBorrowCall];
     const antes = [ante.toBigNumber().div(1e13), BigNumber.from(0)];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
   }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedImportCall, encodedBorrowCall, borrowerNft]);
 
   const { data: multicallConfig } = useSimulateContract({

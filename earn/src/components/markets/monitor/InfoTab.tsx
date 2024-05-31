@@ -9,7 +9,7 @@ import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/dat
 import { GN } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
-import { Address } from 'viem';
+import { Address, Hash } from 'viem';
 
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
@@ -79,7 +79,7 @@ export default function InfoTab(props: InfoTabProps) {
   }, [chainId, provider, lendingPairs.length, setOracleLogs]);
 
   const setPendingTxnAndRefresh = useCallback(
-    (data: `0x${string}`) => {
+    (data: Hash) => {
       setPendingTxn(data);
       fetchOracleLogs();
     },

@@ -17,7 +17,7 @@ import {
 import { Token } from './Token';
 import { getToken } from './TokenData';
 import { toBig } from '../util/Numbers';
-import { Address, Chain } from 'viem';
+import { Address, Chain, Hex } from 'viem';
 
 import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { BIGQ96, Q96 } from './constants/Values';
@@ -521,7 +521,7 @@ function modQ24(value: number) {
   return value & 0b00000000111111111111111111111111;
 }
 
-export function zip(uniswapPositions: readonly UniswapPosition[], tag?: `0x${string}`) {
+export function zip(uniswapPositions: readonly UniswapPosition[], tag?: Hex) {
   const positions: number[] = [];
   uniswapPositions.forEach((position) => {
     if (!JSBI.EQ(position.liquidity, JSBI.BigInt(0))) {

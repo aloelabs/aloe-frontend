@@ -14,6 +14,7 @@ import {
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { UniswapPosition, zip } from 'shared/lib/data/Uniswap';
 import useChain from 'shared/lib/hooks/UseChain';
+import { Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
@@ -78,7 +79,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
           '0x83ee755b'
         ),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [borrower, positionToWithdraw, uniswapNftId]);
 
   const { data: withdrawConfig, error: withdrawError } = useSimulateContract({

@@ -29,6 +29,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
+import { Hex } from 'viem';
 import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -261,7 +262,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     const to = userAddress;
     const pools = [selectedLendingPair.uniswapPool ?? '0x'];
     const salts = [generatedSalt];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
   }, [userAddress, selectedLendingPair?.uniswapPool, generatedSalt, borrowerNft]);
 
   const encodedBorrowCall = useMemo(() => {
@@ -284,7 +285,7 @@ export default function BorrowModal(props: BorrowModalProps) {
     const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
     const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2))];
     const antes = [ante.toBigNumber().div(1e13)];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
   }, [availableNft, nextNftPtrIdx, userAddress, ante, encodedPermit2, encodedBorrowCall, activeChain.id, borrowerNft]);
 
   const {

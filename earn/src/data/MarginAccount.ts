@@ -21,7 +21,7 @@ import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
 import { UniswapPosition } from 'shared/lib/data/Uniswap';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
 
@@ -59,7 +59,7 @@ export type MarginAccount = {
   lender1: Address;
   iv: number;
   nSigma: number;
-  userDataHex: `0x${string}`;
+  userDataHex: Hex;
   warningTime: number;
 };
 
@@ -290,7 +290,7 @@ export async function fetchBorrowerDatas(
 
     const uniswapPositionData = lensReturnContexts[1].returnValues;
     const uniswapPositionBounds = uniswapPositionData[0] as number[];
-    const uniswapPositionLiquidity = uniswapPositionData[1] as { hex: `0x${string}` }[];
+    const uniswapPositionLiquidity = uniswapPositionData[1] as { hex: Hex }[];
 
     const uniswapPositions: UniswapPosition[] = [];
     uniswapPositionLiquidity.forEach((liquidity, i) => {
@@ -309,7 +309,7 @@ export async function fetchBorrowerDatas(
     );
 
     const slot0 = accountReturnContexts[2].returnValues[0] as BigNumber;
-    const userDataHex = slot0.shr(144).mask(64).toHexString() as `0x${string}`;
+    const userDataHex = slot0.shr(144).mask(64).toHexString() as Hex;
     const warningTime = slot0.shr(208).mask(40).toNumber();
 
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;

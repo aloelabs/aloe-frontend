@@ -19,7 +19,7 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
@@ -98,7 +98,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       amount0.toBigNumber(),
       amount1.toBigNumber(),
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [withdrawAmount, borrower.token0.decimals, borrower.token1.decimals, isWithdrawingToken0, accountAddress]);
 
   const encodedWithdrawAnteCall = useMemo(() => {
@@ -107,7 +107,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     return borrowerInterface.encodeFunctionData('transferEth', [
       borrowerBalance?.value,
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [accountAddress, borrowerBalance]);
 
   const combinedEncodingsForMultiManager = useMemo(() => {
@@ -115,7 +115,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     return ethers.utils.defaultAbiCoder.encode(
       ['bytes[]'],
       [[encodedWithdrawCall, encodedWithdrawAnteCall]]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
   const { data: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = useSimulateContract({
