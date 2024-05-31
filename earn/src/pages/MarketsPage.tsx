@@ -21,7 +21,8 @@ import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { linea } from 'viem/chains';
-import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
+import { useAccount, useBlockNumber, usePublicClient } from 'wagmi';
+import { useCapabilities } from 'wagmi/experimental';
 
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
@@ -30,7 +31,6 @@ import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
 import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
-import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';
@@ -100,8 +100,8 @@ export default function MarketsPage() {
 
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
+  const { data: capabilities } = useCapabilities({ account: userAddress });
+  const hasAuxiliaryFunds = useMemo(() => capabilities?.[84532]?.auxiliaryFunds.supported ?? false, [capabilities]);
 
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
@@ -263,7 +263,6 @@ export default function MarketsPage() {
       tabContent = (
         <InfoTab
           chainId={activeChain.id}
-          provider={provider}
           lendingPairs={lendingPairs}
           tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
