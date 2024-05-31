@@ -282,7 +282,11 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         if (userAddress) setSelectedSupply(row);
                       }}
-                      disabled={userAddress && row.suppliableBalance === 0 && !hasAuxiliaryFunds}
+                      disabled={
+                        userAddress &&
+                        row.suppliableBalance === 0 &&
+                        !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')
+                      }
                       className='connect-wallet-button-trigger'
                     >
                       Supply

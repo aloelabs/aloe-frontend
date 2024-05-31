@@ -20,7 +20,7 @@ import { useLatestPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
 import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { linea } from 'viem/chains';
+import { base, linea } from 'viem/chains';
 import { useAccount, useBlockNumber, usePublicClient } from 'wagmi';
 import { useCapabilities } from 'wagmi/experimental';
 
@@ -101,7 +101,13 @@ export default function MarketsPage() {
   // MARK: wagmi hooks
   const { address: userAddress } = useAccount();
   const { data: capabilities } = useCapabilities({ account: userAddress });
-  const hasAuxiliaryFunds = useMemo(() => capabilities?.[84532]?.auxiliaryFunds.supported ?? false, [capabilities]);
+  const hasAuxiliaryFunds = useMemo(
+    // NOTE: We only expect `auxiliaryFunds.supported` to be true for the Coinbase Smart Wallet,
+    // which only _actually_ supports auxiliary funds on Base -- hence the extra condition.
+    () => activeChain.id === base.id && (capabilities?.[84532]?.auxiliaryFunds.supported ?? false),
+    [activeChain.id, capabilities]
+  );
+  console.log(capabilities?.[84532]?.auxiliaryFunds.supported);
 
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
