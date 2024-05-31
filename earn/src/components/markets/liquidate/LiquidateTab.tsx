@@ -77,6 +77,7 @@ export default function LiquidateTab(props: LiquidateTabProps) {
       return pair;
     });
 
+    // TODO: This causes *all* borrowers to disappear if we're missing Token data for a certain pool
     if (missing) return undefined;
     return res as LendingPair[];
   }, [createBorrowerEvents, lendingPairs]);
