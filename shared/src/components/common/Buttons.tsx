@@ -251,6 +251,19 @@ export const OutlinedGradientButton = styled(BaseButton)`
       background: ${GREY_900};
     }
   }
+
+  @keyframes pulse-shadow {
+    0% {
+      box-shadow: 0px 0px 0px 0px rgba(126, 213, 197, 0.9), 0px 0px 0px -4px rgba(154, 173, 241, 0.9);
+    }
+    50% {
+      box-shadow: 0px 0px 0px 8px rgba(126, 213, 197, 0.3), 0px 0px 0px 4px rgba(154, 173, 241, 0.3);
+      transform: translate(-4px);
+    }
+    100% {
+      box-shadow: 0px 0px 0px 0px rgba(126, 213, 197, 0.9), 0px 0px 0px -4px rgba(154, 173, 241, 0.9);
+    }
+  }
 `;
 
 export const OutlinedWhiteButton = styled(BaseButton)`
@@ -337,19 +350,6 @@ export const FilledStylizedButton = styled(BaseButton)`
 
   &:focus-visible {
     box-shadow: 0px 0px 0px 2px ${GREY_900}, 0px 0px 0px 4px rgba(255, 255, 255, 0.2);
-  }
-
-  @keyframes pulse-shadow {
-    0% {
-      box-shadow: 0px 0px 0px 0px rgba(126, 213, 197, 0.9), 0px 0px 0px -4px rgba(154, 173, 241, 0.9);
-    }
-    50% {
-      box-shadow: 0px 0px 0px 8px rgba(126, 213, 197, 0.3), 0px 0px 0px 4px rgba(154, 173, 241, 0.3);
-      transform: translate(-4px);
-    }
-    100% {
-      box-shadow: 0px 0px 0px 0px rgba(126, 213, 197, 0.9), 0px 0px 0px -4px rgba(154, 173, 241, 0.9);
-    }
   }
 `;
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { FilledStylizedButton } from '../common/Buttons';
+import { FilledStylizedButton, OutlinedGradientButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import styled from 'styled-components';
@@ -14,6 +14,7 @@ const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
 `;
 
 export type ConnectWalletButtonProps = {
+  shouldShortenText: boolean;
   checkboxes: React.ReactNode[];
   disabled?: boolean;
   fillWidth?: boolean;
@@ -79,7 +80,7 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
 
   return (
     <Container fillWidth={fillWidth}>
-      <FilledStylizedButton
+      <OutlinedGradientButton
         onClick={() => {
           setWalletModalOpen(true);
         }}
@@ -88,8 +89,8 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         disabled={disabled}
         className='connect-wallet-button'
       >
-        Connect Wallet
-      </FilledStylizedButton>
+        {props.shouldShortenText ? 'Connect' : 'Connect Wallet'}
+      </OutlinedGradientButton>
       <Modal isOpen={walletModalOpen} setIsOpen={setWalletModalOpen} title={'Connect Wallet'}>
         {acceptedTerms ? (
           <div className='w-full'>

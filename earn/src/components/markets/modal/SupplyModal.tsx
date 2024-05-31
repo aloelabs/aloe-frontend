@@ -74,6 +74,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type DepositButtonProps = {
+  hasAuxiliaryFunds: boolean;
   supplyAmount: GN;
   userBalanceTotal: GN;
   userBalanceToken: GN;
@@ -85,8 +86,17 @@ type DepositButtonProps = {
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    hasAuxiliaryFunds,
+    supplyAmount,
+    userBalanceTotal,
+    userBalanceToken,
+    token,
+    kitty,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const activeChain = useChain();
 
   const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
@@ -121,7 +131,7 @@ function DepositButton(props: DepositButtonProps) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (supplyAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (supplyAmount.gt(userBalanceTotal)) {
+  } else if (supplyAmount.gt(userBalanceTotal) && !hasAuxiliaryFunds) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -163,13 +173,14 @@ function DepositButton(props: DepositButtonProps) {
 
 export type SupplyModalProps = {
   isOpen: boolean;
+  hasAuxiliaryFunds: boolean;
   selectedRow: SupplyTableRow;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyModal(props: SupplyModalProps) {
-  const { isOpen, selectedRow, setIsOpen, setPendingTxn } = props;
+  const { isOpen, hasAuxiliaryFunds, selectedRow, setIsOpen, setPendingTxn } = props;
   const [amount, setAmount] = useState<string>('');
   const activeChain = useChain();
   const { address: userAddress } = useAccount();
@@ -267,6 +278,7 @@ export default function SupplyModal(props: SupplyModalProps) {
           </Text>
         </div>
         <DepositButton
+          hasAuxiliaryFunds={hasAuxiliaryFunds}
           accountAddress={userAddress ?? '0x'}
           supplyAmount={supplyAmount}
           userBalanceTotal={userBalance}

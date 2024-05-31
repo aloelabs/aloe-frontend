@@ -61,7 +61,7 @@ export const wagmiConfig = createConfig({
       appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
       // appChainIds: [mainnet.id, optimism.id, arbitrum.id, base.id],
-      darkMode: true,
+      preference: 'all',
     }),
     safe(),
   ],

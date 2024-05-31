@@ -15,6 +15,7 @@ import { computeDomainSeparator } from '../util/Permit';
 import { UNISWAP_PERMIT2_ADDRESS } from '../data/constants/ChainSpecific';
 import { Token } from '../data/Token';
 import { Address, Chain, erc20Abi, maxUint256 } from 'viem';
+import { parseErc6492Signature } from 'viem/experimental';
 
 export enum Permit2State {
   FETCHING_DATA,
