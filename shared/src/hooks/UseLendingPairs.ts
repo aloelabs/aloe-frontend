@@ -71,7 +71,7 @@ export function useLendingPairs(chainId: number) {
   });
 
   // Get factory parameters for each market. Only refreshes on page load.
-  const { data: getParametersData } = useReadContracts({
+  const { data: getParametersData, queryKey: parametersKey } = useReadContracts({
     contracts: logs?.map(
       (log) =>
         ({
@@ -138,9 +138,10 @@ export function useLendingPairs(chainId: number) {
   const refetchOracleData = useCallback(() => {
     return queryClient.invalidateQueries({ queryKey: oracleKey });
   }, [queryClient, oracleKey]);
-  const refetchLenderData = useCallback(() => {
+  const refetchLenderData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: parametersKey })
     return queryClient.invalidateQueries({ queryKey: readBasicsKey });
-  }, [queryClient, readBasicsKey]);
+  }, [queryClient, parametersKey, readBasicsKey]);
 
   const [data, setData] = useState<{ lendingPairs: LendingPair[]; chainId: number }>({
     lendingPairs: [],
