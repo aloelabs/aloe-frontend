@@ -9,7 +9,7 @@ import { ALOE_II_ORACLE_ADDRESS, APPROX_SECONDS_PER_BLOCK } from 'shared/lib/dat
 import { GN } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
-import { Address, Hash } from 'viem';
+import { Address } from 'viem';
 
 import InfoGraph, { InfoGraphColors, InfoGraphData, InfoGraphLabel } from './InfoGraph';
 import StatsTable from './StatsTable';
@@ -78,14 +78,6 @@ export default function InfoTab(props: InfoTabProps) {
     setOracleLogs(map);
   }, [chainId, provider, lendingPairs.length, setOracleLogs]);
 
-  const setPendingTxnAndRefresh = useCallback(
-    (data: Hash) => {
-      setPendingTxn(data);
-      fetchOracleLogs();
-    },
-    [setPendingTxn, fetchOracleLogs]
-  );
-
   // Fetch `oracleLogs`
   useEffect(() => {
     fetchOracleLogs();
@@ -130,6 +122,20 @@ export default function InfoTab(props: InfoTabProps) {
       return blockNumbersToTimestamps.get(blockNumber);
     });
   }, [lendingPairs, oracleLogs, blockNumbersToTimestamps]);
+
+  // NOTE: This is a roundabout way of refetching oracle logs after clicking "Update". TODO: Improve!!
+  useEffect(() => {
+    if (
+      lendingPairs.some((pair, i) => {
+        const latestTimestamp = latestTimestamps[i];
+        return (
+          latestTimestamp !== undefined && latestTimestamp > 0 && latestTimestamp < pair.lastWrite.getTime() / 1000
+        );
+      })
+    ) {
+      fetchOracleLogs();
+    }
+  }, [lendingPairs, latestTimestamps, fetchOracleLogs]);
 
   // Compute graph data
   const graphData: InfoGraphData | undefined = useMemo(() => {
@@ -186,7 +192,7 @@ export default function InfoTab(props: InfoTabProps) {
         rows={lendingPairs.map((lendingPair, i) => ({
           lendingPair,
           lastUpdatedTimestamp: latestTimestamps.at(i),
-          setPendingTxn: setPendingTxnAndRefresh,
+          setPendingTxn,
           onMouseEnter: setHoveredPair,
         }))}
         chainId={chainId}
