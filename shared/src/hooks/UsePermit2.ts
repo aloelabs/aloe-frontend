@@ -261,6 +261,12 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
     resetSignature();
   }, [resetSignature, permitTransferFrom]);
 
+  // parse signature, in case encoded with extra ERC-6492 data
+  const parsedSignature = useMemo(() => {
+    if (!signature) return;
+    return parseErc6492Signature(signature).signature;
+  }, [signature]);
+
   let state: Permit2State;
   let action: (() => void) | undefined;
 
@@ -279,7 +285,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
   } else if (isAskingUserToSign) {
     state = Permit2State.ASKING_USER_TO_SIGN;
     action = undefined;
-  } else if (signature === undefined) {
+  } else if (parsedSignature === undefined) {
     state = Permit2State.READY_TO_SIGN;
     action = () =>
       signTypedData({
@@ -300,7 +306,7 @@ export function usePermit2(chain: Chain, token: Token, owner: Address, spender: 
       amount,
       nonce,
       deadline,
-      signature: signature as `0x${string}` | undefined,
+      signature: parsedSignature,
     },
   };
 }
