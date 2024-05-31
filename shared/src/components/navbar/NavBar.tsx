@@ -19,18 +19,19 @@ import AccountInfo from './AccountInfo';
 import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
-import useMediaQuery from '../../hooks/UseMediaQuery';
+import useMediaQuery, { useMediaQuery2 } from '../../hooks/UseMediaQuery';
 import useLockScroll from '../../hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import { GNFormat } from '../../data/GoodNumber';
 import { useLeaderboardValue } from '../../hooks/UseLeaderboard';
+import { BlueCreateWalletButton } from './CreateWalletButton';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
   height: 40px;
-  margin-right: 32px;
+  margin-right: 20px;
   @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
@@ -53,7 +54,7 @@ const DesktopTopNav = styled.div`
   display: flex;
   align-items: center;
   height: 64px;
-  padding: 0 32px;
+  padding: 0 20px;
 `;
 
 const TabletBottomNav = styled.div`
@@ -157,11 +158,6 @@ const DesktopNavLink = styled(NavLink)`
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
   }
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
-    width: 100%;
-    padding: 12px 0px;
-  }
 `;
 
 const ExternalDesktopLink = styled.a`
@@ -180,11 +176,6 @@ const ExternalDesktopLink = styled.a`
 
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
-  }
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
-    width: 100%;
-    padding: 12px 0px;
   }
 `;
 
@@ -286,6 +277,9 @@ export function NavBar(props: NavBarProps) {
 
   const accountPoints = useLeaderboardValue(account.address);
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS.XS);
+  const windowWidth = useMediaQuery2();
+  const shouldShortedWalletButtonsText =
+    RESPONSIVE_BREAKPOINTS.TABLET < windowWidth && windowWidth < RESPONSIVE_BREAKPOINTS.MD;
 
   useEffect(() => {
     if (isNavDrawerOpen && isBiggerThanMobile) {
@@ -324,7 +318,14 @@ export function NavBar(props: NavBarProps) {
             </OutlinedGradientRoundedButton>
           )}
           {!account.isConnected ? (
-            <ConnectWalletButton checkboxes={checkboxes} disabled={!isAllowedToInteract} />
+            <>
+              <BlueCreateWalletButton shouldShortenText={shouldShortedWalletButtonsText} />
+              <ConnectWalletButton
+                shouldShortenText={shouldShortedWalletButtonsText}
+                checkboxes={checkboxes}
+                disabled={!isAllowedToInteract}
+              />
+            </>
           ) : (
             <AccountInfo account={account} closeChainSelector={() => setIsSelectChainDropdownOpen(false)} />
           )}

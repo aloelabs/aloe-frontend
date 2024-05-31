@@ -15,3 +15,19 @@ export default function useMediaQuery(minWidth: number) {
 
   return isMinWidth;
 }
+
+export function useMediaQuery2() {
+  const [width, setWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWidth(Math.ceil(window.innerWidth / 10) * 10);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return width;
+}

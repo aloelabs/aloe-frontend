@@ -114,12 +114,13 @@ export type SupplyTableRow = {
 };
 
 export type SupplyTableProps = {
+  hasAuxiliaryFunds: boolean;
   rows: SupplyTableRow[];
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyTable(props: SupplyTableProps) {
-  const { rows, setPendingTxn } = props;
+  const { hasAuxiliaryFunds, rows, setPendingTxn } = props;
   const activeChain = useChain();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
@@ -281,7 +282,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         if (userAddress) setSelectedSupply(row);
                       }}
-                      disabled={userAddress && row.suppliableBalance === 0}
+                      disabled={userAddress && row.suppliableBalance === 0 && !hasAuxiliaryFunds}
                       className='connect-wallet-button-trigger'
                     >
                       Supply
@@ -335,6 +336,7 @@ export default function SupplyTable(props: SupplyTableProps) {
       </TableContainer>
       {selectedSupply && (
         <SupplyModal
+          hasAuxiliaryFunds={hasAuxiliaryFunds}
           isOpen={true}
           selectedRow={selectedSupply}
           setIsOpen={() => {

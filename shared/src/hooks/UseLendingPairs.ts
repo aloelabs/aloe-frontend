@@ -139,7 +139,7 @@ export function useLendingPairs(chainId: number) {
     return queryClient.invalidateQueries({ queryKey: oracleKey });
   }, [queryClient, oracleKey]);
   const refetchLenderData = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: parametersKey })
+    await queryClient.invalidateQueries({ queryKey: parametersKey });
     return queryClient.invalidateQueries({ queryKey: readBasicsKey });
   }, [queryClient, parametersKey, readBasicsKey]);
 

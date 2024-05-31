@@ -243,7 +243,9 @@ export default function MarketsPage() {
   switch (selectedTab) {
     default:
     case TabOption.Supply:
-      tabContent = <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />;
+      tabContent = (
+        <SupplyTable hasAuxiliaryFunds={hasAuxiliaryFunds} rows={supplyRows} setPendingTxn={setPendingTxn} />
+      );
       break;
     case TabOption.Borrow:
       tabContent = (
