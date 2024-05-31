@@ -13,6 +13,7 @@ import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Hex } from 'viem';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BoostCardInfo } from '../../data/Uniboost';
@@ -51,7 +52,7 @@ export default function CollectFeesWidget(props: CollectFeesWidgetProps) {
   const modifyData = useMemo(() => {
     const inner = '0x';
     const actionId = 1;
-    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as Hex;
   }, []);
 
   const { data: configBurn } = useSimulateContract({

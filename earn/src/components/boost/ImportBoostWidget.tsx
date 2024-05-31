@@ -32,7 +32,7 @@ import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/G
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { erc721Abi } from 'viem';
+import { erc721Abi, Hex } from 'viem';
 import {
   useAccount,
   useBalance,
@@ -292,9 +292,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         (boostFactor * 10000).toFixed(0),
         combinedMaxBorrowAmount,
       ]
-    ) as `0x${string}`;
+    ) as Hex;
     const actionId = 0;
-    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as Hex;
   }, [cardInfo, maxSlippagePercentage, borrowAmount0, borrowAmount1, boostFactor]);
   const enableHooks = cardInfo !== undefined;
 
@@ -392,7 +392,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const to = userAddress;
     const pools = [cardInfo.uniswapPool];
     const salts = [generateBytes12Salt()];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
   }, [borrowerNft, userAddress, cardInfo]);
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
@@ -402,7 +402,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
     const datas = [modifyData];
     const antes = [ethToSend / 10_000_000_000_000n];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
   }, [borrowerNft, userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
 
   const {

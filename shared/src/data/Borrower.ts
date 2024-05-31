@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { GN } from './GoodNumber';
 import { UniswapPosition, getAmountsForLiquidity, getAmountsForLiquidityGN } from './Uniswap';
 import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from './constants/Values';
@@ -95,7 +95,7 @@ export class DerivedBorrower {
   }
 
   public get userData() {
-    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as `0x${string}`;
+    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as Hex;
   }
 
   public get warnTime() {

@@ -24,6 +24,7 @@ import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Hex } from 'viem';
 import { useAccount, useWriteContract } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
@@ -165,7 +166,7 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
         pair.kitty1.address,
         userAddress ?? ZERO_ADDRESS,
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [pair, userAddress]);
 
   const etherscanUrl = getEtherscanUrlForChain(activeChain);

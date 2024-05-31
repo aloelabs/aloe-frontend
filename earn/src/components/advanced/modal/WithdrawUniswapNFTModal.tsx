@@ -23,7 +23,7 @@ import {
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -115,7 +115,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
           })
         ),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [uniswapNFTPosition, uniswapPosition, existingUniswapPositions]);
 
   const { data: contractWriteConfig } = useSimulateContract({
@@ -126,7 +126,7 @@ function WithdrawUniswapNFTButton(props: WithdrawUniswapNFTButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [0],
     ],
     chainId: activeChain.id,

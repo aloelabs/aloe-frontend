@@ -22,7 +22,7 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, WriteContractReturnType } from 'viem';
+import { Address, Hex, WriteContractReturnType } from 'viem';
 import { useAccount, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -116,7 +116,7 @@ function BorrowButton(props: BorrowButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [etherToSend.toBigNumber().div(1e13).toNumber()],
     ],
     value: etherToSend.toBigInt(),

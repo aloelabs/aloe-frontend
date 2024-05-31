@@ -23,7 +23,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { usePermit2, Permit2State } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, Chain } from 'viem';
+import { Address, Chain, Hex } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -249,7 +249,7 @@ function RepayButton(props: RepayButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [0],
     ],
     query: { enabled: Boolean(userAddress) && repayAmount.isGtZero() },

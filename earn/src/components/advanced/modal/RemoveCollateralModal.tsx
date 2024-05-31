@@ -20,7 +20,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
@@ -91,7 +91,7 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [0],
     ],
     query: { enabled: Boolean(userAddress) && collateralAmount.isGtZero() && collateralAmount.lte(userBalance) },

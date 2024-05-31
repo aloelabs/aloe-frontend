@@ -22,7 +22,7 @@ import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
@@ -101,7 +101,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       amount0.toBigNumber(),
       amount1.toBigNumber(),
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [borrowAmount, borrower.token0.decimals, borrower.token1.decimals, isBorrowingToken0, accountAddress]);
 
   const { data: borrowConfig, isLoading: isCheckingIfAbleToBorrow } = useSimulateContract({

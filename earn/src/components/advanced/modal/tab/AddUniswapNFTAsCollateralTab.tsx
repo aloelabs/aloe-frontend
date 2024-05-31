@@ -18,7 +18,7 @@ import { getValueOfLiquidity, tickToPrice, UniswapNFTPosition, UniswapPosition, 
 import useChain from 'shared/lib/hooks/UseChain';
 import { truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, erc721Abi } from 'viem';
+import { Address, erc721Abi, Hex } from 'viem';
 import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
@@ -193,7 +193,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
           },
         ]),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [uniswapNFTPosition, existingUniswapPositions]);
 
   const { data: contractWriteConfig } = useSimulateContract({
@@ -204,7 +204,7 @@ function AddUniswapNFTAsCollateralButton(props: AddUniswapNFTAsCollateralButtonP
       userAddress,
       [borrower.index],
       [ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [0],
     ],
     query: { enabled: getApprovedData === ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id] },
