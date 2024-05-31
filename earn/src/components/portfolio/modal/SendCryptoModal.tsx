@@ -114,7 +114,6 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY && sendCryptoConfig !== undefined) {
       setIsPending(true);
       contractWrite(sendCryptoConfig.request);

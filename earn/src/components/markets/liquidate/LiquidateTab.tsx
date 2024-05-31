@@ -69,26 +69,22 @@ export default function LiquidateTab(props: LiquidateTabProps) {
     query: { enabled: createBorrowerEvents.length > 0 },
   });
 
-  const lendingPairsForEvents = useMemo(() => {
-    let missing = false;
-    const res = createBorrowerEvents.map((ev) => {
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase());
-      if (pair === undefined) missing = true;
-      return pair;
-    });
-
-    // TODO: This causes *all* borrowers to disappear if we're missing Token data for a certain pool
-    if (missing) return undefined;
-    return res as LendingPair[];
-  }, [createBorrowerEvents, lendingPairs]);
+  const lendingPairsForEvents = useMemo(
+    () =>
+      createBorrowerEvents.map((ev) =>
+        lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase())
+      ),
+    [createBorrowerEvents, lendingPairs]
+  );
 
   const borrowers = useMemo(() => {
-    if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
+    if (summaryData === undefined) return undefined;
     return createBorrowerEvents.map((ev, i) => {
       const { pool: uniswapPool, owner, account: address } = ev.args;
       const [balanceEth, balance0, balance1, liabilities0, liabilities1, slot0, liquidity] = summaryData[i];
 
       const pair = lendingPairsForEvents[i];
+      if (pair === undefined) return undefined;
 
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
@@ -122,8 +118,8 @@ export default function LiquidateTab(props: LiquidateTabProps) {
     if (borrowers === undefined) return [];
     return borrowers
       .map((borrower, i) => {
-        if (borrower.ethBalance.isZero()) return undefined;
-        const pair = lendingPairsForEvents![i];
+        if (borrower === undefined || borrower.ethBalance.isZero()) return undefined;
+        const pair = lendingPairsForEvents[i]!;
         const { health } = borrower.health(
           new Big(pair.oracleData.sqrtPriceX96.toString(GNFormat.INT)),
           pair.iv,

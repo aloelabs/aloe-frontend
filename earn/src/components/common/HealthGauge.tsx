@@ -77,7 +77,6 @@ function HealthSVG(props: HealthGaugeProps) {
 export default function HealthGauge(props: HealthGaugeProps) {
   const [isHovering, setIsHovering] = useState(false);
 
-  // TODO: Ideally we'd show things like auctionState / liquidation time as well, not just health.
   return (
     <TooltipParent onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
       <HealthSVG {...props} />
