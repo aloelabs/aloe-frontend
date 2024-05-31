@@ -5,6 +5,8 @@ import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors'
 
 import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 import { Transport } from 'viem';
+import { DEFAULT_CHAIN } from '../data/constants/Values';
+import { isDevelopment } from '../util/Utils';
 
 const transports: { [chainId: number]: Transport[] } = Object.fromEntries(ALL_CHAINS.map((c) => [c.id, []]));
 
@@ -60,8 +62,8 @@ export const wagmiConfig = createConfig({
     coinbaseWallet({
       appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
-      // appChainIds: [mainnet.id, optimism.id, arbitrum.id, base.id],
-      preference: 'all',
+      chainId: DEFAULT_CHAIN.id,
+      preference: isDevelopment() ? 'all' : 'eoaOnly',
     }),
     safe(),
   ],
