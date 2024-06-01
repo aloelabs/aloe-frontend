@@ -186,7 +186,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { address: userAddress } = useAccount();
 
   const { lendingPairs } = useLendingPairs(activeChain.id);
-  const lendingPair = useLendingPair(lendingPairs, cardInfo.token0.address, cardInfo.token1.address);
+  const lendingPair = useLendingPair(lendingPairs, cardInfo.uniswapPool);
 
   // Generate labels for input range (slider)
   const labels: string[] = [];

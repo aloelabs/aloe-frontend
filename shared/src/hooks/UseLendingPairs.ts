@@ -199,14 +199,16 @@ export function useLendingPairs(chainId: number) {
   };
 }
 
-export function useLendingPair(lendingPairs: LendingPair[], token0?: Address, token1?: Address) {
-  return useMemo(
-    () =>
-      lendingPairs.find(
+export function useLendingPair(lendingPairs: LendingPair[], pool?: Address, token0?: Address, token1?: Address) {
+  return useMemo(() => {
+    if (pool) {
+      return lendingPairs.find((pair) => pool.toLowerCase() === pair.uniswapPool.toLowerCase());
+    } else {
+      return lendingPairs.find(
         (pair) =>
           pair.token0.address.toLowerCase() === token0?.toLowerCase() &&
           pair.token1.address.toLowerCase() === token1?.toLowerCase()
-      ),
-    [lendingPairs, token0, token1]
-  );
+      );
+    }
+  }, [lendingPairs, pool, token0, token1]);
 }

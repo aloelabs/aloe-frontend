@@ -199,11 +199,7 @@ export default function AdvancedPage() {
     );
   }, [borrowerNftBorrowers, searchParams]);
 
-  const market = useLendingPair(
-    lendingPairs,
-    selectedMarginAccount?.token0.address,
-    selectedMarginAccount?.token1.address
-  );
+  const market = useLendingPair(lendingPairs, selectedMarginAccount?.uniswapPool as Address | undefined);
 
   const availablePools = useUniswapPools(lendingPairs);
 
