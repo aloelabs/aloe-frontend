@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import axios, { AxiosResponse } from 'axios';
-import { useNavigate } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useLendingPairsBalances } from 'shared/lib/hooks/UseLendingPairBalances';
+import { useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
+import { useConsolidatedPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
+import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import styled from 'styled-components';
-import { Config, useAccount, useClient, usePublicClient } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { ReactComponent as SendIcon } from '../assets/svg/send.svg';
@@ -31,12 +32,6 @@ import PortfolioBalance from '../components/portfolio/PortfolioBalance';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
 import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
-import { API_PRICE_RELAY_CONSOLIDATED_URL } from '../data/constants/Values';
-import { useLendingPairs } from '../data/hooks/UseLendingPairs';
-import { getLendingPairBalances, LendingPairBalances } from '../data/LendingPair';
-import { PriceRelayConsolidatedResponse } from '../data/PriceRelayResponse';
-import { getProminentColor } from '../util/Colors';
-import { useEthersProvider } from '../util/Provider';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -106,15 +101,6 @@ export default function PortfolioPage() {
   const activeChain = useChain();
 
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
-  const [tokenColors, setTokenColors] = useState<Map<string, string>>(new Map());
-  const [tokenQuotes, setTokenQuotes] = useChainDependentState<TokenQuote[]>([], activeChain.id);
-  const [lendingPairBalances, setLendingPairBalances] = useChainDependentState<LendingPairBalances[]>(
-    [],
-    activeChain.id
-  );
-  const [tokenPriceData, setTokenPriceData] = useState<TokenPriceData[]>([]);
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  const [errorLoadingPrices, setErrorLoadingPrices] = useState(false);
   const [activeAsset, setActiveAsset] = useState<Token | null>(null);
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
@@ -123,15 +109,18 @@ export default function PortfolioPage() {
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
-  const { isLoading, lendingPairs } = useLendingPairs(activeChain.id);
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
-  const { address, isConnecting, isConnected } = useAccount();
-  const navigate = useNavigate();
+  const { lendingPairs, refetchLenderData } = useLendingPairs(activeChain.id);
+  const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
+  const {
+    data: consolidatedPriceData,
+    isPending: isPendingPrices,
+    isFetching: isFetchingPrices,
+    isError: errorLoadingPrices,
+  } = useConsolidatedPriceRelay(lendingPairs, 2 * 60 * 1_000);
+  const isLoadingPrices = isPendingPrices || isFetchingPrices || consolidatedPriceData?.latestPrices.size === 0;
 
-  useEffect(() => {
-    setIsLoadingPrices(true);
-  }, [activeChain.id, setIsLoadingPrices]);
+  const { isConnecting, isConnected } = useAccount();
 
   const uniqueTokens = useMemo(() => {
     const tokens = new Set<Token>();
@@ -142,81 +131,24 @@ export default function PortfolioPage() {
     return Array.from(tokens);
   }, [lendingPairs]);
 
-  /**
-   * Get the latest and historical prices for all tokens
-   */
-  useEffect(() => {
-    (async () => {
-      // Only fetch prices for tokens if they are all on the same (active) chain
-      if (uniqueTokens.length > 0 && uniqueTokens.some((token) => token.chainId !== activeChain.id)) {
-        return;
-      }
-      const symbols = uniqueTokens
-        .map((token) => token?.symbol)
-        .filter((symbol) => symbol !== undefined)
-        .join(',');
-      if (symbols.length === 0) {
-        return;
-      }
-      let priceRelayResponses: AxiosResponse<PriceRelayConsolidatedResponse> | null = null;
-      try {
-        priceRelayResponses = await axios.get(`${API_PRICE_RELAY_CONSOLIDATED_URL}?symbols=${symbols}`);
-      } catch (error) {
-        setErrorLoadingPrices(true);
-        setIsLoadingPrices(false);
-        return;
-      }
-      if (priceRelayResponses == null) {
-        return;
-      }
-      const latestPriceResponse = priceRelayResponses.data.latest;
-      const historicalPriceResponse = priceRelayResponses.data.historical;
-      if (!latestPriceResponse || !historicalPriceResponse) {
-        return;
-      }
-      const tokenQuoteData: TokenQuote[] = Object.entries(latestPriceResponse).map(([symbol, data]) => {
-        return {
-          token: getTokenBySymbol(activeChain.id, symbol),
-          price: data.price,
-        };
-      });
-      const tokenPriceData: TokenPriceData[] = Object.entries(historicalPriceResponse).map(([symbol, data]) => {
-        return {
-          token: getTokenBySymbol(activeChain.id, symbol),
-          priceEntries: data.prices,
-        };
-      });
-      setTokenQuotes(tokenQuoteData);
-      setTokenPriceData(tokenPriceData);
-      setIsLoadingPrices(false);
-    })();
-  }, [activeChain, uniqueTokens, setTokenQuotes, setTokenPriceData, setIsLoadingPrices, setErrorLoadingPrices]);
+  const { tokenQuotes, tokenPriceData } = useMemo(() => {
+    if (!consolidatedPriceData)
+      return {
+        tokenQuotes: [],
+        tokenPriceData: [],
+      };
 
-  useEffect(() => {
-    (async () => {
-      const tokenColorMap: Map<string, string> = new Map();
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
-      const colors = await Promise.all(colorPromises);
-      uniqueTokens.forEach((token: Token, index: number) => {
-        tokenColorMap.set(token.address, colors[index]);
-      });
-      setTokenColors(tokenColorMap);
-    })();
-  }, [lendingPairs, setTokenColors, uniqueTokens]);
-
-  useEffect(() => {
-    (async () => {
-      // Checking for loading rather than number of pairs as pairs could be empty even if loading is false
-      if (!address || !provider || isLoading) return;
-      const { lendingPairBalances: results } = await getLendingPairBalances(
-        lendingPairs,
-        address,
-        provider,
-        activeChain.id
-      );
-      setLendingPairBalances(results);
-    })();
-  }, [activeChain.id, address, isLoading, lendingPairs, provider, setLendingPairBalances]);
+    return {
+      tokenQuotes: Array.from(consolidatedPriceData.latestPrices.entries()).map(([k, v]) => ({
+        token: getTokenBySymbol(activeChain.id, k),
+        price: v,
+      })),
+      tokenPriceData: Array.from(consolidatedPriceData.historicalPrices.entries()).map(([k, v]) => ({
+        token: getTokenBySymbol(activeChain.id, k),
+        priceEntries: v,
+      })),
+    };
+  }, [activeChain.id, consolidatedPriceData]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -235,13 +167,6 @@ export default function PortfolioPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
-  useEffect(() => {
-    if (!isConnected && !isConnecting && lendingPairBalances.length > 0) {
-      setLendingPairBalances([]);
-      setActiveAsset(null);
-    }
-  }, [isConnecting, isConnected, lendingPairBalances, setLendingPairBalances]);
-
   const combinedBalances: TokenBalance[] = useMemo(() => {
     const combined = lendingPairs.flatMap((pair, i) => {
       const token0Quote = tokenQuotes.find((quote) => quote.token?.address === pair.token0.address);
@@ -252,8 +177,8 @@ export default function PortfolioPage() {
       return [
         {
           token: pair.token0,
-          balance: lendingPairBalances?.[i]?.token0Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token0Balance || 0) * token0Price,
+          balance: balancesMap.get(pair.token0.address)?.value || 0,
+          balanceUSD: (balancesMap.get(pair.token0.address)?.value || 0) * token0Price,
           apy: 0,
           isKitty: false,
           pairName,
@@ -261,8 +186,8 @@ export default function PortfolioPage() {
         },
         {
           token: pair.token1,
-          balance: lendingPairBalances?.[i]?.token1Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.token1Balance || 0) * token1Price,
+          balance: balancesMap.get(pair.token1.address)?.value || 0,
+          balanceUSD: (balancesMap.get(pair.token1.address)?.value || 0) * token1Price,
           apy: 0,
           isKitty: false,
           pairName,
@@ -270,8 +195,8 @@ export default function PortfolioPage() {
         },
         {
           token: pair.kitty0,
-          balance: lendingPairBalances?.[i]?.kitty0Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty0Balance || 0) * token0Price,
+          balance: balancesMap.get(pair.kitty0.address)?.value || 0,
+          balanceUSD: (balancesMap.get(pair.kitty0.address)?.value || 0) * token0Price,
           apy: pair.kitty0Info.lendAPY * 100,
           isKitty: true,
           pairName,
@@ -279,8 +204,8 @@ export default function PortfolioPage() {
         },
         {
           token: pair.kitty1,
-          balance: lendingPairBalances?.[i]?.kitty1Balance || 0,
-          balanceUSD: (lendingPairBalances?.[i]?.kitty1Balance || 0) * token1Price,
+          balance: balancesMap.get(pair.kitty1.address)?.value || 0,
+          balanceUSD: (balancesMap.get(pair.kitty1.address)?.value || 0) * token1Price,
           apy: pair.kitty1Info.lendAPY * 100,
           isKitty: true,
           pairName,
@@ -296,7 +221,7 @@ export default function PortfolioPage() {
       }
     });
     return distinct;
-  }, [lendingPairs, lendingPairBalances, tokenQuotes]);
+  }, [lendingPairs, balancesMap, tokenQuotes]);
 
   const totalBalanceUSD = useMemo(() => {
     return combinedBalances.reduce((acc, balance) => acc + balance.balanceUSD, 0);
@@ -321,7 +246,7 @@ export default function PortfolioPage() {
   }, [lendingPairs, activeAsset]);
 
   const noWallet = !isConnecting && !isConnected;
-  const isDoneLoading = !isLoadingPrices && (!isLoading || !noWallet);
+  const isDoneLoading = !isLoadingPrices && (lendingPairs.length > 0 || !noWallet);
 
   return (
     <AppPage>
@@ -353,7 +278,7 @@ export default function PortfolioPage() {
                 return (
                   <AssetBar
                     balances={combinedBalances}
-                    tokenColors={tokenColors}
+                    tokenColors={tokenColors!}
                     ignoreBalances={true}
                     setActiveAsset={(updatedAsset: Token) => {
                       setActiveAsset(updatedAsset);
@@ -407,7 +332,7 @@ export default function PortfolioPage() {
             <PortfolioGrid
               activeAsset={activeAsset}
               balances={combinedBalances}
-              tokenColors={tokenColors}
+              tokenColors={tokenColors!}
               tokenPriceData={tokenPriceData}
               tokenQuotes={tokenQuotes}
               errorLoadingPrices={errorLoadingPrices}
@@ -469,7 +394,8 @@ export default function PortfolioPage() {
         onConfirm={() => {
           setIsPendingTxnModalOpen(false);
           setTimeout(() => {
-            navigate(0);
+            refetchLenderData();
+            refetchBalances();
           }, 100);
         }}
         status={pendingTxnModalStatus}

@@ -9,10 +9,10 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import { Text, Display } from 'shared/lib/components/common/Typography';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import useSortableData from 'shared/lib/data/hooks/UseSortableData';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
+import useSortableData from 'shared/lib/hooks/UseSortableData';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { useAccount } from 'wagmi';
@@ -114,12 +114,13 @@ export type SupplyTableRow = {
 };
 
 export type SupplyTableProps = {
+  hasAuxiliaryFunds: boolean;
   rows: SupplyTableRow[];
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyTable(props: SupplyTableProps) {
-  const { rows, setPendingTxn } = props;
+  const { hasAuxiliaryFunds, rows, setPendingTxn } = props;
   const activeChain = useChain();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
@@ -281,7 +282,11 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         if (userAddress) setSelectedSupply(row);
                       }}
-                      disabled={userAddress && row.suppliableBalance === 0}
+                      disabled={
+                        userAddress &&
+                        row.suppliableBalance === 0 &&
+                        !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')
+                      }
                       className='connect-wallet-button-trigger'
                     >
                       Supply
@@ -335,6 +340,7 @@ export default function SupplyTable(props: SupplyTableProps) {
       </TableContainer>
       {selectedSupply && (
         <SupplyModal
+          hasAuxiliaryFunds={hasAuxiliaryFunds}
           isOpen={true}
           selectedRow={selectedSupply}
           setIsOpen={() => {

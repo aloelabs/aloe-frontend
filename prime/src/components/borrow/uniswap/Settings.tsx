@@ -4,7 +4,7 @@ import { SquareInputWithTrailingUnit } from 'shared/lib/components/common/Input'
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
-import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
+import useClickOutside from 'shared/lib/hooks/UseClickOutside';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';

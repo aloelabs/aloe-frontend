@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { lenderAbi } from 'shared/lib/abis/Lender';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 export type MarketInfo = {
   lender0: Address;

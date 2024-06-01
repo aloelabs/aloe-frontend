@@ -9,6 +9,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { isHealthy, maxBorrowAndWithdraw } from 'shared/lib/data/BalanceSheet';
+import { Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -16,16 +18,14 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy, maxBorrowAndWithdraw } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { LendingPair } from '../../../../data/LendingPair';
-import { Liabilities } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -101,7 +101,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       amount0.toBigNumber(),
       amount1.toBigNumber(),
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [borrowAmount, borrower.token0.decimals, borrower.token1.decimals, isBorrowingToken0, accountAddress]);
 
   const { data: borrowConfig, isLoading: isCheckingIfAbleToBorrow } = useSimulateContract({

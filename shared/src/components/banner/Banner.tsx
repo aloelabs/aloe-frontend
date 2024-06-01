@@ -2,7 +2,7 @@ import { Text } from '../common/Typography';
 import styled from 'styled-components';
 
 import CloseModal from '../../assets/svg/CloseModal';
-import useLocalStorage from '../../data/hooks/UseLocalStorage';
+import useLocalStorage from '../../hooks/UseLocalStorage';
 import { GREY_700 } from '../../data/constants/Colors';
 
 const BannerWrapper = styled.div`

@@ -1,14 +1,12 @@
-import React, { useContext } from 'react';
-
 import FeeTierContainer from 'shared/lib/components/common/FeeTierContainer';
 import RoundedBadge, { BADGE_TEXT_COLOR } from 'shared/lib/components/common/RoundedBadge';
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { ChainContext } from '../../App';
 import { ReactComponent as OpenIcon } from '../../assets/svg/open.svg';
 import {
   RESPONSIVE_BREAKPOINT_LG,
@@ -85,7 +83,7 @@ export type MarginAccountHeaderProps = {
 };
 
 export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
   return (
     <Wrapper>

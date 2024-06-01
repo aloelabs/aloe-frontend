@@ -17,9 +17,10 @@ import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { PrintFeeTier } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useSortableData from 'shared/lib/data/hooks/UseSortableData';
+import { LendingPair } from 'shared/lib/data/LendingPair';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import useSortableData from 'shared/lib/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
@@ -27,7 +28,6 @@ import { Address } from 'viem';
 import { useWriteContract } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
-import { LendingPair } from '../../../data/LendingPair';
 
 const PAGE_SIZE = 5;
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';

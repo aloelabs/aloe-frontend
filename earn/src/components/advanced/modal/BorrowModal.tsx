@@ -8,6 +8,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { isHealthy, maxBorrowAndWithdraw } from 'shared/lib/data/BalanceSheet';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -15,17 +17,15 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, WriteContractReturnType } from 'viem';
+import { Address, Hex, WriteContractReturnType } from 'viem';
 import { useAccount, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy, maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { LendingPair } from '../../../data/LendingPair';
-import { Assets, Liabilities } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -116,7 +116,7 @@ function BorrowButton(props: BorrowButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as `0x${string}`],
+      [encodedData as Hex],
       [etherToSend.toBigNumber().div(1e13).toNumber()],
     ],
     value: etherToSend.toBigInt(),

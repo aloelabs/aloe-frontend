@@ -10,24 +10,24 @@ import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
 import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { Assets } from 'shared/lib/data/Borrower';
 import { RESPONSIVE_BREAKPOINT_TABLET } from 'shared/lib/data/constants/Breakpoints';
 import { ALOE_II_FACTORY_ADDRESS, ALOE_II_ORACLE_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { FeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import { Config, useClient, usePublicClient, useReadContract } from 'wagmi';
 
 import BoostCard from '../../components/boost/BoostCard';
 import ImportBoostWidget from '../../components/boost/ImportBoostWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
-import { Assets } from '../../data/MarginAccount';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
-import { UniswapNFTPosition, computePoolAddress, fetchUniswapNFTPosition } from '../../data/Uniswap';
-import { getProminentColor, rgb } from '../../util/Colors';
 import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
@@ -96,6 +96,7 @@ export default function ImportBoostPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  // TODO: useTokenColors
   useEffect(() => {
     (async () => {
       if (!uniswapNftPosition) return;

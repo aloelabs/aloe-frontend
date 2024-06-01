@@ -9,9 +9,12 @@ import ArrowLeft from 'shared/lib/assets/svg/ArrowLeft';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import { PriceRelayLatestResponse } from 'shared/lib/hooks/UsePriceRelay';
+import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { Config, useAccount, useClient, usePublicClient, useReadContract } from 'wagmi';
@@ -20,11 +23,8 @@ import BoostCard from '../../components/boost/BoostCard';
 import BurnBoostModal from '../../components/boost/BurnBoostModal';
 import CollectFeesWidget from '../../components/boost/CollectFeesWidget';
 import PendingTxnModal, { PendingTxnModalStatus } from '../../components/common/PendingTxnModal';
-import { sqrtRatioToTick } from '../../data/BalanceSheet';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
-import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo, BoostCardType, fetchBoostBorrower } from '../../data/Uniboost';
-import { getProminentColor, rgb } from '../../util/Colors';
 import { useEthersProvider } from '../../util/Provider';
 import { BackButtonWrapper } from '../BoostPage';
 
@@ -94,6 +94,7 @@ export default function ManageBoostPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
+  // TODO: useTokenColors
   useEffect(() => {
     (async () => {
       if (!cardInfo) return;

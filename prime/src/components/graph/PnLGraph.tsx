@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { AxiosResponse } from 'axios';
@@ -19,14 +19,14 @@ import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FRONTEND_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { useDebouncedEffect } from 'shared/lib/data/hooks/UseDebouncedEffect';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useDebouncedEffect } from 'shared/lib/hooks/UseDebouncedEffect';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { PnLGraphPlaceholder } from './PnLGraphPlaceholder';
 import PnLGraphTooltip from './tooltips/PnLGraphTooltip';
-import { ChainContext } from '../../App';
 import { ReactComponent as CogIcon } from '../../assets/svg/gear.svg';
 import { UniswapPosition } from '../../data/actions/Actions';
 import { getAssets } from '../../data/BalanceSheet';
@@ -244,7 +244,7 @@ export default function PnLGraph(props: PnLGraphProps) {
     setBorrowInterestInputValue,
     setSwapFeesInputValue,
   } = props;
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
   const [data, setData] = useState<Array<PnLEntry>>([]);
   const [localInTermsOfToken0, setLocalInTermsOfToken0] = useState<boolean>(inTermsOfToken0);
   const [priceAtLastUpdate, setPriceAtLastUpdate] = useState<GN | null>(null);

@@ -10,12 +10,12 @@ import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_ROUTER_ADDRESS, ETH_RESERVED_FOR_GAS } from 'shared/lib/data/constants/ChainSpecific';
 import { ROUTER_TRANSMITTANCE, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { Permit2State, usePermit2 } from 'shared/lib/data/hooks/UsePermit2';
 import { Kitty } from 'shared/lib/data/Kitty';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
+import { Permit2State, usePermit2 } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, roundPercentage } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hash } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
@@ -74,6 +74,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 }
 
 type DepositButtonProps = {
+  hasAuxiliaryFunds: boolean;
   supplyAmount: GN;
   userBalanceTotal: GN;
   userBalanceToken: GN;
@@ -85,12 +86,30 @@ type DepositButtonProps = {
 };
 
 function DepositButton(props: DepositButtonProps) {
-  const { supplyAmount, userBalanceTotal, userBalanceToken, token, kitty, accountAddress, setIsOpen, setPendingTxn } =
-    props;
+  const {
+    hasAuxiliaryFunds,
+    supplyAmount,
+    userBalanceTotal,
+    userBalanceToken,
+    token,
+    kitty,
+    accountAddress,
+    setIsOpen,
+    setPendingTxn,
+  } = props;
   const activeChain = useChain();
 
-  const supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
-  const supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
+  // Normally, we use as much of the token as possible, and fill in the remainder with ETH
+  // if (a) the token is WETH and (b) there's ETH available
+  let supplyAmountToken = GN.min(supplyAmount, userBalanceToken);
+  let supplyAmountEth = supplyAmount.lte(userBalanceTotal) ? supplyAmount.sub(supplyAmountToken) : undefined;
+  // However, if there are auxiliary funds and the entered amount is greater than the user's balance,
+  // we switch *entirely* to *just* use auxiliary funds. Currently only works with ETH on Base.
+  const isUsingAuxiliaryFunds = hasAuxiliaryFunds && token.symbol === 'WETH' && supplyAmount.gt(userBalanceToken);
+  if (isUsingAuxiliaryFunds) {
+    supplyAmountToken = GN.zero(token.decimals);
+    supplyAmountEth = supplyAmount;
+  }
 
   const {
     state: permit2State,
@@ -98,7 +117,7 @@ function DepositButton(props: DepositButtonProps) {
     result: permit2Result,
   } = usePermit2(activeChain, token, accountAddress, ALOE_II_ROUTER_ADDRESS[activeChain.id], supplyAmountToken);
 
-  const { data: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = useSimulateContract({
+  const depositWithPermit2Args = {
     address: ALOE_II_ROUTER_ADDRESS[activeChain.id],
     abi: routerAbi,
     functionName: 'depositWithPermit2',
@@ -112,7 +131,10 @@ function DepositButton(props: DepositButtonProps) {
     ],
     value: supplyAmountEth?.toBigInt(),
     chainId: activeChain.id,
-    query: { enabled: permit2State === Permit2State.DONE },
+  } as const;
+  const { data: depsitWithPermit2Config, refetch: refetchDepositWithPermit2 } = useSimulateContract({
+    ...depositWithPermit2Args,
+    query: { enabled: permit2State === Permit2State.DONE && !isUsingAuxiliaryFunds },
   });
   const { writeContractAsync: depositWithPermit2, isPending } = useWriteContract();
 
@@ -121,7 +143,7 @@ function DepositButton(props: DepositButtonProps) {
     confirmButtonState = ConfirmButtonState.WAITING_FOR_TRANSACTION;
   } else if (supplyAmount.isZero()) {
     confirmButtonState = ConfirmButtonState.LOADING;
-  } else if (supplyAmount.gt(userBalanceTotal)) {
+  } else if (supplyAmount.gt(userBalanceTotal) && !isUsingAuxiliaryFunds) {
     confirmButtonState = ConfirmButtonState.INSUFFICIENT_ASSET;
   } else {
     confirmButtonState = permit2StateToButtonStateMap[permit2State] ?? ConfirmButtonState.READY;
@@ -136,11 +158,17 @@ function DepositButton(props: DepositButtonProps) {
     }
 
     if (confirmButtonState === ConfirmButtonState.READY) {
-      if (!depsitWithPermit2Config) {
+      let method: Promise<Hash>;
+      if (isUsingAuxiliaryFunds) {
+        method = depositWithPermit2(depositWithPermit2Args);
+      } else if (!depsitWithPermit2Config) {
         refetchDepositWithPermit2();
         return;
+      } else {
+        method = depositWithPermit2(depsitWithPermit2Config.request);
       }
-      depositWithPermit2(depsitWithPermit2Config.request)
+
+      method
         .then((hash) => {
           setPendingTxn(hash);
           setIsOpen(false);
@@ -163,13 +191,14 @@ function DepositButton(props: DepositButtonProps) {
 
 export type SupplyModalProps = {
   isOpen: boolean;
+  hasAuxiliaryFunds: boolean;
   selectedRow: SupplyTableRow;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function SupplyModal(props: SupplyModalProps) {
-  const { isOpen, selectedRow, setIsOpen, setPendingTxn } = props;
+  const { isOpen, hasAuxiliaryFunds, selectedRow, setIsOpen, setPendingTxn } = props;
   const [amount, setAmount] = useState<string>('');
   const activeChain = useChain();
   const { address: userAddress } = useAccount();
@@ -267,6 +296,7 @@ export default function SupplyModal(props: SupplyModalProps) {
           </Text>
         </div>
         <DepositButton
+          hasAuxiliaryFunds={hasAuxiliaryFunds}
           accountAddress={userAddress ?? '0x'}
           supplyAmount={supplyAmount}
           userBalanceTotal={userBalance}

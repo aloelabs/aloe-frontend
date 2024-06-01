@@ -1,5 +1,5 @@
 import Big from 'big.js';
-import { ContractCallContext, Multicall } from 'ethereum-multicall';
+import { CallReturnContext, ContractCallContext, ContractCallReturnContext, Multicall } from 'ethereum-multicall';
 import { BigNumber, ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
@@ -7,6 +7,7 @@ import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { erc20Abi } from 'shared/lib/abis/ERC20';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_BORROWER_LENS_ADDRESS,
@@ -18,57 +19,28 @@ import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
+import { UniswapPosition } from 'shared/lib/data/Uniswap';
 import { toBig, toImpreciseNumber } from 'shared/lib/util/Numbers';
-import { Address } from 'viem';
+import { Address, Hex } from 'viem';
 
 import { TOPIC0_CREATE_BORROWER_EVENT } from './constants/Signatures';
-import { getAmountsForLiquidity, getAmountsForLiquidityGN, UniswapPosition } from './Uniswap';
-import { ContractCallReturnContextEntries, convertBigNumbersForReturnContexts } from '../util/Multicall';
 
-export class Assets {
-  constructor(
-    public readonly amount0: GN,
-    public readonly amount1: GN,
-    public readonly uniswapPositions: UniswapPosition[]
-  ) {}
-
-  amountsAt(tick: number) {
-    let amount0 = this.amount0.toNumber();
-    let amount1 = this.amount1.toNumber();
-    for (const uniswapPosition of this.uniswapPositions) {
-      const [temp0, temp1] = getAmountsForLiquidity(
-        uniswapPosition,
-        tick,
-        this.amount0.resolution,
-        this.amount1.resolution
-      );
-
-      amount0 += temp0;
-      amount1 += temp1;
-    }
-
-    return [amount0, amount1];
-  }
-
-  amountsAtSqrtPrice(sqrtPriceX96: GN) {
-    let amount0 = this.amount0;
-    let amount1 = this.amount1;
-
-    for (const uniswapPosition of this.uniswapPositions) {
-      const temp = getAmountsForLiquidityGN(uniswapPosition, sqrtPriceX96.toJSBI());
-
-      amount0 = amount0.recklessAdd(temp.amount0.toString(10));
-      amount1 = amount1.recklessAdd(temp.amount1.toString(10));
-    }
-
-    return { amount0, amount1 };
-  }
-}
-
-export type Liabilities = {
-  amount0: number;
-  amount1: number;
+type ContractCallReturnContextEntries = {
+  [key: string]: ContractCallReturnContext;
 };
+
+function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
+  return callReturnContexts.map((callReturnContext) => {
+    callReturnContext.returnValues = callReturnContext.returnValues.map((returnValue) => {
+      // If the return value is a BigNumber, convert it to an ethers BigNumber
+      if (returnValue?.type === 'BigNumber' && returnValue?.hex) {
+        returnValue = BigNumber.from(returnValue.hex);
+      }
+      return returnValue;
+    });
+    return callReturnContext;
+  });
+}
 
 /**
  * For the use-cases that require all of the data
@@ -87,7 +59,7 @@ export type MarginAccount = {
   lender1: Address;
   iv: number;
   nSigma: number;
-  userDataHex: `0x${string}`;
+  userDataHex: Hex;
   warningTime: number;
 };
 
@@ -155,7 +127,7 @@ export async function fetchBorrowerDatas(
   // Fetch all the data for the margin accounts
   addresses.forEach((accountAddress) => {
     const uniswapPool = borrowerUniswapPools[accountAddress].callsReturnContext[0].returnValues[0];
-    const uniswapPoolInfo = uniswapPoolDataMap.get(uniswapPool.toLowerCase()) ?? null;
+    const uniswapPoolInfo = uniswapPoolDataMap.get(uniswapPool) ?? null;
 
     if (uniswapPoolInfo === null) return;
 
@@ -318,7 +290,7 @@ export async function fetchBorrowerDatas(
 
     const uniswapPositionData = lensReturnContexts[1].returnValues;
     const uniswapPositionBounds = uniswapPositionData[0] as number[];
-    const uniswapPositionLiquidity = uniswapPositionData[1] as { hex: `0x${string}` }[];
+    const uniswapPositionLiquidity = uniswapPositionData[1] as { hex: Hex }[];
 
     const uniswapPositions: UniswapPosition[] = [];
     uniswapPositionLiquidity.forEach((liquidity, i) => {
@@ -337,7 +309,7 @@ export async function fetchBorrowerDatas(
     );
 
     const slot0 = accountReturnContexts[2].returnValues[0] as BigNumber;
-    const userDataHex = slot0.shr(144).mask(64).toHexString() as `0x${string}`;
+    const userDataHex = slot0.shr(144).mask(64).toHexString() as Hex;
     const warningTime = slot0.shr(208).mask(40).toNumber();
 
     const oracleReturnValues = convertBigNumbersForReturnContexts(oracleResults.callsReturnContext)[0].returnValues;

@@ -5,18 +5,19 @@ import { BigNumber, ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy } from 'shared/lib/data/BalanceSheet';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_WITHDRAW_MANAGER_ADDRESS,
   ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import { UniswapPosition, zip } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
+import { Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { UniswapPosition, zip } from '../../../../data/Uniswap';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -78,7 +79,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
           '0x83ee755b'
         ),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [borrower, positionToWithdraw, uniswapNftId]);
 
   const { data: withdrawConfig, error: withdrawError } = useSimulateContract({

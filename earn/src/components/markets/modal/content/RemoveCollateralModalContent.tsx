@@ -8,6 +8,8 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
+import { isHealthy, maxWithdraws } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_MULTI_MANAGER_ADDRESS,
@@ -15,14 +17,12 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
-import { Address } from 'viem';
+import useChain from 'shared/lib/hooks/UseChain';
+import { Address, Hex } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { isHealthy, maxWithdraws } from '../../../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
-import { Assets } from '../../../../data/MarginAccount';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -98,7 +98,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
       amount0.toBigNumber(),
       amount1.toBigNumber(),
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [withdrawAmount, borrower.token0.decimals, borrower.token1.decimals, isWithdrawingToken0, accountAddress]);
 
   const encodedWithdrawAnteCall = useMemo(() => {
@@ -107,7 +107,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     return borrowerInterface.encodeFunctionData('transferEth', [
       borrowerBalance?.value,
       accountAddress,
-    ]) as `0x${string}`;
+    ]) as Hex;
   }, [accountAddress, borrowerBalance]);
 
   const combinedEncodingsForMultiManager = useMemo(() => {
@@ -115,7 +115,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
     return ethers.utils.defaultAbiCoder.encode(
       ['bytes[]'],
       [[encodedWithdrawCall, encodedWithdrawAnteCall]]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
   const { data: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = useSimulateContract({

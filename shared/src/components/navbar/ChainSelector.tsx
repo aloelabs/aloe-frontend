@@ -14,7 +14,7 @@ import styled from 'styled-components';
 import { Text } from '../common/Typography';
 import { classNames } from '../../util/ClassNames';
 import { AltSpinner } from '../common/Spinner';
-import useClickOutside from '../../data/hooks/UseClickOutside';
+import useClickOutside from '../../hooks/UseClickOutside';
 import { useChainId, useSwitchChain } from 'wagmi';
 import { Chain } from 'viem';
 
@@ -107,7 +107,15 @@ export default function ChainSelector(props: ChainSelectorProps) {
                   if (pendingChainOption?.value !== undefined) return;
                   // If the user is offline, set the chain
                   setPendingChainOption(option);
-                  switchChainAsync({ chainId: option.value.id })
+                  switchChainAsync({
+                    chainId: option.value.id,
+                    addEthereumChainParameter: {
+                      chainName: option.value.name,
+                      nativeCurrency: option.value.nativeCurrency,
+                      rpcUrls: option.value.rpcUrls.default.http,
+                      blockExplorerUrls: option.value.blockExplorers && [option.value.blockExplorers.default.url],
+                    },
+                  })
                     .then(() => {
                       setSelectedChainOption(option);
                       setIsOpen(false);

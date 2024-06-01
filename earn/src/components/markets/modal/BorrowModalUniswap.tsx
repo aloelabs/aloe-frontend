@@ -12,6 +12,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { maxBorrowAndWithdraw } from 'shared/lib/data/BalanceSheet';
+import { Assets } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
@@ -21,17 +23,14 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import { UniswapNFTPosition, zip } from 'shared/lib/data/Uniswap';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { erc721Abi } from 'viem';
+import { erc721Abi, Hex } from 'viem';
 import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
-
-import { maxBorrowAndWithdraw } from '../../../data/BalanceSheet';
-import { LendingPair } from '../../../data/LendingPair';
-import { Assets } from '../../../data/MarginAccount';
-import { UniswapNFTPosition, zip } from '../../../data/Uniswap';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
 const SECONDARY_COLOR = '#CCDFED';
@@ -200,7 +199,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     const to = userAddress;
     const pools = [selectedLendingPair.uniswapPool];
     const salts = [generatedSalt];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
   }, [userAddress, selectedLendingPair, generatedSalt, borrowerNft]);
 
   // Then we use the UniswapNFTManager to import the Uniswap NFT as collateral
@@ -214,7 +213,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
         `-${uniswapPosition.liquidity.toString(10)}`,
         zip([uniswapPosition], '0x83ee755b'),
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [uniswapPosition]);
 
   // Finally, we borrow the requested tokens
@@ -241,7 +240,7 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
     ];
     const datas = [encodedImportCall, encodedBorrowCall];
     const antes = [ante.toBigNumber().div(1e13), BigNumber.from(0)];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
   }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedImportCall, encodedBorrowCall, borrowerNft]);
 
   const { data: multicallConfig } = useSimulateContract({

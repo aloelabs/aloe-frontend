@@ -3,21 +3,21 @@ import { useState } from 'react';
 import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { sqrtRatioToPrice, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
-import styled from 'styled-components';
-
-import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
-import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
-import { sqrtRatioToPrice, sqrtRatioToTick } from '../../data/BalanceSheet';
-import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import {
   getAmountsForLiquidity,
   tickToPrice,
   UniswapNFTPosition,
   UniswapNFTPositionEntry,
   UniswapPosition,
-} from '../../data/Uniswap';
+} from 'shared/lib/data/Uniswap';
+import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
+
+import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
+import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
+import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,

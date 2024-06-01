@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { ethers } from 'ethers';
-
-import { LendingPair } from '../LendingPair';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 
 // TODO: Deprecate this, it sucks
 export default function useNumberOfUsers(

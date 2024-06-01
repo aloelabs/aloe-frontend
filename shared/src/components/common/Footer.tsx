@@ -1,12 +1,10 @@
-import React from 'react';
-
 import { Text } from './Typography';
 import styled from 'styled-components';
 
 import DiscordFooterIcon from '../../assets/svg/DiscordFooter';
 import TwitterFooterIcon from '../../assets/svg/TwitterFooter';
 import MediumFooterIcon from '../../assets/svg/MediumFooter';
-import { RESPONSIVE_BREAKPOINT_TABLET } from '../../data/constants/Breakpoints';
+import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 import { GREY_400 } from '../../data/constants/Colors';
 import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 
@@ -22,11 +20,11 @@ const StyledFooter = styled.footer`
   min-height: 60px;
   background-color: rgba(6, 11, 15, 1);
   border-top: 1px solid rgba(18, 29, 37, 1);
-  padding-left: 188px;
-  padding-right: 180px;
+  padding-left: 20px;
+  padding-right: 20px;
   z-index: 40;
 
-  @media (max-width: ${RESPONSIVE_BREAKPOINT_TABLET}) {
+  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
 `;

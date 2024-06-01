@@ -4,12 +4,12 @@ import { type WriteContractReturnType } from '@wagmi/core';
 import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
+import { UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 
 import { AddCollateralTab } from './tab/AddCollateralTab';
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { MAX_UNISWAP_POSITIONS } from '../../../data/constants/Values';
-import { UniswapNFTPosition } from '../../../data/Uniswap';
 
 const SECONDARY_COLOR = '#CCDFED';
 

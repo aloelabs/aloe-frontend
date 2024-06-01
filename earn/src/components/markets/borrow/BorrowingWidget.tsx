@@ -5,22 +5,23 @@ import JSBI from 'jsbi';
 import TokenIcon from 'shared/lib/components/common/TokenIcon';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { computeLTV } from 'shared/lib/data/BalanceSheet';
 import { UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { LendingPair, LendingPairBalancesMap } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
+import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import { rgba } from 'shared/lib/util/Colors';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address, Chain } from 'viem';
 import { Config, useClient } from 'wagmi';
 
-import { computeLTV } from '../../../data/BalanceSheet';
+import { ReactComponent as CheckIcon } from '../../../assets/svg/check.svg';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
-import { LendingPair, LendingPairBalancesMap } from '../../../data/LendingPair';
-import { fetchUniswapNFTPositions, UniswapNFTPosition } from '../../../data/Uniswap';
-import { rgba } from '../../../util/Colors';
 import { useEthersProvider } from '../../../util/Provider';
 import HealthGauge from '../../common/HealthGauge';
 import BorrowModal from '../modal/BorrowModal';
@@ -117,6 +118,15 @@ const ClearButton = styled.button`
   }
 `;
 
+const Circle = styled.div`
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: 1px solid ${SECONDARY_COLOR};
+  border-radius: 50%;
+  flex-shrink: 0;
+`;
+
 type SelectedBorrower = {
   borrower: BorrowerNftBorrower;
   type: 'borrow' | 'supply';
@@ -128,7 +138,6 @@ export type BorrowingWidgetProps = {
   userAddress?: Address;
   borrowers: BorrowerNftBorrower[] | null;
   lendingPairs: LendingPair[];
-  uniqueTokens: Token[];
   // TODO: may be better to have the key be a full Token instead of just the address due to multichain issues
   tokenBalances: LendingPairBalancesMap;
   tokenQuotes: Map<string, number>;
@@ -281,7 +290,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           <Text size='L' weight='bold'>
             Manage positions
           </Text>
-          <div className='flex'>
+          <div className='flex mb-4'>
             <CardWrapper $textAlignment='start'>
               <CardContainer>
                 <CardRow>
@@ -410,6 +419,27 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       <Text size='L' weight='bold'>
         Open a new position
       </Text>
+      <ol className='mb-2'>
+        <li className='flex items-center gap-2 mb-1'>
+          {selectedCollateral == null ? <Circle /> : <CheckIcon height={20} width={20} />}
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            1. Select an asset to use as collateral. Note that collateral is <strong>not</strong> lent out, and LLTVs
+            can change up to 1% per day.
+          </Text>
+        </li>
+        <li className='flex items-center gap-2 mb-1'>
+          {selectedBorrows == null ? <Circle /> : <CheckIcon height={20} width={20} />}
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            2. Select an asset to borrow. APRs are variable based on utilization.
+          </Text>
+        </li>
+        <li className='flex items-center gap-2'>
+          <Circle />
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            3. Enter amounts and review transaction intent.
+          </Text>
+        </li>
+      </ol>
       <div className='flex'>
         <CardWrapper $textAlignment='start'>
           <CardContainer>

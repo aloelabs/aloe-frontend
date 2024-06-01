@@ -2,7 +2,7 @@ import React from 'react';
 
 import './index.css';
 import * as Sentry from '@sentry/react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { DEVELOPMENT, PRODUCTION } from 'shared/lib/data/constants/SentryEnvironments';
 import { isProduction } from 'shared/lib/util/Utils';
@@ -23,11 +23,12 @@ if (process.env.REACT_APP_SENTRY_DSN) {
   });
 }
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container!);
+root.render(
   <React.StrictMode>
     <Router>
       <App />
     </Router>
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );

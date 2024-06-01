@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { FilledStylizedButton } from '../common/Buttons';
+import { FilledStylizedButton, OutlinedGradientButton } from '../common/Buttons';
 import { Text } from '../common/Typography';
 import { getIconForWagmiConnectorNamed } from './ConnectorIconMap';
 import styled from 'styled-components';
@@ -8,28 +8,25 @@ import { useChainId, useConnect } from 'wagmi';
 
 import Modal, { MODAL_BLACK_TEXT_COLOR } from '../common/Modal';
 import { GREY_700 } from '../../data/constants/Colors';
-import { type UseAccountReturnType } from 'wagmi';
 
 const Container = styled.div.attrs((props: { fillWidth: boolean }) => props)`
   width: ${(props) => (props.fillWidth ? '100%' : 'max-content')};
 `;
 
 export type ConnectWalletButtonProps = {
-  account?: UseAccountReturnType;
+  shouldShortenText: boolean;
   checkboxes: React.ReactNode[];
   disabled?: boolean;
   fillWidth?: boolean;
-  onConnected?: () => void;
 };
 
 export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
   // MARK: component props
-  const { account, checkboxes, disabled, fillWidth, onConnected } = props;
+  const { checkboxes, disabled, fillWidth } = props;
   const [acknowledgedCheckboxes, setAcknowledgedCheckboxes] = useState<boolean[]>(() => {
     return checkboxes?.map(() => false) ?? [];
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const isConnected = account?.isConnected ?? false;
 
   // MARK: component state
   const [walletModalOpen, setWalletModalOpen] = useState<boolean>(false);
@@ -79,18 +76,11 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
     return temp as typeof connectors;
   }, [connectors]);
 
-  useEffect(() => {
-    if (isConnected) {
-      onConnected?.();
-      setWalletModalOpen(false);
-    }
-  }, [isConnected, onConnected]);
-
   const acknowledgedAllCheckboxes = acknowledgedCheckboxes.every((acknowledged) => acknowledged);
 
   return (
     <Container fillWidth={fillWidth}>
-      <FilledStylizedButton
+      <OutlinedGradientButton
         onClick={() => {
           setWalletModalOpen(true);
         }}
@@ -99,8 +89,8 @@ export default function ConnectWalletButton(props: ConnectWalletButtonProps) {
         disabled={disabled}
         className='connect-wallet-button'
       >
-        Connect Wallet
-      </FilledStylizedButton>
+        {props.shouldShortenText ? 'Connect' : 'Connect Wallet'}
+      </OutlinedGradientButton>
       <Modal isOpen={walletModalOpen} setIsOpen={setWalletModalOpen} title={'Connect Wallet'}>
         {acceptedTerms ? (
           <div className='w-full'>

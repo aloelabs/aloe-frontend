@@ -3,15 +3,16 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { auctionCurve, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
-import useChain from 'shared/lib/data/hooks/UseChain';
+import useChain from 'shared/lib/hooks/UseChain';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
+import { usePublicClient } from 'wagmi';
 
-import { auctionCurve, sqrtRatioToTick } from '../../data/BalanceSheet';
 import { BorrowerNftBorrower } from '../../data/BorrowerNft';
 import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
 
@@ -183,14 +184,15 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     [marginAccount]
   );
 
+  const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
       setMostRecentModifyTime(null);
-      if (!marginAccount?.mostRecentModify) return;
-      const block = await marginAccount.mostRecentModify.getBlock();
-      setMostRecentModifyTime(new Date(block.timestamp * 1000));
+      if (!publicClient || !marginAccount?.mostRecentModify) return;
+      const block = await publicClient.getBlock({ blockNumber: marginAccount.mostRecentModify.blockNumber });
+      setMostRecentModifyTime(new Date(Number(block.timestamp) * 1000));
     })();
-  }, [marginAccount, setMostRecentModifyTime]);
+  }, [publicClient, marginAccount, setMostRecentModifyTime]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now()), 200);
@@ -219,7 +221,7 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
   const etherscanUrl = getEtherscanUrlForChain(activeChain);
 
   const mostRecentManager = marginAccount.mostRecentModify
-    ? (marginAccount.mostRecentModify.args!['manager'] as Address)
+    ? (marginAccount.mostRecentModify.args.manager as Address)
     : '0x';
   const mostRecentManagerName = Object.hasOwn(MANAGER_NAME_MAP, mostRecentManager)
     ? MANAGER_NAME_MAP[mostRecentManager]

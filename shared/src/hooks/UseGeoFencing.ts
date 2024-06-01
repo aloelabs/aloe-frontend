@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
-import { isDevelopment } from '../../util/Utils';
-import { GeoFencingInfo } from '../GeoFencing';
+import { isDevelopment } from '../util/Utils';
+import { GeoFencingInfo } from '../data/GeoFencing';
 
 export const GeoFencingContext = createContext<GeoFencingInfo>({
   isAllowed: false,

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { tickToPrice } from 'shared/lib/data/Uniswap';
 import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
@@ -7,7 +8,6 @@ import LiquidityChart from './LiquidityChart';
 import { ReactComponent as WrenchIcon } from '../../assets/svg/wrench.svg';
 import { ReactComponent as ZapIcon } from '../../assets/svg/zap.svg';
 import { BoostCardInfo, BoostCardType } from '../../data/Uniboost';
-import { tickToPrice } from '../../data/Uniswap';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,

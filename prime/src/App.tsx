@@ -1,31 +1,30 @@
-import React, { Suspense, useContext, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/react-hooks';
 import * as Sentry from '@sentry/react';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
 import WelcomeModal from 'shared/lib/components/common/WelcomeModal';
-import WagmiProvider from 'shared/lib/components/WagmiProvider';
+import { wagmiConfig } from 'shared/lib/components/WagmiConfig';
 import { AccountRiskResult } from 'shared/lib/data/AccountRisk';
 import { screenAddress } from 'shared/lib/data/AccountRisk';
-import { DEFAULT_CHAIN, PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { fetchGeoFencing, GeoFencingInfo } from 'shared/lib/data/GeoFencing';
-import { AccountRiskContext, useAccountRisk } from 'shared/lib/data/hooks/UseAccountRisk';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { GeoFencingContext } from 'shared/lib/data/hooks/UseGeoFencing';
-import useSafeState from 'shared/lib/data/hooks/UseSafeState';
+import { AccountRiskContext } from 'shared/lib/hooks/UseAccountRisk';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
+import { GeoFencingContext } from 'shared/lib/hooks/UseGeoFencing';
 import { getLocalStorageBoolean, setLocalStorageBoolean } from 'shared/lib/util/LocalStorage';
 import ScrollToTop from 'shared/lib/util/ScrollToTop';
-import { useAccount, useNetwork } from 'wagmi';
-import { Chain } from 'wagmi/chains';
+import { useAccount, usePublicClient, WagmiProvider, serialize, deserialize } from 'wagmi';
 
 import AppBody from './components/common/AppBody';
 import Header from './components/header/Header';
 import BorrowAccountsPage from './pages/BorrowAccountsPage';
 import BorrowActionsPage from './pages/BorrowActionsPage';
-import ComingSoonPage from './pages/ComingSoonPage';
 
 const CONNECT_WALLET_CHECKBOXES = [
   <Text size='M' weight='regular'>
@@ -53,126 +52,28 @@ const CONNECT_WALLET_CHECKBOXES = [
   <Text>I acknowledge that Aloe II is experimental software and use of the platform may result in loss of funds.</Text>,
 ];
 
-export const theGraphUniswapV2Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3Client = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3ArbitrumClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3OptimismClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphUniswapV3GoerliClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/0xfind/uniswap-v3-goerli-2' }),
-  cache: new InMemoryCache(),
-});
-
-export const theGraphEthereumBlocksClient = new ApolloClient({
-  link: new HttpLink({ uri: 'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks' }),
-  cache: new InMemoryCache(),
-});
-
-export const ChainContext = React.createContext({
-  activeChain: DEFAULT_CHAIN as Chain,
-  isChainLoading: true,
-  setActiveChain: (chain: Chain) => {},
-  setIsChainLoading: (isLoading: boolean) => {},
-});
-
 function AppBodyWrapper() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
-  const { activeChain, isChainLoading, setActiveChain, setIsChainLoading } = useContext(ChainContext);
-  const account = useAccount();
-  const network = useNetwork();
-  const { isBlocked: isAccountBlocked, isLoading: isAccountRiskLoading } = useAccountRisk();
-
-  useEffect(() => {
-    Sentry.setTag('chain_name', activeChain.name);
-  }, [activeChain]);
-
-  useEffect(() => {
-    const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
-    if (!account?.isConnecting && !account?.isConnected && !hasSeenWelcomeModal) {
-      setIsWelcomeModalOpen(true);
-    }
-  }, [account?.isConnecting, account?.isConnected]);
-
-  useEffect(() => {
-    if (network.chain !== undefined && network.chain !== activeChain) {
-      setActiveChain(network.chain);
-      setIsChainLoading(false);
-    }
-  }, [activeChain, network.chain, setActiveChain, setIsChainLoading]);
-
-  useEffect(() => {
-    if (account?.isDisconnected && !account?.isConnecting && isChainLoading) {
-      setIsChainLoading(false);
-    }
-  }, [account?.isConnecting, account?.isDisconnected, isChainLoading, setIsChainLoading]);
-
-  const isReady = true;
-
-  if (isAccountRiskLoading) {
-    return null;
-  }
-
-  if (isAccountBlocked) {
-    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
-  }
-
-  return (
-    <AppBody>
-      {!isReady && <ComingSoonPage />}
-      {isReady && (
-        <>
-          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
-          {!isChainLoading && (
-            <main className='flex-grow'>
-              <Routes>
-                <Route path='/borrow' element={<BorrowAccountsPage />} />
-                <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
-                <Route path='/' element={<Navigate replace to='/borrow' />} />
-                <Route path='*' element={<Navigate to='/' />} />
-              </Routes>
-            </main>
-          )}
-          <Footer />
-          <WelcomeModal
-            isOpen={isWelcomeModalOpen}
-            activeChain={activeChain}
-            checkboxes={CONNECT_WALLET_CHECKBOXES}
-            account={account}
-            setIsOpen={() => setIsWelcomeModalOpen(false)}
-            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
-          />
-          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
-        </>
-      )}
-    </AppBody>
-  );
-}
-
-function App() {
-  const [activeChain, setActiveChain] = React.useState<Chain>(DEFAULT_CHAIN);
-  const [isChainLoading, setIsChainLoading] = React.useState(true);
-  const [blockNumber, setBlockNumber] = React.useState<string | null>(null);
-  const [accountRisk, setAccountRisk] = useSafeState<AccountRiskResult>({ isBlocked: false, isLoading: true });
-  const [geoFencingInfo, setGeoFencingInfo] = useSafeState<GeoFencingInfo>({
+  const [accountRisk, setAccountRisk] = useState<AccountRiskResult>({ isBlocked: false, isLoading: true });
+  const [geoFencingInfo, setGeoFencingInfo] = useState<GeoFencingInfo>({
     isAllowed: false,
     isLoading: true,
   });
-  const { address: userAddress } = useAccount();
+
+  const account = useAccount();
+  const publicClient = usePublicClient();
+
+  useEffect(() => {
+    if (!publicClient) return;
+    Sentry.setTag('chain_name', publicClient.chain.name);
+  }, [publicClient]);
+
+  useEffect(() => {
+    const hasSeenWelcomeModal = getLocalStorageBoolean('hasSeenWelcomeModal');
+    if (!account.isConnecting && !account.isConnected && !hasSeenWelcomeModal) {
+      setIsWelcomeModalOpen(true);
+    }
+  }, [account]);
 
   useEffectOnce(() => {
     (async () => {
@@ -186,68 +87,73 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      if (userAddress === undefined) {
+      if (account.address === undefined) {
         setAccountRisk({ isBlocked: false, isLoading: false });
         return;
       }
       setAccountRisk({ isBlocked: false, isLoading: true });
-      const result = await screenAddress(userAddress);
+      const result = await screenAddress(account.address);
       setAccountRisk({ isBlocked: result.isBlocked, isLoading: false });
     })();
-  }, [userAddress, setAccountRisk]);
+  }, [account.address, setAccountRisk]);
 
-  const value = {
-    activeChain,
-    isChainLoading,
-    setActiveChain,
-    setIsChainLoading,
-  };
+  const isAccountRiskLoading = accountRisk.isLoading;
+  const isAccountBlocked = accountRisk.isBlocked;
+  // const isAllowed = isDevelopment() || geoFencingInfo.isAllowed || Boolean(client?.chain.testnet);
 
-  const twentyFourHoursAgo = Date.now() / 1000 - 24 * 60 * 60;
-  const BLOCK_QUERY = gql`
-  {
-    blocks(first: 1, orderBy: timestamp, orderDirection: asc, where: {timestamp_gt: "${twentyFourHoursAgo.toFixed(
-      0
-    )}"}) {
-      id
-      number
-      timestamp
-    }
+  if (isAccountRiskLoading) {
+    return null;
   }
-  `;
 
-  useEffect(() => {
-    let mounted = true;
+  if (isAccountBlocked) {
+    return <AccountBlockedModal isOpen={true} setIsOpen={() => {}} />;
+  }
 
-    const queryBlocks = async () => {
-      const response = await theGraphEthereumBlocksClient.query({ query: BLOCK_QUERY });
-      if (mounted) {
-        setBlockNumber(response.data.blocks[0].number);
-      }
-    };
-    if (blockNumber === null) {
-      queryBlocks();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  });
   return (
-    <>
-      <Suspense fallback={null}>
-        <WagmiProvider>
-          <AccountRiskContext.Provider value={accountRisk}>
-            <GeoFencingContext.Provider value={geoFencingInfo}>
-              <ChainContext.Provider value={value}>
-                <ScrollToTop />
-                <AppBodyWrapper />
-              </ChainContext.Provider>
-            </GeoFencingContext.Provider>
-          </AccountRiskContext.Provider>
-        </WagmiProvider>
-      </Suspense>
-    </>
+    <AccountRiskContext.Provider value={accountRisk}>
+      <GeoFencingContext.Provider value={geoFencingInfo}>
+        <ScrollToTop />
+        <AppBody>
+          <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+          <main className='flex-grow'>
+            <Routes>
+              <Route path='/borrow' element={<BorrowAccountsPage />} />
+              <Route path='/borrow/account/:account' element={<BorrowActionsPage />} />
+              <Route path='/' element={<Navigate replace to='/borrow' />} />
+              <Route path='*' element={<Navigate to='/' />} />
+            </Routes>
+          </main>
+          <Footer />
+          <WelcomeModal
+            isOpen={isWelcomeModalOpen}
+            checkboxes={CONNECT_WALLET_CHECKBOXES}
+            setIsOpen={() => setIsWelcomeModalOpen(false)}
+            onAcknowledged={() => setLocalStorageBoolean('hasSeenWelcomeModal', true)}
+          />
+          <AccountBlockedModal isOpen={isAccountBlocked} setIsOpen={() => {}} />
+        </AppBody>
+      </GeoFencingContext.Provider>
+    </AccountRiskContext.Provider>
+  );
+}
+
+const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: 365 * 24 * 60 * 60 * 1_000 } } });
+
+const persister = createSyncStoragePersister({
+  serialize,
+  storage: window.localStorage,
+  deserialize,
+});
+
+function App() {
+  return (
+    <Suspense fallback={null}>
+      <WagmiProvider config={wagmiConfig}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+          <AppBodyWrapper />
+        </PersistQueryClientProvider>
+      </WagmiProvider>
+    </Suspense>
   );
 }
 

@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 
-import useMediaQuery from '../../data/hooks/UseMediaQuery';
+import useMediaQuery from '../../hooks/UseMediaQuery';
 
 export type MediaQueryProps = {
   children: ReactElement;

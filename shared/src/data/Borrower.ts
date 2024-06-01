@@ -1,10 +1,53 @@
-import Big from 'big.js';
-import { GN } from 'shared/lib/data/GoodNumber';
-import { Address } from 'viem';
-
-import { auctionCurve, computeAuctionAmounts, isHealthy } from './BalanceSheet';
+import { Address, Hex } from 'viem';
+import { GN } from './GoodNumber';
+import { UniswapPosition, getAmountsForLiquidity, getAmountsForLiquidityGN } from './Uniswap';
 import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from './constants/Values';
-import { Assets } from './MarginAccount';
+import { auctionCurve, computeAuctionAmounts, isHealthy } from './BalanceSheet';
+
+export class Assets {
+  constructor(
+    public readonly amount0: GN,
+    public readonly amount1: GN,
+    public readonly uniswapPositions: UniswapPosition[]
+  ) {}
+
+  amountsAt(tick: number) {
+    let amount0 = this.amount0.toNumber();
+    let amount1 = this.amount1.toNumber();
+    for (const uniswapPosition of this.uniswapPositions) {
+      const [temp0, temp1] = getAmountsForLiquidity(
+        uniswapPosition,
+        tick,
+        this.amount0.resolution,
+        this.amount1.resolution
+      );
+
+      amount0 += temp0;
+      amount1 += temp1;
+    }
+
+    return [amount0, amount1];
+  }
+
+  amountsAtSqrtPrice(sqrtPriceX96: GN) {
+    let amount0 = this.amount0;
+    let amount1 = this.amount1;
+
+    for (const uniswapPosition of this.uniswapPositions) {
+      const temp = getAmountsForLiquidityGN(uniswapPosition, sqrtPriceX96.toJSBI());
+
+      amount0 = amount0.recklessAdd(temp.amount0.toString(10));
+      amount1 = amount1.recklessAdd(temp.amount1.toString(10));
+    }
+
+    return { amount0, amount1 };
+  }
+}
+
+export type Liabilities = {
+  amount0: number;
+  amount1: number;
+};
 
 type Data = {
   /** The borrower's current Ether balance */
@@ -52,7 +95,7 @@ export class DerivedBorrower {
   }
 
   public get userData() {
-    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as `0x${string}`;
+    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as Hex;
   }
 
   public get warnTime() {

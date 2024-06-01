@@ -1,6 +1,6 @@
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import useMediaQuery from 'shared/lib/data/hooks/UseMediaQuery';
+import useMediaQuery from 'shared/lib/hooks/UseMediaQuery';
 import styled from 'styled-components';
 
 import BorrowGraphTooltip from './BorrowGraphTooltip';

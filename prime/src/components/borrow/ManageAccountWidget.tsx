@@ -1,18 +1,19 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { GREY_800 } from 'shared/lib/data/constants/Colors';
 import { GN } from 'shared/lib/data/GoodNumber';
+import useChain from 'shared/lib/hooks/UseChain';
 import styled from 'styled-components';
 import tw from 'twin.macro';
-import { Address, useAccount, useBalance } from 'wagmi';
+import { Address } from 'viem';
+import { useAccount, useBalance } from 'wagmi';
 
 import BorrowSelectActionModal from './BorrowSelectActionModal';
 import HealthBar from './HealthBar';
 import { ManageAccountTransactionButton } from './ManageAccountTransactionButton';
 import SaveTemplateButton from './SaveTemplateButton';
-import { ChainContext } from '../../App';
 import { ReactComponent as AlertIcon } from '../../assets/svg/alert_triangle.svg';
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
 import {
@@ -202,7 +203,7 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
   const { marketInfo, marginAccount, uniswapPositions, enabled, updateHypotheticalState, onAddFirstAction } = props;
   const { address: accountAddress, token0, token1 } = marginAccount;
 
-  const { activeChain } = useContext(ChainContext);
+  const activeChain = useChain();
 
   // MARK: component state
   // actions
@@ -225,24 +226,20 @@ export default function ManageAccountWidget(props: ManageAccountWidgetProps) {
     address: userAddress ?? '0x',
     token: token0.address,
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
   });
   const { data: userBalance1Asset, refetch: refetchBalance1 } = useBalance({
     address: userAddress ?? '0x',
     token: token1.address,
     chainId: activeChain.id,
-    enabled: Boolean(userAddress),
+    query: { enabled: Boolean(userAddress) },
   });
 
   // MARK: logic to ensure that listed balances and MAXes work
   const userBalances: Balances = useMemo(
     () => ({
-      amount0: userBalance0Asset
-        ? GN.fromBigNumber(userBalance0Asset?.value, token0.decimals)
-        : GN.zero(token0.decimals),
-      amount1: userBalance1Asset
-        ? GN.fromBigNumber(userBalance1Asset?.value, token1.decimals)
-        : GN.zero(token1.decimals),
+      amount0: userBalance0Asset ? GN.fromBigInt(userBalance0Asset.value, token0.decimals) : GN.zero(token0.decimals),
+      amount1: userBalance1Asset ? GN.fromBigInt(userBalance1Asset.value, token1.decimals) : GN.zero(token1.decimals),
     }),
     [token0.decimals, token1.decimals, userBalance0Asset, userBalance1Asset]
   );

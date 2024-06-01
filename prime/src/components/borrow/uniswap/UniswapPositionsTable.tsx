@@ -1,23 +1,18 @@
 import { useMemo, useState } from 'react';
 
-import { Provider } from '@wagmi/core';
+import { ethers } from 'ethers';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
+import { fetchUniswapPoolBasics, UniswapV3PoolBasics } from 'shared/lib/data/Uniswap';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
 import { formatPriceRatioGN } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 
 import { UniswapPosition } from '../../../data/actions/Actions';
 import { MarginAccount } from '../../../data/MarginAccount';
 import { UniswapPositionEarnedFees } from '../../../pages/BorrowActionsPage';
-import {
-  getUniswapPoolBasics,
-  UniswapV3PoolBasics,
-  tickToPrice,
-  uniswapPositionKey,
-  getValueOfLiquidity,
-} from '../../../util/Uniswap';
+import { tickToPrice, uniswapPositionKey, getValueOfLiquidity } from '../../../util/Uniswap';
 
 const LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const BORDER_COLOR = GREY_700;
@@ -167,7 +162,7 @@ function calculateUniswapPositionInfo(
 export type UniswapPositionsTableProps = {
   accountAddress: string;
   marginAccount: MarginAccount;
-  provider: Provider;
+  provider?: ethers.providers.JsonRpcProvider;
   uniswapPositions: readonly UniswapPosition[];
   uniswapPositionEarnedFees: UniswapPositionEarnedFees;
   isInTermsOfToken0: boolean;
@@ -189,7 +184,8 @@ export default function UniswapPositionTable(props: UniswapPositionsTableProps) 
   useEffectOnce(() => {
     let mounted = true;
     async function fetch() {
-      const poolBasics = await getUniswapPoolBasics(marginAccount.uniswapPool, provider);
+      if (!provider) return;
+      const poolBasics = await fetchUniswapPoolBasics(marginAccount.uniswapPool, provider);
       if (mounted) {
         setUniswapPoolBasics(poolBasics);
       }

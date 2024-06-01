@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Popover } from '@headlessui/react';
 import { NavLink } from 'react-router-dom';
@@ -10,7 +10,7 @@ import CloseModal from '../../assets/svg/CloseModal';
 import MenuIcon from '../../assets/svg/Menu';
 import { Text } from '../common/Typography';
 import styled from 'styled-components';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 import AloeMobileLogo from '../../assets/svg/AloeCapitalLogo';
 import AloeDesktopLogo from '../../assets/svg/AloeCapitalNavLogo';
@@ -19,19 +19,20 @@ import AccountInfo from './AccountInfo';
 import ChainSelector from './ChainSelector';
 import ConnectWalletButton from './ConnectWalletButton';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
-import useMediaQuery from '../../data/hooks/UseMediaQuery';
-import useLockScroll from '../../data/hooks/UseLockScroll';
+import useMediaQuery, { useMediaQuery2 } from '../../hooks/UseMediaQuery';
+import useLockScroll from '../../hooks/UseLockScroll';
 import { GREY_400, GREY_700, GREY_800 } from '../../data/constants/Colors';
-import { API_LEADERBOARD_URL, TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
+import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
-import { GN, GNFormat } from '../../data/GoodNumber';
-import axios, { AxiosResponse } from 'axios';
-import useEffectOnce from '../../data/hooks/UseEffectOnce';
+import { GNFormat } from '../../data/GoodNumber';
+import { useLeaderboardValue } from '../../hooks/UseLeaderboard';
+import { BlueCreateWalletButton } from './CreateWalletButton';
+import { isDevelopment } from '../../util/Utils';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
   height: 40px;
-  margin-right: 32px;
+  margin-right: 20px;
   @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
     display: none;
   }
@@ -54,7 +55,7 @@ const DesktopTopNav = styled.div`
   display: flex;
   align-items: center;
   height: 64px;
-  padding: 0 32px;
+  padding: 0 20px;
 `;
 
 const TabletBottomNav = styled.div`
@@ -158,11 +159,6 @@ const DesktopNavLink = styled(NavLink)`
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
   }
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
-    width: 100%;
-    padding: 12px 0px;
-  }
 `;
 
 const ExternalDesktopLink = styled.a`
@@ -181,11 +177,6 @@ const ExternalDesktopLink = styled.a`
 
   &.mobile {
     border-bottom: 1px solid ${GREY_700};
-  }
-
-  @media (max-width: ${RESPONSIVE_BREAKPOINTS.TABLET}px) {
-    width: 100%;
-    padding: 12px 0px;
   }
 `;
 
@@ -280,33 +271,16 @@ export function NavBar(props: NavBarProps) {
   const { links, isAllowedToInteract, checkboxes } = props;
   const navigate = useNavigate();
   const account = useAccount();
-  const { disconnect } = useDisconnect();
   const { lockScroll, unlockScroll } = useLockScroll();
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isSelectChainDropdownOpen, setIsSelectChainDropdownOpen] = useState(false);
-  // TODO: Put leaderboardEntries into a shared context so that the Leaderboard Page doesn't have to refetch everything
-  const [leaderboardEntries, setLeaderboardEntries] = useState<{ address: string; score: string }[]>([]);
 
-  useEffectOnce(() => {
-    (async () => {
-      let response: AxiosResponse<{ address: string; score: string }[]>;
-      try {
-        response = await axios.get(API_LEADERBOARD_URL);
-      } catch (e) {
-        return;
-      }
-      if (response.data) setLeaderboardEntries(response.data);
-    })();
-  });
-
-  const accountPoints = useMemo(() => {
-    if (account.address === undefined) return GN.zero(18);
-    const entry = leaderboardEntries.find((x) => x.address.toLowerCase() === account.address!.toLowerCase());
-    return entry === undefined ? GN.zero(18) : new GN(entry.score, 18, 10);
-  }, [account.address, leaderboardEntries]);
-
+  const accountPoints = useLeaderboardValue(account.address);
   const isBiggerThanMobile = useMediaQuery(RESPONSIVE_BREAKPOINTS.XS);
+  const windowWidth = useMediaQuery2();
+  const shouldShortedWalletButtonsText =
+    RESPONSIVE_BREAKPOINTS.TABLET < windowWidth && windowWidth < RESPONSIVE_BREAKPOINTS.MD;
 
   useEffect(() => {
     if (isNavDrawerOpen && isBiggerThanMobile) {
@@ -345,13 +319,16 @@ export function NavBar(props: NavBarProps) {
             </OutlinedGradientRoundedButton>
           )}
           {!account.isConnected ? (
-            <ConnectWalletButton account={account} checkboxes={checkboxes} disabled={!isAllowedToInteract} />
+            <>
+              {isDevelopment() && <BlueCreateWalletButton shouldShortenText={shouldShortedWalletButtonsText} />}
+              <ConnectWalletButton
+                shouldShortenText={shouldShortedWalletButtonsText}
+                checkboxes={checkboxes}
+                disabled={!isAllowedToInteract}
+              />
+            </>
           ) : (
-            <AccountInfo
-              account={account}
-              closeChainSelector={() => setIsSelectChainDropdownOpen(false)}
-              disconnect={disconnect}
-            />
+            <AccountInfo account={account} closeChainSelector={() => setIsSelectChainDropdownOpen(false)} />
           )}
         </div>
       </DesktopTopNav>

@@ -5,17 +5,16 @@ import Big from 'big.js';
 import JSBI from 'jsbi';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
+import { Assets, DerivedBorrower } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
+import { LendingPair } from 'shared/lib/data/LendingPair';
+import { UniswapPosition } from 'shared/lib/data/Uniswap';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { getContract, GetContractEventsReturnType } from 'viem';
 import { usePublicClient, useReadContracts } from 'wagmi';
 
 import LiquidateTable, { LiquidateTableRowProps } from './LiquidateTable';
-import { DerivedBorrower } from '../../../data/Borrower';
-import { LendingPair } from '../../../data/LendingPair';
-import { Assets } from '../../../data/MarginAccount';
-import { UniswapPosition } from '../../../data/Uniswap';
 
 export type LiquidateTabProps = {
   // Alternatively, could get these 2 from `ChainContext` and `useProvider`, respectively
@@ -70,25 +69,22 @@ export default function LiquidateTab(props: LiquidateTabProps) {
     query: { enabled: createBorrowerEvents.length > 0 },
   });
 
-  const lendingPairsForEvents = useMemo(() => {
-    let missing = false;
-    const res = createBorrowerEvents.map((ev) => {
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase());
-      if (pair === undefined) missing = true;
-      return pair;
-    });
-
-    if (missing) return undefined;
-    return res as LendingPair[];
-  }, [createBorrowerEvents, lendingPairs]);
+  const lendingPairsForEvents = useMemo(
+    () =>
+      createBorrowerEvents.map((ev) =>
+        lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ev.args.pool!.toLowerCase())
+      ),
+    [createBorrowerEvents, lendingPairs]
+  );
 
   const borrowers = useMemo(() => {
-    if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
+    if (summaryData === undefined) return undefined;
     return createBorrowerEvents.map((ev, i) => {
       const { pool: uniswapPool, owner, account: address } = ev.args;
       const [balanceEth, balance0, balance1, liabilities0, liabilities1, slot0, liquidity] = summaryData[i];
 
       const pair = lendingPairsForEvents[i];
+      if (pair === undefined) return undefined;
 
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
@@ -122,8 +118,8 @@ export default function LiquidateTab(props: LiquidateTabProps) {
     if (borrowers === undefined) return [];
     return borrowers
       .map((borrower, i) => {
-        if (borrower.ethBalance.isZero()) return undefined;
-        const pair = lendingPairsForEvents![i];
+        if (borrower === undefined || borrower.ethBalance.isZero()) return undefined;
+        const pair = lendingPairsForEvents[i]!;
         const { health } = borrower.health(
           new Big(pair.oracleData.sqrtPriceX96.toString(GNFormat.INT)),
           pair.iv,

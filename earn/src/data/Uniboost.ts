@@ -7,29 +7,28 @@ import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_LENS_ADDRESS,
   ALOE_II_FACTORY_ADDRESS,
   ALOE_II_ORACLE_ADDRESS,
   MULTICALL_ADDRESS,
-  ALOE_II_BOOST_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getToken } from 'shared/lib/data/TokenData';
-import { Address, erc20Abi } from 'viem';
-
-import { fetchListOfBorrowerNfts } from './BorrowerNft';
-import { Assets, Liabilities, MarginAccount } from './MarginAccount';
 import {
   getAmountsForLiquidity,
   getValueOfLiquidity,
   tickToPrice,
   UniswapPosition,
   uniswapPositionKey,
-} from './Uniswap';
+} from 'shared/lib/data/Uniswap';
+import { Address, erc20Abi } from 'viem';
+
+import { MarginAccount } from './MarginAccount';
 
 export enum BoostCardType {
   UNISWAP_NFT,
@@ -145,19 +144,6 @@ export class BoostCardInfo {
     const totalValueIn1 = getValueOfLiquidity(this.position, this.currentTick, this.token1.decimals);
     return amount1 / totalValueIn1;
   }
-}
-
-export async function fetchBoostBorrowersList(
-  chainId: number,
-  provider: ethers.providers.BaseProvider,
-  userAddress: string
-) {
-  const validManagerSet = new Set<Address>([ALOE_II_BOOST_MANAGER_ADDRESS[chainId]]);
-  return fetchListOfBorrowerNfts(chainId, provider, userAddress, {
-    validManagerSet,
-    onlyCheckMostRecentModify: true,
-    includeFreshBorrowers: false,
-  });
 }
 
 export async function fetchBoostBorrower(

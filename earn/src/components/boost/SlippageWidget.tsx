@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 
 import { RESPONSIVE_BREAKPOINT_XS } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_700, GREY_800 } from 'shared/lib/data/constants/Colors';
-import useClickOutside from 'shared/lib/data/hooks/UseClickOutside';
+import useClickOutside from 'shared/lib/hooks/UseClickOutside';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 

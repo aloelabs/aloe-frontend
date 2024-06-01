@@ -1,6 +1,6 @@
 import JSBI from 'jsbi';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { AccountState, TokenType } from './Actions';
 import { getAmountsForLiquidity, uniswapPositionKey } from '../../util/Uniswap';

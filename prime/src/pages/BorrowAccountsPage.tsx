@@ -1,8 +1,9 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ContractCallContext, Multicall } from 'ethereum-multicall';
-import { ContractReceipt, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { FilledGradientButtonWithIcon } from 'shared/lib/components/common/Buttons';
@@ -11,27 +12,29 @@ import { AltSpinner } from 'shared/lib/components/common/Spinner';
 import { Display } from 'shared/lib/components/common/Typography';
 import { ALOE_II_FACTORY_ADDRESS, MULTICALL_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { NumericFeeTierToEnum, PrintFeeTier } from 'shared/lib/data/FeeTier';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
-import useEffectOnce from 'shared/lib/data/hooks/UseEffectOnce';
-import { useGeoFencing } from 'shared/lib/data/hooks/UseGeoFencing';
 import { getToken } from 'shared/lib/data/TokenData';
-import { useAccount, useProvider, useSigner, Address } from 'wagmi';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
+import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
+import { useGeoFencing } from 'shared/lib/hooks/UseGeoFencing';
+import { generateBytes12Salt } from 'shared/lib/util/Salt';
+import { Address } from 'viem';
+import { Config, useAccount, useClient, usePublicClient, useWriteContract } from 'wagmi';
 
-import { ChainContext } from '../App';
 import { ReactComponent as PlusIcon } from '../assets/svg/plus.svg';
 import ActiveMarginAccounts from '../components/borrow/ActiveMarginAccounts';
 import CreatedMarginAccountModal from '../components/borrow/modal/CreatedMarginAccountModal';
 import CreateMarginAccountModal from '../components/borrow/modal/CreateMarginAccountModal';
 import FailedTxnModal from '../components/borrow/modal/FailedTxnModal';
 import PendingTxnModal from '../components/borrow/modal/PendingTxnModal';
-import { createBorrower } from '../connector/FactoryActions';
 import { UNISWAP_POOL_DENYLIST } from '../data/constants/Addresses';
 import { TOPIC0_CREATE_MARKET_EVENT } from '../data/constants/Signatures';
 import { fetchMarginAccountPreviews, MarginAccountPreview, UniswapPoolInfo } from '../data/MarginAccount';
+import { useEthersProvider } from '../util/Provider';
 
 export default function BorrowAccountsPage() {
-  const { activeChain } = useContext(ChainContext);
-  const { isAllowed: isAllowedToInteract, isLoading: isLoadingGeoFencing } = useGeoFencing(activeChain);
+  const activeChain = useChain();
+  const { isAllowed: isAllowedToInteract, isLoading: isLoadingGeoFencing } = useGeoFencing();
   // MARK: component state
   // --> transaction modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -49,9 +52,12 @@ export default function BorrowAccountsPage() {
   const [refetchCount, setRefetchCount] = useState(0);
 
   // MARK: wagmi hooks
-  const provider = useProvider({ chainId: activeChain.id });
   const { address: accountAddress } = useAccount();
-  const { data: signer } = useSigner({ chainId: activeChain.id });
+  const client = useClient<Config>();
+  const provider = useEthersProvider(client);
+  const publicClient = usePublicClient({ chainId: activeChain.id });
+
+  const { writeContractAsync } = useWriteContract();
 
   // MARK: react router hooks
   const navigate = useNavigate();
@@ -75,6 +81,8 @@ export default function BorrowAccountsPage() {
     let mounted = true;
 
     async function fetchAvailablePools() {
+      if (!provider) return;
+
       let createMarketLogs: ethers.providers.Log[] = [];
       try {
         createMarketLogs = await provider.getLogs({
@@ -155,6 +163,7 @@ export default function BorrowAccountsPage() {
         setMarginAccounts([]);
         return;
       }
+      if (!provider) return;
       try {
         const updatedMarginAccounts = await fetchMarginAccountPreviews(
           activeChain,
@@ -182,32 +191,6 @@ export default function BorrowAccountsPage() {
       mounted = false;
     };
   }, [activeChain, accountAddress, isAllowedToInteract, provider, refetchCount, availablePools, setMarginAccounts]);
-
-  function onCommencement() {
-    setIsTxnPending(false);
-    setShowConfirmModal(false);
-    setTimeout(() => {
-      setShowSubmittingModal(true);
-    }, 500);
-  }
-
-  function onCompletion(receipt?: ContractReceipt) {
-    // Reset state (close out of potentially open modals)
-    if (receipt === undefined) {
-      setIsTxnPending(false);
-      return;
-    }
-    setShowSubmittingModal(false);
-    if (receipt?.status === 1) {
-      setTimeout(() => {
-        setShowSuccessModal(true);
-      }, 500);
-    } else {
-      setTimeout(() => {
-        setShowFailedModal(true);
-      }, 500);
-    }
-  }
 
   const dropdownOptions: DropdownOption<string>[] = Array.from(availablePools.entries())
     .map(([addr, info]) => {
@@ -268,11 +251,32 @@ export default function BorrowAccountsPage() {
           isTxnPending={isTxnPending}
           setIsOpen={setShowConfirmModal}
           onConfirm={(selectedPool: string | null) => {
+            if (!selectedPool || !accountAddress || !publicClient) return;
+
             setIsTxnPending(true);
-            if (!signer || !accountAddress || !selectedPool || !isAllowedToInteract) {
-              return;
-            }
-            createBorrower(signer, selectedPool, accountAddress, activeChain, onCommencement, onCompletion);
+
+            const salt = generateBytes12Salt();
+            writeContractAsync({
+              abi: factoryAbi,
+              address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
+              functionName: 'createBorrower',
+              args: [selectedPool as Address, accountAddress, salt],
+              chainId: activeChain.id,
+            })
+              .then(async (hash) => {
+                setIsTxnPending(false);
+                setShowConfirmModal(false);
+                setTimeout(() => setShowSubmittingModal(true), 500);
+
+                const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                setShowSubmittingModal(false);
+                if (receipt.status === 'success') {
+                  setTimeout(() => setShowSuccessModal(true), 500);
+                } else {
+                  setTimeout(() => setShowFailedModal(true), 500);
+                }
+              })
+              .catch((e) => console.error(e));
           }}
         />
       )}

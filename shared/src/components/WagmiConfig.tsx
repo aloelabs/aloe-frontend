@@ -5,6 +5,8 @@ import { coinbaseWallet, injected, safe, walletConnect } from 'wagmi/connectors'
 
 import { ALL_CHAINS } from '../data/constants/ChainSpecific';
 import { Transport } from 'viem';
+import { DEFAULT_CHAIN } from '../data/constants/Values';
+import { isDevelopment } from '../util/Utils';
 
 const transports: { [chainId: number]: Transport[] } = Object.fromEntries(ALL_CHAINS.map((c) => [c.id, []]));
 
@@ -36,35 +38,39 @@ transports[scroll.id].push(
   http('https://1rpc.io/scroll')
 );
 
+const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!;
+const metadata = {
+  name: 'Aloe',
+  description: 'Permissionless lending built on Uniswap',
+  url: 'https://aloe.capital',
+  icons: ['https://avatars.githubusercontent.com/u/82793388'],
+};
+
 export const wagmiConfig = createConfig({
   chains: ALL_CHAINS,
   connectors: [
     injected({ shimDisconnect: true }),
     walletConnect({
-      projectId: process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID!,
+      projectId,
+      metadata,
+      showQrModal: true,
       qrModalOptions: {
         themeMode: 'dark',
         termsOfServiceUrl: 'https://aloe.capital/legal/terms-of-service',
       },
-      showQrModal: true,
-      metadata: {
-        name: 'Aloe',
-        description: 'Permissionless lending built on Uniswap',
-        url: 'https://app.aloe.capital',
-        icons: [],
-      },
     }),
     coinbaseWallet({
-      appName: 'Aloe',
+      appName: metadata.name,
       // appLogoUrl: // TODO: do better than favicon
-      darkMode: true,
+      chainId: DEFAULT_CHAIN.id,
+      preference: isDevelopment() ? 'all' : 'eoaOnly',
     }),
     safe(),
   ],
   batch: {
     multicall: {
       batchSize: 2048,
-      wait: 100,
+      wait: 500,
     },
   },
   cacheTime: 4000,

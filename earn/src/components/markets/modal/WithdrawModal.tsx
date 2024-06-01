@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
+import { lenderAbi } from 'shared/lib/abis/Lender';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
+import { useReadContract } from 'wagmi';
 
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
-import { useBalanceOfUnderlying } from '../../../data/hooks/UseUnderlyingBalanceOf';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import { SupplyTableRow } from '../supply/SupplyTable';
 
@@ -71,24 +72,20 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   const [inputValue, setInputValue] = useState<[string, boolean]>(['', false]); // [amountStr, isMaxed]
   const activeChain = useChain();
 
-  const { data: balanceResult, refetch: refetchBalance } = useBalanceOfUnderlying(
-    selectedRow.asset,
-    selectedRow.kitty.address,
-    userAddress
-  );
+  const { data: balanceResult } = useReadContract({
+    abi: lenderAbi,
+    address: selectedRow.kitty.address,
+    functionName: 'underlyingBalance',
+    args: [userAddress],
+    query: {
+      enabled: isOpen,
+      refetchInterval: 3_000,
+      refetchIntervalInBackground: false,
+    },
+  });
 
   const withdrawAmount = GN.fromDecimalString(inputValue[0] || '0', selectedRow.asset.decimals);
-  const userBalance = GN.fromDecimalString(balanceResult || '0', selectedRow.asset.decimals);
-
-  useEffect(() => {
-    let interval: NodeJS.Timer | null = null;
-    interval = setInterval(() => refetchBalance(), 13_000);
-    return () => {
-      if (interval != null) {
-        clearInterval(interval);
-      }
-    };
-  }, [refetchBalance]);
+  const userBalance = GN.fromBigInt(balanceResult || 0n, selectedRow.asset.decimals);
 
   const {
     state: redeemState,
@@ -133,7 +130,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     GNFormat.DECIMAL
   );
 
-  // TODO add a message if the use is not able to withdraw everything which explains why
+  // TODO: add a message if the use is not able to withdraw everything which explains why
 
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Withdraw'>

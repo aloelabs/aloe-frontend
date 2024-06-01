@@ -8,8 +8,8 @@ import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
 import { Token } from 'shared/lib/data/Token';
+import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address, getAddress, isAddress } from 'viem';
 import { mainnet } from 'viem/chains';
@@ -114,7 +114,6 @@ function SendCryptoConfirmButton(props: SendCryptoConfirmButtonProps) {
   const confirmButton = getConfirmButton(confirmButtonState, token);
 
   function handleClickConfirm() {
-    // TODO: Do not use setStates in async functions outside of useEffect
     if (confirmButtonState === ConfirmButtonState.READY && sendCryptoConfig !== undefined) {
       setIsPending(true);
       contractWrite(sendCryptoConfig.request);

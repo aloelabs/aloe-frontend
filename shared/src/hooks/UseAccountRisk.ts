@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { AccountRiskResult } from '../AccountRisk';
+import { AccountRiskResult } from '../data/AccountRisk';
 
 export const AccountRiskContext = createContext<AccountRiskResult | null>(null);
 

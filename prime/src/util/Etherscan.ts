@@ -1,10 +1,8 @@
 import axios from 'axios';
-import { base } from 'shared/lib/data/BaseChain';
-import { Chain, arbitrum, optimism, mainnet, goerli } from 'wagmi/chains';
+import { Chain, arbitrum, optimism, mainnet, base } from 'wagmi/chains';
 
 const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
   [mainnet.id]: 'api.etherscan.io',
-  [goerli.id]: 'api-goerli.etherscan.io',
   [optimism.id]: 'api-optimistic.etherscan.io',
   [arbitrum.id]: 'api.arbiscan.io',
   [base.id]: 'api.basescan.org',
@@ -12,7 +10,6 @@ const ETHERSCAN_DOMAINS_BY_CHAIN_ID: { [chainId: number]: string } = {
 
 const ETHERSCAN_API_KEYS: { [chainId: number]: string | undefined } = {
   [mainnet.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
-  [goerli.id]: process.env.REACT_APP_ETHERSCAN_API_KEY,
   [optimism.id]: process.env.REACT_APP_OPTIMISTIC_ETHERSCAN_API_KEY,
   [arbitrum.id]: process.env.REACT_APP_ARBISCAN_API_KEY,
   [base.id]: process.env.REACT_APP_BASESCAN_API_KEY,

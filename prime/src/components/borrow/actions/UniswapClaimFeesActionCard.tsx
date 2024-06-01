@@ -2,7 +2,7 @@ import JSBI from 'jsbi';
 import { DropdownOption, DropdownWithPlaceholder } from 'shared/lib/components/common/Dropdown';
 import { Text } from 'shared/lib/components/common/Typography';
 import styled from 'styled-components';
-import { Address } from 'wagmi';
+import { Address } from 'viem';
 
 import { ReactComponent as InboxIcon } from '../../../assets/svg/inbox.svg';
 import { getRemoveLiquidityActionArgs } from '../../../data/actions/ActionArgs';

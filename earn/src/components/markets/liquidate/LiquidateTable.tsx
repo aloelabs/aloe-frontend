@@ -12,22 +12,23 @@ import { FilledGreyButton } from 'shared/lib/components/common/Buttons';
 import Pagination from 'shared/lib/components/common/Pagination';
 import TokenIcons from 'shared/lib/components/common/TokenIcons';
 import { Text, Display } from 'shared/lib/components/common/Typography';
+import { Borrower } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_NFT_ADDRESS, ALOE_II_LIQUIDATOR_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_600, GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Q32 } from 'shared/lib/data/constants/Values';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import useSortableData from 'shared/lib/data/hooks/UseSortableData';
+import { LendingPair } from 'shared/lib/data/LendingPair';
+import useChain from 'shared/lib/hooks/UseChain';
+import useSortableData from 'shared/lib/hooks/UseSortableData';
 import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { Hex } from 'viem';
 import { useAccount, useWriteContract } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
-import { Borrower } from '../../../data/Borrower';
 import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
-import { LendingPair } from '../../../data/LendingPair';
 import { truncateAddress } from '../../../util/Addresses';
 
 const PAGE_SIZE = 10;
@@ -165,7 +166,7 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
         pair.kitty1.address,
         userAddress ?? ZERO_ADDRESS,
       ]
-    ) as `0x${string}`;
+    ) as Hex;
   }, [pair, userAddress]);
 
   const etherscanUrl = getEtherscanUrlForChain(activeChain);

@@ -17,19 +17,25 @@ import {
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
+import {
+  getValueOfLiquidity,
+  UniswapPosition,
+  UniswapV3GraphQL24HourPoolDataQueryResponse,
+} from 'shared/lib/data/Uniswap';
+import { useBorrowerNftRefs } from 'shared/lib/hooks/UseBorrowerNft';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
+import { PriceRelayLatestResponse } from 'shared/lib/hooks/UsePriceRelay';
+import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { Address, erc721Abi } from 'viem';
+import { erc721Abi, Hex } from 'viem';
 import {
-  Config,
   useAccount,
   useBalance,
-  useClient,
   useReadContract,
   useSimulateContract,
   useWaitForTransactionReceipt,
@@ -37,15 +43,9 @@ import {
 } from 'wagmi';
 
 import SlippageWidget from './SlippageWidget';
-import { fetchListOfBorrowerNfts } from '../../data/BorrowerNft';
 import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
-import { useLendingPair } from '../../data/hooks/UseLendingPairs';
-import { PriceRelayLatestResponse } from '../../data/PriceRelayResponse';
 import { BoostCardInfo } from '../../data/Uniboost';
-import { getValueOfLiquidity, UniswapPosition, UniswapV3GraphQL24HourPoolDataQueryResponse } from '../../data/Uniswap';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
-import { getTheGraphClient, Uniswap24HourPoolDataQuery } from '../../util/GraphQL';
-import { useEthersProvider } from '../../util/Provider';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -181,17 +181,12 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const activeChain = useChain();
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useState<TwentyFourHourPoolData | undefined>(undefined);
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[] | undefined>(undefined);
-  const [availableNft, setAvailableNft] = useChainDependentState<{ borrower: Address; ptrIdx: number } | undefined>(
-    undefined,
-    activeChain.id
-  );
   const [maxSlippagePercentage, setSlippagePercentage] = useState('0.10');
 
   const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
 
-  const lendingPair = useLendingPair(cardInfo.token0.address, cardInfo.token1.address);
+  const { lendingPairs } = useLendingPairs(activeChain.id);
+  const lendingPair = useLendingPair(lendingPairs, cardInfo.token0.address, cardInfo.token1.address);
 
   // Generate labels for input range (slider)
   const labels: string[] = [];
@@ -297,9 +292,9 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
         (boostFactor * 10000).toFixed(0),
         combinedMaxBorrowAmount,
       ]
-    ) as `0x${string}`;
+    ) as Hex;
     const actionId = 0;
-    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as `0x${string}`;
+    return ethers.utils.defaultAbiCoder.encode(['uint8', 'bytes'], [actionId, inner]) as Hex;
   }, [cardInfo, maxSlippagePercentage, borrowAmount0, borrowAmount1, boostFactor]);
   const enableHooks = cardInfo !== undefined;
 
@@ -359,28 +354,23 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     query: { enabled: enableHooks && Boolean(userAddress) },
   });
 
-  // The NFT indices we can use if the user has some unused BorrowerNFTs
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      if (!userAddress || !provider) return;
-      const chainId = (await provider.getNetwork()).chainId;
-      const results = await fetchListOfBorrowerNfts(chainId, provider, userAddress, {
-        validUniswapPool: cardInfo.uniswapPool,
-        onlyCheckMostRecentModify: true,
-        includeFreshBorrowers: true,
-      });
-
-      if (mounted && results.length > 0) {
-        setAvailableNft({ borrower: results[0].borrowerAddress, ptrIdx: results[0].index });
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [provider, userAddress, cardInfo, setAvailableNft]);
+  const borrowerNftFilterParams = useMemo(
+    () => ({
+      validUniswapPool: cardInfo.uniswapPool,
+      onlyCheckMostRecentModify: true,
+      includeUnusedBorrowers: true,
+    }),
+    [cardInfo.uniswapPool]
+  );
+  const { borrowerNftRefs } = useBorrowerNftRefs(userAddress, activeChain.id, borrowerNftFilterParams);
+  const availableNft = useMemo(() => {
+    return borrowerNftRefs.length > 0
+      ? {
+          borrower: borrowerNftRefs[0].address,
+          ptrIdx: borrowerNftRefs[0].index,
+        }
+      : undefined;
+  }, [borrowerNftRefs]);
 
   // If we're reusing an old NFT, check whether it has ANTE
   const { data: borrowerBalance } = useBalance({
@@ -402,7 +392,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const to = userAddress;
     const pools = [cardInfo.uniswapPool];
     const salts = [generateBytes12Salt()];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
   }, [borrowerNft, userAddress, cardInfo]);
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
@@ -412,7 +402,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
     const datas = [modifyData];
     const antes = [ethToSend / 10_000_000_000_000n];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as `0x${string}`;
+    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
   }, [borrowerNft, userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
 
   const {

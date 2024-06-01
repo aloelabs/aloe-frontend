@@ -1,35 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import axios, { AxiosResponse } from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Display, Text } from 'shared/lib/components/common/Typography';
-import { getChainLogo } from 'shared/lib/data/constants/ChainSpecific';
+import {
+  ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
+  ALOE_II_PERMIT2_MANAGER_ADDRESS,
+  ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS,
+  getChainLogo,
+} from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_400, GREY_600 } from 'shared/lib/data/constants/Colors';
-import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import useChain from 'shared/lib/data/hooks/UseChain';
-import { useChainDependentState } from 'shared/lib/data/hooks/UseChainDependentState';
 import { Token } from 'shared/lib/data/Token';
+import { useBorrowerNfts } from 'shared/lib/hooks/UseBorrowerNft';
+import useChain from 'shared/lib/hooks/UseChain';
+import { useLendingPairsBalances } from 'shared/lib/hooks/UseLendingPairBalances';
+import { useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
+import { useLatestPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
+import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address } from 'viem';
-import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
+import { base, linea } from 'viem/chains';
+import { useAccount, useBlockNumber, usePublicClient } from 'wagmi';
+import { useCapabilities } from 'wagmi/experimental';
 
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
 import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
-import { BorrowerNftBorrower, fetchListOfFuse2BorrowNfts } from '../data/BorrowerNft';
+import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
 import { ZERO_ADDRESS } from '../data/constants/Addresses';
-import { API_PRICE_RELAY_LATEST_URL } from '../data/constants/Values';
-import { useLendingPairs } from '../data/hooks/UseLendingPairs';
-import { getLendingPairBalances, LendingPairBalancesMap } from '../data/LendingPair';
-import { fetchBorrowerDatas, UniswapPoolInfo } from '../data/MarginAccount';
-import { PriceRelayLatestResponse } from '../data/PriceRelayResponse';
-import { getProminentColor } from '../util/Colors';
-import { useEthersProvider } from '../util/Provider';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';
@@ -77,16 +78,9 @@ enum TabOption {
   Liquidate = 'liquidate',
 }
 
-type TokenSymbol = string;
-type Quote = number;
-
 export default function MarketsPage() {
   const activeChain = useChain();
   // MARK: component state
-  const [tokenQuotes, setTokenQuotes] = useChainDependentState<Map<TokenSymbol, Quote>>(new Map(), activeChain.id);
-  const [balancesMap, setBalancesMap] = useChainDependentState<LendingPairBalancesMap>(new Map(), activeChain.id);
-  const [borrowers, setBorrowers] = useChainDependentState<BorrowerNftBorrower[] | null>(null, activeChain.id);
-  const [tokenColors, setTokenColors] = useChainDependentState<Map<Address, string>>(new Map(), activeChain.id);
   const [pendingTxn, setPendingTxn] = useState<WriteContractReturnType | null>(null);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
@@ -104,42 +98,71 @@ export default function MarketsPage() {
     return TabOption.Supply;
   }, [searchParams]);
 
-  // MARK: custom hooks
-  const { lendingPairs, refetch: refetchLendingPairs } = useLendingPairs(activeChain.id);
+  // MARK: wagmi hooks
+  const { address: userAddress } = useAccount();
+  const { data: capabilities } = useCapabilities({ account: userAddress });
+  const hasAuxiliaryFunds = useMemo(
+    // NOTE: We only expect `auxiliaryFunds.supported` to be true for the Coinbase Smart Wallet,
+    // which only _actually_ supports auxiliary funds on Base -- hence the extra condition.
+    () => activeChain.id === base.id && (capabilities?.[84532]?.auxiliaryFunds.supported ?? false),
+    [activeChain.id, capabilities]
+  );
+  console.log(capabilities?.[84532]?.auxiliaryFunds.supported);
 
-  // NOTE: Instead of `useAvailablePools()`, we're able to compute `availablePools` from `lendingPairs`.
-  // This saves a lot of data.
-  const availablePools = useMemo(() => {
-    const poolInfoMap = new Map<string, UniswapPoolInfo>();
-    lendingPairs.forEach((pair) =>
-      poolInfoMap.set(pair.uniswapPool.toLowerCase(), {
-        token0: pair.token0,
-        token1: pair.token1,
-        fee: GetNumericFeeTier(pair.uniswapFeeTier),
-      })
-    );
-    return poolInfoMap;
-  }, [lendingPairs]);
+  // MARK: custom hooks
+  const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
+  const { data: tokenColors } = useTokenColors(lendingPairs);
+  const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
+  const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
+
+  const borrowerNftFilterParams = useMemo(
+    () => ({
+      includeUnusedBorrowers: false,
+      onlyCheckMostRecentModify: true,
+      validManagerSet: new Set([
+        ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id],
+        ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id],
+        ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
+      ]),
+    }),
+    [activeChain.id]
+  );
+  const {
+    borrowerNftRefs,
+    borrowers: rawBorrowers,
+    refetchBorrowerNftRefs,
+    refetchBorrowers,
+  } = useBorrowerNfts(lendingPairs, userAddress, activeChain.id, borrowerNftFilterParams);
+  const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNftRefs, rawBorrowers);
+
+  // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
+  // when in the background
+  const { data: blockNumber } = useBlockNumber({
+    chainId: activeChain.id,
+    cacheTime: 5_000,
+    watch: false,
+    query: {
+      refetchOnMount: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 5_000,
+      refetchIntervalInBackground: false,
+    },
+  });
+  // Use the `blockNumber` to trigger refresh of certain data
+  useEffect(() => {
+    if (activeChain.id === linea.id || !blockNumber) return;
+    // NOTE: Due to polling, we don't receive every block, so this bisection isn't perfect. Close enough though.
+    if (blockNumber % 2n) {
+      refetchOracleData();
+    } else if (selectedTab === TabOption.Borrow) {
+      refetchBorrowers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockNumber]);
 
   const doesGuardianSenseManipulation = useMemo(() => {
     return lendingPairs.some((pair) => pair.oracleData.manipulationMetric > pair.manipulationThreshold);
-  }, [lendingPairs]);
-
-  // MARK: wagmi hooks
-  const { address: userAddress } = useAccount();
-  const client = useClient<Config>({ chainId: activeChain.id });
-  const provider = useEthersProvider(client);
-  const { data: blockNumber, refetch } = useBlockNumber({
-    chainId: activeChain.id,
-  });
-
-  const uniqueTokens = useMemo(() => {
-    const tokenSet = new Set<Token>();
-    lendingPairs.forEach((pair) => {
-      tokenSet.add(pair.token0);
-      tokenSet.add(pair.token1);
-    });
-    return Array.from(tokenSet.values());
   }, [lendingPairs]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
@@ -159,111 +182,6 @@ export default function MarketsPage() {
     })();
   }, [publicClient, pendingTxn, setIsPendingTxnModalOpen, setPendingTxnModalStatus]);
 
-  // MARK: Computing token colors
-  useEffect(() => {
-    (async () => {
-      // Compute colors for each token logo (local, but still async)
-      const colorPromises = uniqueTokens.map((token) => getProminentColor(token.logoURI || ''));
-      const colors = await Promise.all(colorPromises);
-
-      // Convert response to the desired Map format
-      const addressToColorMap: Map<Address, string> = new Map();
-      uniqueTokens.forEach((token, index) => addressToColorMap.set(token.address, colors[index]));
-      setTokenColors(addressToColorMap);
-    })();
-  }, [uniqueTokens, setTokenColors]);
-
-  // MARK: Fetching token prices
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      // Determine set of unique token symbols (tickers)
-      const symbolSet = new Set<string>();
-      lendingPairs.forEach((pair) => {
-        symbolSet.add(pair.token0.symbol);
-        symbolSet.add(pair.token1.symbol);
-      });
-      const uniqueSymbols = Array.from(symbolSet.values());
-
-      // Return early if there's nothing new to fetch
-      if (
-        uniqueSymbols.length === 0 ||
-        uniqueSymbols.every((symbol) => {
-          return tokenQuotes.has(symbol.toLowerCase()) || (symbol === 'USDC.e' && tokenQuotes.has('USDC'));
-        })
-      ) {
-        return;
-      }
-
-      // Query API for price data, returning early if request fails
-      let quoteDataResponse: AxiosResponse<PriceRelayLatestResponse>;
-      try {
-        quoteDataResponse = await axios.get(
-          `${API_PRICE_RELAY_LATEST_URL}?symbols=${uniqueSymbols.join(',').toUpperCase()}`
-        );
-      } catch {
-        return;
-      }
-      const prResponse: PriceRelayLatestResponse = quoteDataResponse.data;
-      if (!prResponse) return;
-
-      // Convert response to the desired Map format
-      const symbolToPriceMap = new Map<TokenSymbol, Quote>();
-      Object.entries(prResponse).forEach(([k, v]) => {
-        symbolToPriceMap.set(k.toLowerCase(), v.price);
-        symbolToPriceMap.set(k, v.price);
-      });
-
-      if (mounted) setTokenQuotes(symbolToPriceMap);
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [lendingPairs, tokenQuotes, setTokenQuotes]);
-
-  // MARK: Fetching token balances
-  useEffect(() => {
-    (async () => {
-      if (!userAddress || !provider) return;
-      // TODO: I've updated this usage of `getLendingPairBalances` to use the `balancesMap` rather than the old array
-      // return value. Other usages should be updated similarly.
-      const { balancesMap: result } = await getLendingPairBalances(
-        lendingPairs,
-        userAddress,
-        provider,
-        provider.network.chainId
-      );
-      setBalancesMap(result);
-    })();
-  }, [lendingPairs, provider, setBalancesMap, userAddress]);
-
-  // MARK: Fetch margin accounts
-  useEffect(() => {
-    (async () => {
-      if (userAddress === undefined || availablePools.size === 0 || !provider) return;
-
-      const chainId = (await provider.getNetwork()).chainId;
-      const fuse2BorrowerNfts = await fetchListOfFuse2BorrowNfts(chainId, provider, userAddress);
-      const borrowerDatas = (
-        await fetchBorrowerDatas(
-          chainId,
-          provider,
-          fuse2BorrowerNfts.map((b) => b.borrowerAddress),
-          availablePools
-        )
-      ).map((borrowerData) => {
-        return {
-          ...borrowerData,
-          index: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.index || 0,
-          tokenId: fuse2BorrowerNfts.find((b) => b.borrowerAddress === borrowerData.address)?.tokenId || 0,
-        } as BorrowerNftBorrower;
-      });
-
-      setBorrowers(borrowerDatas);
-    })();
-  }, [userAddress, availablePools, provider, blockNumber, setBorrowers]);
-
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
     const ethBalance = balancesMap.get(ZERO_ADDRESS);
@@ -271,8 +189,8 @@ export default function MarketsPage() {
       const isToken0Weth = pair.token0.name === 'Wrapped Ether';
       const isToken1Weth = pair.token1.name === 'Wrapped Ether';
 
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0Price = tokenQuotes?.get(pair.token0.symbol) || 0;
+      const token1Price = tokenQuotes?.get(pair.token1.symbol) || 0;
       const token0Balance =
         (balancesMap.get(pair.token0.address)?.value || 0) + ((isToken0Weth && ethBalance?.value) || 0);
       const token1Balance =
@@ -331,7 +249,9 @@ export default function MarketsPage() {
   switch (selectedTab) {
     default:
     case TabOption.Supply:
-      tabContent = <SupplyTable rows={supplyRows} setPendingTxn={setPendingTxn} />;
+      tabContent = (
+        <SupplyTable hasAuxiliaryFunds={hasAuxiliaryFunds} rows={supplyRows} setPendingTxn={setPendingTxn} />
+      );
       break;
     case TabOption.Borrow:
       tabContent = (
@@ -340,10 +260,9 @@ export default function MarketsPage() {
           userAddress={userAddress}
           borrowers={borrowers}
           lendingPairs={lendingPairs}
-          uniqueTokens={uniqueTokens}
           tokenBalances={balancesMap}
-          tokenQuotes={tokenQuotes}
-          tokenColors={tokenColors}
+          tokenQuotes={tokenQuotes!}
+          tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -352,10 +271,8 @@ export default function MarketsPage() {
       tabContent = (
         <InfoTab
           chainId={activeChain.id}
-          provider={provider}
-          blockNumber={blockNumber}
           lendingPairs={lendingPairs}
-          tokenColors={tokenColors}
+          tokenColors={tokenColors!}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -365,7 +282,7 @@ export default function MarketsPage() {
         <LiquidateTab
           chainId={activeChain.id}
           lendingPairs={lendingPairs}
-          tokenQuotes={tokenQuotes}
+          tokenQuotes={tokenQuotes!}
           setPendingTxn={setPendingTxn}
         />
       );
@@ -379,8 +296,8 @@ export default function MarketsPage() {
 
   const totalBorrowed = useMemo(() => {
     return lendingPairs.reduce((acc, pair) => {
-      const token0Price = tokenQuotes.get(pair.token0.symbol) || 0;
-      const token1Price = tokenQuotes.get(pair.token1.symbol) || 0;
+      const token0Price = tokenQuotes?.get(pair.token0.symbol) || 0;
+      const token1Price = tokenQuotes?.get(pair.token1.symbol) || 0;
       const token0BorrowedUsd = pair.kitty0Info.totalBorrows.toNumber() * token0Price;
       const token1BorrowedUsd = pair.kitty1Info.totalBorrows.toNumber() * token1Price;
       return acc + token0BorrowedUsd + token1BorrowedUsd;
@@ -475,11 +392,11 @@ export default function MarketsPage() {
           }
         }}
         onConfirm={() => {
+          setPendingTxn(null);
           setIsPendingTxnModalOpen(false);
-          setTimeout(() => {
-            refetchLendingPairs?.();
-            refetch();
-          }, 100);
+          refetchLenderData();
+          refetchBalances();
+          refetchBorrowerNftRefs().then(() => refetchBorrowers());
         }}
         status={pendingTxnModalStatus}
       />
