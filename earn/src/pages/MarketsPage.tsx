@@ -107,7 +107,6 @@ export default function MarketsPage() {
     () => activeChain.id === base.id && (capabilities?.[84532]?.auxiliaryFunds.supported ?? false),
     [activeChain.id, capabilities]
   );
-  console.log(capabilities?.[84532]?.auxiliaryFunds.supported);
 
   // MARK: custom hooks
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
