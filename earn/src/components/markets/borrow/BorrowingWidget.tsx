@@ -20,6 +20,7 @@ import styled from 'styled-components';
 import { Address, Chain } from 'viem';
 import { Config, useClient } from 'wagmi';
 
+import { ReactComponent as CheckIcon } from '../../../assets/svg/check.svg';
 import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
 import { useEthersProvider } from '../../../util/Provider';
 import HealthGauge from '../../common/HealthGauge';
@@ -115,6 +116,15 @@ const ClearButton = styled.button`
     color: ${GREY_700};
     cursor: default;
   }
+`;
+
+const Circle = styled.div`
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: 1px solid ${SECONDARY_COLOR};
+  border-radius: 50%;
+  flex-shrink: 0;
 `;
 
 type SelectedBorrower = {
@@ -280,7 +290,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
           <Text size='L' weight='bold'>
             Manage positions
           </Text>
-          <div className='flex'>
+          <div className='flex mb-4'>
             <CardWrapper $textAlignment='start'>
               <CardContainer>
                 <CardRow>
@@ -409,6 +419,27 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       <Text size='L' weight='bold'>
         Open a new position
       </Text>
+      <ol className='mb-2'>
+        <li className='flex items-center gap-2 mb-1'>
+          {selectedCollateral == null ? <Circle /> : <CheckIcon height={20} width={20} />}
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            1. Select an asset to use as collateral. Note that collateral is <strong>not</strong> lent out, and LLTVs
+            can change up to 1% per day.
+          </Text>
+        </li>
+        <li className='flex items-center gap-2 mb-1'>
+          {selectedBorrows == null ? <Circle /> : <CheckIcon height={20} width={20} />}
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            2. Select an asset to borrow. APRs are variable based on utilization.
+          </Text>
+        </li>
+        <li className='flex items-center gap-2'>
+          <Circle />
+          <Text size='M' weight='medium' color={SECONDARY_COLOR}>
+            3. Enter amounts and review transaction intent.
+          </Text>
+        </li>
+      </ol>
       <div className='flex'>
         <CardWrapper $textAlignment='start'>
           <CardContainer>
