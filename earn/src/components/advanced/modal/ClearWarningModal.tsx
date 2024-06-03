@@ -4,12 +4,12 @@ import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { Q32, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import useChain from 'shared/lib/hooks/UseChain';
+import { formatEther } from 'viem';
 import { useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -37,7 +37,7 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
 
 type ClearWarningButtonProps = {
   borrower: BorrowerNftBorrower;
-  etherToSend: GN;
+  etherToSend: bigint;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (result: WriteContractReturnType | null) => void;
 };
@@ -55,7 +55,7 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
     abi: borrowerAbi,
     functionName: 'clear',
     args: [Q32],
-    value: etherToSend.toBigInt(),
+    value: etherToSend,
     chainId: activeChain.id,
   });
   const { writeContractAsync: clearWarning, isPending: isAskingUserToClearWarning } = useWriteContract();
@@ -93,22 +93,17 @@ function ClearWarningButton(props: ClearWarningButtonProps) {
 export type ClearWarningModalProps = {
   borrower: BorrowerNftBorrower;
   market: LendingPair;
-  accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function ClearWarningModal(props: ClearWarningModalProps) {
-  const { borrower, market, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, market, isOpen, setIsOpen, setPendingTxn } = props;
 
   if (!isOpen) return null;
 
-  const ante = market.factoryData.ante;
-  let etherToSend = GN.zero(18, 10);
-  if (accountEtherBalance !== undefined && accountEtherBalance.lt(ante)) {
-    etherToSend = ante.sub(accountEtherBalance);
-  }
+  let etherToSend = market.amountEthRequiredBeforeBorrowing(borrower.ethBalance!.toBigInt());
 
   return (
     <Modal isOpen={isOpen} title='End Auction' setIsOpen={setIsOpen} maxHeight='650px'>
@@ -119,7 +114,7 @@ export default function ClearWarningModal(props: ClearWarningModalProps) {
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
             Your account is healthy, and you're ending the liquidation auction by replenishing the ante with{' '}
-            {etherToSend.toString(GNFormat.DECIMAL)} ETH. This is necessary to cover gas fees in the event that you are
+            {formatEther(etherToSend)} ETH. This is necessary to cover gas fees in the event that you are
             liquidated again.
           </Text>
         </div>

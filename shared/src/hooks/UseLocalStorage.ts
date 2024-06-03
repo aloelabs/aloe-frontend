@@ -9,19 +9,19 @@ export default function useLocalStorage<T>(key: string, initialValue: T) {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(error);
+      console.error('Error retrieving value from local storage:', error);
       return initialValue;
     }
   });
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue = (valueOrOperator: T | ((x: T) => T)) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
+      const value = valueOrOperator instanceof Function ? valueOrOperator(storedValue) : valueOrOperator;
+      setStoredValue(value);
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        window.localStorage.setItem(key, JSON.stringify(value));
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error setting value in local storage:', error);
     }
   };
   return [storedValue, setValue] as const;

@@ -2,7 +2,6 @@ import { Fragment, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
 import { type WriteContractReturnType } from '@wagmi/core';
-import { BigNumber } from 'ethers';
 import Modal from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
@@ -12,7 +11,7 @@ import styled from 'styled-components';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
 import ToUniswapNFTModalContent from './content/ToUniswapNFTModalContent';
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',
@@ -75,7 +74,7 @@ export default function UpdateCollateralModal(props: UpdateCollateralModalProps)
           <ToUniswapNFTModalContent
             borrower={borrower}
             positionToWithdraw={positionToWithdraw}
-            uniswapNftId={BigNumber.from(uniswapNftId)}
+            uniswapNftId={uniswapNftId}
             setIsOpen={setIsOpen}
             setPendingTxnResult={setPendingTxn}
           />

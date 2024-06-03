@@ -19,10 +19,10 @@ import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
-import { Address, Hex } from 'viem';
-import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
+import { Address, encodeFunctionData, Hex } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../../data/hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -83,39 +83,31 @@ function ConfirmButton(props: ConfirmButtonProps) {
 
   const isRedeemingTooMuch = withdrawAmount.gt(maxWithdrawAmount);
 
-  const { data: borrowerBalance } = useBalance({
-    address: borrower.address,
-    chainId: activeChain.id,
-  });
-
   const encodedWithdrawCall = useMemo(() => {
     if (!accountAddress) return null;
-    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
     const amount0 = isWithdrawingToken0 ? withdrawAmount : GN.zero(borrower.token0.decimals);
     const amount1 = isWithdrawingToken0 ? GN.zero(borrower.token1.decimals) : withdrawAmount;
 
-    return borrowerInterface.encodeFunctionData('transfer', [
-      amount0.toBigNumber(),
-      amount1.toBigNumber(),
-      accountAddress,
-    ]) as Hex;
+    return encodeFunctionData({
+      abi: borrowerAbi,
+      functionName: 'transfer',
+      args: [amount0.toBigInt(), amount1.toBigInt(), accountAddress],
+    });
   }, [withdrawAmount, borrower.token0.decimals, borrower.token1.decimals, isWithdrawingToken0, accountAddress]);
 
   const encodedWithdrawAnteCall = useMemo(() => {
-    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-    if (!accountAddress || !borrowerBalance) return null;
-    return borrowerInterface.encodeFunctionData('transferEth', [
-      borrowerBalance?.value,
-      accountAddress,
-    ]) as Hex;
-  }, [accountAddress, borrowerBalance]);
+    if (!accountAddress || !borrower.ethBalance) return null;
+
+    return encodeFunctionData({
+      abi: borrowerAbi,
+      functionName: 'transferEth',
+      args: [borrower.ethBalance.toBigInt(), accountAddress],
+    });
+  }, [accountAddress, borrower.ethBalance]);
 
   const combinedEncodingsForMultiManager = useMemo(() => {
     if (!encodedWithdrawCall || !encodedWithdrawAnteCall) return null;
-    return ethers.utils.defaultAbiCoder.encode(
-      ['bytes[]'],
-      [[encodedWithdrawCall, encodedWithdrawAnteCall]]
-    ) as Hex;
+    return ethers.utils.defaultAbiCoder.encode(['bytes[]'], [[encodedWithdrawCall, encodedWithdrawAnteCall]]) as Hex;
   }, [encodedWithdrawCall, encodedWithdrawAnteCall]);
 
   const { data: withdrawConfig, isLoading: isCheckingIfAbleToWithdraw } = useSimulateContract({

@@ -1,11 +1,10 @@
 import { Display, Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_XS } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-
-import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const STAT_LABEL_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const STAT_VALUE_TEXT_COLOR = 'rgba(255, 255, 255, 1)';

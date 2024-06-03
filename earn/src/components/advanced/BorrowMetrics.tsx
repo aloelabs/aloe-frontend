@@ -4,17 +4,18 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Display, Text } from 'shared/lib/components/common/Typography';
 import { auctionCurve, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
+import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from 'shared/lib/data/constants/Breakpoints';
 import { MANAGER_NAME_MAP } from 'shared/lib/data/constants/ChainSpecific';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
+import { LendingPair } from 'shared/lib/data/LendingPair';
 import useChain from 'shared/lib/hooks/UseChain';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import { formatTokenAmount } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
 import { usePublicClient } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../data/BorrowerNft';
-import { RESPONSIVE_BREAKPOINT_MD, RESPONSIVE_BREAKPOINT_SM } from '../../data/constants/Breakpoints';
+import { BorrowerNftBorrower } from '../../data/hooks/useDeprecatedMarginAccountShim';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;
@@ -165,14 +166,16 @@ function HealthMetricCard(props: { health: number }) {
 }
 
 export type BorrowMetricsProps = {
-  marginAccount?: BorrowerNftBorrower;
-  dailyInterest0: number;
-  dailyInterest1: number;
+  borrowerNft?: BorrowerNftBorrower;
+  market?: LendingPair;
   userHasNoMarginAccounts: boolean;
 };
 
 export function BorrowMetrics(props: BorrowMetricsProps) {
-  const { marginAccount, dailyInterest0, dailyInterest1, userHasNoMarginAccounts } = props;
+  const { borrowerNft, market, userHasNoMarginAccounts } = props;
+
+  const dailyInterest0 = ((market?.kitty0Info.borrowAPR || 0) / 365) * (borrowerNft?.liabilities.amount0 || 0);
+  const dailyInterest1 = ((market?.kitty1Info.borrowAPR || 0) / 365) * (borrowerNft?.liabilities.amount1 || 0);
 
   const activeChain = useChain();
 
@@ -180,27 +183,27 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
   const [mostRecentModifyTime, setMostRecentModifyTime] = useState<Date | null>(null);
 
   const [token0Collateral, token1Collateral] = useMemo(
-    () => marginAccount?.assets.amountsAt(sqrtRatioToTick(marginAccount.sqrtPriceX96)) ?? [0, 0],
-    [marginAccount]
+    () => borrowerNft?.assets.amountsAt(sqrtRatioToTick(borrowerNft.sqrtPriceX96)) ?? [0, 0],
+    [borrowerNft]
   );
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
     (async () => {
       setMostRecentModifyTime(null);
-      if (!publicClient || !marginAccount?.mostRecentModify) return;
-      const block = await publicClient.getBlock({ blockNumber: marginAccount.mostRecentModify.blockNumber });
+      if (!publicClient || !borrowerNft?.mostRecentModify?.blockNumber) return;
+      const block = await publicClient.getBlock({ blockNumber: borrowerNft.mostRecentModify.blockNumber });
       setMostRecentModifyTime(new Date(Number(block.timestamp) * 1000));
     })();
-  }, [publicClient, marginAccount, setMostRecentModifyTime]);
+  }, [publicClient, borrowerNft?.mostRecentModify?.blockNumber, setMostRecentModifyTime]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now()), 200);
-    if (!marginAccount?.warningTime) clearInterval(interval);
+    if (!borrowerNft?.warningTime) clearInterval(interval);
     return () => clearInterval(interval);
-  }, [marginAccount?.warningTime]);
+  }, [borrowerNft]);
 
-  if (!marginAccount)
+  if (!borrowerNft)
     return (
       <MetricsGrid>
         <MetricsGridUpper>
@@ -218,17 +221,17 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
       </MetricsGrid>
     );
 
-  const etherscanUrl = getEtherscanUrlForChain(activeChain);
+  const etherscanUrl = getBlockExplorerUrl(activeChain);
 
-  const mostRecentManager = marginAccount.mostRecentModify
-    ? (marginAccount.mostRecentModify.args.manager as Address)
+  const mostRecentManager = borrowerNft.mostRecentModify
+    ? (borrowerNft.mostRecentModify.args.manager as Address)
     : '0x';
   const mostRecentManagerName = Object.hasOwn(MANAGER_NAME_MAP, mostRecentManager)
     ? MANAGER_NAME_MAP[mostRecentManager]
     : undefined;
   const mostRecentManagerUrl = `${etherscanUrl}/address/${mostRecentManager}`;
 
-  const mostRecentModifyHash = marginAccount.mostRecentModify?.transactionHash;
+  const mostRecentModifyHash = borrowerNft.mostRecentModify?.transactionHash;
   const mostRecentModifyUrl = `${etherscanUrl}/tx/${mostRecentModifyHash}`;
   const mostRecentModifyTimeStr = mostRecentModifyTime
     ? formatDistanceToNowStrict(mostRecentModifyTime, {
@@ -238,8 +241,8 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     : '';
 
   let liquidationAuctionStr = 'Not started';
-  if (marginAccount.warningTime > 0) {
-    const auctionStartTime = marginAccount.warningTime + 5 * 60;
+  if (borrowerNft.warningTime > 0) {
+    const auctionStartTime = borrowerNft.warningTime + 5 * 60;
     const currentTime = Date.now() / 1000;
     if (currentTime < auctionStartTime) {
       liquidationAuctionStr = `Begins in ${(auctionStartTime - currentTime).toFixed(1)} seconds`;
@@ -252,34 +255,34 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
     <MetricsGrid>
       <MetricsGridUpper>
         <MetricCard
-          label={`${marginAccount.token0.symbol} Collateral`}
+          label={`${borrowerNft.token0.symbol} Collateral`}
           value={formatTokenAmount(token0Collateral, 3)}
           valueClassName='underline underline-offset-2 decoration-[#00C143f0]'
         />
         <MetricCard
-          label={`${marginAccount.token1.symbol} Collateral`}
+          label={`${borrowerNft.token1.symbol} Collateral`}
           value={formatTokenAmount(token1Collateral, 3)}
           valueClassName='underline underline-offset-2 decoration-[#00C143f0]'
         />
         <MetricCard
-          label={`${marginAccount.token0.symbol} Borrows`}
-          value={formatTokenAmount(marginAccount.liabilities.amount0 || 0, 3)}
+          label={`${borrowerNft.token0.symbol} Borrows`}
+          value={formatTokenAmount(borrowerNft.liabilities.amount0 || 0, 3)}
           valueClassName='underline underline-offset-2 decoration-[#EC2D5Bf0]'
         />
         <MetricCard
-          label={`${marginAccount.token1.symbol} Borrows`}
-          value={formatTokenAmount(marginAccount.liabilities.amount1 || 0, 3)}
+          label={`${borrowerNft.token1.symbol} Borrows`}
+          value={formatTokenAmount(borrowerNft.liabilities.amount1 || 0, 3)}
           valueClassName='underline underline-offset-2 decoration-[#EC2D5Bf0]'
         />
       </MetricsGridUpper>
       <MetricsGridLower>
-        <HealthMetricCard health={marginAccount.health || 0} />
+        <HealthMetricCard health={borrowerNft.health} />
         <HorizontalMetricCard
           label='Daily Interest Owed'
-          value={`${formatTokenAmount(dailyInterest0, 2)} ${marginAccount.token0.symbol},  ${formatTokenAmount(
+          value={`${formatTokenAmount(dailyInterest0, 2)} ${borrowerNft.token0.symbol},  ${formatTokenAmount(
             dailyInterest1,
             2
-          )} ${marginAccount.token1.symbol}`}
+          )} ${borrowerNft.token1.symbol}`}
         />
         {mostRecentModifyHash && (
           <HorizontalMetricCard label='Last Modified'>
@@ -295,9 +298,9 @@ export function BorrowMetrics(props: BorrowMetricsProps) {
           </HorizontalMetricCard>
         )}
         <HorizontalMetricCard label='Custom Tag'>
-          <Text size='M'>{marginAccount.userDataHex}</Text>
+          <Text size='M'>{borrowerNft.userDataHex}</Text>
         </HorizontalMetricCard>
-        {marginAccount.warningTime > 0 && (
+        {borrowerNft.warningTime > 0 && (
           <HorizontalMetricCard label='Liquidation Auction'>
             <Text size='M'>{liquidationAuctionStr}</Text>
           </HorizontalMetricCard>

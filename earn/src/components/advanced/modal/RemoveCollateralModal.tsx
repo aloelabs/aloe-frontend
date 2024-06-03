@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -20,10 +19,10 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
-import { Address, Hex } from 'viem';
+import { Address, encodeFunctionData, formatUnits, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -75,12 +74,11 @@ function RemoveCollateralButton(props: RemoveCollateralButtonProps) {
   const amount1 = isToken0Collateral ? GN.zero(collateralToken.decimals) : collateralAmount;
 
   const encodedData = useMemo(() => {
-    const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-    return borrowerInterface.encodeFunctionData('transfer', [
-      amount0.toBigNumber(),
-      amount1.toBigNumber(),
-      userAddress,
-    ]);
+    return encodeFunctionData({
+      abi: borrowerAbi,
+      functionName: 'transfer',
+      args: [amount0.toBigInt(), amount1.toBigInt(), userAddress],
+    })
   }, [amount0, amount1, userAddress]);
 
   const { data: removeCollateralConfig } = useSimulateContract({
@@ -176,8 +174,8 @@ export default function RemoveCollateralModal(props: RemoveCollateralModalProps)
   )[isToken0 ? 0 : 1];
   const max = Math.min(existingCollateral.toNumber(), maxWithdrawBasedOnHealth);
   // Mitigate the case when the number is represented in scientific notation
-  const bigMax = BigNumber.from(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
-  const maxString = ethers.utils.formatUnits(bigMax, collateralToken.decimals);
+  const bigMax = BigInt(new Big(max).mul(10 ** collateralToken.decimals).toFixed(0));
+  const maxString = formatUnits(bigMax, collateralToken.decimals);;
 
   const newAssets = new Assets(
     isToken0 ? newCollateralAmount : borrower.assets.amount0,

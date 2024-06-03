@@ -18,8 +18,10 @@ import { useLendingPairsBalances } from 'shared/lib/hooks/UseLendingPairBalances
 import { useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { useLatestPriceRelay } from 'shared/lib/hooks/UsePriceRelay';
 import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
+import { useUniswapPools } from 'shared/lib/hooks/UseUniswapPools';
 import { formatUSDAuto } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
+import { zeroAddress } from 'viem';
 import { base, linea } from 'viem/chains';
 import { useAccount, useBlockNumber, usePublicClient } from 'wagmi';
 import { useCapabilities } from 'wagmi/experimental';
@@ -29,8 +31,7 @@ import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
-import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
-import { ZERO_ADDRESS } from '../data/constants/Addresses';
+import { useDeprecatedMarginAccountShim } from '../data/hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';
@@ -113,6 +114,7 @@ export default function MarketsPage() {
   const { data: tokenColors } = useTokenColors(lendingPairs);
   const { data: tokenQuotes } = useLatestPriceRelay(lendingPairs);
   const { balances: balancesMap, refetch: refetchBalances } = useLendingPairsBalances(lendingPairs, activeChain.id);
+  const uniswapPools = useUniswapPools(lendingPairs);
 
   const borrowerNftFilterParams = useMemo(
     () => ({
@@ -127,12 +129,11 @@ export default function MarketsPage() {
     [activeChain.id]
   );
   const {
-    borrowerNftRefs,
-    borrowers: rawBorrowers,
+    borrowerNfts,
     refetchBorrowerNftRefs,
     refetchBorrowers,
-  } = useBorrowerNfts(lendingPairs, userAddress, activeChain.id, borrowerNftFilterParams);
-  const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNftRefs, rawBorrowers);
+  } = useBorrowerNfts(uniswapPools, userAddress, activeChain.id, borrowerNftFilterParams);
+  const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNfts);
 
   // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
   // when in the background
@@ -183,7 +184,7 @@ export default function MarketsPage() {
 
   const supplyRows = useMemo(() => {
     const rows: SupplyTableRow[] = [];
-    const ethBalance = balancesMap.get(ZERO_ADDRESS);
+    const ethBalance = balancesMap.get(zeroAddress);
     lendingPairs.forEach((pair) => {
       const isToken0Weth = pair.token0.name === 'Wrapped Ether';
       const isToken1Weth = pair.token1.name === 'Wrapped Ether';

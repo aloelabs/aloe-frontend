@@ -12,9 +12,9 @@ import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
+import { zeroAddress } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
 import { TokenBalance } from '../../../pages/PortfolioPage';
 import PairDropdown from '../../common/PairDropdown';
@@ -109,7 +109,7 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     activeChain.id,
     lender?.address,
     inputValue[1] ? GN.Q(112) : amount,
-    isOpen && account.address ? account.address : ZERO_ADDRESS
+    isOpen && account.address ? account.address : zeroAddress
   );
   const maxAmount = GN.fromBigInt(maxAmountBN, selectedToken.decimals);
 

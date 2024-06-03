@@ -41,12 +41,17 @@ export function useLendingPairs(chainId: number) {
     strict: true,
   });
 
-  const query = {
+  const refetchManually = {
     enabled: !isFetching,
     staleTime: Infinity,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+  } as const;
+
+  const refetchManuallyAndOnMount = {
+    ...refetchManually,
+    refetchOnMount: 'always',
   } as const;
 
   // Get fee tier of each Uniswap pool that has a market. Only refreshes when `logs` changes.
@@ -61,13 +66,7 @@ export function useLendingPairs(chainId: number) {
         } as const)
     ),
     allowFailure: false,
-    query: {
-      enabled: !isFetching,
-      staleTime: Infinity,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    },
+    query: refetchManually,
   });
 
   // Get factory parameters for each market. Only refreshes on page load.
@@ -81,7 +80,7 @@ export function useLendingPairs(chainId: number) {
         } as const)
     ),
     allowFailure: false,
-    query,
+    query: refetchManuallyAndOnMount,
   });
 
   // Get instantaneous price and other oracle data for each market. Refreshes on page load and/or manually.
@@ -107,7 +106,7 @@ export function useLendingPairs(chainId: number) {
       ])
       .flat(),
     allowFailure: false,
-    query,
+    query: refetchManuallyAndOnMount,
   });
 
   // Get main data for each market. Refreshes on page load and/or manually.
@@ -131,7 +130,7 @@ export function useLendingPairs(chainId: number) {
       ) ?? []),
     ],
     allowFailure: false,
-    query,
+    query: refetchManuallyAndOnMount,
   });
 
   const queryClient = useQueryClient();

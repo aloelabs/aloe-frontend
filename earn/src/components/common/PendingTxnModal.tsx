@@ -2,7 +2,7 @@ import { FilledGradientButton } from 'shared/lib/components/common/Buttons';
 import Modal, { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import useChain from 'shared/lib/hooks/UseChain';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import { Hash } from 'viem';
 
 import { ReactComponent as ErrorIcon } from '../../assets/svg/error.svg';
@@ -25,7 +25,7 @@ function EtherscanLink(props: { txnHash: string }) {
   return (
     <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR} className='mr-auto'>
       <a
-        href={`${getEtherscanUrlForChain(activeChain)}/tx/${props.txnHash}`}
+        href={`${getBlockExplorerUrl(activeChain)}/tx/${props.txnHash}`}
         target='_blank'
         rel='noopener noreferrer'
         className='underline'

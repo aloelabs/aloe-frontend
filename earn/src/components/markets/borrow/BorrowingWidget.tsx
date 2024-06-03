@@ -21,7 +21,7 @@ import { Address, Chain } from 'viem';
 import { Config, useClient } from 'wagmi';
 
 import { ReactComponent as CheckIcon } from '../../../assets/svg/check.svg';
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 import { useEthersProvider } from '../../../util/Provider';
 import HealthGauge from '../../common/HealthGauge';
 import BorrowModal from '../modal/BorrowModal';

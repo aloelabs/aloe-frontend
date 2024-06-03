@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type WriteContractReturnType } from '@wagmi/core';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_700 } from 'shared/lib/data/constants/Colors';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -23,7 +24,6 @@ import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/Pen
 import { AssetBar } from '../components/portfolio/AssetBar';
 import { AssetBarPlaceholder } from '../components/portfolio/AssetBarPlaceholder';
 import LendingPairPeerCard from '../components/portfolio/LendingPairPeerCard';
-import BridgeModal from '../components/portfolio/modal/BridgeModal';
 import EarnInterestModal from '../components/portfolio/modal/EarnInterestModal';
 import SendCryptoModal from '../components/portfolio/modal/SendCryptoModal';
 import WithdrawModal from '../components/portfolio/modal/WithdrawModal';
@@ -31,7 +31,6 @@ import PortfolioActionButton from '../components/portfolio/PortfolioActionButton
 import PortfolioBalance from '../components/portfolio/PortfolioBalance';
 import PortfolioGrid from '../components/portfolio/PortfolioGrid';
 import PortfolioPageWidgetWrapper from '../components/portfolio/PortfolioPageWidgetWrapper';
-import { RESPONSIVE_BREAKPOINT_SM, RESPONSIVE_BREAKPOINT_XS } from '../data/constants/Breakpoints';
 
 const ASSET_BAR_TOOLTIP_TEXT = `This bar shows the assets in your portfolio. 
   Hover/click on a segment to see more details.`;
@@ -105,7 +104,6 @@ export default function PortfolioPage() {
   const [isSendCryptoModalOpen, setIsSendCryptoModalOpen] = useState(false);
   const [isEarnInterestModalOpen, setIsEarnInterestModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
   const [isPendingTxnModalOpen, setIsPendingTxnModalOpen] = useState(false);
   const [pendingTxnModalStatus, setPendingTxnModalStatus] = useState<PendingTxnModalStatus | null>(null);
 
@@ -322,9 +320,7 @@ export default function PortfolioPage() {
             label={'Bridge'}
             disabled={true}
             Icon={<TruckIcon />}
-            onClick={() => {
-              if (isConnected) setIsBridgeModalOpen(true);
-            }}
+            onClick={() => {}}
           />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
@@ -379,7 +375,6 @@ export default function PortfolioPage() {
             setIsOpen={setIsWithdrawModalOpen}
             setPendingTxn={setPendingTxn}
           />
-          <BridgeModal isOpen={isBridgeModalOpen} selectedAsset={activeAsset} setIsOpen={setIsBridgeModalOpen} />
         </>
       )}
       <PendingTxnModal

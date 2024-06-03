@@ -1,5 +1,4 @@
 import { Address } from 'viem';
-import { LendingPair } from '../data/LendingPair';
 import { useReadContracts } from 'wagmi';
 import { borrowerLensAbi } from '../abis/BorrowerLens';
 import { ALOE_II_BORROWER_LENS_ADDRESS } from '../data/constants/ChainSpecific';
@@ -9,6 +8,7 @@ import { GN } from '../data/GoodNumber';
 import JSBI from 'jsbi';
 import { UniswapPosition } from '../data/Uniswap';
 import { useQueryClient } from '@tanstack/react-query';
+import { UniswapPoolsMap } from './UseUniswapPools';
 
 export type BorrowerRef = {
   /**
@@ -27,7 +27,7 @@ export type BorrowerRef = {
 };
 
 export function useBorrowers(
-  lendingPairs: LendingPair[],
+  uniswapPools: UniswapPoolsMap,
   borrowerRefs: BorrowerRef[],
   chainId: number,
   staleTime = 60 * 1_000
@@ -53,25 +53,14 @@ export function useBorrowers(
     },
   });
 
-  const lendingPairsForEvents = useMemo(() => {
-    let missing = false;
-    const res = borrowerRefs.map((ref) => {
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ref.uniswapPool.toLowerCase());
-      if (pair === undefined) missing = true;
-      return pair;
-    });
-
-    if (missing) return undefined;
-    return res as LendingPair[];
-  }, [borrowerRefs, lendingPairs]);
-
   const borrowers = useMemo(() => {
-    if (summaryData === undefined || lendingPairsForEvents === undefined) return undefined;
+    if (summaryData === undefined) return [];
     return borrowerRefs.map((ref, i) => {
       const { uniswapPool, owner, address } = ref;
       const [balanceEth, balance0, balance1, liabilities0, liabilities1, slot0, liquidity] = summaryData[i];
 
-      const pair = lendingPairsForEvents[i];
+      if (!uniswapPools.has(uniswapPool)) return undefined;
+      const { token0, token1, fee: uniswapFee } = uniswapPools.get(uniswapPool)!;
 
       const positionTicks: { lower: number; upper: number }[] = [];
       for (let i = 0; i < 3; i++) {
@@ -85,21 +74,26 @@ export function useBorrowers(
       return DerivedBorrower.from({
         ethBalance: GN.fromBigInt(balanceEth, 18),
         assets: new Assets(
-          GN.fromBigInt(balance0, pair.token0.decimals),
-          GN.fromBigInt(balance1, pair.token1.decimals),
+          GN.fromBigInt(balance0, token0.decimals),
+          GN.fromBigInt(balance1, token1.decimals),
           positionTicks.map((v, i) => ({ ...v, liquidity: JSBI.BigInt(liquidity[i].toString()) } as UniswapPosition))
         ),
         liabilities: {
-          amount0: GN.fromBigInt(liabilities0, pair.token0.decimals),
-          amount1: GN.fromBigInt(liabilities1, pair.token1.decimals),
+          amount0: GN.fromBigInt(liabilities0, token0.decimals),
+          amount1: GN.fromBigInt(liabilities1, token1.decimals),
         },
         slot0,
-        address: address!,
-        owner: owner!,
-        uniswapPool: uniswapPool!,
+        address,
+        owner,
+        uniswapPool: {
+          address: uniswapPool,
+          fee: uniswapFee,
+        },
+        token0,
+        token1,
       });
     });
-  }, [borrowerRefs, lendingPairsForEvents, summaryData]);
+  }, [uniswapPools, borrowerRefs, summaryData]);
 
   const queryClient = useQueryClient();
   const refetchBorrowers = useCallback(() => {

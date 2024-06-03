@@ -2,14 +2,13 @@ import { useMemo } from 'react';
 
 import Big from 'big.js';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { Borrower } from 'shared/lib/data/Borrower';
 import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
 import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
-import { BorrowerNftRef } from 'shared/lib/hooks/UseBorrowerNft';
+import { BorrowerNft } from 'shared/lib/hooks/UseBorrowerNft';
 import { GetContractEventsReturnType } from 'viem';
 
-import { MarginAccount } from './MarginAccount';
+import { MarginAccount } from '../MarginAccount';
 
 export type BorrowerNftBorrower = MarginAccount & {
   tokenId: string;
@@ -19,25 +18,24 @@ export type BorrowerNftBorrower = MarginAccount & {
 
 export function useDeprecatedMarginAccountShim(
   lendingPairs: LendingPair[],
-  borrowerNftRefs: BorrowerNftRef[],
-  borrowers: Borrower[] | undefined
+  borrowerNfts: BorrowerNft[]
 ): BorrowerNftBorrower[] | null {
   return useMemo(() => {
-    if (borrowers === undefined || borrowerNftRefs.length !== borrowers.length) return null;
+    if (borrowerNfts.some((nft) => nft.borrower === undefined)) return null;
 
-    const borrowerNfts = borrowerNftRefs.map((ref, i) => {
-      const borrower = borrowers[i];
-      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === ref.uniswapPool.toLowerCase())!;
+    const results = borrowerNfts.map((nft) => {
+      const borrower = nft.borrower!;
+      const pair = lendingPairs.find((pair) => pair.uniswapPool.toLowerCase() === nft.uniswapPool.toLowerCase())!;
 
       const sqrtPriceX96 = new Big(pair.oracleData.sqrtPriceX96.toString(GNFormat.INT));
       const iv = pair.iv;
 
       return {
-        tokenId: ref.tokenId,
-        index: ref.index,
-        mostRecentModify: ref.mostRecentModify,
-        address: ref.address,
-        uniswapPool: ref.uniswapPool,
+        tokenId: nft.tokenId,
+        index: nft.index,
+        mostRecentModify: nft.mostRecentModify,
+        address: nft.address,
+        uniswapPool: nft.uniswapPool,
         token0: pair.token0,
         token1: pair.token1,
         feeTier: NumericFeeTierToEnum(pair.uniswapFeeTier),
@@ -54,9 +52,10 @@ export function useDeprecatedMarginAccountShim(
         nSigma: pair.factoryData.nSigma,
         userDataHex: borrower.userData,
         warningTime: borrower.warnTime,
+        ethBalance: borrower.ethBalance,
       } as BorrowerNftBorrower;
     });
-    borrowerNfts.reverse();
-    return borrowerNfts;
-  }, [lendingPairs, borrowerNftRefs, borrowers]);
+    results.sort((a, b) => Number((b.mostRecentModify?.blockNumber || 0n) - (a.mostRecentModify?.blockNumber || 0n)));
+    return results;
+  }, [lendingPairs, borrowerNfts]);
 }

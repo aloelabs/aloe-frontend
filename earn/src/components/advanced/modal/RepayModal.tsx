@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { routerAbi } from 'shared/lib/abis/Router';
@@ -23,10 +22,10 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { usePermit2, Permit2State } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, Chain, Hex } from 'viem';
+import { Address, Chain, encodeFunctionData, Hex } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 import { MarginAccount } from '../../../data/MarginAccount';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
@@ -233,11 +232,11 @@ function RepayButton(props: RepayButtonProps) {
   const amount0Big = isToken0 ? repayAmount : GN.zero(repayToken.decimals);
   const amount1Big = isToken0 ? GN.zero(repayToken.decimals) : repayAmount;
 
-  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-  const encodedData = borrowerInterface.encodeFunctionData('repay', [
-    amount0Big.toBigNumber(),
-    amount1Big.toBigNumber(),
-  ]);
+  const encodedData = encodeFunctionData({
+    abi: borrowerAbi,
+    functionName: 'repay',
+    args: [amount0Big.toBigInt(), amount1Big.toBigInt()],
+  })
 
   const repayTokenBalance = borrower.assets[isToken0 ? 'amount0' : 'amount1'];
 
