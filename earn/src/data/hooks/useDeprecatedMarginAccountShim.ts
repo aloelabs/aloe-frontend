@@ -2,13 +2,32 @@ import { useMemo } from 'react';
 
 import Big from 'big.js';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
-import { GNFormat } from 'shared/lib/data/GoodNumber';
+import { Assets, Liabilities } from 'shared/lib/data/Borrower';
+import { FeeTier, NumericFeeTierToEnum } from 'shared/lib/data/FeeTier';
+import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
+import { Token } from 'shared/lib/data/Token';
 import { BorrowerNft } from 'shared/lib/hooks/UseBorrowerNft';
-import { GetContractEventsReturnType } from 'viem';
+import { Address, GetContractEventsReturnType, Hex } from 'viem';
 
-import { MarginAccount } from '../MarginAccount';
+export type MarginAccount = {
+  address: Address;
+  uniswapPool: Address;
+  token0: Token;
+  token1: Token;
+  feeTier: FeeTier;
+  assets: Assets;
+  liabilities: Liabilities;
+  sqrtPriceX96: Big;
+  health: number;
+  lender0: Address;
+  lender1: Address;
+  iv: number;
+  nSigma: number;
+  userDataHex: Hex;
+  warningTime: number;
+  ethBalance?: GN;
+};
 
 export type BorrowerNftBorrower = MarginAccount & {
   tokenId: string;

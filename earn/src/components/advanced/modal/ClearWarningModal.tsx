@@ -126,7 +126,7 @@ export default function ClearWarningModal(props: ClearWarningModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By using our service, you agree to our{' '}
+            By using this interface, you agree to our{' '}
             <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}

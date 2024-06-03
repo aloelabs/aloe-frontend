@@ -19,7 +19,7 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, encodeFunctionData, WriteContractReturnType } from 'viem';
+import { Address, encodeFunctionData, formatEther, WriteContractReturnType } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
@@ -322,7 +322,7 @@ export default function BorrowModal(props: BorrowModalProps) {
           </Text>
           {etherToSend > 0n && (
             <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-              You will need to provide an additional {GN.fromBigInt(etherToSend, 18).toString(GNFormat.DECIMAL)} ETH to
+              You will need to provide an additional {formatEther(etherToSend)} ETH to
               cover the gas fees in the event that you are liquidated.
             </Text>
           )}
@@ -348,7 +348,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By using our service, you agree to our{' '}
+            By using this interface, you agree to our{' '}
             <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}

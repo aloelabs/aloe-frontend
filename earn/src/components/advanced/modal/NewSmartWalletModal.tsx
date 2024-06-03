@@ -9,6 +9,7 @@ import Pagination from 'shared/lib/components/common/Pagination';
 import { Text } from 'shared/lib/components/common/Typography';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
@@ -16,7 +17,6 @@ import { Address } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
 import { ReactComponent as SearchIcon } from '../../../assets/svg/search.svg';
-import { UniswapPoolInfo } from '../../../data/MarginAccount';
 import SmartWalletButton from '../SmartWalletButton';
 
 const ITEMS_PER_PAGE = 5;
@@ -29,6 +29,12 @@ const SmartWalletOptionsPage = styled.div`
   // The height of 5 buttons + gap between them
   min-height: 212px;
 `;
+
+type UniswapPoolInfo = {
+  token0: Token;
+  token1: Token;
+  fee: number;
+};
 
 type CreateSmartWalletButtonProps = {
   poolAddress: string;
@@ -210,7 +216,7 @@ export default function NewSmartWalletModal(props: NewSmartWalletModalProps) {
               setPendingTxn={setPendingTxn}
             />
             <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-              By using our service, you agree to our{' '}
+              By using this interface, you agree to our{' '}
               <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
                 Terms of Service
               </a>{' '}
