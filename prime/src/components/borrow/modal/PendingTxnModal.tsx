@@ -1,7 +1,7 @@
 import { LoadingModal, MESSAGE_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
 import useChain from 'shared/lib/hooks/UseChain';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 
 export type PendingTxnModalProps = {
   open: boolean;
@@ -19,7 +19,7 @@ export default function PendingTxnModal(props: PendingTxnModalProps) {
       {props.txnHash && (
         <Text size='M' weight='medium' color={MESSAGE_TEXT_COLOR}>
           <a
-            href={`${getEtherscanUrlForChain(activeChain)}/tx/${props.txnHash}`}
+            href={`${getBlockExplorerUrl(activeChain)}/tx/${props.txnHash}`}
             target='_blank'
             rel='noopener noreferrer'
             className='underline'
