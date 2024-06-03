@@ -1,13 +1,12 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import { Tab } from '@headlessui/react';
 import Tooltip from 'shared/lib/components/common/Tooltip';
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_XS } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_400 } from 'shared/lib/data/constants/Colors';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-
-import { RESPONSIVE_BREAKPOINT_XS } from '../../data/constants/Breakpoints';
 
 const SLIPPAGE_TOOLTIP_TEXT = `Slippage tolerance is the maximum price difference you are willing to
  accept between the estimated price and the execution price.`;

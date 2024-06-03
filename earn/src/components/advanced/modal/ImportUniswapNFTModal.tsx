@@ -3,7 +3,7 @@ import Modal from 'shared/lib/components/common/Modal';
 import { UniswapNFTPosition, UniswapPosition } from 'shared/lib/data/Uniswap';
 
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 
 export type ImportUniswapNFTModalProps = {
   isOpen: boolean;

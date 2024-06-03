@@ -20,15 +20,14 @@ import { GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import useChain from 'shared/lib/hooks/UseChain';
 import useSortableData from 'shared/lib/hooks/UseSortableData';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import { getHealthColor } from 'shared/lib/util/Health';
 import { formatTokenAmountCompact } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Hex } from 'viem';
+import { Hex, zeroAddress } from 'viem';
 import { useAccount, useWriteContract } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
-import { ZERO_ADDRESS } from '../../../data/constants/Addresses';
 import { truncateAddress } from '../../../util/Addresses';
 
 const PAGE_SIZE = 10;
@@ -164,12 +163,12 @@ function LiquidateTableRow(props: LiquidateTableRowProps) {
         pair.token1.address,
         pair.kitty0.address,
         pair.kitty1.address,
-        userAddress ?? ZERO_ADDRESS,
+        userAddress ?? zeroAddress,
       ]
     ) as Hex;
   }, [pair, userAddress]);
 
-  const etherscanUrl = getEtherscanUrlForChain(activeChain);
+  const etherscanUrl = getBlockExplorerUrl(activeChain);
   const borrowerLink = `${etherscanUrl}/address/${borrower.address}`;
 
   const isBorrowerNft = borrower.owner === ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id];

@@ -15,7 +15,7 @@ import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
-import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
+import { API_PRICE_RELAY_LATEST_URL, TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
@@ -32,7 +32,7 @@ import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/G
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
-import { erc721Abi, Hex } from 'viem';
+import { encodeFunctionData, erc721Abi, Hex } from 'viem';
 import {
   useAccount,
   useBalance,
@@ -43,7 +43,6 @@ import {
 } from 'wagmi';
 
 import SlippageWidget from './SlippageWidget';
-import { API_PRICE_RELAY_LATEST_URL } from '../../data/constants/Values';
 import { BoostCardInfo } from '../../data/Uniboost';
 import { BOOST_MAX, BOOST_MIN } from '../../pages/boost/ImportBoostPage';
 
@@ -384,26 +383,32 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     return lendingPair.amountEthRequiredBeforeBorrowing(borrowerBalance?.value ?? 0n);
   }, [lendingPair, borrowerBalance]);
 
-  // Prepare for actual import/mint transaction
-  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
   // First, we `mint` so that they have a `Borrower` to put stuff in
   const encodedMint = useMemo(() => {
     if (!userAddress) return '0x';
     const to = userAddress;
     const pools = [cardInfo.uniswapPool];
     const salts = [generateBytes12Salt()];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
-  }, [borrowerNft, userAddress, cardInfo]);
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'mint',
+      args: [to, pools, salts],
+    });
+  }, [userAddress, cardInfo]);
   // Then we `modify`, calling the BoostManager to import the Uniswap position
   const encodedModify = useMemo(() => {
-    if (!userAddress || nextNftPtrIdx === undefined) return '0x';
+    if (!userAddress || nextNftPtrIdx === undefined || modifyData === undefined) return '0x';
     const owner = userAddress;
-    const indices = [availableNft !== undefined ? availableNft.ptrIdx : nextNftPtrIdx];
+    const indices = [availableNft !== undefined ? availableNft.ptrIdx : Number(nextNftPtrIdx)];
     const managers = [ALOE_II_BOOST_MANAGER_ADDRESS[activeChain.id]];
     const datas = [modifyData];
-    const antes = [ethToSend / 10_000_000_000_000n];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
-  }, [borrowerNft, userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
+    const antes = [Number(ethToSend / 10_000_000_000_000n)];
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'modify',
+      args: [owner, indices, managers, datas, antes],
+    });
+  }, [userAddress, activeChain, availableNft, nextNftPtrIdx, modifyData, ethToSend]);
 
   const {
     data: configMint,
@@ -575,7 +580,7 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
           {buttonState.label}
         </FilledGradientButton>
         <Text size='XS' color={TERTIARY_COLOR} className='w-full text-start mt-2'>
-          By using our service, you agree to our{' '}
+          By using this interface, you agree to our{' '}
           <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}

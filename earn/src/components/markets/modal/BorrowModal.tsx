@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
@@ -29,7 +28,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { Hex } from 'viem';
+import { encodeFunctionData, Hex } from 'viem';
 import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -232,61 +231,77 @@ export default function BorrowModal(props: BorrowModalProps) {
   const encodedPermit2 = useMemo(() => {
     const borrowerAddress = availableNft?.address ?? predictedAddress;
     if (!userAddress || !borrowerAddress || !permit2Result.signature) return null;
-    const permit2 = new ethers.utils.Interface(permit2Abi);
-    return permit2.encodeFunctionData(
-      'permitTransferFrom(((address,uint256),uint256,uint256),(address,uint256),address,bytes)',
-      [
+
+    return encodeFunctionData({
+      abi: permit2Abi,
+      functionName: 'permitTransferFrom',
+      args: [
         {
           permitted: {
             token: selectedCollateral.address,
-            amount: permit2Result.amount.toBigNumber(),
+            amount: permit2Result.amount.toBigInt(),
           },
-          nonce: BigNumber.from(permit2Result.nonce ?? '0'),
-          deadline: BigNumber.from(permit2Result.deadline),
+          nonce: BigInt(permit2Result.nonce ?? '0'),
+          deadline: BigInt(permit2Result.deadline),
         },
         {
           to: borrowerAddress,
-          requestedAmount: permit2Result.amount.toBigNumber(),
+          requestedAmount: permit2Result.amount.toBigInt(),
         },
         userAddress,
         permit2Result.signature,
-      ]
-    );
+      ],
+    })
   }, [permit2Result, availableNft, predictedAddress, selectedCollateral.address, userAddress]);
 
-  // Prepare for actual import/mint transaction
-  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
   // First, we `mint` so that they have a `Borrower` to put stuff in
   const encodedMint = useMemo(() => {
     if (!userAddress || selectedLendingPair?.uniswapPool === undefined) return null;
     const to = userAddress;
-    const pools = [selectedLendingPair.uniswapPool ?? '0x'];
+    const pools = [selectedLendingPair.uniswapPool];
     const salts = [generatedSalt];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
-  }, [userAddress, selectedLendingPair?.uniswapPool, generatedSalt, borrowerNft]);
+
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'mint',
+      args: [to, pools, salts],
+    });
+  }, [userAddress, selectedLendingPair?.uniswapPool, generatedSalt]);
 
   const encodedBorrowCall = useMemo(() => {
     if (!userAddress || !selectedLendingPair || !selectedBorrow) return null;
-    const borrower = new ethers.utils.Interface(borrowerAbi);
     const amount0 =
       selectedLendingPair.token0.address === selectedBorrow.address ? borrowAmount : GN.zero(selectedBorrow.decimals);
     const amount1 =
       selectedLendingPair.token1.address === selectedBorrow.address ? borrowAmount : GN.zero(selectedBorrow.decimals);
 
-    return borrower.encodeFunctionData('borrow', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]);
+    return encodeFunctionData({
+      abi: borrowerAbi,
+      functionName: 'borrow',
+      args: [amount0.toBigInt(), amount1.toBigInt(), userAddress],
+    });
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
 
   const encodedModify = useMemo(() => {
-    const index = Boolean(availableNft) ? availableNft!.index : nextNftPtrIdx;
+    const index = Boolean(availableNft)
+      ? availableNft!.index
+      : nextNftPtrIdx !== undefined
+      ? Number(nextNftPtrIdx)
+      : undefined;
     if (!userAddress || index === undefined || ante === undefined || !encodedPermit2 || !encodedBorrowCall) return null;
 
     const owner = userAddress;
     const indices = [index];
     const managers = [ALOE_II_PERMIT2_MANAGER_ADDRESS[activeChain.id]];
-    const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2))];
-    const antes = [ante.toBigNumber().div(1e13)];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
-  }, [availableNft, nextNftPtrIdx, userAddress, ante, encodedPermit2, encodedBorrowCall, activeChain.id, borrowerNft]);
+    const datas = [encodedPermit2.concat(encodedBorrowCall.slice(2)) as Hex];
+    const antes = [ante.toBigNumber().div(1e13).toNumber()];
+
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'modify',
+      args: [owner, indices, managers, datas, antes],
+    });
+  }, [availableNft, nextNftPtrIdx, userAddress, ante, encodedPermit2, encodedBorrowCall, activeChain.id]);
 
   const {
     data: configMulticallOps,

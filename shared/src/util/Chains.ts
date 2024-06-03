@@ -6,6 +6,6 @@ import { DEFAULT_ETHERSCAN_URL } from '../data/constants/Values';
  * @param chain the chain to get the Etherscan url for
  * @returns the Etherscan url for the given chain
  */
-export function getEtherscanUrlForChain(chain: Chain): string {
+export function getBlockExplorerUrl(chain: Chain): string {
   return chain.blockExplorers?.default.url ?? DEFAULT_ETHERSCAN_URL;
 }

@@ -4,7 +4,7 @@ import { Token } from '../data/Token';
 import { GetNumericFeeTier } from '../data/FeeTier';
 import { Address } from 'viem';
 
-type UniswapPoolsMap = Map<Address, { token0: Token; token1: Token; fee: number }>;
+export type UniswapPoolsMap = Map<Address, { token0: Token; token1: Token; fee: number }>;
 
 /**
  * Isolates Uniswap pool changes from other `lendingPairs` changes to prevent unnecessary renders/fetches.

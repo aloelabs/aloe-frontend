@@ -1,15 +1,13 @@
 import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
-import { Address, erc4626Abi, maxUint256 } from 'viem';
+import { Address, erc4626Abi, maxUint256, zeroAddress } from 'viem';
 import {
   useReadContract,
   useReadContracts,
   useSimulateContract,
   useWriteContract,
 } from 'wagmi';
-
-import { ZERO_ADDRESS } from '../constants/Addresses';
 
 export enum RedeemState {
   WAITING_FOR_INPUT,
@@ -49,7 +47,7 @@ export function useRedeem(
     contracts: [
       { ...erc4626, functionName: 'maxWithdraw', args: [owner] },
       { ...erc4626, functionName: 'maxRedeem', args: [owner] },
-      { ...lenderLens, functionName: 'isMaxRedeemDynamic', args: [lender ?? ZERO_ADDRESS, owner] },
+      { ...lenderLens, functionName: 'isMaxRedeemDynamic', args: [lender ?? zeroAddress, owner] },
     ] as const,
     allowFailure: false,
     query: { enabled: lender !== undefined },

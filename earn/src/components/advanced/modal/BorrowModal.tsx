@@ -1,9 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { CustomMaxButton } from 'shared/lib/components/common/Input';
 import Modal from 'shared/lib/components/common/Modal';
@@ -13,7 +11,6 @@ import { Assets, Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
-  ALOE_II_FACTORY_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -22,10 +19,10 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
-import { Address, Hex, WriteContractReturnType } from 'viem';
-import { useAccount, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
+import { Address, encodeFunctionData, formatEther, WriteContractReturnType } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -68,7 +65,7 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
 
 type BorrowButtonProps = {
   borrower: BorrowerNftBorrower;
-  etherToSend: GN;
+  etherToSend: bigint;
   userAddress: Address;
   borrowToken: Token;
   borrowAmount: GN;
@@ -101,12 +98,11 @@ function BorrowButton(props: BorrowButtonProps) {
   const amount0Big = isBorrowingToken0 ? borrowAmount : GN.zero(borrowToken.decimals);
   const amount1Big = isBorrowingToken0 ? GN.zero(borrowToken.decimals) : borrowAmount;
 
-  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-  const encodedData = borrowerInterface.encodeFunctionData('borrow', [
-    amount0Big.toBigNumber(),
-    amount1Big.toBigNumber(),
-    shouldWithdrawToWallet ? userAddress : borrower.address,
-  ]);
+  const encodedData = encodeFunctionData({
+    abi: borrowerAbi,
+    functionName: 'borrow',
+    args: [amount0Big.toBigInt(), amount1Big.toBigInt(), shouldWithdrawToWallet ? userAddress : borrower.address],
+  });
 
   const { data: borrowConfig, isLoading: prepareContractIsLoading } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
@@ -116,10 +112,10 @@ function BorrowButton(props: BorrowButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as Hex],
-      [etherToSend.toBigNumber().div(1e13).toNumber()],
+      [encodedData],
+      [Number(etherToSend / 10_000_000_000_000n)],
     ],
-    value: etherToSend.toBigInt(),
+    value: etherToSend,
     query: { enabled: Boolean(userAddress) && borrowAmount.isGtZero() && !isUnhealthy && !notEnoughSupply },
     chainId: activeChain.id,
   });
@@ -175,15 +171,13 @@ function BorrowButton(props: BorrowButtonProps) {
 export type BorrowModalProps = {
   borrower: BorrowerNftBorrower;
   market: LendingPair;
-  accountEtherBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function BorrowModal(props: BorrowModalProps) {
-  const { borrower, market, accountEtherBalance, isOpen, setIsOpen, setPendingTxn } = props;
-  const activeChain = useChain();
+  const { borrower, market, isOpen, setIsOpen, setPendingTxn } = props;
 
   const [borrowAmountStr, setBorrowAmountStr] = useState('');
   const [borrowToken, setBorrowToken] = useState<Token>(borrower.token0);
@@ -199,19 +193,6 @@ export default function BorrowModal(props: BorrowModalProps) {
     setShouldWithdrawToWallet(true);
   }, [isOpen, borrower.token0]);
 
-  const { data: anteData } = useReadContract({
-    abi: factoryAbi,
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    functionName: 'getParameters',
-    args: [borrower.uniswapPool as Address],
-    chainId: activeChain.id,
-  });
-
-  const ante = useMemo(() => {
-    if (!anteData) return GN.zero(18);
-    return GN.fromBigInt(anteData[0], 18);
-  }, [anteData]);
-
   const tokenOptions = [borrower.token0, borrower.token1];
   const isToken0 = borrowToken.equals(borrower.token0);
 
@@ -221,10 +202,7 @@ export default function BorrowModal(props: BorrowModalProps) {
 
   const newLiability = existingLiability.add(borrowAmount);
 
-  let etherToSend = GN.zero(18, 10);
-  if (accountEtherBalance !== undefined && accountEtherBalance.lt(ante)) {
-    etherToSend = ante.sub(accountEtherBalance);
-  }
+  let etherToSend = market.amountEthRequiredBeforeBorrowing(borrower.ethBalance!.toBigInt());
 
   if (!userAddress || !isOpen) {
     return null;
@@ -342,10 +320,10 @@ export default function BorrowModal(props: BorrowModalProps) {
             <strong>{newLiability.toString(GNFormat.DECIMAL)}</strong>. The borrowed funds will be{' '}
             {shouldWithdrawToWallet ? 'withdrawn to your wallet for immediate use.' : 'left in the NFT for future use.'}
           </Text>
-          {etherToSend.isGtZero() && (
+          {etherToSend > 0n && (
             <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-              You will need to provide an additional {etherToSend.toString(GNFormat.DECIMAL)} ETH to cover the gas fees
-              in the event that you are liquidated.
+              You will need to provide an additional {formatEther(etherToSend)} ETH to
+              cover the gas fees in the event that you are liquidated.
             </Text>
           )}
           <div className='flex gap-2 mt-2'>
@@ -370,7 +348,7 @@ export default function BorrowModal(props: BorrowModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By using our service, you agree to our{' '}
+            By using this interface, you agree to our{' '}
             <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}

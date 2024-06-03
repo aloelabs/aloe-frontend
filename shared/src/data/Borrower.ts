@@ -3,6 +3,7 @@ import { GN } from './GoodNumber';
 import { UniswapPosition, getAmountsForLiquidity, getAmountsForLiquidityGN } from './Uniswap';
 import { ALOE_II_LIQUIDATION_GRACE_PERIOD } from './constants/Values';
 import { auctionCurve, computeAuctionAmounts, isHealthy } from './BalanceSheet';
+import { Token } from './Token';
 
 export class Assets {
   constructor(
@@ -63,7 +64,14 @@ type Data = {
   /** The owner of the borrower */
   readonly owner: Address;
   /** The Uniswap pool to which the borrower belongs */
-  readonly uniswapPool: Address;
+  readonly uniswapPool: {
+    readonly address: Address;
+    readonly fee: number;
+  };
+  /** The Uniswap pool's `token0` */
+  readonly token0: Token;
+  /** The Uniswap pool's `token1` */
+  readonly token1: Token;
 };
 
 export type Borrower = DerivedBorrower & Data;

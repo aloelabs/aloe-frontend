@@ -3,7 +3,7 @@ import RoundedBadge, { BADGE_TEXT_COLOR } from 'shared/lib/components/common/Rou
 import { Display } from 'shared/lib/components/common/Typography';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
@@ -84,7 +84,7 @@ export type MarginAccountHeaderProps = {
 
 export default function MarginAccountHeader(props: MarginAccountHeaderProps) {
   const activeChain = useChain();
-  const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
+  const baseEtherscanUrl = getBlockExplorerUrl(activeChain);
   return (
     <Wrapper>
       <MarginPairContainer>

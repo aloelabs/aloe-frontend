@@ -8,7 +8,7 @@ import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINTS,
-} from '../../data/constants/Breakpoints';
+} from 'shared/lib/data/constants/Breakpoints';
 import Graph from '../graph/Graph';
 
 const TEXT_COLOR = '#82a0b6';

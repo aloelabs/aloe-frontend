@@ -1,5 +1,4 @@
 import { type WriteContractReturnType } from '@wagmi/core';
-import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
@@ -10,12 +9,12 @@ import {
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
-import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
+import { GNFormat } from 'shared/lib/data/GoodNumber';
 import useChain from 'shared/lib/hooks/UseChain';
-import { Address, Chain, Hex } from 'viem';
-import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
+import { Address, Chain, encodeFunctionData } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
@@ -53,13 +52,11 @@ type WithdrawAnteButtonProps = {
 function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
   const { activeChain, borrower, userAddress, setIsOpen, setPendingTxn } = props;
 
-  const { data: borrowerBalance } = useBalance({
-    address: borrower.address,
-    chainId: activeChain.id,
-  });
-
-  const borrowerInterface = new ethers.utils.Interface(borrowerAbi);
-  const encodedData = borrowerInterface.encodeFunctionData('transferEth', [borrowerBalance?.value ?? 0, userAddress]);
+  const encodedData = encodeFunctionData({
+    abi: borrowerAbi,
+    functionName: 'transferEth',
+    args: [borrower.ethBalance?.toBigInt() ?? 0n, userAddress],
+  })
 
   const {
     data: withdrawAnteConfig,
@@ -73,7 +70,7 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
       userAddress,
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
-      [encodedData as Hex],
+      [encodedData],
       [0],
     ],
     query: { enabled: Boolean(userAddress) },
@@ -116,18 +113,17 @@ function WithdrawAnteButton(props: WithdrawAnteButtonProps) {
 
 export type WithdrawAnteModalProps = {
   borrower: BorrowerNftBorrower;
-  accountEthBalance?: GN;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setPendingTxn: (pendingTxn: WriteContractReturnType | null) => void;
 };
 
 export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
-  const { borrower, accountEthBalance, isOpen, setIsOpen, setPendingTxn } = props;
+  const { borrower, isOpen, setIsOpen, setPendingTxn } = props;
   const activeChain = useChain();
   const { address: userAddress } = useAccount();
 
-  if (!userAddress || !accountEthBalance) {
+  if (!userAddress || !borrower.ethBalance) {
     return null;
   }
 
@@ -139,7 +135,7 @@ export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
             Summary
           </Text>
           <Text size='XS' color={SECONDARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You're about to withdraw your {accountEthBalance.toString(GNFormat.DECIMAL)} ETH Ante from this smart
+            You're about to withdraw your {borrower.ethBalance.toString(GNFormat.DECIMAL)} ETH Ante from this smart
             wallet.
           </Text>
         </div>
@@ -152,7 +148,7 @@ export default function WithdrawAnteModal(props: WithdrawAnteModalProps) {
             setPendingTxn={setPendingTxn}
           />
           <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-            By using our service, you agree to our{' '}
+            By using this interface, you agree to our{' '}
             <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
               Terms of Service
             </a>{' '}
