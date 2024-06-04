@@ -8,7 +8,7 @@ import { UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 
 import { AddCollateralTab } from './tab/AddCollateralTab';
 import { AddUniswapNFTAsCollateralTab } from './tab/AddUniswapNFTAsCollateralTab';
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = '#CCDFED';
 

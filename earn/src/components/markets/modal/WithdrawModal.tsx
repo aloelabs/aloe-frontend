@@ -14,7 +14,7 @@ import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { Address } from 'viem';
 import { useReadContract } from 'wagmi';
 
-import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
+import { RedeemState, useRedeem } from '../../../hooks/UseRedeem';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
 import { SupplyTableRow } from '../supply/SupplyTable';
 

@@ -21,7 +21,7 @@ import styled from 'styled-components';
 import { Address, erc721Abi, Hex } from 'viem';
 import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
 const SECONDARY_COLOR = '#CCDFED';

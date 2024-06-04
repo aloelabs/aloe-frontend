@@ -12,7 +12,7 @@ import { formatTokenAmount, roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Config, useClient } from 'wagmi';
 
-import useNumberOfUsers from '../../data/hooks/UseNumberOfUsers';
+import useNumberOfUsers from '../../hooks/UseNumberOfUsers';
 import { useEthersProvider } from '../../util/Provider';
 
 const Container = styled.div`

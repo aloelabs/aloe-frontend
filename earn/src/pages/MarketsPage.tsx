@@ -31,7 +31,7 @@ import BorrowingWidget from '../components/markets/borrow/BorrowingWidget';
 import LiquidateTab from '../components/markets/liquidate/LiquidateTab';
 import InfoTab from '../components/markets/monitor/InfoTab';
 import SupplyTable, { SupplyTableRow } from '../components/markets/supply/SupplyTable';
-import { useDeprecatedMarginAccountShim } from '../data/hooks/useDeprecatedMarginAccountShim';
+import { useDeprecatedMarginAccountShim } from '../hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
 const SELECTED_TAB_KEY = 'selectedTab';

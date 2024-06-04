@@ -36,7 +36,7 @@ import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/
 import { TokenAllocationWidget } from '../components/advanced/TokenAllocationWidget';
 import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import { useDeprecatedMarginAccountShim } from '../data/hooks/useDeprecatedMarginAccountShim';
+import { useDeprecatedMarginAccountShim } from '../hooks/useDeprecatedMarginAccountShim';
 import { useEthersProvider } from '../util/Provider';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';

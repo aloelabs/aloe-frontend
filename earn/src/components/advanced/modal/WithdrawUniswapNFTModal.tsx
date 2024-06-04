@@ -26,7 +26,7 @@ import styled from 'styled-components';
 import { Address, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 import TokenPairIcons from '../../common/TokenPairIcons';
 import { InRangeBadge, OutOfRangeBadge } from '../../common/UniswapPositionCard';
 

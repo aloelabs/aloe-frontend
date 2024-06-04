@@ -14,7 +14,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { MarginAccount } from '../../../../data/MarginAccount';
+import { MarginAccount } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 

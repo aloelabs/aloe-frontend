@@ -17,7 +17,7 @@ import styled from 'styled-components';
 
 import ImportUniswapNFTModal from './modal/ImportUniswapNFTModal';
 import { WithdrawUniswapNFTModal } from './modal/WithdrawUniswapNFTModal';
-import { BorrowerNftBorrower } from '../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../hooks/useDeprecatedMarginAccountShim';
 import TokenPairIcons from '../common/TokenPairIcons';
 import {
   InRangeBadge,

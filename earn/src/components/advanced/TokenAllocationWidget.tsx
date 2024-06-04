@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import TokenAllocationPieChartWidget from './TokenAllocationPieChartWidget';
 import { ReactComponent as PieChartIcon } from '../../assets/svg/pie_chart.svg';
-import { BorrowerNftBorrower } from '../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../hooks/useDeprecatedMarginAccountShim';
 
 const ACCENT_COLOR = 'rgba(130, 160, 182, 1)';
 

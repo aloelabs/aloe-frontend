@@ -15,7 +15,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { zeroAddress } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { RedeemState, useRedeem } from '../../../data/hooks/UseRedeem';
+import { RedeemState, useRedeem } from '../../../hooks/UseRedeem';
 import { TokenBalance } from '../../../pages/PortfolioPage';
 import PairDropdown from '../../common/PairDropdown';
 import TokenAmountSelectInput from '../TokenAmountSelectInput';

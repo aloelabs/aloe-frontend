@@ -11,7 +11,7 @@ import styled from 'styled-components';
 import AddCollateralModalContent from './content/AddCollateralModalContent';
 import RemoveCollateralModalContent from './content/RemoveCollateralModalContent';
 import ToUniswapNFTModalContent from './content/ToUniswapNFTModalContent';
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 
 export enum ConfirmationType {
   DEPOSIT = 'DEPOSIT',

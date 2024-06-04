@@ -15,7 +15,7 @@ import styled from 'styled-components';
 import { Address } from 'viem';
 import { usePublicClient } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../hooks/useDeprecatedMarginAccountShim';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
 const MAX_HEALTH = 10;

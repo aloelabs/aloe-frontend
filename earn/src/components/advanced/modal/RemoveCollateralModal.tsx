@@ -22,7 +22,7 @@ import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { Address, encodeFunctionData, formatUnits, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 

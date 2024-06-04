@@ -23,7 +23,7 @@ import { formatNumberInput } from 'shared/lib/util/Numbers';
 import { Address, formatEther, Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';

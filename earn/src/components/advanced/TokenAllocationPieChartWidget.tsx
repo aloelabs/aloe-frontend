@@ -9,7 +9,7 @@ import { rgb, rgba } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-import { BorrowerNftBorrower } from '../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../hooks/useDeprecatedMarginAccountShim';
 
 // MARK: Capturing Mouse Data on container div ---------------------------------------
 

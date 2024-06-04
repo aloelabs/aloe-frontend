@@ -25,8 +25,7 @@ import styled from 'styled-components';
 import { Address, Chain, encodeFunctionData, Hex } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
-import { MarginAccount } from '../../../data/MarginAccount';
+import { BorrowerNftBorrower, MarginAccount } from '../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../common/HealthBar';
 import TokenAmountSelectInput from '../../portfolio/TokenAmountSelectInput';
 
@@ -236,7 +235,7 @@ function RepayButton(props: RepayButtonProps) {
     abi: borrowerAbi,
     functionName: 'repay',
     args: [amount0Big.toBigInt(), amount1Big.toBigInt()],
-  })
+  });
 
   const repayTokenBalance = borrower.assets[isToken0 ? 'amount0' : 'amount1'];
 

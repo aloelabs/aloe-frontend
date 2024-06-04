@@ -14,7 +14,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { Address, Chain, encodeFunctionData } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../data/hooks/useDeprecatedMarginAccountShim';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 
 const SECONDARY_COLOR = '#CCDFED';
 const TERTIARY_COLOR = '#4b6980';
