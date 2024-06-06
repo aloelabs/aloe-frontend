@@ -28,7 +28,7 @@ import {
 } from 'shared/lib/data/Uniswap';
 import { Address, erc20Abi } from 'viem';
 
-import { MarginAccount } from './MarginAccount';
+import { MarginAccount } from '../hooks/useDeprecatedMarginAccountShim';
 
 export enum BoostCardType {
   UNISWAP_NFT,

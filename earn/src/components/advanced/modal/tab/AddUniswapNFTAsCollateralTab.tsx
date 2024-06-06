@@ -21,7 +21,7 @@ import styled from 'styled-components';
 import { Address, erc721Abi, Hex } from 'viem';
 import { useAccount, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import TokenPairIcons from '../../../common/TokenPairIcons';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -361,7 +361,7 @@ export function AddUniswapNFTAsCollateralTab(props: AddUniswapNFTAsCollateralTab
           setPendingTxn={setPendingTxn}
         />
         <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-          By using our service, you agree to our{' '}
+          By using this interface, you agree to our{' '}
           <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}

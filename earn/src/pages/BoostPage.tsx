@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { uniswapV3PoolAbi } from 'shared/lib/abis/UniswapV3Pool';
@@ -15,7 +14,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import { getProminentColor, rgb } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
-import { Address } from 'viem';
+import { Address, zeroAddress } from 'viem';
 import { Config, useAccount, useClient, useReadContracts } from 'wagmi';
 
 import BoostCard from '../components/boost/BoostCard';
@@ -261,7 +260,7 @@ export default function BoostPage() {
           null
         );
       })
-      .filter((info) => info.lender0 !== ethers.constants.AddressZero || info.lender1 !== ethers.constants.AddressZero);
+      .filter((info) => info.lender0 !== zeroAddress || info.lender1 !== zeroAddress);
   }, [slot0Data, uniswapNFTPositions, marketDatas, userAddress, activeChain.id, colors]);
 
   /*//////////////////////////////////////////////////////////////

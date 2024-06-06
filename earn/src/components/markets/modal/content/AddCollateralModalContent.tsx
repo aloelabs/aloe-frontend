@@ -14,7 +14,7 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';

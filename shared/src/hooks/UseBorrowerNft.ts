@@ -1,4 +1,4 @@
-import { Address, Log, getAddress } from 'viem';
+import { Address, GetContractEventsReturnType, getAddress } from 'viem';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { borrowerNftAbi } from '../abis/BorrowerNft';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_BORROWER_NFT_ADDRESS } from '../data/constants/ChainSpecific';
@@ -7,7 +7,8 @@ import { borrowerLensAbi } from '../abis/BorrowerLens';
 import { useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BorrowerRef, useBorrowers } from './UseBorrowers';
-import { LendingPair } from '../data/LendingPair';
+import { UniswapPoolsMap } from './UseUniswapPools';
+import { Borrower } from '../data/Borrower';
 
 export type BorrowerNftRef = BorrowerRef & {
   /// The NFT's owner
@@ -17,7 +18,11 @@ export type BorrowerNftRef = BorrowerRef & {
   /// The NFT's index in the holder's SSTORE2 array
   index: number;
   /// The most recent `Modify` event (undefined if `modify` hasn't yet been called on the Borrower)
-  mostRecentModify?: Log; // TODO: fuller type info
+  mostRecentModify?: GetContractEventsReturnType<typeof borrowerNftAbi, 'Modify', true, 'earliest', 'latest'>[number];
+};
+
+export type BorrowerNft = BorrowerNftRef & {
+  borrower?: Borrower;
 };
 
 type BorrowerNftFilterParams = {
@@ -193,14 +198,21 @@ export function useBorrowerNftRefs(
 }
 
 export function useBorrowerNfts(
-  lendingPairs: LendingPair[],
+  uniswapPools: UniswapPoolsMap,
   owner: Address | undefined,
   chainId: number,
   filterParams?: BorrowerNftFilterParams,
   staleTime = 60 * 1_000
 ) {
   const { borrowerNftRefs, refetchBorrowerNftRefs } = useBorrowerNftRefs(owner, chainId, filterParams, staleTime);
-  const { borrowers, refetchBorrowers } = useBorrowers(lendingPairs, borrowerNftRefs, chainId, staleTime);
+  const { borrowers, refetchBorrowers } = useBorrowers(uniswapPools, borrowerNftRefs, chainId, staleTime);
 
-  return { borrowerNftRefs, borrowers, refetchBorrowerNftRefs, refetchBorrowers };
+  const borrowerNfts = useMemo(() => {
+    return borrowerNftRefs.map((borrowerNftRef, i) => ({
+      ...borrowerNftRef,
+      borrower: borrowers.at(i),
+    } as BorrowerNft));
+  }, [borrowerNftRefs, borrowers]);
+
+  return { borrowerNfts, refetchBorrowerNftRefs, refetchBorrowers };
 }

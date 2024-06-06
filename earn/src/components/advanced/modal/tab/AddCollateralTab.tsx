@@ -14,7 +14,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, truncateDecimals } from 'shared/lib/util/Numbers';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { MarginAccount } from '../../../../data/MarginAccount';
+import { MarginAccount } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 import TokenAmountSelectInput from '../../../portfolio/TokenAmountSelectInput';
 
@@ -235,7 +235,7 @@ export function AddCollateralTab(props: AddCollateralTabProps) {
           setPendingTxn={setPendingTxn}
         />
         <Text size='XS' color={TERTIARY_COLOR} className='w-full mt-2'>
-          By using our service, you agree to our{' '}
+          By using this interface, you agree to our{' '}
           <a href={TERMS_OF_SERVICE_URL} className='underline' rel='noreferrer' target='_blank'>
             Terms of Service
           </a>{' '}

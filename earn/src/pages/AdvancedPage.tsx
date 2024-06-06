@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { ethers } from 'ethers';
 import JSBI from 'jsbi';
 import { useSearchParams } from 'react-router-dom';
 import Banner from 'shared/lib/components/banner/Banner';
 import AppPage from 'shared/lib/components/common/AppPage';
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_SM } from 'shared/lib/data/constants/Breakpoints';
 import { ALOE_II_BORROWER_NFT_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
-import { GN } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { fetchUniswapNFTPositions, UniswapNFTPosition } from 'shared/lib/data/Uniswap';
 import { useBorrowerNfts } from 'shared/lib/hooks/UseBorrowerNft';
@@ -17,11 +16,10 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { useTokenColors } from 'shared/lib/hooks/UseTokenColors';
 import { useUniswapPools } from 'shared/lib/hooks/UseUniswapPools';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import styled from 'styled-components';
-import { Address } from 'viem';
 import { linea } from 'viem/chains';
-import { Config, useAccount, useBalance, useBlockNumber, useClient, usePublicClient } from 'wagmi';
+import { Config, useAccount, useBlockNumber, useClient, usePublicClient } from 'wagmi';
 
 import { ReactComponent as InfoIcon } from '../assets/svg/info.svg';
 import { BorrowMetrics } from '../components/advanced/BorrowMetrics';
@@ -38,12 +36,11 @@ import SmartWalletButton, { NewSmartWalletButton } from '../components/advanced/
 import { TokenAllocationWidget } from '../components/advanced/TokenAllocationWidget';
 import { UniswapPositionList } from '../components/advanced/UniswapPositionList';
 import PendingTxnModal, { PendingTxnModalStatus } from '../components/common/PendingTxnModal';
-import { useDeprecatedMarginAccountShim } from '../data/BorrowerNft';
-import { RESPONSIVE_BREAKPOINT_SM } from '../data/constants/Breakpoints';
+import { useDeprecatedMarginAccountShim } from '../hooks/useDeprecatedMarginAccountShim';
 import { useEthersProvider } from '../util/Provider';
 
 const BORROW_TITLE_TEXT_COLOR = 'rgba(130, 160, 182, 1)';
-const SELECTED_MARGIN_ACCOUNT_KEY = 'account';
+const SELECTED_BORROWER_NFT_ID = 'nft';
 
 const Container = styled.div`
   display: grid;
@@ -158,12 +155,13 @@ export default function AdvancedPage() {
 
   const { lendingPairs, refetchOracleData, refetchLenderData } = useLendingPairs(activeChain.id);
   const { data: tokenColors } = useTokenColors(lendingPairs);
-  const { borrowerNftRefs, borrowers, refetchBorrowerNftRefs, refetchBorrowers } = useBorrowerNfts(
-    lendingPairs,
+  const availablePools = useUniswapPools(lendingPairs);
+  const { borrowerNfts, refetchBorrowerNftRefs, refetchBorrowers } = useBorrowerNfts(
+    availablePools,
     userAddress,
     activeChain.id
   );
-  const borrowerNftBorrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNftRefs, borrowers);
+  const borrowerNftsDeprecated = useDeprecatedMarginAccountShim(lendingPairs, borrowerNfts);
 
   // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
   // when in the background
@@ -191,32 +189,17 @@ export default function AdvancedPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockNumber]);
 
-  const selectedMarginAccount = useMemo(() => {
-    const marginAccountSearchParam = searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY);
-    if (!marginAccountSearchParam) return borrowerNftBorrowers?.[0];
-    return (
-      borrowerNftBorrowers?.find((account) => account.address === marginAccountSearchParam) ?? borrowerNftBorrowers?.[0]
-    );
-  }, [borrowerNftBorrowers, searchParams]);
+  const selection = useMemo(() => {
+    if (!borrowerNftsDeprecated || borrowerNftsDeprecated.length === 0) return undefined;
 
-  const market = useLendingPair(
-    lendingPairs,
-    selectedMarginAccount?.token0.address,
-    selectedMarginAccount?.token1.address
-  );
+    const nftId = searchParams.get(SELECTED_BORROWER_NFT_ID);
+    let idx = borrowerNftsDeprecated.findIndex((ref) => parseInt(ref.tokenId.slice(-4), 16).toString() === nftId);
+    if (idx === -1) idx = 0;
 
-  const availablePools = useUniswapPools(lendingPairs);
+    return borrowerNftsDeprecated[idx];
+  }, [searchParams, borrowerNftsDeprecated]);
 
-  // MARK: Reset search param if margin account doesn't exist
-  useEffect(() => {
-    if (
-      borrowerNftBorrowers?.length &&
-      selectedMarginAccount?.address !== searchParams.get(SELECTED_MARGIN_ACCOUNT_KEY)
-    ) {
-      searchParams.delete(SELECTED_MARGIN_ACCOUNT_KEY);
-      setSearchParams(searchParams);
-    }
-  }, [borrowerNftBorrowers?.length, searchParams, selectedMarginAccount, setSearchParams]);
+  const market = useLendingPair(lendingPairs, selection?.uniswapPool);
 
   useEffect(() => {
     (async () => {
@@ -224,7 +207,7 @@ export default function AdvancedPage() {
       const fetchedUniswapNFTPositions = await fetchUniswapNFTPositions(userAddress, provider);
       setUniswapNFTPositions(fetchedUniswapNFTPositions);
     })();
-  }, [provider, setUniswapNFTPositions, userAddress]);
+  }, [userAddress, provider, setUniswapNFTPositions]);
 
   const publicClient = usePublicClient({ chainId: activeChain.id });
   useEffect(() => {
@@ -243,34 +226,28 @@ export default function AdvancedPage() {
     })();
   }, [publicClient, pendingTxn, setOpenedModal, setPendingTxnModalStatus]);
 
-  const { data: accountEtherBalanceResult } = useBalance({
-    address: selectedMarginAccount?.address as Address,
-    chainId: activeChain.id,
-    query: { enabled: selectedMarginAccount !== undefined },
-  });
-
-  const accountEtherBalance = accountEtherBalanceResult && GN.fromBigInt(accountEtherBalanceResult.value, 18);
-
   const filteredNonZeroUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
-    if (selectedMarginAccount == null) return filteredPositions;
+    if (!selection) return filteredPositions;
+
     uniswapNFTPositions.forEach((position, tokenId) => {
       if (
-        selectedMarginAccount.token0.equals(position.token0) &&
-        selectedMarginAccount.token1.equals(position.token1) &&
-        GetNumericFeeTier(selectedMarginAccount.feeTier) === position.fee &&
+        position.token0.equals(selection.token0) &&
+        position.token1.equals(selection.token1) &&
+        position.fee === GetNumericFeeTier(selection.feeTier) &&
         JSBI.greaterThan(position.liquidity, JSBI.BigInt('0'))
       ) {
         filteredPositions.set(tokenId, position);
       }
     });
     return filteredPositions;
-  }, [selectedMarginAccount, uniswapNFTPositions]);
+  }, [selection, uniswapNFTPositions]);
 
   const withdrawableUniswapNFTPositions = useMemo(() => {
     const filteredPositions: Map<number, UniswapNFTPosition> = new Map();
-    if (selectedMarginAccount == null) return filteredPositions;
-    selectedMarginAccount.assets.uniswapPositions.forEach((uniswapPosition) => {
+    if (!selection) return filteredPositions;
+
+    selection.assets.uniswapPositions.forEach((uniswapPosition) => {
       const isNonZero = JSBI.greaterThan(uniswapPosition.liquidity, JSBI.BigInt('0'));
       const matchingNFTPosition = Array.from(uniswapNFTPositions.entries()).find(([, position]) => {
         return position.lower === uniswapPosition.lower && position.upper === uniswapPosition.upper;
@@ -280,32 +257,22 @@ export default function AdvancedPage() {
       }
     });
     return filteredPositions;
-  }, [selectedMarginAccount, uniswapNFTPositions]);
+  }, [selection, uniswapNFTPositions]);
 
-  const defaultPool = Array.from(availablePools.keys())[0];
-
-  const dailyInterest0 =
-    ((market?.kitty0Info.borrowAPR || 0) / 365) * (selectedMarginAccount?.liabilities.amount0 || 0);
-  const dailyInterest1 =
-    ((market?.kitty1Info.borrowAPR || 0) / 365) * (selectedMarginAccount?.liabilities.amount1 || 0);
-
-  const baseEtherscanUrl = getEtherscanUrlForChain(activeChain);
-  const selectedMarginAccountEtherscanUrl = `${baseEtherscanUrl}/address/${selectedMarginAccount?.address}`;
-  const selectedBorrowerOpenseaUrl = `https://opensea.io/assets/${activeChain.name}/${
+  const blockExplorerUrl = getBlockExplorerUrl(activeChain);
+  const selectionUrlBlockExplorer = `${blockExplorerUrl}/address/${selection?.address}`;
+  const selectionUrlOpensea = `https://opensea.io/assets/${activeChain.name}/${
     ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id]
-  }/${selectedMarginAccount ? ethers.BigNumber.from(selectedMarginAccount!.tokenId).toString() : ''}`;
+  }/${selection ? BigInt(selection.tokenId).toString(10) : ''}`;
 
-  const hasLiabilities = Object.values(selectedMarginAccount?.liabilities ?? {}).some((liability) => {
-    return liability > 0;
-  });
+  const selectionHasEther = selection?.ethBalance!.isGtZero() ?? false;
+  const selectionHasLiabilities = Boolean(
+    (selection?.liabilities.amount0 ?? 0) > 0 || (selection?.liabilities.amount1 ?? 0) > 0
+  );
 
-  const accountHasEther = accountEtherBalance?.isGtZero() ?? false;
-
-  const userHasNoMarginAccounts = borrowerNftBorrowers?.length === 0;
-
-  const canWithdrawAnte = !hasLiabilities && accountHasEther;
-  const canClearWarning =
-    selectedMarginAccount && selectedMarginAccount.health >= 1 && selectedMarginAccount.warningTime > 0;
+  const userHasBorrowers = borrowerNfts.length > 0;
+  const canWithdrawAnte = selectionHasEther && !selectionHasLiabilities;
+  const canClearWarning = selection && selection.health >= 1 && selection.warningTime > 0;
 
   return (
     <>
@@ -330,51 +297,50 @@ export default function AdvancedPage() {
               onRepay={() => setOpenedModal(OpenedModal.REPAY)}
               onWithdrawAnte={canWithdrawAnte ? () => setOpenedModal(OpenedModal.WITHDRAW_ANTE) : undefined}
               onClearWarning={canClearWarning ? () => setOpenedModal(OpenedModal.CLEAR_WARNING) : undefined}
-              isDisabled={!selectedMarginAccount || !isConnected}
+              isDisabled={!selection || !isConnected}
             />
           </GridAreaForButtons>
           <GridAreaForNFTList>
-            {borrowerNftBorrowers?.map((account) => (
-              <SmartWalletButton
-                token0={account.token0}
-                token1={account.token1}
-                tokenId={parseInt(account.tokenId.slice(-4), 16)}
-                isActive={selectedMarginAccount?.address === account.address}
-                onClick={() => {
-                  // When a new account is selected, we need to update the
-                  // selectedMarginAccount, selectedMarketInfo, and uniswapPositions
-                  // setSelectedMarginAccount(account);
-                  setSearchParams({ [SELECTED_MARGIN_ACCOUNT_KEY]: account.address });
-                }}
-                key={account.address}
-              />
-            ))}
+            {borrowerNftsDeprecated?.map((nft, i) => {
+              const tokenCounter = parseInt(nft.tokenId.slice(-4), 16);
+              return (
+                <SmartWalletButton
+                  token0={nft.token0}
+                  token1={nft.token1}
+                  tokenId={tokenCounter}
+                  isActive={selection?.address === nft.address}
+                  onClick={() => {
+                    setSearchParams({ [SELECTED_BORROWER_NFT_ID]: tokenCounter.toString() });
+                  }}
+                  key={nft.address}
+                />
+              );
+            })}
             <NewSmartWalletButton
-              userHasNoMarginAccounts={userHasNoMarginAccounts}
+              userHasNoMarginAccounts={!userHasBorrowers}
               onClick={() => setOpenedModal(OpenedModal.NEW_SMART_WALLET)}
             />
           </GridAreaForNFTList>
           <GridAreaForData>
             <BorrowMetrics
-              marginAccount={selectedMarginAccount}
-              dailyInterest0={dailyInterest0}
-              dailyInterest1={dailyInterest1}
-              userHasNoMarginAccounts={userHasNoMarginAccounts}
+              market={market}
+              borrowerNft={selection}
+              userHasNoMarginAccounts={!userHasBorrowers}
             />
             <UniswapPositionList
-              borrower={selectedMarginAccount}
+              borrower={selection}
               importableUniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
               withdrawableUniswapNFTs={withdrawableUniswapNFTPositions}
               setPendingTxn={setPendingTxn}
             />
-            <TokenAllocationWidget borrower={selectedMarginAccount} tokenColors={tokenColors!} />
+            <TokenAllocationWidget borrower={selection} tokenColors={tokenColors!} />
             <GlobalStatsTable market={market} />
-            {selectedMarginAccount && (
+            {selection && (
               <div className='flex flex-col gap-4 mb-8'>
                 <LinkContainer>
                   <InfoIcon width={16} height={16} />
                   <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
-                    <StyledExternalLink href={selectedMarginAccountEtherscanUrl} target='_blank'>
+                    <StyledExternalLink href={selectionUrlBlockExplorer} target='_blank'>
                       View on Etherscan
                     </StyledExternalLink>
                   </Text>
@@ -382,7 +348,7 @@ export default function AdvancedPage() {
                 <LinkContainer>
                   <InfoIcon width={16} height={16} />
                   <Text size='S' color={BORROW_TITLE_TEXT_COLOR} className='flex gap-1 whitespace-nowrap'>
-                    <StyledExternalLink href={selectedBorrowerOpenseaUrl} target='_blank'>
+                    <StyledExternalLink href={selectionUrlOpensea} target='_blank'>
                       View on OpenSea
                     </StyledExternalLink>
                   </Text>
@@ -394,52 +360,49 @@ export default function AdvancedPage() {
         {availablePools.size > 0 && (
           <NewSmartWalletModal
             availablePools={availablePools}
-            defaultPool={defaultPool}
+            defaultPool={availablePools.keys().next().value}
             isOpen={openedModal === OpenedModal.NEW_SMART_WALLET}
             setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.NEW_SMART_WALLET : OpenedModal.NONE)}
             setPendingTxn={setPendingTxn}
           />
         )}
-        {selectedMarginAccount && market && (
+        {selection && market && (
           <>
             <AddCollateralModal
-              borrower={selectedMarginAccount}
+              borrower={selection}
               uniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
               isOpen={openedModal === OpenedModal.ADD_COLLATERAL}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.ADD_COLLATERAL : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <RemoveCollateralModal
-              borrower={selectedMarginAccount}
+              borrower={selection}
               isOpen={openedModal === OpenedModal.REMOVE_COLLATERAL}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.REMOVE_COLLATERAL : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <BorrowModal
-              borrower={selectedMarginAccount}
+              borrower={selection}
               market={market}
-              accountEtherBalance={accountEtherBalance}
               isOpen={openedModal === OpenedModal.BORROW}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.BORROW : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <RepayModal
-              borrower={selectedMarginAccount}
+              borrower={selection}
               isOpen={openedModal === OpenedModal.REPAY}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.REPAY : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <WithdrawAnteModal
-              borrower={selectedMarginAccount}
-              accountEthBalance={accountEtherBalance}
+              borrower={selection}
               isOpen={openedModal === OpenedModal.WITHDRAW_ANTE}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.WITHDRAW_ANTE : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}
             />
             <ClearWarningModal
-              borrower={selectedMarginAccount}
+              borrower={selection}
               market={market}
-              accountEtherBalance={accountEtherBalance}
               isOpen={openedModal === OpenedModal.CLEAR_WARNING}
               setIsOpen={(isOpen) => setOpenedModal(isOpen ? OpenedModal.CLEAR_WARNING : OpenedModal.NONE)}
               setPendingTxn={setPendingTxn}

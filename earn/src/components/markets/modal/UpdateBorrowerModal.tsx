@@ -10,7 +10,7 @@ import styled from 'styled-components';
 
 import BorrowModalContent from './content/BorrowModalContent';
 import RepayModalContent from './content/RepayModalContent';
-import { BorrowerNftBorrower } from '../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../hooks/useDeprecatedMarginAccountShim';
 
 export enum ConfirmationType {
   BORROW = 'BORROW',

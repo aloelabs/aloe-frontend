@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -17,7 +17,7 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -53,7 +53,7 @@ function getConfirmButton(state: ConfirmButtonState): { text: string; enabled: b
 type ConfirmButtonProps = {
   borrower: BorrowerNftBorrower;
   positionToWithdraw: UniswapPosition;
-  uniswapNftId: BigNumber;
+  uniswapNftId: number;
   setIsOpen: (open: boolean) => void;
   setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };
@@ -134,7 +134,7 @@ function ConfirmButton(props: ConfirmButtonProps) {
 export type RemoveCollateralModalContentProps = {
   borrower: BorrowerNftBorrower;
   positionToWithdraw: UniswapPosition;
-  uniswapNftId: BigNumber;
+  uniswapNftId: number;
   setIsOpen: (isOpen: boolean) => void;
   setPendingTxnResult: (result: WriteContractReturnType | null) => void;
 };

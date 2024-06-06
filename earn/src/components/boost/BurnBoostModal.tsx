@@ -14,8 +14,8 @@ import useChain from 'shared/lib/hooks/UseChain';
 import { Hex } from 'viem';
 import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { MarginAccount } from '../../data/MarginAccount';
 import { BoostCardInfo } from '../../data/Uniboost';
+import { MarginAccount } from '../../hooks/useDeprecatedMarginAccountShim';
 import MaxSlippageInput from '../common/MaxSlippageInput';
 
 const SECONDARY_COLOR = '#CCDFED';

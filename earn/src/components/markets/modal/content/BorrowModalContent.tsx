@@ -4,7 +4,6 @@ import { type WriteContractReturnType } from '@wagmi/core';
 import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
-import { factoryAbi } from 'shared/lib/abis/Factory';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import { SquareInputWithMax } from 'shared/lib/components/common/Input';
 import { MODAL_BLACK_TEXT_COLOR } from 'shared/lib/components/common/Modal';
@@ -14,7 +13,6 @@ import { Liabilities } from 'shared/lib/data/Borrower';
 import {
   ALOE_II_BORROWER_NFT_ADDRESS,
   ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS,
-  ALOE_II_FACTORY_ADDRESS,
 } from 'shared/lib/data/constants/ChainSpecific';
 import { TERMS_OF_SERVICE_URL } from 'shared/lib/data/constants/Values';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
@@ -22,10 +20,10 @@ import { LendingPair } from 'shared/lib/data/LendingPair';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
-import { Address, Hex } from 'viem';
-import { useAccount, useBalance, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
+import { Address, formatEther, Hex } from 'viem';
+import { useAccount, useSimulateContract, useWriteContract } from 'wagmi';
 
-import { BorrowerNftBorrower } from '../../../../data/BorrowerNft';
+import { BorrowerNftBorrower } from '../../../../hooks/useDeprecatedMarginAccountShim';
 import HealthBar from '../../../common/HealthBar';
 
 const SECONDARY_COLOR = '#CCDFED';
@@ -67,7 +65,7 @@ type ConfirmButtonProps = {
   isLoading: boolean;
   isUnhealthy: boolean;
   notEnoughSupply: boolean;
-  requiredAnte?: GN;
+  requiredAnte?: bigint;
   token: Token;
   isBorrowingToken0: boolean;
   accountAddress?: Address;
@@ -113,9 +111,9 @@ function ConfirmButton(props: ConfirmButtonProps) {
       [borrower.index],
       [ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id]],
       [encodedBorrowCall ?? '0x'],
-      [requiredAnte?.toBigNumber().div(1e13).toNumber() ?? 0],
+      [Number((requiredAnte ?? 0n) / 10_000_000_000_000n)],
     ],
-    value: requiredAnte?.toBigInt(),
+    value: requiredAnte,
     chainId: activeChain.id,
     query: {
       enabled:
@@ -177,27 +175,6 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const [additionalBorrowAmountStr, setAdditionalBorrowAmountStr] = useState('');
 
   const { address: accountAddress } = useAccount();
-  const activeChain = useChain();
-
-  const { data: anteData } = useReadContract({
-    abi: factoryAbi,
-    address: ALOE_II_FACTORY_ADDRESS[activeChain.id],
-    functionName: 'getParameters',
-    args: [borrower.uniswapPool as Address],
-    chainId: activeChain.id,
-  });
-
-  const ante = useMemo(() => {
-    if (!anteData) return GN.zero(18);
-    return GN.fromBigInt(anteData[0], 18);
-  }, [anteData]);
-
-  const { data: accountEtherBalanceResult } = useBalance({
-    address: borrower.address as Address,
-    chainId: activeChain.id,
-  });
-
-  const accountEtherBalance = accountEtherBalanceResult && GN.fromBigInt(accountEtherBalanceResult.value, 18);
 
   // TODO: This assumes that only one token is borrowed and one token is collateralized
   const isBorrowingToken0 = borrower.liabilities.amount0 > 0;
@@ -211,8 +188,7 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
   const borrowAmount = GN.fromDecimalString(additionalBorrowAmountStr || '0', borrowToken.decimals);
   const newLiability = existingLiability.add(borrowAmount);
 
-  const requiredAnte =
-    accountEtherBalance !== undefined && accountEtherBalance.lt(ante) ? ante.sub(accountEtherBalance) : GN.zero(18);
+  const requiredAnte = lendingPair?.amountEthRequiredBeforeBorrowing(borrower.ethBalance!.toBigInt());
 
   const lenderInfo = lendingPair?.[isBorrowingToken0 ? 'kitty0Info' : 'kitty1Info'];
 
@@ -302,9 +278,9 @@ export default function BorrowModalContent(props: BorrowModalContentProps) {
           </strong>
           .
         </Text>
-        {requiredAnte.isGtZero() && (
+        {(requiredAnte !== undefined && requiredAnte > 0n) && (
           <Text size='XS' color={TERTIARY_COLOR} className='overflow-hidden text-ellipsis'>
-            You will need to provide an additional {requiredAnte.toString(GNFormat.LOSSY_HUMAN)} ETH to cover the gas
+            You will need to provide an additional {formatEther(requiredAnte)} ETH to cover the gas
             fees in the event that you are liquidated.
           </Text>
         )}

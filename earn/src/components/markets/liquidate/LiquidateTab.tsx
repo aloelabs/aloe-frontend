@@ -7,6 +7,7 @@ import { borrowerLensAbi } from 'shared/lib/abis/BorrowerLens';
 import { factoryAbi } from 'shared/lib/abis/Factory';
 import { Assets, DerivedBorrower } from 'shared/lib/data/Borrower';
 import { ALOE_II_BORROWER_LENS_ADDRESS, ALOE_II_FACTORY_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
+import { GetNumericFeeTier } from 'shared/lib/data/FeeTier';
 import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { LendingPair } from 'shared/lib/data/LendingPair';
 import { UniswapPosition } from 'shared/lib/data/Uniswap';
@@ -109,7 +110,12 @@ export default function LiquidateTab(props: LiquidateTabProps) {
         slot0,
         address: address!,
         owner: owner!,
-        uniswapPool: uniswapPool!,
+        uniswapPool: {
+          address: uniswapPool!,
+          fee: GetNumericFeeTier(pair.uniswapFeeTier),
+        },
+        token0: pair.token0,
+        token1: pair.token1,
       });
     });
   }, [createBorrowerEvents, lendingPairsForEvents, summaryData]);

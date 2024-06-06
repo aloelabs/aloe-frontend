@@ -5,7 +5,7 @@ import { rgba } from 'shared/lib/util/Colors';
 import styled from 'styled-components';
 
 import { ReactComponent as PlusIcon } from '../../assets/svg/plus.svg';
-import useProminentColor from '../../data/hooks/UseProminentColor';
+import useProminentColor from '../../hooks/UseProminentColor';
 
 const Container = styled.button.attrs(
   (props: { backgroundGradient: string; active: boolean; $animate: boolean }) => props

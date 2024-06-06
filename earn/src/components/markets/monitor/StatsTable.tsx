@@ -21,7 +21,7 @@ import { LendingPair } from 'shared/lib/data/LendingPair';
 import useChain from 'shared/lib/hooks/UseChain';
 import { useChainDependentState } from 'shared/lib/hooks/UseChainDependentState';
 import useSortableData from 'shared/lib/hooks/UseSortableData';
-import { getEtherscanUrlForChain } from 'shared/lib/util/Chains';
+import { getBlockExplorerUrl } from 'shared/lib/util/Chains';
 import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import { Address } from 'viem';
@@ -160,7 +160,7 @@ function StatsTableRow(props: StatsTableRowProps) {
 
   const { writeContractAsync } = useWriteContract();
 
-  const uniswapLink = `${getEtherscanUrlForChain(activeChain)}/address/${pair.uniswapPool}`;
+  const uniswapLink = `${getBlockExplorerUrl(activeChain)}/address/${pair.uniswapPool}`;
 
   const manipulationMetric = pair.oracleData.manipulationMetric;
   const manipulationThreshold = pair.manipulationThreshold;
@@ -193,7 +193,7 @@ function StatsTableRow(props: StatsTableRowProps) {
   const isPaused = pausedUntilTime > Date.now() / 1000;
 
   const lenderLinks = [pair.kitty0.address, pair.kitty1.address].map(
-    (addr) => `${getEtherscanUrlForChain(activeChain)}/address/${addr}`
+    (addr) => `${getBlockExplorerUrl(activeChain)}/address/${addr}`
   );
 
   const reserveFactorTexts = [pair.kitty0Info.reserveFactor, pair.kitty1Info.reserveFactor].map((rf) =>

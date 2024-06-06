@@ -1,12 +1,12 @@
 import React from 'react';
 
 import { Text } from 'shared/lib/components/common/Typography';
+import { RESPONSIVE_BREAKPOINT_MD } from 'shared/lib/data/constants/Breakpoints';
 import { GREY_700, GREY_900 } from 'shared/lib/data/constants/Colors';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
 import { ReactComponent as CloseModalIcon } from '../../assets/svg/close_modal.svg';
-import { RESPONSIVE_BREAKPOINT_MD } from '../../data/constants/Breakpoints';
 
 const TooltipContainer = styled.div.attrs((props: { verticallyCentered?: boolean; filled?: boolean }) => props)`
   ${tw`flex flex-col items-center justify-center absolute`}

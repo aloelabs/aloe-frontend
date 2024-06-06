@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import Big from 'big.js';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { borrowerAbi } from 'shared/lib/abis/Borrower';
 import { borrowerNftAbi } from 'shared/lib/abis/BorrowerNft';
 import { volatilityOracleAbi } from 'shared/lib/abis/VolatilityOracle';
@@ -29,7 +29,7 @@ import { UniswapNFTPosition, zip } from 'shared/lib/data/Uniswap';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput, formatTokenAmount } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
-import { erc721Abi, Hex } from 'viem';
+import { encodeFunctionData, erc721Abi, Hex } from 'viem';
 import { useAccount, useBalance, usePublicClient, useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 const MAX_BORROW_PERCENTAGE = 0.8;
@@ -191,16 +191,19 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
 
   const generatedSalt = useMemo(() => generateBytes12Salt(), []);
 
-  // Prepare for actual import/mint transaction
-  const borrowerNft = useMemo(() => new ethers.utils.Interface(borrowerNftAbi), []);
   // First, we `mint` so that they have a `Borrower` to put stuff in
   const encodedMint = useMemo(() => {
     if (!userAddress) return null;
     const to = userAddress;
     const pools = [selectedLendingPair.uniswapPool];
     const salts = [generatedSalt];
-    return borrowerNft.encodeFunctionData('mint', [to, pools, salts]) as Hex;
-  }, [userAddress, selectedLendingPair, generatedSalt, borrowerNft]);
+
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'mint',
+      args: [to, pools, salts],
+    });
+  }, [userAddress, selectedLendingPair, generatedSalt]);
 
   // Then we use the UniswapNFTManager to import the Uniswap NFT as collateral
   const encodedImportCall = useMemo(() => {
@@ -219,7 +222,6 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
   // Finally, we borrow the requested tokens
   const encodedBorrowCall = useMemo(() => {
     if (!userAddress) return null;
-    const borrower = new ethers.utils.Interface(borrowerAbi);
     const amount0 = selectedBorrow.equals(selectedLendingPair.token0)
       ? borrowAmount
       : GN.zero(selectedLendingPair.token0.decimals);
@@ -227,21 +229,30 @@ export default function BorrowModalUniswap(props: BorrowModalProps) {
       ? borrowAmount
       : GN.zero(selectedLendingPair.token1.decimals);
 
-    return borrower.encodeFunctionData('borrow', [amount0.toBigNumber(), amount1.toBigNumber(), userAddress]);
+    return encodeFunctionData({
+      abi: borrowerAbi,
+      functionName: 'borrow',
+      args: [amount0.toBigInt(), amount1.toBigInt(), userAddress],
+    })
   }, [borrowAmount, selectedBorrow, selectedLendingPair, userAddress]);
 
   const encodedModify = useMemo(() => {
     if (!userAddress || nextNftPtrIdx === undefined || !encodedBorrowCall) return null;
     const owner = userAddress;
-    const indices = [nextNftPtrIdx, nextNftPtrIdx];
+    const indices = [Number(nextNftPtrIdx), Number(nextNftPtrIdx)];
     const managers = [
       ALOE_II_UNISWAP_NFT_MANAGER_ADDRESS[activeChain.id],
       ALOE_II_BORROWER_NFT_SIMPLE_MANAGER_ADDRESS[activeChain.id],
     ];
     const datas = [encodedImportCall, encodedBorrowCall];
-    const antes = [ante.toBigNumber().div(1e13), BigNumber.from(0)];
-    return borrowerNft.encodeFunctionData('modify', [owner, indices, managers, datas, antes]) as Hex;
-  }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedImportCall, encodedBorrowCall, borrowerNft]);
+    const antes = [ante.toBigNumber().div(1e13).toNumber(), 0];
+
+    return encodeFunctionData({
+      abi: borrowerNftAbi,
+      functionName: 'modify',
+      args: [owner, indices, managers, datas, antes],
+    });
+  }, [userAddress, nextNftPtrIdx, ante, activeChain.id, encodedImportCall, encodedBorrowCall]);
 
   const { data: multicallConfig } = useSimulateContract({
     address: ALOE_II_BORROWER_NFT_ADDRESS[activeChain.id],
