@@ -1,6 +1,4 @@
-import { useCallback } from 'react';
 import styled from 'styled-components';
-import { useConnect } from 'wagmi';
 import { RESPONSIVE_BREAKPOINTS } from '../../data/constants/Breakpoints';
 
 export function CoinbaseWalletLogo({ size = 26 }) {
@@ -39,17 +37,15 @@ const StyledButton = styled.button`
   }
 `;
 
-export function BlueCreateWalletButton({ shouldShortenText }: { shouldShortenText: boolean }) {
-  const { connectors, connect } = useConnect();
-
-  const createWallet = useCallback(() => {
-    const coinbaseWalletConnector = connectors.find((connector) => connector.id === 'coinbaseWalletSDK');
-    if (coinbaseWalletConnector) {
-      connect({ connector: coinbaseWalletConnector });
-    }
-  }, [connectors, connect]);
+export function BlueCreateWalletButton({
+  shouldShortenText,
+  onClick,
+}: {
+  shouldShortenText: boolean;
+  onClick: () => void;
+}) {
   return (
-    <StyledButton onClick={createWallet}>
+    <StyledButton onClick={onClick}>
       <CoinbaseWalletLogo size={18} />
       {shouldShortenText ? 'Create' : 'Create Wallet'}
     </StyledButton>
