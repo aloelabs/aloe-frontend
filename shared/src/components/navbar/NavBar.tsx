@@ -26,8 +26,6 @@ import { TERMS_OF_SERVICE_URL } from '../../data/constants/Values';
 import { OutlinedGradientRoundedButton } from '../common/Buttons';
 import { GNFormat } from '../../data/GoodNumber';
 import { useLeaderboardValue } from '../../hooks/UseLeaderboard';
-import { BlueCreateWalletButton } from './CreateWalletButton';
-import { isDevelopment } from '../../util/Utils';
 
 const DesktopLogo = styled(AloeDesktopLogo)`
   width: 100px;
@@ -319,14 +317,11 @@ export function NavBar(props: NavBarProps) {
             </OutlinedGradientRoundedButton>
           )}
           {!account.isConnected ? (
-            <>
-              {isDevelopment() && <BlueCreateWalletButton shouldShortenText={shouldShortedWalletButtonsText} />}
-              <ConnectWalletButton
-                shouldShortenText={shouldShortedWalletButtonsText}
-                checkboxes={checkboxes}
-                disabled={!isAllowedToInteract}
-              />
-            </>
+            <ConnectWalletButton
+              shouldShortenText={shouldShortedWalletButtonsText}
+              checkboxes={checkboxes}
+              disabled={!isAllowedToInteract}
+            />
           ) : (
             <AccountInfo account={account} closeChainSelector={() => setIsSelectChainDropdownOpen(false)} />
           )}
