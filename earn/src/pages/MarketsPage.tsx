@@ -128,11 +128,12 @@ export default function MarketsPage() {
     }),
     [activeChain.id]
   );
-  const {
-    borrowerNfts,
-    refetchBorrowerNftRefs,
-    refetchBorrowers,
-  } = useBorrowerNfts(uniswapPools, userAddress, activeChain.id, borrowerNftFilterParams);
+  const { borrowerNfts, refetchBorrowerNftRefs, refetchBorrowers } = useBorrowerNfts(
+    uniswapPools,
+    userAddress,
+    activeChain.id,
+    borrowerNftFilterParams
+  );
   const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNfts);
 
   // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops

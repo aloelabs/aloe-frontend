@@ -1,14 +1,14 @@
 import { LABEL_TEXT_COLOR } from 'shared/lib/components/common/Modal';
 import { Text } from 'shared/lib/components/common/Typography';
-import useMediaQuery from 'shared/lib/hooks/UseMediaQuery';
-import styled from 'styled-components';
-
-import BorrowGraphTooltip from './BorrowGraphTooltip';
 import {
   RESPONSIVE_BREAKPOINT_MD,
   RESPONSIVE_BREAKPOINT_SM,
   RESPONSIVE_BREAKPOINTS,
 } from 'shared/lib/data/constants/Breakpoints';
+import useMediaQuery from 'shared/lib/hooks/UseMediaQuery';
+import styled from 'styled-components';
+
+import BorrowGraphTooltip from './BorrowGraphTooltip';
 import Graph from '../graph/Graph';
 
 const TEXT_COLOR = '#82a0b6';
