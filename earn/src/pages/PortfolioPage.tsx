@@ -316,12 +316,7 @@ export default function PortfolioPage() {
               if (isConnected) setIsWithdrawModalOpen(true);
             }}
           />
-          <PortfolioActionButton
-            label={'Bridge'}
-            disabled={true}
-            Icon={<TruckIcon />}
-            onClick={() => {}}
-          />
+          <PortfolioActionButton label={'Bridge'} disabled={true} Icon={<TruckIcon />} onClick={() => {}} />
         </PortfolioActionButtonsContainer>
         <div className='mt-10'>
           <PortfolioPageWidgetWrapper tooltip={PORTFOLIO_GRID_TOOLTIP_TEXT} tooltipId='portfolioGrid'>

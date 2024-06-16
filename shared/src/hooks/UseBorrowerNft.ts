@@ -208,10 +208,13 @@ export function useBorrowerNfts(
   const { borrowers, refetchBorrowers } = useBorrowers(uniswapPools, borrowerNftRefs, chainId, staleTime);
 
   const borrowerNfts = useMemo(() => {
-    return borrowerNftRefs.map((borrowerNftRef, i) => ({
-      ...borrowerNftRef,
-      borrower: borrowers.at(i),
-    } as BorrowerNft));
+    return borrowerNftRefs.map(
+      (borrowerNftRef, i) =>
+        ({
+          ...borrowerNftRef,
+          borrower: borrowers.at(i),
+        } as BorrowerNft)
+    );
   }, [borrowerNftRefs, borrowers]);
 
   return { borrowerNfts, refetchBorrowerNftRefs, refetchBorrowers };

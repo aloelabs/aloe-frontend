@@ -322,11 +322,7 @@ export default function AdvancedPage() {
             />
           </GridAreaForNFTList>
           <GridAreaForData>
-            <BorrowMetrics
-              market={market}
-              borrowerNft={selection}
-              userHasNoMarginAccounts={!userHasBorrowers}
-            />
+            <BorrowMetrics market={market} borrowerNft={selection} userHasNoMarginAccounts={!userHasBorrowers} />
             <UniswapPositionList
               borrower={selection}
               importableUniswapNFTPositions={filteredNonZeroUniswapNFTPositions}
