@@ -423,14 +423,16 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <li className='flex items-center gap-2 mb-1'>
           {selectedCollateral == null ? <Circle /> : <CheckIcon height={20} width={20} />}
           <Text size='M' weight='medium' color={SECONDARY_COLOR}>
-            1. Select an asset to use as collateral. Note that collateral is <strong>not</strong> lent out, and LLTVs
-            can change up to 1% per day.
+            1. Select an asset to use as <strong>collateral</strong>.{' '}
+            <em>
+              Note that collateral is <strong>not</strong> lent out, and LLTVs can change up to 1% per day.
+            </em>
           </Text>
         </li>
         <li className='flex items-center gap-2 mb-1'>
           {selectedBorrows == null ? <Circle /> : <CheckIcon height={20} width={20} />}
           <Text size='M' weight='medium' color={SECONDARY_COLOR}>
-            2. Select an asset to borrow. APRs are variable based on utilization.
+            2. Select an asset to <strong>borrow</strong>. <em>APR is variable and based on utilization.</em>
           </Text>
         </li>
         <li className='flex items-center gap-2'>
