@@ -111,6 +111,7 @@ export type SupplyTableRow = {
   suppliableBalance: number;
   suppliableBalanceUsd?: number;
   isOptimized: boolean;
+  lastUpdated: number;
 };
 
 export type SupplyTableProps = {
