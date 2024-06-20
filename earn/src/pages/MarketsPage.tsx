@@ -198,9 +198,9 @@ export default function MarketsPage() {
       const kitty0Balance = balancesMap.get(pair.kitty0.address)?.value || 0;
       const kitty1Balance = balancesMap.get(pair.kitty1.address)?.value || 0;
 
-      const oracleHasBeenUpdatedInPastWeek = pair.lastWrite.getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const oracleHasBeenUpdatedInPast2Weeks = pair.lastWrite.getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000;
 
-      if (kitty0Balance > 0 || oracleHasBeenUpdatedInPastWeek) {
+      if (kitty0Balance > 0 || oracleHasBeenUpdatedInPast2Weeks) {
         rows.push({
           asset: pair.token0,
           kitty: pair.kitty0,
@@ -220,7 +220,7 @@ export default function MarketsPage() {
             : {}),
         });
       }
-      if (kitty1Balance > 0 || oracleHasBeenUpdatedInPastWeek) {
+      if (kitty1Balance > 0 || oracleHasBeenUpdatedInPast2Weeks) {
         rows.push({
           asset: pair.token1,
           kitty: pair.kitty1,
