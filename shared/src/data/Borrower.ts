@@ -103,11 +103,11 @@ export class DerivedBorrower {
   }
 
   public get userData() {
-    return `0x${((this.data.slot0 << 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as Hex;
+    return `0x${((this.data.slot0 >> 144n) & BigInt('0xffffffffffffffff')).toString(16)}` as Hex;
   }
 
   public get warnTime() {
-    return Number((this.data.slot0 << 208n) & BigInt(`0xffffffffff`));
+    return Number((this.data.slot0 >> 208n) & BigInt(`0xffffffffff`));
   }
 
   public get auctionTime() {
