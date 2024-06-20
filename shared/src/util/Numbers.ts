@@ -173,8 +173,11 @@ export function formatTokenAmount(amount: number, sigDigs = 4): string {
 }
 
 export function formatTokenAmountCompact(amount: number, length = 4): string {
+  const sign = amount < 0 ? '-' : '';
+  amount = Math.abs(amount);
+
   if (amount > 1e6) {
-    return amount.toLocaleString('en-US', {
+    return sign + amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'compact',
       compactDisplay: 'short',
@@ -182,13 +185,13 @@ export function formatTokenAmountCompact(amount: number, length = 4): string {
       minimumSignificantDigits: 2,
     });
   } else if (amount > 10 ** -(length / 2) || amount === 0) {
-    return amount.toLocaleString('en-US', {
+    return sign + amount.toLocaleString('en-US', {
       style: 'decimal',
       maximumSignificantDigits: length + 1,
       minimumSignificantDigits: 2,
     });
   } else {
-    return amount.toLocaleString('en-US', {
+    return sign + amount.toLocaleString('en-US', {
       style: 'decimal',
       notation: 'scientific',
       maximumSignificantDigits: length - 1,
