@@ -283,9 +283,13 @@ export default function SupplyTable(props: SupplyTableProps) {
                         if (userAddress) setSelectedSupply(row);
                       }}
                       disabled={
-                        userAddress &&
-                        row.suppliableBalance === 0 &&
-                        !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')
+                        (userAddress &&
+                          row.suppliableBalance === 0 &&
+                          !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')) ||
+                        // TODO: move to constants
+                        row.collateralAssets.some(
+                          (token) => token.address === '0xba5e6fa2f33f3955f0cef50c63dcc84861eab663'
+                        )
                       }
                       className='connect-wallet-button-trigger'
                     >
