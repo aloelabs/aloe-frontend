@@ -128,11 +128,12 @@ export default function MarketsPage() {
     }),
     [activeChain.id]
   );
-  const {
-    borrowerNfts,
-    refetchBorrowerNftRefs,
-    refetchBorrowers,
-  } = useBorrowerNfts(uniswapPools, userAddress, activeChain.id, borrowerNftFilterParams);
+  const { borrowerNfts, refetchBorrowerNftRefs, refetchBorrowers } = useBorrowerNfts(
+    uniswapPools,
+    userAddress,
+    activeChain.id,
+    borrowerNftFilterParams
+  );
   const borrowers = useDeprecatedMarginAccountShim(lendingPairs, borrowerNfts);
 
   // Poll for `blockNumber` when app is in the foreground. Not much different than a `useInterval` that stops
@@ -210,6 +211,7 @@ export default function MarketsPage() {
           totalSupply: pair.kitty0Info.totalAssets.toNumber(),
           suppliedBalance: kitty0Balance,
           suppliableBalance: token0Balance,
+          withdrawableBalance: pair.kitty0Info.availableAssets.toNumber(),
           isOptimized: true,
           ...(token0Price > 0
             ? {
@@ -230,6 +232,7 @@ export default function MarketsPage() {
           totalSupply: pair.kitty1Info.totalAssets.toNumber(),
           suppliedBalance: kitty1Balance,
           suppliableBalance: token1Balance,
+          withdrawableBalance: pair.kitty1Info.availableAssets.toNumber(),
           isOptimized: true,
           ...(token1Price > 0
             ? {

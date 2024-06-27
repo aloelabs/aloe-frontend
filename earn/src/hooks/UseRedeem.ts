@@ -2,12 +2,7 @@ import { lenderLensAbi } from 'shared/lib/abis/LenderLens';
 import { ALOE_II_LENDER_LENS_ADDRESS } from 'shared/lib/data/constants/ChainSpecific';
 import { GN } from 'shared/lib/data/GoodNumber';
 import { Address, erc4626Abi, maxUint256, zeroAddress } from 'viem';
-import {
-  useReadContract,
-  useReadContracts,
-  useSimulateContract,
-  useWriteContract,
-} from 'wagmi';
+import { useReadContract, useReadContracts, useSimulateContract, useWriteContract } from 'wagmi';
 
 export enum RedeemState {
   WAITING_FOR_INPUT,
@@ -65,7 +60,7 @@ export function useRedeem(
   });
   const shares = sharesData ?? 0n;
 
-  const threshold = maxShares * 999n / 1000n;
+  const threshold = (maxShares * 999n) / 1000n;
   const shouldRedeemMax = shares >= threshold && maxSharesIsChanging;
 
   /*//////////////////////////////////////////////////////////////
