@@ -211,6 +211,7 @@ export default function MarketsPage() {
           totalSupply: pair.kitty0Info.totalAssets.toNumber(),
           suppliedBalance: kitty0Balance,
           suppliableBalance: token0Balance,
+          withdrawableBalance: pair.kitty0Info.availableAssets.toNumber(),
           isOptimized: true,
           ...(token0Price > 0
             ? {
@@ -231,6 +232,7 @@ export default function MarketsPage() {
           totalSupply: pair.kitty1Info.totalAssets.toNumber(),
           suppliedBalance: kitty1Balance,
           suppliableBalance: token1Balance,
+          withdrawableBalance: pair.kitty1Info.availableAssets.toNumber(),
           isOptimized: true,
           ...(token1Price > 0
             ? {
