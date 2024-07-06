@@ -130,8 +130,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     GNFormat.DECIMAL
   );
 
-  // TODO: add a message if the use is not able to withdraw everything which explains why
-
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Withdraw'>
       <div className='w-full flex flex-col gap-4'>

@@ -20,6 +20,7 @@ import { useAccount } from 'wagmi';
 import { ReactComponent as InfoIcon } from '../../../assets/svg/info.svg';
 import { ApyWithTooltip } from '../../common/ApyWithTooltip';
 import { TokenIconsWithTooltip } from '../../common/TokenIconsWithTooltip';
+import RecoverModal, { ALOE_II_BAD_DEBT_LENDERS } from '../modal/RecoverModal';
 import SupplyModal from '../modal/SupplyModal';
 import WithdrawModal from '../modal/WithdrawModal';
 // import OptimizeButton from './OptimizeButton';
@@ -110,6 +111,7 @@ export type SupplyTableRow = {
   suppliedBalanceUsd?: number;
   suppliableBalance: number;
   suppliableBalanceUsd?: number;
+  withdrawableBalance: number;
   isOptimized: boolean;
   lastUpdated: number;
 };
@@ -124,8 +126,10 @@ export default function SupplyTable(props: SupplyTableProps) {
   const { hasAuxiliaryFunds, rows, setPendingTxn } = props;
   const activeChain = useChain();
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedSupply, setSelectedSupply] = useState<SupplyTableRow | null>(null);
-  const [selectedWithdraw, setSelectedWithdraw] = useState<SupplyTableRow | null>(null);
+  const [selectedRow, setSelectedRow] = useState<{
+    row: SupplyTableRow;
+    action: 'supply' | 'withdraw' | 'recover';
+  } | null>(null);
   const { sortedRows, requestSort, sortConfig } = useSortableData(rows, {
     primaryKey: 'suppliedBalanceUsd',
     secondaryKey: 'totalSupplyUsd',
@@ -281,12 +285,16 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <FilledGreyButton
                       size='S'
                       onClick={() => {
-                        if (userAddress) setSelectedSupply(row);
+                        if (userAddress) setSelectedRow({ row, action: 'supply' });
                       }}
                       disabled={
-                        userAddress &&
-                        row.suppliableBalance === 0 &&
-                        !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')
+                        (userAddress &&
+                          row.suppliableBalance === 0 &&
+                          !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')) ||
+                        // TODO: move to constants
+                        row.collateralAssets.some(
+                          (token) => token.address === '0xba5e6fa2f33f3955f0cef50c63dcc84861eab663'
+                        )
                       }
                       className='connect-wallet-button-trigger'
                     >
@@ -305,7 +313,10 @@ export default function SupplyTable(props: SupplyTableProps) {
                     <FilledGreyButton
                       size='S'
                       onClick={() => {
-                        setSelectedWithdraw(row);
+                        const hasBadDebt =
+                          row.suppliedBalance > row.withdrawableBalance &&
+                          ALOE_II_BAD_DEBT_LENDERS[activeChain.id].includes(row.kitty.address.toLowerCase());
+                        setSelectedRow({ row, action: hasBadDebt ? 'recover' : 'withdraw' });
                       }}
                       disabled={row.suppliedBalance === 0}
                     >
@@ -339,25 +350,30 @@ export default function SupplyTable(props: SupplyTableProps) {
           </tfoot>
         </Table>
       </TableContainer>
-      {selectedSupply && (
+      {selectedRow?.action === 'supply' && (
         <SupplyModal
           hasAuxiliaryFunds={hasAuxiliaryFunds}
           isOpen={true}
-          selectedRow={selectedSupply}
-          setIsOpen={() => {
-            setSelectedSupply(null);
-          }}
+          selectedRow={selectedRow.row}
+          setIsOpen={() => setSelectedRow(null)}
           setPendingTxn={setPendingTxn}
         />
       )}
-      {userAddress && selectedWithdraw && (
+      {userAddress && selectedRow?.action === 'withdraw' && (
         <WithdrawModal
           isOpen={true}
-          selectedRow={selectedWithdraw}
+          selectedRow={selectedRow.row}
           userAddress={userAddress}
-          setIsOpen={() => {
-            setSelectedWithdraw(null);
-          }}
+          setIsOpen={() => setSelectedRow(null)}
+          setPendingTxn={setPendingTxn}
+        />
+      )}
+      {userAddress && selectedRow?.action === 'recover' && (
+        <RecoverModal
+          isOpen={true}
+          selectedRow={selectedRow.row}
+          userAddress={userAddress}
+          setIsOpen={() => setSelectedRow(null)}
           setPendingTxn={setPendingTxn}
         />
       )}
