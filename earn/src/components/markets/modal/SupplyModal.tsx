@@ -266,7 +266,8 @@ export default function SupplyModal(props: SupplyModalProps) {
               <AlertTriangle width={24} height={24} />
             </AlertTriangleWrapper>
             <Text size='XS' className='w-full'>
-              This market hasn't been updated in the past 2 weeks.
+              In the past two weeks, no one has updated the implied volatility (IV) for this market. IV impacts risk
+              parameters like LLTV. It's normally updated multiple times per day.
             </Text>
           </div>
         )}
