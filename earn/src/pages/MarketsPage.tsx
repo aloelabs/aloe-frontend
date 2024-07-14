@@ -199,50 +199,46 @@ export default function MarketsPage() {
       const kitty0Balance = balancesMap.get(pair.kitty0.address)?.value || 0;
       const kitty1Balance = balancesMap.get(pair.kitty1.address)?.value || 0;
 
-      const oracleHasBeenUpdatedInPast2Weeks = pair.lastWrite.getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000;
-
-      if (kitty0Balance > 0 || oracleHasBeenUpdatedInPast2Weeks) {
-        rows.push({
-          asset: pair.token0,
-          kitty: pair.kitty0,
-          apy: pair.kitty0Info.lendAPY * 100,
-          rewardsRate: pair.rewardsRate0,
-          collateralAssets: [pair.token0, pair.token1],
-          totalSupply: pair.kitty0Info.totalAssets.toNumber(),
-          suppliedBalance: kitty0Balance,
-          suppliableBalance: token0Balance,
-          withdrawableBalance: pair.kitty0Info.availableAssets.toNumber(),
-          isOptimized: true,
-          ...(token0Price > 0
-            ? {
-                totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
-                suppliedBalanceUsd: kitty0Balance * token0Price,
-                suppliableBalanceUsd: token0Balance * token0Price,
-              }
-            : {}),
-        });
-      }
-      if (kitty1Balance > 0 || oracleHasBeenUpdatedInPast2Weeks) {
-        rows.push({
-          asset: pair.token1,
-          kitty: pair.kitty1,
-          apy: pair.kitty1Info.lendAPY * 100,
-          rewardsRate: pair.rewardsRate1,
-          collateralAssets: [pair.token1, pair.token0],
-          totalSupply: pair.kitty1Info.totalAssets.toNumber(),
-          suppliedBalance: kitty1Balance,
-          suppliableBalance: token1Balance,
-          withdrawableBalance: pair.kitty1Info.availableAssets.toNumber(),
-          isOptimized: true,
-          ...(token1Price > 0
-            ? {
-                totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
-                suppliedBalanceUsd: kitty1Balance * token1Price,
-                suppliableBalanceUsd: token1Balance * token1Price,
-              }
-            : {}),
-        });
-      }
+      rows.push({
+        asset: pair.token0,
+        kitty: pair.kitty0,
+        apy: pair.kitty0Info.lendAPY * 100,
+        rewardsRate: pair.rewardsRate0,
+        collateralAssets: [pair.token0, pair.token1],
+        totalSupply: pair.kitty0Info.totalAssets.toNumber(),
+        suppliedBalance: kitty0Balance,
+        suppliableBalance: token0Balance,
+        withdrawableBalance: pair.kitty0Info.availableAssets.toNumber(),
+        isOptimized: true,
+        lastUpdated: pair.lastWrite.getTime(),
+        ...(token0Price > 0
+          ? {
+              totalSupplyUsd: pair.kitty0Info.totalAssets.toNumber() * token0Price,
+              suppliedBalanceUsd: kitty0Balance * token0Price,
+              suppliableBalanceUsd: token0Balance * token0Price,
+            }
+          : {}),
+      });
+      rows.push({
+        asset: pair.token1,
+        kitty: pair.kitty1,
+        apy: pair.kitty1Info.lendAPY * 100,
+        rewardsRate: pair.rewardsRate1,
+        collateralAssets: [pair.token1, pair.token0],
+        totalSupply: pair.kitty1Info.totalAssets.toNumber(),
+        suppliedBalance: kitty1Balance,
+        suppliableBalance: token1Balance,
+        withdrawableBalance: pair.kitty1Info.availableAssets.toNumber(),
+        isOptimized: true,
+        lastUpdated: pair.lastWrite.getTime(),
+        ...(token1Price > 0
+          ? {
+              totalSupplyUsd: pair.kitty1Info.totalAssets.toNumber() * token1Price,
+              suppliedBalanceUsd: kitty1Balance * token1Price,
+              suppliableBalanceUsd: token1Balance * token1Price,
+            }
+          : {}),
+      });
     });
     return rows;
   }, [balancesMap, lendingPairs, tokenQuotes]);
