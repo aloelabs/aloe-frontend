@@ -32,7 +32,6 @@ enum ConfirmButtonState {
   APPROVE_ASSET,
   WAITING_FOR_TRANSACTION,
   WAITING_FOR_USER,
-  WAITING_FOR_CONFIRMATION,
   LOADING,
   READY,
 }
@@ -76,8 +75,6 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
       return { text: 'Check Wallet', enabled: false };
     case ConfirmButtonState.READY:
       return { text: 'Confirm', enabled: true };
-    case ConfirmButtonState.WAITING_FOR_CONFIRMATION:
-      return { text: 'Please Confirm', enabled: false };
     case ConfirmButtonState.LOADING:
     default:
       return { text: 'Confirm', enabled: false };
