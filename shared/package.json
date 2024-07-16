@@ -22,6 +22,7 @@
     "@apollo/client": "^3.10.3",
     "@apollo/react-hooks": "^4.0.0",
     "@coinbase/wallet-sdk": "^4.0.0",
+    "@gfxlabs/oku": "^1.0.123",
     "@heroicons/react": "^1.0.5",
     "@metamask/jazzicon": "^2.0.0",
     "@types/axios": "^0.14.0",

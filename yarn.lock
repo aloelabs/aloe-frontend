@@ -1872,6 +1872,11 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.2.2.tgz#d8bae93ac8b815b2bd7a98078cf91e2724ef11e5"
   integrity sha512-J4yDIIthosAsRZ5CPYP/jQvUAQtlZTTD/4suA08/FEnlxqW3sKS9iAhgsa9VYLZ6vDHn/ixJgIqRQPotoBjxIw==
 
+"@gfxlabs/oku@^1.0.123":
+  version "1.0.123"
+  resolved "https://registry.yarnpkg.com/@gfxlabs/oku/-/oku-1.0.123.tgz#809b0335409df31b1541e5d465be7e8a78ad674a"
+  integrity sha512-2rAKQgjmyefUTXaQfie1o4ZdbDHTUzjU1e7IPXzkmViCOZBhuvpNSvttY6FKYY8W4GSKwtcnGl1W5G+HGO8lPg==
+
 "@graphql-typed-document-node/core@^3.1.1":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.2.0.tgz#5f3d96ec6b2354ad6d8a28bf216a1d97b5426861"

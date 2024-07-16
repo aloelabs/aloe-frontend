@@ -10,6 +10,15 @@ export const SUPPORTED_CHAINS = [mainnet, optimism, arbitrum, base, linea];
 
 export const ALL_CHAINS = [mainnet, optimism, arbitrum, base, linea, scroll] as const;
 
+export const CHAIN_NAMES: { [chainId: number]: string } = {
+  [mainnet.id]: 'ethereum',
+  [optimism.id]: 'optimism',
+  [arbitrum.id]: 'arbitrum',
+  [base.id]: 'base',
+  [linea.id]: 'linea',
+  [scroll.id]: 'scroll',
+};
+
 export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [mainnet.id]: <EthereumLogo width={16} height={16} />,
   [optimism.id]: <OptimismLogo width={16} height={16} />,
@@ -18,6 +27,10 @@ export const CHAIN_LOGOS: { [chainId: number]: JSX.Element } = {
   [linea.id]: <LineaLogo width={16} height={16} />,
   [scroll.id]: <ScrollLogo width={16} height={16} />,
 };
+
+export function getChainName(chainId: number): string {
+  return CHAIN_NAMES[chainId];
+}
 
 export function getChainLogo(chainId: number, size: number): JSX.Element {
   switch (chainId) {

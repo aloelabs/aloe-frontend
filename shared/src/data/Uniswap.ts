@@ -1,4 +1,3 @@
-import { ApolloQueryResult } from '@apollo/react-hooks';
 import { defaultAbiCoder } from '@ethersproject/abi';
 import { getCreate2Address } from '@ethersproject/address';
 import { keccak256 } from '@ethersproject/solidity';
@@ -10,6 +9,7 @@ import JSBI from 'jsbi';
 import { uniswapNonFungiblePositionsAbi } from '../abis/UniswapNonFungiblePositions';
 import { uniswapV3PoolAbi } from '../abis/UniswapV3Pool';
 import {
+  getChainName,
   MULTICALL_ADDRESS,
   UNISWAP_FACTORY_ADDRESS,
   UNISWAP_NONFUNGIBLE_POSITION_MANAGER_ADDRESS,
@@ -19,9 +19,19 @@ import { getToken } from './TokenData';
 import { toBig } from '../util/Numbers';
 import { Address, Chain, Hex } from 'viem';
 
-import { getTheGraphClient, UniswapTicksQuery, UniswapTicksQueryWithMetadata } from '../util/GraphQL';
 import { BIGQ96, Q96 } from './constants/Values';
 import { CallContext } from 'ethereum-multicall/dist/esm/models';
+import { LiquidityChartV2 } from '@gfxlabs/oku';
+
+async function okuFetch(chainId: number, subPath: string, params: (string | number)[]) {
+  const response = await fetch(`https://omni.icarus.tools/${getChainName(chainId)}/cush/${subPath}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      params: params,
+    }),
+  });
+  return response.json();
+}
 
 function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContext[]): CallReturnContext[] {
   return callReturnContexts.map((callReturnContext) => {
@@ -37,7 +47,6 @@ function convertBigNumbersForReturnContexts(callReturnContexts: CallReturnContex
 }
 
 const POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
-const MAX_TICKS_PER_QUERY = 1000;
 
 export type UniswapPosition = {
   lower: number;
@@ -75,9 +84,7 @@ export interface UniswapV3PoolBasics {
 
 export type TickData = {
   tick: number;
-  liquidity: Big;
-  price1In0: number;
-  price0In1: number;
+  liquidityDensity: number;
 };
 
 export type UniswapV3GraphQLTick = {
@@ -443,76 +450,57 @@ export async function fetchUniswapNFTPositions(
   return result;
 }
 
-async function fetchTickData(poolAddress: string, chainId: number, minTick?: number, maxTick?: number) {
-  if (minTick === undefined) minTick = TickMath.MIN_TICK;
-  if (maxTick === undefined) maxTick = TickMath.MAX_TICK;
+async function fetchLiquidityChartData(
+  poolAddress: string,
+  chainId: number,
+): Promise<LiquidityChartV2> {
+  const liquidityChartData: LiquidityChartV2 = (
+    await okuFetch(chainId, 'liquidityChartV2', [poolAddress.toLowerCase(), 0])
+  ).result;
 
-  const theGraphClient = getTheGraphClient(chainId);
-
-  const initialQueryResponse = (await theGraphClient.query({
-    query: UniswapTicksQueryWithMetadata,
-    variables: {
-      poolAddress: poolAddress.toLowerCase(),
-      minTick: minTick,
-      maxTick: maxTick,
-    },
-    errorPolicy: 'ignore',
-  })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
-  if (!initialQueryResponse.data.pools) return null;
-
-  const poolLiquidityData = initialQueryResponse.data.pools[0];
-  const tickData = poolLiquidityData.ticks.concat();
-
-  while (true) {
-    const queryResponse = (await theGraphClient.query({
-      query: UniswapTicksQuery,
-      variables: {
-        poolAddress: poolAddress.toLowerCase(),
-        minTick: Number(tickData[tickData.length - 1].tickIdx),
-        maxTick: maxTick,
-      },
-      errorPolicy: 'ignore',
-    })) as ApolloQueryResult<UniswapV3GraphQLTicksQueryResponse>;
-    if (!queryResponse.data.pools) break;
-
-    tickData.push(...queryResponse.data.pools[0].ticks);
-    if (queryResponse.data.pools[0].ticks.length < MAX_TICKS_PER_QUERY) break;
-  }
-
-  return {
-    ...poolLiquidityData,
-    ticks: tickData,
-  };
+  return liquidityChartData;
 }
 
 export async function calculateTickData(poolAddress: string, chainId: number): Promise<TickData[]> {
-  const poolLiquidityData = await fetchTickData(poolAddress, chainId);
-  if (poolLiquidityData === null) return [];
+  const liquidityChartData = await fetchLiquidityChartData(poolAddress, chainId);
+  if (liquidityChartData === null) return [];
 
-  const token0Decimals = Number(poolLiquidityData.token0.decimals);
-  const token1Decimals = Number(poolLiquidityData.token1.decimals);
-  const decimalFactor = new Big(10 ** (token1Decimals - token0Decimals));
-  const rawTicksData = poolLiquidityData.ticks;
+  // const rawTicksData = poolLiquidityData.ticks;
 
   const tickData: TickData[] = [];
 
-  let liquidity = JSBI.BigInt('0');
+  // let liquidity = 0n;
 
-  for (const element of rawTicksData) {
-    const tick = Number(element.tickIdx);
-    const liquidityNet = JSBI.BigInt(element.liquidityNet);
-    const price0 = new Big(element.price0);
-    const price1 = new Big(element.price1);
+  // console.log(rawTicksData);
 
-    liquidity = JSBI.ADD(liquidity, liquidityNet);
+  // for (const element of rawTicksData) {
+  //   const tick = element.tickIdx;
+  //   const liquidityNet = element.liquidityNet;
+  //   const price0 = isFinite(element.price0) ? new Big(element.price0) : new Big(Number.MAX_SAFE_INTEGER);
+  //   const price1 = isFinite(element.price1) ? new Big(element.price1) : new Big(Number.MAX_SAFE_INTEGER);
 
-    tickData.push({
-      tick,
-      liquidity: new Big(liquidity.toString(10)),
-      price1In0: price1.mul(decimalFactor).toNumber(),
-      price0In1: price0.div(decimalFactor).toNumber(),
-    });
-  }
+  //   liquidity += liquidityNet;
+
+  //   const tickSpacing = 10; // TODO: Fix this
+
+  //   const price = tickToPrice(tick, poolLiquidityData.token0Decimals, poolLiquidityData.token1Decimals);
+  //   const [amount0, amount1] = getAmountsForLiquidity(
+  //     {
+  //       liquidity: JSBI.BigInt(liquidity.toString()),
+  //       lower: tick,
+  //       upper: tick + tickSpacing,
+  //     },
+  //     tick,
+  //     poolLiquidityData.token0Decimals,
+  //     poolLiquidityData.token1Decimals
+  //   );
+  //   const liquidityDensity = (amount1 + (amount0 * price));
+
+  //   tickData.push({
+  //     tick,
+  //     liquidityDensity,
+  //   });
+  // }
 
   return tickData;
 }
