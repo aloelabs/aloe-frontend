@@ -210,7 +210,7 @@ export default function LendingPairPeerCard(props: LendingPairPeerCardProps) {
             <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
               Utilization
             </Text>
-            <Display size='L'>{roundPercentage(activeUtilization)}%</Display>
+            <Display size='L'>{roundPercentage(activeUtilization * 100)}%</Display>
           </SmallCardBodyItem>
           <SmallCardBodyItem>
             <Text size='S' weight='bold' color='rgba(130, 160, 182, 1)'>
