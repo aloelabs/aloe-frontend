@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import * as Sentry from '@sentry/react';
-import Big from 'big.js';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
 import { computeLiquidationThresholds, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
@@ -199,21 +198,15 @@ export default function LiquidityChart(props: LiquidityChartProps) {
         tickData = [
           {
             tick: cutoffLeft,
-            liquidity: new Big(0),
-            price0In1: 0,
-            price1In0: 0,
+            liquidityDensity: 0,
           },
           {
             tick: currentTick,
-            liquidity: new Big(0),
-            price0In1: 0,
-            price1In0: 0,
+            liquidityDensity: 0,
           },
           {
             tick: cutoffRight,
-            liquidity: new Big(0),
-            price0In1: 0,
-            price1In0: 0,
+            liquidityDensity: 0,
           },
         ];
       }
@@ -267,7 +260,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
 
     for (const element of liquidityData) {
       const tick = element.tick;
-      let liquidityDensity = element.liquidity.toNumber();
+      let liquidityDensity = element.liquidityDensity;
 
       // Ignore negative values (TheGraph is stupid)
       if (liquidityDensity < 0) continue;
@@ -506,6 +499,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
                     <LiquidityChartTooltip
                       active={props?.active ?? false}
                       selectedTick={props?.payload[0]?.payload.tick}
+                      liquidityDensity={props?.payload[0]?.payload.liquidityDensity}
                       currentTick={currentTick}
                       x={props?.coordinate?.x ?? 0}
                       chartWidth={CHART_WIDTH}

@@ -23,6 +23,8 @@ import { BIGQ96, Q96 } from './constants/Values';
 import { CallContext } from 'ethereum-multicall/dist/esm/models';
 import { LiquidityChartV2 } from '@gfxlabs/oku';
 
+const TOTAL_NUM_TICKS = 20000;
+
 async function okuFetch(chainId: number, subPath: string, params: (string | number)[]) {
   const response = await fetch(`https://omni.icarus.tools/${getChainName(chainId)}/cush/${subPath}`, {
     method: 'POST',
@@ -450,10 +452,7 @@ export async function fetchUniswapNFTPositions(
   return result;
 }
 
-async function fetchLiquidityChartData(
-  poolAddress: string,
-  chainId: number,
-): Promise<LiquidityChartV2> {
+async function fetchLiquidityChartData(poolAddress: string, chainId: number): Promise<LiquidityChartV2> {
   const liquidityChartData: LiquidityChartV2 = (
     await okuFetch(chainId, 'liquidityChartV2', [poolAddress.toLowerCase(), 0])
   ).result;
@@ -465,9 +464,31 @@ export async function calculateTickData(poolAddress: string, chainId: number): P
   const liquidityChartData = await fetchLiquidityChartData(poolAddress, chainId);
   if (liquidityChartData === null) return [];
 
-  // const rawTicksData = poolLiquidityData.ticks;
+  const currentTick = liquidityChartData.current_pool_tick;
 
-  const tickData: TickData[] = [];
+  const tickOffset = (TOTAL_NUM_TICKS / 2) * liquidityChartData.tick_spacing;
+
+  const aboveFiltered = liquidityChartData.above
+    .filter((element) => element.tick >= currentTick - tickOffset && element.tick <= currentTick + tickOffset)
+    .map((element) => {
+      return {
+        tick: element.tick,
+        liquidityDensity: element.amount,
+      };
+    });
+
+  const belowFiltered = liquidityChartData.below
+    .filter((element) => element.tick >= currentTick - tickOffset && element.tick <= currentTick + tickOffset)
+    .map((element) => {
+      return {
+        tick: element.tick,
+        liquidityDensity: element.amount * element.price0,
+      };
+    });
+
+  const filtered = aboveFiltered.concat(belowFiltered).sort((a, b) => a.tick - b.tick);
+
+  const tickData: TickData[] = filtered;
 
   // let liquidity = 0n;
 

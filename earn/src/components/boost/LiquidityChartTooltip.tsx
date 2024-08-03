@@ -4,7 +4,7 @@ import { roundPercentage } from 'shared/lib/util/Numbers';
 import styled from 'styled-components';
 import tw from 'twin.macro';
 
-export const PERCENTAGE_WIDTH = 66;
+export const PERCENTAGE_WIDTH = 150;
 const TOOLTIP_BG_COLOR = 'rgba(13, 23, 30, 1)';
 const TOOLTIP_BORDER_COLOR = GREY_700;
 
@@ -34,11 +34,12 @@ const TooltipContainer = styled.div.attrs<TooltipProps>((props) => ({
 export default function LiquidityChartTooltip(props: {
   active: boolean;
   selectedTick: number;
+  liquidityDensity: number;
   currentTick: number;
   x: number;
   chartWidth: number;
 }) {
-  const { active, selectedTick, currentTick, x, chartWidth } = props;
+  const { active, selectedTick, liquidityDensity, currentTick, x, chartWidth } = props;
   if (active) {
     const percentChange = 1.0001 ** (selectedTick - currentTick) - 1 || 0;
 
@@ -56,8 +57,14 @@ export default function LiquidityChartTooltip(props: {
     return (
       <TooltipContainer offset={x} chartWidth={chartWidth}>
         <div className='flex flex-col justify-center items-center'>
-          <Text size='S' weight='bold'>
-            {percentageText}
+          <Text size='S' weight='regular'>
+            {`Change: ${percentageText}`}
+          </Text>
+          <Text size='S' weight='regular'>
+            {`Tick: ${selectedTick}`}
+          </Text>
+          <Text size='S' weight='regular'>
+            {`Value: ${liquidityDensity.toFixed(2)}`}
           </Text>
         </div>
       </TooltipContainer>

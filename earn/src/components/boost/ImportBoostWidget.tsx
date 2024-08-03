@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { ApolloQueryResult } from '@apollo/react-hooks';
+// import { ApolloQueryResult } from '@apollo/react-hooks';
 import { TickMath } from '@uniswap/v3-sdk';
 import { type WriteContractReturnType } from '@wagmi/core';
 import axios, { AxiosResponse } from 'axios';
@@ -22,13 +22,13 @@ import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import {
   getValueOfLiquidity,
   UniswapPosition,
-  UniswapV3GraphQL24HourPoolDataQueryResponse,
+  // UniswapV3GraphQL24HourPoolDataQueryResponse,
 } from 'shared/lib/data/Uniswap';
 import { useBorrowerNftRefs } from 'shared/lib/hooks/UseBorrowerNft';
 import useChain from 'shared/lib/hooks/UseChain';
 import { useLendingPair, useLendingPairs } from 'shared/lib/hooks/UseLendingPairs';
 import { PriceRelayLatestResponse } from 'shared/lib/hooks/UsePriceRelay';
-import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
+// import { getTheGraphClient, Uniswap24HourPoolDataQuery } from 'shared/lib/util/GraphQL';
 import { formatUSD } from 'shared/lib/util/Numbers';
 import { generateBytes12Salt } from 'shared/lib/util/Salt';
 import styled from 'styled-components';
@@ -178,6 +178,8 @@ export type ImportBoostWidgetProps = {
 export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
   const { cardInfo, boostFactor, iv, setBoostFactor, setPendingTxn } = props;
   const activeChain = useChain();
+  // TODO: Remove this once we start using the state again
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [twentyFourHourPoolData, setTwentyFourHourPoolData] = useState<TwentyFourHourPoolData | undefined>(undefined);
   const [tokenQuotes, setTokenQuotes] = useState<TokenQuote[] | undefined>(undefined);
   const [maxSlippagePercentage, setSlippagePercentage] = useState('0.10');
@@ -233,27 +235,28 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     };
   }, [lendingPair, borrowAmount0, borrowAmount1]);
 
-  useEffect(() => {
-    (async () => {
-      const theGraphClient = getTheGraphClient(activeChain.id);
-      const unixTwoDaysAgo = Math.floor(Date.now() / 1000) - 86400 * 2;
-      const initialQueryResponse = (await theGraphClient.query({
-        query: Uniswap24HourPoolDataQuery,
-        variables: {
-          poolAddress: cardInfo.uniswapPool.toLowerCase(),
-          date: unixTwoDaysAgo,
-        },
-        errorPolicy: 'ignore',
-      })) as ApolloQueryResult<UniswapV3GraphQL24HourPoolDataQueryResponse>;
-      if (initialQueryResponse.data.poolDayDatas) {
-        const poolDayData = initialQueryResponse.data.poolDayDatas[0];
-        setTwentyFourHourPoolData({
-          liquidity: new Big(poolDayData.liquidity),
-          feesUSD: parseInt(poolDayData.feesUSD),
-        });
-      }
-    })();
-  }, [activeChain.id, cardInfo, setTwentyFourHourPoolData]);
+  // TODO: Update this to no longer use the graph
+  // useEffect(() => {
+  //   (async () => {
+  //     const theGraphClient = getTheGraphClient(activeChain.id);
+  //     const unixTwoDaysAgo = Math.floor(Date.now() / 1000) - 86400 * 2;
+  //     const initialQueryResponse = (await theGraphClient.query({
+  //       query: Uniswap24HourPoolDataQuery,
+  //       variables: {
+  //         poolAddress: cardInfo.uniswapPool.toLowerCase(),
+  //         date: unixTwoDaysAgo,
+  //       },
+  //       errorPolicy: 'ignore',
+  //     })) as ApolloQueryResult<UniswapV3GraphQL24HourPoolDataQueryResponse>;
+  //     if (initialQueryResponse.data.poolDayDatas) {
+  //       const poolDayData = initialQueryResponse.data.poolDayDatas[0];
+  //       setTwentyFourHourPoolData({
+  //         liquidity: new Big(poolDayData.liquidity),
+  //         feesUSD: parseInt(poolDayData.feesUSD),
+  //       });
+  //     }
+  //   })();
+  // }, [activeChain.id, cardInfo, setTwentyFourHourPoolData]);
 
   const dailyInterestUSD = useMemo(() => {
     if (apr0 == null || apr1 == null || !tokenQuotes) {
