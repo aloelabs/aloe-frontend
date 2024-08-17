@@ -177,25 +177,34 @@ export function formatTokenAmountCompact(amount: number, length = 4): string {
   amount = Math.abs(amount);
 
   if (amount > 1e6) {
-    return sign + amount.toLocaleString('en-US', {
-      style: 'decimal',
-      notation: 'compact',
-      compactDisplay: 'short',
-      maximumSignificantDigits: length,
-      minimumSignificantDigits: 2,
-    });
+    return (
+      sign +
+      amount.toLocaleString('en-US', {
+        style: 'decimal',
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumSignificantDigits: length,
+        minimumSignificantDigits: 2,
+      })
+    );
   } else if (amount > 10 ** -(length / 2) || amount === 0) {
-    return sign + amount.toLocaleString('en-US', {
-      style: 'decimal',
-      maximumSignificantDigits: length + 1,
-      minimumSignificantDigits: 2,
-    });
+    return (
+      sign +
+      amount.toLocaleString('en-US', {
+        style: 'decimal',
+        maximumSignificantDigits: length + 1,
+        minimumSignificantDigits: 2,
+      })
+    );
   } else {
-    return sign + amount.toLocaleString('en-US', {
-      style: 'decimal',
-      notation: 'scientific',
-      maximumSignificantDigits: length - 1,
-    });
+    return (
+      sign +
+      amount.toLocaleString('en-US', {
+        style: 'decimal',
+        notation: 'scientific',
+        maximumSignificantDigits: length - 1,
+      })
+    );
   }
 }
 

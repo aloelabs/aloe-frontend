@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { routerAbi } from 'shared/lib/abis/Router';
+import AlertTriangle from 'shared/lib/assets/svg/AlertTriangle';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
@@ -15,6 +16,7 @@ import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { Permit2State, usePermit2 } from 'shared/lib/hooks/UsePermit2';
 import { formatNumberInput, roundPercentage } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
 import { Address, Hash } from 'viem';
 import { useAccount, useBalance, useSimulateContract, useWriteContract } from 'wagmi';
 
@@ -43,6 +45,12 @@ const permit2StateToButtonStateMap = {
   [Permit2State.READY_TO_SIGN]: ConfirmButtonState.PERMIT_ASSET,
   [Permit2State.WAITING_FOR_TRANSACTION]: ConfirmButtonState.WAITING_FOR_TRANSACTION,
 };
+
+const AlertTriangleWrapper = styled.div`
+  path {
+    stroke: rgb(255, 122, 0);
+  }
+`;
 
 function getConfirmButton(state: ConfirmButtonState, token: Token): { text: string; enabled: boolean } {
   switch (state) {
@@ -244,10 +252,22 @@ export default function SupplyModal(props: SupplyModalProps) {
     type: 'disjunction',
   });
   const formattedCollateral = format.format(selectedRow.collateralAssets.map((token) => token.symbol));
+  const wasUpdatedInPast2Weeks = selectedRow.lastUpdated > Date.now() - 14 * 24 * 60 * 60 * 1000;
 
   return (
-    <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Supply'>
+    <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Supply' maxHeight='650px'>
       <div className='w-full flex flex-col gap-4'>
+        {!wasUpdatedInPast2Weeks && (
+          <div className='border-2 border-caution flex items-center p-2 gap-2 rounded-lg'>
+            <AlertTriangleWrapper>
+              <AlertTriangle width={24} height={24} />
+            </AlertTriangleWrapper>
+            <Text size='XS' className='w-full'>
+              In the past two weeks, no one has updated the implied volatility (IV) for this market. IV impacts risk
+              parameters like LLTV. It's normally updated multiple times per day.
+            </Text>
+          </div>
+        )}
         <TokenAmountInput
           token={selectedRow.asset}
           value={amount}

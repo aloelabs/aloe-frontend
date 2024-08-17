@@ -113,6 +113,7 @@ export type SupplyTableRow = {
   suppliableBalanceUsd?: number;
   withdrawableBalance: number;
   isOptimized: boolean;
+  lastUpdated: number;
 };
 
 export type SupplyTableProps = {

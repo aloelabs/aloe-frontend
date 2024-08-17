@@ -234,15 +234,14 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   let borrowModal: JSX.Element | null = null;
 
-  if (selectedBorrows != null && selectedCollateral != null) {
+  const borrowEntry = selectedBorrows ? filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows)) : null;
+
+  if (selectedBorrows != null && selectedCollateral != null && borrowEntry?.matchingPairs.length) {
     if (collateralIsUniswapPosition(selectedCollateral)) {
       borrowModal = (
         <BorrowModalUniswap
           isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedLendingPair={
-            // TODO: improve this
-            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
-          }
+          selectedLendingPair={borrowEntry.matchingPairs[0]}
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           setIsOpen={() => {
@@ -256,10 +255,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       borrowModal = (
         <BorrowModal
           isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedLendingPair={
-            // TODO: improve this
-            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
-          }
+          selectedLendingPair={borrowEntry.matchingPairs[0]}
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
@@ -423,14 +419,16 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
         <li className='flex items-center gap-2 mb-1'>
           {selectedCollateral == null ? <Circle /> : <CheckIcon height={20} width={20} />}
           <Text size='M' weight='medium' color={SECONDARY_COLOR}>
-            1. Select an asset to use as collateral. Note that collateral is <strong>not</strong> lent out, and LLTVs
-            can change up to 1% per day.
+            1. Select an asset to use as <strong>collateral</strong>.{' '}
+            <em>
+              Note that collateral is <strong>not</strong> lent out, and LLTVs can change up to 1% per day.
+            </em>
           </Text>
         </li>
         <li className='flex items-center gap-2 mb-1'>
           {selectedBorrows == null ? <Circle /> : <CheckIcon height={20} width={20} />}
           <Text size='M' weight='medium' color={SECONDARY_COLOR}>
-            2. Select an asset to borrow. APRs are variable based on utilization.
+            2. Select an asset to <strong>borrow</strong>. <em>APR is variable and based on utilization.</em>
           </Text>
         </li>
         <li className='flex items-center gap-2'>
