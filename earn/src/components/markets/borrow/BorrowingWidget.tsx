@@ -234,15 +234,14 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
 
   let borrowModal: JSX.Element | null = null;
 
-  if (selectedBorrows != null && selectedCollateral != null) {
+  const borrowEntry = selectedBorrows ? filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows)) : null;
+
+  if (selectedBorrows != null && selectedCollateral != null && borrowEntry?.matchingPairs.length) {
     if (collateralIsUniswapPosition(selectedCollateral)) {
       borrowModal = (
         <BorrowModalUniswap
           isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedLendingPair={
-            // TODO: improve this
-            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
-          }
+          selectedLendingPair={borrowEntry.matchingPairs[0]}
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           setIsOpen={() => {
@@ -256,10 +255,7 @@ export default function BorrowingWidget(props: BorrowingWidgetProps) {
       borrowModal = (
         <BorrowModal
           isOpen={selectedBorrows != null && selectedCollateral != null}
-          selectedLendingPair={
-            // TODO: improve this
-            filteredBorrowEntries.find((x) => x.token.equals(selectedBorrows))!.matchingPairs[0]
-          }
+          selectedLendingPair={borrowEntry.matchingPairs[0]}
           selectedCollateral={selectedCollateral}
           selectedBorrow={selectedBorrows}
           userBalance={tokenBalances.get(selectedCollateral.address)?.gn ?? GN.zero(selectedCollateral.decimals)}
