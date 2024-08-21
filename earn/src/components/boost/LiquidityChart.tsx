@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import * as Sentry from '@sentry/react';
 import { Area, AreaChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Text } from 'shared/lib/components/common/Typography';
 import { computeLiquidationThresholds, sqrtRatioToTick } from 'shared/lib/data/BalanceSheet';
-import { TickData, calculateTickData } from 'shared/lib/data/Uniswap';
 import useChain from 'shared/lib/hooks/UseChain';
 import { useDebouncedMemo } from 'shared/lib/hooks/UseDebouncedMemo';
-import useEffectOnce from 'shared/lib/hooks/UseEffectOnce';
+import { useLiquidityData } from 'shared/lib/hooks/UseLiquidityData';
 import styled from 'styled-components';
 
 import { LiquidityChartPlaceholder } from './LiquidityChartPlaceholder';
@@ -159,66 +157,13 @@ export default function LiquidityChart(props: LiquidityChartProps) {
   const { info, uniqueId, showPOI } = props;
   const { uniswapPool: poolAddress, currentTick, position, color0, color1 } = info;
   const activeChain = useChain();
-  const [liquidityData, setLiquidityData] = useState<TickData[] | null>(null);
   const [chartData, setChartData] = useState<ChartEntry[] | null>(null);
-  const [chartError, setChartError] = useState<boolean>(false);
 
-  // Fetch liquidityData from TheGraph
-  useEffectOnce(() => {
-    let mounted = true;
-    async function fetch(poolAddress: string) {
-      let tickData: TickData[] | null = null;
-      try {
-        tickData = await calculateTickData(poolAddress, activeChain.id);
-      } catch (e) {
-        Sentry.captureException(e, {
-          extra: {
-            poolAddress,
-            chain: {
-              id: activeChain.id,
-              name: activeChain.name,
-            },
-            assets: {
-              asset0: {
-                symbol: info.token0.symbol,
-                address: info.token0.address,
-              },
-              asset1: {
-                symbol: info.token1.symbol,
-                address: info.token1.address,
-              },
-            },
-          },
-        });
-        if (mounted) {
-          setChartError(true);
-        }
-        const cutoffLeft = Math.min(position.lower, currentTick);
-        const cutoffRight = Math.max(position.upper, currentTick);
-        tickData = [
-          {
-            tick: cutoffLeft,
-            liquidityDensity: 0,
-          },
-          {
-            tick: currentTick,
-            liquidityDensity: 0,
-          },
-          {
-            tick: cutoffRight,
-            liquidityDensity: 0,
-          },
-        ];
-      }
-      if (mounted) {
-        setLiquidityData(tickData);
-      }
-    }
-    fetch(poolAddress);
-    return () => {
-      mounted = false;
-    };
-  });
+  const {
+    data: liquidityData,
+    error: chartError,
+    isLoading: chartLoading,
+  } = useLiquidityData(poolAddress, position, currentTick, info.token0, info.token1, activeChain);
 
   // Compute liquidation thresholds
   const liquidation = useDebouncedMemo(
@@ -316,7 +261,7 @@ export default function LiquidityChart(props: LiquidityChartProps) {
     [liquidation, chartData]
   );
 
-  if (chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
+  if (chartLoading || chartData == null || chartData.length < 3) return <LiquidityChartPlaceholder />;
 
   const lowestTick = chartData[0].tick;
   const highestTick = chartData[chartData.length - 1].tick;
