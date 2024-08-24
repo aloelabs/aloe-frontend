@@ -21,7 +21,7 @@ import { Address, Chain, Hex } from 'viem';
 
 import { BIGQ96, Q96 } from './constants/Values';
 import { CallContext } from 'ethereum-multicall/dist/esm/models';
-import { LiquidityChartV2 } from '@gfxlabs/oku';
+import { LiquidityChartV2, PoolFees } from '@gfxlabs/oku';
 
 const TOTAL_NUM_TICKS = 20000;
 
@@ -456,7 +456,6 @@ async function fetchLiquidityChartData(poolAddress: string, chainId: number): Pr
   const liquidityChartData: LiquidityChartV2 = (
     await okuFetch(chainId, 'liquidityChartV2', [poolAddress.toLowerCase(), 0])
   ).result;
-
   return liquidityChartData;
 }
 
@@ -524,6 +523,10 @@ export async function calculateTickData(poolAddress: string, chainId: number): P
   // }
 
   return tickData;
+}
+
+export async function getPoolFees(poolAddress: string, chainId: number): Promise<PoolFees> {
+  return (await okuFetch(chainId, 'getPoolFees', [poolAddress.toLowerCase()])).result?.[0];
 }
 
 function modQ24(value: number) {

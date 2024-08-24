@@ -20,6 +20,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import { getTokenBySymbol } from 'shared/lib/data/TokenData';
 import {
+  getPoolFees,
   getValueOfLiquidity,
   UniswapPosition,
   // UniswapV3GraphQL24HourPoolDataQueryResponse,
@@ -235,28 +236,15 @@ export default function ImportBoostWidget(props: ImportBoostWidgetProps) {
     };
   }, [lendingPair, borrowAmount0, borrowAmount1]);
 
-  // TODO: Update this to no longer use the graph
-  // useEffect(() => {
-  //   (async () => {
-  //     const theGraphClient = getTheGraphClient(activeChain.id);
-  //     const unixTwoDaysAgo = Math.floor(Date.now() / 1000) - 86400 * 2;
-  //     const initialQueryResponse = (await theGraphClient.query({
-  //       query: Uniswap24HourPoolDataQuery,
-  //       variables: {
-  //         poolAddress: cardInfo.uniswapPool.toLowerCase(),
-  //         date: unixTwoDaysAgo,
-  //       },
-  //       errorPolicy: 'ignore',
-  //     })) as ApolloQueryResult<UniswapV3GraphQL24HourPoolDataQueryResponse>;
-  //     if (initialQueryResponse.data.poolDayDatas) {
-  //       const poolDayData = initialQueryResponse.data.poolDayDatas[0];
-  //       setTwentyFourHourPoolData({
-  //         liquidity: new Big(poolDayData.liquidity),
-  //         feesUSD: parseInt(poolDayData.feesUSD),
-  //       });
-  //     }
-  //   })();
-  // }, [activeChain.id, cardInfo, setTwentyFourHourPoolData]);
+  useEffect(() => {
+    (async () => {
+      const poolFees = await getPoolFees(cardInfo.uniswapPool, activeChain.id);
+      setTwentyFourHourPoolData({
+        feesUSD: poolFees.fees_24h_usd,
+        liquidity: new Big(poolFees.pool_summary_level_1.liquidity),
+      });
+    })();
+  }, [activeChain, cardInfo]);
 
   const dailyInterestUSD = useMemo(() => {
     if (apr0 == null || apr1 == null || !tokenQuotes) {
