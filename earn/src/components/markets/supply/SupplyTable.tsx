@@ -315,7 +315,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                       onClick={() => {
                         const hasBadDebt =
                           row.suppliedBalance > row.withdrawableBalance &&
-                          ALOE_II_BAD_DEBT_LENDERS[activeChain.id].includes(row.kitty.address.toLowerCase());
+                          ALOE_II_BAD_DEBT_LENDERS[activeChain.id]?.includes(row.kitty.address.toLowerCase());
                         setSelectedRow({ row, action: hasBadDebt ? 'recover' : 'withdraw' });
                       }}
                       disabled={row.suppliedBalance === 0}
