@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { type WriteContractReturnType } from '@wagmi/core';
 import { lenderAbi } from 'shared/lib/abis/Lender';
+import Info from 'shared/lib/assets/svg/Info';
 import { FilledStylizedButton } from 'shared/lib/components/common/Buttons';
 import Modal from 'shared/lib/components/common/Modal';
 import TokenAmountInput from 'shared/lib/components/common/TokenAmountInput';
@@ -11,6 +12,7 @@ import { GN, GNFormat } from 'shared/lib/data/GoodNumber';
 import { Token } from 'shared/lib/data/Token';
 import useChain from 'shared/lib/hooks/UseChain';
 import { formatNumberInput } from 'shared/lib/util/Numbers';
+import styled from 'styled-components';
 import { Address } from 'viem';
 import { useReadContract } from 'wagmi';
 
@@ -59,6 +61,12 @@ function getConfirmButton(state: ConfirmButtonState, token: Token): { text: stri
   }
 }
 
+const InfoWrapper = styled.div`
+  path {
+    stroke: #647d93;
+  }
+`;
+
 export type WithdrawModalProps = {
   isOpen: boolean;
   selectedRow: SupplyTableRow;
@@ -79,8 +87,6 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     args: [userAddress],
     query: {
       enabled: isOpen,
-      refetchInterval: 3_000,
-      refetchIntervalInBackground: false,
     },
   });
 
@@ -96,11 +102,9 @@ export default function WithdrawModal(props: WithdrawModalProps) {
   } = useRedeem(activeChain.id, selectedRow.kitty.address, inputValue[1] ? GN.Q(112) : withdrawAmount, userAddress);
 
   const maxAmountGN = GN.fromBigInt(maxAmount, selectedRow.asset.decimals);
+  const withdrawablePercentage = userBalance.isZero() ? 0 : maxAmountGN.div(userBalance).recklessMul(100).toNumber();
   const isConstrainedByUtilization =
-    inputValue[1] &&
-    userBalance.isGtZero() &&
-    maxAmountGN.isGtZero() &&
-    maxAmountGN.recklessMul(100).div(userBalance).toNumber() < 99;
+    inputValue[1] && userBalance.isGtZero() && maxAmountGN.isGtZero() && withdrawablePercentage < 99;
 
   useEffect(() => {
     if (txn === undefined) return;
@@ -130,9 +134,23 @@ export default function WithdrawModal(props: WithdrawModalProps) {
     GNFormat.DECIMAL
   );
 
+  // Whether the user is able to withdraw their full balance
+  const isWithdrawingLimited = maxAmountGN.lt(userBalance);
+
   return (
     <Modal isOpen={isOpen} setIsOpen={setIsOpen} title='Withdraw'>
       <div className='w-full flex flex-col gap-4'>
+        {withdrawablePercentage < 99 && isWithdrawingLimited && (
+          <div className='border-2 border-[#647d93] flex items-center p-2 gap-2 rounded-lg bg-grey-75'>
+            <InfoWrapper>
+              <Info width={24} height={24} />
+            </InfoWrapper>
+            <Text size='XS' className='w-full' color='#647d93'>
+              Due to the utilization rate, you can only withdraw {withdrawablePercentage.toFixed(2)}% of your balance.
+              More funds will be available once the utilization rate decreases.
+            </Text>
+          </div>
+        )}
         <TokenAmountInput
           token={selectedRow.asset}
           value={inputValue[0]}
