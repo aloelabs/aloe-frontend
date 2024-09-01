@@ -489,39 +489,6 @@ export async function calculateTickData(poolAddress: string, chainId: number): P
 
   const tickData: TickData[] = filtered;
 
-  // let liquidity = 0n;
-
-  // console.log(rawTicksData);
-
-  // for (const element of rawTicksData) {
-  //   const tick = element.tickIdx;
-  //   const liquidityNet = element.liquidityNet;
-  //   const price0 = isFinite(element.price0) ? new Big(element.price0) : new Big(Number.MAX_SAFE_INTEGER);
-  //   const price1 = isFinite(element.price1) ? new Big(element.price1) : new Big(Number.MAX_SAFE_INTEGER);
-
-  //   liquidity += liquidityNet;
-
-  //   const tickSpacing = 10; // TODO: Fix this
-
-  //   const price = tickToPrice(tick, poolLiquidityData.token0Decimals, poolLiquidityData.token1Decimals);
-  //   const [amount0, amount1] = getAmountsForLiquidity(
-  //     {
-  //       liquidity: JSBI.BigInt(liquidity.toString()),
-  //       lower: tick,
-  //       upper: tick + tickSpacing,
-  //     },
-  //     tick,
-  //     poolLiquidityData.token0Decimals,
-  //     poolLiquidityData.token1Decimals
-  //   );
-  //   const liquidityDensity = (amount1 + (amount0 * price));
-
-  //   tickData.push({
-  //     tick,
-  //     liquidityDensity,
-  //   });
-  // }
-
   return tickData;
 }
 
