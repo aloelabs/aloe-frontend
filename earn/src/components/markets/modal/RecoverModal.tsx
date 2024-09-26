@@ -14,6 +14,7 @@ import { base } from 'viem/chains';
 import { useReadContract, useSimulateContract, useWriteContract } from 'wagmi';
 
 import AddressDropdown from '../../common/AddressDropdown';
+import MaxSlippageInput from '../../common/MaxSlippageInput';
 import { SupplyTableRow } from '../supply/SupplyTable';
 
 const SECONDARY_COLOR = 'rgba(130, 160, 182, 1)';
@@ -86,6 +87,7 @@ export default function RecoverModal({
 }) {
   const activeChain = useChain();
   const [selectedOption, setSelectedOption] = useState(OPTIONS[activeChain.id][0]);
+  const [slippage, setSlippage] = useState('0.10');
 
   const { data: balanceResult } = useReadContract({
     abi: lenderAbi,
@@ -125,7 +127,7 @@ export default function RecoverModal({
       selectedRow.kitty.address,
       selectedOption.borrower,
       selectedOption.flashPool,
-      10n,
+      BigInt((Number(slippage) * 100).toFixed(0)),
       balanceResult ?? 0n,
       BigInt(permitResult.deadline),
       permitResult.signature?.v ?? 0,
@@ -170,6 +172,7 @@ export default function RecoverModal({
             setSelectedOption(OPTIONS[activeChain.id].find((option) => option.borrower === borrowerAddress)!)
           }
         />
+        <MaxSlippageInput updateMaxSlippage={setSlippage} />
         <div className='flex flex-col gap-1 w-full'>
           <Text size='M' weight='bold'>
             Explanation
