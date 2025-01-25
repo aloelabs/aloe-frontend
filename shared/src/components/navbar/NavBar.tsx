@@ -311,7 +311,7 @@ export function NavBar(props: NavBarProps) {
         </DesktopNavLinks>
         <div className='flex gap-4 items-center ml-auto'>
           <ChainSelector isOpen={isSelectChainDropdownOpen} setIsOpen={setIsSelectChainDropdownOpen} />
-          {account.address !== undefined && (
+          {account.address !== undefined && false /* NOTE: disabled for wind-down */ && (
             <OutlinedGradientRoundedButton size='S' onClick={() => navigate('/leaderboard')}>
               {accountPoints.toString(GNFormat.LOSSY_HUMAN)} points
             </OutlinedGradientRoundedButton>

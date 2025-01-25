@@ -5,6 +5,7 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import Banner from 'shared/lib/components/banner/Banner';
 import AccountBlockedModal from 'shared/lib/components/common/AccountBlockedModal';
 import Footer from 'shared/lib/components/common/Footer';
 import { Text } from 'shared/lib/components/common/Typography';
@@ -112,6 +113,12 @@ function AppBodyWrapper() {
         <ScrollToTop />
         <AppBody>
           <Header checkboxes={CONNECT_WALLET_CHECKBOXES} />
+          <Banner
+            bannerName='Warning'
+            // eslint-disable-next-line max-len
+            bannerText={`Aloe Labs is shutting down. This web interface will not be available after April 25, 2025. Please close positions and withdraw.`}
+            bannerColor='#FF7A00'
+          />
           <main className='flex-grow'>
             <Routes>
               <Route path='/portfolio' element={<PortfolioPage />} />
