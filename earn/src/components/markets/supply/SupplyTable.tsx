@@ -264,7 +264,8 @@ export default function SupplyTable(props: SupplyTableProps) {
                 <td className='px-4 py-2 text-start whitespace-nowrap'>
                   <ApyWithTooltip
                     apy={row.apy}
-                    addOn={row.totalSupplyUsd && row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
+                    // eslint-disable-next-line max-len
+                    // addOn={row.totalSupplyUsd && row.rewardsRate * 86400 * 365 * Math.min(1000 / row.totalSupplyUsd, 1)}
                   />
                 </td>
                 <td className='px-4 py-2 text-end whitespace-nowrap'>
@@ -288,6 +289,7 @@ export default function SupplyTable(props: SupplyTableProps) {
                         if (userAddress) setSelectedRow({ row, action: 'supply' });
                       }}
                       disabled={
+                        true /* NOTE: disabled for wind-down */ ||
                         (userAddress &&
                           row.suppliableBalance === 0 &&
                           !(hasAuxiliaryFunds && row.asset.symbol === 'WETH')) ||

@@ -303,6 +303,7 @@ export default function PortfolioPage() {
             }}
           />
           <PortfolioActionButton
+            disabled={true /* NOTE: disabled for wind-down */}
             label={'Deposit'}
             Icon={<TrendingUpIcon />}
             onClick={() => {
