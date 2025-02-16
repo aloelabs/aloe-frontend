@@ -17,7 +17,7 @@ const PREDEFINED_MAX_SLIPPAGE_OPTIONS = [
 ];
 
 const DEFAULT_CUSTOM_SLIPPAGE_PERCENTAGE = '0.10';
-const MAX_SLIPPAGE_PERCENTAGE = 5;
+const MAX_SLIPPAGE_PERCENTAGE = 100;
 
 const SlippageTabsWrapper = styled.div`
   width: 100%;
